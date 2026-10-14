@@ -25,6 +25,14 @@ It has two modes, switched with the tabs at the top right:
 
 </details>
 
+### MC-101 mode (beta)
+
+Got an MC-101? Choose **Settings › Device: MC-101 (4 tracks)**. The app switches to the MC-101's four tracks: **Drums, Bass, Chords and Lead** on MIDI channels 1–4, with the pads shown as 4 rows of 4. Drums play **full kits** (kick, snare, hats and percussion in one pattern), so one drum track still sounds complete. The song wizard, Live Mode scenes, breaks, builds and drops all work with the four tracks. MC-101 mode hasn't been tested on hardware yet: if you try it, run **Live › Mapping › Pad test** and send the result in an issue.
+
+### Full kits on the MC-707
+
+**Settings › Drums on one track (full kits)** puts the whole groove on Drums 1, which frees Drums 2 for another sound. Drums 3 keeps the builds and drop impacts. Over 1,100 full-kit patterns are built from the library's kits, hats and percussion.
+
 ---
 
 ## Getting started
