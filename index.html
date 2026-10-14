@@ -5187,22 +5187,24 @@ function initWizard(){
 /* ---------- boot ---------- */
 /* ---------- Live Mode ---------- */
 const LVK='mc707-live';
-const LV_LAYOUT=4;
+const LV_LAYOUT=5;
+/* What the MC-707 pads really send on a drum track (measured on hardware): top row 1-8, bottom row 9-16. */
+const LV_DRUM_NOTES=[37,39,42,46,49,51,54,56,36,38,41,45,48,62,63,64];
 /* Default: the MC-707 pads numbered 1-8 on the top row and 9-16 on the bottom row, sending 16 notes in order. */
 const LV_ACTS=['s0','s1','s2','s3','s4','s5','s6','brk','sw:drums','sw:bass','sw:chords','sw:lead','fill','stut:8','bd','next'];
 const LV_ACTS_KBD=['s0','s1','s2','s3','s4','s5','s6','brk','prev','sw:drums','sw:bass','bd','fill','stut:8','sw:chords','next'];
 const lvGridNotes=base=>Array.from({length:16},(_,i)=>base+i);
-const lvLayoutNotes=()=>LV.padLayout==='kbd'?lvKbdNotes(LV.padBase):lvGridNotes(LV.padBase);
+const lvLayoutNotes=()=>LV.padLayout==='kbd'?lvKbdNotes(LV.padBase):LV.padLayout==='drum'?LV_DRUM_NOTES.slice():lvGridNotes(LV.padBase);
 const LV_KBD_OFF=[0,2,4,5,7,9,11,12,null,1,3,null,6,8,10,null];
 const lvKbdNotes=base=>LV_KBD_OFF.map(o=>o==null?null:base+o);
 const LV_TOPFN=['Oct −',null,null,'Step',null,null,null,'Oct +'];
 const LV_SAVE=['style','seed','key','bpm','swing','quant','entry','fills','padNotes','padBase','padLayout','padCh','padFlip','acts','keyBase','muteBase','keyCh','perfOn','layout','autoReps','chaos','ktarget','rest','scBase','riseBars','dropStyle','mode','vary','flavor','buildFx','custom','revRest','brkStyle','brkLen','ctl','homeKey'];
-const LV=Object.assign({style:'liquid',seed:1,key:2,bpm:174,swing:50,quant:4,entry:'smooth',fills:true,padNotes:lvGridNotes(36),padBase:36,padLayout:'grid',padCh:0,padFlip:false,acts:LV_ACTS.slice(),keyBase:60,muteBase:72,keyCh:0,perfOn:true,layout:LV_LAYOUT,autoReps:2,chaos:30,ktarget:'all',rest:[64,0,0,64],scBase:60,riseBars:4,dropStyle:'gap',mode:null,vary:50,flavor:'lively',buildFx:true,custom:false,revRest:0,brkStyle:'mix',brkLen:32,ctl:null,homeKey:null},
+const LV=Object.assign({style:'liquid',seed:1,key:2,bpm:174,swing:50,quant:4,entry:'smooth',fills:true,padNotes:[37,39,42,46,49,51,54,56,36,38,41,45,48,62,63,64],padBase:36,padLayout:'drum',padCh:0,padFlip:false,acts:LV_ACTS.slice(),keyBase:60,muteBase:72,keyCh:0,perfOn:true,layout:LV_LAYOUT,autoReps:2,chaos:30,ktarget:'all',rest:[64,0,0,64],scBase:60,riseBars:4,dropStyle:'gap',mode:null,vary:50,flavor:'lively',buildFx:true,custom:false,revRest:0,brkStyle:'mix',brkLen:32,ctl:null,homeKey:null},
   (()=>{try{return JSON.parse(localStorage.getItem(LVK)||'{}')||{};}catch(e){return {};}})(),
   {autos:[],ccLast:{},edIdx:-1,scenes:[],fillIds:[],cur:0,sceneStart:0,voices:Array.from({length:8},()=>[]),cues:[],fill:null,mute:{},tg:[],stopAt:null,crash:false,ver:0,learn:-1,hist:[],log:[],lastTick:0,lastKey:'',auto:false,energy:8,rate:1,stut:null,rise:null,knobs:[64,0,0,64],knobsIn:[null,null,null,null],pulse:[],held:{},dropTick:null,tapT:[],beat:0});
 (function fixLive(){
-  if(LV.layout!==LV_LAYOUT){LV.acts=LV_ACTS.slice();LV.layout=LV_LAYOUT;LV.padFlip=false;LV.padLayout='grid';LV.padBase=36;LV.padNotes=lvGridNotes(36);}
-  if(LV.padLayout!=='kbd'&&LV.padLayout!=='grid'&&LV.padLayout!=='custom')LV.padLayout='grid';
+  if(LV.layout!==LV_LAYOUT){LV.acts=LV_ACTS.slice();LV.layout=LV_LAYOUT;LV.padFlip=false;LV.padLayout='drum';LV.padBase=36;LV.padCh=0;LV.padNotes=LV_DRUM_NOTES.slice();}
+  if(!['kbd','grid','custom','drum'].includes(LV.padLayout))LV.padLayout='drum';
   LV.padBase=clamp(Math.round(+LV.padBase||36),0,115);
   if(!Array.isArray(LV.padNotes)||LV.padNotes.length!==16||LV.padNotes.some(n=>n!==null&&!Number.isFinite(+n)))LV.padNotes=lvLayoutNotes();
   if(!Array.isArray(LV.acts)||LV.acts.length!==16||LV.acts.some(a=>typeof a!=='string'))LV.acts=LV_ACTS.slice();
@@ -6173,7 +6175,7 @@ function liveMidi(ev){
     return false;
   }
   if(!isOn)return false;
-  if(LV.learn==='p1'){LV.padCh=0;LV.padBase=clamp(n,0,112);LV.padNotes=lvLayoutNotes();LV.learn=-1;saveLive();liveRenderPads();liveRenderSettings();toast('Pads set: pad 1 sends note '+n);return true;}
+  if(LV.learn==='p1'){LV.padCh=0;LV.padBase=clamp(n,0,112);LV.padNotes=LV.padLayout==='drum'?LV_DRUM_NOTES.map(x=>clamp(x+n-37,0,127)):lvLayoutNotes();LV.learn=-1;saveLive();liveRenderPads();liveRenderSettings();toast('Pads set: pad 1 sends note '+n);return true;}
   if(LV.learn>=0){
     if(LV.learn===0)LV.padCh=ch;
     LV.padNotes[LV.learn]=n;LV.padLayout='custom';LV.learn=LV.learn>=15?-1:LV.learn+1;saveLive();liveRenderPads();liveRenderSettings();return true;
@@ -6407,18 +6409,19 @@ function liveRenderSettings(){
   const b=$('#lvSetBody');if(!b)return;b.textContent='';
   const chSel=(val,on)=>{const s=el('select',{onchange:e=>on(+e.target.value)});s.append(el('option',{value:0,selected:val===0},'Any channel'));for(let c=1;c<=16;c++)s.append(el('option',{value:c,selected:val===c},'Channel '+c));return s;};
   const noteIn=(val,on)=>el('input',{type:'number',min:0,max:127,value:val,style:'width:64px',onchange:e=>on(clamp(Math.round(+e.target.value)||0,0,127))});
-  b.append(el('p',{class:'hint'},LV.padLayout==='kbd'?'Matches the MC-707 pads in keyboard mode: the bottom row plays C D E F G A B C, the top row plays C# D# F# G# A# with Oct −, Step and Oct + in between. Those three send no note, so their pads work from the screen and keyboard only. The app follows the MC-707\'s Oct buttons automatically.':'Pads send 16 notes in a row. Use Learn if your pads send something else.'));
+  b.append(el('p',{class:'hint'},LV.padLayout==='kbd'?'Matches the MC-707 pads in keyboard mode: the bottom row plays C D E F G A B C, the top row plays C# D# F# G# A# with Oct −, Step and Oct + in between. Those three send no note, so their pads work from the screen and keyboard only. The app follows the MC-707\'s Oct buttons automatically.':LV.padLayout==='drum'?'Matches the MC-707 pads with a drum track selected: they send the drum notes (kick 36, snare 38, closed hat 42 …) on that track\'s channel. Select any drum track on the MC-707 and the pads work. If yours differ, run the Pad test.':'Pads send 16 notes in a row. Use Learn if your pads send something else.'));
   b.append(el('div',{class:'lvrow'},
     el('label',{class:'lvf'},'Pad channel',chSel(LV.padCh,v=>{LV.padCh=v;saveLive();liveRenderPads();})),
     el('label',{class:'lvf'},'Pad layout',el('select',{onchange:e=>{const v=e.target.value;if(v==='custom')return;const was=LV.padLayout;LV.padLayout=v;LV.padFlip=v==='kbd';LV.padNotes=lvLayoutNotes();if(JSON.stringify(LV.acts)===JSON.stringify(was==='kbd'?LV_ACTS_KBD:LV_ACTS))LV.acts=(v==='kbd'?LV_ACTS_KBD:LV_ACTS).slice();saveLive();liveRenderPads();liveRenderSettings();}},
-      el('option',{value:'grid',selected:LV.padLayout==='grid'},'Pads 1–8 on top, 9–16 below (16 notes in order)'),
+      el('option',{value:'drum',selected:LV.padLayout==='drum'},'MC-707 drum track (recommended)'),
+      el('option',{value:'grid',selected:LV.padLayout==='grid'},'16 notes in a row (other controllers)'),
       el('option',{value:'kbd',selected:LV.padLayout==='kbd'},'MC-707 keyboard mode (white keys on the bottom row)'),
       LV.padLayout==='custom'?el('option',{value:'custom',selected:true},'Learned from your pads'):null)),
     el('button',{class:'btn'+(LV.learn==='p1'?' on':''),disabled:!MIDI.inp,title:MIDI.inp?'Press the top-left pad on the MC-707 once':'Connect the MC-707 first',onclick:()=>{LV.learn=LV.learn==='p1'?-1:'p1';liveRenderSettings();liveRenderPads();}},LV.learn==='p1'?'Now press pad 1 on the MC-707…':'Set from pad 1 (one press)'),
     el('button',{class:'btn on',onclick:padTestOpen,title:'Press pads 1–16 in order and see exactly what the MC-707 sends'},'Pad test'),
     el('button',{class:'btn'+(LV.learn>=0?' on':''),disabled:!MIDI.inp,title:MIDI.inp?'':'Connect the MC-707 first',onclick:()=>{LV.learn=LV.learn>=0?-1:0;liveRenderSettings();liveRenderPads();}},LV.learn>=0?'Press pad '+(LV.learn+1)+'… (click to stop)':'Learn the 16 pads in order'),
     LV.learn>=0?el('button',{class:'btn',onclick:()=>{LV.padNotes[LV.learn]=null;LV.learn=LV.learn>=15?-1:LV.learn+1;saveLive();liveRenderPads();liveRenderSettings();}},'Skip (pad sends no note)'):null,
-    el('button',{class:'btn',onclick:()=>{LV.padLayout='grid';LV.padFlip=false;LV.padBase=36;LV.padNotes=lvGridNotes(36);LV.acts=LV_ACTS.slice();LV.padCh=0;saveLive();liveRenderPads();liveRenderSettings();}},'Reset pads')));
+    el('button',{class:'btn',onclick:()=>{LV.padLayout='drum';LV.padFlip=false;LV.padBase=36;LV.padNotes=LV_DRUM_NOTES.slice();LV.acts=LV_ACTS.slice();LV.padCh=0;saveLive();liveRenderPads();liveRenderSettings();}},'Reset pads')));
   const grid=el('div',{class:'lvActGrid'});
   const opts=[];
   for(let i=0;i<8;i++)opts.push(['s'+i,'Scene '+(i+1)+(LV.scenes[i]?': '+LV.scenes[i].name:'')]);
