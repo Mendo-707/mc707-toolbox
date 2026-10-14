@@ -190,3 +190,21 @@ test('MC-101 mode hides the unused tracks', async () => {
   await page.click('#lvStart');
   assert.deepEqual(errors, []);
 });
+
+test('a new project and undo replace the whole song', async () => {
+  const { page, errors } = await openApp({ storage: SAVED });
+  const clips = () => page.evaluate(() => window.__app.S.clips.length);
+  assert.equal(await clips(), 10);
+  await page.locator('#arr').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+n');
+  await page.waitForTimeout(200);
+  const ok = page.locator('[role=dialog] button.on');
+  if (await ok.count()) await ok.first().click();
+  await page.waitForTimeout(200);
+  assert.equal(await clips(), 0, 'Ctrl+N starts an empty project');
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(200);
+  assert.equal(await clips(), 10, 'Ctrl+Z brings the song back');
+  assert.equal(await page.locator('.clip').count(), 10, 'and the arrangement shows it');
+  assert.deepEqual(errors, []);
+});

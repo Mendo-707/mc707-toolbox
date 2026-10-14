@@ -1,0 +1,70 @@
+import { $, el } from '../core/dom.js';
+import { S } from '../core/state.js';
+import { AU } from './synth.js';
+import { refreshIns } from '../song/saved-songs.js';
+
+/* ---------- MIDI ---------- */
+export const MIDI = { access: null, out: null };
+export function sendMidi(bytes, at) {
+  const o = MIDI.out;
+  if (!o) return;
+  try {
+    const ms = performance.now() + (at - AU.ctx.currentTime) * 1000;
+    if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
+    o.send(bytes, Math.max(ms, 0));
+  } catch (e) {}
+}
+export async function connectMidi() {
+  const st = $('#midiStat');
+  if (!navigator.requestMIDIAccess) {
+    st.textContent = 'Web MIDI is not available in this browser. Use Chrome or Edge on desktop.';
+    return;
+  }
+  try {
+    MIDI.access = await navigator.requestMIDIAccess({ sysex: false });
+    MIDI.access.onstatechange = refreshOuts;
+    refreshOuts();
+  } catch (err) {
+    st.textContent =
+      'MIDI access was blocked (' +
+      ((err && err.name) || 'error') +
+      '). Allow MIDI for this page in your browser, or open the page in its own tab.';
+  }
+}
+export function refreshOuts() {
+  const sel = $('#midiOut');
+  const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [];
+  sel.textContent = '';
+  sel.append(el('option', { value: '' }, outs.length ? 'No output' : 'No devices found'));
+  outs.forEach(o => sel.append(el('option', { value: o.id }, o.name)));
+  let pick = outs.find(o => o.id === S.midiOut) || outs.find(o => /MC-?707/i.test(o.name));
+  sel.value = pick ? pick.id : '';
+  MIDI.out = pick || null;
+  if (pick) S.midiOut = pick.id;
+  $('#midiStat').textContent = pick
+    ? 'Sending to ' + pick.name + '.'
+    : outs.length
+      ? 'Choose an output device.'
+      : 'No MIDI outputs found. Plug in the MC-707 by USB and reconnect.';
+  refreshIns();
+}
+const NOTEHIST = new Set();
+export function panic(hard) {
+  const o = MIDI.out;
+  if (!o) return;
+  const now = performance.now();
+  const burst = ms => {
+    for (let ch = 0; ch < 16; ch++) {
+      o.send([0xb0 | ch, 123, 0], ms);
+      o.send([0xb0 | ch, 64, 0], ms);
+      if (hard) o.send([0xb0 | ch, 120, 0], ms);
+    }
+    NOTEHIST.forEach(k => o.send([0x80 | (k >> 7), k & 127, 0], ms));
+  };
+  /* once now, and again after the scheduling window so queued note-ons cannot start afterwards */
+  try {
+    burst(now);
+    burst(now + 320);
+  } catch (e) {}
+  NOTEHIST.clear();
+}
