@@ -15,13 +15,15 @@ It has two modes, switched with the tabs at the top right:
 ![Song Mode](docs/song-mode.png)
 
 <details>
-<summary><b>Feature overview (5 cards)</b></summary>
+<summary><b>Feature overview (7 cards)</b></summary>
 
 ![Live Mode](docs/features/1-live-mode.png)
 ![Break and moves](docs/features/2-break-and-moves.png)
 ![Scenes](docs/features/3-scenes.png)
 ![Raven mode and controller keyboard](docs/features/4-raven-and-controller.png)
 ![Song Mode](docs/features/5-song-mode.png)
+![Your MC-707 clips](docs/features/6-mc707-clips.png)
+![Live tools](docs/features/7-live-tools.png)
 
 </details>
 
