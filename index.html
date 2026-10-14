@@ -439,6 +439,33 @@ body[data-mode=live] #live{display:flex}
 .rth{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:1px}
 .rtr{border-left:4px solid var(--c);padding:3px 0 3px 8px;background:color-mix(in srgb,var(--c) 7%,transparent);border-radius:6px}
 .rtr select{min-width:0;width:100%}.rtl{font-weight:600;font-size:13px}
+.cmBox{max-width:980px}
+.cmHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cmUnit{background:linear-gradient(180deg,#2a2b30,#1b1c20);border:1px solid #3a3b42;border-radius:16px;padding:14px;margin:10px 0;box-shadow:inset 0 1px 0 #ffffff14,0 10px 30px #0008}
+.cmStrips{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:6px}
+.cmStrip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 10px;border-radius:10px;background:#16171a;border:1px solid #33343b;color:#d9dbe3;cursor:pointer;font:inherit;min-width:0}
+.cmStrip .cmTn{font-size:10px;letter-spacing:1px;color:#8d909c;font-weight:700}
+.cmStrip .cmName{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cmStrip .cmDots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;min-height:8px;max-width:72px}.cmStrip .cmDots i{width:7px;height:7px;border-radius:2px}
+.cmStrip .cmCount{font-size:11px;color:#8d909c}
+.cmStrip .cmSel{width:70%;height:6px;border-radius:3px;background:#2f3037;margin-top:2px}
+.cmStrip.on{border-color:var(--c);background:#1d1e22}.cmStrip.on .cmSel{background:var(--c);box-shadow:0 0 10px var(--c)}
+.cmMid{display:flex;align-items:center;gap:14px;margin:12px 0;flex-wrap:wrap}
+.cmScreen{flex:1 1 260px;background:#050506;border:2px solid #000;border-radius:6px;padding:8px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#e9ecf5;display:flex;flex-direction:column;gap:2px;box-shadow:inset 0 0 12px #000}
+.cmScreen b{font-size:13px;letter-spacing:1px}.cmScreen span{font-size:18px;letter-spacing:2px;color:#fff}
+.cmCtl{display:flex;align-items:center;gap:8px;color:#d9dbe3;font-size:13px}.cmCtl b{font-size:20px;min-width:24px;text-align:center}
+.cmPads{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.cmPad{aspect-ratio:1.25;border-radius:10px;border:1px solid #00000080;background:linear-gradient(180deg,#3a3b41,#2a2b30);color:#bfc2cc;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:6px 8px;cursor:pointer;font:inherit;font-size:11px;box-shadow:inset 0 1px 0 #ffffff1a,0 2px 0 #000}
+.cmPad b{font-size:12px;opacity:.75}.cmPad .off{opacity:.4}
+.cmPad.lit{background:radial-gradient(120% 120% at 50% 120%,var(--c) 0%,color-mix(in srgb,var(--c) 55%,#202126) 70%);color:#101114;font-weight:700;box-shadow:inset 0 1px 0 #ffffff55,0 0 16px color-mix(in srgb,var(--c) 45%,transparent)}
+.cmPad.cur{outline:3px solid #fff;outline-offset:2px}
+.cmEdit{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0}
+.cmTypes{display:flex;flex-wrap:wrap;gap:6px}.cmTypes .btn.on{outline:2px solid var(--c)}
+.cmSw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.cmBox .lvf,.cmAuto b,.cmEdit>b{color:#eef0ff}
+.cmAuto{display:flex;align-items:flex-start;gap:8px;margin-top:6px}.cmAuto small{color:#a9aecb}
+.cmBox input[type=text]{background:#2a2d40;color:#eef0ff;border:1px solid #ffffff22;border-radius:6px;padding:5px 8px}
+@media(max-width:700px){.cmPads{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .devoff{display:none!important}
 body[data-dev="101"] .lvmap{grid-template-columns:repeat(4,1fr)}
 .ptOv{position:fixed;inset:0;z-index:9000;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -1555,6 +1582,7 @@ function processTick(tick,time){
       const Lc=Math.round((c.ll||p.bars)*32);const local=(((tick-Math.round(c.start*32)+Math.round(c.off*32))%Lc)+Lc)%Lc;
       if(c.cc&&c.cc.pts&&c.cc.pts.length&&tick%2===0)autoCC(ti,c,tick,time);
       if(c.pc!=null&&tick===Math.round(c.start*32))sendMidi([0xC0|(t.ch-1),clamp(c.pc,0,127)],time);
+      else if(c.pc==null&&S.clipAuto&&(tick===Math.round(c.start*32)||PCLAST[ti]==null))autoClip(ti,p,time);
       const evs=patIndex(p).get(local);if(!evs)continue;
       const maxT=(c.start+c.len)*32-tick;
       const tone=t.type==='tone',trs=c.tr||0,vm=(c.vel||100)/100*((c.fi||c.fo||c.ve)?velMul(c,tick/32-c.start):1);
@@ -1628,7 +1656,7 @@ function startSong(rec){
     if(tick===0)sendMidi([0xFA],TR.nextTime);
     else{const spp=Math.round(tick/2);sendMidi([0xF2,spp&127,(spp>>7)&127],TR.nextTime);sendMidi([0xFB],TR.nextTime);}
   }
-  Object.keys(AUTOLAST).forEach(k=>delete AUTOLAST[k]);sendTrackCCs();
+  Object.keys(AUTOLAST).forEach(k=>delete AUTOLAST[k]);sendTrackCCs();autoClipReset();
   TICKER.start();sched();updTransport();
 }
 function startPat(p,ti,range,shift,bpm,swing){
@@ -1660,6 +1688,67 @@ function toggleFull(){
   document.documentElement.requestFullscreen().catch(()=>toast('Fullscreen was blocked. Press F11 for your browser\'s own fullscreen.'));
 }
 if(FULLHOST){if(FULLHOST.onFullScreen)FULLHOST.onFullScreen(on=>{STAGE.full=on;syncFullBtn();});if(FULLHOST.isFullScreen)FULLHOST.isFullScreen().then(on=>{STAGE.full=on;syncFullBtn();}).catch(()=>{});}
+/* ===== MC-707 clips: how many clips each MC-707 track has and what kind of sound each one holds.
+   When a track plays a different kind of part, the app switches that track to the matching clip (program change 0-15 = clip 1-16). ===== */
+const CLIP_TYPES=[['drums','Drums','#ff5f45'],['bass','Bass','#2fd3c0'],['chords','Chords','#4da3ff'],['pad','Pad','#a283ff'],['lead','Lead','#84d95b'],['pluck','Pluck / arp','#e9d94a'],['fx','FX / other','#9aa0ad']];
+const CT_DEF=['drums','drums','drums','bass','chords','pad','lead','pluck'];
+const CT_POOL={bass:'bass',chords:'chords',pad:'pad',lead:'lead',pluck:'pluck'};
+const ctInfo=k=>CLIP_TYPES.find(x=>x[0]===k)||CLIP_TYPES[6];
+const PCLAST={};
+function cmFix(){
+  if(!Array.isArray(S.clipMap)||S.clipMap.length!==8)S.clipMap=CT_DEF.map(t=>({n:1,types:[t],names:[]}));
+  S.clipMap.forEach((m,i)=>{m.n=clamp(Math.round(+m.n||1),1,16);if(!Array.isArray(m.types))m.types=[];for(let k=0;k<16;k++)if(!ctInfo(m.types[k])||!m.types[k])m.types[k]=k===0?CT_DEF[i]:(m.types[k-1]||CT_DEF[i]);if(!Array.isArray(m.names))m.names=[];});
+  return S.clipMap;
+}
+/* what kind of part a pattern is */
+function patType(p){
+  if(!p)return null;if(p.type==='drum')return 'drums';
+  const f=p.pool?p:(p.src?facById(p.src):null),pool=(f&&f.pool)||'';
+  const m={bass:'bass',fbass:'bass',chords:'chords',fchords:'chords',pad:'pad',lead:'lead',flead:'lead',pluck:'pluck'}[pool];if(m)return m;
+  const r=String(p.role||(f&&f.role)||'').toLowerCase();
+  return /bass/.test(r)?'bass':/chord|stab|key/.test(r)?'chords':/pad/.test(r)?'pad':/arp|pluck/.test(r)?'pluck':/lead|melod/.test(r)?'lead':null;
+}
+function clipFor(t,type){if(!type)return -1;const m=cmFix()[t];for(let k=0;k<m.n;k++)if(m.types[k]===type)return k;return -1;}
+/* switch an MC-707 track to the clip for this kind of part, a moment before its notes */
+function autoClip(t,p,time){
+  if(!S.clipAuto||!MIDI.out||!devOn(t))return;
+  const k=clipFor(t,patType(p));if(k<0||PCLAST[t]===k)return;
+  PCLAST[t]=k;sendMidi([0xC0|(S.tracks[t].ch-1),k],Math.max(0,time-.004));
+}
+const autoClipReset=()=>{for(const k in PCLAST)delete PCLAST[k];};
+/* ---- the clips screen, laid out like the MC-707: track buttons on top, the 16 pads below (as in CLIP mode) ---- */
+const CMAP={t:3,k:0};
+function clipMapOpen(t){cmFix();if(t!=null)CMAP.t=t;if(!devOn(CMAP.t))CMAP.t=DEVS[DEV].tracks[0];CMAP.k=0;let ov=$('#cmOv');if(ov)ov.remove();ov=el('div',{id:'cmOv',class:'ptOv',role:'dialog','aria-label':'MC-707 clips',onpointerdown:e=>{if(e.target.id==='cmOv')clipMapClose();}});document.body.append(ov);clipMapRender();}
+function clipMapClose(){const o=$('#cmOv');if(o)o.remove();scheduleSave();if(typeof liveRenderSceneEd==='function')liveRenderSceneEd();}
+function clipMapRender(){
+  const ov=$('#cmOv');if(!ov)return;ov.textContent='';const map=cmFix(),m=map[CMAP.t],tr=S.tracks[CMAP.t],dn=DEVS[DEV].name;
+  const strips=el('div',{class:'cmStrips'});
+  DEVS[DEV].tracks.forEach(t=>{const mm=map[t];
+    strips.append(el('button',{class:'cmStrip'+(t===CMAP.t?' on':''),style:'--c:'+TRACK_COLORS[t],onclick:()=>{CMAP.t=t;CMAP.k=0;clipMapRender();}},
+      el('span',{class:'cmTn'},'TRACK '+devNum(t)),el('span',{class:'cmName'},S.tracks[t].name),
+      el('span',{class:'cmDots'},...Array.from({length:mm.n},(_,k)=>el('i',{style:'background:'+ctInfo(mm.types[k])[2],title:'Clip '+(k+1)+': '+ctInfo(mm.types[k])[1]}))),
+      el('span',{class:'cmCount'},mm.n+(mm.n===1?' clip':' clips')),el('span',{class:'cmSel'})));
+  });
+  const pads=el('div',{class:'cmPads'});
+  for(let k=0;k<16;k++){const on=k<m.n,ty=ctInfo(m.types[k]);
+    pads.append(el('button',{class:'cmPad'+(on?' lit':'')+(k===CMAP.k&&on?' cur':''),style:'--c:'+(on?ty[2]:'#555'),title:on?'Clip '+(k+1)+': '+ty[1]:'Clip '+(k+1)+' is not used. Click to use clips up to here.',onclick:()=>{if(k>=m.n){m.n=k+1;}CMAP.k=k;clipMapRender();}},
+      el('b',{},String(k+1)),on?el('span',{},m.names[k]||ty[1]):el('span',{class:'off'},'—')));}
+  const kk=Math.min(CMAP.k,m.n-1),cur=ctInfo(m.types[kk]);
+  const typeBtns=el('div',{class:'cmTypes'},...CLIP_TYPES.filter(x=>tr.type==='drum'?x[0]==='drums'||x[0]==='fx':x[0]!=='drums').map(([v,l,c])=>el('button',{class:'btn sm'+(m.types[kk]===v?' on':''),style:'--c:'+c,onclick:()=>{m.types[kk]=v;clipMapRender();}},el('i',{class:'cmSw',style:'background:'+c}),l)));
+  const box=el('div',{class:'ptBox cmBox'},
+    el('div',{class:'cmHead'},el('h3',{},'Your '+dn+' clips'),el('button',{class:'btn sm',onclick:clipMapClose},'Done')),
+    el('p',{class:'hint'},'Tell the app what is in each clip on your '+dn+'. Like CLIP mode on the '+dn+': choose a track at the top, and its clips show on the 16 pads. When a track plays a different kind of part, for example a lead on your Chords track, the app switches that track to the matching clip, then back.'),
+    el('div',{class:'cmUnit'},strips,
+      el('div',{class:'cmMid'},el('div',{class:'cmScreen'},el('b',{},'TRACK '+devNum(CMAP.t)+' · '+tr.name),el('span',{},'CLIP '+(kk+1)+': '+(m.names[kk]||cur[1]).toUpperCase())),
+        el('div',{class:'cmCtl'},el('span',{},'Clips on this track'),el('button',{class:'btn sm',disabled:m.n<=1,onclick:()=>{m.n--;CMAP.k=Math.min(CMAP.k,m.n-1);clipMapRender();}},'−'),el('b',{},String(m.n)),el('button',{class:'btn sm',disabled:m.n>=16,onclick:()=>{m.n++;m.types[m.n-1]=m.types[m.n-1]||m.types[m.n-2];CMAP.k=m.n-1;clipMapRender();}},'+'))),
+      pads),
+    el('div',{class:'cmEdit'},el('b',{},'Clip '+(kk+1)+' holds'),typeBtns,
+      el('label',{class:'lvf'},'Name (optional)',el('input',{type:'text',maxlength:16,value:m.names[kk]||'',placeholder:'e.g. Reese, Rhodes',onchange:e=>{m.names[kk]=e.target.value.trim();clipMapRender();}})),
+      el('button',{class:'btn sm',disabled:!MIDI.out,title:MIDI.out?'Switch the '+dn+' to this clip now':'Connect the '+dn+' first',onclick:()=>{sendMidi([0xC0|(tr.ch-1),kk],AU.ctx?AU.ctx.currentTime:0);PCLAST[CMAP.t]=kk;toast('Sent: track '+devNum(CMAP.t)+' → clip '+(kk+1));}},'Switch to it now')),
+    el('label',{class:'lvf cmAuto'},el('input',{type:'checkbox',checked:!!S.clipAuto,onchange:e=>{S.clipAuto=e.target.checked;autoClipReset();scheduleSave();}}),el('span',{},el('b',{},'Switch '+dn+' clips automatically'),el('small',{},' when a track changes to a different kind of part. Song Mode clips that set their own clip number keep it.'))),
+    el('p',{class:'hint'},'Use clips that hold a sound but no notes, so the '+dn+' does not play its own pattern on top of the app. The '+dn+' must receive program change on each track\'s channel (check its MIDI settings).'));
+  ov.append(box);
+}
 function applyDevice(){
   document.body.dataset.dev=DEV;
   const b=$('#menubar .mbrand');if(b)b.textContent=DEV==='101'?'MC-707 Toolbox · MC-101 mode':'MC-707 Toolbox';
@@ -3655,7 +3744,7 @@ function initMenubar(){
     ['Song','song',[['Song wizard…',go('#bWiz')],['Transpose…',go('#bXpose')],['Structure tools…',go('#bStruct')],0,['Loop the whole song',go('#bLoopAll')],['Loop the selected clip',go('#bLoopClip'),'\\'],['Tap tempo',go('#bTap')]]],
     ['Audio','song',[['Record audio',go('#bAudRec'),'R'],['Audio inputs and settings…',go('#bAudSet')]]],
     ['Live','live',[['Start / stop',go('#lvStart'),'Space'],['Stop at end of phrase',()=>liveStopCue()],0,['Fullscreen',toggleFull,'F11',isFull],['Keep the screen awake while playing',()=>setAwake(!STAGE.awake),'',()=>STAGE.awake],0,['Connect MC-707',go('#lvMidi')],['New patterns',go('#lvNew')],['Pad and key mapping…',go('#lvPadSet')]]],
-    ['Settings','',[['Device: MC-707 (8 tracks)',()=>setDevice('707'),'',()=>DEV==='707'],['Device: MC-101 (4 tracks)',()=>setDevice('101'),'',()=>DEV==='101'],['Drums on one track (full kits)',()=>setOneKit(!S.oneKit),'',()=>oneKit()],0,['Quick setup…',go('#bSetup')],['MIDI and sound…',go('#bMidi')],['Track MIDI controls…',go('#bTrackCtl')],['Audio inputs…',go('#bAudSet')],0,['Send test note',go('#bTest')],['All notes off',go('#bPanic')]]],
+    ['Settings','',[['Device: MC-707 (8 tracks)',()=>setDevice('707'),'',()=>DEV==='707'],['Device: MC-101 (4 tracks)',()=>setDevice('101'),'',()=>DEV==='101'],['Drums on one track (full kits)',()=>setOneKit(!S.oneKit),'',()=>oneKit()],['Your MC-707 clips…',()=>clipMapOpen()],0,['Quick setup…',go('#bSetup')],['MIDI and sound…',go('#bMidi')],['Track MIDI controls…',go('#bTrackCtl')],['Audio inputs…',go('#bAudSet')],0,['Send test note',go('#bTest')],['All notes off',go('#bPanic')]]],
     ['View','song',[['Fullscreen',toggleFull,'F11',isFull],['Keep the screen awake while playing',()=>setAwake(!STAGE.awake),'',()=>STAGE.awake],0,['Pattern library',go('#bLibT')],['Follow the playhead',go('#bFollow'),'',on('#bFollow')],['Metronome click',go('#bMetro'),'',on('#bMetro')]]],
     ['Help','',[['Shortcuts and tips',go('#bHelp')]]]
   ];
@@ -5528,6 +5617,9 @@ function liveRenderSceneEd(){
     s.append(el('option',{value:''},'— off —'));
     const ids=isF?[...new Set([...(c?[c.id]:[]),...lvPool(st,pool).filter(id=>facById(id).flash===sc.rh),...lvPool(st,pool)])]:[...new Set([...(c?[c.id]:[]),...lvFlavor(lvPool(st,pool),LV.flavor),...lvPool(st,pool)])].slice(0,80);
     ids.forEach(id=>{const f=facById(id);if(f)s.append(el('option',{value:id,selected:c&&c.id===id},f.name));});
+    if(!isF&&S.tracks[ti].type==='tone'){const mm=cmFix()[ti],own=patType({pool});
+      [...new Set(mm.types.slice(0,mm.n))].filter(ty=>CT_POOL[ty]&&ty!==own).forEach(ty=>{const k=clipFor(ti,ty),og=el('optgroup',{label:ctInfo(ty)[1]+' parts (switches to clip '+(k+1)+')'});
+        [...new Set([...(c&&patType(facById(c.id))===ty?[c.id]:[]),...lvFlavor(lvPool(st,CT_POOL[ty]),LV.flavor)])].slice(0,40).forEach(id=>{const f=facById(id);if(f)og.append(el('option',{value:id,selected:c&&c.id===id},f.name));});s.append(og);});}
     const pl=el('select',{'aria-label':t.name+' plays',class:'lvPlay',disabled:!c,title:'Which bars of the scene this part plays',onchange:e=>{const cc=sc.cells[ti];if(!cc)return;if(e.target.value==='all')delete cc.play;else cc.play=e.target.value;save();}},...LV_PLAY.map(([v,l])=>el('option',{value:v,selected:((c&&c.play)||'all')===v},l)));
     parts.append(el('label',{class:'lvf'+(devOn(ti)?'':' devoff')},el('span',{style:'color:'+TRACK_COLORS[ti]+';font-weight:700'},t.name),s,pl));
   });
@@ -5745,6 +5837,12 @@ function liveBuild(){
     if(!Object.keys(cells).length)[0,1,3].forEach(t=>{if(sets.A[t])cells[t]={id:sets.A[t],pool:TRACK_POOLS[t]};});
     const sc={kind,name,bars,e,cells};if(fx)sc.fx=fx;scenes.push(sc);
   }
+  if(S.clipAuto){
+    /* a track with clips of another kind (e.g. a lead sound on the Chords track) switches to it in the B scenes, then back */
+    for(const t of [3,4,5,6,7]){if(!devOn(t))continue;const mm=cmFix()[t],own=patType({pool:TRACK_POOLS[t]});
+      const alt=mm.types.slice(0,mm.n).find(ty=>CT_POOL[ty]&&ty!==own);if(!alt)continue;
+      scenes.forEach(sc=>{if(/ B$/.test(sc.name)&&sc.cells[t]){const id=take(CT_POOL[alt]);if(id)sc.cells[t]={id,pool:CT_POOL[alt],play:sc.cells[t].play};}});}
+  }
   LV.scenes=scenes;LV.fillIds=lvPool(st,'fill');
   if(LV.cur>=scenes.length)LV.cur=0;
   LV.ver++;
@@ -5761,7 +5859,8 @@ const lvTarget=t=>(LV.mute[t]||lvEmute(t))?0:1;
 function lvApplyGain(tick){for(let t=0;t<8;t++){const g=lvTarget(t);if(LV.tg[t].v1!==g)LV.tg[t]=mkEnv(envAt(LV.tg[t],tick),g,tick,S.tracks[t].type==='tone'?16:2);}}
 function lvLog(tick){LV.log.push({tick,ids:lvIds(),mute:Array.from({length:8},(_,t)=>lvTarget(t)===0||lvMaskOff(t,tick)),key:LV.key,mode:LV.mode,idx:LV.cur,brk:!!LV.flash});if(LV.log.length>600)LV.log.shift();}
 function liveReplace(t,id,tick,fade,entry){
-  const f=facById(id);if(!f)return;const tone=S.tracks[t].type==='tone';
+  const f=facById(id);if(!f)return;
+  if(S.clipAuto)autoClip(t,f,AU.ctx?AU.ctx.currentTime+.1:0);const tone=S.tracks[t].type==='tone';
   if(tone&&fade>0)LV.voices[t].forEach(v=>{if(v.env.v1>0)v.env=mkEnv(envAt(v.env,tick),0,tick,fade);});else LV.voices[t]=[];
   LV.voices[t].push({f,start:tick,env:entry>0?mkEnv(0,1,tick,entry):mkEnv(1,1,tick,0)});
 }
@@ -5947,6 +6046,7 @@ function liveStart(idx){
   const sc=LV.scenes[i];
   Object.assign(TR,{playing:true,mode:'live',tick:0,nextTime:AU.ctx.currentTime+.06,vis:[],ending:false,recEnd:null});
   Object.assign(LV,{cur:i,sceneStart:0,voices:Array.from({length:8},()=>[]),cues:[],fill:null,mute:{},energy:8,stut:null,rise:null,rate:LV.rate||1,tg:Array.from({length:8},()=>mkEnv(1,1,0,0)),stopAt:null,crash:false,gap:null,thin:null,bov:null,impact:null,autos:[],ccLast:{},hist:[],log:[],lastTick:0,dropTick:null,flash:null,maskSig:''});
+  autoClipReset();
   for(let t=0;t<8;t++){const c=sc.cells[t];if(c)liveReplace(t,c.id,0,0,0);}
   LV.autos=[];LV.ccLast={};lvSceneFx(sc,0);
   LV.hist.push({tick:0,idx:i,ids:lvIds()});lvLog(0);
@@ -6519,6 +6619,7 @@ function liveInit(){
     el('span',{class:'hint',id:'lvMidiSt'},''),
     el('button',{class:'btn',id:'lvCapture',onclick:liveCapture,title:'Turn what you just played into an arrangement in Song Mode'},'⏺ Capture to Song'),
     el('button',{class:'btn',id:'lvFull',onclick:toggleFull,title:'Fill the whole screen (F11)'},'⛶ Fullscreen'),
+    el('button',{class:'btn',onclick:()=>clipMapOpen(),title:'Tell the app what sound each MC-707 clip holds, so tracks can switch sounds'},'▦ Clips'),
     el('label',{class:'lvf'},'Theme',el('select',{id:'lvTheme','aria-label':'Colour theme',onchange:e=>liveSetTheme(e.target.value)},...Object.entries(LV_THEMES).map(([k,v])=>el('option',{value:k,selected:LV.theme===k},v.name)))),
     el('button',{class:'btn',id:'lvPadSet',onclick:()=>{const d=$('#lvSetDet');d.open=true;d.scrollIntoView({block:'nearest'});}},'Mapping'));
   const hero=el('div',{class:'lvHero'},
