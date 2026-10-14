@@ -577,7 +577,12 @@ input[type=number]{font-variant-numeric:tabular-nums}
       document.body.appendChild(d);
     }catch(e){}
   };
-  window.addEventListener('error',function(e){window.__fatal((e&&e.message)||'unknown error');});
+  window.addEventListener('error',function(e){
+    var m=(e&&e.message)||'unknown error';
+    /* Harmless browser warnings, not app errors: a resize that settled a frame late, or an error from another site's script. */
+    if(/ResizeObserver loop/i.test(m)||m==='Script error.'){try{e.stopImmediatePropagation();}catch(_){}return;}
+    window.__fatal(m);
+  });
 })();
 </script>
 <nav id="menubar" role="menubar" aria-label="Main menu"></nav>
