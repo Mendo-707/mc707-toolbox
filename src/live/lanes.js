@@ -1,3 +1,7 @@
+// The Live Mode timeline: lanes showing what each track plays, the status panel and the per-frame
+// update.
+//
+// Reads: S, LV, MIDI, AU, PCLAST, CLIPPIN, CMNOW, DEV, VZ.
 import { $, el, toast } from '../core/dom.js';
 import { DEV, TRACK_COLORS, devNm, devNum, devOn } from '../core/device.js';
 import { S } from '../core/state.js';

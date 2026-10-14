@@ -1,3 +1,6 @@
+// The song wizard's window and its first two steps (style and sound).
+//
+// Owns: WIZ (the song wizard).
 import { $, el } from '../core/dom.js';
 import { FAMLABEL, NK, STYLES } from '../library/styles.js';
 import { chooseStyle } from './wizard-styles.js';

@@ -1,3 +1,7 @@
+// Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys,
+// transpose).
+//
+// Reads: S, UI, LV, MIDI.
 import { $, clamp, el, toast } from '../core/dom.js';
 import { S, STORE, UI, fixState, pushUndo, replaceState, scheduleSave } from '../core/state.js';
 import { MIDI } from '../services/midi.js';

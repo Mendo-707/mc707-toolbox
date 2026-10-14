@@ -1,3 +1,4 @@
+// Switching between Song Mode and Live Mode.
 import { $$ } from '../core/dom.js';
 import { renderArr } from '../song/arrangement.js';
 import { panic } from '../services/midi.js';

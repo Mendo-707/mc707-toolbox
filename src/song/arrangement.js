@@ -1,3 +1,9 @@
+// The Song Mode arrangement: tracks, clips, the ruler and markers, clip-change flags, zoom, and
+// placing patterns.
+//
+// Owns: DRAG (library drag), bw (bar width), ROWH (row height).
+// Reads: S, UI, ED, TR, REC, CMNOW, SH.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, $$, clamp, el, toast } from '../core/dom.js';
 import { TRACK_COLORS, devNm, devNum, devOn } from '../core/device.js';
 import { ED, S, UI, curClip, pushUndo, scheduleSave } from '../core/state.js';

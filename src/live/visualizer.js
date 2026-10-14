@@ -1,3 +1,7 @@
+// The Live Mode visualizer behind the Now Playing panel.
+//
+// Owns: VZ (the visualizer).
+// Reads: S, LV, AU.
 import { $, clamp } from '../core/dom.js';
 import { TRACK_COLORS } from '../core/device.js';
 import { S } from '../core/state.js';

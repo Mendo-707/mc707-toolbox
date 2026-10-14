@@ -1,3 +1,7 @@
+// The hand-written factory patterns (drums and tone parts for drum and bass and hip hop). FAC, the
+// list every factory pattern goes into, is created here.
+//
+// Owns: FAC (the pattern library).
 import { KEYS, LANE_KEY, parseNote } from '../core/theory.js';
 
 const FAC_ERR = [];

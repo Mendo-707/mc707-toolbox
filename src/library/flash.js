@@ -1,3 +1,6 @@
+// Flash-break patterns: 1 to 2 bar unison hits for every genre (FLASH_RH lists the rhythms).
+//
+// Reads: FAC.
 import { KEYS } from '../core/theory.js';
 import { FAC } from './factory.js';
 

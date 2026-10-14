@@ -1,3 +1,6 @@
+// The song wizard's structure step: sections, lengths, complexity and key changes.
+//
+// Reads: WIZ.
 import { clamp, el, fmtDur } from '../core/dom.js';
 import { TRACK_COLORS, devNum, devOn, oneKit } from '../core/device.js';
 import { NK, STRUCT, trackLabel } from '../library/styles.js';

@@ -1,3 +1,7 @@
+// The controller keyboard settings: input, model, layout, solo track and learning knobs, faders and
+// pads.
+//
+// Reads: S, LV, MIDI, CTL.
 import { el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';

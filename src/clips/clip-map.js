@@ -1,3 +1,8 @@
+// Clip chips and clip-change flags in the screens: showing which clip each track is on, and the
+// menu to pick one.
+//
+// Reads: S, CMNOW.
+// Calls up the layers through hooks (core/hooks.js).
 import { devNm, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { CMNOW, clipFor, clipMarkAt, cmFix, cmMarks, ctInfo, patType } from '../services/clip-switch.js';

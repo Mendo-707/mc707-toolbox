@@ -1,3 +1,7 @@
+// Raven mode: the mute and key keys on the MC-707 and a controller keyboard, the presets and their
+// settings area.
+//
+// Reads: S, LV.
 import { el, toast } from '../core/dom.js';
 import { TRACK_COLORS } from '../core/device.js';
 import { S } from '../core/state.js';

@@ -1,3 +1,10 @@
+// The clock and playback: the tick scheduler (in a Worker so it keeps time in the background),
+// playing the song, a single pattern or the wizard preview, sending notes, and the MIDI recording
+// state REC.
+//
+// Owns: TR (the transport), REC (MIDI recording).
+// Reads: S, MIDI, AU, PCLAST, CMK, AUTOLAST.
+// Calls up the layers through hooks (core/hooks.js).
 import { clamp } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
@@ -38,7 +45,18 @@ const playSwing = () =>
       : TR.mode === 'pat' && TR.patSwing != null
         ? TR.patSwing
         : S.swing;
+/** Length of one tick (1/32 bar) in seconds at the current playing tempo. */
 export const tickDur = () => 60 / playBpm() / 8;
+/**
+ * Play a note on a track: sends MIDI to the MC-707 and plays the preview sound. Applies the track's
+ * velocity, nudge, humanize, drum map and the song's transpose.
+ * @param {number} ti     track 0-7
+ * @param {number} nn     drum lane (drum tracks) or MIDI note (tone tracks)
+ * @param {number} v      velocity
+ * @param {number} time   AU.ctx time
+ * @param {number} dur    seconds
+ * @param {boolean} [noMidi]  preview sound only
+ */
 export function emitNote(ti, nn, v, time, dur, noMidi) {
   if (!devOn(ti)) return;
   const t = S.tracks[ti];
@@ -60,10 +78,12 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
     } else voice(ti, pitch, tm, dur, vel);
   }
 }
+/** Play one note on a track right now (for clicks in the editor). */
 export function audition(ti, nn, v = 100) {
   ensureAudio();
   emitNote(ti, nn, v, AU.ctx.currentTime + 0.005, 0.22);
 }
+/** Everything that happens on one tick in the current mode (song, pattern, wizard or live). Called by sched(). */
 export function processTick(tick, time) {
   const td = TR.mode === 'song' ? tickDurAt(tick / 32) : tickDur();
   if (S.clock && MIDI.out) {
@@ -137,6 +157,7 @@ export function processTick(tick, time) {
   }
   TR.vis.push({ time, tick, dur: td });
 }
+/** Move the transport on by one tick (looping, song end, pattern range). */
 export function advance() {
   TR.nextTime += TR.mode === 'song' ? tickDurAt(TR.tick / 32) : tickDur();
   TR.tick++;
@@ -163,6 +184,7 @@ export function advance() {
     /* runs until stopped */
   } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
 }
+/** Schedule all ticks that fall within the look-ahead window. Run by TICKER. */
 export function sched() {
   const ctx = AU.ctx;
   if (TR.ending) {
@@ -216,6 +238,7 @@ export const TICKER = (() => {
     }
   };
 })();
+/** Play the song from the playhead. rec: {endTick} to stop at a tick (used by audio recording). */
 export function startSong(rec) {
   if (REC.on) hooks.recStop();
   stopAll();
@@ -248,6 +271,15 @@ export function startSong(rec) {
   sched();
   hooks.updTransport();
 }
+/**
+ * Play one pattern on a loop.
+ * @param {import('../core/types.js').Pattern} p
+ * @param {number} ti        track to play it on
+ * @param {[number, number]} [range]  bars to loop, default the whole pattern
+ * @param {number} [shift]   semitones
+ * @param {number} [bpm]
+ * @param {number} [swing]
+ */
 export function startPat(p, ti, range, shift, bpm, swing) {
   stopAll();
   ensureAudio();
@@ -270,6 +302,7 @@ export function startPat(p, ti, range, shift, bpm, swing) {
   sched();
   hooks.updTransport();
 }
+/** Stop whatever is playing, send all notes off, and update the transport display. */
 export function stopAll() {
   if (!TR.playing) return;
   TICKER.stop();
@@ -279,14 +312,17 @@ export function stopAll() {
   panic();
   hooks.updTransport();
 }
+/** Stop, and show the playhead at the song cursor (S.cursor). */
 export function stopPlay() {
   stopAll();
   hooks.updPlayhead(S.cursor);
 }
+/** Play or stop the song (the Play button and Space). */
 export function togglePlay() {
   if (TR.playing && TR.mode === 'song') stopPlay();
   else startSong();
 }
+/** '3.2.1' (bar.beat.step) for a position in bars. */
 export function fmtPos(bars) {
   const b = Math.floor(bars);
   const beat = Math.floor((bars - b) * 4);

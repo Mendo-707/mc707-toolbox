@@ -1,3 +1,7 @@
+// Fullscreen (the Windows app or the browser) and keeping the screen awake while playing.
+//
+// Owns: STAGE (fullscreen and wake lock).
+// Reads: TR.
 import { $, toast } from '../core/dom.js';
 import { TR } from '../services/transport.js';
 

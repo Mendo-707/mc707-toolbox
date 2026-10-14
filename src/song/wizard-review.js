@@ -1,3 +1,6 @@
+// The song wizard's last step: review and create the song.
+//
+// Reads: TR, WIZ.
 import { el } from '../core/dom.js';
 import { TRACK_COLORS, devOn, oneKit } from '../core/device.js';
 import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';

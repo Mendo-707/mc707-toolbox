@@ -1,3 +1,7 @@
+// Right-click menus inside the pattern editor (notes, rows, velocity), and the arrangement's
+// context-menu wiring.
+//
+// Reads: S, UI, ED, CM, bw.
 import { $, clamp, toast } from '../core/dom.js';
 import { ED, S, UI, curClip, getClip } from '../core/state.js';
 import { HEAD, barFromX, bw, cmkMenu, selectClip } from './arrangement.js';

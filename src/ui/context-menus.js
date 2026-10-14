@@ -1,3 +1,7 @@
+// Right-click menus for the transport, Play pattern, the sample grabber and the clips screen, and
+// the one listener that opens them.
+//
+// Reads: S, ED, TR, MIDI, AU, GRAB, CMAP, DEV.
 import { $, $$, toast } from '../core/dom.js';
 import { DEV, DEVS, devNm, devNum } from '../core/device.js';
 import { ED, S, curClip, scheduleSave } from '../core/state.js';

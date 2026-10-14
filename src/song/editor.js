@@ -1,3 +1,7 @@
+// The pattern editor: the step grid and piano roll, drawing notes, velocity lane, and the editor
+// playhead.
+//
+// Reads: S, ED, REC.
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES, SCALES, noteName } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';

@@ -1,4 +1,4 @@
-//<FACTORY>
+// Music theory tables: note names, the drum lanes, keys and scales.
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 export const noteName = n => NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1);
 export const parseNote = s => {

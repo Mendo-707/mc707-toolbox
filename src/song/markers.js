@@ -1,3 +1,7 @@
+// Section markers: add, rename, loop a section, tempo and MC-707 scene changes per section.
+//
+// Reads: S, DEV.
+// Calls up the layers through hooks (core/hooks.js).
 import { clamp, el } from '../core/dom.js';
 import { DEV, DEVS, devNm, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';

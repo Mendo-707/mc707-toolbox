@@ -1,3 +1,8 @@
+// The Transpose dialog: transpose the whole song, a section, a range or chosen tracks, with key
+// changes.
+//
+// Reads: S, UI.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, el, toast } from '../core/dom.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';

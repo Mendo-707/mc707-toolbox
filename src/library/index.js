@@ -1,3 +1,7 @@
+// The finished pattern library: the id lookup (facById), the pool each track draws from, and
+// helpers that copy a factory pattern into the song.
+//
+// Reads: S, FAC.
 import './generate.js';
 import './live-extras.js';
 import './lively.js';
@@ -6,6 +10,7 @@ import './flash.js';
 import { FAC } from './factory.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';
 
+/** Copy a factory pattern into the song and return the song pattern id. An unedited copy already in the song is reused. */
 export function instFactory(f) {
   const found = Object.keys(S.patterns).find(
     k => S.patterns[k].src === f.id && !S.patterns[k].mod && !S.patterns[k].shift
@@ -18,6 +23,7 @@ export function instFactory(f) {
     role: f.role
   });
 }
+/** Replace the song with the demo arrangement (174 BPM drum and bass in F minor). */
 export function makeDemo() {
   replaceState(newState());
   S.bpm = 174;
@@ -39,12 +45,15 @@ export function makeDemo() {
   put(6, 12, 4, 'dnb-arp');
   put(7, 8, 8, 'dnb-pluck');
 }
+/** The pattern behind a library or drag source {kind: 'fac'|'pat', id}. */
 export const metaOf = src => (src.kind === 'fac' ? FAC.find(f => f.id === src.id) : S.patterns[src.id]);
 export const FACMAP = new Map(FAC.map(f => [f.id, f]));
+/** A factory pattern by id. @returns {import('../core/types.js').FactoryPattern|undefined} */
 export const facById = id => FACMAP.get(id);
 export const TRACK_POOLS = ['kit', 'hats', 'perc', 'bass', 'chords', 'pad', 'lead', 'pluck'];
 export const LEVELS = [100, 80, 75, 105, 85, 70, 90, 80];
 
+/** Semitones to move a factory tone pattern into the key with root `target`, kept in a sensible range. */
 export function shiftFor(f, target) {
   if (f.type !== 'tone' || !f.key) return 0;
   const d = (((target - f.key.root) % 12) + 12) % 12;

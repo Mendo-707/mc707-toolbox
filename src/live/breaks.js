@@ -1,3 +1,7 @@
+// Live Mode breaks and flashes: the top-right Break pad (hits, stutter, roll, drop-out) and the
+// quick flash breaks auto-pilot adds.
+//
+// Reads: S, LV, TR.
 import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { facById } from '../library/index.js';

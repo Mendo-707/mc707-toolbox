@@ -1,3 +1,9 @@
+// The pattern library panel: search and filters, favourites, previewing a pattern (on the track
+// that suits it), and adding it to the song.
+//
+// Owns: FAVS (favourite patterns).
+// Reads: S, UI, TR, FAC, DEV.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, el, toast } from '../core/dom.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from '../library/factory.js';

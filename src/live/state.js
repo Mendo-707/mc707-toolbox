@@ -1,8 +1,11 @@
+// Live Mode's state LV (style, key, tempo, scenes, pads, settings) and saving it.
+//
+// Owns: LV (Live Mode state).
+// Reads: DEV.
 import { clamp } from '../core/dom.js';
 import { DEV } from '../core/device.js';
 import { STYLES } from '../library/styles.js';
 
-/* ---------- boot ---------- */
 /* ---------- Live Mode ---------- */
 const LVK = 'mc707-live';
 const LV_LAYOUT = 5;

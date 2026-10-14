@@ -1,3 +1,8 @@
+// MIDI export: builds a .mid with every track (and one per track) and saves it, in a zip when there
+// are several files.
+//
+// Reads: S.
+// Calls up the layers through hooks (core/hooks.js).
 import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { CRC_T } from '../core/crc.js';

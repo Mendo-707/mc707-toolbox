@@ -1,3 +1,9 @@
+// Things you do to clips: split, edit one repeat on its own, glue, copy, make unique, set length
+// and transpose, plus the playhead and loop controls.
+//
+// Owns: CLIPB (the clip clipboard).
+// Reads: S, UI, ED, TR, AU, bw.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, toast } from '../core/dom.js';
 import { ED, S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { HEAD, bw, renderArr, selectClip } from './arrangement.js';

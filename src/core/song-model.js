@@ -1,8 +1,18 @@
+// Reading and editing the song's clips: find the clip at a bar, cut a gap into a track, place a
+// clip, the song's length, and clip arithmetic (loop length, 16th-step rounding).
+//
+// Reads: S, UI.
+// Calls up the layers through hooks (core/hooks.js).
 import { S, UI, curClip } from './state.js';
 import { hooks } from './hooks.js';
 
 /* ---------- pattern + clip helpers ---------- */
 const IDX = new WeakMap();
+/**
+ * The notes of a pattern grouped by tick, for fast lookup while playing. Cached until touch(p).
+ * @param {import('./types.js').Pattern} p
+ * @returns {Map<number, import('./types.js').Note[]>}
+ */
 export function patIndex(p) {
   let m = IDX.get(p);
   if (!m) {
@@ -21,29 +31,39 @@ export function patIndex(p) {
   }
   return m;
 }
+/** Call after changing a pattern's notes: clears its cached index and redraws. @param {import('./types.js').Pattern} p */
 export function touch(p) {
   IDX.delete(p);
   p.mod = true;
   hooks.scheduleUI();
 }
+/** The pattern a clip plays. @param {import('./types.js').Clip} c */
 export const patOf = c => S.patterns[c.pat];
+/** The pattern of the selected clip, or null. */
 export const curPat = () => {
   const c = curClip();
   return c ? patOf(c) : null;
 };
+/** The clip on track t at a bar, or null. @param {number} t @param {number} bar @returns {import('./types.js').Clip|null} */
 export function clipAt(t, bar) {
   for (const c of S.clips) if (c.t === t && bar >= c.start && bar < c.start + c.len) return c;
   return null;
 }
+/** The bar where the last clip ends (at least 1). */
 export function songEnd() {
   let e = 1;
   for (const c of S.clips) e = Math.max(e, c.start + c.len);
   return e;
 }
 export const MAXBARS = 512;
+/** Grow the arrangement so there are a few empty bars after `end`. */
 export function ensureBars(end) {
   if (end + 4 > S.bars) S.bars = Math.min(MAXBARS, Math.ceil((end + 4) / 8) * 8);
 }
+/**
+ * Clear bars [a, b) on track t: clips inside are removed, clips across the edges are shortened or
+ * split. The clip with id exceptId is left alone.
+ */
 export function carve(t, a, b, exceptId) {
   for (const c of S.clips.slice()) {
     if (c.t !== t || c.id === exceptId) continue;
@@ -73,6 +93,7 @@ export function carve(t, a, b, exceptId) {
     }
   }
 }
+/** Put pattern pid on track t at `start` for `len` bars, clearing what was there. @returns {import('./types.js').Clip} */
 export function placeClip(t, start, pid, len) {
   carve(t, start, start + len);
   const c = { id: 'c' + S.nextId++, t, start, len, off: 0, pat: pid };
@@ -81,7 +102,9 @@ export function placeClip(t, start, pid, len) {
   return c;
 }
 
-/* ---------- fine clip control, row scaling, splitter ---------- */
+/** Round bars to the nearest 16th (one step). */
 export const q16 = v => Math.round(v * 16) / 16;
+/** How many bars of its pattern a clip loops (its own loop length, or the pattern's). */
 export const loopLen = c => c.ll || S.patterns[c.pat].bars;
+/** Wrap a pattern offset into [0, L). */
 export const wrapOff = (o, L) => q16(((o % L) + L) % L);

@@ -1,3 +1,9 @@
+// USB controller keyboards in Live Mode: the model presets, keyboard zones (mutes, key, solo),
+// learned controls and the solo voice.
+//
+// Owns: CTL (the controller keyboard).
+// Reads: S, LV, TR, REC, MIDI, AU.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, el, toast } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { S } from '../core/state.js';

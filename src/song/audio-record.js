@@ -1,3 +1,8 @@
+// Recording the song to audio: works out what to record (mix, stems, Ext In), plays the song and
+// writes each pass to WAV or MP3.
+//
+// Reads: S, TR, REC, AU, AUD, AUDREC.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S, scheduleSave } from '../core/state.js';

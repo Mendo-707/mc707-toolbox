@@ -1,3 +1,7 @@
+// Bringing patterns in: MIDI file import with a review step, and new or blank patterns.
+//
+// Reads: S, UI, FAC, bw.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, el, toast } from '../core/dom.js';
 import { FAC } from '../library/factory.js';
 import { S, UI, addPattern, curClip, pushUndo, scheduleSave } from '../core/state.js';

@@ -1,3 +1,8 @@
+// Right-click menus in the arrangement: on clips, lanes, the ruler, track headers and library
+// items.
+//
+// Reads: S, UI, ED, CLIPB, FAVS.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, toast } from '../core/dom.js';
 import { devNm, devOn } from '../core/device.js';
 import { ED, S, UI, pushUndo, scheduleSave } from '../core/state.js';

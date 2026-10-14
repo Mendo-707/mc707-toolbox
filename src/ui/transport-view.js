@@ -1,3 +1,7 @@
+// The transport display: position, play state, and moving the playhead in Song Mode, the editor and
+// the wizard.
+//
+// Reads: S, ED, TR, AU, bw, SH.
 import { $, $$, clamp } from '../core/dom.js';
 import { ICON } from '../core/icons.js';
 import { ED, S, curClip } from '../core/state.js';

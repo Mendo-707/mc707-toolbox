@@ -1,3 +1,7 @@
+// Per-track MIDI controls: the CC settings sent to each MC-707 track (filter, reverb and so on) and
+// their dialog.
+//
+// Reads: S, MIDI.
 import { $, el, toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { MIDI } from '../services/midi.js';

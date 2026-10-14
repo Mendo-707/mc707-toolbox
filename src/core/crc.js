@@ -1,3 +1,4 @@
+// CRC-32 table, shared by the zip writers (MIDI export and audio recordings).
 export const CRC_T = (() => {
   const t = [];
   for (let n = 0; n < 256; n++) {

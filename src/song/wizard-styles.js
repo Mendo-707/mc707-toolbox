@@ -1,3 +1,6 @@
+// The song wizard's choices: picking a style, its default sections and the patterns that fill them.
+//
+// Reads: WIZ, FAC, DEV.
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from '../library/factory.js';
 import { DEV, oneKit } from '../core/device.js';

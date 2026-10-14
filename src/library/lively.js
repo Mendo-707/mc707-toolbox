@@ -1,3 +1,7 @@
+// Lively variants: busier, syncopated basslines, arps, chords and leads built on each genre's
+// progressions.
+//
+// Reads: FAC.
 import { KEYS } from '../core/theory.js';
 import { FAC } from './factory.js';
 

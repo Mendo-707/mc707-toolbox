@@ -1,3 +1,8 @@
+// The Shape editor: fades, velocity shapes and CC automation drawn over a clip, and the overlays
+// that show them on clips.
+//
+// Owns: SH (the shape editor).
+// Reads: TR.
 import { $, clamp, el } from '../core/dom.js';
 import { TRACK_COLORS } from '../core/device.js';
 import { curClip, pushUndo, scheduleSave } from '../core/state.js';

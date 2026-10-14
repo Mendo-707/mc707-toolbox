@@ -1,3 +1,8 @@
+// Mouse and touch on the arrangement: dragging, resizing and copying clips, the loop range on the
+// ruler, and dropping patterns onto lanes.
+//
+// Reads: S, UI, ED, TR, AU, DRAG, bw.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, $$, clamp, el } from '../core/dom.js';
 import { ED, S, UI, addPattern, curClip, getClip, pushUndo, scheduleSave } from '../core/state.js';
 import {

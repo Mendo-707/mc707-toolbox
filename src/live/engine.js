@@ -1,3 +1,8 @@
+// The Live Mode engine: the voices playing on each track, what plays on every tick, scene changes,
+// swaps, and start and stop.
+//
+// Reads: S, LV, TR, REC, MIDI, AU, PCLAST, CLIPPIN, AUTOLAST, CTL.
+// Calls up the layers through hooks (core/hooks.js).
 import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn } from '../core/device.js';
@@ -16,7 +21,7 @@ import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam } from '.
 import { lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
-import { liveBuild, liveSwapIds } from './pools.js';
+import { liveBuild, liveSwapIds } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';

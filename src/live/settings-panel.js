@@ -1,3 +1,7 @@
+// The Live Mapping panel: pad layout and actions, Raven mode, knob rest values and the controller
+// keyboard.
+//
+// Reads: S, LV, MIDI.
 import { $, clamp, el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';

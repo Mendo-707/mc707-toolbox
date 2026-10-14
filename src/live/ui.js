@@ -1,3 +1,7 @@
+// Builds the Live Mode page and its toolbar, and the timeline maths it uses.
+//
+// Reads: S, LV, TR.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, el, toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { TR, stopPlay } from '../services/transport.js';
@@ -10,7 +14,7 @@ import { liveMoveNow } from './moves.js';
 import { LV_BRK, LV_BRKLEN, liveBreak } from './breaks.js';
 import { liveNewSet } from './scene-templates.js';
 import { lvFullPool } from '../library/pools.js';
-import { liveBuild } from './pools.js';
+import { liveBuild } from './set-builder.js';
 import { liveToggle, lvIds } from './engine.js';
 import {
   liveAuto,

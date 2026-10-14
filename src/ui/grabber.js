@@ -1,3 +1,8 @@
+// The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from
+// Song or Live Mode.
+//
+// Owns: GRAB (the sample grabber).
+// Reads: S, LV, TR, AU, AUD, AUDREC, DEV.
 import { $, $$, el, toast } from '../core/dom.js';
 import { DEV, DEVS, devNum } from '../core/device.js';
 import { HOST, S } from '../core/state.js';

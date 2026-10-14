@@ -1,3 +1,7 @@
+// Song structure tools for a bar range: copy, paste, repeat, insert and delete bars.
+//
+// Reads: S.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, toast } from '../core/dom.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';

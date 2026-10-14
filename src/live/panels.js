@@ -1,3 +1,6 @@
+// The Live page panels: scene cards, pads, keys and mutes, knobs, and keeping the toolbar in step.
+//
+// Reads: S, LV, MIDI, DEV.
 import { $, el } from '../core/dom.js';
 import { DEV, DEVS, TRACK_COLORS, devOn } from '../core/device.js';
 import { S } from '../core/state.js';

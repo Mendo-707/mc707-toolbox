@@ -1,3 +1,7 @@
+// The song styles (43 of them): tempo, key, structure, parts and tips, used by the song wizard and
+// Live Mode.
+//
+// Reads: FAC.
 import './index.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from './factory.js';
@@ -510,6 +514,5 @@ for (const f of FAC) {
 export const trackLabel = (st, t) =>
   [oneKit() ? 'Drums' : 'Kit', 'Hats', 'Perc', st.bassName || 'Bass', 'Chords', 'Pad', 'Lead', 'Pluck'][t];
 
-/* ---------- song wizard v2: more styles, section editor, complexity, key change, preview ---------- */
 export const FAMLABEL = { dnb: 'Drum and bass', hh: 'Hip hop', edm: 'Dance and club', song: 'Grooves and songs' };
 export const NK = (n, sc) => NOTE_NAMES[n] + ((sc || 'minor') === 'minor' ? 'm' : '');

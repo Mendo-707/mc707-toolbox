@@ -1,3 +1,7 @@
+// Live Mode cues: everything that waits for the next beat, bar or phrase (scene changes, swaps,
+// mutes, key changes, energy) and the Variation engine.
+//
+// Reads: LV, TR.
 import { $, clamp, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { TRACK_POOLS, facById } from '../library/index.js';
@@ -7,7 +11,7 @@ import { lvIsFlash } from './themes.js';
 import { lvSaveScenes } from './scene-editor.js';
 import { lvAutoFlash } from './breaks.js';
 import { lvPool, lvProg } from '../library/pools.js';
-import { liveSwapIds } from './pools.js';
+import { liveSwapIds } from './set-builder.js';
 import { liveStart, lvEmute, lvIds, lvSwapCue, lvTop } from './engine.js';
 import { lvTickF } from './ui.js';
 import { liveStatus } from './lanes.js';

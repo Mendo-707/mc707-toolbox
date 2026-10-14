@@ -1,3 +1,6 @@
+// Extra patterns for Live Mode: fills, builds and drop impacts for every genre.
+//
+// Reads: FAC.
 import { FAC } from './factory.js';
 
 /* ===== Live Mode expansion: fills, builds and impacts for every genre ===== */

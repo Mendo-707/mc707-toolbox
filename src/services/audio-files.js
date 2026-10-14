@@ -1,9 +1,11 @@
+// Audio file writers: WAV and MP3 encoders and a zip writer for several files.
 import { CRC_T } from '../core/crc.js';
 
 const crcAdd = (c, u) => {
   for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8);
   return c;
 };
+/** A WAV writer: push(L, R, from, to) stereo Float32 samples, then finish() returns {blob, size, crc, ext, frames}. */
 export function wavEncoder(sr, bits) {
   const parts = [];
   let frames = 0;
@@ -74,6 +76,7 @@ export function wavEncoder(sr, bits) {
     }
   };
 }
+/** An MP3 writer with the same interface as wavEncoder (needs loadLame() first). */
 export function mp3Encoder(sr, kbps) {
   const e = new lamejs.Mp3Encoder(2, sr, kbps);
   const parts = [];
@@ -115,6 +118,7 @@ export function mp3Encoder(sr, kbps) {
   };
 }
 let LAME_P = null;
+/** Load the MP3 encoder (lamejs) on first use. @returns {Promise<void>} */
 export function loadLame() {
   if (window.lamejs) return Promise.resolve();
   if (!LAME_P)
@@ -141,6 +145,7 @@ export function loadLame() {
     });
   return LAME_P;
 }
+/** A zip (no compression) of [{name, blob, size, crc}] entries. @returns {Blob} */
 export function makeZip2(entries) {
   const enc = new TextEncoder();
   const parts = [],

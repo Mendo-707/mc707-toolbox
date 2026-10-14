@@ -1,3 +1,7 @@
+// The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio.
+//
+// Owns: SU (the setup wizard).
+// Reads: S, REC, MIDI, AU.
 import { $, el, toast } from '../core/dom.js';
 import { LANES, noteName } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';

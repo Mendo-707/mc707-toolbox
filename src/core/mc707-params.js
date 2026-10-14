@@ -1,4 +1,4 @@
-/* ---------- fades, automation, MC-707 MIDI controls ---------- */
+// The MC-707 controls the app can automate (CC numbers, names, ranges).
 export const MC_PARAMS = [
   { n: 7, name: 'Volume', def: 100 },
   { n: 10, name: 'Pan', def: 64 },

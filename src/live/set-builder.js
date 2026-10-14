@@ -1,3 +1,6 @@
+// Builds a Live set: picks matching patterns for each scene from the style's pools.
+//
+// Reads: S, LV, DEV.
 import { DEV, devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
 import { TRACK_POOLS, facById } from '../library/index.js';

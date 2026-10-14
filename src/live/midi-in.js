@@ -1,3 +1,7 @@
+// MIDI input in Live Mode: the MC-707 pads and keys (Raven keys), the pad test, and the computer
+// keyboard.
+//
+// Reads: LV, MIDI, DEV.
 import { $, clamp, el, toast } from '../core/dom.js';
 import { DEV, DEVS } from '../core/device.js';
 import { MIDI } from '../services/midi.js';

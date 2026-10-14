@@ -1,3 +1,9 @@
+// Audio input: the audio settings (AUD), opening inputs, per-track routing of the MC-707's USB
+// channels, and feeding recorders. Used by Record audio and the sample grabber.
+//
+// Owns: AUD (audio settings), AUDREC (audio recording).
+// Reads: S, AU.
+// Calls up the layers through hooks (core/hooks.js).
 import { S } from '../core/state.js';
 import { AU, ensureAudio } from './synth.js';
 import { hooks } from '../core/hooks.js';

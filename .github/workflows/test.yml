@@ -24,6 +24,8 @@ jobs:
         run: npx --prefix .ci-tools prettier --check src scripts tests
       - name: Check the modules only import down the layers
         run: node scripts/check-imports.mjs --strict
+      - name: Check the module map in docs/ARCHITECTURE.md is current
+        run: node scripts/module-map.mjs --check
       - name: Check index.html was rebuilt from src/
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules

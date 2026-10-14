@@ -1,3 +1,7 @@
+// The variety pack: 38 extra progressions with voice-led chords, chord-aware basslines, pads and
+// arps for every genre.
+//
+// Reads: FAC.
 import { KEYS } from '../core/theory.js';
 import { FAC } from './factory.js';
 

@@ -1,3 +1,6 @@
+// Right-click menus in Live Mode: scene cards, pads, tracks and keys.
+//
+// Reads: S, LV, AU, PCLAST, CLIPPIN, DEV.
 import { $, toast } from '../core/dom.js';
 import { DEV, DEVS, devNm, devOn } from '../core/device.js';
 import { S } from '../core/state.js';
@@ -11,14 +14,13 @@ import { LV_SCFX } from '../live/moves.js';
 import { liveRenderSceneEd, lvSaveScenes } from '../live/scene-editor.js';
 import { LV_BRK, LV_BRKLEN } from '../live/breaks.js';
 import { lvProg } from '../library/pools.js';
-import { liveSwapIds } from '../live/pools.js';
+import { liveSwapIds } from '../live/set-builder.js';
 import { lvIds, lvTop } from '../live/engine.js';
 import { liveCue, liveKeyCue, liveMute, lvBoundary, lvEffMute, lvOn, lvSortCues } from '../live/cues.js';
 import { livePadDown, livePadUp } from '../live/pads.js';
 import { liveRender, liveRenderCards, liveRenderPads } from '../live/panels.js';
 import { askDlg } from './dialogs.js';
 
-/* ===== Right-click menus around the app (Song Mode's arrangement, editor and library have their own) ===== */
 /* Live: one track — mute, new or chosen pattern, stop it, its MC-707 clip */
 export function lvTrackMenu(t) {
   const tr = S.tracks[t],

@@ -1,3 +1,7 @@
+// Live Mode colour themes, scene colours and small shared helpers (action labels and colours, track
+// groups).
+//
+// Reads: S, LV, MIDI, AU.
 import { $ } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU, ensureAudio } from '../services/synth.js';

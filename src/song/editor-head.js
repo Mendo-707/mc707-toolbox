@@ -1,3 +1,8 @@
+// The pattern editor's toolbar: name, length, key, steps or piano roll, the tools, and which bars
+// are being edited.
+//
+// Reads: S, ED, TR.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, clamp, el, toast } from '../core/dom.js';
 import { NOTE_NAMES, SCALES } from '../core/theory.js';
 import { TRACK_COLORS, devOn } from '../core/device.js';

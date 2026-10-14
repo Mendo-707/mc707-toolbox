@@ -8,7 +8,7 @@
 // src/index.html. The result works from a web server, from the Windows app, as a claude.ai page,
 // and when double-clicked, because it needs no other files.
 //
-// esbuild is found through Node's normal module lookup (node_modules or NODE_PATH).
+// esbuild is found in node_modules, NODE_PATH, or .ci-tools (where "npm run tools" installs it).
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,12 +19,19 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
 const OUT = path.join(ROOT, 'index.html');
 
+// the build and test tools live in .ci-tools (installed by "npm run tools"), outside the app's own packages
+const requireTool = name => {
+  try {
+    return require(name);
+  } catch (e) {
+    return createRequire(path.join(ROOT, '.ci-tools', 'package.json'))(name);
+  }
+};
 let esbuild;
 try {
-  esbuild = require('esbuild');
+  esbuild = requireTool('esbuild');
 } catch (e) {
-  console.error('esbuild is not installed. Run: npm install --prefix .ci-tools esbuild@0.28.2');
-  console.error('then: NODE_PATH=.ci-tools/node_modules node scripts/build.mjs');
+  console.error('esbuild is not installed. Run "npm run tools" once, then try again.');
   process.exit(2);
 }
 

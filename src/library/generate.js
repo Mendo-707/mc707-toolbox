@@ -1,3 +1,7 @@
+// Generates most of the factory library: kits, drum layers, fills, chords, basslines, arps, leads
+// and pads for every genre. Order matters: each pattern's id comes from the order it is made in.
+//
+// Reads: FAC.
 import { KEYS } from '../core/theory.js';
 import { D, FAC } from './factory.js';
 

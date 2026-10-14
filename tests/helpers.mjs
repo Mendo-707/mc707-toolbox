@@ -11,7 +11,16 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
-const { chromium } = require('playwright');
+const requireTool = name => {
+  try {
+    return require(name);
+  } catch (e) {
+    return createRequire(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.ci-tools', 'package.json'))(
+      name
+    );
+  }
+};
+const { chromium } = requireTool('playwright');
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // APP_URL=http://localhost:8707 runs the tests against the dev server (src/ as modules) instead of the built file.

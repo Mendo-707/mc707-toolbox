@@ -1,3 +1,7 @@
+// The Audio dialog: choose 2-channel or 8-channel recording, inputs, format and range, and start
+// recording.
+//
+// Reads: S, AU, AUD, AUDREC.
 import { $, clamp, el, toast } from '../core/dom.js';
 import { TRACK_COLORS, devOn } from '../core/device.js';
 import { HOST, S } from '../core/state.js';

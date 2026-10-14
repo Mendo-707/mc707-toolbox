@@ -1,9 +1,15 @@
+// MC-707 control automation during playback: CC curves, clip fades and velocity shapes, the tempo
+// map, and sending each track's CC settings.
+//
+// Owns: AUTOLAST (last CC values sent).
+// Reads: S, MIDI, AU.
 import { clamp } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU, ensureAudio } from './synth.js';
 import { MIDI, sendMidi } from './midi.js';
 
 export const curveFn = { lin: t => t, exp: t => t * t, log: t => Math.sqrt(t), s: t => t * t * (3 - 2 * t) };
+/** Value of a points curve [[x, y] …] at x (0-1), or def when there are no points. */
 export function envInterp(pts, x, def) {
   if (!pts || !pts.length) return def;
   if (x <= pts[0][0]) return pts[0][1];
@@ -16,6 +22,7 @@ export function envInterp(pts, x, def) {
     }
   return pts[pts.length - 1][1];
 }
+/** A clip's fade-in/fade-out gain at `pos` bars into the clip (0-1). */
 export function fadeGain(c, pos) {
   let g = 1;
   const f = curveFn[c.fcv] || curveFn.lin;
@@ -30,8 +37,10 @@ export function fadeGain(c, pos) {
   }
   return g;
 }
+/** Velocity multiplier at `pos` bars into a clip: its fades times its velocity shape. */
 export const velMul = (c, pos) => fadeGain(c, pos) * envInterp(c.ve, c.len ? pos / c.len : 0, 1);
 export const AUTOLAST = {};
+/** Send a clip's CC automation value for this tick. */
 export function autoCC(ti, c, tick, time) {
   const x = (tick / 32 - c.start) / c.len;
   if (x < 0 || x > 1) return;
@@ -41,6 +50,7 @@ export function autoCC(ti, c, tick, time) {
   AUTOLAST[k] = v;
   sendMidi([0xb0 | (S.tracks[ti].ch - 1), c.cc.n, v], time + (S.midiOffset || 0) / 1000);
 }
+/** The tempo at a bar, following markers with their own tempo. */
 export function tempoAtBar(bar) {
   let b = S.bpm;
   for (const m of S.markers) {
@@ -48,13 +58,16 @@ export function tempoAtBar(bar) {
   }
   return b;
 }
+/** Length of one tick in seconds at a bar of the song. */
 export const tickDurAt = bar => 60 / tempoAtBar(bar) / 8;
+/** Send CC n with value v to track ti now. Returns false when no MIDI output is open. */
 export function sendCC(ti, n, v) {
   if (!MIDI.out) return false;
   ensureAudio();
   sendMidi([0xb0 | (S.tracks[ti].ch - 1), n, v], AU.ctx.currentTime);
   return true;
 }
+/** Send every track's CC settings (track MIDI controls) to the MC-707. */
 export function sendTrackCCs() {
   if (!MIDI.out || S.sendCC === false || !AU.ctx) return;
   S.tracks.forEach((t, i) => {

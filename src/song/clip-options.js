@@ -1,3 +1,7 @@
+// The Clip options panel: fine position, length, transpose, velocity, fades and the MC-707 clip to
+// launch.
+//
+// Reads: S, ED, TR.
 import { clamp, el } from '../core/dom.js';
 import { devNm } from '../core/device.js';
 import { ED, S, pushUndo } from '../core/state.js';
@@ -10,7 +14,6 @@ import { cmLabel } from '../clips/clip-map.js';
 import { loopClip, playFrom } from './clip-ops.js';
 import { setGeom } from './layout.js';
 
-/* ---- editor menus ---- */
 export function clipOptionsEl(c, p, isDrum) {
   const clipOpt = el('details', { class: 'clipopt' }, el('summary', { class: 'btn sm' }, 'Clip options'));
   const panel = el('div', { class: 'clippanel' });

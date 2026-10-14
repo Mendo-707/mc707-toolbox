@@ -1,3 +1,7 @@
+// Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip
+// changes.
+//
+// Reads: S, LV, TR, bw.
 import { $, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S, addPattern, pushUndo, scheduleSave } from '../core/state.js';

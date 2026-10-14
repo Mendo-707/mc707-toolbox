@@ -1,7 +1,10 @@
+// The Live scene templates (Groove, Lift, Peak …) and the play patterns that let parts come and go.
+//
+// Reads: LV.
 import { LV, lvStyle, saveLive } from './state.js';
 import { lvClearCustom } from './scene-editor.js';
 import { lvModeFam } from '../library/pools.js';
-import { liveBuild } from './pools.js';
+import { liveBuild } from './set-builder.js';
 
 /* ---- Live scenes: loops for performing, not song sections. Each uses a different mix of parts, and parts can sit out bars so the groove breathes. ---- */
 export const LV_PLAY = [

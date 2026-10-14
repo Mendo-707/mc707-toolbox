@@ -1,13 +1,22 @@
+// The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items.
+//
+// Owns: CM (the open menu).
 import { el } from '../core/dom.js';
 
-/* ---------- context menus, clip options and loop controls ---------- */
 export let CM = null;
+/** Close the open right-click menu, if any. */
 export function closeMenu() {
   if (CM) {
     CM.remove();
     CM = null;
   }
 }
+/**
+ * Open a right-click menu at screen position x, y.
+ * @param {number} x
+ * @param {number} y
+ * @param {Array<import('../core/types.js').MenuItem|string|null>} items  '-' = separator, null = skipped
+ */
 export function showMenu(x, y, items) {
   closeMenu();
   const m = el('div', { class: 'cmenu', role: 'menu' });

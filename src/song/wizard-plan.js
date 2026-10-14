@@ -1,3 +1,8 @@
+// The song wizard's plan and preview: what plays in each section, previews, and writing the
+// finished plan into the song.
+//
+// Reads: S, UI, ED, TR, AU, WIZ, bw, DEV.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, $$, clamp, toast } from '../core/dom.js';
 import { DEV } from '../core/device.js';
 import { ED, S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';

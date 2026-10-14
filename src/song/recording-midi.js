@@ -1,3 +1,7 @@
+// Recording notes into a pattern from a MIDI keyboard, the MC-707 pads or the computer keyboard.
+//
+// Reads: S, ED, TR, REC, MIDI, AU.
+// Calls up the layers through hooks (core/hooks.js).
 import { clamp, el, toast } from '../core/dom.js';
 import { ED, S, curClip, pushUndo } from '../core/state.js';
 import { scheduleUI } from './arrangement.js';

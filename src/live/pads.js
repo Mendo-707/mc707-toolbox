@@ -1,3 +1,6 @@
+// The 16 Live pads: press and release, knobs and scatter sent to the MC-707.
+//
+// Reads: S, LV, MIDI.
 import { $, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';

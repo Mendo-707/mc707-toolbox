@@ -1,3 +1,9 @@
+// Start-up. Imports every module in a fixed order (the pattern library depends on it), fills in
+// core/hooks.js, then starts the app: loads the saved song, builds the screens and starts the
+// clock.
+//
+// Reads: S, PROJ, LV, TR, MIDI, AU, FAC.
+// Calls up the layers through hooks (core/hooks.js).
 // Load order matters: each module is evaluated once, in this order (see AGENTS.md).
 import './core/dom.js';
 import './core/icons.js';
@@ -72,7 +78,7 @@ import './live/scene-editor.js';
 import './live/breaks.js';
 import './live/scene-templates.js';
 import './library/pools.js';
-import './live/pools.js';
+import './live/set-builder.js';
 import './live/engine.js';
 import './live/cues.js';
 import './live/pads.js';
@@ -119,7 +125,7 @@ import { wizCellAt } from './song/wizard-plan.js';
 import { initWizard } from './song/sound-suggestions.js';
 import { LV, liveSwingAmt, liveTempo } from './live/state.js';
 import { liveRenderSceneEd } from './live/scene-editor.js';
-import { liveBuild } from './live/pools.js';
+import { liveBuild } from './live/set-builder.js';
 import { liveCleanup, liveScene, liveStart, liveTick } from './live/engine.js';
 import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';

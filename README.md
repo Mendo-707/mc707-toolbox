@@ -153,17 +153,21 @@ More are listed under **Help › Shortcuts and tips**.
 ## Project layout
 
 ```
-index.html      the whole app (HTML, CSS and JavaScript in one file)
+index.html      the whole app in one file, built from src/ (do not edit it directly)
+src/            the source: about 90 JavaScript modules, the page markup and the styles
+scripts/        build, development server and code checks
+tests/          automated tests (Playwright, with a simulated MC-707)
 main.js         Windows app window, file dialogs, folders, keep-awake
 preload.js      the small bridge the page uses to reach those features
 package.json    app name, version and build settings (Electron + electron-builder)
 build-exe.bat   one-click build for Windows
-docs/           screenshots and feature cards used in this README
+docs/           ARCHITECTURE.md, plus the screenshots and feature cards used in this README
+AGENTS.md       how to work on the code (for people and coding agents)
 LICENSE.md      PolyForm Noncommercial 1.0.0
-.github/        builds the Windows app automatically when a version is tagged
+.github/        runs the tests on every push, and builds the Windows app for each release
 ```
 
-Developers can run `npm install` and then `npm start` to launch it without building the exe.
+**Working on the code:** read [AGENTS.md](AGENTS.md) first, then [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: `npm run tools` once, `npm run dev` to work on `src/` in the browser, `npm run build` to make `index.html`, and `npm test` before committing. Developers can also run `npm install` and then `npm start` to launch the Windows app without building the exe.
 
 ---
 

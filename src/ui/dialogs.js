@@ -1,5 +1,11 @@
+// A simple ask dialog (OK / Cancel, or a text box).
 import { el } from '../core/dom.js';
 
+/**
+ * Ask a question in a small dialog. With input: true it shows a text box.
+ * @param {{title: string, text?: string, ok?: string, cancel?: string, input?: boolean, def?: string}} o
+ * @returns {Promise<boolean|string|null>}  true/false, or the text (null when cancelled)
+ */
 export function askDlg(o) {
   return new Promise(res => {
     const back = el('div', {

@@ -1,3 +1,9 @@
+// The "Your MC-707 clips" screen, laid out like the MC-707's display and pads: set how many clips
+// each track has and what each holds.
+//
+// Owns: CMAP (the clips screen).
+// Reads: S, PROJ, MIDI, AU, PCLAST, DEV.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, el, toast } from '../core/dom.js';
 import { DEV, DEVS, TRACK_COLORS, devNum, devOn } from '../core/device.js';
 import { PROJ, S, scheduleSave } from '../core/state.js';

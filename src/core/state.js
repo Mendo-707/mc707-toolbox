@@ -1,3 +1,9 @@
+// The song (S) and everything that saves it: a new song, autosave to localStorage, undo and redo,
+// loading and checking saved songs (fixState), plus the shared screen state UI and the editor state
+// ED.
+//
+// Owns: S (the song), UI (song screen state), ED (editor state), PROJ (the open project).
+// Calls up the layers through hooks (core/hooks.js).
 import { $, toast } from './dom.js';
 import { LANES, SCALES } from './theory.js';
 import { MC_PARAMS } from './mc707-params.js';
@@ -16,6 +22,7 @@ const DEFAULT_TRACKS = [
 export const STORE = 'mc707-song-mode-v1';
 
 /* ---------- state ---------- */
+/** An empty song. @returns {import('./types.js').Song} */
 export function newState() {
   return {
     v: 1,
@@ -45,6 +52,11 @@ export function newState() {
   };
 }
 export let S = newState();
+/**
+ * Replace the whole song (new project, open, undo). Every module sees the new S at once because S
+ * is a live binding; this is the only place that assigns it.
+ * @param {import('./types.js').Song} v
+ */
 export function replaceState(v) {
   S = v;
 }
@@ -66,6 +78,15 @@ export const UI = {
   prevTrack: -1
 };
 
+/**
+ * Add a pattern to the song and return its new id.
+ * @param {'drum'|'tone'} type
+ * @param {string} name
+ * @param {number} bars
+ * @param {import('./types.js').Note[]} notes
+ * @param {object} [extra]  more fields (key, role, src …)
+ * @returns {string}
+ */
 export function addPattern(type, name, bars, notes, extra = {}) {
   const id = 'p' + S.nextId++;
   S.patterns[id] = { id, name, type, bars, notes: notes.map(n => ({ ...n })), mod: false, ...extra };
@@ -76,22 +97,26 @@ export function addPattern(type, name, bars, notes, extra = {}) {
 const UNDO = [],
   REDO = [];
 const snapState = () => JSON.stringify(S);
+/** Save an undo step. Call BEFORE changing the song. */
 export function pushUndo() {
   UNDO.push(snapState());
   if (UNDO.length > 80) UNDO.shift();
   REDO.length = 0;
   updUndo();
 }
+/** Enable or disable the Undo and Redo buttons. */
 export function updUndo() {
   $('#bUndo').disabled = !UNDO.length;
   $('#bRedo').disabled = !REDO.length;
 }
+/** Undo the last change. */
 export function undo() {
   if (!UNDO.length) return;
   REDO.push(snapState());
   S = JSON.parse(UNDO.pop());
   afterReplace();
 }
+/** Redo the last undone change. */
 export function redo() {
   if (!REDO.length) return;
   UNDO.push(snapState());
@@ -108,6 +133,7 @@ function afterReplace() {
 export const HOST = window.toolbox || null;
 export const PROJ = { name: '', path: '', dirty: false, t: null };
 let saveT = 0;
+/** Autosave soon (debounced), and mark the project as changed. Call after changing the song. */
 export function scheduleSave() {
   PROJ.dirty = true;
   if (PROJ.t) PROJ.t();
@@ -124,6 +150,7 @@ export function scheduleSave() {
     }
   }, 400);
 }
+/** The autosaved song from localStorage, checked by fixState(), or null if there is none. @returns {import('./types.js').Song|null} */
 export function loadSaved() {
   try {
     const raw = localStorage.getItem(STORE);
@@ -136,7 +163,9 @@ export function loadSaved() {
     return null;
   }
 }
+/** The clip with this id, or undefined. */
 export const getClip = id => S.clips.find(c => c.id === id);
+/** The selected clip, or null. */
 export const curClip = () => (UI.sel ? getClip(UI.sel) : null);
 export const ED = {
   mode: 'steps',
@@ -151,7 +180,12 @@ export const ED = {
   lastDown: null
 };
 
-/* ---------- recording, markers, saved songs and extras ---------- */
+/**
+ * Check and repair a song read from storage or a file: fills defaults, clamps values, and drops
+ * anything broken, so the rest of the app can trust S.
+ * @param {object} s
+ * @returns {import('./types.js').Song}
+ */
 export function fixState(s) {
   const d = newState();
   const num = (v, lo, hi, def) => {

@@ -1,3 +1,7 @@
+// The top menu bar (File, Edit, Song, Audio, Settings, View, Help), and wiring the setup wizard's
+// buttons.
+//
+// Reads: S, SU, STAGE, DEV.
 import { $, el } from '../core/dom.js';
 import { DEV, oneKit } from '../core/device.js';
 import { HOST, S } from '../core/state.js';

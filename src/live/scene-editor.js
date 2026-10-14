@@ -1,3 +1,6 @@
+// Editing Live scenes: parts, when each plays, its MC-707 clip, and saving custom scenes.
+//
+// Reads: S, LV, TR, AU.
 import { $, clamp, el } from '../core/dom.js';
 import { TRACK_COLORS, devNm, devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
@@ -13,7 +16,7 @@ import { LV_SCFX, lvSceneFx } from './moves.js';
 import { FLPOOL, lvFlashIds } from './breaks.js';
 import { LV_PLAY } from './scene-templates.js';
 import { lvFlavor, lvPool } from '../library/pools.js';
-import { liveBuild } from './pools.js';
+import { liveBuild } from './set-builder.js';
 import { liveReplace, lvCellClip } from './engine.js';
 import { lvOn } from './cues.js';
 import { liveRender, liveRenderCards } from './panels.js';

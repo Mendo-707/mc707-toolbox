@@ -1,3 +1,7 @@
+// Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan)
+// for builds, drops and scene moves.
+//
+// Reads: S, LV, TR, AU.
 import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU } from '../services/synth.js';
@@ -9,7 +13,6 @@ import { LV } from './state.js';
 import { lvOn } from './cues.js';
 import { liveSync } from './panels.js';
 
-/* ---- building a set ---- */
 /* ---- automation moves: MC-707 CCs shaped over time (filter, resonance, reverb wash, pump, autopan) ---- */
 export const LV_TONES = [3, 4, 5, 6, 7],
   LV_PUMP = [3, 4, 5, 6];

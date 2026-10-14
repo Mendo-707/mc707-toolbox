@@ -1,3 +1,6 @@
+// Saving recordings: through the Windows app, the claude.ai page, or a browser download.
+//
+// Reads: AUDREC.
 import { toast } from '../core/dom.js';
 import { HOST } from '../core/state.js';
 import { DL } from './export.js';

@@ -1,3 +1,8 @@
+// Web MIDI: the output and input ports, sending messages, and panic (all notes off).
+//
+// Owns: MIDI (MIDI ports).
+// Reads: S, AU.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU } from './synth.js';
@@ -5,6 +10,11 @@ import { hooks } from '../core/hooks.js';
 
 /* ---------- MIDI ---------- */
 export const MIDI = { access: null, out: null };
+/**
+ * Send a MIDI message to the chosen output at an AudioContext time (seconds).
+ * @param {number[]} bytes
+ * @param {number} at  AU.ctx time; use AU.ctx.currentTime for now
+ */
 export function sendMidi(bytes, at) {
   const o = MIDI.out;
   if (!o) return;
@@ -14,6 +24,7 @@ export function sendMidi(bytes, at) {
     o.send(bytes, Math.max(ms, 0));
   } catch (e) {}
 }
+/** Ask the browser for MIDI access, then pick the output (see refreshOuts). */
 export async function connectMidi() {
   const st = $('#midiStat');
   if (!navigator.requestMIDIAccess) {
@@ -31,6 +42,7 @@ export async function connectMidi() {
       '). Allow MIDI for this page in your browser, or open the page in its own tab.';
   }
 }
+/** Refill the MIDI output list and pick the saved output, or the first MC-707. Also refreshes the input list. */
 export function refreshOuts() {
   const sel = $('#midiOut');
   const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [];
@@ -49,6 +61,7 @@ export function refreshOuts() {
   hooks.refreshIns();
 }
 const NOTEHIST = new Set();
+/** All notes off and sustain off on every channel, now and again after the look-ahead. hard = also all sound off. */
 export function panic(hard) {
   const o = MIDI.out;
   if (!o) return;

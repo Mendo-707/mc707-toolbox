@@ -1,3 +1,7 @@
+// Project files: new, open, save, recent projects and the project title, through the Windows app or
+// the browser.
+//
+// Reads: S, UI, PROJ.
 import { $, toast } from '../core/dom.js';
 import { HOST, PROJ, S, UI, fixState, newState, pushUndo, replaceState } from '../core/state.js';
 import { panic } from '../services/midi.js';

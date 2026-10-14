@@ -1,3 +1,6 @@
+// Suggested MC-707 factory sounds for each style's tracks, shown by the song wizard.
+//
+// Reads: DEV.
 import { $, el } from '../core/dom.js';
 import { DEV, TRACK_COLORS, oneKit } from '../core/device.js';
 import { trackLabel } from '../library/styles.js';

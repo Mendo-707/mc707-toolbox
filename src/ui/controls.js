@@ -1,3 +1,7 @@
+// The Song Mode toolbar and keyboard shortcuts, and redrawing everything after big changes
+// (renderAll).
+//
+// Reads: S, UI, ED, TR, MIDI, AUDREC, STAGE, CM, bw.
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES } from '../core/theory.js';
 import {

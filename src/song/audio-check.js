@@ -1,3 +1,8 @@
+// The checks in the Audio dialog: which input is which, level meters, and a test that plays a note
+// on each MC-707 track to find its USB channel.
+//
+// Reads: S, MIDI, AUD, AUDREC.
+// Calls up the layers through hooks (core/hooks.js).
 import { $, el, toast } from '../core/dom.js';
 import { TRACK_COLORS, devOn } from '../core/device.js';
 import { S } from '../core/state.js';

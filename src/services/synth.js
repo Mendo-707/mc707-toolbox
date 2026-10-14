@@ -1,5 +1,10 @@
+// The preview sound: a small Web Audio synth and drum kit, so the app makes sound without the
+// MC-707.
+//
+// Owns: AU (the audio context).
 /* ---------- audio preview synth ---------- */
 export const AU = {};
+/** Create the AudioContext (AU.ctx) if needed. Browsers only allow this after a click or key. */
 export function ensureAudio() {
   if (!AU.ctx) {
     const C = window.AudioContext || window.webkitAudioContext;
@@ -128,6 +133,7 @@ const TONE_P = {
   6: { w: ['square'], lp: 3600, atk: 0.006, rel: 0.12, gain: 0.14 },
   7: { w: ['triangle'], lp: 5000, atk: 0.002, rel: 0.05, gain: 0.3, pluck: 0.3 }
 };
+/** Play a preview note on tone track ti. t = AU.ctx time, dur in seconds, vel 1-127. */
 export function voice(ti, pitch, t, dur, vel) {
   const p = TONE_P[ti] || TONE_P[6];
   const f = 440 * Math.pow(2, (pitch - 69) / 12);
@@ -159,6 +165,7 @@ export function voice(ti, pitch, t, dur, vel) {
     o.stop(stop);
   });
 }
+/** Metronome click at AU.ctx time t (accent = first beat of the bar). */
 export function click(t, accent) {
   const g = genv(t, 0.25, 0.03);
   osc('square', accent ? 1600 : 1050, t, 0.05).connect(g);

@@ -1,3 +1,7 @@
+// Arrangement layout: snap, row heights that fit the window, the splitter between arrangement and
+// editor, and clip geometry.
+//
+// Reads: S, ED, ROWH.
 import { $, clamp, el } from '../core/dom.js';
 import { devCount } from '../core/device.js';
 import { ED, S, curClip, pushUndo, scheduleSave } from '../core/state.js';

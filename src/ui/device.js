@@ -1,3 +1,6 @@
+// Switching between MC-707 and MC-101 and the one-kit drums option, which rebuild Song and Live.
+//
+// Reads: S, LV, DEV.
 import { $, toast } from '../core/dom.js';
 import { DEV, DEVS, assignDevice } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
@@ -5,7 +8,7 @@ import { stopAll } from '../services/transport.js';
 import { renderAll } from './controls.js';
 import { LV } from '../live/state.js';
 import { lvClearCustom } from '../live/scene-editor.js';
-import { liveBuild } from '../live/pools.js';
+import { liveBuild } from '../live/set-builder.js';
 import { liveRender } from '../live/panels.js';
 
 export function applyDevice() {

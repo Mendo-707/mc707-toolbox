@@ -1,3 +1,6 @@
+// Pattern tools: chord shapes, diatonic chords, euclidean rhythms and scale lock.
+//
+// Reads: S, ED.
 import { SCALES } from '../core/theory.js';
 import { ED, S } from '../core/state.js';
 

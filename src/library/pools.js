@@ -1,9 +1,14 @@
+// Which patterns suit a style: pools by genre, sub-style and tempo, full kits for one drum track,
+// and the Lively / Classic flavour filter. Used by Live Mode and the song wizard.
+//
+// Reads: FAC.
 import { FAC } from './factory.js';
 import { FACMAP, facById } from './index.js';
 import { hashStr, mulberry } from '../core/random.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const LV_POOLCACHE = {};
+/** The genre a style draws from ('dnb', 'house' …), worked out from its hand-picked patterns. */
 export function lvGenreOf(st) {
   if (st._genre) return st._genre;
   const c = {};
@@ -17,6 +22,7 @@ export function lvGenreOf(st) {
 }
 /* ---- Full kits: kick, snare, hats and percussion on ONE drum track (MC-101, or to free Drums 2 and 3 on the MC-707) ---- */
 const FULLKITS = {};
+/** Full kits for a style: kick, snare, hats and percussion combined for one drum track. */
 export function lvFullPool(st) {
   if (FULLKITS[st.id]) return FULLKITS[st.id];
   const ok = f => f && f.type === 'drum' && f.bars <= 4 && f.notes && f.notes.length;
@@ -71,6 +77,13 @@ export function lvFullPool(st) {
   }
   return out;
 }
+/**
+ * Ids of the factory patterns that suit a style for one pool ('kit', 'bass', 'chords' …): the
+ * style's hand-picked ones plus every library pattern of its genre, sub-style and tempo. Cached.
+ * @param {object} st    a style from STYLES
+ * @param {string} pool
+ * @returns {string[]}
+ */
 export function lvPool(st, pool) {
   if (pool === 'full') return lvFullPool(st);
   const key = st.id + ':' + pool;
@@ -107,6 +120,7 @@ function lvLively(f) {
   if (f.lively) sc = Math.min(1, sc + 0.3);
   return (f._lv = sc);
 }
+/** Narrow a pool by flavour: 'lively' keeps the busiest patterns, 'classic' the simplest, 'mixed' all. */
 export function lvFlavor(ids, flavor) {
   if (flavor !== 'lively' && flavor !== 'classic') return ids;
   const s = ids
@@ -115,10 +129,12 @@ export function lvFlavor(ids, flavor) {
   return s.slice(0, Math.max(4, Math.ceil(ids.length * (flavor === 'lively' ? 0.45 : 0.6)))).map(x => x[0]);
 }
 /* chord progression named in a pattern (bass, chords, pads and arps built on the same one sit together) */
+/** The chord progression in a pattern's name ('i-VI-III-VII'), or null. Patterns that share one fit together. */
 export const lvProg = f => {
   if (!f) return null;
   if (f._prog !== undefined) return f._prog;
   const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(f.name);
   return (f._prog = m ? m[1] : null);
 };
+/** 'major' or 'minor' for a scale name. */
 export const lvModeFam = sc => (/major|mixolydian|lydian/.test(sc || '') ? 'major' : 'minor');
