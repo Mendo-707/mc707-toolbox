@@ -7,7 +7,11 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win portable --publish never",
-    "test": "node --test tests/*.test.mjs"
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "format": "prettier --write src scripts tests"
   },
   "devDependencies": {
     "electron": "^33.0.0",

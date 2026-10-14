@@ -6,3 +6,4 @@ docs
 tests/baselines
 tests/fixtures
 package-lock.json
+index.html

@@ -20,7 +20,21 @@ jobs:
         run: |
           npm install --prefix .ci-tools --no-audit --no-fund playwright@1.56.1 esbuild@0.28.2 prettier@3.8.1
           npx --prefix .ci-tools playwright install --with-deps chromium
-      - name: Run the tests
+      - name: Check formatting
+        run: npx --prefix .ci-tools prettier --check src scripts tests
+      - name: Check index.html was rebuilt from src/
+        env:
+          NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
+        run: node scripts/build.mjs --check
+      - name: Run the tests on the built app
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
         run: node --test tests/*.test.mjs
+      - name: Run the tests on the source (ES modules from a local server)
+        env:
+          NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
+          APP_URL: http://localhost:8707
+        run: |
+          node scripts/dev.mjs &
+          sleep 1
+          node --test tests/*.test.mjs

@@ -29,11 +29,26 @@ const OFFLINE = `async (o) => {
 test('factory pattern library is unchanged (ids, names, notes)', async () => {
   const { page, errors } = await openApp();
   const r = await page.evaluate(() => {
-    const FAC = window.__app.FAC, pools = {}, rows = [];
+    const FAC = window.__app.FAC,
+      pools = {},
+      rows = [];
     for (const f of FAC) {
       pools[f.pool || '-'] = (pools[f.pool || '-'] || 0) + 1;
-      rows.push(JSON.stringify([f.id, f.name, f.type, f.genre, f.bars, f.pool || '', f.role || '', f.keyName || '', f.bpm ?? '', f.styles || null,
-        f.notes.map(n => [n.s, n.l, n.n, n.v])]));
+      rows.push(
+        JSON.stringify([
+          f.id,
+          f.name,
+          f.type,
+          f.genre,
+          f.bars,
+          f.pool || '',
+          f.role || '',
+          f.keyName || '',
+          f.bpm ?? '',
+          f.styles || null,
+          f.notes.map(n => [n.s, n.l, n.n, n.v])
+        ])
+      );
     }
     return { count: FAC.length, pools, rows };
   });
@@ -58,10 +73,21 @@ const STYLES = ['liquid', 'neuro', 'trap', 'deephouse', 'acidtechno', 'reggae', 
 test('Live scenes are built the same way for each style', async () => {
   const { page, errors } = await openApp();
   const r = await page.evaluate(styles => {
-    const a = window.__app, LV = a.LV, out = {};
+    const a = window.__app,
+      LV = a.LV,
+      out = {};
     for (const st of styles) {
-      LV.style = st; LV.seed = 3; LV.custom = false; a.liveBuild();
-      out[st] = LV.scenes.map(sc => [sc.name, sc.bars, sc.e, sc.fx || '', Object.entries(sc.cells).map(([t, c]) => [t, c.id, c.play || ''])]);
+      LV.style = st;
+      LV.seed = 3;
+      LV.custom = false;
+      a.liveBuild();
+      out[st] = LV.scenes.map(sc => [
+        sc.name,
+        sc.bars,
+        sc.e,
+        sc.fx || '',
+        Object.entries(sc.cells).map(([t, c]) => [t, c.id, c.play || ''])
+      ]);
     }
     return out;
   }, STYLES);

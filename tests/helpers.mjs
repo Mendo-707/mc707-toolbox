@@ -14,7 +14,8 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const APP_URL = pathToFileURL(path.join(ROOT, process.env.APP_FILE || 'index.html')).href;
+// APP_URL=http://localhost:8707 runs the tests against the dev server (src/ as modules) instead of the built file.
+export const APP_URL = process.env.APP_URL || pathToFileURL(path.join(ROOT, process.env.APP_FILE || 'index.html')).href;
 export const BASELINES = path.join(ROOT, 'tests', 'baselines');
 export const FIXTURES = path.join(ROOT, 'tests', 'fixtures');
 
@@ -54,10 +55,17 @@ export async function openApp(o = {}) {
   const ctx = await b.newContext({ viewport: o.viewport || { width: 1400, height: 950 } });
   const page = await ctx.newPage();
   const errors = [];
-  page.on('pageerror', e => errors.push(String(e && e.message || e)));
+  page.on('pageerror', e => errors.push(String((e && e.message) || e)));
   await page.addInitScript(MIDI_MOCK + SEEDED_RANDOM);
   const storage = { 'mc707-awake': '0', ...(o.storage || {}) };
-  await page.addInitScript(s => { try { if (!sessionStorage.getItem('__seeded')) { for (const k in s) localStorage.setItem(k, s[k]); sessionStorage.setItem('__seeded', '1'); } } catch (e) {} }, storage);
+  await page.addInitScript(s => {
+    try {
+      if (!sessionStorage.getItem('__seeded')) {
+        for (const k in s) localStorage.setItem(k, s[k]);
+        sessionStorage.setItem('__seeded', '1');
+      }
+    } catch (e) {}
+  }, storage);
   await page.goto(APP_URL);
   await page.waitForFunction(() => window.__app && document.querySelector('#arrInner'));
   await page.waitForTimeout(300);
@@ -68,7 +76,10 @@ export async function openApp(o = {}) {
 /** FNV-1a hash of a string, as 8 hex digits: a quick fingerprint for comparing big outputs with a baseline. */
 export function fnv(str) {
   let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
   return h.toString(16).padStart(8, '0');
 }
 
