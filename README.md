@@ -73,6 +73,7 @@ Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download 
 | **+ Pattern** | Create a blank drum or tone pattern, or **load MIDI files** from any folder or USB drive (or drop `.mid` files on the arranger). Channel 10 parts become drums automatically. |
 | **Pattern editor** | Step grid, piano roll and fade/automation shapes. Use **Edit bars** to pick a bar or range and change only that block. **Repeat to end** copies it through the pattern. |
 | **Edit one block** | Long clips show dashed lines where the pattern repeats. Hover to see the block, then **double-click** it (or right-click › Edit … on its own) to give just that repeat its own copy and open it in the editor. The other repeats stay as they were. |
+| **Glue** | Join clips that touch on a track back into one clip: right-click › **Glue to the next clip**, or select a clip and press **G** to glue everything touching it. Fades, velocity and transpose are kept. If the result repeats it becomes a short looping pattern again, and if nothing was changed it relinks to the original pattern. Up to 32 bars at a time. |
 | **Linked clips** | Clips can share a pattern. Edit once and every copy changes, or use **Make unique** to split one off. |
 | **Structure and transpose** | Copy, paste, repeat, insert and delete whole sections. Transpose the song or just part of it. |
 | **Scene and clip changes** | Markers can switch MC-707 scenes, and clips can switch MC-707 clips, using program change. |

@@ -2536,6 +2536,7 @@ function onKey(e){
   if(!mod&&e.key==='['){const b=Math.floor(posBarNow());setLoop(b,Math.max(b+1,S.loop.end));return;}
   if(!mod&&e.key===']'){const b=Math.floor(posBarNow());setLoop(Math.min(S.loop.start,b),b+1);return;}
   if(!mod&&e.key==='\\'){const c=curClip();if(c)loopClip(c);return;}
+  if(!mod&&(e.key==='g'||e.key==='G')){const c=curClip();if(c){const r=glueRun(c,'all');glueClips(r);}return;}
   if(e.key==='Escape'){if(UI.arm){UI.arm=null;hideGhost();renderLibrary();renderArr();}else if(ED.selNotes.size){ED.selNotes.clear();drawEditor();}return;}
   if(e.key==='Delete'||e.key==='Backspace'){
     const p=curPat();
@@ -2970,6 +2971,54 @@ function editBlock(c,bar){
   selectClip(target.id);renderArr();renderEditor();scheduleSave();
   toast('Editing bar'+(b-a>1?'s '+fmt(a)+'–'+Math.ceil(b):' '+fmt(a))+' on its own. The other repeats are unchanged.');
 }
+/* Glue: join clips that touch on one track back into one clip. Fades, velocity, transpose and mutes are baked in.
+   If the result repeats, it becomes a short looping pattern again; if it matches an existing pattern, the clip relinks to it. */
+const GLUE_BARS=[1,2,4,8,16,32];
+function glueRun(c,dir){
+  const same=S.clips.filter(x=>x.t===c.t).sort((a,b)=>a.start-b.start),touch=(x,y)=>Math.abs(x.start+x.len-y.start)<1e-6;
+  let a=same.indexOf(c),b=a;if(a<0)return [];
+  if(dir==='next'){if(b+1<same.length&&touch(same[b],same[b+1]))b++;}
+  else{while(a>0&&touch(same[a-1],same[a]))a--;while(b+1<same.length&&touch(same[b],same[b+1]))b++;}
+  return same.slice(a,b+1);
+}
+const glueBase=n=>String(n||'').replace(/\s*\((?:bars? [\d–\-]+|glued)\)\s*$/,'').replace(/ copy$/,'').trim();
+const glueSig=ns=>ns.map(n=>[(+n.s).toFixed(3),n.n,Math.round(n.v),(+n.l).toFixed(3)].join(',')).sort().join(';');
+function glueClips(run){
+  if(run.length<2){toast('Nothing to glue: the next clip has to start exactly where this one ends');return;}
+  const t=run[0].t,tone=S.tracks[t].type==='tone',s0=run[0].start,total=q16(run.reduce((n,x)=>n+x.len,0));
+  if(total>32+1e-6){toast('Glue joins up to 32 bars at a time');return;}
+  const notes=[];
+  for(const c of run){
+    if(c.mute)continue;const p=patOf(c);if(!p)continue;
+    const L=loopLen(c),vm=(c.vel||100)/100,shaped=c.fi>0||c.fo>0||(c.ve&&c.ve.length);
+    for(let k=Math.floor(c.off/L)-1;k*L-c.off<c.len;k++)for(const n of p.notes){
+      if(n.s/16>=L-1e-9)continue;
+      const pos=n.s/16+k*L-c.off;if(pos<-1e-9||pos>=c.len-1e-9)continue;
+      notes.push({...n,s:+((c.start-s0+pos)*16).toFixed(4),l:+Math.min(n.l,(c.len-pos)*16).toFixed(4),
+        n:tone?clamp(n.n+(c.tr||0),0,127):n.n,v:clamp(Math.round(n.v*vm*(shaped?velMul(c,pos):1)),1,127)});
+    }
+  }
+  /* shortest repeating loop that covers the whole glued stretch */
+  let bars=GLUE_BARS.find(b=>b>=total-1e-6),body=notes;
+  for(const P of GLUE_BARS){
+    if(P>=total-1e-6||Math.abs(total/P-Math.round(total/P))>1e-6)continue;
+    const base=notes.filter(n=>n.s<P*16-1e-6),reps=Math.round(total/P),exp=[];
+    for(let k=0;k<reps;k++)base.forEach(n=>exp.push({...n,s:n.s+k*P*16}));
+    if(glueSig(exp)===glueSig(notes)){bars=P;body=base;break;}
+  }
+  const p0=patOf(run[0]),sig=glueSig(body);
+  const match=[...new Set(run.map(c=>c.pat))].map(id=>S.patterns[id]).find(p=>p&&p.bars===bars&&glueSig(p.notes)===sig);
+  const names=[...new Set(run.map(c=>glueBase(patOf(c).name)))];
+  const pid=match?match.id:addPattern(p0.type,(names.length===1?names[0]:names[0]+' (glued)').slice(0,40),bars,body.map(n=>({...n})),{key:p0.key?{...p0.key}:null,role:p0.role,genre:p0.genre});
+  pushUndo();
+  const ccs=run.filter(c=>c.cc&&c.cc.pts&&c.cc.pts.length),cn=ccs.length?ccs[0].cc.n:null;
+  const nc={id:'c'+(S.nextId++),t,start:s0,len:total,off:0,pat:pid};
+  if(run[0].pc!=null)nc.pc=run[0].pc;
+  if(ccs.length){const pts=[];ccs.filter(c=>c.cc.n===cn).forEach(c=>c.cc.pts.forEach(([x,v])=>pts.push([+(((c.start-s0)+x*c.len)/total).toFixed(5),v])));pts.sort((a,b)=>a[0]-b[0]);nc.cc={...ccs[0].cc,pts};}
+  const ids=new Set(run.map(c=>c.id));S.clips=S.clips.filter(c=>!ids.has(c.id));S.clips.push(nc);
+  selectClip(nc.id);renderArr();renderEditor();scheduleSave();
+  toast('Glued '+run.length+' clips into one ('+(total===1?'1 bar':total+' bars')+(bars<total?', looping a '+bars+'-bar pattern':'')+(match?', back to the original pattern':'')+')'+(ccs.some(c=>c.cc.n!==cn)?'. Only one automation lane was kept.':''));
+}
 function copyClipTo(c,t){pushUndo();carve(t,c.start,c.start+c.len);const n={...c,id:'c'+(S.nextId++),t};S.clips.push(n);selectClip(n.id);renderArr();scheduleSave();}
 function makeUnique(c){const p=patOf(c);pushUndo();c.pat=addPattern(p.type,p.name+' copy',p.bars,p.notes,{key:p.key?{...p.key}:null,role:p.role,genre:p.genre});renderArr();renderEditor();scheduleSave();toast('This clip now has its own copy');}
 function deleteClipById(id){pushUndo();const i=S.clips.findIndex(c=>c.id===id);if(i>=0)S.clips.splice(i,1);if(UI.sel===id){UI.sel=null;ED.selNotes.clear();}renderArr();renderEditor();scheduleSave();}
@@ -3190,6 +3239,8 @@ function clipMenuItems(c){
     {label:'Fades and automation',sub:[{label:'Edit shape…',action:()=>{selectClip(c.id);ED.mode='shape';renderEditor();}},'-',{label:'Fade in: 1 beat',action:()=>quickFade(c,'fi',4)},{label:'Fade in: 1 bar',action:()=>quickFade(c,'fi',16)},{label:'Fade in: 2 bars',action:()=>quickFade(c,'fi',32)},{label:'Fade out: 1 beat',action:()=>quickFade(c,'fo',4)},{label:'Fade out: 1 bar',action:()=>quickFade(c,'fo',16)},{label:'Fade out: 2 bars',action:()=>quickFade(c,'fo',32)},'-',{label:'Clear fades and shapes',danger:true,action:()=>{pushUndo();delete c.fi;delete c.fo;delete c.fcv;delete c.ve;delete c.cc;renderArr();renderEditor();scheduleSave();}}]},
     '-',
     {label:'Split at playhead',disabled:!(cur>c.start&&cur<c.start+c.len),action:()=>splitClip(c,cur)},
+    (()=>{const n=glueRun(c,'next');return {label:'Glue to the next clip',disabled:n.length<2,action:()=>glueClips(n)};})(),
+    (()=>{const a=glueRun(c,'all');return a.length>2?{label:'Glue all '+a.length+' touching clips',hint:'G',action:()=>glueClips(a)}:null;})(),
     {label:'Duplicate after',hint:'Ctrl+D',action:()=>{selectClip(c.id);dupClip();}},
     others.length?{label:'Copy to track',sub:others.map(i=>({label:'Track '+(i+1)+': '+S.tracks[i].name,action:()=>copyClipTo(c,i)}))}:null,
     shared?{label:'Make unique',action:()=>makeUnique(c)}:null,
@@ -3628,7 +3679,7 @@ function fixState(s){
   const pats={};let maxId=1;
   if(s.patterns&&typeof s.patterns==='object')for(const id in s.patterns){
     const p=s.patterns[id];if(!p||!Array.isArray(p.notes)||(p.type!=='drum'&&p.type!=='tone'))continue;
-    p.id=id;p.bars=[1,2,4,8].includes(p.bars)?p.bars:Math.min(8,Math.max(1,Math.round(num(p.bars,1,8,1))));p.name=String(p.name||'Pattern').slice(0,40);
+    p.id=id;p.bars=[1,2,4,8,16,32].includes(p.bars)?p.bars:Math.min(8,Math.max(1,Math.round(num(p.bars,1,8,1))));p.name=String(p.name||'Pattern').slice(0,40);
     p.notes=p.notes.filter(n=>n&&Number.isFinite(+n.s)&&Number.isFinite(+n.l)&&Number.isFinite(+n.n)&&Number.isFinite(+n.v)&&n.l>0&&n.s>=0&&n.s<p.bars*16).map(n=>({s:+n.s,l:+n.l,n:Math.round(+n.n),v:Math.max(1,Math.min(127,Math.round(+n.v)))}));
     if(p.key&&!(Number.isFinite(+p.key.root)&&SCALES[p.key.scale]))p.key=null;
     pats[id]=p;const m=/^p(\d+)$/.exec(id);if(m)maxId=Math.max(maxId,+m[1]+1);
