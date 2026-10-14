@@ -101,6 +101,7 @@ Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download 
 | **Controller keyboard** | Plug in a USB MIDI keyboard as well as the MC-707, such as a Novation FLkey or Launchkey, an Arturia KeyLab or an Akai MPK, or any other model. Pick it in **Mapping › Controller keyboard** and choose its model. The lowest octave mutes, the next changes key, and every key above plays a live solo on the MC-707 track you choose (with optional scale lock and octave shift). The pitch wheel bends the solo; the mod wheel opens the filter. Knobs control FILTER, MOD, FX, SOUND, reverb, resonance, Variation and Chaos; faders set each track's volume and the energy; fader buttons mute tracks; and the keyboard's pads can play the 16 live pads. Press **Learn all controls in order** once to match your keyboard. |
 | **Capture to Song** | Turns what you just played into a Song Mode arrangement, with a marker for each scene. |
 | **Visualizer** | A synthwave scene that reacts to the notes as they play. |
+| **Themes** | Pick a colour theme next to Fullscreen: Neon night, Studio (teal and amber), Graphite (orange), Mono (lime) or Midnight (blue and coral). Scene colours, buttons and the visualizer all follow it. |
 | **Stage ready** | **F11** for fullscreen, and the screen stays awake while music is playing (turn this off in the Live or View menu). |
 
 ---
