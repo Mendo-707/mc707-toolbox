@@ -451,6 +451,19 @@ body[data-mode=live] #live{display:flex}
 .cmStrip .cmSel{width:70%;height:6px;border-radius:3px;background:#2f3037;margin-top:2px}
 .cmStrip.on{border-color:var(--c);background:#1d1e22}.cmStrip.on .cmSel{background:var(--c);box-shadow:0 0 10px var(--c)}
 .cmMid{display:flex;align-items:center;gap:14px;margin:12px 0;flex-wrap:wrap}
+.cmLcd{flex:1 1 420px;background:#020203;border:3px solid #000;border-radius:6px;padding:6px 8px 5px;font-family:ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;color:#f2f4f8;font-size:11px;line-height:1;box-shadow:inset 0 0 14px #000,0 0 0 1px #3a3b42;user-select:none;letter-spacing:.5px}
+.lcdTop,.lcdBot{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 4px}
+.lcdTop{border-bottom:1px solid #f2f4f855}.lcdBot{border-top:1px solid #f2f4f855;padding:4px 2px 1px}
+.lcdTempo{display:flex;align-items:center;gap:4px}.lcdClk{width:8px;height:8px;border:1.5px solid #f2f4f8;border-radius:50%;display:inline-block}
+.lcdRow,.lcdGrid{display:grid;grid-template-columns:7px repeat(var(--cols),minmax(0,1fr));gap:3px}
+.lcdHead{padding:4px 0 3px}.lcdTh{text-align:center;cursor:pointer;padding:1px 0}.lcdTh.on{background:#f2f4f8;color:#020203}
+.lcdGrid{gap:3px}.lcdScroll{position:relative;border:1px solid #f2f4f866;border-radius:1px}.lcdScroll i{position:absolute;left:0;right:0;height:50%;background:#f2f4f8}
+.lcdCol{display:grid;grid-template-rows:repeat(8,13px);gap:2px}
+.lcdCell{border:1px solid #f2f4f833;font-size:8.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;white-space:nowrap}
+.lcdCell.used{border-color:#f2f4f8}.lcdCell.cur{background:#f2f4f8;color:#020203;font-weight:700}.lcdCell.play:not(.cur)::after{content:"▸";margin-left:1px}
+.lcdCol.on .lcdCell:not(.used){border-color:#f2f4f866}
+.lcdMeters{padding:4px 0 2px}.lcdMeter{height:4px;border:1px solid #f2f4f866;position:relative}.lcdMeter i{position:absolute;left:0;top:0;bottom:0;background:#f2f4f8}
+.lcdCmd{border:1px solid #f2f4f8;padding:1px 4px}
 .cmScreen{flex:1 1 260px;background:#050506;border:2px solid #000;border-radius:6px;padding:8px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#e9ecf5;display:flex;flex-direction:column;gap:2px;box-shadow:inset 0 0 12px #000}
 .cmScreen b{font-size:13px;letter-spacing:1px}.cmScreen span{font-size:18px;letter-spacing:2px;color:#fff}
 .cmCtl{display:flex;align-items:center;gap:8px;color:#d9dbe3;font-size:13px}.cmCtl b{font-size:20px;min-width:24px;text-align:center}
@@ -1720,6 +1733,31 @@ const autoClipReset=()=>{for(const k in PCLAST)delete PCLAST[k];};
 const CMAP={t:3,k:0};
 function clipMapOpen(t){cmFix();if(t!=null)CMAP.t=t;if(!devOn(CMAP.t))CMAP.t=DEVS[DEV].tracks[0];CMAP.k=0;let ov=$('#cmOv');if(ov)ov.remove();ov=el('div',{id:'cmOv',class:'ptOv',role:'dialog','aria-label':'MC-707 clips',onpointerdown:e=>{if(e.target.id==='cmOv')clipMapClose();}});document.body.append(ov);clipMapRender();}
 function clipMapClose(){const o=$('#cmOv');if(o)o.remove();scheduleSave();if(typeof liveRenderSceneEd==='function')liveRenderSceneEd();}
+/* The MC-707 HOME screen, as the reference manual lays it out: project name and tempo on top, a column per track
+   (number + T/D type), a clip grid showing 8 clips at a time with a scroll bar, level meters, the current
+   track-clip number and name, and a command area. White on black. */
+const CM_ABBR={drums:'KIT',bass:'BAS',chords:'CHD',pad:'PAD',lead:'LD',pluck:'ARP',fx:'FX'};
+function cmScreen(map,kk){
+  const tracks=DEVS[DEV].tracks,page=kk>=8?1:0,m=map[CMAP.t],tr=S.tracks[CMAP.t];
+  const scr=el('div',{class:'cmLcd',style:'--cols:'+tracks.length});
+  scr.append(el('div',{class:'lcdTop'},el('span',{},String((typeof PROJ!=='undefined'&&PROJ.name)||'Untitled').toUpperCase().slice(0,16)),el('span',{class:'lcdTempo'},el('i',{class:'lcdClk'}),String(Math.round(S.bpm*10)/10))));
+  const head=el('div',{class:'lcdRow lcdHead'},el('span',{class:'lcdSb'}));
+  tracks.forEach(t=>head.append(el('span',{class:'lcdTh'+(t===CMAP.t?' on':''),onclick:()=>{CMAP.t=t;CMAP.k=0;clipMapRender();}},devNum(t)+(S.tracks[t].type==='drum'?'D':'T'))));
+  scr.append(head);
+  const grid=el('div',{class:'lcdGrid'});
+  const sb=el('div',{class:'lcdScroll'},el('i',{style:'top:'+(page*50)+'%'}));
+  grid.append(sb);
+  tracks.forEach(t=>{const mm=map[t],col=el('div',{class:'lcdCol'+(t===CMAP.t?' on':'')});
+    for(let r=0;r<8;r++){const k=page*8+r,used=k<mm.n,cur=t===CMAP.t&&k===kk,pl=PCLAST[t]===k;
+      col.append(el('span',{class:'lcdCell'+(used?' used':'')+(cur?' cur':'')+(pl?' play':''),title:'Track '+devNum(t)+', clip '+(k+1)+(used?': '+ctInfo(mm.types[k])[1]:''),onclick:()=>{CMAP.t=t;if(k>=mm.n)mm.n=k+1;CMAP.k=k;clipMapRender();}},used?(mm.names[k]||CM_ABBR[mm.types[k]]||'').slice(0,4).toUpperCase():''));}
+    grid.append(col);});
+  scr.append(grid);
+  const meters=el('div',{class:'lcdRow lcdMeters'},el('span',{class:'lcdSb'}));
+  tracks.forEach(t=>{const p=LV&&LV.pulse&&LV.pulse[t]?LV.pulse[t].v||0:0;meters.append(el('span',{class:'lcdMeter'},el('i',{style:'width:'+Math.round(25+75*Math.min(1,p))+'%'})));});
+  scr.append(meters);
+  scr.append(el('div',{class:'lcdBot'},el('span',{},devNum(CMAP.t)+'-'+String(kk+1).padStart(2,'0')+' '+String(m.names[kk]||ctInfo(m.types[kk])[1]).toUpperCase().slice(0,14)),el('span',{class:'lcdCmd'},'[SWITCH]')));
+  return scr;
+}
 function clipMapRender(){
   const ov=$('#cmOv');if(!ov)return;ov.textContent='';const map=cmFix(),m=map[CMAP.t],tr=S.tracks[CMAP.t],dn=DEVS[DEV].name;
   const strips=el('div',{class:'cmStrips'});
@@ -1739,7 +1777,7 @@ function clipMapRender(){
     el('div',{class:'cmHead'},el('h3',{},'Your '+dn+' clips'),el('button',{class:'btn sm',onclick:clipMapClose},'Done')),
     el('p',{class:'hint'},'Tell the app what is in each clip on your '+dn+'. Like CLIP mode on the '+dn+': choose a track at the top, and its clips show on the 16 pads. When a track plays a different kind of part, for example a lead on your Chords track, the app switches that track to the matching clip, then back.'),
     el('div',{class:'cmUnit'},strips,
-      el('div',{class:'cmMid'},el('div',{class:'cmScreen'},el('b',{},'TRACK '+devNum(CMAP.t)+' · '+tr.name),el('span',{},'CLIP '+(kk+1)+': '+(m.names[kk]||cur[1]).toUpperCase())),
+      el('div',{class:'cmMid'},cmScreen(map,kk),
         el('div',{class:'cmCtl'},el('span',{},'Clips on this track'),el('button',{class:'btn sm',disabled:m.n<=1,onclick:()=>{m.n--;CMAP.k=Math.min(CMAP.k,m.n-1);clipMapRender();}},'−'),el('b',{},String(m.n)),el('button',{class:'btn sm',disabled:m.n>=16,onclick:()=>{m.n++;m.types[m.n-1]=m.types[m.n-1]||m.types[m.n-2];CMAP.k=m.n-1;clipMapRender();}},'+'))),
       pads),
     el('div',{class:'cmEdit'},el('b',{},'Clip '+(kk+1)+' holds'),typeBtns,
