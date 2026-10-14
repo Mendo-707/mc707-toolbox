@@ -20,11 +20,13 @@
       "preload.js",
       "index.html",
       "package.json",
-      "node_modules/lamejs/lame.min.js"
+      "node_modules/lamejs/lame.min.js",
+      "icon.png"
     ],
     "win": {
       "target": "portable",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico"
     },
     "portable": {
       "artifactName": "MC-707-Toolbox.exe"

@@ -28,6 +28,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1400, height: 900, minWidth: 700, minHeight: 500,
     title: 'MC-707 Toolbox',
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') }
   });
   win.loadFile(path.join(__dirname, 'index.html'));
