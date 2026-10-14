@@ -214,6 +214,12 @@ input[type=range]{accent-color:var(--hot);min-width:0}
 .cprow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
 /* extras */
 .ruler{height:40px}
+.cmk{position:absolute;top:0;bottom:0;border-left:2px solid var(--k);pointer-events:none;z-index:4}
+.cmk b{pointer-events:auto;position:absolute;left:-2px;bottom:1px;font-size:10px;line-height:14px;padding:0 6px 0 4px;background:var(--k);color:#101318;border-radius:0 4px 4px 0;cursor:grab;white-space:nowrap;font-weight:700;touch-action:none;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.cmk.auto{border-left-style:dashed}.cmk.auto b{color:var(--panel)}
+.thClip{flex:none;height:20px;padding:0 5px;font-size:10.5px;font-weight:700;border-radius:4px;border:1px solid var(--line);background:var(--panel);color:var(--mute);border-left:4px solid var(--k,transparent);max-width:78px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
+.thClip.on{color:var(--ink)}
+.thead .thClip{width:60px;text-align:left}
 .mark{position:absolute;top:22px;height:17px;padding:0 7px 0 6px;font-size:11px;line-height:17px;background:var(--hot);color:#fff;border-radius:0 4px 4px 0;border-left:2px solid rgba(255,255,255,.55);cursor:pointer;white-space:nowrap;z-index:3;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .markin{width:112px;font-size:11px;padding:0 3px;height:15px}
 .recbtn.on{background:#e5484d;border-color:transparent;color:#fff}
@@ -357,6 +363,9 @@ body[data-mode=live] #live{display:flex}
 .lvScParts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 12px;margin:8px 0}
 .lvScParts .lvf{flex-direction:column;align-items:stretch;gap:2px}
 .lvScParts select{border-left:4px solid var(--c)!important}
+.lvScPair{display:flex;gap:4px}.lvScPair select{flex:1;min-width:0}
+.lvLab .lvClip{margin-left:auto;height:20px;font-size:10px;background:transparent;max-width:66px;text-decoration:none}
+.lvLab>span{overflow:hidden;text-overflow:ellipsis}
 .lvTile:hover{transform:translateY(-2px);box-shadow:0 6px 18px color-mix(in srgb,var(--c) 40%,transparent)}
 .lvTile .ln{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lvmap{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;height:8px}
@@ -369,7 +378,7 @@ body[data-mode=live] #live{display:flex}
 .lvTile.queued{animation:lvpulse .8s ease-in-out infinite;outline:2px dashed var(--hot);outline-offset:2px}
 @keyframes lvpulse{50%{filter:brightness(1.5)}}
 .lvLanes{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.lvLH{flex:0 0 104px;border-right:1px solid var(--line)}
+.lvLH{flex:0 0 156px;border-right:1px solid var(--line)}
 .lvLab{height:34px;display:flex;align-items:center;gap:6px;padding:0 8px;border-left:5px solid var(--c);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line);position:relative}
 .lvLab .vu{width:5px;height:16px;border-radius:2px;background:var(--c);opacity:calc(.15 + var(--v,0)*.85);flex:none}
 .lvLab.muted{opacity:.4;text-decoration:line-through}
@@ -1596,6 +1605,7 @@ function processTick(tick,time){
   const nt=time+swing;
   if(TR.mode==='song'){
     if(tick%32===0&&MIDI.out){const mb=tick/32;for(const m of S.markers)if(m.scene!=null&&m.bar===mb)sendMidi([0xC0|((S.ctrlCh||16)-1),m.scene],time);}
+    songClipTick(tick,time);
     const solo=S.tracks.some(t=>t.solo);const bar=tick/32;
     for(let ti=0;ti<8;ti++){
       const t=S.tracks[ti];if(t.mute||(solo&&!t.solo))continue;
@@ -1603,7 +1613,7 @@ function processTick(tick,time){
       const p=S.patterns[c.pat];if(!p)continue;
       const Lc=Math.round((c.ll||p.bars)*32);const local=(((tick-Math.round(c.start*32)+Math.round(c.off*32))%Lc)+Lc)%Lc;
       if(c.cc&&c.cc.pts&&c.cc.pts.length&&tick%2===0)autoCC(ti,c,tick,time);
-      if(c.pc!=null&&tick===Math.round(c.start*32))sendMidi([0xC0|(t.ch-1),clamp(c.pc,0,127)],time);
+      if(c.pc!=null&&tick===Math.round(c.start*32)){if(c.pc<16)sendClip(ti,c.pc,time+.004);else sendMidi([0xC0|(t.ch-1),clamp(c.pc,0,127)],time);}
       else if(c.pc==null&&S.clipAuto&&(tick===Math.round(c.start*32)||PCLAST[ti]==null))autoClip(ti,p,time);
       const evs=patIndex(p).get(local);if(!evs)continue;
       const maxT=(c.start+c.len)*32-tick;
@@ -1678,7 +1688,7 @@ function startSong(rec){
     if(tick===0)sendMidi([0xFA],TR.nextTime);
     else{const spp=Math.round(tick/2);sendMidi([0xF2,spp&127,(spp>>7)&127],TR.nextTime);sendMidi([0xFB],TR.nextTime);}
   }
-  Object.keys(AUTOLAST).forEach(k=>delete AUTOLAST[k]);sendTrackCCs();autoClipReset();
+  Object.keys(AUTOLAST).forEach(k=>delete AUTOLAST[k]);sendTrackCCs();autoClipReset();CMK.last=-9;
   TICKER.start();sched();updTransport();
 }
 function startPat(p,ti,range,shift,bpm,swing){
@@ -1733,15 +1743,66 @@ function patType(p){
 function clipFor(t,type){if(!type)return -1;const m=cmFix()[t];for(let k=0;k<m.n;k++)if(m.types[k]===type)return k;return -1;}
 /* switch an MC-707 track to the clip for this kind of part, a moment before its notes */
 function autoClip(t,p,time){
-  if(!S.clipAuto||!MIDI.out||!devOn(t))return;
+  if(!S.clipAuto||!devOn(t)||CLIPPIN[t]!=null)return;
   const k=clipFor(t,patType(p));if(k<0||PCLAST[t]===k)return;
-  PCLAST[t]=k;sendMidi([0xC0|(S.tracks[t].ch-1),k],Math.max(0,time-.004));
+  sendClip(t,k,time);
 }
-const autoClipReset=()=>{for(const k in PCLAST)delete PCLAST[k];};
+/* a clip chosen on purpose (a Song Mode clip change or a Live scene's clip) holds until the next one, and automatic switching waits */
+const CLIPPIN={},CMNOW={};
+const autoClipReset=()=>{for(const k in PCLAST)delete PCLAST[k];for(const k in CLIPPIN)delete CLIPPIN[k];};
+function sendClip(t,k,time){
+  if(!devOn(t)||k==null||k<0)return;PCLAST[t]=k;
+  if(MIDI.out)sendMidi([0xC0|(S.tracks[t].ch-1),k],Math.max(0,time-.004));
+  const d=AU.ctx&&time?Math.max(0,(time-AU.ctx.currentTime)*1000):0;setTimeout(()=>cmChipSet(t,k),d);
+}
+function cmChipSet(t,k){CMNOW[t]=k;['thClip','lvClip'].forEach(p=>{const e=document.getElementById(p+t);if(e)cmChipFill(e,t,k);});}
+function cmChipFill(e,t,k){
+  const m=cmFix()[t],on=k!=null&&k>=0;e.textContent=on?'C'+(k+1)+' '+(m.names[k]?m.names[k].slice(0,7):CM_ABBR[m.types[k]]):'Clip';
+  e.style.setProperty('--k',on?ctInfo(m.types[k])[2]:'transparent');e.classList.toggle('on',on);
+  e.title=(on?devNm()+' track '+devNum(t)+' is on '+cmLabel(t,k):'No clip chosen yet')+'. Click to change.';
+}
+const devNm=()=>DEV==='101'?'MC-101':'MC-707';
+const cmLabel=(t,k)=>{if(k<0)return 'Automatic';const m=cmFix()[t];return 'Clip '+(k+1)+' · '+(m.names[k]||ctInfo(m.types[k])[1]);};
+/* menu entries: every clip set up on this track, then automatic, then the clips screen */
+function cmPickItems(t,cur,fn,autoLabel){
+  const m=cmFix()[t],items=[];
+  for(let k=0;k<m.n;k++)items.push({label:cmLabel(t,k),checked:cur===k,action:()=>fn(k)});
+  if(autoLabel&&(S.clipAuto||cur===-1))items.push('-',{label:autoLabel,checked:cur===-1,action:()=>fn(-1)});
+  items.push('-',{label:'Set up track '+devNum(t)+' clips…',action:()=>clipMapOpen(t)});
+  return items;
+}
+/* ---- Song Mode clip changes: a flag on a track at a bar tells that MC-707 track to change clip (k=-1 hands it back to automatic) ---- */
+const cmMarks=()=>S.clipMarks||(S.clipMarks=[]);
+function clipMarkAt(t,bar){let r=null;for(const m of cmMarks())if(m.t===t&&m.bar<=bar+1e-9&&(!r||m.bar>r.bar))r=m;return r;}
+function setClipMark(t,bar,k){
+  pushUndo();bar=Math.max(0,Math.floor(bar));const ms=cmMarks(),ex=ms.find(m=>m.t===t&&m.bar===bar);
+  if(ex)ex.k=k;else ms.push({t,bar,k});ms.sort((a,b)=>a.bar-b.bar||a.t-b.t);scheduleSave();renderArr();
+}
+function delClipMark(mk){pushUndo();S.clipMarks=cmMarks().filter(m=>m!==mk);scheduleSave();renderArr();}
+/* which clip a track is on at a bar, as far as the app knows */
+function cmAtBar(t,bar){
+  const mk=clipMarkAt(t,bar);if(mk&&mk.k>=0)return mk.k;
+  let last=null;for(const c of S.clips)if(c.t===t&&c.start<=bar+1e-9&&(!last||c.start>last.start))last=c;
+  if(last&&last.pc!=null)return last.pc;
+  if(S.clipAuto&&last){const k=clipFor(t,patType(S.patterns[last.pat]));if(k>=0)return k;}
+  return null;
+}
+const CMK={last:-9};
+function songClipTick(tick,time){
+  if(!S.clipMarks||!S.clipMarks.length){CMK.last=tick;return;}
+  const jump=tick!==CMK.last+1;CMK.last=tick;if(!jump&&tick%32)return;
+  const bar=Math.floor(tick/32);
+  for(let t=0;t<8;t++){
+    if(!devOn(t))continue;
+    const mk=jump?clipMarkAt(t,bar):S.clipMarks.find(m=>m.t===t&&m.bar===bar);if(!mk){if(jump)delete CLIPPIN[t];continue;}
+    if(mk.k>=0){CLIPPIN[t]=mk.k;if(PCLAST[t]!==mk.k)sendClip(t,mk.k,time);}
+    else if(CLIPPIN[t]!=null){delete CLIPPIN[t];delete PCLAST[t];}
+  }
+}
 /* ---- the clips screen, laid out like the MC-707: track buttons on top, the 16 pads below (as in CLIP mode) ---- */
 const CMAP={t:3,k:0};
 function clipMapOpen(t){cmFix();if(t!=null)CMAP.t=t;if(!devOn(CMAP.t))CMAP.t=DEVS[DEV].tracks[0];CMAP.k=0;let ov=$('#cmOv');if(ov)ov.remove();ov=el('div',{id:'cmOv',class:'ptOv',role:'dialog','aria-label':'MC-707 clips',onpointerdown:e=>{if(e.target.id==='cmOv')clipMapClose();}});document.body.append(ov);clipMapRender();}
-function clipMapClose(){const o=$('#cmOv');if(o)o.remove();scheduleSave();if(typeof liveRenderSceneEd==='function')liveRenderSceneEd();}
+function clipMapClose(){const o=$('#cmOv');if(o)o.remove();scheduleSave();if(typeof renderArr==="function"&&$("#arrInner"))renderArr();if(typeof liveRenderSceneEd==='function')liveRenderSceneEd();}
 /* The MC-707 HOME screen, as the reference manual lays it out: project name and tempo on top, a column per track
    (number + T/D type), a clip grid showing 8 clips at a time with a scroll bar, level meters, the current
    track-clip number and name, and a command area. White on black. */
@@ -1813,7 +1874,7 @@ function clipMapRender(){
       pads),
     el('div',{class:'cmEdit'},el('b',{},'Clip '+(kk+1)+' holds'),typeBtns,
       el('label',{class:'lvf'},'Name (optional)',el('input',{type:'text',maxlength:16,value:m.names[kk]||'',placeholder:'e.g. Reese, Rhodes',onchange:e=>{m.names[kk]=e.target.value.trim();clipMapRender();}})),
-      el('button',{class:'btn sm',disabled:!MIDI.out,title:MIDI.out?'Switch the '+dn+' to this clip now':'Connect the '+dn+' first',onclick:()=>{sendMidi([0xC0|(tr.ch-1),kk],AU.ctx?AU.ctx.currentTime:0);PCLAST[CMAP.t]=kk;toast('Sent: track '+devNum(CMAP.t)+' → clip '+(kk+1));}},'Switch to it now')),
+      el('button',{class:'btn sm',disabled:!MIDI.out,title:MIDI.out?'Switch the '+dn+' to this clip now':'Connect the '+dn+' first',onclick:()=>{sendClip(CMAP.t,kk,AU.ctx?AU.ctx.currentTime:0);toast('Sent: track '+devNum(CMAP.t)+' → clip '+(kk+1));}},'Switch to it now')),
     el('label',{class:'lvf cmAuto'},el('input',{type:'checkbox',checked:!!S.clipAuto,onchange:e=>{S.clipAuto=e.target.checked;autoClipReset();scheduleSave();}}),el('span',{},el('b',{},'Switch '+dn+' clips automatically'),el('small',{},' when a track changes to a different kind of part. Song Mode clips that set their own clip number keep it.'))),
     el('p',{class:'hint'},'Use clips that hold a sound but no notes, so the '+dn+' does not play its own pattern on top of the app. The '+dn+' must receive program change on each track\'s channel (check its MIDI settings).'));
   ov.append(box);
@@ -1917,6 +1978,7 @@ function trackRow(t,i,W){
   const head=el('div',{class:'thead'+(ROWH<52?' compact':''),'data-t':i,style:'--c:'+col},
     el('div',{class:'trow1'},
       el('input',{class:'tname',type:'text',value:t.name,maxlength:16,'aria-label':'Track '+(i+1)+' name',onchange:e=>{pushUndo();t.name=e.target.value.trim().slice(0,16)||t.name;scheduleSave();renderEdHead();}}),
+      (()=>{if(!devOn(i))return '';const b=el('button',{class:'thClip',id:'thClip'+i,onclick:ev=>{ev.stopPropagation();const r=ev.currentTarget.getBoundingClientRect(),bar=Math.floor(TR.playing&&TR.mode==='song'?posBarNow():S.cursor),mk=cmMarks().find(m=>m.t===i&&m.bar===bar);showMenu(r.left,r.bottom+2,[{label:'Change clip at bar '+(bar+1)+' (playhead)',disabled:true},...cmPickItems(i,mk?mk.k:null,k=>setClipMark(i,bar,k),'Back to automatic here')]);}});cmChipFill(b,i,TR.playing&&CMNOW[i]!=null?CMNOW[i]:cmAtBar(i,S.cursor));return b;})(),
       el('button',{class:'ms m'+(t.mute?' on':''),title:'Mute',onclick:()=>{pushUndo();t.mute=!t.mute;renderArr();scheduleSave();}},'M'),
       el('button',{class:'ms s'+(t.solo?' on':''),title:'Solo',onclick:()=>{pushUndo();t.solo=!t.solo;renderArr();scheduleSave();}},'S')),
     el('div',{class:'trow2'},
@@ -1924,7 +1986,24 @@ function trackRow(t,i,W){
       el('input',{type:'range',min:0,max:127,value:t.vol,title:'Track velocity (100 = unchanged)','aria-label':'Velocity for '+t.name,oninput:e=>{t.vol=+e.target.value;},onchange:()=>{scheduleSave();}})));
   const lane=el('div',{class:'lane','data-t':i,style:'width:'+W+'px'});
   S.clips.filter(c=>c.t===i).forEach(c=>lane.append(clipEl(c,col)));
+  if(devOn(i))cmMarks().forEach(mk=>{if(mk.t!==i)return;const m=cmFix()[i],k=mk.k,auto=k<0;
+    lane.append(el('div',{class:'cmk'+(auto?' auto':''),style:'left:'+mk.bar*bw+'px;--k:'+(auto?'var(--mute)':ctInfo(m.types[k])[2])},
+      el('b',{title:'Bar '+(mk.bar+1)+': '+devNm()+' track '+devNum(i)+' → '+cmLabel(i,k)+'. Drag to move, click to change, right-click to delete.',onpointerdown:ev=>cmkDown(ev,mk)},auto?'AUTO':'C'+(k+1)+' '+(m.names[k]?m.names[k].slice(0,10):ctInfo(m.types[k])[1]))));});
   return el('div',{class:'trow'+(i===3?' split':'')+(devOn(i)?'':' devoff')},head,lane);
+}
+function cmkDown(e,mk){
+  if(e.button===2)return;e.preventDefault();e.stopPropagation();
+  const b=e.currentTarget,host=b.parentNode,x0=e.clientX,bar0=mk.bar;let moved=false,undo=false;
+  b.setPointerCapture(e.pointerId);
+  const mv=ev=>{const nb=Math.max(0,Math.min(S.bars-1,bar0+Math.round((ev.clientX-x0)/bw)));if(Math.abs(ev.clientX-x0)>3)moved=true;
+    if(moved&&nb!==mk.bar&&!cmMarks().some(m=>m!==mk&&m.t===mk.t&&m.bar===nb)){if(!undo){pushUndo();undo=true;}mk.bar=nb;host.style.left=nb*bw+'px';}};
+  const up=ev=>{b.removeEventListener('pointermove',mv);b.removeEventListener('pointerup',up);b.removeEventListener('pointercancel',up);
+    if(moved){cmMarks().sort((a,c)=>a.bar-c.bar||a.t-c.t);scheduleSave();renderArr();}else showMenu(ev.clientX,ev.clientY,cmkMenu(mk));};
+  b.addEventListener('pointermove',mv);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+}
+function cmkMenu(mk){
+  return [{label:'Track '+devNum(mk.t)+', bar '+(mk.bar+1),disabled:true},...cmPickItems(mk.t,mk.k,k=>{pushUndo();mk.k=k;scheduleSave();renderArr();},'Back to automatic switching'),
+    {label:'Delete this clip change',danger:true,action:()=>delClipMark(mk)}];
 }
 function clipEl(c,col){
   const p=patOf(c);const w=Math.max(8,c.len*bw-2),h=ROWH-8;
@@ -3409,7 +3488,7 @@ async function openNewPat(){
   });
   return picked;
 }
-function clearTrack(t){pushUndo();S.clips=S.clips.filter(c=>c.t!==t);if(UI.sel&&!curClip()){UI.sel=null;}renderArr();renderEditor();scheduleSave();}
+function clearTrack(t){pushUndo();S.clips=S.clips.filter(c=>c.t!==t);S.clipMarks=cmMarks().filter(m=>m.t!==t);if(UI.sel&&!curClip()){UI.sel=null;}renderArr();renderEditor();scheduleSave();}
 function randomLibPattern(type,filter){
   const pool=FAC.filter(f=>f.type===type&&(!filter||filter(f)));return pool[Math.floor(Math.random()*pool.length)];
 }
@@ -3425,6 +3504,7 @@ function clipMenuItems(c){
     {label:'Loop this clip',action:()=>loopClip(c)},
     '-',
     {label:'Mute clip',checked:!!c.mute,action:()=>{pushUndo();c.mute=!c.mute;renderArr();scheduleSave();}},
+    devOn(c.t)?{label:devNm()+' clip change at bar '+(Math.floor(c.start)+1),sub:cmPickItems(c.t,(cmMarks().find(m=>m.t===c.t&&m.bar===Math.floor(c.start))||{}).k,k=>setClipMark(c.t,c.start,k),'Back to automatic switching')}:null,
     isTone?{label:'Transpose this clip’s range…',action:()=>openXpose({scope:'clip'})}:null,
     isTone?{label:'Transpose clip',sub:[{label:'+12 (octave up)',action:()=>setClipTr(c,(c.tr||0)+12)},{label:'+7',action:()=>setClipTr(c,(c.tr||0)+7)},{label:'+5',action:()=>setClipTr(c,(c.tr||0)+5)},{label:'+1',action:()=>setClipTr(c,(c.tr||0)+1)},{label:'−1',action:()=>setClipTr(c,(c.tr||0)-1)},{label:'−5',action:()=>setClipTr(c,(c.tr||0)-5)},{label:'−7',action:()=>setClipTr(c,(c.tr||0)-7)},{label:'−12 (octave down)',action:()=>setClipTr(c,(c.tr||0)-12)},'-',{label:'Reset to 0',action:()=>setClipTr(c,0)}]}:null,
     {label:'Clip velocity',sub:[50,75,100,125,150].map(v=>({label:v+'%',checked:(c.vel||100)===v,action:()=>{pushUndo();if(v===100)delete c.vel;else c.vel=v;renderArr();scheduleSave();}}))},
@@ -3460,6 +3540,7 @@ function laneMenuItems(t,bar){
     {label:'New pattern here',action:()=>newPatternAt(t,bar)},
     {label:'Paste clip here',disabled:!CLIPB,action:()=>pasteClip(t,bar)},
     {label:'Add from library',sub:libSubmenu(t,bar)},
+    devOn(t)?{label:devNm()+' clip change at bar '+(Math.floor(bar)+1),sub:cmPickItems(t,(cmMarks().find(m=>m.t===t&&m.bar===Math.floor(bar))||{}).k,k=>setClipMark(t,bar,k),'Back to automatic switching')}:null,
     '-',
     {label:'Play from here',action:()=>playFrom(bar)},
     {label:'Set playhead here',action:()=>setCursor(bar)},
@@ -3504,6 +3585,8 @@ function trackMenuItems(t){
     {label:'Track velocity',sub:[50,75,90,100,110,127].map(v=>({label:String(v),checked:tr.vol===v,action:()=>{pushUndo();tr.vol=v;renderArr();scheduleSave();}}))},
     tr.type==='tone'?{label:'Transpose this track…',action:()=>openXpose({scope:'song',tracks:new Set([t])})}:null,
     {label:'MIDI controls (CC)…',action:()=>openMctl(t)},
+    devOn(t)?{label:devNm()+' clips on this track…',action:()=>clipMapOpen(t)}:null,
+    devOn(t)?{label:'Remove this track’s clip changes',disabled:!cmMarks().some(m=>m.t===t),action:()=>{pushUndo();S.clipMarks=cmMarks().filter(m=>m.t!==t);scheduleSave();renderArr();}}:null,
     {label:'Timing nudge (ms)',sub:[-20,-10,-5,0,5,10,20].map(v=>({label:(v>0?'+':'')+v,checked:(tr.nudge||0)===v,action:()=>{pushUndo();tr.nudge=v;scheduleSave();}}))},
     {label:'Humanize timing (ms)',sub:[0,3,6,10,15].map(v=>({label:v?'±'+v:'Off',checked:(tr.hum||0)===v,action:()=>{pushUndo();tr.hum=v;scheduleSave();}}))},
     {label:'Send test note',action:()=>{ensureAudio();audition(t,tr.type==='drum'?0:60,100);}},
@@ -3544,7 +3627,9 @@ function clipOptionsEl(c,p,isDrum){
     stepIn('Start inside the pattern',c.off,0,v=>setGeom(c,{off:v/16}),'Where in the pattern this clip begins playing'),
     stepIn('Loop length (0 = whole pattern)',c.ll||0,0,v=>setGeom(c,{ll:v/16}),'Repeat only this much of the pattern. Odd lengths make polyrhythms.'));
   if(!isDrum){const ts=el('select',{'aria-label':'Transpose clip',onchange:e=>{pushUndo();const v=+e.target.value;if(v)c.tr=v;else delete c.tr;scheduleUI();}});for(let v=-12;v<=12;v++)ts.append(el('option',{value:v,selected:(c.tr||0)===v},(v>0?'+':'')+v+' semitones'));panel.append(row('Transpose (this clip only)',ts));}
-  panel.append(row('Launch MC-707 clip (1–16)',el('input',{type:'number',min:1,max:16,step:1,placeholder:'none',value:c.pc!=null?c.pc+1:'',style:'width:70px',title:'Sends a clip change to this track when the clip starts. The MC-707 accepts clip numbers 0–15 on the track channel.','aria-label':'MC-707 clip number',onchange:e=>{pushUndo();const v=Math.round(+e.target.value);if(e.target.value===''||!(v>=1&&v<=16))delete c.pc;else c.pc=v-1;scheduleUI();}})));
+  {const mm=cmFix()[c.t],ps=el('select',{title:'Switches this MC-707 track to a clip when this clip starts. Set up the clips in Settings › Your MC-707 clips.','aria-label':'MC-707 clip',onchange:e=>{pushUndo();const v=e.target.value;if(v==='')delete c.pc;else c.pc=+v;scheduleUI();}},el('option',{value:''},S.clipAuto?'Automatic (by kind of part)':'No clip change'));
+    for(let k=0;k<16;k++)if(k<mm.n||c.pc===k)ps.append(el('option',{value:k,selected:c.pc===k},k<mm.n?cmLabel(c.t,k):'Clip '+(k+1)+' (not set up)'));
+    panel.append(row('Launch '+devNm()+' clip',ps));}
   panel.append(row('Velocity %',el('input',{type:'number',min:10,max:200,step:5,value:c.vel||100,style:'width:70px','aria-label':'Clip velocity percent',onchange:e=>{pushUndo();const v=clamp(Math.round(+e.target.value)||100,10,200);if(v===100)delete c.vel;else c.vel=v;scheduleUI();}})));
   if(p.bars>1){const ar=el('select',{'aria-label':'Audition loop range',onchange:e=>{const v=e.target.value;if(v==='all')ED.aud=null;else{const [a,b2]=v.split('-').map(Number);ED.aud=[a,b2];}if(TR.playing&&TR.mode==='pat'&&TR.pat===p)startPat(p,c.t,ED.aud);}});
     ar.append(el('option',{value:'all',selected:!ED.aud},'Whole pattern'));
@@ -3639,6 +3724,8 @@ function initExtra(){
     e.preventDefault();
     const rc=e.target.closest('.rcells');
     if(rc){const bar=clamp(Math.floor((e.clientX-rc.getBoundingClientRect().left)/bw),0,S.bars-1);showMenu(e.clientX,e.clientY,rulerMenuItems(bar));return;}
+    const ck=e.target.closest('.cmk');
+    if(ck){const lane=ck.closest('.lane'),t=+lane.dataset.t,bar=Math.round(parseFloat(ck.style.left)/bw),mk=cmMarks().find(m=>m.t===t&&m.bar===bar);if(mk)showMenu(e.clientX,e.clientY,cmkMenu(mk));return;}
     const ce=e.target.closest('.clip');
     if(ce){const c=getClip(ce.dataset.id);if(c){if(UI.sel!==c.id)selectClip(c.id);{const r=$('#rows').getBoundingClientRect();UI.ctxBar=(e.clientX-r.left-HEAD)/bw;}showMenu(e.clientX,e.clientY,clipMenuItems(c));}return;}
     const th=e.target.closest('.thead');
@@ -3865,6 +3952,7 @@ function fixState(s){
   s.midiOffset=num(s.midiOffset,-200,200,0);s.transpose=Math.round(num(s.transpose,-24,24,0));s.snap=[1,.5,.25,.0625].includes(+s.snap)?+s.snap:1;s.ctrlCh=Math.round(num(s.ctrlCh,1,16,16));s.sendCC=s.sendCC!==false;
   s.metro=!!s.metro;s.clock=!!s.clock;s.preview=s.preview!==false;s.follow=s.follow!==false;s.midiOut=typeof s.midiOut==='string'?s.midiOut:'';s.midiIn=typeof s.midiIn==='string'?s.midiIn:'';
   s.markers=(Array.isArray(s.markers)?s.markers:[]).filter(m=>m&&Number.isFinite(+m.bar)).map(m=>{const o={bar:Math.max(0,Math.round(+m.bar)),name:String(m.name||'Section').slice(0,20)};if(Number.isFinite(+m.bpm)&&+m.bpm>=40&&+m.bpm<=240)o.bpm=Math.round(+m.bpm);if(m.scene!=null&&m.scene!==''&&Number.isInteger(+m.scene)&&+m.scene>=0&&+m.scene<=127)o.scene=+m.scene;return o;});
+  s.clipMarks=(Array.isArray(s.clipMarks)?s.clipMarks:[]).filter(m=>m&&Number.isInteger(+m.t)&&+m.t>=0&&+m.t<8&&Number.isFinite(+m.bar)&&Number.isInteger(+m.k)&&+m.k>=-1&&+m.k<16).map(m=>({t:+m.t,bar:Math.max(0,Math.round(+m.bar)),k:+m.k}));
   const lp=(s.loop&&typeof s.loop==='object')?s.loop:{};
   const ls=Math.max(0,Math.round(num(lp.start,0,511,0)*16)/16);s.loop={on:!!lp.on,start:ls,end:Math.max(ls+.0625,Math.round(num(lp.end,.0625,512,8)*16)/16)};
   s.drumMap=(Array.isArray(s.drumMap)&&s.drumMap.length===12)?s.drumMap.map((n,i)=>Math.round(num(n,0,127,d.drumMap[i]))):d.drumMap;
@@ -4000,6 +4088,7 @@ function markerMenu(i){
     {label:'Loop this section',action:()=>loopSection(i)},
     {label:'Tempo from here',sub:[...[.5,.75,1,1.25,1.5,2].map(f=>({label:'×'+f+' ('+Math.round(S.bpm*f)+' BPM)',action:()=>{pushUndo();if(f===1)delete m.bpm;else m.bpm=clamp(Math.round(S.bpm*f),40,240);scheduleSave();renderArr();}})),'-',{label:'−5 BPM',action:()=>{pushUndo();m.bpm=clamp((m.bpm||S.bpm)-5,40,240);scheduleSave();renderArr();}},{label:'+5 BPM',action:()=>{pushUndo();m.bpm=clamp((m.bpm||S.bpm)+5,40,240);scheduleSave();renderArr();}},{label:'Same as the song tempo',disabled:!m.bpm,action:()=>{pushUndo();delete m.bpm;scheduleSave();renderArr();}}]},
     {label:'MC-707 scene change',sub:[{label:'None',disabled:m.scene==null,action:()=>{pushUndo();delete m.scene;scheduleSave();renderArr();}},'-',...Array.from({length:8},(_,g)=>({label:'Scenes '+(g*16+1)+'–'+(g*16+16),sub:Array.from({length:16},(_,k)=>({label:'Scene '+(g*16+k+1),checked:m.scene===g*16+k,action:()=>{pushUndo();m.scene=g*16+k;scheduleSave();renderArr();}}))}))]},
+    {label:devNm()+' clips for this section',sub:DEVS[DEV].tracks.map(t=>({label:S.tracks[t].name+' (track '+devNum(t)+')',sub:cmPickItems(t,(cmMarks().find(x=>x.t===t&&x.bar===m.bar)||{}).k,k=>setClipMark(t,m.bar,k),'Back to automatic switching')}))},
     {label:'Transpose this section…',action:()=>openXpose({scope:'section',section:i})},
     {label:'Play from here',action:()=>playFrom(m.bar)},
     {label:'Move to playhead',action:()=>{pushUndo();m.bar=Math.floor(posBarNow());S.markers.sort((a,b)=>a.bar-b.bar);scheduleSave();renderArr();}},
@@ -4990,33 +5079,36 @@ function piecesIn(a,b){
   return out;
 }
 const markersIn=(a,b)=>S.markers.filter(m=>m.bar>=a&&m.bar<b).map(m=>({...m,bar:m.bar-a}));
+const cmarksIn=(a,b)=>cmMarks().filter(m=>m.bar>=a&&m.bar<b).map(m=>({...m,bar:m.bar-a}));
 const carveAll=(a,b)=>{for(let t=0;t<8;t++)carve(t,a,b);};
 function shiftAfter(at,d){
   for(let t=0;t<8;t++)splitAtBar(at,new Set([t]));
   S.clips.forEach(c=>{if(c.start>=at-1e-9)c.start=q16(c.start+d);});
   S.markers.forEach(m=>{if(m.bar>=at)m.bar=Math.max(0,m.bar+d);});
+  cmMarks().forEach(m=>{if(m.bar>=at)m.bar=Math.max(0,m.bar+d);});
 }
 function placeRange(r,at){
   r.pieces.forEach(p=>S.clips.push({...p,id:'c'+(S.nextId++),start:q16(at+p.start)}));
   r.marks.forEach(m=>{if(!S.markers.some(x=>x.bar===at+m.bar))S.markers.push({...m,bar:at+m.bar});});
+  (r.cm||[]).forEach(m=>{const ms=cmMarks();if(!ms.some(x=>x.t===m.t&&x.bar===at+m.bar))ms.push({...m,bar:at+m.bar});});cmMarks().sort((a,b)=>a.bar-b.bar||a.t-b.t);
   S.markers.sort((a,b)=>a.bar-b.bar);ensureBars(at+r.len);
 }
 function structDone(msg){S.clips=S.clips.filter(c=>S.patterns[c.pat]);renderArr();renderEditor();syncControls();scheduleSave();if(msg)toast(msg);}
-function copyRange(a,b){RANGEB={len:b-a,pieces:piecesIn(a,b),marks:markersIn(a,b)};toast('Copied bars '+(a+1)+'–'+b+' ('+RANGEB.pieces.length+' clips)');}
+function copyRange(a,b){RANGEB={len:b-a,pieces:piecesIn(a,b),marks:markersIn(a,b),cm:cmarksIn(a,b)};toast('Copied bars '+(a+1)+'–'+b+' ('+RANGEB.pieces.length+' clips)');}
 function pasteRange(at,insert){
   if(!RANGEB){toast('Copy a range first');return;}
   pushUndo();if(insert)shiftAfter(at,RANGEB.len);else carveAll(at,at+RANGEB.len);
   placeRange(RANGEB,at);structDone('Pasted at bar '+(at+1));
 }
 function repeatRange(a,b,times){
-  const r={len:b-a,pieces:piecesIn(a,b),marks:markersIn(a,b)};
+  const r={len:b-a,pieces:piecesIn(a,b),marks:markersIn(a,b),cm:cmarksIn(a,b)};
   pushUndo();shiftAfter(b,r.len*times);
   for(let k=0;k<times;k++)placeRange(r,b+k*r.len);
   structDone('Repeated bars '+(a+1)+'–'+b+' ×'+times);
 }
 function insertBarsAt(at,n){pushUndo();shiftAfter(at,n);ensureBars(songEnd()+n);structDone('Inserted '+n+' bar'+(n>1?'s':'')+' at bar '+(at+1));}
 function deleteRange(a,b,close){
-  pushUndo();carveAll(a,b);S.markers=S.markers.filter(m=>m.bar<a||m.bar>=b);
+  pushUndo();carveAll(a,b);S.markers=S.markers.filter(m=>m.bar<a||m.bar>=b);S.clipMarks=cmMarks().filter(m=>m.bar<a||m.bar>=b);
   if(close)shiftAfter(b,-(b-a));
   structDone(close?'Deleted bars '+(a+1)+'–'+b+' and closed the gap':'Cleared bars '+(a+1)+'–'+b);
 }
@@ -5188,7 +5280,7 @@ function wizApply(){
   const w=WIZ,plan=wizPlan(w),st=plan.st;
   stopAll();pushUndo();
   let base=0;
-  if(w.mode==='replace'){S.clips=[];S.patterns={};S.markers=[];S.bars=32;S.cursor=0;S.loop={on:false,start:0,end:8};UI.sel=null;ED.selNotes.clear();}
+  if(w.mode==='replace'){S.clips=[];S.patterns={};S.markers=[];S.clipMarks=[];S.bars=32;S.cursor=0;S.loop={on:false,start:0,end:8};UI.sel=null;ED.selNotes.clear();}
   else if(S.clips.length)base=Math.ceil(songEnd()/8)*8;
   if(w.mode==='replace'){S.bpm=w.bpm;S.swing=w.swing;S.key=w.key;S.scale=st.scale||'minor';}
   if(w.mode==='replace'&&w.opts.names)S.tracks.forEach((t,i)=>{t.name=trackLabel(st,i);t.vol=LEVELS[i];t.mute=false;t.solo=false;});
@@ -5690,7 +5782,10 @@ function liveRenderSceneEd(){
       [...new Set(mm.types.slice(0,mm.n))].filter(ty=>CT_POOL[ty]&&ty!==own).forEach(ty=>{const k=clipFor(ti,ty),og=el('optgroup',{label:ctInfo(ty)[1]+' parts (switches to clip '+(k+1)+')'});
         [...new Set([...(c&&patType(facById(c.id))===ty?[c.id]:[]),...lvFlavor(lvPool(st,CT_POOL[ty]),LV.flavor)])].slice(0,40).forEach(id=>{const f=facById(id);if(f)og.append(el('option',{value:id,selected:c&&c.id===id},f.name));});s.append(og);});}
     const pl=el('select',{'aria-label':t.name+' plays',class:'lvPlay',disabled:!c,title:'Which bars of the scene this part plays',onchange:e=>{const cc=sc.cells[ti];if(!cc)return;if(e.target.value==='all')delete cc.play;else cc.play=e.target.value;save();}},...LV_PLAY.map(([v,l])=>el('option',{value:v,selected:((c&&c.play)||'all')===v},l)));
-    parts.append(el('label',{class:'lvf'+(devOn(ti)?'':' devoff')},el('span',{style:'color:'+TRACK_COLORS[ti]+';font-weight:700'},t.name),s,pl));
+    const mm=cmFix()[ti],cl=el('select',{'aria-label':t.name+' MC-707 clip',class:'lvClipSel',disabled:!c,title:'Which '+devNm()+' clip this track plays in this scene',onchange:e=>{const cc=sc.cells[ti];if(!cc)return;if(e.target.value==='')delete cc.clip;else cc.clip=+e.target.value;save();if(lvOn()&&LV.cur===i)lvCellClip(ti,cc,AU.ctx.currentTime+.05);}},
+      el('option',{value:''},S.clipAuto?'Clip: auto':'Clip: as is'));
+    for(let k=0;k<mm.n;k++)cl.append(el('option',{value:k,selected:c&&c.clip===k},cmLabel(ti,k)));
+    parts.append(el('label',{class:'lvf'+(devOn(ti)?'':' devoff')},el('span',{style:'color:'+TRACK_COLORS[ti]+';font-weight:700'},t.name),s,el('div',{class:'lvScPair'},pl,cl)));
   });
   const move=d=>{const j=i+d;if(j<0||j>=LV.scenes.length)return;[LV.scenes[i],LV.scenes[j]]=[LV.scenes[j],LV.scenes[i]];if(LV.cur===i)LV.cur=j;else if(LV.cur===j)LV.cur=i;LV.edIdx=j;save();liveRenderSceneEd();};
   host.append(
@@ -5933,6 +6028,12 @@ function liveReplace(t,id,tick,fade,entry){
   if(tone&&fade>0)LV.voices[t].forEach(v=>{if(v.env.v1>0)v.env=mkEnv(envAt(v.env,tick),0,tick,fade);});else LV.voices[t]=[];
   LV.voices[t].push({f,start:tick,env:entry>0?mkEnv(0,1,tick,entry):mkEnv(1,1,tick,0)});
 }
+/* a scene part can name the MC-707 clip it plays on; otherwise the track follows the kind of part (when automatic switching is on) */
+function lvCellClip(t,cell,time){
+  if(!devOn(t))return;
+  if(cell&&cell.clip!=null&&cell.clip<cmFix()[t].n){CLIPPIN[t]=cell.clip;if(PCLAST[t]!==cell.clip)sendClip(t,cell.clip,time);}
+  else if(CLIPPIN[t]!=null){delete CLIPPIN[t];delete PCLAST[t];if(cell){const f=facById(cell.id);if(f)autoClip(t,f,time);}}
+}
 function liveScene(idx,tick,hard){
   const prev=LV.scenes[LV.cur],sc=LV.scenes[idx];if(!sc||lvIsFlash(sc))return;
   const jump=sc.e-(prev?prev.e:0);
@@ -5949,6 +6050,7 @@ function liveScene(idx,tick,hard){
   LV.cur=idx;LV.sceneStart=tick;
   for(let t=0;t<8;t++){
     const cell=sc.cells[t],tone=S.tracks[t].type==='tone',top=lvTop(t);
+    lvCellClip(t,cell,AU.ctx?AU.ctx.currentTime+.1:0);
     if(!cell){
       if(tone&&toneFade>0)LV.voices[t].forEach(v=>{if(v.env.v1>0)v.env=mkEnv(envAt(v.env,tick),0,tick,toneFade);});else LV.voices[t]=[];
       continue;
@@ -6116,7 +6218,7 @@ function liveStart(idx){
   Object.assign(TR,{playing:true,mode:'live',tick:0,nextTime:AU.ctx.currentTime+.06,vis:[],ending:false,recEnd:null});
   Object.assign(LV,{cur:i,sceneStart:0,voices:Array.from({length:8},()=>[]),cues:[],fill:null,mute:{},energy:8,stut:null,rise:null,rate:LV.rate||1,tg:Array.from({length:8},()=>mkEnv(1,1,0,0)),stopAt:null,crash:false,gap:null,thin:null,bov:null,impact:null,autos:[],ccLast:{},hist:[],log:[],lastTick:0,dropTick:null,flash:null,maskSig:''});
   autoClipReset();
-  for(let t=0;t<8;t++){const c=sc.cells[t];if(c)liveReplace(t,c.id,0,0,0);}
+  for(let t=0;t<8;t++){const c=sc.cells[t];lvCellClip(t,c,TR.nextTime);if(c)liveReplace(t,c.id,0,0,0);}
   LV.autos=[];LV.ccLast={};lvSceneFx(sc,0);
   LV.hist.push({tick:0,idx:i,ids:lvIds()});lvLog(0);
   if(S.clock&&MIDI.out)sendMidi([0xFA],TR.nextTime);
@@ -6634,7 +6736,11 @@ async function liveCapture(){
     }
     close();
   }
-  segs.forEach(g=>{if(g.x.idx!==lastIdx){lastIdx=g.x.idx;const sc=LV.scenes[g.x.idx];S.markers.push({bar:base+g.s,name:(sc?sc.name:'Scene').slice(0,20)});}});
+  const pin={};
+  segs.forEach(g=>{if(g.x.idx!==lastIdx){lastIdx=g.x.idx;const sc=LV.scenes[g.x.idx];S.markers.push({bar:base+g.s,name:(sc?sc.name:'Scene').slice(0,20)});
+    /* the clips each scene asked for become clip changes on the tracks */
+    if(sc)for(let t=0;t<8;t++){if(!devOn(t))continue;const c=sc.cells[t],k=c&&c.clip!=null?c.clip:-1;if(k!==(pin[t]==null?-1:pin[t])){const ms=cmMarks();ms.filter(m=>m.t===t&&m.bar===base+g.s).forEach(m=>ms.splice(ms.indexOf(m),1));ms.push({t,bar:base+g.s,k});pin[t]=k;}}}});
+  cmMarks().sort((a,b)=>a.bar-b.bar||a.t-b.t);
   S.markers.sort((a,b)=>a.bar-b.bar);ensureBars(base+endBar);
   setMode('song');renderAll();$('#arr').scrollLeft=Math.max(0,base*bw);scheduleSave();
   toast('Captured '+endBar+' bars into Song Mode ('+count+' clips)');
@@ -6856,8 +6962,8 @@ function liveRenderLanes(b0,force){
   const W=16,bw=Math.max(24,Math.floor((view.clientWidth||640)/W));
   const tickf=lvTickF();
   const segs=lvSegs(tickf);
-  if(labels.children.length!==9||labels.dataset.dev!==DEV){labels.dataset.dev=DEV;labels.textContent='';labels.append(el('div',{class:'lvHdr'},''));S.tracks.forEach((t,i)=>labels.append(el('div',{class:'lvLab'+(devOn(i)?'':' devoff'),id:'lvLab'+i,style:'--c:'+TRACK_COLORS[i]},el('i',{class:'vu',id:'lvLVu'+i}),el('span',{},t.name))));}
-  S.tracks.forEach((t,i)=>{const l=$('#lvLab'+i);if(l){l.lastChild.textContent=t.name;l.classList.toggle('muted',lvEffMute(i)||t.mute||lvEmute(i));}});
+  if(labels.children.length!==9||labels.dataset.dev!==DEV){labels.dataset.dev=DEV;labels.textContent='';labels.append(el('div',{class:'lvHdr'},''));S.tracks.forEach((t,i)=>labels.append(el('div',{class:'lvLab'+(devOn(i)?'':' devoff'),id:'lvLab'+i,style:'--c:'+TRACK_COLORS[i]},el('i',{class:'vu',id:'lvLVu'+i}),el('span',{},t.name),(()=>{const b=el('button',{class:'thClip lvClip',id:'lvClip'+i,onclick:ev=>{ev.stopPropagation();const r=ev.currentTarget.getBoundingClientRect();showMenu(r.left,r.bottom+2,[{label:'Switch track '+devNum(i)+' now (until the next scene)',disabled:true},...cmPickItems(i,CLIPPIN[i]!=null?CLIPPIN[i]:null,k=>{if(k<0){delete CLIPPIN[i];delete PCLAST[i];const v=lvTop(i);if(v)autoClip(i,v.f,AU.ctx?AU.ctx.currentTime:0);return;}ensureAudio();CLIPPIN[i]=k;sendClip(i,k,AU.ctx.currentTime);if(!MIDI.out)toast('Connect the '+devNm()+' to switch its clips');},'Back to automatic')]);}});cmChipFill(b,i,CMNOW[i]!=null?CMNOW[i]:null);return b;})())));}
+  S.tracks.forEach((t,i)=>{const l=$('#lvLab'+i);if(l){l.children[1].textContent=t.name;l.classList.toggle('muted',lvEffMute(i)||t.mute||lvEmute(i));}});
   inner.textContent='';inner.style.width=(W+2)*bw+'px';
   const hdr=el('div',{class:'lvHdr',style:'width:'+(W+2)*bw+'px'});inner.append(hdr);
   const segAt=tk=>{let s=segs[0];for(const x of segs)if(x.tick<=tk)s=x;return s;};
