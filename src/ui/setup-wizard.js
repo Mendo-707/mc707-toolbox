@@ -31,7 +31,7 @@ export const SU = {
 };
 const ROLAND_USB_URL =
   'https://support.roland.com/hc/en-us/articles/16183425095835-MC-707-How-to-set-the-USB-driver-Mode';
-const PAD_NAMES = LANES.map(l => l[0]);
+
 export function setMidiIn(id) {
   if (MIDI.inp) MIDI.inp.onmidimessage = null;
   const i = MIDI.access ? MIDI.access.inputs.get(id) : null;
@@ -125,21 +125,7 @@ export function testNote(ti) {
   sendMidi([0x80 | ch, pitch, 0], now + 0.5);
   return true;
 }
-function testChannel(ch) {
-  if (!MIDI.out) {
-    toast('No MIDI output selected. Go back to step 1.');
-    return;
-  }
-  ensureAudio();
-  const now = AU.ctx.currentTime + 0.02;
-  [
-    [S.drumMap[0], 0],
-    [60, 0.4]
-  ].forEach(([n, dt]) => {
-    sendMidi([0x90 | (ch - 1), n, 110], now + dt);
-    sendMidi([0x80 | (ch - 1), n, 0], now + dt + 0.3);
-  });
-}
+
 function sendClockTest() {
   if (!MIDI.out) {
     toast('No MIDI output selected. Press Auto-connect first.');

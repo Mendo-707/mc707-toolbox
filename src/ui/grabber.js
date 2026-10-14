@@ -6,19 +6,11 @@ import { AU, ensureAudio } from '../services/synth.js';
 import { TR, startSong, stopPlay, tickDur } from '../services/transport.js';
 import { syncControls } from './controls.js';
 import { DL } from '../song/export.js';
-import {
-  AUD,
-  AUDREC,
-  audMode,
-  audioJobs,
-  capAttachOne,
-  capDetach,
-  capOpen,
-  makeZip2,
-  pad2,
-  wavEncoder
-} from '../services/audio-capture.js';
-import { anchorSave, openAudio } from '../song/audio-dialog.js';
+import { AUD, AUDREC, audMode, capAttachOne, capDetach, capOpen } from '../services/audio-capture.js';
+import { makeZip2, wavEncoder } from '../services/audio-files.js';
+import { audioJobs, pad2 } from '../song/audio-record.js';
+import { anchorSave } from '../song/audio-save.js';
+import { openAudio } from '../song/audio-dialog.js';
 import { tempoAtBar, tickDurAt } from '../services/mc-controls.js';
 import { LV } from '../live/state.js';
 import { liveStart } from '../live/engine.js';

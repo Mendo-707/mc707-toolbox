@@ -9,7 +9,7 @@ import { TR, startPat, stopPlay } from '../services/transport.js';
 import { CT_DEF, ctInfo, patType } from '../services/clip-switch.js';
 import { STYLES } from '../library/styles.js';
 import { showMenu } from '../ui/menu.js';
-import { libMenuItems } from './import.js';
+import { libMenuItems } from './arrangement-menus.js';
 import { hooks } from '../core/hooks.js';
 
 /* ---------- library ---------- */

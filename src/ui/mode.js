@@ -4,7 +4,7 @@ import { panic } from '../services/midi.js';
 import { stopAll } from '../services/transport.js';
 import { updTransport } from './transport-view.js';
 import { closePops } from './controls.js';
-import { liveRender } from '../live/ui.js';
+import { liveRender } from '../live/panels.js';
 import { vizStart } from '../live/visualizer.js';
 
 /* ---- mode switch ---- */

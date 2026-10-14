@@ -7,9 +7,10 @@ import { edPlay } from '../song/editor.js';
 import { AU } from '../services/synth.js';
 import { TR, fmtPos, tickDur } from '../services/transport.js';
 import { syncAwake } from './fullscreen.js';
-import { SH, drawShape } from '../song/automation.js';
+import { SH, drawShape } from '../song/shape-editor.js';
 import { wizPlayhead, wizSyncPreview } from '../song/wizard-plan.js';
-import { liveFrame, liveSync } from '../live/ui.js';
+import { liveFrame } from '../live/lanes.js';
+import { liveSync } from '../live/panels.js';
 
 export function updTransport() {
   syncAwake();

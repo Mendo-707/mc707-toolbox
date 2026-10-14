@@ -16,7 +16,7 @@ import {
   ctlUsePreset,
   liveRenderCtlBar
 } from './controller.js';
-import { liveRenderSettings } from './ui.js';
+import { liveRenderSettings } from './settings-panel.js';
 
 export function ctlRenderSettings(b, chSel) {
   const c = LV.ctl,

@@ -5,7 +5,8 @@ import { LV, LV_DRUM_NOTES, LV_KBD_OFF, lvKbdNotes, lvLayoutNotes, noteLbl, save
 import { liveToggle } from './engine.js';
 import { livePadDown, livePadUp } from './pads.js';
 import { ravenKeyKey, ravenMuteKey } from './controller.js';
-import { liveRenderPads, liveRenderSettings } from './ui.js';
+import { liveRenderPads } from './panels.js';
+import { liveRenderSettings } from './settings-panel.js';
 
 /* ---- MIDI in: pads, key octave, mute octave, knob mirror ---- */
 /* ---- Pad test: press pads 1-16 in order and record exactly what the MC-707 sends ---- */

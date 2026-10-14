@@ -19,7 +19,9 @@ import './clips/clip-map.js';
 import './clips/clips-screen.js';
 import './ui/device.js';
 import './ui/transport-view.js';
+import './song/arrangement-input.js';
 import './song/library-panel.js';
+import './song/editor-head.js';
 import './ui/controls.js';
 import './song/export.js';
 import './core/crc.js';
@@ -33,6 +35,8 @@ import './song/wizard-ui.js';
 import './ui/menu.js';
 import './song/clip-ops.js';
 import './song/import.js';
+import './song/arrangement-menus.js';
+import './song/clip-options.js';
 import './song/editor-menus.js';
 import './ui/setup-wizard.js';
 import './ui/menubar.js';
@@ -42,16 +46,24 @@ import './song/markers.js';
 import './ui/saved-songs.js';
 import './song/transpose.js';
 import './services/audio-capture.js';
+import './services/audio-files.js';
+import './song/audio-record.js';
 import './ui/grabber.js';
+import './ui/live-menus.js';
 import './ui/context-menus.js';
+import './song/audio-save.js';
 import './song/audio-dialog.js';
+import './song/audio-check.js';
 import './song/layout.js';
 import './core/mc707-params.js';
-import './song/automation.js';
+import './song/track-midi.js';
 import './services/mc-controls.js';
+import './song/shape-editor.js';
 import './song/structure.js';
 import './song/wizard-styles.js';
 import './song/wizard-plan.js';
+import './song/wizard-structure.js';
+import './song/wizard-review.js';
 import './song/sound-suggestions.js';
 import './live/state.js';
 import './live/themes.js';
@@ -70,6 +82,9 @@ import './live/controller-settings.js';
 import './live/midi-in.js';
 import './ui/live-capture.js';
 import './live/ui.js';
+import './live/lanes.js';
+import './live/panels.js';
+import './live/settings-panel.js';
 import './live/visualizer.js';
 import './ui/mode.js';
 import './ui/projects.js';
@@ -77,7 +92,7 @@ import './ui/dialogs.js';
 import { $ } from './core/dom.js';
 import { FAC } from './library/factory.js';
 import { HOST, PROJ, S, fixState, loadSaved, replaceState } from './core/state.js';
-import { initArr, renderArr, scheduleUI } from './song/arrangement.js';
+import { renderArr, scheduleUI } from './song/arrangement.js';
 import { makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
 import { AU, ensureAudio } from './services/synth.js';
@@ -86,6 +101,7 @@ import { TICKER, TR, advance, processTick, startSong, stopAll } from './services
 import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice } from './ui/device.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
+import { initArr } from './song/arrangement-input.js';
 import { closePops, initControls, renderAll, syncControls } from './ui/controls.js';
 import { setDownloads } from './song/export.js';
 import { glueClips, glueRun } from './song/clip-ops.js';
@@ -95,9 +111,9 @@ import { initSetup } from './ui/menubar.js';
 import { recMidi, recStop } from './song/recording-midi.js';
 import { initMore, refreshIns, syncExtra } from './ui/saved-songs.js';
 import { grabOpen, grabUI } from './ui/grabber.js';
-import { audBtn, audRender, initAudio, openAudio } from './song/audio-dialog.js';
+import { audRender, initAudio } from './song/audio-dialog.js';
 import { initPro } from './song/layout.js';
-import { initStageB } from './song/automation.js';
+import { initStageB } from './song/track-midi.js';
 import { initStructure } from './song/structure.js';
 import { wizCellAt } from './song/wizard-plan.js';
 import { initWizard } from './song/sound-suggestions.js';
@@ -115,7 +131,6 @@ import { hooks } from './core/hooks.js';
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
   applyDevice,
-  audBtn,
   audRender,
   closePops,
   cmChipSet,
@@ -127,7 +142,6 @@ Object.assign(hooks, {
   liveSwingAmt,
   liveTempo,
   liveTick,
-  openAudio,
   recMidi,
   recStop,
   refreshIns,

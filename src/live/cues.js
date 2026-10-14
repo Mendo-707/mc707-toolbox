@@ -9,7 +9,9 @@ import { lvAutoFlash } from './breaks.js';
 import { lvPool, lvProg } from '../library/pools.js';
 import { liveSwapIds } from './pools.js';
 import { liveStart, lvEmute, lvIds, lvSwapCue, lvTop } from './engine.js';
-import { liveRender, liveRenderCards, liveRenderPads, liveStatus, liveSync, lvTickF } from './ui.js';
+import { lvTickF } from './ui.js';
+import { liveStatus } from './lanes.js';
+import { liveRender, liveRenderCards, liveRenderPads, liveSync } from './panels.js';
 
 /* ---- cues (all quantised) ---- */
 export const lvOn = () => TR.playing && TR.mode === 'live';

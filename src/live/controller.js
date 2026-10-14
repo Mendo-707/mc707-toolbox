@@ -20,7 +20,8 @@ import {
   lvVaryLabel
 } from './cues.js';
 import { livePadDown, livePadUp, sendKnob } from './pads.js';
-import { liveRender, liveRenderSettings } from './ui.js';
+import { liveRender } from './panels.js';
+import { liveRenderSettings } from './settings-panel.js';
 import { vizNote } from './visualizer.js';
 import { hooks } from '../core/hooks.js';
 

@@ -13,7 +13,7 @@ import {
   undo,
   updUndo
 } from '../core/state.js';
-import { bw, deleteClip, dupClip, hideGhost, renderArr, setBarWidth } from '../song/arrangement.js';
+import { bw, hideGhost, renderArr, setBarWidth } from '../song/arrangement.js';
 import { makeDemo } from '../library/index.js';
 import { MAXBARS, curPat, songEnd, touch } from '../core/song-model.js';
 import { drawEditor, layoutEditor, renderEditor } from '../song/editor.js';
@@ -22,6 +22,7 @@ import { MIDI, connectMidi, panic } from '../services/midi.js';
 import { TR, audition, stopAll, togglePlay } from '../services/transport.js';
 import { FULLHOST, STAGE, canFull, toggleFull } from './fullscreen.js';
 import { updPlayhead, updTransport } from './transport-view.js';
+import { deleteClip, dupClip } from '../song/arrangement-input.js';
 import { libReset, renderLibrary } from '../song/library-panel.js';
 import { buildMidi, makeZip, saveFile } from '../song/export.js';
 import { CM, closeMenu } from './menu.js';
@@ -31,10 +32,11 @@ import { closeSetup } from './setup-wizard.js';
 import { recKey } from '../song/recording-midi.js';
 import { syncExtra } from './saved-songs.js';
 import { closeXpose } from '../song/transpose.js';
-import { AUDREC, quickRec } from '../services/audio-capture.js';
+import { AUDREC } from '../services/audio-capture.js';
+import { quickRec } from '../song/audio-record.js';
 import { closeAudio } from '../song/audio-dialog.js';
 import { clipArrow } from '../song/layout.js';
-import { closeMctl } from '../song/automation.js';
+import { closeMctl } from '../song/track-midi.js';
 import { closeWiz } from '../song/wizard-plan.js';
 import { liveKeyDown, liveKeyUp } from '../live/midi-in.js';
 import { projLoadText, projNew, projOpen, projSave, projSaveAs } from './projects.js';

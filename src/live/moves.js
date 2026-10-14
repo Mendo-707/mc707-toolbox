@@ -7,7 +7,7 @@ import { MC_PARAMS } from '../core/mc707-params.js';
 import { curveFn } from '../services/mc-controls.js';
 import { LV } from './state.js';
 import { lvOn } from './cues.js';
-import { liveSync } from './ui.js';
+import { liveSync } from './panels.js';
 
 /* ---- building a set ---- */
 /* ---- automation moves: MC-707 CCs shaped over time (filter, resonance, reverb wash, pump, autopan) ---- */

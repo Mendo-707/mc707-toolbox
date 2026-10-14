@@ -598,7 +598,7 @@ STYLES.forEach(s => {
     SHORT[m.id] = m.name;
   });
 })();
-const GENRE_OF_STYLE = Object.fromEntries(STYLES.map(s => [s.id, s.genre]));
+
 export function defaultSecs(st, presetId) {
   const list = STRUCT[st.fam];
   const def =

@@ -29,17 +29,7 @@ export function lvFlashIds(st, rid, mode) {
   });
   return out;
 }
-function lvMakeFlash(st, rid) {
-  const R = FLASH_RH.find(x => x[0] === rid) || FLASH_RH[0];
-  return {
-    kind: 'flash',
-    name: 'Flash',
-    bars: R[2],
-    e: 9,
-    rh: R[0],
-    cells: lvFlashIds(st, R[0], LV.mode || lvModeFam(st.scale))
-  };
-}
+
 /* ---- Break: the top-right pad. A quick, exciting flash (½, 1 or 2 bars) that always lands back in the loop on the downbeat. ---- */
 export const LV_BRK = [
   ['mix', 'Mix it up'],

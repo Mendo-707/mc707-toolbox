@@ -6,7 +6,7 @@ import { renderAll } from './controls.js';
 import { LV } from '../live/state.js';
 import { lvClearCustom } from '../live/scene-editor.js';
 import { liveBuild } from '../live/pools.js';
-import { liveRender } from '../live/ui.js';
+import { liveRender } from '../live/panels.js';
 
 export function applyDevice() {
   document.body.dataset.dev = DEV;

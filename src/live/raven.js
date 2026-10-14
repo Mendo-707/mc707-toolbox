@@ -3,7 +3,8 @@ import { TRACK_COLORS } from '../core/device.js';
 import { S } from '../core/state.js';
 import { LV, NOTEN, noteLbl, saveLive } from './state.js';
 import { ctlAllOff, liveRenderCtlBar } from './controller.js';
-import { liveRenderPerf, liveRenderSettings } from './ui.js';
+import { liveRenderPerf } from './panels.js';
+import { liveRenderSettings } from './settings-panel.js';
 
 /* Raven presets: whole ways of playing, set in one tap */
 const RV_PRESETS = [

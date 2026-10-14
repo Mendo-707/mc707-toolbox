@@ -3,7 +3,9 @@ import { S } from '../core/state.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
 import { LV, LV_LABEL, NOTEN, lvHue, saveLive } from './state.js';
-import { liveRenderCards, liveRenderPads, liveStatus, lvTickF } from './ui.js';
+import { lvTickF } from './ui.js';
+import { liveStatus } from './lanes.js';
+import { liveRenderCards, liveRenderPads } from './panels.js';
 
 /* Live Mode colour themes. Each sets the panel colours (CSS) and how scene colours run from low to high energy. */
 export const LV_THEMES = {

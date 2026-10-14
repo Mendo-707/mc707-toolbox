@@ -16,7 +16,7 @@ import { lvFlavor, lvPool } from '../library/pools.js';
 import { liveBuild } from './pools.js';
 import { liveReplace, lvCellClip } from './engine.js';
 import { lvOn } from './cues.js';
-import { liveRender, liveRenderCards } from './ui.js';
+import { liveRender, liveRenderCards } from './panels.js';
 import { askDlg } from '../ui/dialogs.js';
 
 /* ---- scene editor ---- */

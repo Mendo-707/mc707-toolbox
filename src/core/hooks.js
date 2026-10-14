@@ -8,7 +8,6 @@
 //
 // Hook               provided by
 //   applyDevice        src/ui/device.js
-//   audBtn             src/song/audio-dialog.js
 //   audRender          src/song/audio-dialog.js
 //   closePops          src/ui/controls.js
 //   cmChipSet          src/clips/clip-map.js
@@ -20,7 +19,6 @@
 //   liveSwingAmt       src/live/state.js
 //   liveTempo          src/live/state.js
 //   liveTick           src/live/engine.js
-//   openAudio          src/song/audio-dialog.js
 //   recMidi            src/song/recording-midi.js
 //   recStop            src/song/recording-midi.js
 //   refreshIns         src/ui/saved-songs.js
