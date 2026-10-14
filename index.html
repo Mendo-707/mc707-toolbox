@@ -154,6 +154,46 @@ input[type=range]{accent-color:var(--hot);min-width:0}
 .ghost.bad{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 20%,transparent)}
 .loopband{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--hot) 8%,transparent);pointer-events:none;z-index:1;display:none}
 .playhead{position:absolute;top:0;bottom:0;left:0;width:2px;background:var(--hot);z-index:5;pointer-events:none;display:none}
+.li .acts .pvt{min-width:0;padding:0 5px;font-size:10.5px;border-left:3px solid var(--c)}
+.rvWrap{border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0;background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.rvWrap.off .rvPresets,.rvWrap.off .rvMaps,.rvWrap.off .rvOpts{opacity:.45}
+.rvHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.rvHead h4{margin:0 0 2px}.rvHead .hint{margin:0}
+.rvSwitch{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;flex:none}
+.rvSwitch input{position:absolute;opacity:0;pointer-events:none}
+.rvSwitch span{width:40px;height:22px;border-radius:11px;background:var(--line);position:relative;transition:background .15s}
+.rvSwitch span::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.rvSwitch input:checked+span{background:var(--auto,#2e9e6a)}.rvSwitch input:checked+span::after{left:21px}
+.rvPresets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin:12px 0}
+.rvP{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font:inherit}
+.rvP b{font-size:13px}.rvP span{font-size:11.5px;color:var(--mute);line-height:1.35}
+.rvP:hover{border-color:var(--auto,#2e9e6a)}.rvP.on{border-color:var(--auto,#2e9e6a);box-shadow:inset 0 0 0 1px var(--auto,#2e9e6a);background:color-mix(in srgb,var(--auto,#2e9e6a) 12%,var(--panel))}
+.rvMaps{display:flex;flex-wrap:wrap;gap:18px;margin:6px 0 12px}
+.rvMapH{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:6px}.rvMapH span{color:var(--mute)}.rvMapH em{font-style:normal;color:var(--mute)}
+.rvKb{position:relative;height:74px}
+.rk{position:absolute;top:0;box-sizing:border-box;display:flex;align-items:flex-end;justify-content:center;font-style:normal;font-size:10px;font-weight:700}
+.rk.w{width:25px;height:74px;background:#f4f5f7;color:#222;border:1px solid #9aa0ad;border-radius:0 0 5px 5px;padding-bottom:5px;border-bottom:5px solid var(--c,#c5cad3)}
+.rk.b{width:18px;height:44px;font-size:8.5px;letter-spacing:-.3px;background:#22252b;color:#fff;border-radius:0 0 4px 4px;z-index:2;padding-bottom:4px;border-bottom:4px solid var(--c,#555)}
+.rvKb.key .rk.w{border-bottom-color:#4da3ff}.rvKb.key .rk.b{border-bottom-color:#4da3ff}
+.rk.fx{--c:#e9d94a}
+.rvOpts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.rvCard{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.rvSeg small{display:block;color:var(--mute);font-size:11px;margin-bottom:3px}
+.segb{display:flex;gap:0}.segb .btn{flex:1;border-radius:0;margin:0}.segb .btn:first-child{border-radius:7px 0 0 7px}.segb .btn:last-child{border-radius:0 7px 7px 0}
+.rvCard .gf{display:flex;flex-direction:column;gap:3px;font-size:12px}
+.grabBtn{position:absolute;top:2px;left:1px;transform:translateX(-50%);min-width:22px;height:22px;border-radius:11px;pointer-events:auto;border:2px solid var(--hot);background:var(--panel);color:var(--hot);font-size:12px;font-weight:700;line-height:16px;padding:0 4px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.grabBtn:hover{background:var(--hot);color:#fff}
+.grabBtn.on,#lvGrab.on{background:var(--hot);color:#fff;animation:grabp 1s ease-in-out infinite}
+@keyframes grabp{50%{box-shadow:0 0 12px var(--hot)}}
+.grabPop{position:fixed;z-index:80;width:330px;max-width:calc(100vw - 16px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 12px 34px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:9px;font-size:13px}
+.grabH{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.grabPop .gf{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}
+.grabPop .gf select{color:var(--ink)}
+.grabPop .seg{display:flex;gap:4px}.grabPop .seg .btn{flex:1}
+.grabGo{font-weight:700;padding:8px}.grabGo.on{background:var(--hot);color:#fff;border-color:transparent}
+.grabPop .hint{margin:0;font-size:11.5px}
+.grabList{display:flex;flex-direction:column;gap:4px;max-height:210px;overflow:auto;border-top:1px solid var(--line);padding-top:8px}
+.grabRow{display:flex;align-items:center;gap:6px;font-size:12px}.grabRow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lvlock.on{background:color-mix(in srgb,var(--auto) 26%,transparent)!important;border-color:var(--auto)!important}
 
 /* editor */
 #editor{height:var(--edH,clamp(250px,38vh,420px));border-top:2px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;flex:none}
@@ -1966,10 +2006,11 @@ function renderArr(){
   rows.append(
     el('div',{class:'loopband',id:'loopband',style:'left:'+(HEAD+S.loop.start*bw)+'px;width:'+(S.loop.end-S.loop.start)*bw+'px;display:'+(S.loop.on?'block':'none')}),
     el('div',{class:'ghost',id:'ghost'}),
-    el('div',{class:'playhead',id:'playhead'}));
+    el('div',{class:'playhead',id:'playhead'},el('button',{class:'grabBtn',id:'grabBtn','aria-label':'Sample grabber',onclick:ev=>{ev.stopPropagation();grabOpen(ev.currentTarget);}},'◉')));
   inner.append(rows);
   updPlayhead(TR.playing&&TR.mode==='song'?(TR.vis[0]?TR.vis[0].tick/32:S.cursor):S.cursor);
   const bi=$('#barsIn');if(bi)bi.value=S.bars;
+  grabUI();
 }
 function trackRow(t,i,W){
   const col=TRACK_COLORS[i];
@@ -2266,7 +2307,8 @@ function renderLibrary(){
     const fk=it.kind+':'+it.id;const faved=FAVS.has(fk);
     const star=el('button',{class:'btn sm star'+(faved?' on':''),title:faved?'Remove from saved':'Save for later',onclick:ev=>{ev.stopPropagation();if(faved)FAVS.delete(fk);else FAVS.add(fk);saveFavs();renderLibrary();}},'★');
     const aud=el('button',{class:'btn sm aud',title:'Preview',onclick:ev=>{ev.stopPropagation();auditionLib(m);}},'▶');aud._pat=m;
-    const acts=el('div',{class:'acts'},aud,el('button',{class:'btn sm',title:'Add at the playhead',onclick:ev=>{ev.stopPropagation();quickAdd({kind:it.kind,id:it.id});}},'+'),star);
+    const pvt=m.type==='tone'?previewTrackFor(m,true):null;
+    const acts=el('div',{class:'acts'},aud,...(m.type==='tone'?[el('button',{class:'btn sm pvt',style:'--c:'+TRACK_COLORS[pvt],title:'Previews on track '+devNum(pvt)+': '+S.tracks[pvt].name+'. Click to choose any tone track.',onclick:ev=>{ev.stopPropagation();prvPick(m,ev);}},'→'+devNum(pvt))]:[]),el('button',{class:'btn sm',title:'Add at the playhead',onclick:ev=>{ev.stopPropagation();quickAdd({kind:it.kind,id:it.id});}},'+'),star);
     const row=el('div',{class:'li'+(UI.arm&&UI.arm.id===it.id&&UI.arm.kind===it.kind?' armed':''),draggable:'true',style:'--c:'+col,
       onclick:()=>{const same=UI.arm&&UI.arm.id===it.id&&UI.arm.kind===it.kind;UI.arm=same?null:{kind:it.kind,id:it.id};if(!UI.arm)hideGhost();if(UI.arm&&innerWidth<=860){$('#main').classList.add('nolib');$('#bLibT').classList.remove('on');toast('Now tap a track lane to place it');}renderLibrary();renderArr();},
       ondragstart:ev=>{DRAG={kind:it.kind,id:it.id};ev.dataTransfer.effectAllowed='copy';ev.dataTransfer.setData('text/plain',it.id);},
@@ -2293,14 +2335,28 @@ function trackFor(type){
   const c=curClip();if(c&&S.tracks[c.t].type===type)return c.t;
   return type==='drum'?0:3;
 }
-function previewTrackFor(m){
+/* tone patterns preview on the track that suits them (bass on Bass, a lead on Lead …) unless you pick another tone track */
+const PRVMAP=(()=>{try{return JSON.parse(localStorage.getItem('mc707-prevmap')||'{}')||{};}catch(e){return {};}})();
+const PRV_DEF={bass:3,chords:4,pad:5,lead:6,pluck:7,fx:4};
+const toneTracks=()=>DEVS[DEV].tracks.filter(i=>S.tracks[i].type==='tone');
+function prvTone(m){
+  const ty=patType(m)||'chords',tt=toneTracks();let t=PRVMAP[ty];
+  if(t==null||!tt.includes(t)||S.tracks[t].type!=='tone'){t=PRV_DEF[ty];if(!tt.includes(t))t=tt.find(i=>CT_DEF[i]===ty);if(t==null||!tt.includes(t))t=tt[0];}
+  return t!=null?t:3;
+}
+function prvPick(m,ev){
+  const ty=patType(m)||'chords',cur=previewTrackFor(m,true),r=ev.currentTarget.getBoundingClientRect();
+  showMenu(r.left,r.bottom+2,[{label:'Preview '+ctInfo(ty)[1].toLowerCase()+' patterns on…',disabled:true},...toneTracks().map(i=>({label:'Track '+devNum(i)+': '+S.tracks[i].name+' (ch '+S.tracks[i].ch+')',checked:cur===i,action:()=>{PRVMAP[ty]=i;try{localStorage.setItem('mc707-prevmap',JSON.stringify(PRVMAP));}catch(e){}UI.prevTrack=-1;renderLibrary();auditionLib(m,i);}}))]);
+}
+function previewTrackFor(m,quiet){
   const pt=UI.prevTrack;
   if(pt>=0){
     if(S.tracks[pt].type===m.type)return pt;
-    const alt=trackFor(m.type);
-    toast('Track '+(pt+1)+' is a '+(S.tracks[pt].type==='drum'?'drum':'tone')+' track, so this '+(m.type==='drum'?'drum':'tone')+' pattern plays on track '+(alt+1)+' instead');
+    const alt=m.type==='tone'?prvTone(m):trackFor(m.type);
+    if(!quiet)toast('Track '+(pt+1)+' is a '+(S.tracks[pt].type==='drum'?'drum':'tone')+' track, so this '+(m.type==='drum'?'drum':'tone')+' pattern plays on track '+(alt+1)+' instead');
     return alt;
   }
+  if(m.type==='tone')return prvTone(m);
   return trackFor(m.type);
 }
 function auditionLib(m,forceTrack){
@@ -2405,7 +2461,10 @@ function renderEdHead(){
     pushUndo();const np=addPattern(p.type,p.name+' copy',p.bars,p.notes,{key:p.key?{...p.key}:null,role:p.role,genre:p.genre});
     c.pat=np;scheduleSave();renderArr();renderEditor();toast('This clip now has its own copy');
   },'This pattern is used by several clips. Give this clip its own copy.'));
-  tools.append(el('button',{class:'btn sm',id:'bAud',onclick:()=>{if(TR.playing&&TR.mode==='pat'&&TR.pat===p)stopPlay();else startPat(p,c.t,ED.aud);}},'Play pattern'),
+  const edOn=()=>p.type==='tone'&&ED.playOn!=null&&ED.playOnClip===c.id&&S.tracks[ED.playOn]&&S.tracks[ED.playOn].type==='tone'&&devOn(ED.playOn)?ED.playOn:c.t;
+  tools.append(el('button',{class:'btn sm',id:'bAud',onclick:()=>{if(TR.playing&&TR.mode==='pat'&&TR.pat===p)stopPlay();else startPat(p,edOn(),ED.aud);}},'Play pattern'),
+    ...(p.type==='tone'?[el('select',{class:'edPlayOn','aria-label':'Play the pattern on',title:'Hear this pattern through another tone track\'s sound (the clip stays on its own track)',onchange:e=>{ED.playOn=+e.target.value;ED.playOnClip=c.id;if(TR.playing&&TR.mode==='pat'&&TR.pat===p)startPat(p,edOn(),ED.aud);}},
+      ...toneTracks().map(i=>el('option',{value:i,selected:edOn()===i},'on '+S.tracks[i].name+(i===c.t?' (own)':''))))]:[]),
     act('Duplicate clip',dupClip,'Place a linked copy right after this clip (Ctrl/Cmd+D)'),
     act('Delete clip',deleteClip,'Remove this clip from the arrangement (Delete)'));
   h.append(tools);
@@ -4689,6 +4748,110 @@ function quickRec(){
   if(AUD.source==='input'&&!AUD.mixDev&&!AUDREC.caps.mix){openAudio();return;}
   audioRecord();
 }
+/* ===== Sample grabber: record a few bars of one MC-707 track (or the mix, or Ext In) to a WAV, lined up on the bar.
+   While the song or the live set plays it grabs from the next bar line; when stopped it plays from the playhead.
+   Uses the inputs set up in Audio (per-track USB channels), or the app's own sound with that track soloed. ===== */
+const GRAB={on:false,list:[],bars:4,src:(()=>{try{return localStorage.getItem('mc707-grab-src')||'mix';}catch(e){return 'mix';}})(),sink:null,cleanup:null,label:'',pv:null};
+const grabKeys=()=>['mix',...DEVS[DEV].tracks.map(i=>'t'+i),'ext'];
+const grabName=k=>k==='mix'?'Mix':k==='ext'?'Ext In':'Track '+devNum(+k.slice(1))+': '+S.tracks[+k.slice(1)].name;
+const grabPv=()=>AUD.source==='preview';
+/* which input and channels feed this source, worked out exactly as Audio recording does */
+function grabDef(k){
+  const keep={stems:AUD.stems,mix:AUD.mix,extIn:AUD.extIn};
+  AUD.stems='channels';AUD.mix=true;AUD.extIn=true;
+  let sinks=[];try{sinks=audioJobs().flatMap(j=>j.sinks);}finally{Object.assign(AUD,keep);}
+  if(grabPv()){const m=sinks.find(x=>x.key==='mix');return m&&k!=='ext'?{...m,name:grabName(k),key:k,track:k==='mix'?undefined:+k.slice(1)}:null;}
+  if(audMode()!=='mc707'&&k!=='mix')return null;
+  return sinks.find(x=>x.key===k)||null;
+}
+function grabSecs(fromBar,bars){let s=0;for(let b=0;b<bars;b++)s+=32*(TR.mode==='live'?tickDur():tickDurAt(fromBar+b));return s;}
+async function grabStart(){
+  if(GRAB.on){grabStop();return;}
+  if(AUDREC.on||AUDREC.busy){toast('Audio recording is running. Stop it first.');return;}
+  ensureAudio();const ctx=AU.ctx,sr=ctx.sampleRate,k=GRAB.src,def=grabDef(k);
+  if(!def){toast(grabPv()?'Ext In needs the MC-707\'s USB audio. Choose it in Audio.':'Grabbing one track needs the MC-707\'s USB audio (8-channel). Set it up in Audio, or grab the Mix.');openAudio();return;}
+  try{if(def.cap!=='pv'&&!AUDREC.caps[def.cap])await capOpen(def.cap);}catch(e){toast((e&&e.message)||'Could not open the audio input');openAudio();return;}
+  const bars=GRAB.bars;let startTime,fromBar,ours=false,saved=null;
+  if(TR.playing&&(TR.mode==='song'||TR.mode==='live')){
+    const v=TR.vis[0]||{tick:TR.tick,time:TR.nextTime,dur:tickDur()};
+    const now=v.tick+(ctx.currentTime-v.time)/v.dur;let st=Math.ceil((now+2)/32)*32;
+    startTime=v.time+(st-v.tick)*v.dur;fromBar=TR.mode==='song'?st/32:0;
+  }else{
+    if(document.body.dataset.mode==='live'){liveStart(LV.cur);startTime=TR.nextTime;fromBar=0;ours='live';}
+    else{
+      saved={loop:{...S.loop},preview:S.preview,metro:S.metro,flags:S.tracks.map(t=>({mute:t.mute,solo:t.solo}))};
+      fromBar=Math.floor(S.cursor);S.loop.on=false;S.cursor=fromBar;S.metro=false;if(grabPv())S.preview=true;
+      if(grabPv()&&def.track!=null)S.tracks.forEach((t,i)=>{t.solo=i===def.track;if(i===def.track)t.mute=false;});
+      startSong({endTick:(fromBar+bars)*32});startTime=TR.nextTime;ours='song';
+    }
+  }
+  if(grabPv()&&TR.mode==='live'&&def.track!=null){GRAB.pv={was:S.tracks.map(t=>t.solo)};S.tracks.forEach((t,i)=>{t.solo=i===def.track;});}
+  const enc=wavEncoder(sr,AUD.bits===24?24:16),need=Math.round(grabSecs(fromBar,bars)*sr);let got=0;
+  const trim=(AUD.trimMs+(def.track!=null&&def.cap!=='pv'?AUD.stemTrimMs:0))/1000;
+  const sk={cap:def.cap,l:def.l,r:def.r,skip:0,feed(L,R,n){let a=0;if(sk.skip>0){const d=Math.min(sk.skip,n);sk.skip-=d;a=d;if(a>=n)return;}
+    const b=Math.min(n,a+need-got);if(b>a){enc.push(L,R,a,b);got+=b-a;}if(got>=need&&!sk.done){sk.done=true;setTimeout(()=>grabFinish(),0);}}};
+  sk.skip=Math.max(0,Math.round((startTime-ctx.currentTime+trim)*sr));
+  sk.enc=enc;sk.need=need;sk.got=()=>got;sk.t0=startTime;sk.secs=need/sr;
+  AUDREC.sinks.push(sk);capAttachOne(def.cap);
+  Object.assign(GRAB,{on:true,sink:sk,label:grabName(k),bars,fromBar});
+  GRAB.cleanup=()=>{
+    AUDREC.sinks=AUDREC.sinks.filter(x=>x!==sk);if(!AUDREC.sinks.length&&!AUDREC.on&&!AUDREC.metering)capDetach();
+    if(GRAB.pv){GRAB.pv.was.forEach((s,i)=>{S.tracks[i].solo=s;});GRAB.pv=null;}
+    if(ours==='song'&&TR.playing&&TR.mode==='song')stopPlay();
+    if(saved){S.loop=saved.loop;S.preview=saved.preview;S.metro=saved.metro;saved.flags.forEach((f,i)=>{S.tracks[i].mute=f.mute;S.tracks[i].solo=f.solo;});syncControls();renderArr();}
+  };
+  grabUI();GRAB.timer=setInterval(grabUI,120);
+}
+function grabFinish(cancel){
+  if(!GRAB.on)return;const sk=GRAB.sink;GRAB.on=false;clearInterval(GRAB.timer);
+  GRAB.cleanup&&GRAB.cleanup();GRAB.cleanup=null;
+  if(!cancel&&sk.got()>0){
+    const r=sk.enc.finish(),d=new Date(),bpm=Math.round(TR.mode==='live'?LV.bpm:tempoAtBar(GRAB.fromBar||0));
+    const secs=sk.got()/(AU.ctx.sampleRate||48000),bars=Math.round(secs/grabSecs(GRAB.fromBar||0,1)*4)/4;
+    const nm=(GRAB.label.replace(/^Track \d+: /,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'grab')+'-'+bpm+'bpm-'+bars+'bar-'+pad2(d.getHours())+pad2(d.getMinutes())+pad2(d.getSeconds())+'.wav';
+    GRAB.list.unshift({...r,name:nm,label:GRAB.label,bars,bpm,url:URL.createObjectURL(r.blob)});if(GRAB.list.length>12){const x=GRAB.list.pop();URL.revokeObjectURL(x.url);}
+    toast('Grabbed '+bars+(bars===1?' bar':' bars')+' of '+GRAB.label);
+  }else if(!cancel)toast('Nothing came in from '+GRAB.label+'. Check the input in Audio.');
+  grabUI();grabRenderPop();
+}
+function grabStop(){if(!GRAB.on)return;grabFinish(GRAB.sink.got()<=0);}
+async function grabSave(r){
+  try{
+    if(HOST){const dir=await HOST.saveRecording([{name:r.name,data:await r.blob.arrayBuffer()}],'');toast('Saved to '+dir);return;}
+    if(DL){await DL.save({filename:r.name.replace(/\.wav$/,'.zip'),data:makeZip2([{name:r.name,blob:r.blob,size:r.size,crc:r.crc}])});toast('Saved. This viewer saves audio inside a .zip.');return;}
+    anchorSave(r.name,r.blob);
+  }catch(e){if(!e||e.code!=='declined')toast('Could not save: '+((e&&(e.code||e.message))||'error'));}
+}
+/* the button riding on the playhead (Song Mode) and in the Live toolbar */
+function grabUI(){
+  const sk=GRAB.sink,ctx=AU.ctx;let txt='◉',tip='Sample grabber: record a few bars of one track';
+  if(GRAB.on&&sk&&ctx){const left=sk.t0-ctx.currentTime;txt=left>0?'◉ '+Math.ceil(left/(grabSecs(0,1)/4)):'● '+Math.min(GRAB.bars,Math.floor(sk.got()/sk.need*GRAB.bars)+1)+'/'+GRAB.bars;tip=left>0?'Starts on the next bar':'Grabbing '+GRAB.label+'. Click to stop.';}
+  ['grabBtn','lvGrab'].forEach(id=>{const b=document.getElementById(id);if(!b)return;b.classList.toggle('on',GRAB.on);b.title=tip;b.textContent=id==='lvGrab'?(GRAB.on?txt:'◉ Grab sample'):txt;});
+}
+function grabOpen(anchor){
+  let p=$('#grabPop');if(p&&p._anchor===anchor){p.remove();return;}if(p)p.remove();
+  p=el('div',{id:'grabPop',class:'grabPop',role:'dialog','aria-label':'Sample grabber'});p._anchor=anchor;document.body.append(p);grabRenderPop();
+  const r=anchor.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;
+  p.style.left=Math.max(8,Math.min(r.left-12,innerWidth-w-8))+'px';p.style.top=(r.bottom+h+8>innerHeight?Math.max(8,r.top-h-6):r.bottom+6)+'px';
+  setTimeout(()=>addEventListener('pointerdown',function off(e){const q=$('#grabPop');if(!q){removeEventListener('pointerdown',off,true);return;}if(!q.contains(e.target)&&e.target!==anchor&&!e.target.closest('.cmenu')){q.remove();removeEventListener('pointerdown',off,true);}},true),0);
+}
+function grabRenderPop(){
+  const p=$('#grabPop');if(!p)return;p.textContent='';const pv=grabPv(),mc=audMode()==='mc707';
+  const src=el('select',{'aria-label':'Grab from',disabled:GRAB.on,onchange:e=>{GRAB.src=e.target.value;try{localStorage.setItem('mc707-grab-src',GRAB.src);}catch(x){}grabRenderPop();}},
+    ...grabKeys().map(k=>{const ok=pv?k!=='ext':(mc||k==='mix');return el('option',{value:k,selected:GRAB.src===k,disabled:!ok},grabName(k)+(ok?'':' (needs 8-channel USB audio)'));}));
+  const lens=el('div',{class:'seg'},...[1,2,4,8,16].map(n=>el('button',{class:'btn sm'+(GRAB.bars===n?' on':''),disabled:GRAB.on,onclick:()=>{GRAB.bars=n;grabRenderPop();}},String(n))));
+  const playing=TR.playing&&(TR.mode==='song'||TR.mode==='live'),live=document.body.dataset.mode==='live';
+  const when=playing?'from the next bar':live?'starting the set':'from bar '+(Math.floor(S.cursor)+1);
+  p.append(el('div',{class:'grabH'},el('b',{},'Sample grabber'),el('button',{class:'btn sm',onclick:()=>{const q=$('#grabPop');if(q)q.remove();},'aria-label':'Close'},'✕')),
+    el('label',{class:'gf'},'Grab from',src),
+    el('div',{class:'gf'},'Length (bars)',lens),
+    el('button',{class:'btn grabGo'+(GRAB.on?' on':''),onclick:grabStart},GRAB.on?'■ Stop grabbing':'● Grab '+GRAB.bars+(GRAB.bars===1?' bar ':' bars ')+when),
+    el('p',{class:'hint'},pv?'Recording the app\'s own sound'+(GRAB.src!=='mix'?' with that track soloed':'')+'. To grab the MC-707 itself, choose its USB audio in Audio.':'Recording '+(mc?'the MC-707\'s USB audio':'your audio interface')+'. Inputs and latency are set in ',pv?'':el('a',{href:'#',onclick:e=>{e.preventDefault();openAudio();}},'Audio'),pv?'':'.'),
+    GRAB.list.length?el('div',{class:'grabList'},...GRAB.list.map((r,i)=>{const au=el('audio',{src:r.url,preload:'none'});
+      const pl=el('button',{class:'btn sm',title:'Play',onclick:()=>{if(au.paused){$$('#grabPop audio').forEach(a=>a.pause());au.currentTime=0;au.play();pl.textContent='■';au.onended=au.onpause=()=>{pl.textContent='▶';};}else au.pause();}},'▶');
+      return el('div',{class:'grabRow'},pl,au,el('span',{title:r.name},r.label.replace(/^Track \d+: /,'')+' · '+r.bars+(r.bars===1?' bar':' bars')+' · '+r.bpm+' BPM'),
+        el('button',{class:'btn sm',onclick:()=>grabSave(r)},'Save'),el('button',{class:'btn sm',title:'Remove',onclick:()=>{URL.revokeObjectURL(r.url);GRAB.list.splice(i,1);grabRenderPop();}},'✕'));})):el('p',{class:'hint'},'Grabs appear here. Save them as WAV files and load them into the MC-707 as samples.'));
+}
 /* ---- saving ---- */
 function anchorSave(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
 async function audioSave(list){
@@ -5830,7 +5993,7 @@ function saveLive(){try{const o={};LV_SAVE.forEach(k=>o[k]=LV[k]);localStorage.s
 const lvBT=()=>DEV==='101'?0:2;
 const SWG={drums:[0,1],perc:[2],bass:[3],chords:[4,5],pad:[5],lead:[6,7]};
 const MUG={drums:[0,1,2],bass:[3],chords:[4,5],lead:[6,7]};
-const LV_LABEL={'sw:drums':'New drums','sw:perc':'New perc','sw:bass':'New bass','sw:chords':'New chords','sw:pad':'New pad','sw:lead':'New lead','fill':'Fill','brk':'Break','mu:drums':'Drums out','mu:bass':'Bass out','mu:chords':'Chords out','mu:lead':'Lead out','next':'Next scene','prev':'Previous scene','stop':'Stop at phrase end','bd':'Build → Drop','rise:up':'Riser up','rise:down':'Riser down','stut:4':'Stutter ¼ (hold)','stut:8':'Stutter ⅛ (hold)','stut:16':'Stutter 1/16 (hold)','en:up':'Energy up','en:down':'Energy down','auto':'Auto-pilot'};
+const LV_LABEL={'sw:drums':'New drums','sw:perc':'New perc','sw:bass':'New bass','sw:chords':'New chords','sw:pad':'New pad','sw:lead':'New lead','fill':'Fill','brk':'Break','mu:drums':'Drums out','mu:bass':'Bass out','mu:chords':'Chords out','mu:lead':'Lead out','next':'Next scene','prev':'Previous scene','stop':'Stop at phrase end','bd':'Build → Drop','rise:up':'Riser up','rise:down':'Riser down','stut:4':'Stutter ¼ (hold)','stut:8':'Stutter ⅛ (hold)','stut:16':'Stutter 1/16 (hold)','en:up':'Energy up','en:down':'Energy down','auto':'Auto-pilot','lock':'Lock loop'};
 const NOTEN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const noteLbl=n=>NOTEN[((n%12)+12)%12]+(Math.floor(n/12)-1);
 const LV_PRI=[0,3,1,4,2,5,6,7];
@@ -5863,7 +6026,7 @@ function actLabel(a){
 function actColor(a){
   if(/^s\d$/.test(a)){const sc=LV.scenes[+a.slice(1)];return sc?(sc.kind==='flash'?LV_FLASHC:lvScCol(sc.e,55)):'#555';}
   if(a==='brk')return LV_FLASHC;if(a.startsWith('sw:'))return '#a283ff';if(a==='fill')return '#ffa629';if(a.startsWith('mu:')||a.startsWith('mt:'))return '#2fd3c0';if(a.startsWith('key:'))return '#84d95b';
-  if(a.startsWith('stut:')||a.startsWith('sc:'))return '#ff6fa3';if(a.startsWith('rise:')||a==='bd')return '#ff5f45';if(a.startsWith('en:')||a==='auto')return '#e9d94a';
+  if(a.startsWith('stut:')||a.startsWith('sc:'))return '#ff6fa3';if(a.startsWith('rise:')||a==='bd')return '#ff5f45';if(a.startsWith('en:')||a==='auto'||a==='lock')return '#e9d94a';
   return '#8f929c';
 }
 const lvNow=()=>{ensureAudio();return AU.ctx.currentTime;};
@@ -6312,7 +6475,7 @@ function liveAutoStep(tick,rel){
 function lvModeNote(n){const r=((n-LV.key)%12+12)%12;if(LV.mode==='major')return r===3||r===8||r===10?n+1:n;return r===4||r===9||r===11?n-1:n;}
 /* Repeat variation: when a pattern comes round again it changes a little, more often the higher Variation is. */
 function lvVarOf(v,t,k,L){
-  if(LV.vary<=0||k<1||t===5||t===2||(L<64&&k%2===0))return null;
+  if(LV.lock||LV.vary<=0||k<1||t===5||t===2||(L<64&&k%2===0))return null;
   if(v._vk===k)return v._vt;
   const hs=(hashStr(v.f.id+':'+t)+Math.imul(k,2654435761))>>>0;let ty=null;
   if((hs%1000)/1000<LV.vary/100*.8){const o=t===0?['ghost','kickx','open']:t===1?['open','thin']:t===3?['oct','run','thin','echo']:['oct','run','echo','thin','up'];ty=o[(hs>>>11)%o.length];}
@@ -6337,8 +6500,10 @@ function liveTick(tick,nt,td){
   const rel=tick-LV.sceneStart;
   if(rel%32===0){
     for(let t=0;t<8;t++)LV.voices[t]=LV.voices[t].filter(v=>!(v.env.v1===0&&tick>=v.env.t1));
-    if(LV.auto)liveAutoStep(tick,rel);
-    if(LV.vary>0)liveVaryStep(tick,rel);
+    if(!LV.lock&&(LV.auto||LV.vary>0)){const before=new Set(LV.cues);
+      if(LV.auto)liveAutoStep(tick,rel);
+      if(LV.vary>0)liveVaryStep(tick,rel);
+      LV.cues.forEach(c=>{if(!before.has(c))c.gen=true;});}
     const ms=Array.from({length:8},(_,t)=>lvMaskOff(t,tick)?1:0).join('');if(ms!==LV.maskSig){LV.maskSig=ms;lvLog(tick);}
   }
   lvRiseTick(tick,nt);lvAutoTick(tick,nt);
@@ -6549,6 +6714,25 @@ function liveStutter(len,on){
   if(on){LV.stut={press:TR.tick,len:Math.max(1,len)};}else LV.stut=null;LV.ver++;
 }
 function liveRate(r){LV.rate=r;LV.ver++;}
+/* Lock: hold the loop exactly as it is playing now. Auto-pilot, variation, guest parts leaving and repeat changes all wait;
+   your own pad presses still work, and Save as scene keeps it. */
+function liveLock(on){
+  LV.lock=on==null?!LV.lock:!!on;
+  if(LV.lock){LV.cues=LV.cues.filter(c=>!c.gen&&c.type!=='guestOut');toast('Loop locked: the parts playing now stay put until you unlock');}
+  else toast('Unlocked: auto-pilot and variation carry on');
+  LV.ver++;liveSync();
+}
+function liveLockSave(){
+  const sc=LV.scenes[LV.cur];if(!sc){toast('Start the set first');return;}
+  const ids=lvIds(),cells={};
+  ids.forEach((id,t)=>{if(!id||!devOn(t)||lvEffMute(t))return;const f=facById(id),old=sc.cells[t];
+    cells[t]={id,pool:old&&old.id===id?old.pool:(f&&f.pool)||TRACK_POOLS[t]};if(old&&old.play)cells[t].play=old.play;if(old&&old.clip!=null)cells[t].clip=old.clip;});
+  if(!Object.keys(cells).length){toast('Nothing is playing to save');return;}
+  const n=LV.scenes.filter(x=>/^Locked/.test(x.name)).length+1,ns={kind:sc.kind==='flash'?'drop':sc.kind,name:'Locked '+n,bars:sc.bars,e:sc.e,cells};if(sc.fx)ns.fx=sc.fx;
+  if(LV.scenes.length>=7){LV.scenes[LV.cur]=ns;toast('All 7 scene pads are full, so the playing scene was replaced by Locked '+n);}
+  else{LV.scenes.splice(LV.cur+1,0,ns);LV.cur=LV.cur;toast('Saved as scene '+(LV.cur+2)+': Locked '+n);}
+  lvSaveScenes();LV.ver++;liveRenderCards();liveRenderPads();
+}
 function liveAuto(on){LV.auto=on==null?!LV.auto:on;LV.ver++;liveSync();}
 function liveTap(){
   const n=performance.now();LV.tapT=LV.tapT.filter(x=>n-x<2500);LV.tapT.push(n);
@@ -6590,6 +6774,7 @@ function liveAct(a){
   if(a==='stop')return liveStopCue();
   if(a==='bd')return liveBuildDrop();
   if(a==='auto')return liveAuto();
+  if(a==='lock')return liveLock();
   if(a==='rise:up')return liveRiser('up');
   if(a==='rise:down')return liveRiser('down');
   if(a==='en:up'||a==='en:down'){const base=LV.cues.filter(c=>c.type==='energy').pop();return liveEnergy((base?base.n:LV.energy)+(a==='en:up'?1:-1));}
@@ -6609,6 +6794,11 @@ const CTL_PRESETS=[
   ['launchkey37','Novation Launchkey 37',37,48,8,0,0,16,1,'nov'],
   ['keylab61','Arturia KeyLab Essential 61',61,36,9,9,0,8,1,''],['keylab49','Arturia KeyLab Essential 49',49,36,9,9,0,8,1,''],
   ['mpk261','Akai MPK261',61,36,8,8,8,16,1,''],['mpk249','Akai MPK249',49,36,8,8,8,16,1,''],['mpkmini','Akai MPK Mini',25,48,8,0,0,8,1,''],
+  ['launchkeymini','Novation Launchkey Mini MK3',25,48,8,0,0,16,1,'nov'],
+  ['minilab3','Arturia MiniLab 3',25,48,8,4,0,8,1,''],['keylab88','Arturia KeyLab 88 MkII',88,21,9,9,9,16,1,''],
+  ['mpkminiplus','Akai MPK Mini Plus',37,48,8,0,0,8,1,''],['oxygenpro61','M-Audio Oxygen Pro 61',61,36,8,9,9,16,1,''],['keystation61','M-Audio Keystation 61 MK3',61,36,0,1,0,0,1,''],
+  ['kka49','Native Instruments Komplete Kontrol A49',49,36,8,0,0,0,1,''],['kkm32','Native Instruments Komplete Kontrol M32',32,41,8,0,0,0,1,''],
+  ['impactlx61','Nektar Impact LX61+',61,36,8,9,9,8,1,''],['rolanda49','Roland A-49',49,36,2,0,0,0,1,''],
   ['g25','Other 25-key keyboard',25,48,8,0,0,8,0,''],['g37','Other 37-key keyboard',37,48,8,0,0,8,0,''],['g49','Other 49-key keyboard',49,36,8,9,0,16,0,''],
   ['g61','Other 61-key keyboard',61,36,8,9,0,16,0,''],['g88','Other 88-key keyboard',88,21,8,9,0,16,0,'']
 ];
@@ -6616,7 +6806,7 @@ const CTL_ZONES=[['raven','Mutes, key, then solo (Raven)'],['keysolo','Key, then
 const CTL_KNOBS=['FILTER knob','MOD knob','FX knob','SOUND knob','Reverb (tone parts)','Resonance (tone parts)','Variation','Chaos','Solo cutoff'];
 const CTL_DEF={preset:'g61',inName:'',low:36,base:36,keys:61,keyCh:0,zones:'raven',muteMode:'toggle',muteWhen:'beat',trMode:'abs',trHold:false,trWhen:'beat',soloT:6,soloOct:0,soloSnap:false,soloOwn:false,modWheel:'filter',map:{}};
 const CTL={inp:null,learn:null,learnAll:false,learnLow:false,held:{},trHeld:[],idx:{},lastAct:''};
-const ctlPreset=()=>CTL_PRESETS.find(p=>p[0]===LV.ctl.preset)||CTL_PRESETS[15];
+const ctlPreset=()=>CTL_PRESETS.find(p=>p[0]===LV.ctl.preset)||CTL_PRESETS.find(p=>p[0]==='g61');
 function ctlFix(){
   const c=LV.ctl=Object.assign({},CTL_DEF,LV.ctl&&typeof LV.ctl==='object'?LV.ctl:{});
   if(!c.map||typeof c.map!=='object')c.map={};
@@ -6765,17 +6955,56 @@ function ctlKeyboard(){
   wrap.style.width=wx*W+'px';
   return el('div',{class:'ctlKbWrap'},wrap);
 }
-function ravenOptions(){
-  const c=LV.ctl,sel=(id,label,val,opts,on)=>el('label',{class:'lvf'},label,el('select',{id,onchange:e=>{on(e.target.value);saveLive();liveRenderSettings();liveRenderPerf();}},...opts.map(([v,l])=>el('option',{value:v,selected:String(val)===String(v)},l))));
-  const when=[['now','Straight away'],['beat','On the next beat'],['bar','On the next bar']];
-  return [el('div',{class:'lvrow'},
-      sel('ctlMuteMode','Mute keys',c.muteMode,[['toggle','Toggle: press to mute, again to unmute'],['hold','Hold: only while held (Raven Mute B)']],v=>{c.muteMode=v;}),
-      sel('ctlMuteWhen','Mutes land',c.muteWhen,when,v=>{c.muteWhen=v;})),
-    el('div',{class:'lvrow'},
-      sel('ctlTrMode','Key keys',c.trMode,[['abs','Absolute: C = key of C, D = key of D …'],['rel','Relative (Raven): C = the set\'s own key, C# = up 1 …']],v=>{c.trMode=v;}),
-      sel('ctlTrHold','Key change',c.trHold?'1':'',[['','Latch: stays until another key'],['1','Hold: back to the set\'s key on release']],v=>{c.trHold=!!v;}),
-      sel('ctlTrWhen','Key change lands',c.trWhen,when,v=>{c.trWhen=v;})),
-    el('p',{class:'hint'},'The 4 keys above the 8 mute keys are Unmute all, Fill, Build → Drop and Break. Drums never change key.')];
+/* Raven presets: whole ways of playing, set in one tap */
+const RV_PRESETS=[
+  ['classic','Classic Raven','Mutes toggle on the beat. Key keys move relative to the set\'s key and latch on the bar. Solo plays Lead in key.',{muteMode:'toggle',muteWhen:'beat',trMode:'rel',trHold:false,trWhen:'bar',zones:'raven',soloT:6,soloOct:0,soloSnap:true,modWheel:'filter'}],
+  ['muteb','Raven Mute B','Hold a mute key to cut a track, let go and it is straight back. Key changes spring back on release.',{muteMode:'hold',muteWhen:'now',trMode:'rel',trHold:true,trWhen:'beat',zones:'raven',soloT:6,soloOct:0,soloSnap:true,modWheel:'filter'}],
+  ['dj','DJ cuts','Tap to cut and bring back parts, landing on the next beat. Keys are absolute (C = C) and wait for the bar. No solo.',{muteMode:'toggle',muteWhen:'beat',trMode:'abs',trHold:false,trWhen:'bar',zones:'raven',soloT:-1,soloOct:0,soloSnap:false,modWheel:'filter'}],
+  ['jockey','Key jockey','Hold key keys to throw the whole set up or down like a transposer, instantly. It springs home when you let go.',{muteMode:'toggle',muteWhen:'bar',trMode:'rel',trHold:true,trWhen:'now',zones:'raven',soloT:6,soloOct:0,soloSnap:true,modWheel:'filter'}],
+  ['drop','Drop builder','Mutes wait for the bar, so you can stack cuts before a drop and bring everything in together. Mod wheel opens the filter.',{muteMode:'toggle',muteWhen:'bar',trMode:'rel',trHold:false,trWhen:'bar',zones:'raven',soloT:6,soloOct:0,soloSnap:true,modWheel:'filter'}],
+  ['lead','Lead player','Mutes and keys at the bottom, the rest plays a Lead solo an octave up, kept in key. Mod wheel adds vibrato.',{muteMode:'toggle',muteWhen:'beat',trMode:'rel',trHold:false,trWhen:'bar',zones:'raven',soloT:6,soloOct:1,soloSnap:true,modWheel:'mod'}],
+  ['bass','Bass player','Mutes and keys at the bottom, the rest plays Bass an octave down in key. Mute the app\'s bassline and play your own.',{muteMode:'toggle',muteWhen:'beat',trMode:'rel',trHold:false,trWhen:'bar',zones:'raven',soloT:3,soloOct:-1,soloSnap:true,modWheel:'filter'}],
+  ['jam','Chord jam','Key keys at the bottom, every other key plays Chords in key. No mute keys on the controller (the MC-707 keys still mute).',{muteMode:'toggle',muteWhen:'beat',trMode:'rel',trHold:false,trWhen:'bar',zones:'keysolo',soloT:4,soloOct:0,soloSnap:true,modWheel:'mod'}]];
+const RV_KEYS=['muteMode','muteWhen','trMode','trHold','trWhen','zones','soloT','soloOct','soloSnap','modWheel'];
+const rvActive=()=>{const c=LV.ctl;return (RV_PRESETS.find(p=>RV_KEYS.every(k=>String(p[3][k])===String(c[k])))||[])[0]||null;};
+function rvUse(id){
+  const p=RV_PRESETS.find(x=>x[0]===id);if(!p)return;ctlAllOff();Object.assign(LV.ctl,p[3]);LV.perfOn=true;
+  saveLive();liveRenderSettings();liveRenderPerf();liveRenderCtlBar();toast('Raven preset: '+p[1]);
+}
+/* one octave of keys, labelled with what each does */
+function rvOctave(base,kind){
+  const c=LV.ctl,wrap=el('div',{class:'rvKb '+kind}),blk=[1,3,6,8,10];let wx=0;
+  for(let i=0;i<12;i++){const n=base+i,isB=blk.includes(n%12);
+    const lab=kind==='mute'?(i<8?String(i+1):['All','Fill','Drop','Brk'][i-8]):(c.trMode==='rel'?(i===0?'0':'+'+i):NOTEN[i]);
+    const tip=kind==='mute'?(i<8?'Mute '+S.tracks[i].name:['Unmute all','Fill','Build → Drop','Break'][i-8]):(c.trMode==='rel'?'Key +'+i+' from the set\'s key':'Key of '+NOTEN[i]);
+    wrap.append(el('i',{class:'rk '+(isB?'b':'w')+(kind==='mute'&&i>=8?' fx':''),title:noteLbl(n)+' · '+tip,style:'left:'+(isB?wx*26-8:wx*26)+'px'+(kind==='mute'&&i<8?';--c:'+TRACK_COLORS[i]:'')},el('span',{},lab)));
+    if(!isB)wx++;}
+  wrap.style.width=wx*26+'px';return wrap;
+}
+function ravenSection(chSel,noteIn){
+  const c=LV.ctl,act=rvActive(),wrap=el('div',{class:'rvWrap'+(LV.perfOn?'':' off')});
+  const seg=(label,val,opts,on)=>el('div',{class:'rvSeg'},el('small',{},label),el('div',{class:'segb'},...opts.map(([v,l,t])=>el('button',{class:'btn sm'+(String(val)===String(v)?' on':''),title:t||'',onclick:()=>{on(v);saveLive();liveRenderSettings();liveRenderPerf();liveRenderCtlBar();}},l))));
+  const when=[['now','Now','Straight away'],['beat','Beat','On the next beat'],['bar','Bar','On the next bar']];
+  wrap.append(
+    el('div',{class:'rvHead'},
+      el('div',{},el('h4',{},'Raven mode'),el('p',{class:'hint'},'Mute and key keys on the MC-707 (keyboard mode) and on a controller keyboard, like the Quasimidi Raven.')),
+      el('label',{class:'rvSwitch'},el('input',{type:'checkbox',checked:LV.perfOn,onchange:e=>{LV.perfOn=e.target.checked;saveLive();liveRenderPerf();liveRenderSettings();}}),el('span',{}),LV.perfOn?'On':'Off')),
+    el('div',{class:'rvPresets'},...RV_PRESETS.map(([id,name,desc])=>el('button',{class:'rvP'+(act===id?' on':''),onclick:()=>rvUse(id)},el('b',{},name),el('span',{},desc)))),
+    el('div',{class:'rvMaps'},
+      el('div',{class:'rvMap'},el('div',{class:'rvMapH'},el('b',{},'Mute octave'),el('span',{},'MC-707 from'),noteIn(LV.muteBase,v=>{LV.muteBase=v;saveLive();liveRenderPerf();liveRenderSettings();}),el('em',{},noteLbl(LV.muteBase))),rvOctave(LV.muteBase,'mute')),
+      el('div',{class:'rvMap'},el('div',{class:'rvMapH'},el('b',{},'Key octave'),el('span',{},'MC-707 from'),noteIn(LV.keyBase,v=>{LV.keyBase=v;saveLive();liveRenderPerf();liveRenderSettings();}),el('em',{},noteLbl(LV.keyBase))),rvOctave(LV.keyBase,'key'))),
+    el('div',{class:'rvOpts'},
+      el('div',{class:'rvCard'},el('b',{},'Mutes'),
+        seg('Mute keys',c.muteMode,[['toggle','Toggle','Press to mute, again to unmute'],['hold','Hold','Muted only while held (Raven Mute B)']],v=>{c.muteMode=v;}),
+        seg('They land',c.muteWhen,when,v=>{c.muteWhen=v;})),
+      el('div',{class:'rvCard'},el('b',{},'Key changes'),
+        seg('Key keys',c.trMode,[['rel','Relative','C = the set\'s own key, C# = up 1 …'],['abs','Absolute','C = key of C, D = key of D …']],v=>{c.trMode=v;}),
+        seg('After release',c.trHold?'1':'',[['','Latch','Stays until another key'],['1','Spring back','Back to the set\'s key on release']],v=>{c.trHold=!!v;}),
+        seg('They land',c.trWhen,when,v=>{c.trWhen=v;})),
+      el('div',{class:'rvCard'},el('b',{},'MC-707 keys'),
+        el('label',{class:'gf'},'Channel',chSel(LV.keyCh,v=>{LV.keyCh=v;saveLive();})),
+        el('p',{class:'hint'},'Put the MC-707 pads in keyboard mode. Drums never change key. The controller keyboard, solo and mod wheel are set further down.'))));
+  return wrap;
 }
 function ctlRenderSettings(b,chSel){
   const c=LV.ctl,ins=MIDI.access?[...MIDI.access.inputs.values()].filter(i=>i!==MIDI.inp):[],p=ctlPreset();
@@ -6964,6 +7193,8 @@ function liveInit(){
   const top=el('div',{class:'lvTop'},
     el('button',{class:'btn lvstart',id:'lvStart',onclick:liveToggle},'▶ Start'),
     el('button',{class:'btn lvauto',id:'lvAuto',onclick:()=>liveAuto(),title:'Let the set run itself: fills, swaps and scene changes'},'Auto-pilot'),
+    el('button',{class:'btn lvlock',id:'lvLock',onclick:()=>liveLock(),title:'Hold the loop exactly as it is playing: the same patterns on every track, no automatic changes. Your own pad presses still work.'},'🔓 Lock loop'),
+    el('button',{class:'btn',id:'lvLockSave',hidden:true,onclick:liveLockSave,title:'Keep this exact loop as a scene pad'},'＋ Save as scene'),
     sel('Loops',reps),
     sel('Style',styleSel),sel('Patterns',el('select',{id:'lvFlavor','aria-label':'Pattern style',title:'Lively picks busier, more syncopated parts. Classic keeps them simple.',onchange:e=>{LV.flavor=e.target.value;saveLive();liveBuild();liveRender();toast(lvOn()?'New patterns arrive with the next scene':'Set rebuilt with '+e.target.value+' patterns');}},el('option',{value:'lively'},'Lively'),el('option',{value:'mixed'},'Mixed'),el('option',{value:'classic'},'Classic'))),sel('Key',el('span',{class:'lvsw'},keySel,modeSel)),el('span',{class:'lvKeyRec',id:'lvKeyRec','aria-label':'Suggested keys for this style'}),
     el('span',{class:'lvf'},'BPM',el('button',{class:'btn sm',onclick:()=>liveBpm(-1),title:'Slower'},'−'),bpm,el('button',{class:'btn sm',onclick:()=>liveBpm(1),title:'Faster'},'+'),el('button',{class:'btn sm',onclick:liveTap,title:'Tap the tempo'},'Tap')),
@@ -6973,6 +7204,7 @@ function liveInit(){
     el('button',{class:'btn',id:'lvNew',onclick:()=>{liveNewSet();if(lvOn())stopPlay();liveRender();toast('New set built from '+lvStyle().name);},title:'Build a fresh set of scenes and patterns in this style'},'🎲 New patterns'),
     el('button',{class:'btn',id:'lvMidi',onclick:async()=>{await suAutoConnect();liveRender();},title:'Connect to the MC-707 over USB MIDI'},'Connect MC-707'),
     el('span',{class:'hint',id:'lvMidiSt'},''),
+    el('button',{class:'btn',id:'lvGrab',onclick:ev=>grabOpen(ev.currentTarget),title:'Sample grabber: record a few bars of one track to a WAV'},'◉ Grab sample'),
     el('button',{class:'btn',id:'lvCapture',onclick:liveCapture,title:'Turn what you just played into an arrangement in Song Mode'},'⏺ Capture to Song'),
     el('button',{class:'btn',id:'lvFull',onclick:toggleFull,title:'Fill the whole screen (F11)'},'⛶ Fullscreen'),
     el('button',{class:'btn',onclick:()=>clipMapOpen(),title:'Tell the app what sound each MC-707 clip holds, so tracks can switch sounds'},'▦ Clips'),
@@ -7044,6 +7276,7 @@ function liveSync(){
   b.textContent=on?'■ Stop':'▶ Start';b.classList.toggle('stopb',on);
   {const pb=$('#lvPumpB'),pn=$('#lvPanB');if(pb)pb.classList.toggle('on',(LV.autos||[]).some(a=>a.id==='qpump'));if(pn)pn.classList.toggle('on',(LV.autos||[]).some(a=>a.id==='qpan'));}
   const a=$('#lvAuto');if(a){a.classList.toggle('on',LV.auto);a.textContent=LV.auto?'Auto-pilot ON':'Auto-pilot';}
+  const lk=$('#lvLock');if(lk){lk.classList.toggle('on',!!LV.lock);lk.textContent=LV.lock?'🔒 Locked':'🔓 Lock loop';const ls=$('#lvLockSave');if(ls)ls.hidden=!LV.lock;}
   const pv=$('#lvPrev');if(pv)pv.checked=!!S.preview;
   [.5,1,2].forEach(r=>{const x=$('#lvRate'+String(r).replace('.','_'));if(x)x.classList.toggle('on',LV.rate===r);});
   if(!on)liveStatus(0);
@@ -7116,7 +7349,7 @@ function liveRenderSettings(){
   const grid=el('div',{class:'lvActGrid'});
   const opts=[];
   for(let i=0;i<8;i++)opts.push(['s'+i,'Scene '+(i+1)+(LV.scenes[i]?': '+LV.scenes[i].name:'')]);
-  ['sw:drums','sw:perc','sw:bass','sw:chords','sw:pad','sw:lead','fill','bd','rise:up','rise:down','stut:4','stut:8','stut:16','en:up','en:down','auto','mu:drums','mu:bass','mu:chords','mu:lead','next','prev','stop'].forEach(a=>opts.push([a,LV_LABEL[a]]));
+  ['sw:drums','sw:perc','sw:bass','sw:chords','sw:pad','sw:lead','fill','bd','rise:up','rise:down','stut:4','stut:8','stut:16','en:up','en:down','auto','lock','mu:drums','mu:bass','mu:chords','mu:lead','next','prev','stop'].forEach(a=>opts.push([a,LV_LABEL[a]]));
   NOTEN.forEach((n,i)=>opts.push(['key:'+i,'Key '+n]));
   S.tracks.forEach((t,i)=>opts.push(['mt:'+i,'Mute '+t.name]));
   for(let i=0;i<16;i++)opts.push(['sc:'+i,'Scatter '+(i+1)+' (hold)']);
@@ -7126,11 +7359,7 @@ function liveRenderSettings(){
     grid.append(el('label',{class:'lvf'},'Pad '+(i+1)+((LV.padLayout==='kbd')===(i<8)?' (bottom row)':' (top row)')+' · '+(LV.padNotes[i]==null?(LV.padLayout==='kbd'&&i>=8&&LV_TOPFN[i-8]?LV_TOPFN[i-8]+', screen only':'no note'):noteLbl(LV.padNotes[i])),s));
   }
   b.append(grid);
-  b.append(el('h4',{},'Raven mode: key and mute keys (MC-707 and controller keyboard)'),el('div',{class:'lvrow'},
-    el('label',{class:'lvf'},el('input',{type:'checkbox',checked:LV.perfOn,onchange:e=>{LV.perfOn=e.target.checked;saveLive();liveRenderPerf();}}),'Enabled'),
-    el('label',{class:'lvf'},'Channel',chSel(LV.keyCh,v=>{LV.keyCh=v;saveLive();})),
-    el('label',{class:'lvf'},'Key octave starts at note',noteIn(LV.keyBase,v=>{LV.keyBase=v;saveLive();liveRenderPerf();liveRenderSettings();})),
-    el('label',{class:'lvf'},'Mute octave starts at note',noteIn(LV.muteBase,v=>{LV.muteBase=v;saveLive();liveRenderPerf();liveRenderSettings();}))),...ravenOptions());
+  b.append(ravenSection(chSel,noteIn));
   b.append(el('h4',{},'Knobs and scatter'),el('div',{class:'lvrow'},
     ...['FILTER','MOD','FX','SOUND'].map((n,i)=>el('label',{class:'lvf'},n+' rest',el('input',{type:'number',min:0,max:127,value:LV.rest[i],style:'width:60px',onchange:e=>{LV.rest[i]=clamp(Math.round(+e.target.value)||0,0,127);saveLive();}}))),
     el('label',{class:'lvf'},'Reverb rest',el('input',{type:'number',min:0,max:127,value:LV.revRest|0,style:'width:60px',onchange:e=>{LV.revRest=clamp(Math.round(+e.target.value)||0,0,127);saveLive();}})),
@@ -7212,6 +7441,7 @@ function liveStatus(tickf){
     else if(a==='brk'){cur=!!(on&&LV.flash&&LV.flash.start<=tickf&&LV.flash.end>tickf);q=!cur&&LV.cues.some(c=>c.type==='brk');}
     else if(a==='stop')q=LV.cues.some(c=>c.type==='stop');
     else if(a==='auto')cur=LV.auto;
+    else if(a==='lock')cur=!!LV.lock;
     else if(a.startsWith('rise:')||a==='bd')cur=!!LV.rise;
     b.classList.toggle('cur',!!cur);b.classList.toggle('queued',!!q);
   }
