@@ -450,20 +450,29 @@ body[data-mode=live] #live{display:flex}
 .cmStrip .cmCount{font-size:11px;color:#8d909c}
 .cmStrip .cmSel{width:70%;height:6px;border-radius:3px;background:#2f3037;margin-top:2px}
 .cmStrip.on{border-color:var(--c);background:#1d1e22}.cmStrip.on .cmSel{background:var(--c);box-shadow:0 0 10px var(--c)}
-.cmMid{display:flex;align-items:center;gap:14px;margin:12px 0;flex-wrap:wrap}
-.cmLcd{flex:1 1 420px;background:#020203;border:3px solid #000;border-radius:6px;padding:6px 8px 5px;font-family:ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;color:#f2f4f8;font-size:11px;line-height:1;box-shadow:inset 0 0 14px #000,0 0 0 1px #3a3b42;user-select:none;letter-spacing:.5px}
-.lcdTop,.lcdBot{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 4px}
-.lcdTop{border-bottom:1px solid #f2f4f855}.lcdBot{border-top:1px solid #f2f4f855;padding:4px 2px 1px}
-.lcdTempo{display:flex;align-items:center;gap:4px}.lcdClk{width:8px;height:8px;border:1.5px solid #f2f4f8;border-radius:50%;display:inline-block}
-.lcdRow,.lcdGrid{display:grid;grid-template-columns:7px repeat(var(--cols),minmax(0,1fr));gap:3px}
-.lcdHead{padding:4px 0 3px}.lcdTh{text-align:center;cursor:pointer;padding:1px 0}.lcdTh.on{background:#f2f4f8;color:#020203}
-.lcdGrid{gap:3px}.lcdScroll{position:relative;border:1px solid #f2f4f866;border-radius:1px}.lcdScroll i{position:absolute;left:0;right:0;height:50%;background:#f2f4f8}
-.lcdCol{display:grid;grid-template-rows:repeat(8,13px);gap:2px}
-.lcdCell{border:1px solid #f2f4f833;font-size:8.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;white-space:nowrap}
-.lcdCell.used{border-color:#f2f4f8}.lcdCell.cur{background:#f2f4f8;color:#020203;font-weight:700}.lcdCell.play:not(.cur)::after{content:"▸";margin-left:1px}
-.lcdCol.on .lcdCell:not(.used){border-color:#f2f4f866}
-.lcdMeters{padding:4px 0 2px}.lcdMeter{height:4px;border:1px solid #f2f4f866;position:relative}.lcdMeter i{position:absolute;left:0;top:0;bottom:0;background:#f2f4f8}
-.lcdCmd{border:1px solid #f2f4f8;padding:1px 4px}
+.cmMid{display:flex;align-items:center;gap:10px 14px;margin:12px 0;flex-wrap:wrap}.cmMid .cmCtl{margin-left:auto}
+.cmLcd{flex:1 1 100%;--lc:#d7f2ff;--ld:#7fa2ff;--lb:#1631c9;display:grid;grid-template-columns:150px 24px repeat(var(--cols),minmax(0,1fr)) 128px;grid-template-rows:30px repeat(8,26px) 16px;column-gap:4px;row-gap:3px;align-items:stretch;
+  background:radial-gradient(120% 140% at 50% 40%,#2440e0 0%,#1630c4 55%,#0e22a0 100%);border:5px solid #050608;border-radius:5px;padding:10px 12px;font-family:ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;color:var(--lc);font-size:13px;line-height:1;box-shadow:inset 0 0 20px #0009,0 0 0 1px #3a3b42,0 0 28px #2440e055;user-select:none;letter-spacing:.5px;text-shadow:0 0 3px #bfe6ff88}
+.lcdProj{font-weight:700;font-size:16px;align-self:center;white-space:nowrap;overflow:hidden}
+.lcdTab{display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ld);background:#ffffff14;cursor:pointer;font-size:13px;font-weight:700}.lcdTab.on{background:var(--lc);color:var(--lb);text-shadow:none}
+.lcdTempo{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-weight:700;font-size:16px}.lcdClk{width:12px;height:12px;border:2px solid var(--lc);border-radius:50%;display:inline-block}
+.lcdLeft{display:flex;flex-direction:column;gap:5px;padding-right:6px}
+.lcdPrev{border:1.5px solid var(--lc);display:grid;grid-template-rows:1fr auto;flex:1}
+.lcdPrevA{padding:10px 26px 6px;color:var(--lc);min-height:70px}.lcdPrevB{border-top:1.5px solid var(--lc);text-align:center;font-size:11px;line-height:1.35;padding:5px 2px;color:var(--lc)}
+.lcdClipNo{font-size:14px}.lcdClipName{background:var(--lc);color:var(--lb);text-shadow:none;font-weight:700;font-size:14px;padding:4px 5px;white-space:nowrap;overflow:hidden}
+.lcdNum{display:flex;align-items:center;justify-content:center;font-size:12px}.lcdNum.on{background:var(--lc);color:var(--lb);text-shadow:none;font-weight:700}
+.lcdCell{display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;cursor:pointer;overflow:hidden;white-space:nowrap;border-bottom:1px dotted var(--ld);border-left:1px dotted #7fa2ff66;border-right:1px dotted #7fa2ff66}
+.lcdCell.col{border-left:2px solid var(--lc);border-right:2px solid var(--lc)}
+.lcdCell.row{border-top:2px solid var(--lc);border-bottom:2px solid var(--lc)}
+.lcdCell.used{background:#bfe6ffd0;color:var(--lb);text-shadow:none;box-shadow:inset 0 0 0 3px #1630c4}
+.lcdCell.cur{background:#fff;color:var(--lb);outline:2px solid #fff;outline-offset:-1px;box-shadow:none}
+.lcdCell.play:not(.cur)::before{content:"▶";font-size:8px;margin-right:3px}
+.lcdScroll{position:relative;border:1.5px solid var(--ld);margin:0 6px}.lcdScroll i{position:absolute;left:0;right:0;height:50%;background:var(--lc)}
+.lcdMeter{border:1.5px solid var(--lc);margin:3px 10px}.lcdMeter.on{background:var(--lc)}
+.lcdRight{display:flex;flex-direction:column;gap:4px;border-left:2px solid var(--lc);padding-left:8px}
+.lcdMenuH{background:var(--lc);color:var(--lb);text-shadow:none;font-weight:700;font-size:13px;padding:4px 5px;margin-bottom:3px}
+.lcdCmdI{font-size:15px;padding:3px 5px;cursor:pointer;letter-spacing:1px}.lcdCmdI.on{background:var(--lc);color:var(--lb);text-shadow:none}.lcdCmdI:hover{outline:1px dotted var(--lc)}
+@media(max-width:900px){.cmLcd{grid-template-columns:110px 20px repeat(var(--cols),minmax(0,1fr)) 96px;font-size:11px}.lcdCell{font-size:8.5px}.lcdCmdI{font-size:12px}}
 .cmScreen{flex:1 1 260px;background:#050506;border:2px solid #000;border-radius:6px;padding:8px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#e9ecf5;display:flex;flex-direction:column;gap:2px;box-shadow:inset 0 0 12px #000}
 .cmScreen b{font-size:13px;letter-spacing:1px}.cmScreen span{font-size:18px;letter-spacing:2px;color:#fff}
 .cmCtl{display:flex;align-items:center;gap:8px;color:#d9dbe3;font-size:13px}.cmCtl b{font-size:20px;min-width:24px;text-align:center}
@@ -1737,26 +1746,48 @@ function clipMapClose(){const o=$('#cmOv');if(o)o.remove();scheduleSave();if(typ
    (number + T/D type), a clip grid showing 8 clips at a time with a scroll bar, level meters, the current
    track-clip number and name, and a command area. White on black. */
 const CM_ABBR={drums:'KIT',bass:'BAS',chords:'CHD',pad:'PAD',lead:'LD',pluck:'ARP',fx:'FX'};
+/* tiny pixel icon per clip type for the preview box */
+const CM_ICON={drums:'M2 9h2v3H2zM6 6h2v6H6zM10 8h2v4h-2zM14 4h2v8h-2z',bass:'M1 11h4v1H1zM5 8h3v1H5zM8 11h4v1H8zM12 6h3v1h-3z',chords:'M2 3h3v1H2zM2 6h3v1H2zM2 9h3v1H2zM8 4h3v1H8zM8 7h3v1H8zM8 10h3v1H8zM13 3h2v1h-2zM13 6h2v1h-2z',pad:'M1 5h14v1H1zM1 8h14v1H1z',lead:'M1 9h2v1H1zM3 7h2v1H3zM5 5h3v1H5zM8 7h2v1H8zM10 3h3v1h-3zM13 6h2v1h-2z',pluck:'M1 10h1v1H1zM3 8h1v1H3zM5 6h1v1H5zM7 4h1v1H7zM9 6h1v1H9zM11 8h1v1h-1zM13 6h1v1h-1z',fx:'M7 1h2v4H7zM7 11h2v4H7zM1 7h4v2H1zM11 7h4v2h-4z'};
+/* The MC-707 HOME screen as it looks on the unit: blue backlit display. Project name and tempo on top, a preview panel
+   with CLIP t-cc and the clip name on the left, the clip grid with track tabs (1-D, 5-T) and row numbers 1-8 in the
+   middle, and the CLIP EDIT menu on the right. */
 function cmScreen(map,kk){
-  const tracks=DEVS[DEV].tracks,page=kk>=8?1:0,m=map[CMAP.t],tr=S.tracks[CMAP.t];
-  const scr=el('div',{class:'cmLcd',style:'--cols:'+tracks.length});
-  scr.append(el('div',{class:'lcdTop'},el('span',{},String((typeof PROJ!=='undefined'&&PROJ.name)||'Untitled').toUpperCase().slice(0,16)),el('span',{class:'lcdTempo'},el('i',{class:'lcdClk'}),String(Math.round(S.bpm*10)/10))));
-  const head=el('div',{class:'lcdRow lcdHead'},el('span',{class:'lcdSb'}));
-  tracks.forEach(t=>head.append(el('span',{class:'lcdTh'+(t===CMAP.t?' on':''),onclick:()=>{CMAP.t=t;CMAP.k=0;clipMapRender();}},devNum(t)+(S.tracks[t].type==='drum'?'D':'T'))));
-  scr.append(head);
-  const grid=el('div',{class:'lcdGrid'});
-  const sb=el('div',{class:'lcdScroll'},el('i',{style:'top:'+(page*50)+'%'}));
-  grid.append(sb);
-  tracks.forEach(t=>{const mm=map[t],col=el('div',{class:'lcdCol'+(t===CMAP.t?' on':'')});
-    for(let r=0;r<8;r++){const k=page*8+r,used=k<mm.n,cur=t===CMAP.t&&k===kk,pl=PCLAST[t]===k;
-      col.append(el('span',{class:'lcdCell'+(used?' used':'')+(cur?' cur':'')+(pl?' play':''),title:'Track '+devNum(t)+', clip '+(k+1)+(used?': '+ctInfo(mm.types[k])[1]:''),onclick:()=>{CMAP.t=t;if(k>=mm.n)mm.n=k+1;CMAP.k=k;clipMapRender();}},used?(mm.names[k]||CM_ABBR[mm.types[k]]||'').slice(0,4).toUpperCase():''));}
-    grid.append(col);});
-  scr.append(grid);
-  const meters=el('div',{class:'lcdRow lcdMeters'},el('span',{class:'lcdSb'}));
-  tracks.forEach(t=>{const p=LV&&LV.pulse&&LV.pulse[t]?LV.pulse[t].v||0:0;meters.append(el('span',{class:'lcdMeter'},el('i',{style:'width:'+Math.round(25+75*Math.min(1,p))+'%'})));});
-  scr.append(meters);
-  scr.append(el('div',{class:'lcdBot'},el('span',{},devNum(CMAP.t)+'-'+String(kk+1).padStart(2,'0')+' '+String(m.names[kk]||ctInfo(m.types[kk])[1]).toUpperCase().slice(0,14)),el('span',{class:'lcdCmd'},'[SWITCH]')));
-  return scr;
+  const tracks=DEVS[DEV].tracks,N=tracks.length,page=kk>=8?1:0,m=map[CMAP.t],tr=S.tracks[CMAP.t],ty=m.types[kk];
+  /* One CSS grid for the whole screen, so every track title sits exactly over its column:
+     [left panel] [row numbers] [track 1 … track N] [CLIP EDIT menu]; row 1 is the top line, rows 2-9 are clips, row 10 the meters. */
+  const g=el('div',{class:'cmLcd',style:'--cols:'+N});
+  const at=(node,col,row,cs,rs)=>{node.style.gridColumn=col+(cs?' / span '+cs:'');node.style.gridRow=row+(rs?' / span '+rs:'');g.append(node);return node;};
+  const C0=3,CE=3+N; /* first track column, menu column */
+  at(el('span',{class:'lcdProj'},String((typeof PROJ!=='undefined'&&PROJ.name)||'Untitled').toUpperCase().slice(0,12)),1,1,2);
+  tracks.forEach((t,i)=>at(el('span',{class:'lcdTab'+(t===CMAP.t?' on':''),title:'Track '+devNum(t)+': '+S.tracks[t].name,onclick:()=>{CMAP.t=t;CMAP.k=0;clipMapRender();}},devNum(t)+'-'+(S.tracks[t].type==='drum'?'D':'T')),C0+i,1));
+  at(el('span',{class:'lcdTempo'},el('i',{class:'lcdClk'}),(Math.round(S.bpm*10)/10).toFixed(1)),CE,1);
+  /* left panel: preview, CLIP t-cc, name */
+  const ic=CM_ICON[ty]||CM_ICON.fx;
+  const prevA=el('div',{class:'lcdPrevA'});prevA.innerHTML='<svg viewBox="0 0 16 16" width="100%" height="100%" shape-rendering="crispEdges"><path d="'+ic+'" fill="currentColor"/></svg>';
+  at(el('div',{class:'lcdLeft'},el('div',{class:'lcdPrev'},prevA,el('div',{class:'lcdPrevB'},S.tracks[CMAP.t].name.toUpperCase().slice(0,10),el('br'),m.n+(m.n===1?' CLIP':' CLIPS'))),
+    el('div',{class:'lcdClipNo'},'CLIP '+devNum(CMAP.t)+'-'+String(kk+1).padStart(2,'0')),
+    el('div',{class:'lcdClipName'},String(m.names[kk]||ctInfo(ty)[1]).toUpperCase().slice(0,12))),1,2,1,9);
+  /* row numbers and clip cells */
+  for(let r=0;r<8;r++){const k=page*8+r;
+    at(el('span',{class:'lcdNum'+(k===kk?' on':'')},String(k+1)),2,2+r);
+    tracks.forEach((t,i)=>{const mm=map[t],used=k<mm.n,cur=t===CMAP.t&&k===kk,pl=PCLAST[t]===k;
+      at(el('span',{class:'lcdCell'+(used?' used':'')+(cur?' cur':'')+(pl?' play':'')+(t===CMAP.t?' col':'')+(k===kk?' row':''),
+        title:'Track '+devNum(t)+', clip '+(k+1)+(used?': '+ctInfo(mm.types[k])[1]+(mm.names[k]?' ('+mm.names[k]+')':''):' (not used)'),
+        onclick:()=>{CMAP.t=t;if(k>=mm.n)mm.n=k+1;CMAP.k=k;clipMapRender();}},
+        used?String(mm.names[k]||ctInfo(mm.types[k])[1].split(' ')[0]).slice(0,9).toUpperCase():''),C0+i,2+r);});
+  }
+  /* scroll bar for clips 9-16, and a meter per track */
+  at(el('span',{class:'lcdScroll'},el('i',{style:'top:'+(page*50)+'%'})),2,10);
+  tracks.forEach((t,i)=>at(el('span',{class:'lcdMeter'+(PCLAST[t]!=null?' on':'')}),C0+i,10));
+  /* right: CLIP EDIT menu */
+  const cmd=(lab,fn,on)=>el('span',{class:'lcdCmdI'+(on?' on':''),onclick:fn},lab);
+  at(el('div',{class:'lcdRight'},el('div',{class:'lcdMenuH'},'CLIP EDIT'),
+    cmd('SWITCH',()=>{if(!MIDI.out){toast('Connect the MC-707 first');return;}sendMidi([0xC0|(tr.ch-1),kk],AU.ctx?AU.ctx.currentTime:0);PCLAST[CMAP.t]=kk;toast('Sent: track '+devNum(CMAP.t)+' → clip '+(kk+1));clipMapRender();},true),
+    cmd('TYPE',()=>{const opts=CLIP_TYPES.filter(x=>tr.type==='drum'?x[0]==='drums'||x[0]==='fx':x[0]!=='drums').map(x=>x[0]);m.types[kk]=opts[(opts.indexOf(m.types[kk])+1)%opts.length];clipMapRender();}),
+    cmd('RENAME',()=>{const i=$('.cmEdit input[type=text]');if(i){i.focus();i.select();}}),
+    cmd('ADD',()=>{if(m.n<16){m.n++;m.types[m.n-1]=m.types[m.n-1]||m.types[m.n-2];CMAP.k=m.n-1;clipMapRender();}}),
+    cmd('DELETE',()=>{if(m.n>1){m.n--;CMAP.k=Math.min(CMAP.k,m.n-1);clipMapRender();}})),CE,2,1,9);
+  return g;
 }
 function clipMapRender(){
   const ov=$('#cmOv');if(!ov)return;ov.textContent='';const map=cmFix(),m=map[CMAP.t],tr=S.tracks[CMAP.t],dn=DEVS[DEV].name;
