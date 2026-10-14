@@ -1,0 +1,42 @@
+{
+ "count": 8324,
+ "pools": {
+  "-": 450,
+  "kit": 540,
+  "hats": 74,
+  "perc": 48,
+  "fill": 151,
+  "chords": 1552,
+  "bass": 1548,
+  "pluck": 892,
+  "lead": 367,
+  "pad": 467,
+  "intro": 56,
+  "build": 150,
+  "impact": 45,
+  "fkit": 120,
+  "fbass": 240,
+  "fchords": 240,
+  "flead": 240,
+  "full": 1144
+ },
+ "chunks": [
+  "7a0f5004",
+  "a57eee71",
+  "093dfbeb",
+  "83ac534f",
+  "3324daa3",
+  "948b75ed",
+  "0d7ad434",
+  "c04bf914",
+  "47759d94",
+  "b88b307e",
+  "dd0eacc7",
+  "b5bf319b",
+  "4312b9f4",
+  "b2fe2cbf",
+  "9d235a2c",
+  "3b367a06",
+  "1a30d6f7"
+ ]
+}

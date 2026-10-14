@@ -7800,6 +7800,9 @@ function exitApp(){
   addEventListener('pagehide',()=>{try{stopAll();panic(true);}catch(e){}});
   addEventListener('beforeunload',()=>{try{stopAll();panic(true);}catch(e){}});
   if(HOST&&HOST.onClosing)HOST.onClosing(()=>{try{stopAll();panic(true);}catch(e){}setTimeout(()=>HOST.closeNow(),450);});
+  /* Test hook: the automated tests in tests/ reach the app's internals through this. The app itself never uses it. */
+  window.__app={get S(){return S;},get LV(){return LV;},get TR(){return TR;},get FAC(){return FAC;},get MIDI(){return MIDI;},get AU(){return AU;},
+    processTick,advance,TICKER,liveTick,liveBuild,liveStart,liveScene,stopAll,startSong,ensureAudio,connectMidi,fixState,setClipMark,glueRun,glueClips,renderAll};
   initControls();initArr();initEditor();initWizard();initExtra();initSetup();initMore();initAudio();initPro();initStageB();initStructure();liveInit();
   if(innerWidth<=860)$('#main').classList.add('nolib');
   $('#bLibT').classList.toggle('on',!$('#main').classList.contains('nolib'));

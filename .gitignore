@@ -22,3 +22,4 @@ Projects/
 Thumbs.db
 desktop.ini
 .DS_Store
+.ci-tools/

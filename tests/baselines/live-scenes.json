@@ -1,0 +1,30 @@
+{
+ "liquid": {
+  "scenes": 7,
+  "hash": "306a93b2"
+ },
+ "neuro": {
+  "scenes": 7,
+  "hash": "11f44b42"
+ },
+ "trap": {
+  "scenes": 7,
+  "hash": "74a0e09d"
+ },
+ "deephouse": {
+  "scenes": 7,
+  "hash": "e97a89de"
+ },
+ "acidtechno": {
+  "scenes": 7,
+  "hash": "736ce701"
+ },
+ "reggae": {
+  "scenes": 7,
+  "hash": "8d043149"
+ },
+ "pop": {
+  "scenes": 7,
+  "hash": "301a68d7"
+ }
+}
