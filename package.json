@@ -1,0 +1,43 @@
+{
+  "name": "mc707-toolbox",
+  "productName": "MC-707 Toolbox",
+  "version": "0.9.0",
+  "description": "Unofficial song arranger and live performance tool for the Roland MC-707",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "local.mc707.toolbox",
+    "productName": "MC-707 Toolbox",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "package.json",
+      "node_modules/lamejs/lame.min.js"
+    ],
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "MC-707-Toolbox.exe"
+    },
+    "publish": null,
+    "npmRebuild": false,
+    "compression": "normal"
+  },
+  "private": true,
+  "author": "Aaron",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "dependencies": {
+    "lamejs": "^1.2.1"
+  },
+  "homepage": "https://github.com/Mendo-707/mc707-toolbox"
+}

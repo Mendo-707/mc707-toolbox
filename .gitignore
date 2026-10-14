@@ -1,0 +1,24 @@
+# Build output and dependencies (never commit these)
+node_modules/
+dist/
+build-log.txt
+*.log
+
+# Secrets and local settings, in case any are ever added
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Your own music and projects stay on your computer
+*.wav
+*.mp3
+Recordings/
+Projects/
+
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
