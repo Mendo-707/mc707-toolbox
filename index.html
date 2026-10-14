@@ -426,9 +426,7 @@ body[data-mode=live] #live{display:flex}
 .lvbrk{background:linear-gradient(135deg,#ffd23f,#ff8a3d)!important;color:#1a1200!important;border:0!important;font-weight:800}
 .lvPlay{font-size:11px;opacity:.9}
 .devoff{display:none!important}
-body[data-dev="101"] .lvPads{grid-template-columns:repeat(4,minmax(0,1fr));max-width:620px}
 body[data-dev="101"] .lvmap{grid-template-columns:repeat(4,1fr)}
-body[data-dev="101"] .ptGrid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:420px}
 .ptOv{position:fixed;inset:0;z-index:9000;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}
 .ptBox{background:#171925;color:#eef0ff;border:1px solid #ffffff22;border-radius:14px;padding:18px 20px;max-width:880px;width:100%;max-height:92vh;overflow:auto}
 .ptBox h3{margin:0 0 6px;color:#fff}.ptBox p{color:#d6d9ee}.ptBox .hint{color:#a9aecb}.ptBox .btn{background:#2a2d40;color:#eef0ff;border:1px solid #ffffff22}.ptBox .btn.on{background:#ffd23f;color:#1a1200}.ptWarn{color:#ff8a80}
@@ -6237,7 +6235,7 @@ function padTestRender(){
   for(let i=0;i<16;i++){const x=PT.res[i];grid.append(el('div',{class:'ptPad'+(i===PT.i&&!done?' now':'')+(x?' got':'')},el('b',{},String(i+1)),el('span',{},x?noteLbl(x.n)+' ('+x.n+')':(i===PT.i&&!done?'press':'')),x?el('small',{},'ch '+x.ch):''));}
   const box=el('div',{class:'ptBox'},
     el('h3',{},'Pad test'),
-    el('p',{},done?'Done. Copy the result and paste it to Claude, or use it now.':DEV==='101'?'Select the drum track on the MC-101, then press pad '+(PT.i+1)+' (row '+(Math.floor(PT.i/4)+1)+' from the top, '+(PT.i%4+1)+(['st','nd','rd'][PT.i%4]||'th')+' from the left).':'Select a drum track on the MC-707, then press pad '+(PT.i+1)+' ('+(PT.i<8?'top row, ':'bottom row, ')+(PT.i%8+1)+(['st','nd','rd'][PT.i%8]||'th')+' from the left).'),
+    el('p',{},done?'Done. Copy the result and paste it to Claude, or use it now.':'Select a drum track on the '+DEVS[DEV].name+', then press pad '+(PT.i+1)+' ('+(PT.i<8?'top row, ':'bottom row, ')+(PT.i%8+1)+(['st','nd','rd'][PT.i%8]||'th')+' from the left).'),
     MIDI.inp?'':el('p',{class:'ptWarn'},'No MC-707 input is connected. Press Connect MC-707 first.'),
     el('p',{class:'hint'},'Nothing arriving? On the MC-707 hold SHIFT and press that track\'s TRACK SEL button, open the MIDI page, and turn TxMIDI Note ON with output set to USB.'),
     grid,
@@ -6473,9 +6471,8 @@ function lvActKind(a){
 }
 function liveRenderPads(){
   const g=$('#lvPads');if(!g)return;g.textContent='';
-  const R=DEV==='101'?4:2,C=16/R;
-  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
-    const i=DEV==='101'?r*4+c:lvPadIndex(r,c),a=LV.acts[i],kk=LV_KEYROWS[Math.floor(i/8)][i%8].toUpperCase();
+  for(let r=0;r<2;r++)for(let c=0;c<8;c++){
+    const i=lvPadIndex(r,c),a=LV.acts[i],kk=LV_KEYROWS[Math.floor(i/8)][i%8].toUpperCase();
     const nn=LV.padNotes[i],learnMe=LV.learn===i||(LV.learn==='p1'&&i===0),fn=LV.padLayout==='kbd'&&i>=8?LV_TOPFN[i-8]:null;
     const where=nn==null?(fn?'the MC-707 '+fn+' button does not send a note, so use the screen or key':'no MIDI note'):'MIDI note '+nn+' ('+noteLbl(nn)+')';
     const b=el('button',{class:'lvPad'+(nn==null?' nonote':'')+(learnMe?' learnme':''),id:'lvPad'+i,style:'--c:'+actColor(a),title:'Pad '+(i+1)+' · '+where+' · key '+kk},
@@ -6484,7 +6481,7 @@ function liveRenderPads(){
     b.addEventListener('pointerup',()=>livePadUp(i));b.addEventListener('pointercancel',()=>livePadUp(i));
     g.append(b);
   }
-  $('#lvPadHint').textContent=(LV.learn==='p1'?'Press pad 1 (top left) on the MC-707 now. ':LV.padLayout==='kbd'?'Laid out like the MC-707 pads in keyboard mode. ':DEV==='101'?'4 rows of 4, like the MC-101. ':'Pads 1–8 on top, 9–16 below, like the MC-707. ')+'Click, press the key shown, or hit the pad on the '+DEVS[DEV].name+' ('+(LV.padCh?'channel '+LV.padCh:'any channel')+'). Cues wait for the launch point.';
+  $('#lvPadHint').textContent=(LV.learn==='p1'?'Press pad 1 (top left) on the MC-707 now. ':LV.padLayout==='kbd'?'Laid out like the MC-707 pads in keyboard mode. ':'Pads 1–8 on top, 9–16 below, like the '+DEVS[DEV].name+'. ')+'Click, press the key shown, or hit the pad on the '+DEVS[DEV].name+' ('+(LV.padCh?'channel '+LV.padCh:'any channel')+'). Cues wait for the launch point.';
 }
 function liveRenderPerf(){
   const k=$('#lvKeys'),m=$('#lvMutes');if(!k)return;k.textContent='';m.textContent='';
