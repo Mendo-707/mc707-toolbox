@@ -1,11 +1,11 @@
 # Builds MC-707-Toolbox.exe on GitHub's own Windows machines.
-# Runs when you push a version tag (for example v0.9.0), or by hand from the Actions tab.
-# A tag build also publishes a Release with the exe attached.
+# Runs when you publish a Release (Releases > Draft a new release), and attaches the exe to it.
+# You can also run it by hand from the Actions tab; the exe is then under the run's Artifacts.
 name: Build Windows app
 
 on:
-  push:
-    tags: ['v*']
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -26,9 +26,9 @@ jobs:
         with:
           name: MC-707-Toolbox
           path: dist/MC-707-Toolbox.exe
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Attach the exe to the release
+        if: github.event_name == 'release'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/MC-707-Toolbox.exe --title "MC-707 Toolbox ${GITHUB_REF_NAME}" --notes "Download MC-707-Toolbox.exe below. Windows will warn that the app is not signed; click More info, then Run anyway." --prerelease
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/MC-707-Toolbox.exe --clobber
