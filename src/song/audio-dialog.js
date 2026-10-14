@@ -4,11 +4,11 @@ import { HOST, S } from '../core/state.js';
 import { AU } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
 import { DL } from './export.js';
-import { testNote } from '../ui/setup-wizard.js';
 import {
   AUD,
   AUDREC,
   RT_KEYS,
+  audMode,
   audioFileName,
   audioJobs,
   audioRecord,
@@ -34,6 +34,7 @@ import {
   saveAud,
   sleep
 } from '../services/audio-capture.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---- saving ---- */
 export function anchorSave(name, blob) {
@@ -138,10 +139,6 @@ export function audRender() {
    MC-707 USB audio (Roland driver, USB Driver = VENDOR) sends 20 channels to the computer:
    1-2 MIX, 3-4 TRACK 1 … 17-18 TRACK 8, 19-20 EXT IN (Roland support article 360038852492). */
 const MC_PAIRS = [['Mix', 0], ...Array.from({ length: 8 }, (_, i) => ['Track ' + (i + 1), i + 1]), ['Ext In', 9]];
-export function audMode() {
-  if (AUD.mode) return AUD.mode;
-  return AUD.source === 'preview' ? 'preview' : AUD.stems === 'channels' ? 'mc707' : 'interface';
-}
 function mcDevice() {
   return AUDREC.devices.find(d => /MC-?707/i.test(d.label));
 }
@@ -251,7 +248,7 @@ async function audCheckRouting() {
   for (let i = 0; i < 8 && AUDREC.checking; i++) {
     if (!devOn(i)) continue;
     caps.forEach(c => (c.max = []));
-    testNote(i);
+    hooks.testNote(i);
     await sleep(750);
     const want = rtGet('t' + i),
       wc = AUDREC.caps[rtCap('t' + i)],

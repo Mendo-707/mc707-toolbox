@@ -1,13 +1,13 @@
 import { $, toast } from '../core/dom.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
-import { carve, ensureBars, songEnd } from '../core/song-model.js';
+import { carve, ensureBars, loopLen, q16, songEnd, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
-import { cmMarks } from '../clips/clip-map.js';
-import { syncControls } from './controls.js';
-import { applyShape, posBarNow, shapeSlice, showMenu } from './clip-ops.js';
+import { cmMarks } from '../services/clip-switch.js';
+import { showMenu } from '../ui/menu.js';
+import { applyShape, posBarNow, shapeSlice } from './clip-ops.js';
 import { splitAtBar } from './transpose.js';
-import { loopLen, q16, wrapOff } from './layout.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- song structure tools: copy, paste, repeat, insert, delete ranges ---------- */
 let RANGEB = null;
@@ -65,7 +65,7 @@ function structDone(msg) {
   S.clips = S.clips.filter(c => S.patterns[c.pat]);
   renderArr();
   renderEditor();
-  syncControls();
+  hooks.syncControls();
   scheduleSave();
   if (msg) toast(msg);
 }

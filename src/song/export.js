@@ -1,7 +1,8 @@
 import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
-import { closePops } from './controls.js';
-import { envInterp, velMul } from './automation.js';
+import { CRC_T } from '../core/crc.js';
+import { envInterp, velMul } from '../services/mc-controls.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- export ---------- */
 export let DL = null;
@@ -20,7 +21,7 @@ export async function saveFile(name, data) {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       toast('Saved ' + name);
-      closePops();
+      hooks.closePops();
     } catch (e) {
       toast('Could not save the file');
     }
@@ -29,7 +30,7 @@ export async function saveFile(name, data) {
   try {
     await DL.save({ filename: name, data });
     toast('Saved ' + name);
-    closePops();
+    hooks.closePops();
   } catch (err) {
     if (!err || err.code !== 'declined') toast('Could not save: ' + ((err && err.code) || 'error'));
   }
@@ -153,15 +154,6 @@ export function buildMidi(only) {
   const head = [...str('MThd'), ...u32(6), ...u16(1), ...u16(tracks.length), ...u16(PPQ)];
   return new Uint8Array([...head, ...tracks.flat()]);
 }
-export const CRC_T = (() => {
-  const t = [];
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
 const crc32 = u => {
   let c = 0xffffffff;
   for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8);

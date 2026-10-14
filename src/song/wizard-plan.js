@@ -1,17 +1,15 @@
 import { $, $$, clamp, toast } from '../core/dom.js';
 import { DEV } from '../core/device.js';
-import { S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';
+import { ED, S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { bw } from './arrangement.js';
+import { LEVELS, facById, shiftFor } from '../library/index.js';
 import { ensureBars, songEnd } from '../core/song-model.js';
-import { ED } from './editor.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { TICKER, TR, sched, startPat, stopAll, stopPlay } from '../services/transport.js';
-import { updTransport } from '../clips/clips-screen.js';
-import { renderAll } from './controls.js';
-import { LEVELS, facById, shiftFor } from '../library/index.js';
 import { STYLES, trackLabel } from '../library/styles.js';
 import { WIZ } from './wizard-ui.js';
 import { defaultWiz, wizPlan } from './wizard-styles.js';
+import { hooks } from '../core/hooks.js';
 
 /* What plays on a track at a bar of a wizard section: fills on Drums 1, builds and impacts on Drums 3. */
 export function wizCellAt(sec, t, rel) {
@@ -145,7 +143,7 @@ export function wizApply() {
     }
   }
   closeWiz();
-  renderAll();
+  hooks.renderAll();
   const a = $('#arr');
   a.scrollLeft = Math.max(0, base * bw);
   toast('Song created. Press Space to play.');
@@ -179,7 +177,7 @@ function startWiz(plan, key, secIdx, bpm, swing) {
   });
   TICKER.start();
   sched();
-  updTransport();
+  hooks.updTransport();
 }
 export function wizSongPreview() {
   if (TR.playing && TR.mode === 'wiz' && !TR.wz.loop) {

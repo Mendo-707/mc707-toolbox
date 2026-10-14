@@ -2,19 +2,19 @@ import { $, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { bw } from '../song/arrangement.js';
+import { LEVELS, facById, shiftFor } from '../library/index.js';
 import { ensureBars, songEnd } from '../core/song-model.js';
 import { TR, stopAll } from '../services/transport.js';
-import { cmMarks } from '../clips/clip-map.js';
-import { renderAll } from '../song/controls.js';
-import { LEVELS, facById, shiftFor } from '../library/index.js';
+import { cmMarks } from '../services/clip-switch.js';
+import { renderAll } from './controls.js';
 import { trackLabel } from '../library/styles.js';
 import { instShift } from '../song/wizard-plan.js';
-import { LV, lvStyle } from './state.js';
-import { lvModeFam } from './pools.js';
-import { lvModeNote } from './engine.js';
-import { lvOn } from './cues.js';
-import { setMode } from '../ui/mode.js';
-import { askDlg } from '../ui/dialogs.js';
+import { LV, lvStyle } from '../live/state.js';
+import { lvModeFam } from '../library/pools.js';
+import { lvModeNote } from '../live/engine.js';
+import { lvOn } from '../live/cues.js';
+import { setMode } from './mode.js';
+import { askDlg } from './dialogs.js';
 
 /* ---- capture the set into Song Mode ---- */
 function lvCapPat(f, key, mode, st) {

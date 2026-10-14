@@ -1,27 +1,13 @@
 import { clamp, el, toast } from '../core/dom.js';
-import { S, pushUndo } from '../core/state.js';
+import { ED, S, curClip, pushUndo } from '../core/state.js';
 import { scheduleUI } from './arrangement.js';
-import { curClip, patOf, touch } from '../core/song-model.js';
-import { ED, drawEditor, renderEdHead } from './editor.js';
+import { patOf, touch } from '../core/song-model.js';
+import { drawEditor, renderEdHead } from './editor.js';
 import { AU } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
-import { TR, emitNote, startPat, stopPlay, tickDur } from '../services/transport.js';
-import { syncControls } from './controls.js';
+import { REC, TR, emitNote, startPat, stopPlay, tickDur } from '../services/transport.js';
+import { hooks } from '../core/hooks.js';
 
-export const REC = {
-  on: false,
-  mode: 'live',
-  quant: 1,
-  held: {},
-  cur: 0,
-  chordPos: 0,
-  lastT: 0,
-  metroWas: false,
-  warned: false,
-  pat: null,
-  ti: 0,
-  oct: 0
-};
 const KEYMAP_TONE = {
   a: 0,
   w: 1,
@@ -184,7 +170,7 @@ function recStart() {
   if (REC.mode === 'live') {
     REC.metroWas = S.metro;
     S.metro = true;
-    syncControls();
+    hooks.syncControls();
     startPat(p, c.t, ED.aud);
   }
   renderEdHead();
@@ -195,7 +181,7 @@ export function recStop() {
   REC.on = false;
   if (REC.mode === 'live') {
     S.metro = REC.metroWas;
-    syncControls();
+    hooks.syncControls();
     if (TR.playing && TR.mode === 'pat') stopPlay();
   }
   REC.held = {};

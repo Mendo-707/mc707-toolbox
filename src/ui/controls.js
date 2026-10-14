@@ -1,29 +1,43 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES } from '../core/theory.js';
-import { S, UI, makeDemo, newState, pushUndo, redo, replaceState, scheduleSave, undo, updUndo } from '../core/state.js';
-import { bw, deleteClip, dupClip, hideGhost, renderArr, setBarWidth } from './arrangement.js';
-import { MAXBARS, curClip, curPat, songEnd, touch } from '../core/song-model.js';
-import { ED, drawEditor, layoutEditor, renderEditor } from './editor.js';
+import {
+  ED,
+  S,
+  UI,
+  curClip,
+  newState,
+  pushUndo,
+  redo,
+  replaceState,
+  scheduleSave,
+  undo,
+  updUndo
+} from '../core/state.js';
+import { bw, deleteClip, dupClip, hideGhost, renderArr, setBarWidth } from '../song/arrangement.js';
+import { makeDemo } from '../library/index.js';
+import { MAXBARS, curPat, songEnd, touch } from '../core/song-model.js';
+import { drawEditor, layoutEditor, renderEditor } from '../song/editor.js';
 import { ensureAudio } from '../services/synth.js';
 import { MIDI, connectMidi, panic } from '../services/midi.js';
 import { TR, audition, stopAll, togglePlay } from '../services/transport.js';
-import { FULLHOST, STAGE, canFull, toggleFull } from '../ui/fullscreen.js';
-import { updPlayhead, updTransport } from '../clips/clips-screen.js';
-import { libReset, renderLibrary } from './library-panel.js';
-import { buildMidi, makeZip, saveFile } from './export.js';
-import { CM, closeMenu, glueClips, glueRun, loopClip, posBarNow, setLoop, updLoopUI } from './clip-ops.js';
-import { importMidiFiles, openNewPat } from './import.js';
-import { closeSetup } from '../ui/setup-wizard.js';
-import { recKey } from './recording-midi.js';
+import { FULLHOST, STAGE, canFull, toggleFull } from './fullscreen.js';
+import { updPlayhead, updTransport } from './transport-view.js';
+import { libReset, renderLibrary } from '../song/library-panel.js';
+import { buildMidi, makeZip, saveFile } from '../song/export.js';
+import { CM, closeMenu } from './menu.js';
+import { glueClips, glueRun, loopClip, posBarNow, setLoop, updLoopUI } from '../song/clip-ops.js';
+import { importMidiFiles, openNewPat } from '../song/import.js';
+import { closeSetup } from './setup-wizard.js';
+import { recKey } from '../song/recording-midi.js';
 import { syncExtra } from './saved-songs.js';
-import { closeXpose } from './transpose.js';
+import { closeXpose } from '../song/transpose.js';
 import { AUDREC, quickRec } from '../services/audio-capture.js';
-import { closeAudio } from './audio-dialog.js';
-import { clipArrow } from './layout.js';
-import { closeMctl } from './automation.js';
-import { closeWiz } from './wizard-plan.js';
+import { closeAudio } from '../song/audio-dialog.js';
+import { clipArrow } from '../song/layout.js';
+import { closeMctl } from '../song/automation.js';
+import { closeWiz } from '../song/wizard-plan.js';
 import { liveKeyDown, liveKeyUp } from '../live/midi-in.js';
-import { projLoadText, projNew, projOpen, projSave, projSaveAs } from '../ui/projects.js';
+import { projLoadText, projNew, projOpen, projSave, projSaveAs } from './projects.js';
 
 /* ---------- controls ---------- */
 export function syncControls() {

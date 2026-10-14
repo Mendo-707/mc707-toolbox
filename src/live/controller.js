@@ -3,8 +3,7 @@ import { SCALES } from '../core/theory.js';
 import { S } from '../core/state.js';
 import { AU, voice } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
-import { TR } from '../services/transport.js';
-import { REC, recMidi } from '../song/recording-midi.js';
+import { REC, TR } from '../services/transport.js';
 import { LV, NOTEN, mkEnv, noteLbl, saveLive } from './state.js';
 import { actLabel, lvNow } from './themes.js';
 import { LV_TONES, lvSendCC } from './moves.js';
@@ -23,6 +22,7 @@ import {
 import { livePadDown, livePadUp, sendKnob } from './pads.js';
 import { liveRender, liveRenderSettings } from './ui.js';
 import { vizNote } from './visualizer.js';
+import { hooks } from '../core/hooks.js';
 
 /* ===== USB controller keyboard (FLkey, Launchkey, KeyLab, any MIDI keyboard) =====
    Raven-style zones: lowest octave mutes the 8 tracks, the next octave changes the key of every melodic part,
@@ -353,7 +353,7 @@ function onCtlIn(ev) {
     return;
   }
   if (REC.on && $('#setup').hidden && document.body.dataset.mode !== 'live') {
-    recMidi(ev);
+    hooks.recMidi(ev);
     return;
   }
   if (typ === 0xb0 || on || off) {

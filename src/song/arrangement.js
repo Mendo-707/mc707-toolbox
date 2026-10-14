@@ -1,31 +1,21 @@
 import { $, $$, clamp, el, toast } from '../core/dom.js';
-import { TRACK_COLORS, devNum, devOn } from '../core/device.js';
-import { S, UI, addPattern, instFactory, pushUndo, scheduleSave } from '../core/state.js';
-import { MAXBARS, carve, curClip, ensureBars, getClip, metaOf, patOf, placeClip } from '../core/song-model.js';
-import { ED, defaultLo, renderEdHead, renderEditor } from './editor.js';
+import { TRACK_COLORS, devNm, devNum, devOn } from '../core/device.js';
+import { ED, S, UI, addPattern, curClip, getClip, pushUndo, scheduleSave } from '../core/state.js';
+import { instFactory, metaOf } from '../library/index.js';
+import { MAXBARS, carve, ensureBars, loopLen, patOf, placeClip, q16, wrapOff } from '../core/song-model.js';
+import { defaultLo, renderEdHead, renderEditor } from './editor.js';
 import { AU } from '../services/synth.js';
-import { TR } from '../services/transport.js';
-import {
-  CMNOW,
-  cmAtBar,
-  cmChipFill,
-  cmFix,
-  cmLabel,
-  cmMarks,
-  cmPickItems,
-  ctInfo,
-  delClipMark,
-  devNm,
-  setClipMark
-} from '../clips/clip-map.js';
-import { updPlayhead } from '../clips/clips-screen.js';
+import { REC, TR } from '../services/transport.js';
+import { CMNOW, cmFix, cmMarks, ctInfo } from '../services/clip-switch.js';
+import { cmAtBar, cmChipFill, cmLabel, cmPickItems, delClipMark, setClipMark } from '../clips/clip-map.js';
 import { renderLibrary } from './library-panel.js';
-import { blkLabel, clipBlock, clipHasBlocks, editBlock, posBarNow, showMenu, updLoopUI } from './clip-ops.js';
-import { REC, recStop } from './recording-midi.js';
+import { showMenu } from '../ui/menu.js';
+import { blkLabel, clipBlock, clipHasBlocks, editBlock, posBarNow, updLoopUI } from './clip-ops.js';
+import { recStop } from './recording-midi.js';
 import { loopSection, markerMenu, renameMarker } from './markers.js';
-import { grabOpen, grabUI } from './grabber.js';
-import { SNAP, fitRows, loopLen, q16, snapBar, snapFloor, wrapOff } from './layout.js';
+import { SNAP, fitRows, snapBar, snapFloor } from './layout.js';
 import { SH, drawClipOverlay } from './automation.js';
+import { hooks } from '../core/hooks.js';
 
 export const HEAD = 196,
   RULERH = 40;
@@ -170,7 +160,7 @@ export function renderArr() {
           'aria-label': 'Sample grabber',
           onclick: ev => {
             ev.stopPropagation();
-            grabOpen(ev.currentTarget);
+            hooks.grabOpen(ev.currentTarget);
           }
         },
         '◉'
@@ -178,10 +168,10 @@ export function renderArr() {
     )
   );
   inner.append(rows);
-  updPlayhead(TR.playing && TR.mode === 'song' ? (TR.vis[0] ? TR.vis[0].tick / 32 : S.cursor) : S.cursor);
+  hooks.updPlayhead(TR.playing && TR.mode === 'song' ? (TR.vis[0] ? TR.vis[0].tick / 32 : S.cursor) : S.cursor);
   const bi = $('#barsIn');
   if (bi) bi.value = S.bars;
-  grabUI();
+  hooks.grabUI();
 }
 function trackRow(t, i, W) {
   const col = TRACK_COLORS[i];
@@ -654,7 +644,7 @@ function rulerDown(e, rc) {
         TR.vis = [];
         TR.nextTime = Math.max(TR.nextTime, AU.ctx.currentTime + 0.03);
       }
-      updPlayhead(b0);
+      hooks.updPlayhead(b0);
     }
     scheduleSave();
   };

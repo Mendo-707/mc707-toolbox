@@ -2,8 +2,8 @@ import { $$ } from '../core/dom.js';
 import { renderArr } from '../song/arrangement.js';
 import { panic } from '../services/midi.js';
 import { stopAll } from '../services/transport.js';
-import { updTransport } from '../clips/clips-screen.js';
-import { closePops } from '../song/controls.js';
+import { updTransport } from './transport-view.js';
+import { closePops } from './controls.js';
 import { liveRender } from '../live/ui.js';
 import { vizStart } from '../live/visualizer.js';
 

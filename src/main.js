@@ -7,25 +7,30 @@ import './library/generate.js';
 import './core/device.js';
 import './core/state.js';
 import './song/arrangement.js';
+import './library/index.js';
 import './core/song-model.js';
 import './song/editor.js';
 import './services/synth.js';
 import './services/midi.js';
 import './services/transport.js';
 import './ui/fullscreen.js';
+import './services/clip-switch.js';
 import './clips/clip-map.js';
 import './clips/clips-screen.js';
+import './ui/device.js';
+import './ui/transport-view.js';
 import './song/library-panel.js';
-import './song/controls.js';
+import './ui/controls.js';
 import './song/export.js';
+import './core/crc.js';
 import './core/random.js';
 import './library/live-extras.js';
 import './library/lively.js';
 import './library/variety.js';
 import './library/flash.js';
-import './library/index.js';
 import './library/styles.js';
 import './song/wizard-ui.js';
+import './ui/menu.js';
 import './song/clip-ops.js';
 import './song/import.js';
 import './song/editor-menus.js';
@@ -34,14 +39,16 @@ import './ui/menubar.js';
 import './song/recording-midi.js';
 import './song/editor-tools.js';
 import './song/markers.js';
-import './song/saved-songs.js';
+import './ui/saved-songs.js';
 import './song/transpose.js';
 import './services/audio-capture.js';
-import './song/grabber.js';
+import './ui/grabber.js';
 import './ui/context-menus.js';
 import './song/audio-dialog.js';
 import './song/layout.js';
+import './core/mc707-params.js';
 import './song/automation.js';
+import './services/mc-controls.js';
 import './song/structure.js';
 import './song/wizard-styles.js';
 import './song/wizard-plan.js';
@@ -52,6 +59,7 @@ import './live/moves.js';
 import './live/scene-editor.js';
 import './live/breaks.js';
 import './live/scene-templates.js';
+import './library/pools.js';
 import './live/pools.js';
 import './live/engine.js';
 import './live/cues.js';
@@ -60,7 +68,7 @@ import './live/controller.js';
 import './live/raven.js';
 import './live/controller-settings.js';
 import './live/midi-in.js';
-import './live/capture.js';
+import './ui/live-capture.js';
 import './live/ui.js';
 import './live/visualizer.js';
 import './ui/mode.js';
@@ -68,31 +76,74 @@ import './ui/projects.js';
 import './ui/dialogs.js';
 import { $ } from './core/dom.js';
 import { FAC } from './library/factory.js';
-import { HOST, PROJ, S, fixState, loadSaved, makeDemo, replaceState } from './core/state.js';
-import { initArr } from './song/arrangement.js';
+import { HOST, PROJ, S, fixState, loadSaved, replaceState } from './core/state.js';
+import { initArr, renderArr, scheduleUI } from './song/arrangement.js';
+import { makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
 import { AU, ensureAudio } from './services/synth.js';
 import { MIDI, connectMidi, panic } from './services/midi.js';
 import { TICKER, TR, advance, processTick, startSong, stopAll } from './services/transport.js';
-import { setClipMark } from './clips/clip-map.js';
-import { frame } from './clips/clips-screen.js';
-import { initControls, renderAll } from './song/controls.js';
+import { cmChipSet, setClipMark } from './clips/clip-map.js';
+import { applyDevice } from './ui/device.js';
+import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
+import { closePops, initControls, renderAll, syncControls } from './ui/controls.js';
 import { setDownloads } from './song/export.js';
 import { glueClips, glueRun } from './song/clip-ops.js';
 import { initExtra } from './song/editor-menus.js';
+import { suAutoConnect, testNote } from './ui/setup-wizard.js';
 import { initSetup } from './ui/menubar.js';
-import { initMore } from './song/saved-songs.js';
-import { initAudio } from './song/audio-dialog.js';
+import { recMidi, recStop } from './song/recording-midi.js';
+import { initMore, refreshIns, syncExtra } from './ui/saved-songs.js';
+import { grabOpen, grabUI } from './ui/grabber.js';
+import { audBtn, audRender, initAudio, openAudio } from './song/audio-dialog.js';
 import { initPro } from './song/layout.js';
 import { initStageB } from './song/automation.js';
 import { initStructure } from './song/structure.js';
+import { wizCellAt } from './song/wizard-plan.js';
 import { initWizard } from './song/sound-suggestions.js';
-import { LV } from './live/state.js';
+import { LV, liveSwingAmt, liveTempo } from './live/state.js';
+import { liveRenderSceneEd } from './live/scene-editor.js';
 import { liveBuild } from './live/pools.js';
-import { liveScene, liveStart, liveTick } from './live/engine.js';
+import { liveCleanup, liveScene, liveStart, liveTick } from './live/engine.js';
+import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';
+import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
 import { projTitle } from './ui/projects.js';
+import { hooks } from './core/hooks.js';
+
+// Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
+Object.assign(hooks, {
+  applyDevice,
+  audBtn,
+  audRender,
+  closePops,
+  cmChipSet,
+  grabOpen,
+  grabUI,
+  liveCapture,
+  liveCleanup,
+  liveRenderSceneEd,
+  liveSwingAmt,
+  liveTempo,
+  liveTick,
+  openAudio,
+  recMidi,
+  recStop,
+  refreshIns,
+  renderAll,
+  renderArr,
+  scheduleUI,
+  stopAll,
+  suAutoConnect,
+  syncControls,
+  syncExtra,
+  testNote,
+  updPlayhead,
+  updTransport,
+  vizNote,
+  wizCellAt
+});
 
 PROJ.t = projTitle;
 
@@ -140,6 +191,7 @@ PROJ.t = projTitle;
     get AU() {
       return AU;
     },
+    hooks,
     processTick,
     advance,
     TICKER,

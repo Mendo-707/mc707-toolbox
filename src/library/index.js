@@ -4,7 +4,42 @@ import './lively.js';
 import './variety.js';
 import './flash.js';
 import { FAC } from './factory.js';
+import { S, addPattern, newState, replaceState } from '../core/state.js';
 
+export function instFactory(f) {
+  const found = Object.keys(S.patterns).find(
+    k => S.patterns[k].src === f.id && !S.patterns[k].mod && !S.patterns[k].shift
+  );
+  if (found) return found;
+  return addPattern(f.type, f.name, f.bars, f.notes, {
+    src: f.id,
+    genre: f.genre,
+    key: f.key ? { ...f.key } : null,
+    role: f.role
+  });
+}
+export function makeDemo() {
+  replaceState(newState());
+  S.bpm = 174;
+  S.loop = { on: true, start: 0, end: 8 };
+  S.key = 5;
+  S.scale = 'minor';
+  const put = (t, start, len, fid) => {
+    const pid = instFactory(FAC.find(x => x.id === fid));
+    S.clips.push({ id: 'c' + S.nextId++, t, start, len, off: 0, pat: pid });
+  };
+  put(0, 0, 7, 'dnb-twostep');
+  put(0, 7, 1, 'dnb-fill');
+  put(0, 8, 8, 'dnb-neuro');
+  put(3, 0, 8, 'dnb-sub');
+  put(3, 8, 8, 'dnb-reese');
+  put(4, 4, 4, 'dnb-stabs');
+  put(4, 8, 8, 'dnb-liquid-ch');
+  put(5, 0, 8, 'dnb-pad');
+  put(6, 12, 4, 'dnb-arp');
+  put(7, 8, 8, 'dnb-pluck');
+}
+export const metaOf = src => (src.kind === 'fac' ? FAC.find(f => f.id === src.id) : S.patterns[src.id]);
 export const FACMAP = new Map(FAC.map(f => [f.id, f]));
 export const facById = id => FACMAP.get(id);
 export const TRACK_POOLS = ['kit', 'hats', 'perc', 'bass', 'chords', 'pad', 'lead', 'pluck'];

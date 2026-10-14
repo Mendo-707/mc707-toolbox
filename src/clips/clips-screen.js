@@ -1,22 +1,10 @@
-import { $, $$, clamp, el, toast } from '../core/dom.js';
-import { ICON } from '../core/icons.js';
-import { DEV, DEVS, TRACK_COLORS, assignDevice, devNum, devOn } from '../core/device.js';
-import { PROJ, S, pushUndo, scheduleSave } from '../core/state.js';
-import { HEAD, bw, renderArr } from '../song/arrangement.js';
-import { curClip, curPat, patOf } from '../core/song-model.js';
-import { ED, edPlay } from '../song/editor.js';
+import { $, el, toast } from '../core/dom.js';
+import { DEV, DEVS, TRACK_COLORS, devNum, devOn } from '../core/device.js';
+import { PROJ, S, scheduleSave } from '../core/state.js';
 import { AU } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
-import { TR, fmtPos, stopAll, tickDur } from '../services/transport.js';
-import { STAGE, syncFullBtn } from '../ui/fullscreen.js';
-import { CLIP_TYPES, PCLAST, autoClipReset, cmFix, ctInfo, sendClip } from './clip-map.js';
-import { renderAll } from '../song/controls.js';
-import { SH, drawShape } from '../song/automation.js';
-import { wizPlayhead, wizSyncPreview } from '../song/wizard-plan.js';
-import { LV } from '../live/state.js';
-import { liveRenderSceneEd, lvClearCustom } from '../live/scene-editor.js';
-import { liveBuild } from '../live/pools.js';
-import { liveFrame, liveRender, liveSync } from '../live/ui.js';
+import { CLIP_TYPES, PCLAST, autoClipReset, cmFix, ctInfo, sendClip } from '../services/clip-switch.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---- the clips screen, laid out like the MC-707: track buttons on top, the 16 pads below (as in CLIP mode) ---- */
 export const CMAP = { t: 3, k: 0 };
@@ -43,8 +31,8 @@ function clipMapClose() {
   const o = $('#cmOv');
   if (o) o.remove();
   scheduleSave();
-  if (typeof renderArr === 'function' && $('#arrInner')) renderArr();
-  if (typeof liveRenderSceneEd === 'function') liveRenderSceneEd();
+  if (typeof hooks.renderArr === 'function' && $('#arrInner')) hooks.renderArr();
+  if (typeof hooks.liveRenderSceneEd === 'function') hooks.liveRenderSceneEd();
 }
 /* The MC-707 HOME screen, as the reference manual lays it out: project name and tempo on top, a column per track
    (number + T/D type), a clip grid showing 8 clips at a time with a scroll bar, level meters, the current
@@ -476,156 +464,4 @@ export function clipMapRender() {
     )
   );
   ov.append(box);
-}
-export function applyDevice() {
-  document.body.dataset.dev = DEV;
-  const b = $('#menubar .mbrand');
-  if (b) b.textContent = DEV === '101' ? 'MC-707 Toolbox · MC-101 mode' : 'MC-707 Toolbox';
-}
-export function setDevice(d) {
-  if (d === DEV) return;
-  stopAll();
-  pushUndo();
-  assignDevice(d);
-  try {
-    localStorage.setItem('mc-device', d);
-  } catch (e) {}
-  S.tracks.forEach((t, i) => {
-    const c = DEVS[d].ch[i];
-    if (c) t.ch = c;
-  });
-  applyDevice();
-  scheduleSave();
-  if (typeof lvClearCustom === 'function') {
-    lvClearCustom();
-    LV.edIdx = -1;
-    liveBuild();
-  }
-  renderAll();
-  if (typeof liveRender === 'function') liveRender();
-  toast(
-    d === '101'
-      ? 'MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits.'
-      : 'MC-707 mode: 8 tracks on channels 1–8.'
-  );
-}
-export function setOneKit(on) {
-  if (DEV === '101') {
-    toast('The MC-101 always plays full kits on its one drum track');
-    return;
-  }
-  S.oneKit = !!on;
-  scheduleSave();
-  if (typeof lvClearCustom === 'function') {
-    lvClearCustom();
-    LV.edIdx = -1;
-    liveBuild();
-    if (typeof liveRender === 'function') liveRender();
-  }
-  toast(
-    on
-      ? 'Drums 1 now plays full kits (kick, snare, hats and percussion). Drums 2 is free, and Drums 3 keeps builds and impacts.'
-      : 'Drums are spread over Drums 1, 2 and 3 again.'
-  );
-}
-export function setAwake(on) {
-  STAGE.awake = on;
-  try {
-    localStorage.setItem('mc707-awake', on ? '1' : '0');
-  } catch (e) {}
-  syncAwake();
-  toast(on ? 'The screen stays on while music is playing' : 'Screen can sleep as normal');
-}
-async function syncAwake() {
-  const want = STAGE.awake && TR.playing && !document.hidden;
-  if (want === STAGE.held) return;
-  STAGE.held = want;
-  const host = window.toolbox;
-  if (host && host.keepAwake) {
-    try {
-      host.keepAwake(want);
-    } catch (e) {}
-    return;
-  }
-  try {
-    if (want && navigator.wakeLock) {
-      STAGE.lock = await navigator.wakeLock.request('screen');
-      STAGE.lock.addEventListener('release', () => {
-        STAGE.lock = null;
-        if (STAGE.held) {
-          STAGE.held = false;
-        }
-      });
-    } else if (!want && STAGE.lock) {
-      const l = STAGE.lock;
-      STAGE.lock = null;
-      await l.release();
-    }
-  } catch (e) {
-    STAGE.lock = null;
-  }
-}
-document.addEventListener('visibilitychange', () => {
-  if (!(window.toolbox && window.toolbox.keepAwake) && !STAGE.lock) STAGE.held = false;
-  syncAwake();
-});
-document.addEventListener('fullscreenchange', syncFullBtn);
-export function updTransport() {
-  syncAwake();
-  if (typeof liveSync === 'function') liveSync();
-  if (typeof wizSyncPreview === 'function' && !$('#wiz').hidden) wizSyncPreview();
-  const pb = $('#bPlay');
-  const on = TR.playing && TR.mode === 'song';
-  pb.innerHTML = on ? ICON.stop + ' Stop' : ICON.play + ' Play';
-  pb.classList.toggle('on', on);
-  const a = $('#bAud');
-  if (a) {
-    const p = curPat();
-    a.textContent = TR.playing && TR.mode === 'pat' && TR.pat === p ? 'Stop pattern' : 'Play pattern';
-    a.classList.toggle('on', TR.playing && TR.mode === 'pat' && TR.pat === p);
-  }
-  $$('.li .aud').forEach(b => {
-    const on2 = TR.playing && TR.mode === 'pat' && TR.pat === b._pat;
-    b.textContent = on2 ? '■' : '▶';
-  });
-}
-export function frame() {
-  requestAnimationFrame(frame);
-  if (!TR.playing) return;
-  const now = AU.ctx.currentTime;
-  while (TR.vis.length > 1 && TR.vis[1].time <= now) TR.vis.shift();
-  const v = TR.vis[0];
-  if (!v) return;
-  const tick = v.tick + (now >= v.time ? clamp((now - v.time) / (v.dur || tickDur()), 0, 1) : 0);
-  if (TR.mode === 'song') {
-    const bars = tick / 32;
-    updPlayhead(bars);
-    $('#pos').textContent = fmtPos(bars);
-    const c = curClip();
-    if (c && bars >= c.start && bars < c.start + c.len) {
-      const pb = patOf(c).bars;
-      edPlay(((bars - c.start + c.off) * 16) % (pb * 16));
-    } else edPlay(-1);
-  } else if (TR.mode === 'wiz') {
-    wizPlayhead(tick / 32);
-  } else if (TR.mode === 'live') {
-    liveFrame(tick);
-  } else {
-    edPlay(tick / 2);
-  }
-}
-export function updPlayhead(bars) {
-  SH.pos = bars;
-  if (ED.mode === 'shape' && TR.playing && $('#edShape') && !$('#edShape').hidden) drawShape();
-  const ph = $('#playhead');
-  if (!ph) return;
-  ph.style.display = 'block';
-  ph.style.transform = 'translateX(' + (HEAD + bars * bw) + 'px)';
-  if (TR.playing && TR.mode === 'song' && S.follow) {
-    const a = $('#arr');
-    const x = HEAD + bars * bw;
-    if (x < a.scrollLeft + HEAD + 10 || x > a.scrollLeft + a.clientWidth - 50)
-      a.scrollLeft = Math.max(0, x - HEAD - 40);
-  }
-  if (!TR.playing) $('#pos').textContent = fmtPos(bars);
 }

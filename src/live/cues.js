@@ -1,12 +1,13 @@
 import { $, clamp, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
-import { TR } from '../services/transport.js';
 import { TRACK_POOLS, facById } from '../library/index.js';
+import { TR } from '../services/transport.js';
 import { LV, SWG, lvRand, lvStyle, saveLive } from './state.js';
 import { lvIsFlash } from './themes.js';
 import { lvSaveScenes } from './scene-editor.js';
 import { lvAutoFlash } from './breaks.js';
-import { liveSwapIds, lvPool, lvProg } from './pools.js';
+import { lvPool, lvProg } from '../library/pools.js';
+import { liveSwapIds } from './pools.js';
 import { liveStart, lvEmute, lvIds, lvSwapCue, lvTop } from './engine.js';
 import { liveRender, liveRenderCards, liveRenderPads, liveStatus, liveSync, lvTickF } from './ui.js';
 

@@ -1,7 +1,5 @@
-import { FAC } from '../library/factory.js';
-import { S, UI } from './state.js';
-import { scheduleUI } from '../song/arrangement.js';
-import { loopLen, q16, wrapOff } from '../song/layout.js';
+import { S, UI, curClip } from './state.js';
+import { hooks } from './hooks.js';
 
 /* ---------- pattern + clip helpers ---------- */
 const IDX = new WeakMap();
@@ -26,10 +24,8 @@ export function patIndex(p) {
 export function touch(p) {
   IDX.delete(p);
   p.mod = true;
-  scheduleUI();
+  hooks.scheduleUI();
 }
-export const getClip = id => S.clips.find(c => c.id === id);
-export const curClip = () => (UI.sel ? getClip(UI.sel) : null);
 export const patOf = c => S.patterns[c.pat];
 export const curPat = () => {
   const c = curClip();
@@ -84,4 +80,8 @@ export function placeClip(t, start, pid, len) {
   ensureBars(start + len);
   return c;
 }
-export const metaOf = src => (src.kind === 'fac' ? FAC.find(f => f.id === src.id) : S.patterns[src.id]);
+
+/* ---------- fine clip control, row scaling, splitter ---------- */
+export const q16 = v => Math.round(v * 16) / 16;
+export const loopLen = c => c.ll || S.patterns[c.pat].bars;
+export const wrapOff = (o, L) => q16(((o % L) + L) % L);

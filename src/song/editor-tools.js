@@ -1,6 +1,5 @@
 import { SCALES } from '../core/theory.js';
-import { S } from '../core/state.js';
-import { ED } from './editor.js';
+import { ED, S } from '../core/state.js';
 
 /* ---- chords, euclid, scale lock ---- */
 export const CHORDS = [

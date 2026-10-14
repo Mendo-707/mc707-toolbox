@@ -1,6 +1,7 @@
 import { LV, lvStyle, saveLive } from './state.js';
 import { lvClearCustom } from './scene-editor.js';
-import { liveBuild, lvModeFam } from './pools.js';
+import { lvModeFam } from '../library/pools.js';
+import { liveBuild } from './pools.js';
 
 /* ---- Live scenes: loops for performing, not song sections. Each uses a different mix of parts, and parts can sit out bars so the groove breathes. ---- */
 export const LV_PLAY = [

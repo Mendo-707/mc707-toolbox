@@ -1,14 +1,13 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';
-import { S, UI, pushUndo, scheduleSave } from '../core/state.js';
+import { S, UI, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
-import { curClip, songEnd } from '../core/song-model.js';
+import { loopLen, q16, songEnd, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { applyShape, playFrom, posBarNow, setLoop, shapeSlice } from './clip-ops.js';
 import { sectionEnd } from './markers.js';
-import { syncExtra } from './saved-songs.js';
-import { loopLen, q16, wrapOff } from './layout.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- transpose dialog (whole song or parts) ---------- */
 const XP = {
@@ -133,7 +132,7 @@ function xpApply(reset) {
   }
   renderArr();
   renderEditor();
-  syncExtra();
+  hooks.syncExtra();
   scheduleSave();
   toast(
     reset

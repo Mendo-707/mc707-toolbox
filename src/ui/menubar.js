@@ -1,9 +1,10 @@
 import { $, el } from '../core/dom.js';
 import { DEV, oneKit } from '../core/device.js';
 import { HOST, S } from '../core/state.js';
-import { STAGE, isFull, toggleFull } from './fullscreen.js';
-import { clipMapOpen, setAwake, setDevice, setOneKit } from '../clips/clips-screen.js';
-import { closePops } from '../song/controls.js';
+import { STAGE, isFull, setAwake, toggleFull } from './fullscreen.js';
+import { clipMapOpen } from '../clips/clips-screen.js';
+import { setDevice, setOneKit } from './device.js';
+import { closePops } from './controls.js';
 import { SU, closeSetup, openSetup } from './setup-wizard.js';
 import { liveStopCue } from '../live/cues.js';
 import { setMode } from './mode.js';

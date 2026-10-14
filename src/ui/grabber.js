@@ -1,14 +1,15 @@
 import { $, $$, el, toast } from '../core/dom.js';
 import { DEV, DEVS, devNum } from '../core/device.js';
 import { HOST, S } from '../core/state.js';
-import { renderArr } from './arrangement.js';
+import { renderArr } from '../song/arrangement.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { TR, startSong, stopPlay, tickDur } from '../services/transport.js';
 import { syncControls } from './controls.js';
-import { DL } from './export.js';
+import { DL } from '../song/export.js';
 import {
   AUD,
   AUDREC,
+  audMode,
   audioJobs,
   capAttachOne,
   capDetach,
@@ -17,8 +18,8 @@ import {
   pad2,
   wavEncoder
 } from '../services/audio-capture.js';
-import { anchorSave, audMode, openAudio } from './audio-dialog.js';
-import { tempoAtBar, tickDurAt } from './automation.js';
+import { anchorSave, openAudio } from '../song/audio-dialog.js';
+import { tempoAtBar, tickDurAt } from '../services/mc-controls.js';
 import { LV } from '../live/state.js';
 import { liveStart } from '../live/engine.js';
 

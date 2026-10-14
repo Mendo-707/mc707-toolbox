@@ -176,6 +176,9 @@ export const LV = Object.assign(
     beat: 0
   }
 );
+/* Live's tempo and swing, read by the transport while Live Mode plays */
+export const liveTempo = () => LV.bpm;
+export const liveSwingAmt = () => LV.swing;
 (function fixLive() {
   if (LV.layout !== LV_LAYOUT) {
     LV.acts = LV_ACTS.slice();

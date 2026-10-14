@@ -1,7 +1,9 @@
 // Behaviour tests: saved work loads, every screen opens without errors, and the main features still work.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { openApp, closeBrowser, readFixture } from './helpers.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { openApp, closeBrowser, readFixture, ROOT } from './helpers.mjs';
 
 after(closeBrowser);
 
@@ -206,5 +208,17 @@ test('a new project and undo replace the whole song', async () => {
   await page.waitForTimeout(200);
   assert.equal(await clips(), 10, 'Ctrl+Z brings the song back');
   assert.equal(await page.locator('.clip').count(), 10, 'and the arrangement shows it');
+  assert.deepEqual(errors, []);
+});
+
+test('every hook in core/hooks.js is filled in when the app starts', async () => {
+  // Lower modules call up the layers through hooks; a hook left empty would only fail when that path runs.
+  const listed = [
+    ...fs.readFileSync(path.join(ROOT, 'src', 'core', 'hooks.js'), 'utf8').matchAll(/^\/\/ {3}(\w+)\s+src\//gm)
+  ].map(m => m[1]);
+  assert.ok(listed.length > 0, 'hooks.js lists its hooks');
+  const { page, errors } = await openApp();
+  const missing = await page.evaluate(names => names.filter(n => typeof window.__app.hooks[n] !== 'function'), listed);
+  assert.deepEqual(missing, []);
   assert.deepEqual(errors, []);
 });

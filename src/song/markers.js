@@ -1,12 +1,13 @@
 import { clamp, el } from '../core/dom.js';
-import { DEV, DEVS, devNum } from '../core/device.js';
+import { DEV, DEVS, devNm, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
 import { songEnd } from '../core/song-model.js';
-import { cmMarks, cmPickItems, devNm, setClipMark } from '../clips/clip-map.js';
-import { updPlayhead } from '../clips/clips-screen.js';
+import { cmMarks } from '../services/clip-switch.js';
+import { cmPickItems, setClipMark } from '../clips/clip-map.js';
 import { playFrom, posBarNow, setLoop } from './clip-ops.js';
 import { openXpose } from './transpose.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---- section markers ---- */
 export const sectionEnd = i => {
@@ -18,7 +19,7 @@ export function loopSection(i) {
   if (!m) return;
   setLoop(m.bar, sectionEnd(i));
   S.cursor = m.bar;
-  updPlayhead(m.bar);
+  hooks.updPlayhead(m.bar);
 }
 export function addMarker(bar) {
   pushUndo();

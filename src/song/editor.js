@@ -1,16 +1,16 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES, NOTE_NAMES, SCALES, noteName } from '../core/theory.js';
 import { TRACK_COLORS, devOn } from '../core/device.js';
-import { S, addPattern, pushUndo, scheduleSave } from '../core/state.js';
+import { ED, S, addPattern, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { deleteClip, dupClip, renderArr } from './arrangement.js';
-import { curClip, curPat, patOf, touch } from '../core/song-model.js';
-import { TR, audition, startPat, stopPlay } from '../services/transport.js';
-import { updTransport } from '../clips/clips-screen.js';
+import { curPat, patOf, touch } from '../core/song-model.js';
+import { REC, TR, audition, startPat, stopPlay } from '../services/transport.js';
 import { toneTracks } from './library-panel.js';
 import { clipOptionsEl } from './editor-menus.js';
-import { REC, recGroup } from './recording-midi.js';
+import { recGroup } from './recording-midi.js';
 import { lockPitch } from './editor-tools.js';
 import { drawShape, shapeHead } from './automation.js';
+import { hooks } from '../core/hooks.js';
 
 export function defaultLo(p, t) {
   if (p.notes.length) return clamp(Math.floor(Math.min(...p.notes.map(n => n.n)) / 12) * 12, 12, 96);
@@ -19,18 +19,6 @@ export function defaultLo(p, t) {
 
 /* ---------- pattern editor ---------- */
 const LW = 100;
-export const ED = {
-  mode: 'steps',
-  snap: 1,
-  zoom: 26,
-  lo: 36,
-  clipboard: null,
-  selNotes: new Set(),
-  fit: true,
-  geom: null,
-  drag: null,
-  lastDown: null
-};
 export const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 export function sizeCanvas(cv, w, h) {
   const d = Math.max(1, Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12e6 / Math.max(1, w * h))));
@@ -154,7 +142,7 @@ export function renderEdHead() {
   if (ED.mode === 'shape') {
     shapeHead(h, c, p);
     h.append(clipOptionsEl(c, p, p.type === 'drum'));
-    updTransport();
+    hooks.updTransport();
     return;
   }
   if (ED.mode === 'roll') {
@@ -504,7 +492,7 @@ export function renderEdHead() {
   h.append(clipOptionsEl(c, p, isDrum));
   h.append(el('div', { id: 'edBarSel', class: 'edbs' }));
   refreshBarSel();
-  updTransport();
+  hooks.updTransport();
 }
 function barRange(p) {
   const s = ED.barSel;

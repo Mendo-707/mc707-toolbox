@@ -1,14 +1,10 @@
 import { $, clamp, el } from '../core/dom.js';
 import { devCount } from '../core/device.js';
-import { S, pushUndo, scheduleSave } from '../core/state.js';
+import { ED, S, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { ROWH, RULERH, renderArr, setRowHeight } from './arrangement.js';
-import { carve, curClip, ensureBars } from '../core/song-model.js';
-import { ED, layoutEditor } from './editor.js';
+import { carve, ensureBars, loopLen, q16, wrapOff } from '../core/song-model.js';
+import { layoutEditor } from './editor.js';
 
-/* ---------- fine clip control, row scaling, splitter ---------- */
-export const q16 = v => Math.round(v * 16) / 16;
-export const loopLen = c => c.ll || S.patterns[c.pat].bars;
-export const wrapOff = (o, L) => q16(((o % L) + L) % L);
 export const SNAP = () => ([1, 0.5, 0.25, 0.0625].includes(+S.snap) ? +S.snap : 1);
 export const snapBar = v => Math.round(v / SNAP()) * SNAP();
 export const snapFloor = v => Math.floor(v / SNAP() + 1e-9) * SNAP();

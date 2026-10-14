@@ -34,3 +34,4 @@ export const oneKit = () => {
     return false;
   }
 };
+export const devNm = () => (DEV === '101' ? 'MC-101' : 'MC-707');

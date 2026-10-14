@@ -1,20 +1,17 @@
 import { $, clamp, el, toast } from '../core/dom.js';
-import { DEV, DEVS, TRACK_COLORS, devNum, devOn } from '../core/device.js';
+import { DEV, DEVS, TRACK_COLORS, devNm, devNum, devOn } from '../core/device.js';
 import { S, scheduleSave } from '../core/state.js';
+import { facById } from '../library/index.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
 import { TR, stopPlay } from '../services/transport.js';
 import { toggleFull } from '../ui/fullscreen.js';
-import { CLIPPIN, CMNOW, PCLAST, autoClip, cmChipFill, cmPickItems, devNm, sendClip } from '../clips/clip-map.js';
-import { applyDevice, clipMapOpen } from '../clips/clips-screen.js';
-import { syncControls } from '../song/controls.js';
+import { CLIPPIN, CMNOW, PCLAST, autoClip, sendClip } from '../services/clip-switch.js';
+import { cmChipFill, cmPickItems } from '../clips/clip-map.js';
+import { clipMapOpen } from '../clips/clips-screen.js';
 import { FLASH_RH } from '../library/flash.js';
-import { facById } from '../library/index.js';
-import { STYLES } from '../library/styles.js';
-import { showMenu } from '../song/clip-ops.js';
-import { suAutoConnect } from '../ui/setup-wizard.js';
-import { grabOpen } from '../song/grabber.js';
-import { FAMLABEL, NK } from '../song/wizard-styles.js';
+import { FAMLABEL, NK, STYLES } from '../library/styles.js';
+import { showMenu } from '../ui/menu.js';
 import {
   LV,
   LV_ACTS,
@@ -34,7 +31,8 @@ import { LV_SCFX, liveMoveNow } from './moves.js';
 import { liveEditScene, liveRenderSceneEd } from './scene-editor.js';
 import { LV_BRK, LV_BRKLEN, liveBreak } from './breaks.js';
 import { LV_PLAY, liveNewSet, lvPlayOn } from './scene-templates.js';
-import { liveBuild, lvFullPool, lvModeFam } from './pools.js';
+import { lvFullPool, lvModeFam } from '../library/pools.js';
+import { liveBuild } from './pools.js';
 import { liveToggle, lvEmute, lvIds, lvTop } from './engine.js';
 import {
   liveAuto,
@@ -60,8 +58,8 @@ import { ctlFix, liveRenderCtlBar } from './controller.js';
 import { ravenSection } from './raven.js';
 import { ctlRenderSettings } from './controller-settings.js';
 import { LV_KEYROWS, lvPadIndex, padTestOpen } from './midi-in.js';
-import { liveCapture } from './capture.js';
 import { VZ, vizStart } from './visualizer.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---- UI ---- */
 function lvSegs(tickf) {
@@ -105,7 +103,7 @@ export function liveInit() {
   try {
     STYLES.forEach(st => lvFullPool(st));
   } catch (e) {}
-  applyDevice();
+  hooks.applyDevice();
   const root = $('#live');
   if (!root) return;
   root.dataset.theme = LV.theme;
@@ -291,7 +289,7 @@ export function liveInit() {
         onchange: e => {
           S.preview = e.target.checked;
           scheduleSave();
-          syncControls();
+          hooks.syncControls();
         }
       }),
       'Preview sound'
@@ -317,7 +315,7 @@ export function liveInit() {
         class: 'btn',
         id: 'lvMidi',
         onclick: async () => {
-          await suAutoConnect();
+          await hooks.suAutoConnect();
           liveRender();
         },
         title: 'Connect to the MC-707 over USB MIDI'
@@ -330,7 +328,7 @@ export function liveInit() {
       {
         class: 'btn',
         id: 'lvGrab',
-        onclick: ev => grabOpen(ev.currentTarget),
+        onclick: ev => hooks.grabOpen(ev.currentTarget),
         title: 'Sample grabber: record a few bars of one track to a WAV'
       },
       '◉ Grab sample'
@@ -340,7 +338,7 @@ export function liveInit() {
       {
         class: 'btn',
         id: 'lvCapture',
-        onclick: liveCapture,
+        onclick: hooks.liveCapture,
         title: 'Turn what you just played into an arrangement in Song Mode'
       },
       '⏺ Capture to Song'

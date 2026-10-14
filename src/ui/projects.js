@@ -2,7 +2,7 @@ import { $, toast } from '../core/dom.js';
 import { HOST, PROJ, S, UI, fixState, newState, pushUndo, replaceState } from '../core/state.js';
 import { panic } from '../services/midi.js';
 import { stopAll } from '../services/transport.js';
-import { afterReplaceKeepUndo } from '../song/controls.js';
+import { afterReplaceKeepUndo } from './controls.js';
 import { saveFile } from '../song/export.js';
 import { askDlg } from './dialogs.js';
 

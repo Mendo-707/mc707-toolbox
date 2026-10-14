@@ -1,18 +1,13 @@
 import { clamp } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
+import { facById, shiftFor } from '../library/index.js';
 import { clipAt, patIndex, songEnd } from '../core/song-model.js';
 import { AU, DRUMS, click, ensureAudio, voice } from './synth.js';
 import { MIDI, panic, sendMidi } from './midi.js';
-import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from '../clips/clip-map.js';
-import { updPlayhead, updTransport } from '../clips/clips-screen.js';
-import { facById, shiftFor } from '../library/index.js';
-import { REC, recStop } from '../song/recording-midi.js';
-import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from '../song/automation.js';
-import { wizCellAt } from '../song/wizard-plan.js';
-import { LV } from '../live/state.js';
-import { liveCleanup, liveTick } from '../live/engine.js';
-import { vizNote } from '../live/visualizer.js';
+import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
+import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from './mc-controls.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- transport ---------- */
 export const TR = {
@@ -29,7 +24,7 @@ export const TR = {
 };
 const playBpm = () =>
   TR.mode === 'live'
-    ? LV.bpm
+    ? hooks.liveTempo()
     : TR.mode === 'wiz' && TR.wz && TR.wz.bpm
       ? TR.wz.bpm
       : TR.mode === 'pat' && TR.patBpm
@@ -37,7 +32,7 @@ const playBpm = () =>
         : S.bpm;
 const playSwing = () =>
   TR.mode === 'live'
-    ? LV.swing
+    ? hooks.liveSwingAmt()
     : TR.mode === 'wiz' && TR.wz && TR.wz.swing != null
       ? TR.wz.swing
       : TR.mode === 'pat' && TR.patSwing != null
@@ -57,7 +52,7 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
     sendMidi([0x90 | (t.ch - 1), pitch, vel], mt);
     sendMidi([0x80 | (t.ch - 1), pitch, 0], mt + Math.max(dur, 0.03));
   }
-  if (TR.mode === 'live' && typeof vizNote === 'function') vizNote(ti, isD ? nn : pitch, vel, time, dur);
+  if (TR.mode === 'live' && typeof hooks.vizNote === 'function') hooks.vizNote(ti, isD ? nn : pitch, vel, time, dur);
   if (S.preview) {
     if (isD) {
       const fn = DRUMS[nn];
@@ -119,7 +114,7 @@ export function processTick(tick, time) {
     if (sec) {
       const rel = bar - sec.start;
       for (let t = 0; t < 8; t++) {
-        const at = wizCellAt(sec, t, rel);
+        const at = hooks.wizCellAt(sec, t, rel);
         if (!at) continue;
         const f = facById(at.id);
         if (!f) continue;
@@ -132,7 +127,7 @@ export function processTick(tick, time) {
       }
     }
   } else if (TR.mode === 'live') {
-    liveTick(tick, nt, td);
+    hooks.liveTick(tick, nt, td);
   } else {
     const p = TR.pat;
     const evs = patIndex(p).get(tick);
@@ -222,7 +217,7 @@ export const TICKER = (() => {
   };
 })();
 export function startSong(rec) {
-  if (REC.on) recStop();
+  if (REC.on) hooks.recStop();
   stopAll();
   ensureAudio();
   let tick = Math.round(S.cursor * 32);
@@ -251,7 +246,7 @@ export function startSong(rec) {
   CMK.last = -9;
   TICKER.start();
   sched();
-  updTransport();
+  hooks.updTransport();
 }
 export function startPat(p, ti, range, shift, bpm, swing) {
   stopAll();
@@ -273,20 +268,20 @@ export function startPat(p, ti, range, shift, bpm, swing) {
   });
   TICKER.start();
   sched();
-  updTransport();
+  hooks.updTransport();
 }
 export function stopAll() {
   if (!TR.playing) return;
   TICKER.stop();
   TR.playing = false;
   if (AU.ctx && (TR.mode === 'song' || TR.mode === 'live') && S.clock && MIDI.out) sendMidi([0xfc], AU.ctx.currentTime);
-  if (typeof liveCleanup === 'function') liveCleanup();
+  if (typeof hooks.liveCleanup === 'function') hooks.liveCleanup();
   panic();
-  updTransport();
+  hooks.updTransport();
 }
 export function stopPlay() {
   stopAll();
-  updPlayhead(S.cursor);
+  hooks.updPlayhead(S.cursor);
 }
 export function togglePlay() {
   if (TR.playing && TR.mode === 'song') stopPlay();
@@ -298,3 +293,17 @@ export function fmtPos(bars) {
   const st = Math.floor(((bars - b) * 16) % 4);
   return b + 1 + '.' + (beat + 1) + '.' + (st + 1);
 }
+export const REC = {
+  on: false,
+  mode: 'live',
+  quant: 1,
+  held: {},
+  cur: 0,
+  chordPos: 0,
+  lastT: 0,
+  metroWas: false,
+  warned: false,
+  pat: null,
+  ti: 0,
+  oct: 0
+};

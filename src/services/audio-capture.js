@@ -1,14 +1,11 @@
 import { $, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S, scheduleSave } from '../core/state.js';
-import { renderArr } from '../song/arrangement.js';
 import { songEnd } from '../core/song-model.js';
 import { AU, ensureAudio } from './synth.js';
-import { TR, startSong, stopAll, stopPlay } from './transport.js';
-import { syncControls } from '../song/controls.js';
-import { CRC_T } from '../song/export.js';
-import { REC, recStop } from '../song/recording-midi.js';
-import { audBtn, audMode, audRender, openAudio } from '../song/audio-dialog.js';
+import { REC, TR, startSong, stopAll, stopPlay } from './transport.js';
+import { CRC_T } from '../core/crc.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- audio recording: mix and stems to WAV or MP3 ---------- */
 export const AUD = Object.assign(
@@ -287,7 +284,7 @@ export async function capPerm() {
     AUDREC.perm = r.state;
     r.onchange = () => {
       AUDREC.perm = r.state;
-      audRender();
+      hooks.audRender();
     };
   } catch (e) {}
 }
@@ -610,7 +607,7 @@ export async function audioRecord() {
   if (AUDREC.on || AUDREC.busy) return;
   AUDREC.busy = true;
   AUDREC.err = '';
-  audRender();
+  hooks.audRender();
   let saved = null;
   try {
     ensureAudio();
@@ -633,7 +630,7 @@ export async function audioRecord() {
     const [sb, et] = playRange();
     if (et <= sb * 32 || !S.clips.length) throw new Error('There is nothing to play in that range.');
     stopAll();
-    if (REC.on) recStop();
+    if (REC.on) hooks.recStop();
     saved = {
       preview: S.preview,
       metro: S.metro,
@@ -643,7 +640,7 @@ export async function audioRecord() {
     };
     S.metro = false;
     S.preview = AUD.source === 'preview' ? true : false;
-    syncControls();
+    hooks.syncControls();
     const d = new Date();
     AUDREC.base =
       'mc707-song-' +
@@ -662,7 +659,7 @@ export async function audioRecord() {
     for (let j = 0; j < jobs.length && !AUDREC.stop; j++) {
       AUDREC.pass = j;
       AUDREC.label = jobs[j].label;
-      audRender();
+      hooks.audRender();
       await runPass(jobs[j], sr);
       for (const [i, f] of saved.flags.entries()) {
         S.tracks[i].mute = f.mute;
@@ -688,12 +685,12 @@ export async function audioRecord() {
         S.tracks[i].solo = f.solo;
       });
     }
-    syncControls();
-    renderArr();
+    hooks.syncControls();
+    hooks.renderArr();
     scheduleSave();
     if ($('#audio').hidden) capCloseAll();
-    audRender();
-    audBtn();
+    hooks.audRender();
+    hooks.audBtn();
     if (AUDREC.results.length)
       toast(
         'Recorded ' +
@@ -713,8 +710,12 @@ export function quickRec() {
     return;
   }
   if (AUD.source === 'input' && !AUD.mixDev && !AUDREC.caps.mix) {
-    openAudio();
+    hooks.openAudio();
     return;
   }
   audioRecord();
+}
+export function audMode() {
+  if (AUD.mode) return AUD.mode;
+  return AUD.source === 'preview' ? 'preview' : AUD.stems === 'channels' ? 'mc707' : 'interface';
 }

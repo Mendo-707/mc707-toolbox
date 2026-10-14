@@ -2,24 +2,24 @@ import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
+import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
 import { patIndex } from '../core/song-model.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
-import { TICKER, TR, emitNote, sched, stopAll, stopPlay } from '../services/transport.js';
-import { CLIPPIN, PCLAST, autoClip, autoClipReset, cmFix, sendClip } from '../clips/clip-map.js';
-import { updTransport } from '../clips/clips-screen.js';
+import { REC, TICKER, TR, emitNote, sched, stopAll, stopPlay } from '../services/transport.js';
+import { CLIPPIN, PCLAST, autoClip, autoClipReset, cmFix, sendClip } from '../services/clip-switch.js';
 import { hashStr } from '../core/random.js';
-import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
-import { REC, recStop } from '../song/recording-midi.js';
-import { AUTOLAST, sendTrackCCs } from '../song/automation.js';
+import { AUTOLAST, sendTrackCCs } from '../services/mc-controls.js';
 import { LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam } from './moves.js';
 import { lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvMaskOff } from './scene-templates.js';
-import { liveBuild, liveSwapIds, lvModeFam, lvPool, lvProg } from './pools.js';
+import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
+import { liveBuild, liveSwapIds } from './pools.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---- engine ---- */
 export const lvTop = t => {
@@ -485,7 +485,7 @@ export function liveTick(tick, nt, td) {
   LV.lastTick = tick;
 }
 export function liveStart(idx) {
-  if (REC.on) recStop();
+  if (REC.on) hooks.recStop();
   stopAll();
   ensureAudio();
   if (!LV.scenes.length) liveBuild();
@@ -548,7 +548,7 @@ export function liveStart(idx) {
   TICKER.start();
   sched();
   LV.ver++;
-  updTransport();
+  hooks.updTransport();
 }
 export function liveCleanup() {
   try {

@@ -22,6 +22,8 @@ jobs:
           npx --prefix .ci-tools playwright install --with-deps chromium
       - name: Check formatting
         run: npx --prefix .ci-tools prettier --check src scripts tests
+      - name: Check the modules only import down the layers
+        run: node scripts/check-imports.mjs --strict
       - name: Check index.html was rebuilt from src/
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules

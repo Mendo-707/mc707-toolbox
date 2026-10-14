@@ -3,9 +3,9 @@ import { S, STORE, UI, fixState, pushUndo, replaceState, scheduleSave } from '..
 import { MIDI } from '../services/midi.js';
 import { stopAll } from '../services/transport.js';
 import { afterReplaceKeepUndo, closePops } from './controls.js';
-import { setMidiIn } from '../ui/setup-wizard.js';
-import { recKey } from './recording-midi.js';
-import { closeXpose, openXpose } from './transpose.js';
+import { setMidiIn } from './setup-wizard.js';
+import { recKey } from '../song/recording-midi.js';
+import { closeXpose, openXpose } from '../song/transpose.js';
 import { LV } from '../live/state.js';
 import { ctlAttach } from '../live/controller.js';
 

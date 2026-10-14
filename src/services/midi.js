@@ -1,7 +1,7 @@
 import { $, el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU } from './synth.js';
-import { refreshIns } from '../song/saved-songs.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- MIDI ---------- */
 export const MIDI = { access: null, out: null };
@@ -46,7 +46,7 @@ export function refreshOuts() {
     : outs.length
       ? 'Choose an output device.'
       : 'No MIDI outputs found. Plug in the MC-707 by USB and reconnect.';
-  refreshIns();
+  hooks.refreshIns();
 }
 const NOTEHIST = new Set();
 export function panic(hard) {

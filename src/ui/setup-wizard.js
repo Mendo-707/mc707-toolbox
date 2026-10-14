@@ -4,9 +4,9 @@ import { TRACK_COLORS } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, connectMidi, refreshOuts, sendMidi } from '../services/midi.js';
-import { stopAll } from '../services/transport.js';
-import { renderDmap, syncControls } from '../song/controls.js';
-import { REC, recMidi } from '../song/recording-midi.js';
+import { REC, stopAll } from '../services/transport.js';
+import { renderDmap, syncControls } from './controls.js';
+import { recMidi } from '../song/recording-midi.js';
 import { openAudio } from '../song/audio-dialog.js';
 import { liveMidi } from '../live/midi-in.js';
 

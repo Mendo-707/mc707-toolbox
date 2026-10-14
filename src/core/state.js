@@ -1,11 +1,7 @@
 import { $, toast } from './dom.js';
 import { LANES, SCALES } from './theory.js';
-import { FAC } from '../library/factory.js';
-import { curClip } from './song-model.js';
-import { ED } from '../song/editor.js';
-import { stopAll } from '../services/transport.js';
-import { renderAll } from '../song/controls.js';
-import { cleanTrackCC, fixClipExtras } from '../song/automation.js';
+import { MC_PARAMS } from './mc707-params.js';
+import { hooks } from './hooks.js';
 
 const DEFAULT_TRACKS = [
   { name: 'Drums 1', type: 'drum' },
@@ -75,39 +71,6 @@ export function addPattern(type, name, bars, notes, extra = {}) {
   S.patterns[id] = { id, name, type, bars, notes: notes.map(n => ({ ...n })), mod: false, ...extra };
   return id;
 }
-export function instFactory(f) {
-  const found = Object.keys(S.patterns).find(
-    k => S.patterns[k].src === f.id && !S.patterns[k].mod && !S.patterns[k].shift
-  );
-  if (found) return found;
-  return addPattern(f.type, f.name, f.bars, f.notes, {
-    src: f.id,
-    genre: f.genre,
-    key: f.key ? { ...f.key } : null,
-    role: f.role
-  });
-}
-export function makeDemo() {
-  S = newState();
-  S.bpm = 174;
-  S.loop = { on: true, start: 0, end: 8 };
-  S.key = 5;
-  S.scale = 'minor';
-  const put = (t, start, len, fid) => {
-    const pid = instFactory(FAC.find(x => x.id === fid));
-    S.clips.push({ id: 'c' + S.nextId++, t, start, len, off: 0, pat: pid });
-  };
-  put(0, 0, 7, 'dnb-twostep');
-  put(0, 7, 1, 'dnb-fill');
-  put(0, 8, 8, 'dnb-neuro');
-  put(3, 0, 8, 'dnb-sub');
-  put(3, 8, 8, 'dnb-reese');
-  put(4, 4, 4, 'dnb-stabs');
-  put(4, 8, 8, 'dnb-liquid-ch');
-  put(5, 0, 8, 'dnb-pad');
-  put(6, 12, 4, 'dnb-arp');
-  put(7, 8, 8, 'dnb-pluck');
-}
 
 /* ---------- undo / persistence ---------- */
 const UNDO = [],
@@ -138,8 +101,8 @@ export function redo() {
 function afterReplace() {
   ED.selNotes.clear();
   if (!curClip()) UI.sel = null;
-  stopAll();
-  renderAll();
+  hooks.stopAll();
+  hooks.renderAll();
   scheduleSave();
 }
 export const HOST = window.toolbox || null;
@@ -173,6 +136,20 @@ export function loadSaved() {
     return null;
   }
 }
+export const getClip = id => S.clips.find(c => c.id === id);
+export const curClip = () => (UI.sel ? getClip(UI.sel) : null);
+export const ED = {
+  mode: 'steps',
+  snap: 1,
+  zoom: 26,
+  lo: 36,
+  clipboard: null,
+  selNotes: new Set(),
+  fit: true,
+  geom: null,
+  drag: null,
+  lastDown: null
+};
 
 /* ---------- recording, markers, saved songs and extras ---------- */
 export function fixState(s) {
@@ -321,4 +298,35 @@ export function fixState(s) {
   });
   s.nextId = Math.max(Math.round(num(s.nextId, 1, 1e9, 1)), maxId + 1);
   return s;
+}
+
+function cleanPts(a, maxY) {
+  if (!Array.isArray(a)) return null;
+  const o = a
+    .filter(q => Array.isArray(q) && Number.isFinite(+q[0]) && Number.isFinite(+q[1]))
+    .map(q => [Math.min(1, Math.max(0, +q[0])), Math.min(maxY, Math.max(0, +q[1]))])
+    .sort((x, y) => x[0] - y[0])
+    .slice(0, 200);
+  return o;
+}
+function fixClipExtras(c, o) {
+  if (Number.isFinite(+c.fi) && +c.fi > 0) o.fi = Math.min(512, Math.round(+c.fi));
+  if (Number.isFinite(+c.fo) && +c.fo > 0) o.fo = Math.min(512, Math.round(+c.fo));
+  if (['exp', 'log', 's'].includes(c.fcv)) o.fcv = c.fcv;
+  const ve = cleanPts(c.ve, 1.5);
+  if (ve && ve.length) o.ve = ve;
+  if (c.cc && MC_PARAMS.some(m => m.n === +c.cc.n)) {
+    const pts = cleanPts(c.cc.pts, 1);
+    if (pts) o.cc = { n: +c.cc.n, pts };
+  }
+  if (Number.isInteger(+c.pc) && +c.pc >= 0 && +c.pc <= 127 && c.pc !== null && c.pc !== '') o.pc = +c.pc;
+}
+function cleanTrackCC(cc) {
+  if (!cc || typeof cc !== 'object') return {};
+  const o = {};
+  MC_PARAMS.forEach(m => {
+    const v = cc[m.n];
+    if (Number.isFinite(+v) && v !== null && v !== '') o[m.n] = Math.max(0, Math.min(127, Math.round(+v)));
+  });
+  return Object.keys(o).length ? { cc: o } : {};
 }

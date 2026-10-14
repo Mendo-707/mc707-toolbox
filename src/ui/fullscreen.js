@@ -1,4 +1,5 @@
 import { $, toast } from '../core/dom.js';
+import { TR } from '../services/transport.js';
 
 /* ---------- fullscreen and keep screen awake ---------- */
 export const STAGE = {
@@ -20,7 +21,7 @@ export function isFull() {
 export function canFull() {
   return !!FULLHOST || !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
 }
-export function syncFullBtn() {
+function syncFullBtn() {
   const b = $('#lvFull');
   if (b) {
     b.classList.toggle('on', isFull());
@@ -65,3 +66,45 @@ if (FULLHOST) {
       })
       .catch(() => {});
 }
+export function setAwake(on) {
+  STAGE.awake = on;
+  try {
+    localStorage.setItem('mc707-awake', on ? '1' : '0');
+  } catch (e) {}
+  syncAwake();
+  toast(on ? 'The screen stays on while music is playing' : 'Screen can sleep as normal');
+}
+export async function syncAwake() {
+  const want = STAGE.awake && TR.playing && !document.hidden;
+  if (want === STAGE.held) return;
+  STAGE.held = want;
+  const host = window.toolbox;
+  if (host && host.keepAwake) {
+    try {
+      host.keepAwake(want);
+    } catch (e) {}
+    return;
+  }
+  try {
+    if (want && navigator.wakeLock) {
+      STAGE.lock = await navigator.wakeLock.request('screen');
+      STAGE.lock.addEventListener('release', () => {
+        STAGE.lock = null;
+        if (STAGE.held) {
+          STAGE.held = false;
+        }
+      });
+    } else if (!want && STAGE.lock) {
+      const l = STAGE.lock;
+      STAGE.lock = null;
+      await l.release();
+    }
+  } catch (e) {
+    STAGE.lock = null;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!(window.toolbox && window.toolbox.keepAwake) && !STAGE.lock) STAGE.held = false;
+  syncAwake();
+});
+document.addEventListener('fullscreenchange', syncFullBtn);

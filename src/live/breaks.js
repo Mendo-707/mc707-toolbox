@@ -1,11 +1,11 @@
 import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
+import { facById } from '../library/index.js';
 import { TR, emitNote } from '../services/transport.js';
 import { FLASH_RH } from '../library/flash.js';
-import { facById } from '../library/index.js';
 import { LV, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
 import { LV_TONES, lvMove } from './moves.js';
-import { lvModeFam, lvPool } from './pools.js';
+import { lvModeFam, lvPool } from '../library/pools.js';
 import { lvLog } from './engine.js';
 import { lvOn, lvSortCues } from './cues.js';
 

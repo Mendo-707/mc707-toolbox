@@ -1,9 +1,9 @@
 import { $, clamp, el, fmtDur } from '../core/dom.js';
 import { TRACK_COLORS, devNum, devOn, oneKit } from '../core/device.js';
-import { TR, stopPlay } from '../services/transport.js';
 import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
-import { GEN_TIPS, KIND_TIPS, STRUCT, STYLES, trackLabel } from '../library/styles.js';
-import { FAMLABEL, KEYTXT, NK, chooseStyle, defaultSecs, kindsOf, wizPlan } from './wizard-styles.js';
+import { TR, stopPlay } from '../services/transport.js';
+import { FAMLABEL, GEN_TIPS, KIND_TIPS, NK, STRUCT, STYLES, trackLabel } from '../library/styles.js';
+import { KEYTXT, chooseStyle, defaultSecs, kindsOf, wizPlan } from './wizard-styles.js';
 import {
   closeWiz,
   styleDemo,
@@ -14,7 +14,7 @@ import {
   wizSyncPreview
 } from './wizard-plan.js';
 import { soundCard } from './sound-suggestions.js';
-import { lvPool } from '../live/pools.js';
+import { lvPool } from '../library/pools.js';
 
 export const WIZ = {
   step: 1,

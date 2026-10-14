@@ -1,86 +1,20 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { TRACK_COLORS } from '../core/device.js';
-import { S, pushUndo, scheduleSave } from '../core/state.js';
+import { S, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr, scheduleUI } from './arrangement.js';
-import { curClip, patOf } from '../core/song-model.js';
+import { patOf } from '../core/song-model.js';
 import { css, renderEdHead, sizeCanvas } from './editor.js';
-import { AU, ensureAudio } from '../services/synth.js';
-import { MIDI, sendMidi } from '../services/midi.js';
+import { MIDI } from '../services/midi.js';
 import { TR, fmtPos } from '../services/transport.js';
-import { loopClip, playFrom, showMenu } from './clip-ops.js';
+import { showMenu } from '../ui/menu.js';
+import { loopClip, playFrom } from './clip-ops.js';
+import { MC_PARAMS } from '../core/mc707-params.js';
+import { envInterp, fadeGain, sendCC, velMul } from '../services/mc-controls.js';
 
-/* ---------- fades, automation, MC-707 MIDI controls ---------- */
-export const MC_PARAMS = [
-  { n: 7, name: 'Volume', def: 100 },
-  { n: 10, name: 'Pan', def: 64 },
-  { n: 11, name: 'Expression', def: 127 },
-  { n: 74, name: 'Cutoff', def: 64 },
-  { n: 71, name: 'Resonance', def: 64 },
-  { n: 73, name: 'Attack time', def: 64 },
-  { n: 75, name: 'Decay time', def: 64 },
-  { n: 72, name: 'Release time', def: 64 },
-  { n: 91, name: 'Reverb send', def: 0 },
-  { n: 92, name: 'Chorus send', def: 0 },
-  { n: 1, name: 'Modulation', def: 0 },
-  { n: 5, name: 'Portamento time', def: 0 },
-  { n: 76, name: 'Vibrato rate', def: 64 },
-  { n: 77, name: 'Vibrato depth', def: 64 },
-  { n: 78, name: 'Vibrato delay', def: 64 },
-  { n: 80, name: 'FILTER knob', def: 64 },
-  { n: 81, name: 'MOD knob', def: 64 },
-  { n: 82, name: 'FX knob', def: 64 },
-  { n: 83, name: 'SOUND knob', def: 64 }
-];
 const CC_NAME = n => {
   const p = MC_PARAMS.find(x => x.n === n);
   return p ? p.name + ' (CC ' + n + ')' : 'CC ' + n;
 };
-export const curveFn = { lin: t => t, exp: t => t * t, log: t => Math.sqrt(t), s: t => t * t * (3 - 2 * t) };
-export function envInterp(pts, x, def) {
-  if (!pts || !pts.length) return def;
-  if (x <= pts[0][0]) return pts[0][1];
-  for (let i = 1; i < pts.length; i++)
-    if (x <= pts[i][0]) {
-      const a = pts[i - 1],
-        b = pts[i];
-      const t = b[0] === a[0] ? 1 : (x - a[0]) / (b[0] - a[0]);
-      return a[1] + (b[1] - a[1]) * t;
-    }
-  return pts[pts.length - 1][1];
-}
-function fadeGain(c, pos) {
-  let g = 1;
-  const f = curveFn[c.fcv] || curveFn.lin;
-  if (c.fi > 0) {
-    const L = c.fi / 16;
-    if (pos < L) g *= f(Math.max(0, pos / L));
-  }
-  if (c.fo > 0) {
-    const L = c.fo / 16;
-    const rem = c.len - pos;
-    if (rem < L) g *= f(Math.max(0, rem / L));
-  }
-  return g;
-}
-export const velMul = (c, pos) => fadeGain(c, pos) * envInterp(c.ve, c.len ? pos / c.len : 0, 1);
-export const AUTOLAST = {};
-export function autoCC(ti, c, tick, time) {
-  const x = (tick / 32 - c.start) / c.len;
-  if (x < 0 || x > 1) return;
-  const v = Math.round(clamp(envInterp(c.cc.pts, x, 0.5), 0, 1) * 127);
-  const k = ti + ':' + c.cc.n;
-  if (AUTOLAST[k] === v) return;
-  AUTOLAST[k] = v;
-  sendMidi([0xb0 | (S.tracks[ti].ch - 1), c.cc.n, v], time + (S.midiOffset || 0) / 1000);
-}
-export function tempoAtBar(bar) {
-  let b = S.bpm;
-  for (const m of S.markers) {
-    if (m.bpm && m.bar <= bar + 1e-9) b = m.bpm;
-  }
-  return b;
-}
-export const tickDurAt = bar => 60 / tempoAtBar(bar) / 8;
 /* ---- shape editor ---- */
 export const SH = { target: 'vel', drag: null, sel: -1, pos: null };
 function shapePts(c, create) {
@@ -650,18 +584,6 @@ export function shapeHead(h, c, p) {
 }
 /* ---- per-track MIDI controls ---- */
 const MCT = { t: 3 };
-function sendCC(ti, n, v) {
-  if (!MIDI.out) return false;
-  ensureAudio();
-  sendMidi([0xb0 | (S.tracks[ti].ch - 1), n, v], AU.ctx.currentTime);
-  return true;
-}
-export function sendTrackCCs() {
-  if (!MIDI.out || S.sendCC === false || !AU.ctx) return;
-  S.tracks.forEach((t, i) => {
-    if (t.cc) for (const n in t.cc) sendMidi([0xb0 | (t.ch - 1), +n, t.cc[n]], AU.ctx.currentTime + 0.02);
-  });
-}
 export function openMctl(t) {
   if (t != null) MCT.t = t;
   $('#mctl').hidden = false;
@@ -827,37 +749,6 @@ export function initStageB() {
     $('#midiPop').hidden = true;
     openMctl();
   });
-}
-
-function cleanPts(a, maxY) {
-  if (!Array.isArray(a)) return null;
-  const o = a
-    .filter(q => Array.isArray(q) && Number.isFinite(+q[0]) && Number.isFinite(+q[1]))
-    .map(q => [Math.min(1, Math.max(0, +q[0])), Math.min(maxY, Math.max(0, +q[1]))])
-    .sort((x, y) => x[0] - y[0])
-    .slice(0, 200);
-  return o;
-}
-export function fixClipExtras(c, o) {
-  if (Number.isFinite(+c.fi) && +c.fi > 0) o.fi = Math.min(512, Math.round(+c.fi));
-  if (Number.isFinite(+c.fo) && +c.fo > 0) o.fo = Math.min(512, Math.round(+c.fo));
-  if (['exp', 'log', 's'].includes(c.fcv)) o.fcv = c.fcv;
-  const ve = cleanPts(c.ve, 1.5);
-  if (ve && ve.length) o.ve = ve;
-  if (c.cc && MC_PARAMS.some(m => m.n === +c.cc.n)) {
-    const pts = cleanPts(c.cc.pts, 1);
-    if (pts) o.cc = { n: +c.cc.n, pts };
-  }
-  if (Number.isInteger(+c.pc) && +c.pc >= 0 && +c.pc <= 127 && c.pc !== null && c.pc !== '') o.pc = +c.pc;
-}
-export function cleanTrackCC(cc) {
-  if (!cc || typeof cc !== 'object') return {};
-  const o = {};
-  MC_PARAMS.forEach(m => {
-    const v = cc[m.n];
-    if (Number.isFinite(+v) && v !== null && v !== '') o[m.n] = Math.max(0, Math.min(127, Math.round(+v)));
-  });
-  return Object.keys(o).length ? { cc: o } : {};
 }
 
 export function drawClipOverlay(cv, c, w, h, col) {

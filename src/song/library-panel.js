@@ -2,15 +2,15 @@ import { $, el, toast } from '../core/dom.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from '../library/factory.js';
 import { DEV, DEVS, TRACK_COLORS, devNum } from '../core/device.js';
-import { S, UI } from '../core/state.js';
+import { S, UI, curClip } from '../core/state.js';
 import { hideGhost, placeSrc, renderArr, setDrag } from './arrangement.js';
-import { curClip, metaOf } from '../core/song-model.js';
+import { metaOf } from '../library/index.js';
 import { TR, startPat, stopPlay } from '../services/transport.js';
-import { CT_DEF, ctInfo, patType } from '../clips/clip-map.js';
-import { updTransport } from '../clips/clips-screen.js';
+import { CT_DEF, ctInfo, patType } from '../services/clip-switch.js';
 import { STYLES } from '../library/styles.js';
-import { showMenu } from './clip-ops.js';
+import { showMenu } from '../ui/menu.js';
 import { libMenuItems } from './import.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- library ---------- */
 function chipRow(host, opts, cur, fn) {
@@ -487,7 +487,7 @@ export function renderLibrary() {
         'Show 60 more (' + (items.length - UI.libLimit) + ' left)'
       )
     );
-  updTransport();
+  hooks.updTransport();
 }
 function drawThumb(cv, m, col) {
   const x = cv.getContext('2d');

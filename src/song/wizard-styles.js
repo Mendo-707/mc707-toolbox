@@ -1,21 +1,18 @@
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from '../library/factory.js';
 import { DEV, oneKit } from '../core/device.js';
+import { facById } from '../library/index.js';
 import { SHORT } from './library-panel.js';
 import { hashStr, mulberry } from '../core/random.js';
-import { facById } from '../library/index.js';
 import { DNB_KINDS, HH_KINDS, KIND_TIPS, STRUCT, STYLES } from '../library/styles.js';
 import { WIZ } from './wizard-ui.js';
-import { lvFlavor, lvPool, lvProg } from '../live/pools.js';
+import { lvFlavor, lvPool, lvProg } from '../library/pools.js';
 
-/* ---------- song wizard v2: more styles, section editor, complexity, key change, preview ---------- */
-export const FAMLABEL = { dnb: 'Drum and bass', hh: 'Hip hop', edm: 'Dance and club', song: 'Grooves and songs' };
 export const kindsOf = fam => (fam === 'dnb' || fam === 'edm' ? DNB_KINDS : HH_KINDS);
 STRUCT.edm = STRUCT.dnb;
 STRUCT.song = STRUCT.hh;
 KIND_TIPS.edm = KIND_TIPS.dnb;
 KIND_TIPS.song = KIND_TIPS.hh;
-export const NK = (n, sc) => NOTE_NAMES[n] + ((sc || 'minor') === 'minor' ? 'm' : '');
 export const KEYTXT = (n, sc) => NOTE_NAMES[n] + ((sc || 'minor') === 'minor' ? ' minor' : ' major');
 STYLES.forEach(s => {
   if (!s.genre) s.genre = s.fam === 'dnb' ? 'dnb' : 'hiphop';

@@ -1,17 +1,17 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { FAC } from '../library/factory.js';
-import { devOn } from '../core/device.js';
-import { S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';
+import { devNm, devOn } from '../core/device.js';
+import { ED, S, UI, addPattern, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { bw, dupClip, placeSrc, renderArr, selectClip } from './arrangement.js';
-import { MAXBARS, curClip, patOf, placeClip, songEnd } from '../core/song-model.js';
-import { ED, renderEditor } from './editor.js';
+import { facById } from '../library/index.js';
+import { MAXBARS, patOf, placeClip, q16, songEnd } from '../core/song-model.js';
+import { renderEditor } from './editor.js';
 import { ensureAudio } from '../services/synth.js';
 import { audition, startPat } from '../services/transport.js';
-import { cmMarks, cmPickItems, devNm, setClipMark } from '../clips/clip-map.js';
+import { cmMarks } from '../services/clip-switch.js';
+import { cmPickItems, setClipMark } from '../clips/clip-map.js';
 import { clipMapOpen } from '../clips/clips-screen.js';
 import { FAVS, auditionLib, itemStyles, keyLabel, quickAdd, renderLibrary, saveFavs } from './library-panel.js';
-import { syncControls } from './controls.js';
-import { facById } from '../library/index.js';
 import { STYLES } from '../library/styles.js';
 import {
   CLIPB,
@@ -39,9 +39,9 @@ import {
 } from './clip-ops.js';
 import { addMarker, loopSection } from './markers.js';
 import { openXpose } from './transpose.js';
-import { q16 } from './layout.js';
 import { openMctl, quickFade } from './automation.js';
 import { rangeMenuItems } from './structure.js';
+import { hooks } from '../core/hooks.js';
 
 /* ---------- external patterns: new, blank, and MIDI import ---------- */
 const GMDRUM = {
@@ -419,7 +419,7 @@ function reviewImport(items, bad, skipped) {
           renderArr();
           renderEditor();
           renderLibrary();
-          syncControls();
+          hooks.syncControls();
           scheduleSave();
           toast(
             place
@@ -975,7 +975,7 @@ export function rulerMenuItems(bar) {
       label: 'Add 8 bars',
       action: () => {
         S.bars = Math.min(MAXBARS, S.bars + 8);
-        syncControls();
+        hooks.syncControls();
         renderArr();
         scheduleSave();
       }

@@ -3,7 +3,7 @@ import { DEV, TRACK_COLORS, oneKit } from '../core/device.js';
 import { trackLabel } from '../library/styles.js';
 import { openWiz } from './wizard-ui.js';
 import { closeWiz } from './wizard-plan.js';
-import { lvGenreOf } from '../live/pools.js';
+import { lvGenreOf } from '../library/pools.js';
 
 /* ---------- MC-707 factory sound suggestions ----------
    Tone names, banks and numbers come from Roland's MC-707 Sound List. Drum kits are described by style
