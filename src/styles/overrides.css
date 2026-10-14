@@ -1,0 +1,101 @@
+/* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
+/* polish and fine control */
+.thead.compact {
+  padding: 2px 7px;
+}
+.thead.compact .trow2 {
+  display: none;
+}
+.thead.compact .tname {
+  padding: 0 3px;
+}
+#split {
+  height: 8px;
+  flex: none;
+  cursor: row-resize;
+  background: var(--line);
+  position: relative;
+  touch-action: none;
+}
+#split::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2.5px;
+  width: 46px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--mute);
+  transform: translateX(-50%);
+  opacity: 0.55;
+}
+#split:hover::after,
+#split:focus-visible::after {
+  background: var(--hot);
+  opacity: 1;
+}
+.clip .gripl {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--c) 55%, transparent));
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--raise) transparent;
+}
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--raise);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mute);
+  background-clip: padding-box;
+}
+.btn {
+  transition:
+    background 0.12s,
+    transform 0.06s,
+    box-shadow 0.15s;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn.on {
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--hot) 35%, transparent);
+}
+.clip {
+  transition:
+    box-shadow 0.12s,
+    filter 0.12s;
+}
+.clip:hover {
+  filter: brightness(1.1);
+}
+.clip.sel {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+.playhead {
+  box-shadow: 0 0 9px var(--hot);
+}
+.li {
+  transition: background 0.12s;
+}
+.li:hover {
+  background: var(--raise);
+}
+#top {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}

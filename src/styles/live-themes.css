@@ -1,0 +1,215 @@
+/* Live Mode colour themes: each #live[data-theme] sets the colour tokens; data-light marks the light themes. Loaded after live.css. */
+#live[data-theme='studio'] {
+  --bg: #101214;
+  --panel: #171a1d;
+  --panel2: #1d2125;
+  --raise: #262b30;
+  --line: #2b3137;
+  --ink: #eceff1;
+  --mute: #8a949e;
+  --hot: #2dd4bf;
+  --glow1: #0f2b2a;
+  --glow2: #16191d;
+  --padA: #1f2327;
+  --padB: #14171a;
+  --st1: #14b8a6;
+  --st2: #2dd4bf;
+  --stInk: #06231f;
+  --bd1: #0ea5e9;
+  --bd2: #2dd4bf;
+  --bdInk: #06231f;
+  --auto: #0d9488;
+  --auto2: #2dd4bf;
+  --xy1: #12302e;
+  --xy2: #1b2228;
+  --swap: #5eead4;
+  --vizf: hue-rotate(-100deg) saturate(0.7);
+}
+#live[data-theme='graphite'] {
+  --bg: #0f0f10;
+  --panel: #18181a;
+  --panel2: #1e1e21;
+  --raise: #29292d;
+  --line: #2e2e33;
+  --ink: #f2f2f3;
+  --mute: #8e8e96;
+  --hot: #ff7a1a;
+  --glow1: #28190c;
+  --glow2: #151517;
+  --padA: #222225;
+  --padB: #161618;
+  --st1: #ff6a00;
+  --st2: #ff9f43;
+  --stInk: #1a0d00;
+  --bd1: #ff6a00;
+  --bd2: #ffb347;
+  --bdInk: #1a0d00;
+  --auto: #e8650f;
+  --auto2: #ffb066;
+  --xy1: #2a2018;
+  --xy2: #1d1d20;
+  --swap: #ffb066;
+  --vizf: grayscale(0.85) sepia(0.45) saturate(2.2) hue-rotate(-18deg);
+}
+#live[data-theme='mono'] {
+  --bg: #0b0b0b;
+  --panel: #151515;
+  --panel2: #1b1b1b;
+  --raise: #262626;
+  --line: #2c2c2c;
+  --ink: #f5f5f5;
+  --mute: #8f8f8f;
+  --hot: #c6f432;
+  --glow1: #1b220a;
+  --glow2: #121212;
+  --padA: #1f1f1f;
+  --padB: #141414;
+  --st1: #a3e635;
+  --st2: #d9f99d;
+  --stInk: #111;
+  --bd1: #a3e635;
+  --bd2: #facc15;
+  --bdInk: #111;
+  --auto: #65a30d;
+  --auto2: #a3e635;
+  --xy1: #1a2210;
+  --xy2: #161616;
+  --swap: #d9f99d;
+  --vizf: grayscale(1) contrast(1.15);
+}
+#live[data-theme='midnight'] {
+  --bg: #0a1020;
+  --panel: #111a2e;
+  --panel2: #16213a;
+  --raise: #1f2c4a;
+  --line: #24324f;
+  --ink: #eaf1ff;
+  --mute: #8597b8;
+  --hot: #ff6b5b;
+  --glow1: #0e2b4f;
+  --glow2: #13213f;
+  --padA: #1a2540;
+  --padB: #111a2e;
+  --st1: #ff6b5b;
+  --st2: #ffa94d;
+  --stInk: #fff;
+  --bd1: #3b82f6;
+  --bd2: #ff6b5b;
+  --bdInk: #fff;
+  --auto: #2563eb;
+  --auto2: #60a5fa;
+  --xy1: #12305a;
+  --xy2: #1a2240;
+  --swap: #60a5fa;
+  --vizf: hue-rotate(-55deg) saturate(0.85);
+}
+#live[data-theme='daylight'] {
+  --bg: #f2f4f8;
+  --panel: #ffffff;
+  --panel2: #f7f9fc;
+  --raise: #e8ecf3;
+  --line: #d8dee8;
+  --ink: #141a24;
+  --mute: #5b6577;
+  --hot: #2563eb;
+  --glow1: #dce8ff;
+  --glow2: #e6f6f1;
+  --padA: #ffffff;
+  --padB: #edf1f7;
+  --st1: #2563eb;
+  --st2: #0ea5e9;
+  --stInk: #fff;
+  --bd1: #2563eb;
+  --bd2: #f43f5e;
+  --bdInk: #fff;
+  --auto: #2563eb;
+  --auto2: #60a5fa;
+  --xy1: #e1ebff;
+  --xy2: #eef7f4;
+  --swap: #2563eb;
+  --vizf: hue-rotate(-85deg) saturate(0.8);
+}
+#live[data-theme='paper'] {
+  --bg: #f5f1ea;
+  --panel: #fffdf9;
+  --panel2: #faf6ef;
+  --raise: #eee6d8;
+  --line: #e0d6c5;
+  --ink: #1f1a14;
+  --mute: #6b6155;
+  --hot: #e8590c;
+  --glow1: #fde6d2;
+  --glow2: #f1ece2;
+  --padA: #fffdf9;
+  --padB: #f3ece0;
+  --st1: #e8590c;
+  --st2: #f59f00;
+  --stInk: #fff;
+  --bd1: #e8590c;
+  --bd2: #d6336c;
+  --bdInk: #fff;
+  --auto: #e8590c;
+  --auto2: #ffa94d;
+  --xy1: #fde3cc;
+  --xy2: #f4eee4;
+  --swap: #e8590c;
+  --vizf: grayscale(0.85) sepia(0.45) saturate(2.2) hue-rotate(-18deg);
+}
+#live[data-light='1'] .lvnow .big {
+  background: linear-gradient(90deg, var(--ink), color-mix(in srgb, var(--acc) 85%, #000));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+#live[data-light='1'] .lvProg i.now {
+  background: var(--ink);
+  box-shadow: none;
+}
+#live[data-light='1'] .lvbeats i.on {
+  box-shadow: none;
+}
+#live[data-light='1'] .lvBar.sc {
+  color: var(--ink);
+}
+#live[data-light='1'] .lvTile.editing {
+  outline-color: var(--ink);
+}
+#live[data-light='1'] .lvEdit {
+  background: #ffffffb0;
+  border-color: #00000022;
+}
+#live[data-light='1'] .lvCell {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--c) 28%, #fff);
+}
+#live[data-light='1'] .lvLV::after {
+  background: var(--ink);
+  box-shadow: none;
+}
+#live[data-light='1'] .lvPad {
+  border-color: color-mix(in srgb, var(--c) 45%, #00000018);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 #0000000d,
+    0 2px 0 #00000014,
+    0 6px 14px #00000012;
+}
+#live[data-light='1'] .lvPad kbd {
+  border-color: #00000026;
+}
+#live[data-light='1'] .lvPad.cur {
+  background:
+    radial-gradient(120% 100% at 50% 110%, color-mix(in srgb, var(--c) 45%, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, var(--padA), var(--padB));
+}
+#live[data-light='1'] .lvK.blk {
+  background: #2b313c;
+  color: #fff;
+}
+#live[data-light='1'] .lvnow {
+  box-shadow: 0 0 calc(6px + 18px * var(--beat, 0)) color-mix(in srgb, var(--acc) 30%, transparent);
+}
+#live[data-light='1'] .lvbox,
+#live[data-light='1'] .lvPanel,
+#live[data-light='1'] .lvTile {
+  box-shadow: 0 1px 2px #0000000f;
+}

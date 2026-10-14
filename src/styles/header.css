@@ -1,0 +1,128 @@
+/* The top bar: app name, menus, transport and mode switch. */
+/* header */
+#top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 30;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.brand b {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.brand span {
+  color: var(--mute);
+  font-size: 12px;
+}
+.grp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.grp label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--mute);
+}
+#bpm {
+  width: 64px;
+}
+.play {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 84px;
+  justify-content: center;
+}
+.play svg,
+.btn svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+.play.on {
+  background: var(--hot);
+  color: #fff;
+  border-color: transparent;
+}
+.pos {
+  min-width: 76px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 17px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+.pop {
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  margin-top: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  z-index: 40;
+  width: min(420px, calc(100vw - 20px));
+  max-height: 70vh;
+  overflow: auto;
+}
+.pop[hidden] {
+  display: none;
+}
+.pop h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.pop .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 7px 0;
+  flex-wrap: wrap;
+}
+.pop select {
+  max-width: 100%;
+}
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 200px;
+  width: auto;
+}
+.menu .btn {
+  text-align: left;
+}
+.dmap {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.dmap label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--mute);
+  gap: 2px;
+}
+.dmap input {
+  width: 100%;
+}

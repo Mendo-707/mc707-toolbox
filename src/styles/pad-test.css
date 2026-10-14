@@ -1,0 +1,77 @@
+/* Pad test and other pop-up overlays (.ptOv / .ptBox), shared by the clips screen. Loaded after clips-screen.css. */
+.ptOv {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ptBox {
+  background: #171925;
+  color: #eef0ff;
+  border: 1px solid #ffffff22;
+  border-radius: 14px;
+  padding: 18px 20px;
+  max-width: 880px;
+  width: 100%;
+  max-height: 92vh;
+  overflow: auto;
+}
+.ptBox h3 {
+  margin: 0 0 6px;
+  color: #fff;
+}
+.ptBox p {
+  color: #d6d9ee;
+}
+.ptBox .hint {
+  color: #a9aecb;
+}
+.ptBox .btn {
+  background: #2a2d40;
+  color: #eef0ff;
+  border: 1px solid #ffffff22;
+}
+.ptBox .btn.on {
+  background: #ffd23f;
+  color: #1a1200;
+}
+.ptWarn {
+  color: #ff8a80;
+}
+.ptGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.ptPad {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #2a2d40;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 2px solid transparent;
+}
+.ptPad b {
+  font-size: 15px;
+  opacity: 0.7;
+}
+.ptPad.now {
+  border-color: #ffd23f;
+  box-shadow: 0 0 18px #ffd23f66;
+}
+.ptPad.got {
+  background: #1f6f66;
+}
+.ptOut {
+  width: 100%;
+  font: 12px monospace;
+  margin: 6px 0;
+}

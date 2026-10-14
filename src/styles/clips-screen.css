@@ -1,0 +1,417 @@
+/* The "Your MC-707 clips" screen: track strips, the blue MC-707 display, the 16 pads. Loaded after live.css (it builds on the .ptOv/.ptBox overlay). */
+.cmBox {
+  max-width: 980px;
+}
+.cmHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cmUnit {
+  background: linear-gradient(180deg, #2a2b30, #1b1c20);
+  border: 1px solid #3a3b42;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 10px 0;
+  box-shadow:
+    inset 0 1px 0 #ffffff14,
+    0 10px 30px #0008;
+}
+.cmStrips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 6px;
+}
+.cmStrip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 10px;
+  border-radius: 10px;
+  background: #16171a;
+  border: 1px solid #33343b;
+  color: #d9dbe3;
+  cursor: pointer;
+  font: inherit;
+  min-width: 0;
+}
+.cmStrip .cmTn {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #8d909c;
+  font-weight: 700;
+}
+.cmStrip .cmName {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.cmStrip .cmDots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  min-height: 8px;
+  max-width: 72px;
+}
+.cmStrip .cmDots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.cmStrip .cmCount {
+  font-size: 11px;
+  color: #8d909c;
+}
+.cmStrip .cmSel {
+  width: 70%;
+  height: 6px;
+  border-radius: 3px;
+  background: #2f3037;
+  margin-top: 2px;
+}
+.cmStrip.on {
+  border-color: var(--c);
+  background: #1d1e22;
+}
+.cmStrip.on .cmSel {
+  background: var(--c);
+  box-shadow: 0 0 10px var(--c);
+}
+.cmMid {
+  display: flex;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.cmMid .cmCtl {
+  margin-left: auto;
+}
+.cmLcd {
+  flex: 1 1 100%;
+  --lc: #d7f2ff;
+  --ld: #7fa2ff;
+  --lb: #1631c9;
+  display: grid;
+  grid-template-columns: 150px 24px repeat(var(--cols), minmax(0, 1fr)) 128px;
+  grid-template-rows: 30px repeat(8, 26px) 16px;
+  column-gap: 4px;
+  row-gap: 3px;
+  align-items: stretch;
+  background: radial-gradient(120% 140% at 50% 40%, #2440e0 0%, #1630c4 55%, #0e22a0 100%);
+  border: 5px solid #050608;
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+  color: var(--lc);
+  font-size: 13px;
+  line-height: 1;
+  box-shadow:
+    inset 0 0 20px #0009,
+    0 0 0 1px #3a3b42,
+    0 0 28px #2440e055;
+  user-select: none;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 3px #bfe6ff88;
+}
+.lcdProj {
+  font-weight: 700;
+  font-size: 16px;
+  align-self: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.lcdTab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--ld);
+  background: #ffffff14;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.lcdTab.on {
+  background: var(--lc);
+  color: var(--lb);
+  text-shadow: none;
+}
+.lcdTempo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 16px;
+}
+.lcdClk {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--lc);
+  border-radius: 50%;
+  display: inline-block;
+}
+.lcdLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 6px;
+}
+.lcdPrev {
+  border: 1.5px solid var(--lc);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  flex: 1;
+}
+.lcdPrevA {
+  padding: 10px 26px 6px;
+  color: var(--lc);
+  min-height: 70px;
+}
+.lcdPrevB {
+  border-top: 1.5px solid var(--lc);
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 5px 2px;
+  color: var(--lc);
+}
+.lcdClipNo {
+  font-size: 14px;
+}
+.lcdClipName {
+  background: var(--lc);
+  color: var(--lb);
+  text-shadow: none;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.lcdNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.lcdNum.on {
+  background: var(--lc);
+  color: var(--lb);
+  text-shadow: none;
+  font-weight: 700;
+}
+.lcdCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px dotted var(--ld);
+  border-left: 1px dotted #7fa2ff66;
+  border-right: 1px dotted #7fa2ff66;
+}
+.lcdCell.col {
+  border-left: 2px solid var(--lc);
+  border-right: 2px solid var(--lc);
+}
+.lcdCell.row {
+  border-top: 2px solid var(--lc);
+  border-bottom: 2px solid var(--lc);
+}
+.lcdCell.used {
+  background: #bfe6ffd0;
+  color: var(--lb);
+  text-shadow: none;
+  box-shadow: inset 0 0 0 3px #1630c4;
+}
+.lcdCell.cur {
+  background: #fff;
+  color: var(--lb);
+  outline: 2px solid #fff;
+  outline-offset: -1px;
+  box-shadow: none;
+}
+.lcdCell.play:not(.cur)::before {
+  content: '▶';
+  font-size: 8px;
+  margin-right: 3px;
+}
+.lcdScroll {
+  position: relative;
+  border: 1.5px solid var(--ld);
+  margin: 0 6px;
+}
+.lcdScroll i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--lc);
+}
+.lcdMeter {
+  border: 1.5px solid var(--lc);
+  margin: 3px 10px;
+}
+.lcdMeter.on {
+  background: var(--lc);
+}
+.lcdRight {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 2px solid var(--lc);
+  padding-left: 8px;
+}
+.lcdMenuH {
+  background: var(--lc);
+  color: var(--lb);
+  text-shadow: none;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 5px;
+  margin-bottom: 3px;
+}
+.lcdCmdI {
+  font-size: 15px;
+  padding: 3px 5px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.lcdCmdI.on {
+  background: var(--lc);
+  color: var(--lb);
+  text-shadow: none;
+}
+.lcdCmdI:hover {
+  outline: 1px dotted var(--lc);
+}
+.cmScreen {
+  flex: 1 1 260px;
+  background: #050506;
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: #e9ecf5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: inset 0 0 12px #000;
+}
+.cmScreen b {
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.cmScreen span {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #fff;
+}
+.cmCtl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9dbe3;
+  font-size: 13px;
+}
+.cmCtl b {
+  font-size: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+.cmPads {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+}
+.cmPad {
+  aspect-ratio: 1.25;
+  border-radius: 10px;
+  border: 1px solid #00000080;
+  background: linear-gradient(180deg, #3a3b41, #2a2b30);
+  color: #bfc2cc;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  box-shadow:
+    inset 0 1px 0 #ffffff1a,
+    0 2px 0 #000;
+}
+.cmPad b {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.cmPad .off {
+  opacity: 0.4;
+}
+.cmPad.lit {
+  background: radial-gradient(120% 120% at 50% 120%, var(--c) 0%, color-mix(in srgb, var(--c) 55%, #202126) 70%);
+  color: #101114;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 #ffffff55,
+    0 0 16px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.cmPad.cur {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.cmEdit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.cmTypes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cmTypes .btn.on {
+  outline: 2px solid var(--c);
+}
+.cmSw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.cmBox .lvf,
+.cmAuto b,
+.cmEdit > b {
+  color: #eef0ff;
+}
+.cmAuto {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+}
+.cmAuto small {
+  color: #a9aecb;
+}
+.cmBox input[type='text'] {
+  background: #2a2d40;
+  color: #eef0ff;
+  border: 1px solid #ffffff22;
+  border-radius: 6px;
+  padding: 5px 8px;
+}

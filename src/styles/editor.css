@@ -1,0 +1,201 @@
+/* The pattern editor: step grid, piano roll, velocity lane. */
+/* editor */
+#editor {
+  height: var(--edH, clamp(250px, 38vh, 420px));
+  border-top: 2px solid var(--line);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: none;
+}
+#edHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+#edHead .grp {
+  gap: 4px;
+}
+#blkHover {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+.edbs {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding-top: 2px;
+}
+.edbs[hidden] {
+  display: none;
+}
+.edbs .bsc {
+  min-width: 30px;
+  position: relative;
+}
+.edbs .bsc.has::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+}
+.edbs .bswarn {
+  color: var(--hot);
+  margin-left: auto;
+}
+.seg {
+  display: flex;
+}
+.seg .btn {
+  border-radius: 0;
+  margin-left: -1px;
+}
+.seg .btn:first-child {
+  border-radius: 5px 0 0 5px;
+  margin-left: 0;
+}
+.seg .btn:last-child {
+  border-radius: 0 5px 5px 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--c) 30%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  font-size: 12.5px;
+}
+#edName {
+  width: 150px;
+  font-weight: 600;
+}
+#edBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#edScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+  background: var(--bg);
+}
+#edInner {
+  display: flex;
+  width: max-content;
+}
+#edLabels {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  flex: none;
+  touch-action: none;
+}
+#edGridWrap {
+  position: relative;
+  flex: none;
+}
+#edGrid {
+  display: block;
+  touch-action: none;
+}
+#edPlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--hot);
+  pointer-events: none;
+  display: none;
+  z-index: 2;
+}
+#edVelWrap {
+  flex: none;
+  height: 64px;
+  overflow: hidden;
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  position: relative;
+}
+#edVelWrap[hidden] {
+  display: none;
+}
+#edVelWrap .sp {
+  position: sticky;
+  left: 0;
+  flex: none;
+  width: 100px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  z-index: 2;
+  font-size: 11px;
+  color: var(--mute);
+  padding: 5px 6px;
+}
+#edVel {
+  display: block;
+  flex: none;
+  touch-action: none;
+  cursor: ns-resize;
+}
+#edEmpty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--mute);
+  padding: 20px;
+  line-height: 1.5;
+}
+#edEmpty[hidden] {
+  display: none;
+}
+#edEmpty b {
+  color: var(--ink);
+}
+
+@media (max-height: 640px) {
+  body {
+    overflow-y: auto;
+  }
+  #main {
+    flex: none;
+    min-height: 0;
+  }
+  #work {
+    min-height: 0;
+  }
+  #arr {
+    flex: none;
+    height: 300px;
+  }
+  #editor {
+    height: 340px;
+  }
+  #lib {
+    max-height: none;
+  }
+}

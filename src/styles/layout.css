@@ -1,0 +1,56 @@
+/* Page layout: the library sidebar, arrangement and editor panes. */
+/* layout */
+#main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+}
+#main.nolib {
+  grid-template-columns: minmax(0, 1fr);
+}
+#main.nolib #lib {
+  display: none;
+}
+#lib {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+#work {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+#libClose {
+  display: none;
+}
+@media (max-width: 860px) {
+  #main,
+  #main.nolib {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #lib,
+  #main.nolib #lib {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(330px, 90vw);
+    z-index: 60;
+    border-right: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding-top: env(safe-area-inset-top, 0px);
+    display: flex;
+  }
+  #main.nolib #lib {
+    display: none;
+  }
+  #libClose {
+    display: inline-block;
+    align-self: flex-start;
+  }
+}

@@ -51,6 +51,12 @@ export async function build() {
     const css = fs.readFileSync(path.join(SRC, href), 'utf8');
     return '<style>\n' + css + '</style>';
   });
+  // inline plain scripts that run before the app: <script src="./x.js"></script>
+  html = html.replace(/<script src="\.\/([^"]+)"><\/script>/g, (m, src) => {
+    const code = fs.readFileSync(path.join(SRC, src), 'utf8');
+    if (/<\/script/i.test(code)) throw new Error(src + ' contains "</script".');
+    return '<script>\n' + code + '</script>';
+  });
   // inline the bundled script in place of the module tag
   const tag = '<script type="module" src="./main.js"></script>';
   if (!html.includes(tag)) throw new Error('src/index.html must load the app with: ' + tag);

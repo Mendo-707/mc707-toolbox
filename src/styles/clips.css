@@ -1,0 +1,57 @@
+/* MC-707 clips: clip-change flags on Song Mode lanes and the clip chips on track headers. */
+.cmk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--k);
+  pointer-events: none;
+  z-index: 4;
+}
+.cmk b {
+  pointer-events: auto;
+  position: absolute;
+  left: -2px;
+  bottom: 1px;
+  font-size: 10px;
+  line-height: 14px;
+  padding: 0 6px 0 4px;
+  background: var(--k);
+  color: #101318;
+  border-radius: 0 4px 4px 0;
+  cursor: grab;
+  white-space: nowrap;
+  font-weight: 700;
+  touch-action: none;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.cmk.auto {
+  border-left-style: dashed;
+}
+.cmk.auto b {
+  color: var(--panel);
+}
+.thClip {
+  flex: none;
+  height: 20px;
+  padding: 0 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--mute);
+  border-left: 4px solid var(--k, transparent);
+  max-width: 78px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.thClip.on {
+  color: var(--ink);
+}
+.thead .thClip {
+  width: 60px;
+  text-align: left;
+}

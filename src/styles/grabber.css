@@ -1,0 +1,110 @@
+/* The sample grabber button on the playhead and its pop-up. */
+.grabBtn {
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  transform: translateX(-50%);
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  pointer-events: auto;
+  border: 2px solid var(--hot);
+  background: var(--panel);
+  color: var(--hot);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  padding: 0 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.grabBtn:hover {
+  background: var(--hot);
+  color: #fff;
+}
+.grabBtn.on,
+#lvGrab.on {
+  background: var(--hot);
+  color: #fff;
+  animation: grabp 1s ease-in-out infinite;
+}
+@keyframes grabp {
+  50% {
+    box-shadow: 0 0 12px var(--hot);
+  }
+}
+.grabPop {
+  position: fixed;
+  z-index: 80;
+  width: 330px;
+  max-width: calc(100vw - 16px);
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 13px;
+}
+.grabH {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+.grabPop .gf {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--mute);
+}
+.grabPop .gf select {
+  color: var(--ink);
+}
+.grabPop .seg {
+  display: flex;
+  gap: 4px;
+}
+.grabPop .seg .btn {
+  flex: 1;
+}
+.grabGo {
+  font-weight: 700;
+  padding: 8px;
+}
+.grabGo.on {
+  background: var(--hot);
+  color: #fff;
+  border-color: transparent;
+}
+.grabPop .hint {
+  margin: 0;
+  font-size: 11.5px;
+}
+.grabList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 210px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.grabRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.grabRow span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
