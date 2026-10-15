@@ -3,7 +3,7 @@ setlocal
 title Build MC-707 Toolbox
 cd /d "%~dp0"
 echo.
-echo  Building MC-707-Toolbox.exe
+echo  Building the MC-707 Toolbox installer and portable app
 echo  The first build downloads about 250 MB and takes 2 to 5 minutes.
 echo  Everything it prints is saved to build-log.txt.
 echo.
@@ -23,10 +23,11 @@ if errorlevel 1 goto failed
 echo  Step 2 of 2: packaging the app...
 call npm run dist >> build-log.txt 2>&1
 if errorlevel 1 goto failed
-if not exist "dist\MC-707-Toolbox.exe" goto failed
+if not exist "dist\MC-707-Toolbox-Setup.exe" goto failed
 echo.
-echo  Done. Your app is here:  %~dp0dist\MC-707-Toolbox.exe
-echo  Copy it anywhere you like. It needs no installer.
+echo  Done. In %~dp0dist you have:
+echo    MC-707-Toolbox-Setup.exe  the installer (Start menu and desktop shortcuts, uninstall from Settings)
+echo    MC-707-Toolbox.exe        the portable app (no install, copy it anywhere)
 echo.
 echo  Windows may show a blue "Windows protected your PC" box the first time,
 echo  because the app is not code-signed. Click More info, then Run anyway.

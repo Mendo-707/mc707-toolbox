@@ -44,15 +44,20 @@ Got an MC-101? Choose **Settings › Device: MC-101 (4 tracks)**. The app switch
 
 ### Windows app (recommended)
 
-**Download:** get `MC-707-Toolbox.exe` from [Releases](../../releases). It is one portable file with no installer.
+**Download** from [Releases](../../releases):
+
+- **`MC-707-Toolbox-Setup.exe`** (recommended): the installer. It adds MC-707 Toolbox to the Start menu and the desktop, lets you choose the folder, and opens faster than the portable app. Uninstall it from Windows **Settings › Apps**. Install a newer version over the top; your songs, settings and My patterns stay.
+- **`MC-707-Toolbox.exe`**: the portable app. No install: one file you can run from anywhere, such as a USB stick.
+
+Both keep their saved work in the same place, so you can switch between them.
 
 **Or build it yourself:**
 
 1. Install **Node.js LTS** from <https://nodejs.org> (accept the defaults).
 2. Double-click **`build-exe.bat`** in this folder and wait 2–5 minutes.
-3. Your app is **`dist\MC-707-Toolbox.exe`**. It is one portable file with no installer, so copy it anywhere.
+3. In the **`dist`** folder you get **`MC-707-Toolbox-Setup.exe`** (the installer) and **`MC-707-Toolbox.exe`** (the portable app).
 
-The first time you open it, Windows may say *"Windows protected your PC"*. That appears for any app that is not code-signed. Click **More info**, then **Run anyway**.
+The first time you open either one, Windows may say *"Windows protected your PC"*. That appears for any app that is not code-signed. Click **More info**, then **Run anyway**.
 
 If the build fails, the details are in `build-log.txt` next to the script.
 

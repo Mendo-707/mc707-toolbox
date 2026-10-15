@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable --publish never",
+    "dist": "electron-builder --win nsis portable --publish never",
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check && node scripts/check-imports.mjs --strict && node scripts/module-map.mjs --check",
     "check-imports": "node scripts/check-imports.mjs",
@@ -31,9 +31,26 @@
       "icon.png"
     ],
     "win": {
-      "target": "portable",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "signAndEditExecutable": false,
       "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MC-707 Toolbox",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "uninstallDisplayName": "MC-707 Toolbox",
+      "artifactName": "MC-707-Toolbox-Setup.exe"
     },
     "portable": {
       "artifactName": "MC-707-Toolbox.exe"

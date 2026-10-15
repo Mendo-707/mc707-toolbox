@@ -1,5 +1,6 @@
-# Builds MC-707-Toolbox.exe on GitHub's own Windows machines.
-# Runs when you publish a Release (Releases > Draft a new release), and attaches the exe to it.
+# Builds the Windows app on GitHub's own Windows machines: MC-707-Toolbox-Setup.exe (the installer)
+# and MC-707-Toolbox.exe (portable, no install).
+# Runs when you publish a Release (Releases > Draft a new release), and attaches both to it.
 # You can also run it by hand from the Actions tab; the exe is then under the run's Artifacts. Give it
 # a release tag (e.g. v1.0.0) and it builds that tag and attaches the exe to that release too, for
 # when the release event did not start a build.
@@ -38,10 +39,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: MC-707-Toolbox
-          path: dist/MC-707-Toolbox.exe
-      - name: Attach the exe to the release
+          path: |
+            dist/MC-707-Toolbox-Setup.exe
+            dist/MC-707-Toolbox.exe
+      - name: Attach the installer and the portable exe to the release
         if: github.event_name == 'release' || github.event.inputs.tag != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag }}" dist/MC-707-Toolbox.exe --clobber
+        run: gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag }}" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
