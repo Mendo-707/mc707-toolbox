@@ -7,7 +7,7 @@ It has two modes, switched with the tabs at the top right:
 - **Song Mode** – build a whole track on a timeline, then play it on the MC-707 note for note.
 - **Live Mode** – a looping set of scenes you perform from 16 pads, with drops, breaks, swaps and effects that land on the beat.
 
-> **Beta.** Free to use and share, not for sale (see [Licence](#licence)). This is an unofficial fan project and is not made by or affiliated with Roland.
+> **Version 1.0.** Free to use and share, not for sale (see [Licence](#licence)). This is an unofficial fan project and is not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
