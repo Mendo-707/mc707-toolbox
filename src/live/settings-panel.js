@@ -247,8 +247,13 @@ export function liveRenderSettings() {
             max: 127,
             value: LV.rest[i],
             style: 'width:60px',
+            title:
+              i === 0
+                ? 'Where FILTER sits when nothing is happening. 0 matches the MC-707; builds and risers sweep up from here.'
+                : 'Where this knob goes back to after moves and risers.',
             onchange: e => {
               LV.rest[i] = clamp(Math.round(+e.target.value) || 0, 0, 127);
+              liveRenderKnobs();
               saveLive();
             }
           })

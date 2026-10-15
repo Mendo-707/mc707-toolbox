@@ -82,6 +82,7 @@ const LV_SAVE = [
   'chaos',
   'ktarget',
   'rest',
+  'restV',
   'scBase',
   'riseBars',
   'dropStyle',
@@ -121,7 +122,7 @@ export const LV = Object.assign(
     autoReps: 2,
     chaos: 30,
     ktarget: 'all',
-    rest: [64, 0, 0, 64],
+    rest: [0, 0, 64, 64],
     scBase: 60,
     riseBars: 4,
     dropStyle: 'gap',
@@ -170,7 +171,7 @@ export const LV = Object.assign(
     rate: 1,
     stut: null,
     rise: null,
-    knobs: [64, 0, 0, 64],
+    knobs: [0, 0, 64, 64],
     knobsIn: [null, null, null, null],
     pulse: [],
     held: {},
@@ -228,8 +229,15 @@ export const liveSwingAmt = () => LV.swing;
   LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);
   if (LV.mode !== 'major' && LV.mode !== 'minor') LV.mode = null;
   LV.riseBars = [2, 4, 8].includes(+LV.riseBars) ? +LV.riseBars : 4;
+  /* FILTER rests at 0 on the MC-707. Sets saved before 1.0.1 had it at 64 (centre): move the untouched
+     default once (restV 2); a rest someone set by hand later stays as they set it. */
   if (Array.isArray(LV.rest) && LV.rest.join() === '64,0,0,64') LV.rest = [64, 0, 64, 64];
-  if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [64, 0, 64, 64];
+  if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [0, 0, 64, 64];
+  if (LV.restV !== 2) {
+    if (LV.rest.join() === '64,0,64,64') LV.rest = [0, 0, 64, 64];
+    LV.restV = 2;
+  }
+  LV.knobs = LV.rest.slice();
   if (
     !(
       ['all', 'drums', 'tone'].includes(LV.ktarget) ||

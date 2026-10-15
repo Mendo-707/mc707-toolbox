@@ -14,7 +14,7 @@ import { liveEditScene, liveRenderSceneEd } from './scene-editor.js';
 import { LV_PLAY } from './scene-templates.js';
 import { lvModeFam } from '../library/pools.js';
 import { liveCue, liveKeyCue, liveMute, lvOn, lvVaryLabel } from './cues.js';
-import { livePadDown, livePadUp, scatter, sendKnob } from './pads.js';
+import { knobUI, livePadDown, livePadUp, scatter, sendKnob } from './pads.js';
 import { liveRenderCtlBar } from './controller.js';
 import { LV_KEYROWS, lvPadIndex } from './midi-in.js';
 import { liveRenderLanes, liveStatus } from './lanes.js';
@@ -330,23 +330,47 @@ export function liveRenderKnobs() {
   ['FILTER', 'MOD', 'FX', 'SOUND'].forEach((n, i) =>
     kb.append(
       el(
-        'label',
+        'div',
         { class: 'lvKnob' },
-        el('span', {}, n),
+        el(
+          'span',
+          { class: 'lvKh' },
+          n,
+          el('b', { id: 'lvKv' + i }),
+          el(
+            'button',
+            {
+              class: 'lvkz',
+              title: 'Back to rest (' + LV.rest[i] + ')',
+              'aria-label': n + ' back to rest',
+              onclick: () => sendKnob(i, LV.rest[i])
+            },
+            '↺'
+          )
+        ),
         el('input', {
           type: 'range',
           id: 'lvKn' + i,
           min: 0,
           max: 127,
           value: LV.knobs[i],
+          'aria-label': n,
           oninput: e => sendKnob(i, +e.target.value),
           ondblclick: () => sendKnob(i, LV.rest[i]),
-          title: 'CC ' + (80 + i) + '. Double-click to reset. The MC-707 knob position shows as a marker.'
+          title:
+            'CC ' +
+            (80 + i) +
+            '. Rests at ' +
+            LV.rest[i] +
+            ' (the white tick). The coloured bar shows how far it is from rest; the orange marker is the MC-707 knob. Double-click or ↺ to go back to rest.'
         }),
+        el('i', { class: 'lvkf' }),
+        el('i', { class: 'lvkRest' }),
         el('i', { class: 'lvki', id: 'lvKi' + i })
       )
     )
   );
+  for (let i = 0; i < 4; i++) knobUI(i, LV.knobs[i]);
   const kt = $('#lvKT');
   if (kt) {
     kt.textContent = '';

@@ -26,6 +26,7 @@ import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
 import { lvExtreme, lvXExtra, lvXSkip, lvXType } from './extreme.js';
+import { knobUI } from './pads.js';
 
 /* ---- engine ---- */
 export const lvTop = t => {
@@ -171,6 +172,8 @@ function lvRiseReset(tick) {
   lvTracksFor(r.target).forEach(t =>
     sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
   );
+  LV.knobs[r.cc - 80] = LV.rest[r.cc - 80];
+  knobUI(r.cc - 80, LV.rest[r.cc - 80]);
 }
 function lvRiseTick(tick, nt) {
   const r = LV.rise;
@@ -182,6 +185,7 @@ function lvRiseTick(tick, nt) {
   const u = (tick - r.start) / (r.end - r.start),
     v = Math.round(r.from + (r.to - r.from) * u);
   lvTracksFor(r.target).forEach(t => sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, clamp(v, 0, 127)], nt));
+  knobUI(r.cc - 80, clamp(v, 0, 127));
 }
 function liveFire(c, tick) {
   if (c.type === 'scene') liveScene(c.idx, tick, c.hard);

@@ -281,7 +281,13 @@ export function liveRiser(dir) {
   const t1 = lvBoundary(1),
     nextScene = LV.cues.find(c => c.type === 'scene' && c.tick > t1);
   const end = nextScene ? nextScene.tick : t1 + LV.riseBars * 32;
-  LV.rise = { start: t1, end, from: LV.rest[0], to: dir === 'down' ? 0 : 127, cc: 80, target: 'all' };
+  const r = LV.rest[0],
+    low = r < 32;
+  /* up: from rest into the filter; down: the other way (out of the filter back to rest when it rests low) */
+  LV.rise =
+    dir === 'down'
+      ? { start: t1, end, from: low ? 127 : r, to: low ? r : 0, cc: 80, target: 'all' }
+      : { start: t1, end, from: r, to: 127, cc: 80, target: 'all' };
   LV.ver++;
 }
 export function liveStutter(len, on) {

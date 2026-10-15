@@ -42,8 +42,25 @@ export function scatter(i, on) {
 export function sendKnob(i, val) {
   LV.knobs[i] = val;
   lvTracksFor(LV.ktarget).forEach(t => lvSend([0xb0 | (S.tracks[t].ch - 1), 80 + i, val]));
+  knobUI(i, val);
+}
+/**
+ * Show a knob's value on screen without sending it: the slider, its number, and a bar from its rest
+ * position to where it is now (lit while it is away from rest, also during risers and moves).
+ */
+export function knobUI(i, val) {
   const k = $('#lvKn' + i);
-  if (k && +k.value !== val) k.value = val;
+  if (!k) return;
+  if (+k.value !== val) k.value = val;
+  const box = k.parentNode,
+    r = LV.rest[i],
+    away = Math.abs(val - r) > 1;
+  box.style.setProperty('--r', r / 127);
+  box.style.setProperty('--a', Math.min(r, val) / 127);
+  box.style.setProperty('--w', Math.abs(val - r) / 127);
+  box.classList.toggle('away', away);
+  const t = $('#lvKv' + i);
+  if (t) t.textContent = away ? val + (val > r ? ' ▲' : ' ▼') : 'rest ' + r;
 }
 export function knobsRest() {
   for (let i = 0; i < 4; i++) sendKnob(i, LV.rest[i]);

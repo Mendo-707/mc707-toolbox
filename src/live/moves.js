@@ -12,6 +12,7 @@ import { curveFn } from '../services/mc-controls.js';
 import { LV } from './state.js';
 import { lvOn } from './cues.js';
 import { liveSync } from './panels.js';
+import { knobUI } from './pads.js';
 
 /* ---- automation moves: MC-707 CCs shaped over time (filter, resonance, reverb wash, pump, autopan) ---- */
 export const LV_TONES = [3, 4, 5, 6, 7],
@@ -24,6 +25,14 @@ export const LV_SCFX = [
   ['filterin', 'Filter opens in'],
   ['autopan', 'Autopan leads']
 ];
+/**
+ * A FILTER value `amt` (0-1) of the way from rest into the effect. With the knob resting low (the
+ * MC-707's 0) the effect grows upwards; a centred rest (64) dips down toward 0 as it used to.
+ */
+export function lvFilterAway(amt) {
+  const r = LV.rest[0];
+  return Math.round(r < 32 ? r + (127 - r) * amt : r - r * amt);
+}
 export function lvRestCC(t, cc) {
   const tr = S.tracks[t];
   if (tr.cc && tr.cc[cc] != null) return tr.cc[cc];
@@ -73,9 +82,11 @@ export function lvAutoTick(tick, nt) {
     if (tick < a.start) continue;
     if (tick >= a.end) {
       if (a.restore !== false) a.tracks.forEach(t => lvSendCC(t, a.cc, lvRestCC(t, a.cc), nt));
+      if (a.cc >= 80 && a.cc <= 83) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
       continue;
     }
     a.tracks.forEach(t => lvSendCC(t, a.cc, lvMoveVal(a, t, tick), nt));
+    if (a.cc >= 80 && a.cc <= 83 && a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
   }
   LV.autos = LV.autos.filter(a => tick < a.end);
 }
@@ -186,7 +197,7 @@ export function lvSceneFx(sc, tick) {
       tracks: [0, 1, 2, 3, 4, 5, 6, 7],
       cc: 80,
       kind: 'ramp',
-      from: 12,
+      from: lvFilterAway(0.9),
       to: 'rest',
       curve: 'log',
       start: tick,
@@ -249,7 +260,7 @@ export function liveMoveNow(kind) {
       tracks: [0, 1, 2, 3, 4, 5, 6, 7],
       cc: 80,
       kind: 'ramp',
-      from: 14,
+      from: lvFilterAway(0.85),
       to: 'rest',
       curve: 'exp',
       start: bar,

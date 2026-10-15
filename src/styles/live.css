@@ -1339,15 +1339,87 @@ body[data-dev='101'] .lvmap {
   width: 100%;
   accent-color: #4dd0e1;
 }
+.lvKnob {
+  padding-bottom: 7px;
+}
+.lvKh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lvKh b {
+  margin-left: auto;
+  font-weight: 700;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.lvkz {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+  visibility: hidden;
+}
+.lvKnob.away .lvKh {
+  color: #4dd0e1;
+}
+.lvKnob.away .lvKh b {
+  opacity: 1;
+  color: var(--ink);
+}
+.lvKnob.away .lvkz {
+  visibility: visible;
+}
+/* a bar under the slider from the rest position to the value; lit while the knob is away from rest */
+.lvkf {
+  position: absolute;
+  bottom: 1px;
+  left: calc(8px + var(--a, 0) * (100% - 16px));
+  width: calc(var(--w, 0) * (100% - 16px));
+  height: 4px;
+  border-radius: 2px;
+  background: #4dd0e1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.lvKnob.away .lvkf {
+  opacity: 0.9;
+  box-shadow: 0 0 8px #4dd0e1;
+}
+/* the rest position */
+.lvkRest {
+  position: absolute;
+  bottom: 0;
+  left: calc(8px + var(--r, 0) * (100% - 16px));
+  width: 2px;
+  height: 7px;
+  background: var(--ink);
+  opacity: 0.6;
+  border-radius: 1px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+/* the MC-707's own knob position (from its CC out) */
 .lvki {
   position: absolute;
   bottom: 0;
+  left: calc(8px + var(--v, 0) * (100% - 16px));
   width: 3px;
   height: 10px;
   background: #ffa629;
   border-radius: 2px;
   pointer-events: none;
   transform: translateX(-50%);
+  display: none;
+}
+.lvki[style*='--v'] {
+  display: block;
 }
 .lvxy {
   position: relative;

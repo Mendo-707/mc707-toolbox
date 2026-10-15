@@ -3149,15 +3149,87 @@ body[data-dev='101'] .lvmap {
   width: 100%;
   accent-color: #4dd0e1;
 }
+.lvKnob {
+  padding-bottom: 7px;
+}
+.lvKh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lvKh b {
+  margin-left: auto;
+  font-weight: 700;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.lvkz {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+  visibility: hidden;
+}
+.lvKnob.away .lvKh {
+  color: #4dd0e1;
+}
+.lvKnob.away .lvKh b {
+  opacity: 1;
+  color: var(--ink);
+}
+.lvKnob.away .lvkz {
+  visibility: visible;
+}
+/* a bar under the slider from the rest position to the value; lit while the knob is away from rest */
+.lvkf {
+  position: absolute;
+  bottom: 1px;
+  left: calc(8px + var(--a, 0) * (100% - 16px));
+  width: calc(var(--w, 0) * (100% - 16px));
+  height: 4px;
+  border-radius: 2px;
+  background: #4dd0e1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.lvKnob.away .lvkf {
+  opacity: 0.9;
+  box-shadow: 0 0 8px #4dd0e1;
+}
+/* the rest position */
+.lvkRest {
+  position: absolute;
+  bottom: 0;
+  left: calc(8px + var(--r, 0) * (100% - 16px));
+  width: 2px;
+  height: 7px;
+  background: var(--ink);
+  opacity: 0.6;
+  border-radius: 1px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+/* the MC-707's own knob position (from its CC out) */
 .lvki {
   position: absolute;
   bottom: 0;
+  left: calc(8px + var(--v, 0) * (100% - 16px));
   width: 3px;
   height: 10px;
   background: #ffa629;
   border-radius: 2px;
   pointer-events: none;
   transform: translateX(-50%);
+  display: none;
+}
+.lvki[style*='--v'] {
+  display: block;
 }
 .lvxy {
   position: relative;
@@ -8545,7 +8617,7 @@ input[type='number'] {
     { n: 76, name: "Vibrato rate", def: 64 },
     { n: 77, name: "Vibrato depth", def: 64 },
     { n: 78, name: "Vibrato delay", def: 64 },
-    { n: 80, name: "FILTER knob", def: 64 },
+    { n: 80, name: "FILTER knob", def: 0 },
     { n: 81, name: "MOD knob", def: 64 },
     { n: 82, name: "FX knob", def: 64 },
     { n: 83, name: "SOUND knob", def: 64 }
@@ -22395,6 +22467,7 @@ input[type='number'] {
     "chaos",
     "ktarget",
     "rest",
+    "restV",
     "scBase",
     "riseBars",
     "dropStyle",
@@ -22434,7 +22507,7 @@ input[type='number'] {
       autoReps: 2,
       chaos: 30,
       ktarget: "all",
-      rest: [64, 0, 0, 64],
+      rest: [0, 0, 64, 64],
       scBase: 60,
       riseBars: 4,
       dropStyle: "gap",
@@ -22483,7 +22556,7 @@ input[type='number'] {
       rate: 1,
       stut: null,
       rise: null,
-      knobs: [64, 0, 0, 64],
+      knobs: [0, 0, 64, 64],
       knobsIn: [null, null, null, null],
       pulse: [],
       held: {},
@@ -22537,7 +22610,12 @@ input[type='number'] {
     if (LV.mode !== "major" && LV.mode !== "minor") LV.mode = null;
     LV.riseBars = [2, 4, 8].includes(+LV.riseBars) ? +LV.riseBars : 4;
     if (Array.isArray(LV.rest) && LV.rest.join() === "64,0,0,64") LV.rest = [64, 0, 64, 64];
-    if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [64, 0, 64, 64];
+    if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [0, 0, 64, 64];
+    if (LV.restV !== 2) {
+      if (LV.rest.join() === "64,0,64,64") LV.rest = [0, 0, 64, 64];
+      LV.restV = 2;
+    }
+    LV.knobs = LV.rest.slice();
     if (!(["all", "drums", "tone"].includes(LV.ktarget) || Number.isInteger(+LV.ktarget) && +LV.ktarget >= 0 && +LV.ktarget < 8))
       LV.ktarget = "all";
     LV.tg = Array.from({ length: 8 }, () => mkEnv(1, 1, 0, 0));
@@ -22801,8 +22879,19 @@ input[type='number'] {
   function sendKnob(i, val) {
     LV.knobs[i] = val;
     lvTracksFor(LV.ktarget).forEach((t) => lvSend([176 | S.tracks[t].ch - 1, 80 + i, val]));
+    knobUI(i, val);
+  }
+  function knobUI(i, val) {
     const k = $("#lvKn" + i);
-    if (k && +k.value !== val) k.value = val;
+    if (!k) return;
+    if (+k.value !== val) k.value = val;
+    const box = k.parentNode, r = LV.rest[i], away = Math.abs(val - r) > 1;
+    box.style.setProperty("--r", r / 127);
+    box.style.setProperty("--a", Math.min(r, val) / 127);
+    box.style.setProperty("--w", Math.abs(val - r) / 127);
+    box.classList.toggle("away", away);
+    const t = $("#lvKv" + i);
+    if (t) t.textContent = away ? val + (val > r ? " ▲" : " ▼") : "rest " + r;
   }
   function knobsRest() {
     for (let i = 0; i < 4; i++) sendKnob(i, LV.rest[i]);
@@ -23722,8 +23811,10 @@ input[type='number'] {
               max: 127,
               value: LV.rest[i],
               style: "width:60px",
+              title: i === 0 ? "Where FILTER sits when nothing is happening. 0 matches the MC-707; builds and risers sweep up from here." : "Where this knob goes back to after moves and risers.",
               onchange: (e) => {
                 LV.rest[i] = clamp(Math.round(+e.target.value) || 0, 0, 127);
+                liveRenderKnobs();
                 saveLive();
               }
             })
@@ -24285,23 +24376,42 @@ input[type='number'] {
     ["FILTER", "MOD", "FX", "SOUND"].forEach(
       (n, i) => kb.append(
         el(
-          "label",
+          "div",
           { class: "lvKnob" },
-          el("span", {}, n),
+          el(
+            "span",
+            { class: "lvKh" },
+            n,
+            el("b", { id: "lvKv" + i }),
+            el(
+              "button",
+              {
+                class: "lvkz",
+                title: "Back to rest (" + LV.rest[i] + ")",
+                "aria-label": n + " back to rest",
+                onclick: () => sendKnob(i, LV.rest[i])
+              },
+              "↺"
+            )
+          ),
           el("input", {
             type: "range",
             id: "lvKn" + i,
             min: 0,
             max: 127,
             value: LV.knobs[i],
+            "aria-label": n,
             oninput: (e) => sendKnob(i, +e.target.value),
             ondblclick: () => sendKnob(i, LV.rest[i]),
-            title: "CC " + (80 + i) + ". Double-click to reset. The MC-707 knob position shows as a marker."
+            title: "CC " + (80 + i) + ". Rests at " + LV.rest[i] + " (the white tick). The coloured bar shows how far it is from rest; the orange marker is the MC-707 knob. Double-click or ↺ to go back to rest."
           }),
+          el("i", { class: "lvkf" }),
+          el("i", { class: "lvkRest" }),
           el("i", { class: "lvki", id: "lvKi" + i })
         )
       )
     );
+    for (let i = 0; i < 4; i++) knobUI(i, LV.knobs[i]);
     const kt = $("#lvKT");
     if (kt) {
       kt.textContent = "";
@@ -25187,6 +25297,8 @@ input[type='number'] {
     lvTracksFor(r.target).forEach(
       (t) => sendMidi([176 | S.tracks[t].ch - 1, r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
     );
+    LV.knobs[r.cc - 80] = LV.rest[r.cc - 80];
+    knobUI(r.cc - 80, LV.rest[r.cc - 80]);
   }
   function lvRiseTick(tick, nt) {
     const r = LV.rise;
@@ -25197,6 +25309,7 @@ input[type='number'] {
     }
     const u = (tick - r.start) / (r.end - r.start), v = Math.round(r.from + (r.to - r.from) * u);
     lvTracksFor(r.target).forEach((t) => sendMidi([176 | S.tracks[t].ch - 1, r.cc, clamp(v, 0, 127)], nt));
+    knobUI(r.cc - 80, clamp(v, 0, 127));
   }
   function liveFire(c, tick) {
     if (c.type === "scene") liveScene(c.idx, tick, c.hard);
@@ -26331,7 +26444,8 @@ input[type='number'] {
     }
     const t1 = lvBoundary(1), nextScene = LV.cues.find((c) => c.type === "scene" && c.tick > t1);
     const end = nextScene ? nextScene.tick : t1 + LV.riseBars * 32;
-    LV.rise = { start: t1, end, from: LV.rest[0], to: dir === "down" ? 0 : 127, cc: 80, target: "all" };
+    const r = LV.rest[0], low = r < 32;
+    LV.rise = dir === "down" ? { start: t1, end, from: low ? 127 : r, to: low ? r : 0, cc: 80, target: "all" } : { start: t1, end, from: r, to: 127, cc: 80, target: "all" };
     LV.ver++;
   }
   function liveStutter(len, on) {
@@ -26422,6 +26536,10 @@ input[type='number'] {
     ["filterin", "Filter opens in"],
     ["autopan", "Autopan leads"]
   ];
+  function lvFilterAway(amt) {
+    const r = LV.rest[0];
+    return Math.round(r < 32 ? r + (127 - r) * amt : r - r * amt);
+  }
   function lvRestCC(t, cc) {
     const tr = S.tracks[t];
     if (tr.cc && tr.cc[cc] != null) return tr.cc[cc];
@@ -26468,9 +26586,11 @@ input[type='number'] {
       if (tick < a.start) continue;
       if (tick >= a.end) {
         if (a.restore !== false) a.tracks.forEach((t) => lvSendCC(t, a.cc, lvRestCC(t, a.cc), nt));
+        if (a.cc >= 80 && a.cc <= 83) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
         continue;
       }
       a.tracks.forEach((t) => lvSendCC(t, a.cc, lvMoveVal(a, t, tick), nt));
+      if (a.cc >= 80 && a.cc <= 83 && a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
     }
     LV.autos = LV.autos.filter((a) => tick < a.end);
   }
@@ -26578,7 +26698,7 @@ input[type='number'] {
         tracks: [0, 1, 2, 3, 4, 5, 6, 7],
         cc: 80,
         kind: "ramp",
-        from: 12,
+        from: lvFilterAway(0.9),
         to: "rest",
         curve: "log",
         start: tick,
@@ -26639,7 +26759,7 @@ input[type='number'] {
         tracks: [0, 1, 2, 3, 4, 5, 6, 7],
         cc: 80,
         kind: "ramp",
-        from: 14,
+        from: lvFilterAway(0.85),
         to: "rest",
         curve: "exp",
         start: bar,

@@ -1,7 +1,7 @@
 {
   "name": "mc707-toolbox",
   "productName": "MC-707 Toolbox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Unofficial song arranger and live performance tool for the Roland MC-707",
   "main": "main.js",
   "scripts": {
