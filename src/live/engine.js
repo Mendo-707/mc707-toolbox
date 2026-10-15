@@ -8,7 +8,7 @@ import { SCALES } from '../core/theory.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
 import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
-import { patIndex } from '../core/song-model.js';
+import { patIndex, subTick } from '../core/song-model.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
 import { REC, TICKER, TR, emitNote, sched, stopAll, stopPlay } from '../services/transport.js';
@@ -25,6 +25,7 @@ import { liveBuild, liveSwapIds } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
+import { lvExtreme, lvXExtra, lvXSkip, lvXType } from './extreme.js';
 
 /* ---- engine ---- */
 export const lvTop = t => {
@@ -314,11 +315,13 @@ export function lvModeNote(n) {
 }
 /* Repeat variation: when a pattern comes round again it changes a little, more often the higher Variation is. */
 function lvVarOf(v, t, k, L) {
-  if (LV.lock || LV.vary <= 0 || k < 1 || t === 5 || t === 2 || (L < 64 && k % 2 === 0)) return null;
+  const X = lvExtreme();
+  if (LV.lock || LV.vary <= 0 || k < 1 || t === 5 || t === 2 || (!X && L < 64 && k % 2 === 0)) return null;
   if (v._vk === k) return v._vt;
   const hs = (hashStr(v.f.id + ':' + t) + Math.imul(k, 2654435761)) >>> 0;
   let ty = null;
-  if ((hs % 1000) / 1000 < (LV.vary / 100) * 0.8) {
+  if (X) ty = (hs % 1000) / 1000 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
+  else if ((hs % 1000) / 1000 < (LV.vary / 100) * 0.8) {
     const o =
       t === 0
         ? ['ghost', 'kickx', 'open']
@@ -435,7 +438,7 @@ export function liveTick(tick, nt, td) {
         L = f.bars * 32,
         evs = patIndex(f).get((tick - LV.bov.start + LV.bov.off) % L);
       if (evs) {
-        for (const n of evs) emitNote(lvBT(), n.n, n.v, nt, n.l * 2 * td);
+        for (const n of evs) emitNote(lvBT(), n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
         LV.pulse[lvBT()] = { time: nt, v: 1 };
       }
       continue;
@@ -444,7 +447,7 @@ export function liveTick(tick, nt, td) {
       const f = LV.fill.f,
         evs = patIndex(f).get((ft - LV.fill.start + f.bars * 32 * 8) % (f.bars * 32));
       if (evs) {
-        for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt, n.l * 2 * td);
+        for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
         LV.pulse[0] = { time: nt, v: 1 };
       }
       continue;
@@ -467,7 +470,10 @@ export function liveTick(tick, nt, td) {
         local = (((vft - v.start) % L) + L) % L;
       const vt = quiet ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L), L),
         last = local >= L - 32;
-      if (vt) lvVarExtra(t, v, vt, local, L, nt, td, g);
+      if (vt) {
+        lvVarExtra(t, v, vt, local, L, nt, td, g);
+        lvXExtra(t, v, vt, local, L, nt, td, g);
+      }
       const evs = patIndex(v.f).get(local);
       if (!evs) continue;
       if (tone && v.shK !== LV.key) {
@@ -477,12 +483,14 @@ export function liveTick(tick, nt, td) {
       const conv = tone && v.f.key && lvModeFam(v.f.key.scale) !== LV.mode;
       for (const n of evs) {
         if (vt === 'thin' && local % 8 !== 0 && (local >> 1) % 3 === 1) continue;
+        if (vt && lvXSkip(v, vt, local, L, n)) continue;
         let nn = tone ? (conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0)) : n.n;
         if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && t >= 6)))
           nn = t === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
-        emitNote(t, tone ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt, n.l * 2 * td);
+        emitNote(t, tone ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
+        if (t === 3) v._last = nn;
         if (vt === 'echo' && last && tone)
-          emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + 6 * td, n.l * 2 * td);
+          emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
       }
       LV.pulse[t] = { time: nt, v: Math.min(1, g) };
     }

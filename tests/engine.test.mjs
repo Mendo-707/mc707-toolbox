@@ -104,3 +104,30 @@ test('a Live set with auto-pilot plays the same MIDI (32 bars)', async () => {
   assert.ok(out.length > 500);
   assert.deepEqual(errors, []);
 });
+
+test('trap hat rolls land between ticks, and Extreme variation changes the repeats', async () => {
+  const { page, errors } = await openApp();
+  const run = vary =>
+    page.evaluate(`(async () => {
+      const a = window.__app; a.ensureAudio(); await a.connectMidi();
+      window.__out.length = 0; window.__times = [];
+      const LV = a.LV; LV.style = 'trap'; LV.seed = 3; LV.custom = false; LV.auto = false; LV.bpm = 140; LV.vary = ${vary};
+      a.liveBuild(); a.liveStart(0); a.TICKER.stop();
+      const end = a.TR.tick + 512;
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < end) { a.processTick(a.TR.tick, a.TR.nextTime); a.advance(); }
+      a.stopAll();
+      return window.__out.map((m, i) => [m[0], m[1], window.__times[i]]).filter(m => (m[0] & 0xf0) === 0x90 && m[2] != null);
+    })()`);
+  const high = await run(100),
+    extreme = await run(125);
+  const tick = 60000 / 140 / 8,
+    times = [...new Set(high.map(m => Math.round(m[2])))].sort((a, b) => a - b),
+    between = times.slice(1).filter((t, i) => t - times[i] > tick * 0.3 && t - times[i] < tick * 0.8);
+  assert.ok(between.length > 4, 'triplet or 64th notes fall between the 32nd-note ticks');
+  assert.notDeepEqual(
+    extreme.map(m => m.slice(0, 2)),
+    high.map(m => m.slice(0, 2)),
+    'Extreme plays different notes from High'
+  );
+  assert.deepEqual(errors, []);
+});

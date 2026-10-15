@@ -148,6 +148,7 @@ creating the clock's Worker. Then `main.js`:
 | `core/icons.js` | SVG icons for the Play and Stop buttons. |  |
 | `core/mc707-params.js` | The MC-707 controls the app can automate (CC numbers, names, ranges). |  |
 | `core/random.js` | Seeded random numbers (mulberry32) and a string hash, so generated patterns come out the same every run. |  |
+| `core/rolls.js` | Hi-hat and snare roll shapes (16th triplets, 32nds, 64th ramps …) as note positions inside one beat, and a parser for beat-by-beat hat lines like '8 8 t16 32'. Used by the genre pack and by Live Mode's Extreme variation. |  |
 | `core/song-model.js` | Reading and editing the song's clips: find the clip at a bar, cut a gap into a track, place a clip, the song's length, and clip arithmetic (loop length, 16th-step rounding). |  |
 | `core/state.js` | The song (S) and everything that saves it: a new song, autosave to localStorage, undo and redo, loading and checking saved songs (fixState), plus the shared screen state UI and the editor state ED. | S (the song), UI (song screen state), ED (editor state), PROJ (the open project) |
 | `core/theory.js` | Music theory tables: note names, the drum lanes, keys and scales. |  |
@@ -160,6 +161,8 @@ creating the clock's Worker. Then `main.js`:
 | `library/factory.js` | The hand-written factory patterns (drums and tone parts for drum and bass and hip hop). FAC, the list every factory pattern goes into, is created here. | FAC (the pattern library) |
 | `library/flash.js` | Flash-break patterns: 1 to 2 bar unison hits for every genre (FLASH_RH lists the rhythms). |  |
 | `library/generate.js` | Generates most of the factory library: kits, drum layers, fills, chords, basslines, arps, leads and pads for every genre. Order matters: each pattern's id comes from the order it is made in. |  |
+| `library/genre-drums.js` | The genre pack's drums: trap kits in three producer flavours (dark and sparse, bouncy, busy keys), drill, halftime drum and bass, Amen jungle breaks, afrobeats and phonk, with real hi-hat rolls (16th triplets, 32nds, 64th ramps) and the fills to match. Also moves older kits that do not fit out of the trap, drill and halftime pools. |  |
+| `library/genre-keys.js` | The genre pack's tone parts for trap and drill: sliding 808s (overlapping notes, so the MC-707 glides with portamento on), dark bells, bouncy plucks, piano chords and piano runs with triplet flourishes, organ and string pads. Every part of a progression shares its name, so Live Mode keeps them together. Other hip hop basslines leave the trap and drill pools, which are 808s only. |  |
 | `library/index.js` | The finished pattern library: the id lookup (facById), the pool each track draws from, and helpers that copy a factory pattern into the song. |  |
 | `library/live-extras.js` | Extra patterns for Live Mode: fills, builds and drop impacts for every genre. |  |
 | `library/lively.js` | Lively variants: busier, syncopated basslines, arps, chords and leads built on each genre's progressions. |  |
@@ -229,6 +232,7 @@ creating the clock's Worker. Then `main.js`:
 | `live/controller.js` | USB controller keyboards in Live Mode: the model presets, keyboard zones (mutes, key, solo), learned controls and the solo voice. | CTL (the controller keyboard) |
 | `live/cues.js` | Live Mode cues: everything that waits for the next beat, bar or phrase (scene changes, swaps, mutes, key changes, energy) and the Variation engine. |  |
 | `live/engine.js` | The Live Mode engine: the voices playing on each track, what plays on every tick, scene changes, swaps, and start and stop. |  |
+| `live/extreme.js` | Extreme variation (Variation above 100): every repeat of a loop changes. Hats break into rolls that suit the style (16th triplets for trap, drill and phonk, 32nds and 64th ramps elsewhere), snare rolls and kick drop-outs on the kit, and octave flicks on the 808. |  |
 | `live/lanes.js` | The Live Mode timeline: lanes showing what each track plays, the status panel and the per-frame update. |  |
 | `live/midi-in.js` | MIDI input in Live Mode: the MC-707 pads and keys (Raven keys), the pad test, and the computer keyboard. |  |
 | `live/moves.js` | Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan) for builds, drops and scene moves. |  |

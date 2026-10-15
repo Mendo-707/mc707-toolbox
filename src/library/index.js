@@ -7,6 +7,8 @@ import './live-extras.js';
 import './lively.js';
 import './variety.js';
 import './flash.js';
+import './genre-drums.js';
+import './genre-keys.js';
 import { FAC } from './factory.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';
 

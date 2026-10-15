@@ -225,7 +225,7 @@ export const liveSwingAmt = () => LV.swing;
   LV.scBase = clamp(Math.round(+LV.scBase || 60), 0, 112);
   if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
   if (!['lively', 'mixed', 'classic'].includes(LV.flavor)) LV.flavor = 'lively';
-  LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 100);
+  LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);
   if (LV.mode !== 'major' && LV.mode !== 'minor') LV.mode = null;
   LV.riseBars = [2, 4, 8].includes(+LV.riseBars) ? +LV.riseBars : 4;
   if (Array.isArray(LV.rest) && LV.rest.join() === '64,0,0,64') LV.rest = [64, 0, 64, 64];

@@ -18,7 +18,7 @@ export function patIndex(p) {
   if (!m) {
     m = new Map();
     for (const n of p.notes) {
-      const k = Math.round(n.s * 2);
+      const k = Math.floor(n.s * 2 + 1e-6);
       if (k < 0 || k >= p.bars * 32) continue;
       let a = m.get(k);
       if (!a) {
@@ -31,6 +31,12 @@ export function patIndex(p) {
   }
   return m;
 }
+/**
+ * How far after its tick a note starts, in ticks (0 to <1). Notes on the 32nd grid give 0; triplets
+ * and 64th rolls sit between ticks, so players add subTick(n) * tickDuration to the note's time.
+ * @param {import('./types.js').Note} n
+ */
+export const subTick = n => Math.max(0, n.s * 2 - Math.floor(n.s * 2 + 1e-6));
 /** Call after changing a pattern's notes: clears its cached index and redraws. @param {import('./types.js').Pattern} p */
 export function touch(p) {
   IDX.delete(p);

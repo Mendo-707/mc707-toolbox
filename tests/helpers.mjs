@@ -31,7 +31,7 @@ export const FIXTURES = path.join(ROOT, 'tests', 'fixtures');
 const MIDI_MOCK = `
 window.__out=[];
 (()=>{
-  const out={id:'o1',name:'MC-707 MIDI 1',type:'output',state:'connected',send:(b)=>{window.__out.push([...b]);}};
+  const out={id:'o1',name:'MC-707 MIDI 1',type:'output',state:'connected',send:(b,t)=>{window.__out.push([...b]);(window.__times=window.__times||[]).push(t);}};
   const inp={id:'i1',name:'MC-707 MIDI 1',type:'input',state:'connected',onmidimessage:null};
   const fl={id:'i2',name:'FLkey 61 MIDI',type:'input',state:'connected',onmidimessage:null};
   window.__inject=b=>{if(inp.onmidimessage)inp.onmidimessage({data:new Uint8Array(b),timeStamp:performance.now()});};

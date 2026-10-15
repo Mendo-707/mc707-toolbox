@@ -20,7 +20,8 @@ import { liveRender, liveRenderCards, liveRenderPads, liveSync } from './panels.
 /* ---- cues (all quantised) ---- */
 export const lvOn = () => TR.playing && TR.mode === 'live';
 /* Variation: every phrase, parts change on their own. Higher = more often and more at once. */
-export const lvVaryLabel = () => (LV.vary === 0 ? 'Off' : LV.vary < 35 ? 'Low' : LV.vary < 70 ? 'Medium' : 'High');
+export const lvVaryLabel = () =>
+  LV.vary === 0 ? 'Off' : LV.vary < 35 ? 'Low' : LV.vary < 70 ? 'Medium' : LV.vary <= 100 ? 'High' : 'Extreme';
 export function liveVaryStep(tick, rel) {
   const sc = LV.scenes[LV.cur];
   if (!sc || LV.stopAt != null) return;
@@ -28,7 +29,8 @@ export function liveVaryStep(tick, rel) {
   if (rel % U !== U - 64) return;
   const end = tick + 64;
   if (LV.cues.some(c => (c.type === 'scene' || c.type === 'bov' || c.type === 'gap') && c.tick <= end + 32)) return;
-  const p = LV.vary / 100,
+  const X = LV.vary > 100,
+    p = Math.min(1, LV.vary / 100),
     R = Math.random;
   let fill = false,
     did = 0;
@@ -40,11 +42,18 @@ export function liveVaryStep(tick, rel) {
     const g = lvRand(['bass', 'chords', 'lead', 'perc', 'drums', 'pad']);
     if (lvSwapCue(g, end)) did++;
   }
+  if (X && lvSwapCue(lvRand(['drums', 'perc', 'bass', 'lead']), end)) did++;
   if (p > 0.6 && R() < p - 0.5) {
     const g = lvRand(['chords', 'lead', 'perc']);
     if (lvSwapCue(g, end)) did++;
   }
-  if (LV.fills && sc.cells[0] && LV.fillIds.length && !LV.cues.some(c => c.type === 'fill') && R() < p * 0.6) {
+  if (
+    LV.fills &&
+    sc.cells[0] &&
+    LV.fillIds.length &&
+    !LV.cues.some(c => c.type === 'fill') &&
+    R() < (X ? 0.9 : p * 0.6)
+  ) {
     const f = facById(lvRand(LV.fillIds));
     if (f) {
       LV.cues.push({ type: 'fill', tick: end - 32, f, auto: true });

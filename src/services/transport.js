@@ -9,7 +9,7 @@ import { clamp } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
-import { clipAt, patIndex, songEnd } from '../core/song-model.js';
+import { clipAt, patIndex, songEnd, subTick } from '../core/song-model.js';
 import { AU, DRUMS, click, ensureAudio, voice } from './synth.js';
 import { MIDI, panic, sendMidi } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
@@ -125,7 +125,13 @@ export function processTick(tick, time) {
         trs = c.tr || 0,
         vm = ((c.vel || 100) / 100) * (c.fi || c.fo || c.ve ? velMul(c, tick / 32 - c.start) : 1);
       for (const n of evs)
-        emitNote(ti, tone ? clamp(n.n + trs, 0, 127) : n.n, n.v * vm, nt, Math.min(n.l * 2, maxT) * td);
+        emitNote(
+          ti,
+          tone ? clamp(n.n + trs, 0, 127) : n.n,
+          n.v * vm,
+          nt + subTick(n) * td,
+          Math.min(n.l * 2, maxT) * td
+        );
     }
   } else if (TR.mode === 'wiz') {
     const wz = TR.wz;
@@ -143,7 +149,8 @@ export function processTick(tick, time) {
         const evs = patIndex(f).get(local);
         if (!evs) continue;
         const sh = f.type === 'tone' ? shiftFor(f, wz.key) : 0;
-        for (const n of evs) emitNote(t, f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n, n.v, nt, n.l * 2 * td);
+        for (const n of evs)
+          emitNote(t, f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
       }
     }
   } else if (TR.mode === 'live') {
@@ -153,7 +160,13 @@ export function processTick(tick, time) {
     const evs = patIndex(p).get(tick);
     if (evs)
       for (const n of evs)
-        emitNote(TR.patTrack, TR.patShift ? clamp(n.n + TR.patShift, 0, 127) : n.n, n.v, nt, n.l * 2 * td);
+        emitNote(
+          TR.patTrack,
+          TR.patShift ? clamp(n.n + TR.patShift, 0, 127) : n.n,
+          n.v,
+          nt + subTick(n) * td,
+          n.l * 2 * td
+        );
   }
   TR.vis.push({ time, tick, dur: td });
 }

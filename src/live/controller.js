@@ -280,7 +280,7 @@ function ctlDo(tg, val, press, release) {
     else if (i === 4) LV_TONES.forEach(t => lvSendCC(t, 91, val, now));
     else if (i === 5) LV_TONES.forEach(t => lvSendCC(t, 71, val, now));
     else if (i === 6) {
-      LV.vary = Math.round((val / 127) * 20) * 5;
+      LV.vary = Math.round((val / 127) * 25) * 5;
       const s = $('#lvVary');
       if (s) s.value = LV.vary;
       const x = $('#lvVaryVal');

@@ -337,7 +337,7 @@ export const STYLES = [
     ],
     tips: [
       'Leave the 808 long and low. Keep kicks sparse so the sub can ring.',
-      'Hat rolls create the energy, so vary them every 4 or 8 bars.',
+      'Hat rolls create the energy, so vary them every 4 or 8 bars. In Live Mode, Variation on Extreme rolls them for you.',
       'Keep the melody sparse, like a bell or pluck, so the 808 stays the star.'
     ],
     pools: {

@@ -449,7 +449,7 @@ export function liveInit() {
         type: 'range',
         id: 'lvVary',
         min: 0,
-        max: 100,
+        max: 125,
         step: 5,
         class: 'lvEn',
         'aria-label': 'Variation: how often parts change by themselves',
@@ -462,7 +462,7 @@ export function liveInit() {
       el(
         'div',
         { class: 'hint' },
-        'How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is.'
+        'How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is. Past High is Extreme: every repeat changes, with hi-hat rolls (triplets in trap and drill), snare rolls, kick drop-outs and 808 octave flicks.'
       )
     ),
     el(
