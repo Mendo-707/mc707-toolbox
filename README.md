@@ -13,9 +13,10 @@ It has two modes, switched with the tabs at the top right:
 
 ![Live Mode](docs/live-mode.png)
 ![Song Mode](docs/song-mode.png)
+![Your MC-707 clips](docs/mc707-clips.png)
 
 <details>
-<summary><b>Feature overview (7 cards)</b></summary>
+<summary><b>Feature overview (9 cards)</b></summary>
 
 ![Live Mode](docs/features/1-live-mode.png)
 ![Break and moves](docs/features/2-break-and-moves.png)
@@ -24,6 +25,8 @@ It has two modes, switched with the tabs at the top right:
 ![Song Mode](docs/features/5-song-mode.png)
 ![Your MC-707 clips](docs/features/6-mc707-clips.png)
 ![Live tools](docs/features/7-live-tools.png)
+![Genre pack and Extreme variation](docs/features/8-genre-pack.png)
+![Your library and My patterns](docs/features/9-my-patterns.png)
 
 </details>
 

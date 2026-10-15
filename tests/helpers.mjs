@@ -57,11 +57,15 @@ export async function closeBrowser() {
  * @param {object} [o]
  * @param {Record<string,string>} [o.storage] localStorage entries to put in place before the app starts
  * @param {{width:number,height:number}} [o.viewport]
+ * @param {number} [o.scale] device pixel ratio (2 for sharp screenshots)
  * @returns {Promise<{page: import('playwright').Page, errors: string[]}>}
  */
 export async function openApp(o = {}) {
   const b = await launch();
-  const ctx = await b.newContext({ viewport: o.viewport || { width: 1400, height: 950 } });
+  const ctx = await b.newContext({
+    viewport: o.viewport || { width: 1400, height: 950 },
+    deviceScaleFactor: o.scale || 1
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String((e && e.message) || e)));

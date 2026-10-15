@@ -356,7 +356,15 @@ export function renderLibrary() {
       m.role || (m.type === 'drum' ? 'Drums' : 'Tone'),
       m.bars + (m.bars === 1 ? ' bar' : ' bars'),
       keyLabel(m),
-      UI.libTab === 'fac' && m.bpm ? m.bpm + ' bpm' : uses ? 'used ×' + uses : 'unused'
+      UI.libTab === 'fac'
+        ? m.bpm
+          ? m.bpm + ' bpm'
+          : ''
+        : UI.libTab === 'proj'
+          ? uses
+            ? 'used ×' + uses
+            : 'unused'
+          : ''
     ]
       .filter(Boolean)
       .join(' · ');
