@@ -59,6 +59,7 @@ export let S = newState();
  */
 export function replaceState(v) {
   S = v;
+  UI.view = null;
 }
 export const UI = {
   sel: null,
@@ -75,7 +76,9 @@ export const UI = {
   libFav: false,
   q: '',
   libLimit: 60,
-  prevTrack: -1
+  prevTrack: -1,
+  /** a library pattern open in the editor without a clip (see song/lib-view.js), or null */
+  view: null
 };
 
 /**
@@ -167,6 +170,8 @@ export function loadSaved() {
 export const getClip = id => S.clips.find(c => c.id === id);
 /** The selected clip, or null. */
 export const curClip = () => (UI.sel ? getClip(UI.sel) : null);
+/** What the editor shows: the selected clip, or a library pattern opened from the library (UI.view). */
+export const edClip = () => curClip() || UI.view || null;
 export const ED = {
   mode: 'steps',
   snap: 1,

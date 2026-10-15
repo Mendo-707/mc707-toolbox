@@ -3,7 +3,7 @@
 //
 // Reads: S, UI.
 // Calls up the layers through hooks (core/hooks.js).
-import { S, UI, curClip } from './state.js';
+import { S, UI, edClip, scheduleSave } from './state.js';
 import { hooks } from './hooks.js';
 
 /* ---------- pattern + clip helpers ---------- */
@@ -41,13 +41,25 @@ export const subTick = n => Math.max(0, n.s * 2 - Math.floor(n.s * 2 + 1e-6));
 export function touch(p) {
   IDX.delete(p);
   p.mod = true;
+  const v = UI.view;
+  if (v && v.p === p) adoptView(v, p);
   hooks.scheduleUI();
 }
-/** The pattern a clip plays. @param {import('./types.js').Clip} c */
-export const patOf = c => S.patterns[c.pat];
-/** The pattern of the selected clip, or null. */
+/* The first edit to a library pattern open in the editor keeps the edited copy in the song's patterns
+   (unplaced), so it is saved and undo works. Until then the copy lives only in UI.view. */
+function adoptView(v, p) {
+  const id = 'p' + S.nextId++;
+  p.id = id;
+  S.patterns[id] = p;
+  v.pat = id;
+  v.p = JSON.parse(JSON.stringify(v.orig));
+  scheduleSave();
+}
+/** The pattern a clip plays. A library view (UI.view) falls back to its unsaved copy. @param {import('./types.js').Clip} c */
+export const patOf = c => (c.view ? (c.pat && S.patterns[c.pat]) || c.p : S.patterns[c.pat]);
+/** The pattern in the editor (the selected clip's, or a library pattern's), or null. */
 export const curPat = () => {
-  const c = curClip();
+  const c = edClip();
   return c ? patOf(c) : null;
 };
 /** The clip on track t at a bar, or null. @param {number} t @param {number} bar @returns {import('./types.js').Clip|null} */

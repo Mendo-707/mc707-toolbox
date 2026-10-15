@@ -13,10 +13,22 @@ import { renderEditor } from './editor.js';
 import { ensureAudio } from '../services/synth.js';
 import { audition, startPat } from '../services/transport.js';
 import { cmMarks } from '../services/clip-switch.js';
-import { cmPickItems, setClipMark } from '../clips/clip-map.js';
 import { clipMapOpen } from '../clips/clips-screen.js';
 import { dupClip } from './arrangement-input.js';
-import { FAVS, auditionLib, itemStyles, keyLabel, quickAdd, renderLibrary, saveFavs } from './library-panel.js';
+import {
+  FAVS,
+  auditionLib,
+  itemStyles,
+  keyLabel,
+  previewTrackFor,
+  quickAdd,
+  renderLibrary,
+  saveFavs
+} from './library-panel.js';
+import { openView } from './lib-view.js';
+import { clipChangeItems } from './clip-change.js';
+import { userDelete, userRename } from '../library/user-lib.js';
+import { askDlg } from '../ui/dialogs.js';
 import { STYLES } from '../library/styles.js';
 import {
   CLIPB,
@@ -93,13 +105,8 @@ export function clipMenuItems(c) {
     },
     devOn(c.t)
       ? {
-          label: devNm() + ' clip change at bar ' + (Math.floor(c.start) + 1),
-          sub: cmPickItems(
-            c.t,
-            (cmMarks().find(m => m.t === c.t && m.bar === Math.floor(c.start)) || {}).k,
-            k => setClipMark(c.t, c.start, k),
-            'Back to automatic switching'
-          )
+          label: 'Insert ' + devNm() + ' clip change at bar ' + (Math.floor(c.start) + 1),
+          sub: clipChangeItems(c.t, c.start)
         }
       : null,
     isTone ? { label: 'Transpose this clip’s range…', action: () => openXpose({ scope: 'clip' }) } : null,
@@ -312,13 +319,8 @@ export function laneMenuItems(t, bar) {
     { label: 'Add from library', sub: libSubmenu(t, bar) },
     devOn(t)
       ? {
-          label: devNm() + ' clip change at bar ' + (Math.floor(bar) + 1),
-          sub: cmPickItems(
-            t,
-            (cmMarks().find(m => m.t === t && m.bar === Math.floor(bar)) || {}).k,
-            k => setClipMark(t, bar, k),
-            'Back to automatic switching'
-          )
+          label: 'Insert ' + devNm() + ' clip change at bar ' + (Math.floor(bar) + 1),
+          sub: clipChangeItems(t, bar)
         }
       : null,
     '-',
@@ -539,6 +541,7 @@ export function libMenuItems(it) {
   const styles = itemStyles(it);
   const k = keyLabel(m);
   return [
+    { label: 'Open in editor', action: () => openView(src, previewTrackFor(m, true)) },
     { label: 'Preview', action: () => auditionLib(m) },
     {
       label: 'Preview on track…',
@@ -602,6 +605,33 @@ export function libMenuItems(it) {
             renderLibrary();
           }
         }
-      : null
+      : null,
+    ...(it.kind === 'user'
+      ? [
+          '-',
+          {
+            label: 'Rename…',
+            action: async () => {
+              const n = await askDlg({ title: 'Rename pattern', input: true, def: m.name, ok: 'Rename' });
+              if (n) userRename(it.id, n);
+              renderLibrary();
+            }
+          },
+          {
+            label: 'Delete from My patterns',
+            danger: true,
+            action: async () => {
+              const ok = await askDlg({
+                title: 'Delete "' + m.name + '" from My patterns?',
+                text: 'Songs that already use it keep their own copy.',
+                ok: 'Delete'
+              });
+              if (!ok) return;
+              userDelete(it.id);
+              renderLibrary();
+            }
+          }
+        ]
+      : [])
   ];
 }

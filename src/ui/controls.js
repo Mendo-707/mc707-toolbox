@@ -44,6 +44,7 @@ import { closeMctl } from '../song/track-midi.js';
 import { closeWiz } from '../song/wizard-plan.js';
 import { liveKeyDown, liveKeyUp } from '../live/midi-in.js';
 import { projLoadText, projNew, projOpen, projSave, projSaveAs } from './projects.js';
+import { clipChangeMenu, flipAtPlayhead } from '../song/clip-change.js';
 
 /* ---------- controls ---------- */
 export function syncControls() {
@@ -158,6 +159,10 @@ export function initControls() {
   $('#zoom').addEventListener('input', e => {
     setBarWidth(+e.target.value);
     renderArr();
+  });
+  $('#bClipChg').addEventListener('click', e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    clipChangeMenu(r.left, r.bottom + 2);
   });
   $('#bAddBars').addEventListener('click', () => {
     if (S.bars >= MAXBARS) {
@@ -462,6 +467,15 @@ function onKey(e) {
   if (!mod && e.key === '\\') {
     const c = curClip();
     if (c) loopClip(c);
+    return;
+  }
+  if (!mod && !e.altKey && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    if (e.shiftKey) flipAtPlayhead();
+    else {
+      const r = $('#bClipChg').getBoundingClientRect();
+      clipChangeMenu(r.left, r.bottom + 2);
+    }
     return;
   }
   if (!mod && (e.key === 'g' || e.key === 'G')) {

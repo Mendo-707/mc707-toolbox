@@ -4660,6 +4660,13 @@ input[type='number'] {
         <button class="btn sm" id="bAddBars" title="Add 8 bars to the end">+8</button>
       </div>
       <div class="grp" style="margin-left: auto">
+        <button
+          class="btn sm"
+          id="bClipChg"
+          title="Insert an MC-707 clip change at the playhead (K). Shift+K flips straight back to the clip before."
+        >
+          ⇄ Clip change
+        </button>
         <button class="btn sm" id="bNewPat" title="New blank pattern, or load patterns from MIDI files or a folder">
           + Pattern
         </button>
@@ -4776,7 +4783,8 @@ input[type='number'] {
           ><span>Duplicate clip</span><span>Delete</span><span>Delete note or clip</span> <span>Alt-drag a clip</span
           ><span>Copy it</span><span>Shift + right-click a note</span><span>Delete it instantly</span
           ><span>Double-click a lane</span><span>New pattern</span><span>Double-click a marker</span
-          ><span>Rename it</span>
+          ><span>Rename it</span><span>K</span><span>Insert a clip change at the playhead</span><span>Shift+K</span
+          ><span>Flip back to the clip before</span><span>Alt+click a lane</span><span>Clip change there</span>
         </div>
         <h3 style="margin-top: 12px">Live Mode</h3>
         <div class="hint" style="line-height: 1.45">
@@ -4859,8 +4867,8 @@ input[type='number'] {
           </div>
           <div id="edEmpty" hidden>
             <div>
-              <b>No pattern selected</b><br />Click a clip in the arrangement, or double-click an empty spot on a track
-              to make a new pattern.
+              <b>No pattern selected</b><br />Click a clip in the arrangement or a pattern in the library, or
+              double-click an empty spot on a track to make a new pattern.
             </div>
           </div>
         </section>
@@ -8589,6 +8597,7 @@ input[type='number'] {
   var S = newState();
   function replaceState(v) {
     S = v;
+    UI.view = null;
   }
   var UI = {
     sel: null,
@@ -8605,7 +8614,9 @@ input[type='number'] {
     libFav: false,
     q: "",
     libLimit: 60,
-    prevTrack: -1
+    prevTrack: -1,
+    /** a library pattern open in the editor without a clip (see song/lib-view.js), or null */
+    view: null
   };
   function addPattern(type, name, bars, notes, extra = {}) {
     const id = "p" + S.nextId++;
@@ -8677,6 +8688,7 @@ input[type='number'] {
   }
   var getClip = (id) => S.clips.find((c) => c.id === id);
   var curClip = () => UI.sel ? getClip(UI.sel) : null;
+  var edClip = () => curClip() || UI.view || null;
   var ED = {
     mode: "steps",
     snap: 1,
@@ -11857,6 +11869,62 @@ input[type='number'] {
     })
   });
 
+  // src/library/user-lib.js
+  var KEY = "mc707-user-patterns";
+  var LIST = null;
+  function load() {
+    try {
+      const a = JSON.parse(localStorage.getItem(KEY) || "[]");
+      return Array.isArray(a) ? a.filter(
+        (p) => p && typeof p.id === "string" && Array.isArray(p.notes) && (p.type === "drum" || p.type === "tone")
+      ) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function userLib() {
+    if (!LIST) LIST = load();
+    return LIST;
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(userLib()));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  var userById = (id) => userLib().find((p) => p.id === id);
+  function userSave(p, replaceId) {
+    const old = replaceId ? userById(replaceId) : null;
+    const e = {
+      id: old ? old.id : "u" + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36),
+      name: String(p.name || "My pattern").slice(0, 28),
+      type: p.type,
+      bars: p.bars,
+      notes: p.notes.map((n) => ({ s: n.s, l: n.l, n: n.n, v: n.v })),
+      key: p.key ? { root: p.key.root, scale: p.key.scale } : null,
+      role: p.role || "",
+      genre: p.genre || "",
+      bpm: null,
+      at: Date.now()
+    };
+    if (old) Object.assign(old, e);
+    else userLib().unshift(e);
+    return save() ? e.id : null;
+  }
+  function userRename(id, name) {
+    const p = userById(id);
+    if (!p) return;
+    p.name = String(name).trim().slice(0, 28) || p.name;
+    save();
+  }
+  function userDelete(id) {
+    const L = userLib(), i = L.findIndex((p) => p.id === id);
+    if (i >= 0) L.splice(i, 1);
+    save();
+  }
+
   // src/library/index.js
   function instFactory(f) {
     const found = Object.keys(S.patterns).find(
@@ -11891,7 +11959,7 @@ input[type='number'] {
     put(6, 12, 4, "dnb-arp");
     put(7, 8, 8, "dnb-pluck");
   }
-  var metaOf = (src) => src.kind === "fac" ? FAC.find((f) => f.id === src.id) : S.patterns[src.id];
+  var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
   var facById = (id) => FACMAP.get(id);
   var TRACK_POOLS = ["kit", "hats", "perc", "bass", "chords", "pad", "lead", "pluck"];
@@ -11931,11 +11999,21 @@ input[type='number'] {
   function touch(p) {
     IDX.delete(p);
     p.mod = true;
+    const v = UI.view;
+    if (v && v.p === p) adoptView(v, p);
     hooks.scheduleUI();
   }
-  var patOf = (c) => S.patterns[c.pat];
+  function adoptView(v, p) {
+    const id = "p" + S.nextId++;
+    p.id = id;
+    S.patterns[id] = p;
+    v.pat = id;
+    v.p = JSON.parse(JSON.stringify(v.orig));
+    scheduleSave();
+  }
+  var patOf = (c) => c.view ? c.pat && S.patterns[c.pat] || c.p : S.patterns[c.pat];
   var curPat = () => {
-    const c = curClip();
+    const c = edClip();
     return c ? patOf(c) : null;
   };
   function clipAt(t, bar) {
@@ -13653,6 +13731,150 @@ input[type='number'] {
     ov.append(box);
   }
 
+  // src/ui/dialogs.js
+  function askDlg(o) {
+    return new Promise((res) => {
+      const back = el("div", {
+        style: "position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px"
+      });
+      let inp = null;
+      const done = (v) => {
+        back.remove();
+        removeEventListener("keydown", kd, true);
+        res(v);
+      };
+      const ok = el(
+        "button",
+        { class: "btn on", onclick: () => done(o.input ? inp.value.trim() || null : true) },
+        o.ok || "OK"
+      );
+      const no = el("button", { class: "btn", onclick: () => done(o.input ? null : false) }, o.cancel || "Cancel");
+      const box = el(
+        "div",
+        {
+          role: "dialog",
+          "aria-modal": "true",
+          style: "background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px"
+        },
+        el("b", { style: "font-size:16px" }, o.title),
+        o.text ? el("div", { class: "hint", style: "line-height:1.4" }, o.text) : null
+      );
+      if (o.input) {
+        inp = el("input", { type: "text", value: o.def || "", maxlength: 80, style: "width:100%" });
+        box.append(inp);
+      }
+      box.append(el("div", { style: "display:flex;gap:8px;justify-content:flex-end" }, no, ok));
+      back.append(box);
+      document.body.append(back);
+      const kd = (e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          done(o.input ? null : false);
+        } else if (e.key === "Enter") {
+          e.stopPropagation();
+          e.preventDefault();
+          ok.click();
+        }
+      };
+      addEventListener("keydown", kd, true);
+      setTimeout(() => {
+        (inp || ok).focus();
+        if (inp) inp.select();
+      }, 30);
+    });
+  }
+
+  // src/song/lib-view.js
+  var VIEW_ID = "__view";
+  var copyOf = (m) => ({
+    id: null,
+    name: m.name,
+    type: m.type,
+    bars: m.bars,
+    notes: m.notes.map((n) => ({ s: n.s, l: n.l, n: n.n, v: n.v })),
+    key: m.key ? { ...m.key } : null,
+    role: m.role || "",
+    genre: m.genre || "",
+    src: m.id,
+    mod: false
+  });
+  function openView(it, t) {
+    const m = metaOf(it);
+    if (!m) return;
+    const v = UI.view;
+    if (v && v.kind === it.kind && v.srcId === it.id && !UI.sel) return;
+    if (REC.on) hooks.recStop();
+    UI.sel = null;
+    $$(".clip.sel").forEach((x) => x.classList.remove("sel"));
+    const orig = it.kind === "proj" ? null : copyOf(m);
+    UI.view = {
+      id: VIEW_ID,
+      view: true,
+      kind: it.kind,
+      srcId: it.id,
+      t,
+      start: 0,
+      len: m.bars,
+      off: 0,
+      pat: it.kind === "proj" ? it.id : null,
+      orig,
+      p: orig ? copyOf(orig) : null
+    };
+    ED.barSel = null;
+    ED.selNotes.clear();
+    ED.fit = true;
+    ED.aud = null;
+    if (ED.mode === "shape") ED.mode = "steps";
+    if (m.type === "tone") ED.lo = defaultLo(m, t);
+    renderEditor();
+  }
+  function closeView() {
+    if (!UI.view) return;
+    UI.view = null;
+    renderEditor();
+    renderLibrary();
+  }
+  function viewLabel(v) {
+    if (v.kind === "proj") return "Project pattern (not placed here)";
+    return (v.kind === "user" ? "My pattern" : "Factory pattern") + " (not in the song yet)";
+  }
+  function placeView() {
+    const v = UI.view;
+    if (!v) return;
+    const p = patOf(v);
+    let t = v.t;
+    if (!S.tracks[t] || S.tracks[t].type !== p.type) t = p.type === "drum" ? 0 : 3;
+    pushUndo();
+    const src = !v.pat && metaOf({ kind: v.kind, id: v.srcId });
+    const pid = v.pat || (src ? instFactory(src) : addPattern(p.type, p.name, p.bars, p.notes, { key: p.key, role: p.role, genre: p.genre }));
+    const c = placeClip(t, Math.max(0, Math.floor(S.cursor)), pid, p.bars);
+    UI.view = null;
+    selectClip(c.id);
+    renderArr();
+    renderLibrary();
+    scheduleSave();
+    toast("Placed on " + S.tracks[t].name + " at bar " + (Math.floor(S.cursor) + 1));
+  }
+  async function saveToMine(c, update) {
+    const p = patOf(c);
+    if (!p) return;
+    const name = update ? p.name : await askDlg({
+      title: "Save to My patterns",
+      text: "My patterns are kept in this browser and show in the library in every song.",
+      input: true,
+      def: p.name,
+      ok: "Save"
+    });
+    if (!name) return;
+    const id = userSave({ ...p, name }, update && c.view && c.kind === "user" ? c.srcId : null);
+    if (!id) {
+      toast("Could not save: the browser storage is full");
+      return;
+    }
+    toast(update ? "Updated in My patterns" : "Saved to My patterns");
+    renderLibrary();
+  }
+
   // src/clips/clip-map.js
   function cmChipSet(t, k) {
     CMNOW[t] = k;
@@ -14025,6 +14247,97 @@ input[type='number'] {
     selectClip(c.id);
     renderArr();
     scheduleSave();
+  }
+
+  // src/song/clip-change.js
+  var short = (k) => "C" + (k + 1);
+  function cmFlipTarget(t, bar) {
+    const n = cmFix()[t].n;
+    if (n < 2) return null;
+    const now = bar > 0 ? cmAtBar(t, bar - 1) : null;
+    const earlier = cmMarks().filter((m) => m.t === t && m.bar < bar && m.k >= 0 && m.k < n).sort((a, b) => b.bar - a.bar).map((m) => m.k).find((k) => k !== now);
+    if (earlier != null) return earlier;
+    return now == null || now <= 0 ? 1 : 0;
+  }
+  function clipChangeItems(t, bar) {
+    const b = Math.max(0, Math.floor(bar)), mk = cmMarks().find((m) => m.t === t && m.bar === b), f = cmFlipTarget(t, b);
+    return [
+      f != null ? { label: "⇄ Flip to " + cmLabel(t, f), hint: "Shift+K", action: () => setClipMark(t, b, f) } : null,
+      ...cmPickItems(t, mk ? mk.k : null, (k) => setClipMark(t, b, k), "Back to automatic here"),
+      mk ? { label: "Remove the clip change at bar " + (b + 1), danger: true, action: () => delClipMark(mk) } : null,
+      cmFix()[t].n > 1 ? { label: "Switch back and forth", sub: alternateItems(t, b) } : null
+    ];
+  }
+  function altRange(b) {
+    if (S.loop.on && b >= S.loop.start && b < S.loop.end)
+      return [Math.floor(S.loop.start), Math.max(Math.floor(S.loop.start) + 1, Math.ceil(S.loop.end))];
+    return [b, Math.max(b + 1, Math.ceil(songEnd()))];
+  }
+  function alternateItems(t, b) {
+    const n = cmFix()[t].n, [from, to] = altRange(b), cur = cmAtBar(t, from);
+    const a = cur != null && cur >= 0 && cur < n ? cur : 0;
+    let f = cmFlipTarget(t, from);
+    if (f == null || f === a) f = (a + 1) % n;
+    const range = "bars " + (from + 1) + "–" + to;
+    const every = (x, y) => [1, 2, 4, 8].map((e) => ({
+      label: short(x) + " ↔ " + short(y) + " every " + (e === 1 ? "bar" : e + " bars") + ", " + range,
+      action: () => alternate(t, from, to, x, y, e)
+    }));
+    const others = [];
+    for (let k = 0; k < n; k++) if (k !== a && k !== f) others.push(k);
+    return [
+      ...every(a, f),
+      others.length ? {
+        label: "With another clip",
+        sub: others.map((k) => ({ label: cmLabel(t, k), sub: every(a, k) }))
+      } : null
+    ];
+  }
+  function alternate(t, from, to, x, y, each) {
+    pushUndo();
+    const back = cmAtBar(t, to);
+    const keep = cmMarks().filter((m) => !(m.t === t && m.bar >= from && m.bar < to));
+    for (let b = from, i = 0; b < to; b += each, i++) keep.push({ t, bar: b, k: i % 2 ? y : x });
+    if (back != null && back >= 0 && to < songEnd() && !keep.some((m) => m.t === t && m.bar === to))
+      keep.push({ t, bar: to, k: back });
+    keep.sort((p, q) => p.bar - q.bar || p.t - q.t);
+    S.clipMarks = keep;
+    scheduleSave();
+    hooks.renderArr();
+    toast(
+      "Track " + devNum(t) + " switches " + short(x) + " ↔ " + short(y) + " every " + each + " bar" + (each > 1 ? "s" : "")
+    );
+  }
+  var selTrack = () => {
+    const c = curClip();
+    return c && devOn(c.t) ? c.t : null;
+  };
+  function clipChangeMenu(x, y) {
+    const bar = Math.floor(posBarNow()), t0 = selTrack(), tracks = S.tracks.map((_, i) => i).filter((i) => devOn(i));
+    const trackItem = (t) => ({ label: "Track " + devNum(t) + ": " + S.tracks[t].name, sub: clipChangeItems(t, bar) });
+    showMenu(x, y, [
+      { label: devNm() + " clip change at bar " + (bar + 1) + " (playhead)", disabled: true },
+      ...t0 != null ? [
+        { label: "Track " + devNum(t0) + ": " + S.tracks[t0].name, disabled: true },
+        ...clipChangeItems(t0, bar),
+        "-",
+        { label: "Another track", sub: tracks.filter((t) => t !== t0).map(trackItem) }
+      ] : tracks.map(trackItem)
+    ]);
+  }
+  function flipAtPlayhead() {
+    const t = selTrack();
+    if (t == null) {
+      toast("Select a clip on the track first, or press K to choose a track");
+      return;
+    }
+    const bar = Math.floor(posBarNow()), f = cmFlipTarget(t, bar);
+    if (f == null) {
+      toast("Track " + devNum(t) + " has one clip set up. Set up more in Your " + devNm() + " clips.");
+      return;
+    }
+    setClipMark(t, bar, f);
+    toast("Bar " + (bar + 1) + ": track " + devNum(t) + " → " + cmLabel(t, f));
   }
 
   // src/song/import.js
@@ -16144,13 +16457,8 @@ input[type='number'] {
         }
       },
       devOn(c.t) ? {
-        label: devNm() + " clip change at bar " + (Math.floor(c.start) + 1),
-        sub: cmPickItems(
-          c.t,
-          (cmMarks().find((m) => m.t === c.t && m.bar === Math.floor(c.start)) || {}).k,
-          (k) => setClipMark(c.t, c.start, k),
-          "Back to automatic switching"
-        )
+        label: "Insert " + devNm() + " clip change at bar " + (Math.floor(c.start) + 1),
+        sub: clipChangeItems(c.t, c.start)
       } : null,
       isTone ? { label: "Transpose this clip’s range…", action: () => openXpose({ scope: "clip" }) } : null,
       isTone ? {
@@ -16350,13 +16658,8 @@ input[type='number'] {
       { label: "Paste clip here", disabled: !CLIPB, action: () => pasteClip(t, bar) },
       { label: "Add from library", sub: libSubmenu(t, bar) },
       devOn(t) ? {
-        label: devNm() + " clip change at bar " + (Math.floor(bar) + 1),
-        sub: cmPickItems(
-          t,
-          (cmMarks().find((m) => m.t === t && m.bar === Math.floor(bar)) || {}).k,
-          (k) => setClipMark(t, bar, k),
-          "Back to automatic switching"
-        )
+        label: "Insert " + devNm() + " clip change at bar " + (Math.floor(bar) + 1),
+        sub: clipChangeItems(t, bar)
       } : null,
       "-",
       { label: "Play from here", action: () => playFrom(bar) },
@@ -16569,6 +16872,7 @@ input[type='number'] {
     const styles = itemStyles(it);
     const k = keyLabel(m);
     return [
+      { label: "Open in editor", action: () => openView(src, previewTrackFor(m, true)) },
       { label: "Preview", action: () => auditionLib(m) },
       {
         label: "Preview on track…",
@@ -16628,7 +16932,32 @@ input[type='number'] {
           UI.libKey = k;
           renderLibrary();
         }
-      } : null
+      } : null,
+      ...it.kind === "user" ? [
+        "-",
+        {
+          label: "Rename…",
+          action: async () => {
+            const n = await askDlg({ title: "Rename pattern", input: true, def: m.name, ok: "Rename" });
+            if (n) userRename(it.id, n);
+            renderLibrary();
+          }
+        },
+        {
+          label: "Delete from My patterns",
+          danger: true,
+          action: async () => {
+            const ok = await askDlg({
+              title: 'Delete "' + m.name + '" from My patterns?',
+              text: "Songs that already use it keep their own copy.",
+              ok: "Delete"
+            });
+            if (!ok) return;
+            userDelete(it.id);
+            renderLibrary();
+          }
+        }
+      ] : []
     ];
   }
 
@@ -16783,7 +17112,8 @@ input[type='number'] {
       $("#libTabs"),
       [
         ["fac", "Factory"],
-        ["proj", "Project"]
+        ["proj", "Project"],
+        ["user", "Mine"]
       ],
       UI.libTab,
       (v) => {
@@ -16832,7 +17162,7 @@ input[type='number'] {
       GENRE_ORDER.forEach((g) => gs.append(el("option", { value: g, selected: UI.libGenre === g }, GENRE_LABELS[g])));
       gh.append(gs);
     }
-    const base = UI.libTab === "fac" ? FAC.map((f) => ({ kind: "fac", id: f.id, m: f })) : Object.values(S.patterns).map((p) => ({ kind: "proj", id: p.id, m: p }));
+    const base = UI.libTab === "fac" ? FAC.map((f) => ({ kind: "fac", id: f.id, m: f })) : UI.libTab === "user" ? userLib().map((p) => ({ kind: "user", id: p.id, m: p })) : Object.values(S.patterns).map((p) => ({ kind: "proj", id: p.id, m: p }));
     const pt = $("#prevTrack");
     pt.textContent = "";
     pt.append(el("option", { value: -1, selected: UI.prevTrack === -1 }, "Auto (first matching track)"));
@@ -16910,7 +17240,7 @@ input[type='number'] {
         el(
           "div",
           { class: "empty" },
-          UI.libTab === "proj" && !base.length ? "No patterns in this song yet. Place one from the factory library or double-click a track lane." : "No patterns match. Try removing a filter or a search word.",
+          UI.libTab === "proj" && !base.length ? "No patterns in this song yet. Place one from the factory library or double-click a track lane." : UI.libTab === "user" && !base.length ? "Nothing saved yet. Open a pattern in the editor and press Save to My patterns." : "No patterns match. Try removing a filter or a search word.",
           el("br"),
           el("button", { class: "btn sm", style: "margin-top:8px", onclick: libReset }, "Clear filters")
         )
@@ -17034,12 +17364,13 @@ input[type='number'] {
       const row = el(
         "div",
         {
-          class: "li" + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? " armed" : ""),
+          class: "li" + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? " armed" : "") + (UI.view && UI.view.srcId === it.id && UI.view.kind === it.kind ? " viewing" : ""),
           draggable: "true",
           style: "--c:" + col,
           onclick: () => {
             const same = UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind;
             UI.arm = same ? null : { kind: it.kind, id: it.id };
+            if (UI.arm) openView(UI.arm, previewTrackFor(m, true));
             if (!UI.arm) hideGhost();
             if (UI.arm && innerWidth <= 860) {
               $("#main").classList.add("nolib");
@@ -17336,6 +17667,14 @@ input[type='number'] {
       if (lane) {
         const t = +lane.dataset.t;
         const bar = barFromX(e.clientX);
+        if (e.altKey && devOn(t)) {
+          e.preventDefault();
+          showMenu(e.clientX, e.clientY, [
+            { label: "Track " + devNum(t) + ", bar " + (Math.max(0, bar) + 1), disabled: true },
+            ...clipChangeItems(t, Math.max(0, bar))
+          ]);
+          return;
+        }
         if (UI.arm) {
           placeSrc(UI.arm, t, bar);
           return;
@@ -18008,7 +18347,7 @@ input[type='number'] {
 
   // src/song/editor-head.js
   function renderEdHead() {
-    const c = curClip();
+    const c = edClip();
     const h = $("#edHead");
     if (!c) {
       h.textContent = "";
@@ -18043,19 +18382,12 @@ input[type='number'] {
         }),
         el("span", { class: "chip", style: "--c:" + TRACK_COLORS[c.t] }, t.name)
       ),
-      seg(
-        [
-          ["steps", "Steps"],
-          ["roll", "Piano roll"],
-          ["shape", "Shape"]
-        ],
-        ED.mode,
-        (v) => {
-          ED.mode = v;
-          ED.fit = true;
-          renderEditor();
-        }
-      ),
+      ...c.view ? [viewGroup(c)] : [],
+      seg([["steps", "Steps"], ["roll", "Piano roll"], ...c.view ? [] : [["shape", "Shape"]]], ED.mode, (v) => {
+        ED.mode = v;
+        ED.fit = true;
+        renderEditor();
+      }),
       el(
         "div",
         { class: "grp" },
@@ -18348,7 +18680,7 @@ input[type='number'] {
         });
       })
     );
-    const shared = S.clips.filter((x) => x.pat === c.pat).length > 1;
+    const shared = !c.view && S.clips.filter((x) => x.pat === c.pat).length > 1;
     if (shared)
       tools.append(
         act(
@@ -18401,15 +18733,32 @@ input[type='number'] {
           )
         )
       ] : [],
-      act("Duplicate clip", dupClip, "Place a linked copy right after this clip (Ctrl/Cmd+D)"),
-      act("Delete clip", deleteClip, "Remove this clip from the arrangement (Delete)")
+      ...c.view ? [] : [
+        act("Save to My patterns", () => saveToMine(c), "Keep this pattern in your own library, for every song"),
+        act("Duplicate clip", dupClip, "Place a linked copy right after this clip (Ctrl/Cmd+D)"),
+        act("Delete clip", deleteClip, "Remove this clip from the arrangement (Delete)")
+      ]
     );
     h.append(tools);
-    h.append(recGroup());
-    h.append(clipOptionsEl(c, p, isDrum));
+    if (!c.view) {
+      h.append(recGroup());
+      h.append(clipOptionsEl(c, p, isDrum));
+    }
     h.append(el("div", { id: "edBarSel", class: "edbs" }));
     refreshBarSel();
     hooks.updTransport();
+  }
+  function viewGroup(c) {
+    const b = (label, fn, title, on) => el("button", { class: "btn sm" + (on ? " on" : ""), title: title || label, onclick: fn }, label);
+    return el(
+      "div",
+      { class: "grp edView" },
+      el("span", { class: "hint" }, viewLabel(c)),
+      b("Place at playhead", placeView, "Put this pattern in the song at the playhead", true),
+      c.kind === "user" ? b("Update My pattern", () => saveToMine(c, true), "Save your changes over this pattern in My patterns") : null,
+      b("Save to My patterns", () => saveToMine(c), "Keep a copy in your own library, for every song"),
+      b("Close", closeView, "Close the pattern without placing it")
+    );
   }
   function barRange(p) {
     const s = ED.barSel;
@@ -18505,7 +18854,8 @@ input[type='number'] {
     return out;
   }
   function renderEditor() {
-    const c = curClip();
+    if (UI.view && !patOf(UI.view)) UI.view = null;
+    const c = edClip();
     $("#edBody").style.display = c ? "" : "none";
     $("#edEmpty").hidden = !!c;
     if (!c) {
@@ -18585,7 +18935,7 @@ input[type='number'] {
   }
   function refreshBarSel() {
     const host = $("#edBarSel");
-    const c = curClip();
+    const c = edClip();
     if (!host || !c) return;
     const p = patOf(c);
     host.textContent = "";
@@ -18712,7 +19062,7 @@ input[type='number'] {
     }
   }
   function layoutEditor() {
-    const c = curClip();
+    const c = edClip();
     if (!c) return;
     const p = patOf(c);
     if (ED.mode === "shape") {
@@ -18762,7 +19112,7 @@ input[type='number'] {
     drawEditor();
   }
   function drawEditor() {
-    const c = curClip();
+    const c = edClip();
     const g = ED.geom;
     if (!c || !g) return;
     if (ED.mode === "shape") {
@@ -18941,7 +19291,7 @@ input[type='number'] {
   function initEditor() {
     const gc = $("#edGrid"), lc = $("#edLabels"), vc = $("#edVel");
     lc.addEventListener("pointerdown", (e) => {
-      const c = curClip();
+      const c = edClip();
       if (!c || !ED.geom) return;
       const ri = Math.floor(e.offsetY / ED.geom.rh);
       const r = ED.geom.rows[ri];
@@ -18949,7 +19299,7 @@ input[type='number'] {
     });
     gc.addEventListener("pointerdown", (e) => {
       if (e.button === 2) return;
-      const c = curClip();
+      const c = edClip();
       if (!c || !ED.geom) return;
       const p = patOf(c);
       const g = ED.geom;
@@ -19035,7 +19385,7 @@ input[type='number'] {
       gc.setPointerCapture(e.pointerId);
     });
     gc.addEventListener("pointermove", (e) => {
-      const c = curClip();
+      const c = edClip();
       if (!c || !ED.geom) return;
       const p = patOf(c);
       const g = ED.geom;
@@ -19096,7 +19446,7 @@ input[type='number'] {
     gc.addEventListener("pointercancel", end);
     let vdown = false;
     const setVel = (e) => {
-      const c = curClip();
+      const c = edClip();
       if (!c || !ED.geom) return;
       const p = patOf(c);
       const g = ED.geom;
@@ -19163,7 +19513,7 @@ input[type='number'] {
       return false;
     }
     pushUndo();
-    const pid = src.kind === "fac" ? instFactory(meta) : src.id;
+    const pid = src.kind === "fac" || src.kind === "user" ? instFactory(meta) : src.id;
     const c = placeClip(t, Math.max(0, bar), pid, meta.bars);
     selectClip(c.id);
     renderArr();
@@ -19173,6 +19523,7 @@ input[type='number'] {
   function selectClip(id) {
     if (REC.on && UI.sel !== id) recStop();
     UI.sel = id;
+    UI.view = null;
     ED.barSel = null;
     ED.selNotes.clear();
     ED.fit = true;
@@ -19316,10 +19667,10 @@ input[type='number'] {
             id: "thClip" + i,
             onclick: (ev) => {
               ev.stopPropagation();
-              const r = ev.currentTarget.getBoundingClientRect(), bar = Math.floor(TR.playing && TR.mode === "song" ? posBarNow() : S.cursor), mk = cmMarks().find((m) => m.t === i && m.bar === bar);
+              const r = ev.currentTarget.getBoundingClientRect(), bar = Math.floor(TR.playing && TR.mode === "song" ? posBarNow() : S.cursor);
               showMenu(r.left, r.bottom + 2, [
-                { label: "Change clip at bar " + (bar + 1) + " (playhead)", disabled: true },
-                ...cmPickItems(i, mk ? mk.k : null, (k) => setClipMark(i, bar, k), "Back to automatic here")
+                { label: "Clip change at bar " + (bar + 1) + " (playhead)", disabled: true },
+                ...clipChangeItems(i, bar)
               ]);
             }
           });
@@ -19699,7 +20050,7 @@ input[type='number'] {
     const kits = lvPool(st, "kit").map(facById).filter(ok), hats2 = lvPool(st, "hats").map(facById).filter(ok), perc2 = lvPool(st, "perc").map(facById).filter(ok);
     const out = FULLKITS[st.id] = [];
     if (!kits.length) return out;
-    const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short = (x) => x.name.split(":").pop().trim();
+    const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short2 = (x) => x.name.split(":").pop().trim();
     for (let i = 0; i < N * 3 && out.length < N; i++) {
       const k = kits[i % kits.length], h = hats2.length ? hats2[Math.floor(r() * hats2.length)] : null, p = perc2.length && r() < 0.45 ? perc2[Math.floor(r() * perc2.length)] : null;
       const key = k.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
@@ -19718,7 +20069,7 @@ input[type='number'] {
       });
       const e = {
         id: "fk-" + st.id + "-" + out.length,
-        name: "Full Kit: " + short(k) + (h ? " + " + short(h) : "") + (p ? " + " + short(p) : ""),
+        name: "Full Kit: " + short2(k) + (h ? " + " + short2(h) : "") + (p ? " + " + short2(p) : ""),
         type: "drum",
         genre: k.genre,
         bpm: k.bpm,
@@ -25400,59 +25751,6 @@ input[type='number'] {
     return lvQueueBreak(lvMakeBreak(LV.brkStyle, len), t);
   }
 
-  // src/ui/dialogs.js
-  function askDlg(o) {
-    return new Promise((res) => {
-      const back = el("div", {
-        style: "position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px"
-      });
-      let inp = null;
-      const done = (v) => {
-        back.remove();
-        removeEventListener("keydown", kd, true);
-        res(v);
-      };
-      const ok = el(
-        "button",
-        { class: "btn on", onclick: () => done(o.input ? inp.value.trim() || null : true) },
-        o.ok || "OK"
-      );
-      const no = el("button", { class: "btn", onclick: () => done(o.input ? null : false) }, o.cancel || "Cancel");
-      const box = el(
-        "div",
-        {
-          role: "dialog",
-          "aria-modal": "true",
-          style: "background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px"
-        },
-        el("b", { style: "font-size:16px" }, o.title),
-        o.text ? el("div", { class: "hint", style: "line-height:1.4" }, o.text) : null
-      );
-      if (o.input) {
-        inp = el("input", { type: "text", value: o.def || "", maxlength: 80, style: "width:100%" });
-        box.append(inp);
-      }
-      box.append(el("div", { style: "display:flex;gap:8px;justify-content:flex-end" }, no, ok));
-      back.append(box);
-      document.body.append(back);
-      const kd = (e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          done(o.input ? null : false);
-        } else if (e.key === "Enter") {
-          e.stopPropagation();
-          e.preventDefault();
-          ok.click();
-        }
-      };
-      addEventListener("keydown", kd, true);
-      setTimeout(() => {
-        (inp || ok).focus();
-        if (inp) inp.select();
-      }, 30);
-    });
-  }
-
   // src/live/scene-editor.js
   var LVSK = "mc707-live-scenes2";
   function lvSaveScenes() {
@@ -25505,7 +25803,7 @@ input[type='number'] {
       return;
     }
     host.hidden = false;
-    const st = lvStyle(), save = () => {
+    const st = lvStyle(), save2 = () => {
       lvSaveScenes();
       liveRenderCards();
       LV.ver++;
@@ -25517,7 +25815,7 @@ input[type='number'] {
       "aria-label": "Scene name",
       onchange: (e) => {
         sc.name = e.target.value.trim() || sc.name;
-        save();
+        save2();
       }
     });
     const isF = lvIsFlash(sc);
@@ -25527,7 +25825,7 @@ input[type='number'] {
         "aria-label": "Scene length",
         onchange: (e) => {
           sc.bars = +e.target.value;
-          save();
+          save2();
         }
       },
       ...(isF ? [1, 2] : [1, 2, 4, 6, 8, 12, 16, 24, 32]).map(
@@ -25544,7 +25842,7 @@ input[type='number'] {
         sc.e = +e.target.value;
         $("#lvScEdE").textContent = sc.e;
       },
-      onchange: () => save()
+      onchange: () => save2()
     });
     const rh = isF ? el(
       "select",
@@ -25555,7 +25853,7 @@ input[type='number'] {
           sc.rh = R[0];
           sc.bars = R[2];
           sc.cells = lvFlashIds(st, R[0], LV.mode);
-          save();
+          save2();
           liveRenderSceneEd();
         }
       },
@@ -25569,7 +25867,7 @@ input[type='number'] {
         "aria-label": "Scene move",
         onchange: (e) => {
           sc.fx = e.target.value;
-          save();
+          save2();
           if (lvOn() && LV.cur === i) lvSceneFx(sc, Math.ceil(TR.tick / 32) * 32);
         }
       },
@@ -25590,7 +25888,7 @@ input[type='number'] {
             sc.cells[ti] = { id: v, pool: c && c.pool || pool };
             if (c && c.play) sc.cells[ti].play = c.play;
           }
-          save();
+          save2();
           liveRenderSceneEd();
           if (lvOn() && LV.cur === i) {
             if (v)
@@ -25651,7 +25949,7 @@ input[type='number'] {
             if (!cc) return;
             if (e.target.value === "all") delete cc.play;
             else cc.play = e.target.value;
-            save();
+            save2();
           }
         },
         ...LV_PLAY.map(([v, l]) => el("option", { value: v, selected: (c && c.play || "all") === v }, l))
@@ -25668,7 +25966,7 @@ input[type='number'] {
             if (!cc) return;
             if (e.target.value === "") delete cc.clip;
             else cc.clip = +e.target.value;
-            save();
+            save2();
             if (lvOn() && LV.cur === i) lvCellClip(ti, cc, AU.ctx.currentTime + 0.05);
           }
         },
@@ -25692,7 +25990,7 @@ input[type='number'] {
       if (LV.cur === i) LV.cur = j;
       else if (LV.cur === j) LV.cur = i;
       LV.edIdx = j;
-      save();
+      save2();
       liveRenderSceneEd();
     };
     host.append(
@@ -25746,7 +26044,7 @@ input[type='number'] {
             onclick: () => {
               LV.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify({ ...sc, name: (sc.name + " copy").slice(0, 24) })));
               LV.edIdx = i + 1;
-              save();
+              save2();
               liveRenderSceneEd();
             }
           },
@@ -25762,7 +26060,7 @@ input[type='number'] {
               if (LV.cur >= LV.scenes.length) LV.cur = LV.scenes.length - 1;
               LV.edIdx = -1;
               LV.cues = LV.cues.filter((c) => c.type !== "scene");
-              save();
+              save2();
               liveRenderSceneEd();
             }
           },
@@ -30391,6 +30689,10 @@ input[type='number'] {
       setBarWidth(+e.target.value);
       renderArr();
     });
+    $("#bClipChg").addEventListener("click", (e) => {
+      const r = e.currentTarget.getBoundingClientRect();
+      clipChangeMenu(r.left, r.bottom + 2);
+    });
     $("#bAddBars").addEventListener("click", () => {
       if (S.bars >= MAXBARS) {
         toast(MAXBARS + " bars is the maximum");
@@ -30694,6 +30996,15 @@ input[type='number'] {
       if (c) loopClip(c);
       return;
     }
+    if (!mod && !e.altKey && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      if (e.shiftKey) flipAtPlayhead();
+      else {
+        const r = $("#bClipChg").getBoundingClientRect();
+        clipChangeMenu(r.left, r.bottom + 2);
+      }
+      return;
+    }
     if (!mod && (e.key === "g" || e.key === "G")) {
       const c = curClip();
       if (c) {
@@ -30865,7 +31176,7 @@ input[type='number'] {
   }
   function editorContext(e) {
     e.preventDefault();
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const p = patOf(c), g = ED.geom;
     const ri = Math.floor(e.offsetY / g.rh);
@@ -31057,7 +31368,7 @@ input[type='number'] {
   }
   function labelContext(e) {
     e.preventDefault();
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const g = ED.geom;
     const r = g.rows[Math.floor(e.offsetY / g.rh)];
@@ -31070,7 +31381,7 @@ input[type='number'] {
   }
   function velContext(e) {
     e.preventDefault();
-    const c = curClip();
+    const c = edClip();
     if (!c) return;
     const all = (f) => edOp((p) => p.notes.forEach(f));
     showMenu(e.clientX, e.clientY, [

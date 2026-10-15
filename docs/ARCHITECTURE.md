@@ -168,6 +168,7 @@ creating the clock's Worker. Then `main.js`:
 | `library/lively.js` | Lively variants: busier, syncopated basslines, arps, chords and leads built on each genre's progressions. |  |
 | `library/pools.js` | Which patterns suit a style: pools by genre, sub-style and tempo, full kits for one drum track, and the Lively / Classic flavour filter. Used by Live Mode and the song wizard. |  |
 | `library/styles.js` | The song styles (43 of them): tempo, key, structure, parts and tips, used by the song wizard and Live Mode. |  |
+| `library/user-lib.js` | My patterns: patterns you save from the editor into your own library. Kept in this browser (or the Windows app) under one localStorage key, apart from songs, so they are there in every song. | the My patterns list (read it with userLib()) |
 | `library/variety.js` | The variety pack: 38 extra progressions with voice-led chords, chord-aware basslines, pads and arps for every genre. |  |
 
 ### services/ (layer: services)
@@ -200,6 +201,7 @@ creating the clock's Worker. Then `main.js`:
 | `song/audio-dialog.js` | The Audio dialog: choose 2-channel or 8-channel recording, inputs, format and range, and start recording. |  |
 | `song/audio-record.js` | Recording the song to audio: works out what to record (mix, stems, Ext In), plays the song and writes each pass to WAV or MP3. |  |
 | `song/audio-save.js` | Saving recordings: through the Windows app, the claude.ai page, or a browser download. |  |
+| `song/clip-change.js` | Inserting MC-707 clip changes quickly: at the playhead (K, or the toolbar button), by Alt+click on a lane, flipping straight back to the clip before (Shift+K), and switching back and forth between two clips every few bars. |  |
 | `song/clip-ops.js` | Things you do to clips: split, edit one repeat on its own, glue, copy, make unique, set length and transpose, plus the playhead and loop controls. | CLIPB (the clip clipboard) |
 | `song/clip-options.js` | The Clip options panel: fine position, length, transpose, velocity, fades and the MC-707 clip to launch. |  |
 | `song/editor-head.js` | The pattern editor's toolbar: name, length, key, steps or piano roll, the tools, and which bars are being edited. |  |
@@ -209,6 +211,7 @@ creating the clock's Worker. Then `main.js`:
 | `song/export.js` | MIDI export: builds a .mid with every track (and one per track) and saves it, in a zip when there are several files. |  |
 | `song/import.js` | Bringing patterns in: MIDI file import with a review step, and new or blank patterns. |  |
 | `song/layout.js` | Arrangement layout: snap, row heights that fit the window, the splitter between arrangement and editor, and clip geometry. |  |
+| `song/lib-view.js` | A library pattern open in the pattern editor without placing it: click a pattern in the library to see and edit it, then place it at the playhead. Also saves patterns to My patterns. | UI.view (opened and closed here; core/song-model.js keeps the edited copy on the first edit) |
 | `song/library-panel.js` | The pattern library panel: search and filters, favourites, previewing a pattern (on the track that suits it), and adding it to the song. | FAVS (favourite patterns) |
 | `song/markers.js` | Section markers: add, rename, loop a section, tempo and MC-707 scene changes per section. |  |
 | `song/recording-midi.js` | Recording notes into a pattern from a MIDI keyboard, the MC-707 pads or the computer keyboard. |  |

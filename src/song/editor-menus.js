@@ -3,7 +3,7 @@
 //
 // Reads: S, UI, ED, CM, bw.
 import { $, clamp, toast } from '../core/dom.js';
-import { ED, S, UI, curClip, getClip } from '../core/state.js';
+import { ED, S, UI, curClip, edClip, getClip } from '../core/state.js';
 import { HEAD, barFromX, bw, cmkMenu, selectClip } from './arrangement.js';
 import { curPat, patOf, songEnd } from '../core/song-model.js';
 import { drawEditor, randomize, shiftNotes } from './editor.js';
@@ -106,7 +106,7 @@ function patternSub() {
 }
 function editorContext(e) {
   e.preventDefault();
-  const c = curClip();
+  const c = edClip();
   if (!c || !ED.geom) return;
   const p = patOf(c),
     g = ED.geom;
@@ -310,7 +310,7 @@ function editorContext(e) {
 }
 function labelContext(e) {
   e.preventDefault();
-  const c = curClip();
+  const c = edClip();
   if (!c || !ED.geom) return;
   const g = ED.geom;
   const r = g.rows[Math.floor(e.offsetY / g.rh)];
@@ -323,7 +323,7 @@ function labelContext(e) {
 }
 function velContext(e) {
   e.preventDefault();
-  const c = curClip();
+  const c = edClip();
   if (!c) return;
   const all = f => edOp(p => p.notes.forEach(f));
   showMenu(e.clientX, e.clientY, [

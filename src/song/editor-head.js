@@ -6,7 +6,7 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { NOTE_NAMES, SCALES } from '../core/theory.js';
 import { TRACK_COLORS, devOn } from '../core/device.js';
-import { ED, S, addPattern, curClip, pushUndo, scheduleSave } from '../core/state.js';
+import { ED, S, addPattern, edClip, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
 import { patOf, touch } from '../core/song-model.js';
 import { edDo, layoutEditor, randomize, refreshBarSel, renderEditor, setBars, shiftNotes } from './editor.js';
@@ -16,10 +16,11 @@ import { toneTracks } from './library-panel.js';
 import { clipOptionsEl } from './clip-options.js';
 import { recGroup } from './recording-midi.js';
 import { shapeHead } from './shape-editor.js';
+import { closeView, placeView, saveToMine, viewLabel } from './lib-view.js';
 import { hooks } from '../core/hooks.js';
 
 export function renderEdHead() {
-  const c = curClip();
+  const c = edClip();
   const h = $('#edHead');
   if (!c) {
     h.textContent = '';
@@ -55,19 +56,12 @@ export function renderEdHead() {
       }),
       el('span', { class: 'chip', style: '--c:' + TRACK_COLORS[c.t] }, t.name)
     ),
-    seg(
-      [
-        ['steps', 'Steps'],
-        ['roll', 'Piano roll'],
-        ['shape', 'Shape']
-      ],
-      ED.mode,
-      v => {
-        ED.mode = v;
-        ED.fit = true;
-        renderEditor();
-      }
-    ),
+    ...(c.view ? [viewGroup(c)] : []),
+    seg([['steps', 'Steps'], ['roll', 'Piano roll'], ...(c.view ? [] : [['shape', 'Shape']])], ED.mode, v => {
+      ED.mode = v;
+      ED.fit = true;
+      renderEditor();
+    }),
     el(
       'div',
       { class: 'grp' },
@@ -367,7 +361,7 @@ export function renderEdHead() {
       });
     })
   );
-  const shared = S.clips.filter(x => x.pat === c.pat).length > 1;
+  const shared = !c.view && S.clips.filter(x => x.pat === c.pat).length > 1;
   if (shared)
     tools.append(
       act(
@@ -430,15 +424,38 @@ export function renderEdHead() {
           )
         ]
       : []),
-    act('Duplicate clip', dupClip, 'Place a linked copy right after this clip (Ctrl/Cmd+D)'),
-    act('Delete clip', deleteClip, 'Remove this clip from the arrangement (Delete)')
+    ...(c.view
+      ? []
+      : [
+          act('Save to My patterns', () => saveToMine(c), 'Keep this pattern in your own library, for every song'),
+          act('Duplicate clip', dupClip, 'Place a linked copy right after this clip (Ctrl/Cmd+D)'),
+          act('Delete clip', deleteClip, 'Remove this clip from the arrangement (Delete)')
+        ])
   );
   h.append(tools);
-  h.append(recGroup());
-  h.append(clipOptionsEl(c, p, isDrum));
+  if (!c.view) {
+    h.append(recGroup());
+    h.append(clipOptionsEl(c, p, isDrum));
+  }
   h.append(el('div', { id: 'edBarSel', class: 'edbs' }));
   refreshBarSel();
   hooks.updTransport();
+}
+/* the banner for a library pattern open in the editor: where it came from, place it, keep it, close */
+function viewGroup(c) {
+  const b = (label, fn, title, on) =>
+    el('button', { class: 'btn sm' + (on ? ' on' : ''), title: title || label, onclick: fn }, label);
+  return el(
+    'div',
+    { class: 'grp edView' },
+    el('span', { class: 'hint' }, viewLabel(c)),
+    b('Place at playhead', placeView, 'Put this pattern in the song at the playhead', true),
+    c.kind === 'user'
+      ? b('Update My pattern', () => saveToMine(c, true), 'Save your changes over this pattern in My patterns')
+      : null,
+    b('Save to My patterns', () => saveToMine(c), 'Keep a copy in your own library, for every song'),
+    b('Close', closeView, 'Close the pattern without placing it')
+  );
 }
 export function barRange(p) {
   const s = ED.barSel;

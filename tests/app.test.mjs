@@ -222,3 +222,43 @@ test('every hook in core/hooks.js is filled in when the app starts', async () =>
   assert.deepEqual(missing, []);
   assert.deepEqual(errors, []);
 });
+
+test('a library pattern opens in the editor, is placed, saved to My patterns; K flips clips', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(() => {
+    document.querySelector('#wiz').hidden = true;
+  });
+  const count = () => page.evaluate(() => Object.keys(window.__app.S.patterns).length);
+  const n0 = await count();
+  await page.locator('#libList .li').nth(2).click();
+  assert.equal(await page.isVisible('.edView'), true, 'the library pattern is in the editor');
+  assert.equal(await count(), n0, 'just looking adds nothing to the song');
+  const g = await page.locator('#edGrid').boundingBox();
+  await page.mouse.click(g.x + 26 * 3 + 5, g.y + 26 * 2 + 5);
+  assert.equal(await count(), n0 + 1, 'the first edit keeps an edited copy');
+  await page.locator('.edView button', { hasText: 'Save to My patterns' }).click();
+  await page.waitForSelector('[role=dialog] input');
+  await page.waitForTimeout(100);
+  await page.keyboard.type('Mine 1');
+  await page.keyboard.press('Enter');
+  const clips = await page.evaluate(() => window.__app.S.clips.length);
+  await page.locator('.edView button', { hasText: 'Place at playhead' }).click();
+  assert.equal(await page.evaluate(() => window.__app.S.clips.length), clips + 1);
+  await page.locator('#libTabs button', { hasText: 'Mine' }).click();
+  assert.equal(await page.locator('#libList .li b').first().innerText(), 'Mine 1');
+  await page.evaluate(() => {
+    const S = window.__app.S;
+    S.clipMap = S.clipMap || [];
+    S.clipMap[0] = { n: 2, types: ['drums', 'drums'], names: ['', ''] };
+  });
+  await page.locator('.lane[data-t="0"] .clip').first().click();
+  await page.evaluate(() => (window.__app.S.cursor = 4));
+  await page.keyboard.press('Shift+K');
+  await page.evaluate(() => (window.__app.S.cursor = 6));
+  await page.keyboard.press('Shift+K');
+  assert.deepEqual(await page.evaluate(() => window.__app.S.clipMarks), [
+    { t: 0, bar: 4, k: 1 },
+    { t: 0, bar: 6, k: 0 }
+  ]);
+  assert.deepEqual(errors, []);
+});

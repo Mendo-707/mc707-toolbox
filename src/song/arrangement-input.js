@@ -26,6 +26,9 @@ import { TR } from '../services/transport.js';
 import { renderLibrary } from './library-panel.js';
 import { blkLabel, clipBlock, clipHasBlocks, editBlock, updLoopUI } from './clip-ops.js';
 import { SNAP, snapBar, snapFloor } from './layout.js';
+import { devNum, devOn } from '../core/device.js';
+import { showMenu } from '../ui/menu.js';
+import { clipChangeItems } from './clip-change.js';
 import { hooks } from '../core/hooks.js';
 
 // library drag source
@@ -63,6 +66,14 @@ export function initArr() {
     if (lane) {
       const t = +lane.dataset.t;
       const bar = barFromX(e.clientX);
+      if (e.altKey && devOn(t)) {
+        e.preventDefault();
+        showMenu(e.clientX, e.clientY, [
+          { label: 'Track ' + devNum(t) + ', bar ' + (Math.max(0, bar) + 1), disabled: true },
+          ...clipChangeItems(t, Math.max(0, bar))
+        ]);
+        return;
+      }
       if (UI.arm) {
         placeSrc(UI.arm, t, bar);
         return;

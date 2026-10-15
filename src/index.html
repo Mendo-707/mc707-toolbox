@@ -115,6 +115,13 @@
         <button class="btn sm" id="bAddBars" title="Add 8 bars to the end">+8</button>
       </div>
       <div class="grp" style="margin-left: auto">
+        <button
+          class="btn sm"
+          id="bClipChg"
+          title="Insert an MC-707 clip change at the playhead (K). Shift+K flips straight back to the clip before."
+        >
+          ⇄ Clip change
+        </button>
         <button class="btn sm" id="bNewPat" title="New blank pattern, or load patterns from MIDI files or a folder">
           + Pattern
         </button>
@@ -231,7 +238,8 @@
           ><span>Duplicate clip</span><span>Delete</span><span>Delete note or clip</span> <span>Alt-drag a clip</span
           ><span>Copy it</span><span>Shift + right-click a note</span><span>Delete it instantly</span
           ><span>Double-click a lane</span><span>New pattern</span><span>Double-click a marker</span
-          ><span>Rename it</span>
+          ><span>Rename it</span><span>K</span><span>Insert a clip change at the playhead</span><span>Shift+K</span
+          ><span>Flip back to the clip before</span><span>Alt+click a lane</span><span>Clip change there</span>
         </div>
         <h3 style="margin-top: 12px">Live Mode</h3>
         <div class="hint" style="line-height: 1.45">
@@ -314,8 +322,8 @@
           </div>
           <div id="edEmpty" hidden>
             <div>
-              <b>No pattern selected</b><br />Click a clip in the arrangement, or double-click an empty spot on a track
-              to make a new pattern.
+              <b>No pattern selected</b><br />Click a clip in the arrangement or a pattern in the library, or
+              double-click an empty spot on a track to make a new pattern.
             </div>
           </div>
         </section>

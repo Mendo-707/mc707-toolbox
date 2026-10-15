@@ -5,7 +5,7 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES, SCALES, noteName } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';
-import { ED, S, curClip, pushUndo } from '../core/state.js';
+import { ED, S, UI, edClip, pushUndo } from '../core/state.js';
 import { curPat, patOf, touch } from '../core/song-model.js';
 import { REC, audition } from '../services/transport.js';
 import { barRange, renderEdHead } from './editor-head.js';
@@ -60,7 +60,8 @@ function edRows(p) {
   return out;
 }
 export function renderEditor() {
-  const c = curClip();
+  if (UI.view && !patOf(UI.view)) UI.view = null;
+  const c = edClip();
   $('#edBody').style.display = c ? '' : 'none';
   $('#edEmpty').hidden = !!c;
   if (!c) {
@@ -147,7 +148,7 @@ function barRepeat() {
 }
 export function refreshBarSel() {
   const host = $('#edBarSel');
-  const c = curClip();
+  const c = edClip();
   if (!host || !c) return;
   const p = patOf(c);
   host.textContent = '';
@@ -274,7 +275,7 @@ export function randomize(p) {
   }
 }
 export function layoutEditor() {
-  const c = curClip();
+  const c = edClip();
   if (!c) return;
   const p = patOf(c);
   if (ED.mode === 'shape') {
@@ -325,7 +326,7 @@ export function layoutEditor() {
   drawEditor();
 }
 export function drawEditor() {
-  const c = curClip();
+  const c = edClip();
   const g = ED.geom;
   if (!c || !g) return;
   if (ED.mode === 'shape') {
@@ -523,7 +524,7 @@ export function initEditor() {
     lc = $('#edLabels'),
     vc = $('#edVel');
   lc.addEventListener('pointerdown', e => {
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const ri = Math.floor(e.offsetY / ED.geom.rh);
     const r = ED.geom.rows[ri];
@@ -531,7 +532,7 @@ export function initEditor() {
   });
   gc.addEventListener('pointerdown', e => {
     if (e.button === 2) return;
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const p = patOf(c);
     const g = ED.geom;
@@ -619,7 +620,7 @@ export function initEditor() {
     gc.setPointerCapture(e.pointerId);
   });
   gc.addEventListener('pointermove', e => {
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const p = patOf(c);
     const g = ED.geom;
@@ -683,7 +684,7 @@ export function initEditor() {
   /* velocity lane */
   let vdown = false;
   const setVel = e => {
-    const c = curClip();
+    const c = edClip();
     if (!c || !ED.geom) return;
     const p = patOf(c);
     const g = ED.geom;

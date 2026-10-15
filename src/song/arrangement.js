@@ -12,7 +12,7 @@ import { loopLen, patOf, placeClip } from '../core/song-model.js';
 import { defaultLo, renderEditor } from './editor.js';
 import { REC, TR } from '../services/transport.js';
 import { CMNOW, cmFix, cmMarks, ctInfo } from '../services/clip-switch.js';
-import { cmAtBar, cmChipFill, cmLabel, cmPickItems, delClipMark, setClipMark } from '../clips/clip-map.js';
+import { cmAtBar, cmChipFill, cmLabel, cmPickItems, delClipMark } from '../clips/clip-map.js';
 import { renderLibrary } from './library-panel.js';
 import { renderEdHead } from './editor-head.js';
 import { showMenu } from '../ui/menu.js';
@@ -21,6 +21,7 @@ import { recStop } from './recording-midi.js';
 import { loopSection, markerMenu, renameMarker } from './markers.js';
 import { fitRows, snapFloor } from './layout.js';
 import { SH, drawClipOverlay } from './shape-editor.js';
+import { clipChangeItems } from './clip-change.js';
 import { hooks } from '../core/hooks.js';
 
 export const HEAD = 196,
@@ -53,7 +54,7 @@ export function placeSrc(src, t, bar) {
     return false;
   }
   pushUndo();
-  const pid = src.kind === 'fac' ? instFactory(meta) : src.id;
+  const pid = src.kind === 'fac' || src.kind === 'user' ? instFactory(meta) : src.id;
   const c = placeClip(t, Math.max(0, bar), pid, meta.bars);
   selectClip(c.id);
   renderArr();
@@ -63,6 +64,7 @@ export function placeSrc(src, t, bar) {
 export function selectClip(id) {
   if (REC.on && UI.sel !== id) recStop();
   UI.sel = id;
+  UI.view = null;
   ED.barSel = null;
   ED.selNotes.clear();
   ED.fit = true;
@@ -216,11 +218,10 @@ function trackRow(t, i, W) {
           onclick: ev => {
             ev.stopPropagation();
             const r = ev.currentTarget.getBoundingClientRect(),
-              bar = Math.floor(TR.playing && TR.mode === 'song' ? posBarNow() : S.cursor),
-              mk = cmMarks().find(m => m.t === i && m.bar === bar);
+              bar = Math.floor(TR.playing && TR.mode === 'song' ? posBarNow() : S.cursor);
             showMenu(r.left, r.bottom + 2, [
-              { label: 'Change clip at bar ' + (bar + 1) + ' (playhead)', disabled: true },
-              ...cmPickItems(i, mk ? mk.k : null, k => setClipMark(i, bar, k), 'Back to automatic here')
+              { label: 'Clip change at bar ' + (bar + 1) + ' (playhead)', disabled: true },
+              ...clipChangeItems(i, bar)
             ]);
           }
         });

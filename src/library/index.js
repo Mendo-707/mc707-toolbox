@@ -10,6 +10,7 @@ import './flash.js';
 import './genre-drums.js';
 import './genre-keys.js';
 import { FAC } from './factory.js';
+import { userById } from './user-lib.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';
 
 /** Copy a factory pattern into the song and return the song pattern id. An unedited copy already in the song is reused. */
@@ -47,8 +48,9 @@ export function makeDemo() {
   put(6, 12, 4, 'dnb-arp');
   put(7, 8, 8, 'dnb-pluck');
 }
-/** The pattern behind a library or drag source {kind: 'fac'|'pat', id}. */
-export const metaOf = src => (src.kind === 'fac' ? FAC.find(f => f.id === src.id) : S.patterns[src.id]);
+/** The pattern behind a library or drag source {kind: 'fac'|'user'|'proj', id}. */
+export const metaOf = src =>
+  src.kind === 'fac' ? FACMAP.get(src.id) : src.kind === 'user' ? userById(src.id) : S.patterns[src.id];
 export const FACMAP = new Map(FAC.map(f => [f.id, f]));
 /** A factory pattern by id. @returns {import('../core/types.js').FactoryPattern|undefined} */
 export const facById = id => FACMAP.get(id);

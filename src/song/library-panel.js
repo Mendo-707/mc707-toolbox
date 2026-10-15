@@ -16,6 +16,8 @@ import { CT_DEF, ctInfo, patType } from '../services/clip-switch.js';
 import { STYLES } from '../library/styles.js';
 import { showMenu } from '../ui/menu.js';
 import { libMenuItems } from './arrangement-menus.js';
+import { userLib } from '../library/user-lib.js';
+import { openView } from './lib-view.js';
 import { hooks } from '../core/hooks.js';
 
 /* ---------- library ---------- */
@@ -170,7 +172,8 @@ export function renderLibrary() {
     $('#libTabs'),
     [
       ['fac', 'Factory'],
-      ['proj', 'Project']
+      ['proj', 'Project'],
+      ['user', 'Mine']
     ],
     UI.libTab,
     v => {
@@ -222,7 +225,9 @@ export function renderLibrary() {
   const base =
     UI.libTab === 'fac'
       ? FAC.map(f => ({ kind: 'fac', id: f.id, m: f }))
-      : Object.values(S.patterns).map(p => ({ kind: 'proj', id: p.id, m: p }));
+      : UI.libTab === 'user'
+        ? userLib().map(p => ({ kind: 'user', id: p.id, m: p }))
+        : Object.values(S.patterns).map(p => ({ kind: 'proj', id: p.id, m: p }));
   const pt = $('#prevTrack');
   pt.textContent = '';
   pt.append(el('option', { value: -1, selected: UI.prevTrack === -1 }, 'Auto (first matching track)'));
@@ -315,7 +320,9 @@ export function renderLibrary() {
         { class: 'empty' },
         UI.libTab === 'proj' && !base.length
           ? 'No patterns in this song yet. Place one from the factory library or double-click a track lane.'
-          : 'No patterns match. Try removing a filter or a search word.',
+          : UI.libTab === 'user' && !base.length
+            ? 'Nothing saved yet. Open a pattern in the editor and press Save to My patterns.'
+            : 'No patterns match. Try removing a filter or a search word.',
         el('br'),
         el('button', { class: 'btn sm', style: 'margin-top:8px', onclick: libReset }, 'Clear filters')
       )
@@ -444,12 +451,16 @@ export function renderLibrary() {
     const row = el(
       'div',
       {
-        class: 'li' + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? ' armed' : ''),
+        class:
+          'li' +
+          (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? ' armed' : '') +
+          (UI.view && UI.view.srcId === it.id && UI.view.kind === it.kind ? ' viewing' : ''),
         draggable: 'true',
         style: '--c:' + col,
         onclick: () => {
           const same = UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind;
           UI.arm = same ? null : { kind: it.kind, id: it.id };
+          if (UI.arm) openView(UI.arm, previewTrackFor(m, true));
           if (!UI.arm) hideGhost();
           if (UI.arm && innerWidth <= 860) {
             $('#main').classList.add('nolib');
@@ -568,7 +579,7 @@ function prvPick(m, ev) {
     }))
   ]);
 }
-function previewTrackFor(m, quiet) {
+export function previewTrackFor(m, quiet) {
   const pt = UI.prevTrack;
   if (pt >= 0) {
     if (S.tracks[pt].type === m.type) return pt;
