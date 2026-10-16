@@ -12,6 +12,7 @@
 //   closePops          src/ui/controls.js
 //   cmChipSet          src/clips/clip-map.js
 //   grabOpen           src/ui/grabber.js
+//   grabPattern        src/ui/grab-pattern.js
 //   grabUI             src/ui/grabber.js
 //   liveCapture        src/ui/live-capture.js
 //   liveCleanup        src/live/engine.js

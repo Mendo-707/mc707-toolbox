@@ -8629,7 +8629,7 @@ input[type='number'] {
     { n: 76, name: "Vibrato rate", def: 64 },
     { n: 77, name: "Vibrato depth", def: 64 },
     { n: 78, name: "Vibrato delay", def: 64 },
-    { n: 80, name: "FILTER knob", def: 0 },
+    { n: 80, name: "FILTER knob", def: 64 },
     { n: 81, name: "MOD knob", def: 64 },
     { n: 82, name: "FX knob", def: 64 },
     { n: 83, name: "SOUND knob", def: 64 }
@@ -20331,6 +20331,7 @@ input[type='number'] {
           )
         )
       ] : [],
+      ...recordSample(c, p),
       ...c.view ? [] : [
         act("Save to My patterns", () => saveToMine(c), "Keep this pattern in your own library, for every song"),
         act("Duplicate clip", dupClip, "Place a linked copy right after this clip (Ctrl/Cmd+D)"),
@@ -20345,6 +20346,35 @@ input[type='number'] {
     h.append(el("div", { id: "edBarSel", class: "edbs" }));
     refreshBarSel();
     hooks.updTransport();
+    hooks.grabUI();
+  }
+  function recordSample(c, p) {
+    const same = S.tracks.map((x, i) => i).filter((i) => S.tracks[i].type === p.type && devOn(i));
+    if (!same.length) return [];
+    if (!same.includes(ED.recOn)) ED.recOn = same.includes(c.t) ? c.t : same[0];
+    const sel = el(
+      "select",
+      {
+        class: "edRecOn",
+        "aria-label": "Record the sample from",
+        title: "The track the pattern plays on while it is recorded (its own audio channel when Audio has per-track channels)",
+        onchange: (e) => {
+          ED.recOn = +e.target.value;
+        }
+      },
+      ...same.map((i) => el("option", { value: i, selected: ED.recOn === i }, "from " + S.tracks[i].name))
+    );
+    const b = el(
+      "button",
+      {
+        class: "btn sm",
+        id: "edGrab",
+        title: "Record this pattern on its own to a WAV, played on the track you choose",
+        onclick: (e) => hooks.grabPattern(p, ED.recOn, 1, e.currentTarget)
+      },
+      "● Record sample"
+    );
+    return [b, sel];
   }
   function viewGroup(c) {
     const b = (label, fn, title, on) => el("button", { class: "btn sm" + (on ? " on" : ""), title: title || label, onclick: fn }, label);
@@ -24035,7 +24065,7 @@ input[type='number'] {
       autoReps: 2,
       chaos: 30,
       ktarget: "all",
-      rest: [0, 0, 64, 64],
+      rest: [64, 0, 64, 64],
       scBase: 60,
       riseBars: 4,
       dropStyle: "gap",
@@ -24084,7 +24114,7 @@ input[type='number'] {
       rate: 1,
       stut: null,
       rise: null,
-      knobs: [0, 0, 64, 64],
+      knobs: [64, 0, 64, 64],
       knobsIn: [null, null, null, null],
       pulse: [],
       held: {},
@@ -24138,10 +24168,10 @@ input[type='number'] {
     if (LV.mode !== "major" && LV.mode !== "minor") LV.mode = null;
     LV.riseBars = [2, 4, 8].includes(+LV.riseBars) ? +LV.riseBars : 4;
     if (Array.isArray(LV.rest) && LV.rest.join() === "64,0,0,64") LV.rest = [64, 0, 64, 64];
-    if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [0, 0, 64, 64];
-    if (LV.restV !== 2) {
-      if (LV.rest.join() === "64,0,64,64") LV.rest = [0, 0, 64, 64];
-      LV.restV = 2;
+    if (!Array.isArray(LV.rest) || LV.rest.length !== 4) LV.rest = [64, 0, 64, 64];
+    if (LV.restV !== 3) {
+      if (LV.rest.join() === "0,0,64,64") LV.rest = [64, 0, 64, 64];
+      LV.restV = 3;
     }
     LV.knobs = LV.rest.slice();
     if (!(["all", "drums", "tone"].includes(LV.ktarget) || Number.isInteger(+LV.ktarget) && +LV.ktarget >= 0 && +LV.ktarget < 8))
@@ -25357,7 +25387,7 @@ input[type='number'] {
               max: 127,
               value: LV.rest[i],
               style: "width:60px",
-              title: i === 0 ? "Where FILTER sits when nothing is happening. 0 matches the MC-707; builds and risers sweep up from here." : "Where this knob goes back to after moves and risers.",
+              title: i === 0 ? "Where FILTER sits when nothing is happening (64 is the centre, no filter). Builds and risers sweep up from here; dips go down." : "Where this knob goes back to after moves and risers.",
               onchange: (e) => {
                 LV.rest[i] = clamp(Math.round(+e.target.value) || 0, 0, 127);
                 liveRenderKnobs();
@@ -33988,7 +34018,30 @@ input[type='number'] {
         t.solo = i === def.track;
       });
     }
-    const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16), need = Math.round(grabSecs(fromBar, bars) * sr);
+    grabArm(def, k, startTime, Math.round(grabSecs(fromBar, bars) * sr), { bars, fromBar, label: grabName(k) }, () => {
+      if (GRAB.pv) {
+        GRAB.pv.was.forEach((s, i) => {
+          S.tracks[i].solo = s;
+        });
+        GRAB.pv = null;
+      }
+      if (ours === "song" && TR.playing && TR.mode === "song") stopPlay();
+      if (saved) {
+        S.loop = saved.loop;
+        S.preview = saved.preview;
+        S.metro = saved.metro;
+        saved.flags.forEach((f, i) => {
+          S.tracks[i].mute = f.mute;
+          S.tracks[i].solo = f.solo;
+        });
+        syncControls();
+        renderArr();
+      }
+    });
+  }
+  function grabArm(def, k, startTime, need, info, after) {
+    const ctx = AU.ctx, sr = ctx.sampleRate;
+    const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16);
     let got = 0;
     const trim = (AUD.trimMs + (def.track != null && def.cap !== "pv" ? AUD.stemTrimMs : 0)) / 1e3;
     const sk = {
@@ -34023,28 +34076,18 @@ input[type='number'] {
     sk.secs = need / sr;
     AUDREC.sinks.push(sk);
     capAttachOne(def.cap);
-    Object.assign(GRAB, { on: true, sink: sk, label: grabName(k), bars, fromBar });
+    Object.assign(GRAB, {
+      on: true,
+      sink: sk,
+      label: info.label,
+      bars: info.bars,
+      fromBar: info.fromBar,
+      anchor: info.anchor || null
+    });
     GRAB.cleanup = () => {
       AUDREC.sinks = AUDREC.sinks.filter((x) => x !== sk);
       if (!AUDREC.sinks.length && !AUDREC.on && !AUDREC.metering) capDetach();
-      if (GRAB.pv) {
-        GRAB.pv.was.forEach((s, i) => {
-          S.tracks[i].solo = s;
-        });
-        GRAB.pv = null;
-      }
-      if (ours === "song" && TR.playing && TR.mode === "song") stopPlay();
-      if (saved) {
-        S.loop = saved.loop;
-        S.preview = saved.preview;
-        S.metro = saved.metro;
-        saved.flags.forEach((f, i) => {
-          S.tracks[i].mute = f.mute;
-          S.tracks[i].solo = f.solo;
-        });
-        syncControls();
-        renderArr();
-      }
+      if (after) after();
     };
     grabUI();
     GRAB.timer = setInterval(grabUI, 120);
@@ -34066,6 +34109,8 @@ input[type='number'] {
         URL.revokeObjectURL(x.url);
       }
       toast("Grabbed " + bars + (bars === 1 ? " bar" : " bars") + " of " + GRAB.label);
+      if (GRAB.anchor && document.body.contains(GRAB.anchor) && !$("#grabPop"))
+        setTimeout(() => grabOpen(GRAB.anchor), 0);
     } else if (!cancel) toast("Nothing came in from " + GRAB.label + ". Check the input in Audio.");
     grabUI();
     grabRenderPop();
@@ -34102,12 +34147,12 @@ input[type='number'] {
       txt = left > 0 ? "◉ " + Math.ceil(left / (grabSecs(0, 1) / 4)) : "● " + Math.min(GRAB.bars, Math.floor(sk.got() / sk.need * GRAB.bars) + 1) + "/" + GRAB.bars;
       tip = left > 0 ? "Starts on the next bar" : "Grabbing " + GRAB.label + ". Click to stop.";
     }
-    ["grabBtn", "lvGrab"].forEach((id) => {
+    ["grabBtn", "lvGrab", "edGrab"].forEach((id) => {
       const b = document.getElementById(id);
       if (!b) return;
       b.classList.toggle("on", GRAB.on);
-      b.title = tip;
-      b.textContent = id === "lvGrab" ? GRAB.on ? txt : "◉ Grab sample" : txt;
+      b.title = id === "edGrab" && !GRAB.on ? "Record this pattern on its own to a WAV, played on the track you choose" : tip;
+      b.textContent = id === "lvGrab" ? GRAB.on ? txt : "◉ Grab sample" : id === "edGrab" ? GRAB.on ? txt : "● Record sample" : txt;
     });
   }
   function grabOpen(anchor) {
@@ -35028,6 +35073,51 @@ input[type='number'] {
     toast("Captured " + endBar + " bars into Song Mode (" + count + " clips)");
   }
 
+  // src/ui/grab-pattern.js
+  async function grabPattern(p, t, loops = 1, anchor) {
+    if (GRAB.on) {
+      grabStop();
+      return;
+    }
+    if (AUDREC.on || AUDREC.busy) {
+      toast("Audio recording is running. Stop it first.");
+      return;
+    }
+    if (!p || !p.notes.length) {
+      toast("This pattern has no notes yet");
+      return;
+    }
+    ensureAudio();
+    let k = "t" + t, def = grabDef(k);
+    if (!def) {
+      k = "mix";
+      def = grabDef(k);
+    }
+    if (!def) {
+      toast("Recording needs an audio input. Choose the MC-707's USB audio (or the app's own sound) in Audio.");
+      openAudio();
+      return;
+    }
+    try {
+      if (def.cap !== "pv" && !AUDREC.caps[def.cap]) await capOpen(def.cap);
+    } catch (e) {
+      toast(e && e.message || "Could not open the audio input");
+      openAudio();
+      return;
+    }
+    stopAll();
+    const was = { preview: S.preview, bars: GRAB.bars };
+    if (AUD.source === "preview") S.preview = true;
+    startPat(p, t);
+    const bars = p.bars * loops, need = Math.round(bars * 32 * tickDur() * AU.ctx.sampleRate), label = p.name + " on " + S.tracks[t].name + (k === "mix" || def.cap === "pv" ? "" : " (own channel)");
+    grabArm(def, k, TR.nextTime, need, { bars, fromBar: 0, label, anchor }, () => {
+      if (TR.playing && TR.mode === "pat") stopPlay();
+      S.preview = was.preview;
+      GRAB.bars = was.bars;
+    });
+    toast("Recording " + bars + (bars === 1 ? " bar" : " bars") + " of " + p.name + " on " + S.tracks[t].name);
+  }
+
   // src/main.js
   Object.assign(hooks, {
     applyDevice,
@@ -35035,6 +35125,7 @@ input[type='number'] {
     closePops,
     cmChipSet,
     grabOpen,
+    grabPattern,
     grabUI,
     liveCapture,
     liveCleanup,

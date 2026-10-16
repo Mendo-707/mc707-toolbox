@@ -44,7 +44,7 @@ export const grabName = k =>
   k === 'mix' ? 'Mix' : k === 'ext' ? 'Ext In' : 'Track ' + devNum(+k.slice(1)) + ': ' + S.tracks[+k.slice(1)].name;
 const grabPv = () => AUD.source === 'preview';
 /* which input and channels feed this source, worked out exactly as Audio recording does */
-function grabDef(k) {
+export function grabDef(k) {
   const keep = { stems: AUD.stems, mix: AUD.mix, extIn: AUD.extIn };
   AUD.stems = 'channels';
   AUD.mix = true;
@@ -142,8 +142,35 @@ export async function grabStart() {
       t.solo = i === def.track;
     });
   }
-  const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16),
-    need = Math.round(grabSecs(fromBar, bars) * sr);
+  grabArm(def, k, startTime, Math.round(grabSecs(fromBar, bars) * sr), { bars, fromBar, label: grabName(k) }, () => {
+    if (GRAB.pv) {
+      GRAB.pv.was.forEach((s, i) => {
+        S.tracks[i].solo = s;
+      });
+      GRAB.pv = null;
+    }
+    if (ours === 'song' && TR.playing && TR.mode === 'song') stopPlay();
+    if (saved) {
+      S.loop = saved.loop;
+      S.preview = saved.preview;
+      S.metro = saved.metro;
+      saved.flags.forEach((f, i) => {
+        S.tracks[i].mute = f.mute;
+        S.tracks[i].solo = f.solo;
+      });
+      syncControls();
+      renderArr();
+    }
+  });
+}
+/**
+ * Start capturing `need` samples of source `k` (worked out by grabDef) from AudioContext time
+ * `startTime`. `info` is {bars, fromBar, label, anchor}; `after` undoes whatever the caller changed.
+ */
+export function grabArm(def, k, startTime, need, info, after) {
+  const ctx = AU.ctx,
+    sr = ctx.sampleRate;
+  const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16);
   let got = 0;
   const trim = (AUD.trimMs + (def.track != null && def.cap !== 'pv' ? AUD.stemTrimMs : 0)) / 1000;
   const sk = {
@@ -178,28 +205,18 @@ export async function grabStart() {
   sk.secs = need / sr;
   AUDREC.sinks.push(sk);
   capAttachOne(def.cap);
-  Object.assign(GRAB, { on: true, sink: sk, label: grabName(k), bars, fromBar });
+  Object.assign(GRAB, {
+    on: true,
+    sink: sk,
+    label: info.label,
+    bars: info.bars,
+    fromBar: info.fromBar,
+    anchor: info.anchor || null
+  });
   GRAB.cleanup = () => {
     AUDREC.sinks = AUDREC.sinks.filter(x => x !== sk);
     if (!AUDREC.sinks.length && !AUDREC.on && !AUDREC.metering) capDetach();
-    if (GRAB.pv) {
-      GRAB.pv.was.forEach((s, i) => {
-        S.tracks[i].solo = s;
-      });
-      GRAB.pv = null;
-    }
-    if (ours === 'song' && TR.playing && TR.mode === 'song') stopPlay();
-    if (saved) {
-      S.loop = saved.loop;
-      S.preview = saved.preview;
-      S.metro = saved.metro;
-      saved.flags.forEach((f, i) => {
-        S.tracks[i].mute = f.mute;
-        S.tracks[i].solo = f.solo;
-      });
-      syncControls();
-      renderArr();
-    }
+    if (after) after();
   };
   grabUI();
   GRAB.timer = setInterval(grabUI, 120);
@@ -237,6 +254,9 @@ function grabFinish(cancel) {
       URL.revokeObjectURL(x.url);
     }
     toast('Grabbed ' + bars + (bars === 1 ? ' bar' : ' bars') + ' of ' + GRAB.label);
+    /* a pattern recorded from the editor: show it straight away, ready to save */
+    if (GRAB.anchor && document.body.contains(GRAB.anchor) && !$('#grabPop'))
+      setTimeout(() => grabOpen(GRAB.anchor), 0);
   } else if (!cancel) toast('Nothing came in from ' + GRAB.label + '. Check the input in Audio.');
   grabUI();
   grabRenderPop();
@@ -279,12 +299,14 @@ export function grabUI() {
         : '● ' + Math.min(GRAB.bars, Math.floor((sk.got() / sk.need) * GRAB.bars) + 1) + '/' + GRAB.bars;
     tip = left > 0 ? 'Starts on the next bar' : 'Grabbing ' + GRAB.label + '. Click to stop.';
   }
-  ['grabBtn', 'lvGrab'].forEach(id => {
+  ['grabBtn', 'lvGrab', 'edGrab'].forEach(id => {
     const b = document.getElementById(id);
     if (!b) return;
     b.classList.toggle('on', GRAB.on);
-    b.title = tip;
-    b.textContent = id === 'lvGrab' ? (GRAB.on ? txt : '◉ Grab sample') : txt;
+    b.title =
+      id === 'edGrab' && !GRAB.on ? 'Record this pattern on its own to a WAV, played on the track you choose' : tip;
+    b.textContent =
+      id === 'lvGrab' ? (GRAB.on ? txt : '◉ Grab sample') : id === 'edGrab' ? (GRAB.on ? txt : '● Record sample') : txt;
   });
 }
 export function grabOpen(anchor) {

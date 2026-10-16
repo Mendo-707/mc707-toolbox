@@ -424,6 +424,7 @@ export function renderEdHead() {
           )
         ]
       : []),
+    ...recordSample(c, p),
     ...(c.view
       ? []
       : [
@@ -440,6 +441,37 @@ export function renderEdHead() {
   h.append(el('div', { id: 'edBarSel', class: 'edbs' }));
   refreshBarSel();
   hooks.updTransport();
+  hooks.grabUI();
+}
+/* Record sample: this pattern on its own, played through the track picked here, to a WAV */
+function recordSample(c, p) {
+  const same = S.tracks.map((x, i) => i).filter(i => S.tracks[i].type === p.type && devOn(i));
+  if (!same.length) return [];
+  if (!same.includes(ED.recOn)) ED.recOn = same.includes(c.t) ? c.t : same[0];
+  const sel = el(
+    'select',
+    {
+      class: 'edRecOn',
+      'aria-label': 'Record the sample from',
+      title:
+        'The track the pattern plays on while it is recorded (its own audio channel when Audio has per-track channels)',
+      onchange: e => {
+        ED.recOn = +e.target.value;
+      }
+    },
+    ...same.map(i => el('option', { value: i, selected: ED.recOn === i }, 'from ' + S.tracks[i].name))
+  );
+  const b = el(
+    'button',
+    {
+      class: 'btn sm',
+      id: 'edGrab',
+      title: 'Record this pattern on its own to a WAV, played on the track you choose',
+      onclick: e => hooks.grabPattern(p, ED.recOn, 1, e.currentTarget)
+    },
+    '● Record sample'
+  );
+  return [b, sel];
 }
 /* the banner for a library pattern open in the editor: where it came from, place it, keep it, close */
 function viewGroup(c) {

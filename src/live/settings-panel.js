@@ -249,7 +249,7 @@ export function liveRenderSettings() {
             style: 'width:60px',
             title:
               i === 0
-                ? 'Where FILTER sits when nothing is happening. 0 matches the MC-707; builds and risers sweep up from here.'
+                ? 'Where FILTER sits when nothing is happening (64 is the centre, no filter). Builds and risers sweep up from here; dips go down.'
                 : 'Where this knob goes back to after moves and risers.',
             onchange: e => {
               LV.rest[i] = clamp(Math.round(+e.target.value) || 0, 0, 127);

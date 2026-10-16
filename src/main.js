@@ -117,6 +117,7 @@ import { initSetup } from './ui/menubar.js';
 import { recMidi, recStop } from './song/recording-midi.js';
 import { initMore, refreshIns, syncExtra } from './ui/saved-songs.js';
 import { grabOpen, grabUI } from './ui/grabber.js';
+import { grabPattern } from './ui/grab-pattern.js';
 import { audRender, initAudio } from './song/audio-dialog.js';
 import { initPro } from './song/layout.js';
 import { initStageB } from './song/track-midi.js';
@@ -141,6 +142,7 @@ Object.assign(hooks, {
   closePops,
   cmChipSet,
   grabOpen,
+  grabPattern,
   grabUI,
   liveCapture,
   liveCleanup,

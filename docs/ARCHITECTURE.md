@@ -264,6 +264,7 @@ creating the clock's Worker. Then `main.js`:
 | `ui/device.js` | Switching between MC-707 and MC-101 and the one-kit drums option, which rebuild Song and Live. |  |
 | `ui/dialogs.js` | A simple ask dialog (OK / Cancel, or a text box). |  |
 | `ui/fullscreen.js` | Fullscreen (the Windows app or the browser) and keeping the screen awake while playing. | STAGE (fullscreen and wake lock) |
+| `ui/grab-pattern.js` | Record sample from the pattern editor: play one pattern on its own, through the track you choose, and record it to a WAV with the sample grabber (that track's own USB channel when Audio has per-track channels set up, otherwise the mix). |  |
 | `ui/grabber.js` | The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from Song or Live Mode. | GRAB (the sample grabber) |
 | `ui/live-capture.js` | Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip changes. |  |
 | `ui/live-menus.js` | Right-click menus in Live Mode: scene cards, pads, tracks and keys. |  |

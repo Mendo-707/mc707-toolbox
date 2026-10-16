@@ -15,7 +15,7 @@ export const MC_PARAMS = [
   { n: 76, name: 'Vibrato rate', def: 64 },
   { n: 77, name: 'Vibrato depth', def: 64 },
   { n: 78, name: 'Vibrato delay', def: 64 },
-  { n: 80, name: 'FILTER knob', def: 0 },
+  { n: 80, name: 'FILTER knob', def: 64 },
   { n: 81, name: 'MOD knob', def: 64 },
   { n: 82, name: 'FX knob', def: 64 },
   { n: 83, name: 'SOUND knob', def: 64 }
