@@ -96,16 +96,19 @@ export function liveRenderLanes(b0, force) {
     for (const x of segs) if (x.tick <= tk) s = x;
     return s;
   };
+  /* a mark inside a scene (a swap, a guest part, the end of a break) carries the scene's own start */
+  const sStart = s => (s.start != null ? s.start : s.tick);
   let prevSeg = null;
   for (let k = 0; k < W + 2; k++) {
     const tk = (b0 + k) * 32,
-      s = segAt(tk);
-    const rel = Math.max(0, Math.floor((tk - s.tick) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
+      s = segAt(tk),
+      newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
+    const rel = Math.max(0, Math.floor((tk - sStart(s)) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
     hdr.append(
       el(
         'div',
-        { class: 'lvBar' + (s !== prevSeg ? ' sc' : ''), style: 'left:' + k * bw + 'px;width:' + bw + 'px' },
-        s !== prevSeg || rel === 0 ? (LV.scenes[s.idx] ? LV.scenes[s.idx].name : '') : String(rel + 1)
+        { class: 'lvBar' + (newSc ? ' sc' : ''), style: 'left:' + k * bw + 'px;width:' + bw + 'px' },
+        newSc || rel === 0 ? s.label || (LV.scenes[s.idx] ? LV.scenes[s.idx].name : '') : String(rel + 1)
       )
     );
     prevSeg = s;
@@ -117,29 +120,81 @@ export function liveRenderLanes(b0, force) {
       class: 'lvRow' + (devOn(ti) ? '' : ' devoff'),
       style: 'width:' + (W + 2) * bw + 'px;--c:' + TRACK_COLORS[ti]
     });
+    let prevId = null;
     for (let k = 0; k < W + 2; k++) {
       const tk = (b0 + k) * 32,
-        s = segAt(tk),
+        s = segAt(tk);
+      /* the bar playing now: exactly what the track plays (including fades, fills, builds and breaks) */
+      const snap = k === 0 && lvOn() && LV.bars && LV.bars.get(b0);
+      if (snap) {
+        const c = snap[ti],
+          sf = c && (facById(c.id) || (c.k === 'roll' ? { name: 'Break roll' } : null));
+        if (sf) {
+          const lab = { fill: 'Fill', bov: 'Build', brk: 'Break', imp: 'Impact', roll: 'Roll' }[c.k];
+          row.append(
+            el(
+              'div',
+              {
+                class:
+                  'lvCell st' +
+                  (lab ? ' fill' : '') +
+                  (c.k === 'rest' || c.k === 'fade' ? ' rest' : '') +
+                  (c.k === 'em' ? ' em' : ''),
+                style: 'left:0;width:' + (bw - 1) + 'px',
+                title: sf.name + ({ rest: ' (resting this bar)', em: ' (held back)', fade: ' (fading out)' }[c.k] || '')
+              },
+              lab || sf.name
+            )
+          );
+        }
+        prevId = c ? c.id : null;
+        continue;
+      }
+      const ovFill = ti === 0 && pendFill.find(c => c.tick <= tk && tk < c.tick + 32),
         id = s.ids[ti];
-      if (!id) continue;
+      if (!id) {
+        if (ovFill)
+          row.append(
+            el(
+              'div',
+              {
+                class: 'lvCell st fill',
+                style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px',
+                title: ovFill.f.name
+              },
+              'Fill'
+            )
+          );
+        prevId = null;
+        continue;
+      }
       const f = facById(id);
       if (!f) continue;
       const ssc = LV.scenes[s.idx],
-        scell = ssc && ssc.cells[ti];
-      if (scell && scell.play && !lvPlayOn(scell.play, Math.floor((tk - s.tick) / 32) % ssc.bars, ssc.bars)) continue;
-      const phase = Math.floor((tk - s.tick) / 32) % f.bars;
+        scell = ssc && ssc.cells[ti],
+        bar = Math.floor((tk - sStart(s)) / 32);
+      /* a bar the part sits out (its scene says first half, every other bar …): a faint outline, so the part does not seem to vanish */
+      const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar % ssc.bars, ssc.bars);
+      const phase = bar % f.bars;
       const isFill = ti === 0 && pendFill.some(c => c.tick <= tk && tk < c.tick + 32);
+      const label = isFill ? 'Fill' : resting ? '' : phase === 0 || id !== prevId ? f.name : '';
       row.append(
         el(
           'div',
           {
-            class: 'lvCell' + (phase === 0 ? ' st' : '') + (isFill ? ' fill' : ''),
+            class:
+              'lvCell' +
+              (phase === 0 || id !== prevId ? ' st' : '') +
+              (isFill ? ' fill' : '') +
+              (resting ? ' rest' : '') +
+              (lvEmute(ti) ? ' em' : ''),
             style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px',
-            title: f.name
+            title: f.name + (resting ? ' (resting this bar)' : lvEmute(ti) ? ' (held back by the energy level)' : '')
           },
-          phase === 0 || isFill ? (isFill ? 'Fill' : f.name) : ''
+          label
         )
       );
+      prevId = id;
     }
     pendSw.forEach(c => {
       if (c.ids[ti]) {
@@ -183,9 +238,11 @@ export function liveStatus(tickf) {
   nm.textContent =
     on && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf
       ? '⚡ Break: ' + LV.flash.name
-      : on && sc
-        ? sc.name
-        : 'Stopped';
+      : on && s0 && s0.label
+        ? s0.label + (LV.jam && LV.jam.kind === 'in' ? ' → ' + (sc ? sc.name : '') : '')
+        : on && sc
+          ? sc.name
+          : 'Stopped';
   const root = $('#live');
   if (root && sc) root.style.setProperty('--acc', lvScCol(sc.e, 58));
   const barNo = on && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
@@ -196,7 +253,7 @@ export function liveStatus(tickf) {
         ' of ' +
         sc.bars +
         (LV.auto ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + LV.autoReps : '')
-      : 'Press Start, or hit a scene pad';
+      : 'Press Start Jam, or hit a scene pad';
   const pg = $('#lvProg');
   if (pg && sc) {
     if (pg.children.length !== sc.bars) {

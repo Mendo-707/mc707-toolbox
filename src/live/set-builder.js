@@ -1,4 +1,5 @@
-// Builds a Live set: picks matching patterns for each scene from the style's pools.
+// Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part
+// on the chords' progression and the lead and pluck kept out of each other's way.
 //
 // Reads: S, LV, DEV.
 import { DEV, devOn, oneKit } from '../core/device.js';
@@ -10,7 +11,11 @@ import { LV, lvStyle } from './state.js';
 import { lvIsFlash } from './themes.js';
 import { lvLoadScenes } from './scene-editor.js';
 import { LV_TPL, LV_TPL101, LV_TPL1K } from './scene-templates.js';
-import { lvFlavor, lvModeFam, lvPool, lvProg } from '../library/pools.js';
+import { lvFlavor, lvLively, lvModeFam, lvPool, lvProg } from '../library/pools.js';
+
+const avgPitch = f => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
+/** Two melodic parts that can play together: not both busy, and at least a fifth apart on average. */
+const roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(avgPitch(f) - avgPitch(g)) >= 7;
 
 export function liveBuild() {
   const st = lvStyle();
@@ -63,14 +68,31 @@ export function liveBuild() {
   const mkSet = () => {
     const o = {};
     o[4] = take('chords', f => lvProg(f) && bassKeys.has(lvProg(f) + '|' + f.bars)) || take('chords');
-    const cf = facById(o[4]),
-      prog = cf && lvProg(cf),
+    let cf = facById(o[4]);
+    /* chords that follow no progression: the bass sets it instead */
+    if (!(cf && lvProg(cf))) {
+      const b = take('bass', f => lvProg(f));
+      if (b) {
+        o[3] = b;
+        cf = facById(b);
+      }
+    }
+    const prog = cf && lvProg(cf),
       pb = cf && cf.bars;
-    const fit = p => (prog && take(p, f => lvProg(f) === prog && f.bars === pb)) || take(p, f => !lvProg(f)) || take(p);
-    o[3] = fit('bass');
+    /* every tone part follows the chords' progression, or follows none; a melody from another progression
+       would clash, so a part is left out rather than picked from another one (except the bass) */
+    const fit = (p, ok = () => true) =>
+      (prog && take(p, f => lvProg(f) === prog && f.bars === pb && ok(f))) ||
+      take(p, f => !lvProg(f) && ok(f)) ||
+      (prog && take(p, f => lvProg(f) === prog && f.bars === pb)) ||
+      take(p, f => !lvProg(f)) ||
+      (p === 'bass' || !prog ? take(p) : null);
+    o[3] = o[3] || fit('bass');
     o[5] = fit('pad');
-    o[7] = fit('pluck');
-    o[6] = take('lead');
+    o[6] = fit('lead');
+    /* the pluck makes room for the lead: not both busy, and not in the same register */
+    const lead = facById(o[6]);
+    o[7] = fit('pluck', f => !lead || roomFor(f, lead));
     o[0] = take('kit');
     o[1] = take('hats');
     o[2] = take('perc');
@@ -106,6 +128,13 @@ export function liveBuild() {
       [0, 1, 3].forEach(t => {
         if (sets.A[t]) cells[t] = { id: sets.A[t], pool: TRACK_POOLS[t] };
       });
+    /* a lead and a pluck that would crowd each other take turns: the lead asks in the first half, the pluck answers */
+    const ld = cells[6] && facById(cells[6].id),
+      pk = cells[7] && facById(cells[7].id);
+    if (ld && pk && bars >= 4 && !roomFor(ld, pk)) {
+      cells[6].play = 'h1';
+      cells[7].play = 'h2';
+    }
     const sc = { kind, name, bars, e, cells };
     if (fx) sc.fx = fx;
     scenes.push(sc);
@@ -120,7 +149,9 @@ export function liveBuild() {
       if (!alt) continue;
       scenes.forEach(sc => {
         if (/ B$/.test(sc.name) && sc.cells[t]) {
-          const id = take(CT_POOL[alt]);
+          const cb = facById(sets.B[4]),
+            pB = cb && lvProg(cb);
+          const id = take(CT_POOL[alt], f => !pB || !lvProg(f) || (lvProg(f) === pB && f.bars === cb.bars));
           if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play };
         }
       });

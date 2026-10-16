@@ -1,6 +1,6 @@
-// Extreme variation (Variation above 100): every repeat of a loop changes. Hats break into rolls
-// that suit the style (16th triplets for trap, drill and phonk, 32nds and 64th ramps elsewhere),
-// snare rolls and kick drop-outs on the kit, and octave flicks on the 808.
+// Hi-hat rolls for the trap family (trap, drill, phonk, Memphis), at any Variation level, and
+// Extreme variation (Variation above 100): every repeat of a loop changes, with snare rolls and
+// kick drop-outs on the kit and octave flicks on the 808.
 //
 // Reads: LV.
 import { clamp } from '../core/dom.js';
@@ -10,37 +10,45 @@ import { LV, lvStyle } from './state.js';
 
 /** True when Variation is in its Extreme range. */
 export const lvExtreme = () => LV.vary > 100;
-/* styles whose rolls are mostly triplets */
-const TRIP = ['trap', 'drill', 'phonk', 'memphis', 'halftime', 'dubstep', 'riddim', 'jungle'];
+/* the styles whose hats roll: their rolls are part of the style, so they play whatever Variation is set to */
+const TRAPFAM = ['trap', 'drill', 'phonk', 'memphis'];
+/** True when the playing style is one whose hi-hats roll (trap, drill, phonk, Memphis). */
+export const lvTrapRolls = () => TRAPFAM.includes(lvStyle().id);
 const BEATS = [[3], [1, 3], [2, 3], [3], [0, 2, 3], [1, 2, 3]];
+const plan = (v, hs, kinds) =>
+  (v._vr = {
+    beats: BEATS[(hs >>> 3) % BEATS.length],
+    kind: kinds[(hs >>> 7) % kinds.length],
+    two: (hs >>> 17) % 3 === 0
+  });
+/**
+ * A trap-family hat roll for one repeat of a hats pattern (or a kit with hats): about two repeats in
+ * three roll, on different beats of the last bar, in 16th triplets, 32nds, sextuplets or 64th ramps.
+ * @returns {'hroll'|null}
+ */
+export function lvTrapRoll(v, t, hs) {
+  if (!v.f.notes.some(n => n.n === 4) || (hs >>> 21) % 100 >= 65) return null;
+  plan(v, hs, ['t16', 't16', '32', '64', 's24', 't8', 'h32']);
+  return 'hroll';
+}
 
 /**
  * The Extreme variation for one repeat, chosen from a hash so the same repeat always does the same.
- * Kit: snare roll, hat roll, kick drop-out or the gentler ones; Hats: rolls; 808: octave flick.
+ * Kit: snare roll, kick drop-out or the gentler ones; Hats: open hats or thinning; 808: octave flick.
+ * Hat rolls are not here: they belong to the trap family (lvTrapRoll), not to the Variation level.
  * @returns {string|null}
  */
 export function lvXType(v, t, hs) {
-  const hasHat = v.f.notes.some(n => n.n === 4);
   const o =
     t === 0
-      ? ['sroll', 'kdrop', 'ghost', 'kickx', 'open', 'sroll', ...(hasHat ? ['hroll', 'hroll'] : [])]
+      ? ['sroll', 'kdrop', 'ghost', 'kickx', 'open', 'sroll']
       : t === 1
-        ? hasHat
-          ? ['hroll', 'hroll', 'hroll', 'open']
-          : ['open']
+        ? ['open', 'thin']
         : t === 3
           ? ['slide', 'slide', 'oct', 'run']
           : ['oct', 'run', 'echo', 'up', 'thin'];
   const ty = o[(hs >>> 11) % o.length];
-  if (ty === 'hroll' || ty === 'sroll') {
-    const trip = TRIP.includes(lvStyle().id),
-      kinds = trip ? ['t16', 't16', '32', '64', 's24', 't8'] : ['32', '32', 't16', '64', 'h32'];
-    v._vr = {
-      beats: BEATS[(hs >>> 3) % BEATS.length],
-      kind: kinds[(hs >>> 7) % kinds.length],
-      two: (hs >>> 17) % 3 === 0
-    };
-  }
+  if (ty === 'sroll') plan(v, hs, lvTrapRolls() ? ['t16', 't16', '32', '64', 's24'] : ['16', '32', '32', 'h32']);
   return ty;
 }
 /** Leave out a pattern note this repeat (the beats a hat roll replaces, kicks in a drop-out). */

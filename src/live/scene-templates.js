@@ -27,6 +27,7 @@ export function lvPlayOn(p, bar, bars) {
   return true;
 }
 export function lvMaskOff(t, tick) {
+  if (LV.jam) return false;
   const sc = LV.scenes[LV.cur],
     c = sc && sc.cells[t];
   if (!c || !c.play || c.play === 'all') return false;

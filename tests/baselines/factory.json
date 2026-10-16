@@ -1,16 +1,16 @@
 {
- "count": 8464,
+ "count": 9332,
  "pools": {
   "-": 450,
-  "kit": 573,
+  "kit": 633,
   "hats": 86,
   "perc": 52,
   "fill": 158,
-  "chords": 1570,
-  "bass": 1570,
-  "pluck": 903,
-  "lead": 389,
-  "pad": 478,
+  "chords": 1794,
+  "bass": 1794,
+  "pluck": 1015,
+  "lead": 501,
+  "pad": 590,
   "intro": 56,
   "build": 150,
   "impact": 45,
@@ -18,7 +18,7 @@
   "fbass": 240,
   "fchords": 240,
   "flead": 240,
-  "full": 1144
+  "full": 1168
  },
  "chunks": [
   "69a3a5a8",
@@ -35,8 +35,10 @@
   "b5bf319b",
   "4312b9f4",
   "b2fe2cbf",
-  "53846227",
-  "c2c4d64d",
-  "ce9c42cd"
+  "f3f25799",
+  "2c1e4b57",
+  "6472029c",
+  "eef493ae",
+  "df88e54b"
  ]
 }

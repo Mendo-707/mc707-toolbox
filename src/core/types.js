@@ -125,7 +125,7 @@
 /**
  * A factory pattern in the library (FAC). A Pattern plus where it fits.
  * @typedef {Pattern & {genre: string, bpm: number|null, keyName: string|null, styles: string[]|null,
- *   pool: string, lively?: boolean, flash?: string}} FactoryPattern
+ *   pool: string, lively?: boolean, flash?: string, notFor?: string[]}} FactoryPattern
  */
 
 /**

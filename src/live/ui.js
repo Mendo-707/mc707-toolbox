@@ -16,6 +16,7 @@ import { liveNewSet } from './scene-templates.js';
 import { lvFullPool } from '../library/pools.js';
 import { liveBuild } from './set-builder.js';
 import { liveToggle, lvIds } from './engine.js';
+import { lvJamAhead } from './jam.js';
 import {
   liveAuto,
   liveBpm,
@@ -56,6 +57,8 @@ export function lvSegs(tickf) {
   if (!base) base = hs[0] || { tick: 0, idx: LV.cur, ids: lvIds() };
   const segs = [base];
   for (const h of hs) if (h.tick > tickf && h.tick > base.tick) segs.push(h);
+  /* the intro or outro loops still to come */
+  if (LV.jam) lvJamAhead().forEach(a => segs.push({ ...a, idx: a.scene ? LV.jam.to : LV.cur, start: a.tick }));
   LV.cues
     .filter(c => c.type === 'scene')
     .forEach(c => {
@@ -125,7 +128,10 @@ export function liveInit() {
     id: 'lvSwing',
     min: 50,
     max: 75,
-    style: 'width:80px',
+    style: 'width:90px',
+    'aria-label': 'Swing',
+    title:
+      'Swing: 50% is straight; higher pushes every second 16th later for a looser, bouncier groove. Changes straight away.',
     oninput: e => {
       LV.swing = +e.target.value;
       $('#lvSwV').textContent = LV.swing + '%';
@@ -172,7 +178,17 @@ export function liveInit() {
   const top = el(
     'div',
     { class: 'lvTop' },
-    el('button', { class: 'btn lvstart', id: 'lvStart', onclick: liveToggle }, '▶ Start'),
+    el(
+      'button',
+      {
+        class: 'btn lvstart',
+        id: 'lvStart',
+        onclick: liveToggle,
+        title:
+          'Start Jam: a few 2-bar intro loops build into the first scene (Shift-click to start the first scene straight away). End Jam: outro loops wind it down to a last hit; press again to stop now.'
+      },
+      '▶ Start Jam'
+    ),
     el(
       'button',
       {
@@ -241,6 +257,7 @@ export function liveInit() {
       el('button', { class: 'btn sm', onclick: () => liveBpm(1), title: 'Faster' }, '+'),
       el('button', { class: 'btn sm', onclick: liveTap, title: 'Tap the tempo' }, 'Tap')
     ),
+    el('span', { class: 'lvf' }, 'Swing', sw, el('b', { id: 'lvSwV', class: 'lvSwV' }, LV.swing + '%')),
     sel('Launch on', qs),
     sel('Entry', es),
     el(
@@ -462,7 +479,7 @@ export function liveInit() {
       el(
         'div',
         { class: 'hint' },
-        'How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is. Past High is Extreme: every repeat changes, with hi-hat rolls (triplets in trap and drill), snare rolls, kick drop-outs and 808 octave flicks.'
+        'How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is. Past High is Extreme: every repeat changes, with snare rolls, kick drop-outs and 808 octave flicks. Trap, drill, phonk and Memphis hats roll at any setting.'
       )
     ),
     el(

@@ -25,7 +25,10 @@ export function liveRender() {
   $('#lvStyle').value = LV.style;
   $('#lvKey').value = LV.key;
   $('#lvBpm').value = LV.bpm;
-  $('#lvSwing') && ($('#lvSwing').value = LV.swing);
+  if ($('#lvSwing')) {
+    $('#lvSwing').value = LV.swing;
+    $('#lvSwV').textContent = LV.swing + '%';
+  }
   $('#lvQ').value = LV.quant;
   $('#lvEntry').value = LV.entry;
   $('#lvFills').checked = LV.fills;
@@ -61,7 +64,7 @@ export function liveSync() {
   const b = $('#lvStart');
   if (!b) return;
   const on = lvOn();
-  b.textContent = on ? '■ Stop' : '▶ Start';
+  b.textContent = !on ? '▶ Start Jam' : LV.jam && LV.jam.kind === 'out' ? '■ Stop now' : '■ End Jam';
   b.classList.toggle('stopb', on);
   {
     const pb = $('#lvPumpB'),

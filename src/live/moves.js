@@ -220,7 +220,7 @@ export function lvSceneFx(sc, tick) {
 /* Quick moves from the Moves panel */
 export function liveMoveNow(kind) {
   if (!lvOn()) {
-    toast('Press Start first');
+    toast('Press Start Jam first');
     return;
   }
   const beat = Math.ceil(TR.tick / 8) * 8,

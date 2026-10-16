@@ -7,6 +7,7 @@ import { FACMAP, facById } from './index.js';
 import { hashStr, mulberry } from '../core/random.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
+const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck'];
 const LV_POOLCACHE = {};
 /** The genre a style draws from ('dnb', 'house' …), worked out from its hand-picked patterns. */
 export function lvGenreOf(st) {
@@ -91,17 +92,20 @@ export function lvPool(st, pool) {
   const g = lvGenreOf(st),
     bpm = st.bpm[2];
   const hand = [...(st.pools[pool] || []), ...((st.more && st.more[pool]) || [])];
+  /* drums keep to their own sub-style (the feel is in the beat); tone parts may come from any sub-style of
+     the genre at a nearby tempo, unless a pattern was marked as not for this style (notFor) */
+  const tone = TONE_POOLS.includes(pool);
   const lib = FAC.filter(
     f =>
       f.genre === g &&
       f.pool === pool &&
-      (!f.styles || f.styles.includes(st.id)) &&
-      (f.bpm == null || Math.abs(f.bpm - bpm) <= 24)
+      (!f.styles || f.styles.includes(st.id) || (tone && !(f.notFor && f.notFor.includes(st.id)))) &&
+      (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone ? 30 : 24))
   ).map(f => f.id);
   return (LV_POOLCACHE[key] = [...new Set([...hand, ...lib])].filter(id => facById(id)));
 }
 /* How lively a pattern is (0-1): note density, syncopation, pitch variety; drums: density and ghost notes. */
-function lvLively(f) {
+export function lvLively(f) {
   if (!f) return 0;
   if (f._lv !== undefined) return f._lv;
   const n = f.notes.length,
@@ -126,7 +130,7 @@ export function lvFlavor(ids, flavor) {
   const s = ids
     .map(id => [id, lvLively(facById(id))])
     .sort((a, b) => (flavor === 'lively' ? b[1] - a[1] : a[1] - b[1]));
-  return s.slice(0, Math.max(4, Math.ceil(ids.length * (flavor === 'lively' ? 0.45 : 0.6)))).map(x => x[0]);
+  return s.slice(0, Math.max(4, Math.ceil(ids.length * (flavor === 'lively' ? 0.6 : 0.7)))).map(x => x[0]);
 }
 /* chord progression named in a pattern (bass, chords, pads and arps built on the same one sit together) */
 /** The chord progression in a pattern's name ('i-VI-III-VII'), or null. Patterns that share one fit together. */

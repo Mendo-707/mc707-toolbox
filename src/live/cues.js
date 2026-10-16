@@ -10,8 +10,9 @@ import { LV, SWG, lvRand, lvStyle, saveLive } from './state.js';
 import { lvIsFlash } from './themes.js';
 import { lvSaveScenes } from './scene-editor.js';
 import { lvAutoFlash } from './breaks.js';
-import { lvPool, lvProg } from '../library/pools.js';
+import { lvPool } from '../library/pools.js';
 import { liveSwapIds } from './set-builder.js';
+import { lvFitIds, lvMelodicCount } from './harmony.js';
 import { liveStart, lvEmute, lvIds, lvSwapCue, lvTop } from './engine.js';
 import { lvTickF } from './ui.js';
 import { liveStatus } from './lanes.js';
@@ -72,20 +73,12 @@ export function liveVaryStep(tick, rel) {
       did++;
     }
   }
-  if (R() < p * 0.45) {
+  /* a guest melody only when it fits the progression playing and the mix has room (at most 3 melodic parts) */
+  if (R() < p * 0.45 && lvMelodicCount() < 3) {
     const empty = [6, 7, 5].filter(t => !lvTop(t) && !LV.mute[t] && !lvEmute(t));
     if (empty.length) {
       const t = lvRand(empty),
-        pool = liveSwapIds(t);
-      const ch = lvTop(4),
-        prog = ch && lvProg(ch.f);
-      const fit = prog
-        ? pool.filter(id => {
-            const f = facById(id);
-            return lvProg(f) === prog;
-          })
-        : [];
-      const id = lvRand(fit.length ? fit : pool);
+        id = lvRand(lvFitIds(t, liveSwapIds(t), null, t === 6));
       if (id) {
         LV.cues.push({ type: 'guest', t, id, tick: end }, { type: 'guestOut', t, id, tick: end + U });
         did++;
@@ -111,7 +104,9 @@ export function lvBoundary(unitBars) {
   return base + Math.ceil((from - base) / U) * U;
 }
 function lvAutoFill(sc, nx, tick) {
-  if (LV.fills && sc.cells[0] && nx.cells[0] && nx.e >= sc.e && LV.fillIds.length && tick - 32 >= TR.tick) {
+  /* a fill leads into a scene with more energy, or into a different beat, so the drums do not just switch */
+  const newKit = nx.cells[0] && sc.cells[0] && nx.cells[0].id !== sc.cells[0].id;
+  if (LV.fills && sc.cells[0] && nx.cells[0] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
     const f = facById(lvRand(LV.fillIds));
     if (f) LV.cues.push({ type: 'fill', tick: tick - 32, f, auto: true });
   }
@@ -122,6 +117,11 @@ export function liveCue(idx) {
   if (!lvOn()) {
     liveStart(idx);
     return;
+  }
+  /* a scene pad during the intro or outro takes over: the jam carries on as a normal set */
+  if (LV.jam) {
+    LV.jam = null;
+    LV.cues = LV.cues.filter(c => c.type !== 'moves');
   }
   const pend = LV.cues.find(c => c.type === 'scene');
   LV.cues = LV.cues.filter(
@@ -149,7 +149,7 @@ export function lvDropExtras(t2) {
 }
 export function liveBuildDrop() {
   if (!lvOn()) {
-    toast('Press Start first');
+    toast('Press Start Jam first');
     return;
   }
   const n = LV.scenes.length;
@@ -185,7 +185,7 @@ export function liveBuildDrop() {
 }
 export function liveSwap(group) {
   if (!lvOn()) {
-    toast('Press Start (or a scene pad) first');
+    toast('Press Start Jam (or a scene pad) first');
     return;
   }
   const probe = {};
@@ -198,7 +198,7 @@ export function liveSwap(group) {
 }
 export function liveFillNow() {
   if (!lvOn()) {
-    toast('Press Start first');
+    toast('Press Start Jam first');
     return;
   }
   if (!LV.fillIds.length || !LV.scenes[LV.cur].cells[0]) {
@@ -217,7 +217,7 @@ export function lvEffMute(t) {
 }
 export function liveMute(tracks) {
   if (!lvOn()) {
-    toast('Press Start first');
+    toast('Press Start Jam first');
     return;
   }
   const on = !tracks.every(lvEffMute);
@@ -275,7 +275,7 @@ export function liveStopCue() {
 }
 export function liveRiser(dir) {
   if (!lvOn()) {
-    toast('Press Start first');
+    toast('Press Start Jam first');
     return;
   }
   const t1 = lvBoundary(1),

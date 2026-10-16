@@ -730,6 +730,15 @@ body[data-mode='live'] #live {
   border-left-color: transparent;
   opacity: 0.8;
 }
+.lvCell.rest {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--c) 55%, transparent);
+  border-left: 1px dashed color-mix(in srgb, var(--c) 55%, transparent);
+  opacity: 0.7;
+}
+.lvCell.em {
+  opacity: 0.35;
+}
 .lvCell.fill {
   background: #ffa629;
   color: #1e1f23;

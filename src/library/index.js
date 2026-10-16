@@ -9,6 +9,7 @@ import './variety.js';
 import './flash.js';
 import './genre-drums.js';
 import './genre-keys.js';
+import './groove-pack.js';
 import { FAC } from './factory.js';
 import { userById } from './user-lib.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';

@@ -15,6 +15,7 @@ for (const f of FAC) {
   if (f.genre !== 'hiphop' || f.pool !== 'bass' || /808|Sub/i.test(f.name)) continue;
   const st = f.styles || HH_STYLES;
   if (st.includes('trap') || st.includes('drill')) f.styles = st.filter(x => x !== 'trap' && x !== 'drill');
+  f.notFor = ['trap', 'drill'];
 }
 
 const Q = { m: [0, 3, 7], M: [0, 4, 7], m7: [0, 3, 7, 10], M7: [0, 4, 7, 11], 7: [0, 4, 7, 10] };

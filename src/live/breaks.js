@@ -73,7 +73,7 @@ function lvMakeBreak(kind, len) {
 }
 export function liveBreak(kind) {
   if (!lvOn()) {
-    toast('Press Start first, then hit Break');
+    toast('Press Start Jam first, then hit Break');
     return;
   }
   const pend = LV.cues.find(c => c.type === 'brk');

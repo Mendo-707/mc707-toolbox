@@ -163,6 +163,8 @@ creating the clock's Worker. Then `main.js`:
 | `library/generate.js` | Generates most of the factory library: kits, drum layers, fills, chords, basslines, arps, leads and pads for every genre. Order matters: each pattern's id comes from the order it is made in. |  |
 | `library/genre-drums.js` | The genre pack's drums: trap kits in three producer flavours (dark and sparse, bouncy, busy keys), drill, halftime drum and bass, Amen jungle breaks, afrobeats and phonk, with real hi-hat rolls (16th triplets, 32nds, 64th ramps) and the fills to match. Also moves older kits that do not fit out of the trap, drill and halftime pools. |  |
 | `library/genre-keys.js` | The genre pack's tone parts for trap and drill: sliding 808s (overlapping notes, so the MC-707 glides with portamento on), dark bells, bouncy plucks, piano chords and piano runs with triplet flourishes, organ and string pads. Every part of a progression shares its name, so Live Mode keeps them together. Other hip hop basslines leave the trap and drill pools, which are 808s only. |  |
+| `library/groove-data.js` | The groove pack's material: modal chord progressions (Dorian, Mixolydian, Lydian, Phrygian, harmonic minor, blues), each genre's groovy keys and rhythms for chords, basslines and melodies, and four new drum grooves per genre. library/groove-pack.js turns it into patterns. |  |
+| `library/groove-pack.js` | The groove pack: for every genre, chords, basslines, pads, leads and arps on modal progressions (Dorian vamps, Mixolydian and Lydian lifts, Phrygian and harmonic-minor darkness, blues) in each genre's groovy keys and rhythms, plus four new drum grooves per genre. Parts on one progression share its name, so Live Mode keeps them together. |  |
 | `library/index.js` | The finished pattern library: the id lookup (facById), the pool each track draws from, and helpers that copy a factory pattern into the song. |  |
 | `library/live-extras.js` | Extra patterns for Live Mode: fills, builds and drop impacts for every genre. |  |
 | `library/lively.js` | Lively variants: busier, syncopated basslines, arps, chords and leads built on each genre's progressions. |  |
@@ -235,7 +237,9 @@ creating the clock's Worker. Then `main.js`:
 | `live/controller.js` | USB controller keyboards in Live Mode: the model presets, keyboard zones (mutes, key, solo), learned controls and the solo voice. | CTL (the controller keyboard) |
 | `live/cues.js` | Live Mode cues: everything that waits for the next beat, bar or phrase (scene changes, swaps, mutes, key changes, energy) and the Variation engine. |  |
 | `live/engine.js` | The Live Mode engine: the voices playing on each track, what plays on every tick, scene changes, swaps, and start and stop. |  |
-| `live/extreme.js` | Extreme variation (Variation above 100): every repeat of a loop changes. Hats break into rolls that suit the style (16th triplets for trap, drill and phonk, 32nds and 64th ramps elsewhere), snare rolls and kick drop-outs on the kit, and octave flicks on the 808. |  |
+| `live/extreme.js` | Hi-hat rolls for the trap family (trap, drill, phonk, Memphis), at any Variation level, and Extreme variation (Variation above 100): every repeat of a loop changes, with snare rolls and kick drop-outs on the kit and octave flicks on the 808. |  |
+| `live/harmony.js` | Keeping a Live set in tune with itself: the chord progression that is playing now, which patterns fit it when parts swap or a guest melody comes in, and where a new part should start so it lines up with the progression already playing. |  |
+| `live/jam.js` | Start Jam and End Jam. A jam opens with a few 2-bar intro loops that build into the first scene (parts arrive one group at a time, the filter opens, the last loop rolls and rises into the drop) and closes with 2-bar outro loops that wind the scene down to a final hit. The loops are made from the set's own patterns, so they suit every genre and lead straight into (or out of) the music, and the recipe is picked at random each time. | LV.jam (the intro or outro in progress) |
 | `live/lanes.js` | The Live Mode timeline: lanes showing what each track plays, the status panel and the per-frame update. |  |
 | `live/midi-in.js` | MIDI input in Live Mode: the MC-707 pads and keys (Raven keys), the pad test, and the computer keyboard. |  |
 | `live/moves.js` | Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan) for builds, drops and scene moves. |  |
@@ -244,7 +248,7 @@ creating the clock's Worker. Then `main.js`:
 | `live/raven.js` | Raven mode: the mute and key keys on the MC-707 and a controller keyboard, the presets and their settings area. |  |
 | `live/scene-editor.js` | Editing Live scenes: parts, when each plays, its MC-707 clip, and saving custom scenes. |  |
 | `live/scene-templates.js` | The Live scene templates (Groove, Lift, Peak …) and the play patterns that let parts come and go. |  |
-| `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools. |  |
+| `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part on the chords' progression and the lead and pluck kept out of each other's way. |  |
 | `live/settings-panel.js` | The Live Mapping panel: pad layout and actions, Raven mode, knob rest values and the controller keyboard. |  |
 | `live/state.js` | Live Mode's state LV (style, key, tempo, scenes, pads, settings) and saving it. | LV (Live Mode state) |
 | `live/themes.js` | Live Mode colour themes, scene colours and small shared helpers (action labels and colours, track groups). |  |

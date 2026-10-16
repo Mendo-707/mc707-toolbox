@@ -131,3 +131,41 @@ test('trap hat rolls land between ticks, and Extreme variation changes the repea
   );
   assert.deepEqual(errors, []);
 });
+
+test('Start Jam plays intro loops into the first scene; End Jam winds down and stops', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    LV.style = 'deephouse';
+    LV.seed = 2;
+    LV.custom = false;
+    LV.auto = false;
+    a.liveBuild();
+    document.querySelector('#lvStart').click();
+    a.TICKER.stop();
+    const run = n => {
+      const end = a.TR.tick + n;
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+    };
+    run(32 * 10);
+    const intro = LV.hist.filter(h => /^Intro/.test(h.label || '')).length,
+      inScene = !LV.jam && LV.hist.some(h => !h.label && h.tick > 0);
+    document.querySelector('#lvStart').click();
+    const outro = !!(LV.jam && LV.jam.kind === 'out');
+    run(32 * 14);
+    const ended = a.TR.ending || !a.TR.playing;
+    a.stopAll();
+    return { intro, inScene, outro, ended };
+  });
+  assert.ok(r.intro >= 2, 'at least two intro loops');
+  assert.ok(r.inScene, 'the first scene follows the intro');
+  assert.ok(r.outro && r.ended, 'End Jam plays an outro and stops');
+  assert.deepEqual(errors, []);
+});

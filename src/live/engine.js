@@ -5,7 +5,7 @@
 // Calls up the layers through hooks (core/hooks.js).
 import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
-import { devOn } from '../core/device.js';
+import { devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
 import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
 import { patIndex, subTick } from '../core/song-model.js';
@@ -25,8 +25,10 @@ import { liveBuild, liveSwapIds } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
-import { lvExtreme, lvXExtra, lvXSkip, lvXType } from './extreme.js';
+import { lvExtreme, lvTrapRoll, lvTrapRolls, lvXExtra, lvXSkip, lvXType } from './extreme.js';
 import { knobUI } from './pads.js';
+import { lvAnchorStart, lvFitIds } from './harmony.js';
+import { liveJamEnd, liveJamStart, lvJamStep } from './jam.js';
 
 /* ---- engine ---- */
 export const lvTop = t => {
@@ -65,17 +67,59 @@ export function lvLog(tick) {
   });
   if (LV.log.length > 600) LV.log.shift();
 }
+/**
+ * Put pattern `id` on track t from `tick`. One track is one MC-707 part, so the old pattern stops
+ * where the new one starts (two patterns on one track sound like a mistake). A tone part that shares
+ * the progression already playing starts in step with it. `entry` fades it in over that many ticks
+ * (pads take the whole fade; other parts at most a quarter bar so they still land on the beat).
+ */
 export function liveReplace(t, id, tick, fade, entry) {
   const f = facById(id);
   if (!f) return;
   if (S.clipAuto) autoClip(t, f, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
-  const tone = S.tracks[t].type === 'tone';
-  if (tone && fade > 0)
-    LV.voices[t].forEach(v => {
-      if (v.env.v1 > 0) v.env = mkEnv(envAt(v.env, tick), 0, tick, fade);
-    });
-  else LV.voices[t] = [];
-  LV.voices[t].push({ f, start: tick, env: entry > 0 ? mkEnv(0, 1, tick, entry) : mkEnv(1, 1, tick, 0) });
+  LV.voices[t] = [];
+  const ent = t === 5 ? entry : Math.min(entry, 8);
+  LV.voices[t].push({
+    f,
+    start: lvAnchorStart(t, f, tick),
+    env: ent > 0 ? mkEnv(0, 1, tick, ent) : mkEnv(1, 1, tick, 0)
+  });
+}
+/** Note what is playing from `tick` (for the timeline), inside the current scene. */
+export function lvHistMark(tick, label) {
+  LV.hist.push({ tick, idx: LV.cur, start: label ? tick : LV.sceneStart, ids: lvIds(), label });
+  if (LV.hist.length > 16) LV.hist.shift();
+}
+/**
+ * What each track really plays in the bar starting at `tick`, for the timeline's current bar: the
+ * pattern, and whether it plays ('on'), sits the bar out ('rest'), is held back by the energy ('em'),
+ * is fading out ('fade'), or is a fill, build or break playing over the track.
+ */
+function lvBarSnap(tick) {
+  /* a break that starts during this bar counts too */
+  const pend = LV.cues.find(c => c.type === 'brk' && c.tick < tick + 32),
+    fl = LV.flash && tick >= LV.flash.start ? LV.flash : pend && pend.b ? pend.b : null,
+    snap = [];
+  for (let t = 0; t < 8; t++) {
+    let c = null;
+    const rollT = fl && (fl.kind === 'roll' || fl.kind === 'drop') ? (fl.kind === 'roll' ? 0 : lvBT()) : -1;
+    if (t === rollT) c = { id: null, k: 'roll' };
+    else if (fl && !fl.loop && fl.v && fl.v[t]) c = { id: fl.v[t].f.id, k: 'brk' };
+    else if (t === 0 && LV.fill && tick >= LV.fill.start) c = { id: LV.fill.f.id, k: 'fill' };
+    else if (t === lvBT() && LV.bov && tick >= LV.bov.start) c = { id: LV.bov.f.id, k: 'bov' };
+    else if (t === lvBT() && LV.impact && LV.impact.tick < tick + 32) c = { id: LV.impact.f.id, k: 'imp' };
+    else {
+      const v = lvTop(t);
+      if (v) c = { id: v.f.id, k: lvMaskOff(t, tick) ? 'rest' : lvEmute(t) || LV.mute[t] ? 'em' : 'on' };
+      else {
+        const fv = LV.voices[t].find(x => x.env.v1 === 0 && x.env.t1 > tick);
+        if (fv) c = { id: fv.f.id, k: 'fade' };
+      }
+    }
+    snap.push(c);
+  }
+  LV.bars.set(tick / 32, snap);
+  if (LV.bars.size > 48) LV.bars.delete(LV.bars.keys().next().value);
 }
 /* a scene part can name the MC-707 clip it plays on; otherwise the track follows the kind of part (when automatic switching is on) */
 export function lvCellClip(t, cell, time) {
@@ -129,23 +173,26 @@ export function liveScene(idx, tick, hard) {
   }
   LV.cur = idx;
   LV.sceneStart = tick;
+  /* the new scene's progression: a part of another progression that is leaving stops at once instead of fading over it */
+  const newProg = [4, 3, 5, 7, 6].map(t => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
   for (let t = 0; t < 8; t++) {
     const cell = sc.cells[t],
       tone = S.tracks[t].type === 'tone',
       top = lvTop(t);
     lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
     if (!cell) {
+      const clash = top && newProg && lvProg(top.f) && lvProg(top.f) !== newProg;
       if (tone && toneFade > 0)
         LV.voices[t].forEach(v => {
-          if (v.env.v1 > 0) v.env = mkEnv(envAt(v.env, tick), 0, tick, toneFade);
+          /* pads may linger over the change; a melody that is leaving gets out of the way within a beat or two */
+          if (v.env.v1 > 0)
+            v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : t === 5 ? toneFade : Math.min(toneFade, 12));
         });
       else LV.voices[t] = [];
       continue;
     }
-    if (top && top.f.id === cell.id) {
-      top.start = tick;
-      continue;
-    }
+    /* the same pattern carries on where it is, so the groove and the progression do not jump back to bar 1 */
+    if (top && top.f.id === cell.id) continue;
     liveReplace(
       t,
       cell.id,
@@ -158,10 +205,24 @@ export function liveScene(idx, tick, hard) {
     LV.crash = true;
     LV.dropTick = tick;
   }
+  /* a big step down lands softly: the tone parts that stay get a short reverb tail across the change */
+  if (jump <= -3 && LV.buildFx && !hard)
+    lvMove({
+      id: 'landthrow',
+      tag: 'scene',
+      tracks: [3, 4, 5, 6, 7].filter(t => sc.cells[t]),
+      cc: 91,
+      kind: 'ramp',
+      from: 96,
+      to: 'rest',
+      curve: 'log',
+      start: tick,
+      end: tick + 24
+    });
   if (LV.rise && tick >= LV.rise.start && LV.rise.end > tick) lvRiseReset(tick);
   lvSceneFx(sc, tick);
-  LV.hist.push({ tick, idx, ids: lvIds() });
-  if (LV.hist.length > 8) LV.hist.shift();
+  LV.hist.push({ tick, idx, start: tick, ids: lvIds() });
+  if (LV.hist.length > 16) LV.hist.shift();
   lvLog(tick);
   LV.ver++;
 }
@@ -199,20 +260,21 @@ function liveFire(c, tick) {
   else if (c.type === 'guest') {
     if (!lvTop(c.t)) {
       liveReplace(c.t, c.id, tick, 0, 16);
+      lvHistMark(tick);
       lvLog(tick);
     }
   } else if (c.type === 'guestOut') {
     const v = lvTop(c.t);
     if (v && v.f.id === c.id) {
       v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+      lvHistMark(tick);
       lvLog(tick);
     }
   } else if (c.type === 'swap') {
     for (const t in c.ids)
       if (lvTop(+t))
         liveReplace(+t, c.ids[t], tick, S.tracks[+t].type === 'tone' ? 16 : 0, S.tracks[+t].type === 'tone' ? 16 : 0);
-    const h = LV.hist[LV.hist.length - 1];
-    if (h) h.ids = lvIds();
+    lvHistMark(tick);
     lvLog(tick);
   } else if (c.type === 'fill') LV.fill = { f: c.f, start: tick, end: tick + Math.min(c.f.bars, 2) * 32 };
   else if (c.type === 'mute') {
@@ -256,22 +318,12 @@ export function lvSwapCue(group, tick) {
   (SWG[group] || []).forEach(t => {
     const v = lvTop(t);
     if (!v) return;
-    const pool = liveSwapIds(t).filter(id => id !== v.f.id);
-    if (!pool.length) return;
-    const ref = S.tracks[t].type === 'tone' ? lvTop(t === 4 ? 3 : 4) : null,
-      prog = ref && lvProg(ref.f);
-    let fit = prog
-      ? pool.filter(id => {
-          const f = facById(id);
-          return lvProg(f) === prog && f.bars === ref.f.bars;
-        })
-      : [];
-    if (prog && !fit.length)
-      fit = lvPool(lvStyle(), TRACK_POOLS[t]).filter(id => {
-        const f = facById(id);
-        return id !== v.f.id && lvProg(f) === prog && f.bars === ref.f.bars;
-      });
-    ids[t] = lvRand(fit.length && Math.random() < 0.8 ? fit : pool);
+    /* only patterns that fit the progression playing on the other tracks (wider pool if the flavour has none) */
+    const free = !lvProg(v.f);
+    let fit = lvFitIds(t, liveSwapIds(t), v.f.id, free);
+    if (!fit.length) fit = lvFitIds(t, lvPool(lvStyle(), t === 0 && oneKit() ? 'full' : TRACK_POOLS[t]), v.f.id, free);
+    if (!fit.length) return;
+    ids[t] = lvRand(fit);
   });
   if (!Object.keys(ids).length) return null;
   LV.cues = LV.cues.filter(c => !(c.type === 'swap' && c.group === group));
@@ -319,12 +371,17 @@ export function lvModeNote(n) {
 }
 /* Repeat variation: when a pattern comes round again it changes a little, more often the higher Variation is. */
 function lvVarOf(v, t, k, L) {
-  const X = lvExtreme();
-  if (LV.lock || LV.vary <= 0 || k < 1 || t === 5 || t === 2 || (!X && L < 64 && k % 2 === 0)) return null;
+  const X = lvExtreme(),
+    rolls = (t === 1 || (t === 0 && !LV.voices[1].some(x => x.env.v1 > 0))) && lvTrapRolls();
+  if (LV.lock || k < 1 || t === 5 || t === 2) return null;
+  const off = LV.vary <= 0 || (!X && L < 64 && k % 2 === 0);
+  if (off && !rolls) return null;
   if (v._vk === k) return v._vt;
   const hs = (hashStr(v.f.id + ':' + t) + Math.imul(k, 2654435761)) >>> 0;
-  let ty = null;
-  if (X) ty = (hs % 1000) / 1000 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
+  /* trap-family hats roll whatever Variation is set to */
+  let ty = rolls ? lvTrapRoll(v, t, hs) : null;
+  if (ty || off) ty = ty || null;
+  else if (X) ty = (hs % 1000) / 1000 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
   else if ((hs % 1000) / 1000 < (LV.vary / 100) * 0.8) {
     const o =
       t === 0
@@ -359,12 +416,15 @@ function lvVarExtra(t, v, vt, local, L, nt, td, g) {
 }
 export function liveTick(tick, nt, td) {
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
+  if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
+  if (tick % 32 === 0) lvBarSnap(tick);
   if (LV.flash && tick >= LV.flash.end) {
     const fe = LV.flash.end;
     LV.flash = null;
     const im = lvPool(lvStyle(), 'impact');
     const f = im.length ? facById(lvRand(im)) : null;
     if (f) LV.impact = { tick: fe, f };
+    lvHistMark(tick);
     lvLog(tick);
     LV.ver++;
   }
@@ -380,7 +440,7 @@ export function liveTick(tick, nt, td) {
   const rel = tick - LV.sceneStart;
   if (rel % 32 === 0) {
     for (let t = 0; t < 8; t++) LV.voices[t] = LV.voices[t].filter(v => !(v.env.v1 === 0 && tick >= v.env.t1));
-    if (!LV.lock && (LV.auto || LV.vary > 0)) {
+    if (!LV.lock && !LV.jam && (LV.auto || LV.vary > 0)) {
       const before = new Set(LV.cues);
       if (LV.auto) liveAutoStep(tick, rel);
       if (LV.vary > 0) liveVaryStep(tick, rel);
@@ -546,6 +606,8 @@ export function liveStart(idx) {
     lastTick: 0,
     dropTick: null,
     flash: null,
+    jam: null,
+    bars: new Map(),
     maskSig: ''
   });
   autoClipReset();
@@ -595,9 +657,11 @@ export function liveCleanup() {
   LV.held = {};
 }
 export function liveStop() {
+  LV.jam = null;
   if (TR.playing && TR.mode === 'live') stopPlay();
 }
-export function liveToggle() {
-  if (TR.playing && TR.mode === 'live') liveStop();
-  else liveStart(0);
+/** The Start Jam / End Jam button (and Space): an intro into the first scene, or an outro to the end. */
+export function liveToggle(e) {
+  if (TR.playing && TR.mode === 'live') liveJamEnd();
+  else liveJamStart(!!(e && e.shiftKey));
 }
