@@ -3450,6 +3450,14 @@ input[type='number'] {
     transition: none;
   }
 }
+/* playback options in the Settings and mapping panel */
+.lvPlayOpts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 4px 0 14px;
+}
 </style>
     <style>
 /* Live Mode colour themes: each #live[data-theme] sets the colour tokens; data-light marks the light themes. Loaded after live.css. */
@@ -7619,7 +7627,7 @@ input[type='number'] {
       [12, 2, 7],
       [14, 2, 4]
     ];
-    const ACID = [
+    const ACID2 = [
       [0, 1, 0],
       [1, 1, 12],
       [3, 1, 0],
@@ -7785,7 +7793,7 @@ input[type='number'] {
       BT: [
         ["Rolling Sub", NB([0, 2, 3, 5, 6, 8, 10, 11, 13, 14], 1)],
         ["Offbeat", NB([2, 6, 10, 14], 2)],
-        ["Acid Run", ACID],
+        ["Acid Run", ACID2],
         ["Driving", NB(ev(2), 2)],
         ["Sparse", NB([0, 6, 10], 3)],
         ["Rumble", [[0, 16, 0, 100]]],
@@ -8125,7 +8133,7 @@ input[type='number'] {
           ]
         ],
         ["Sync", NB([0, 3, 6, 9, 12], 2)],
-        ["Acid", ACID],
+        ["Acid", ACID2],
         ["Pulse", NB(ev(2), 2)],
         ["Funk", FUNKB],
         [
@@ -10026,8 +10034,8 @@ input[type='number'] {
       MOT.forEach(([mn, mot]) => {
         const notes = [];
         const deg = (d) => 60 + R2 + SC[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
-        const put = (bar, shift, vel) => mot.forEach(
-          ([s, l, d], i) => notes.push({ s: bar * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
+        const put = (bar2, shift, vel) => mot.forEach(
+          ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
         put(0, 0, 104);
         put(1, 2, 98);
@@ -11465,9 +11473,9 @@ input[type='number'] {
   }
   function hatLine(line, lane = 4, top = 100) {
     const out = [];
-    line.split("|").forEach((bar, b) => {
+    line.split("|").forEach((bar2, b) => {
       let beat = 0;
-      for (const tok of bar.trim().split(/\s+/).filter(Boolean)) {
+      for (const tok of bar2.trim().split(/\s+/).filter(Boolean)) {
         out.push(...rollNotes(tok, b * 16 + beat * 4, lane, top));
         beat += ROLL2[tok] ? 2 : 1;
       }
@@ -13846,6 +13854,107 @@ input[type='number'] {
       });
   }
 
+  // src/core/random.js
+  var mulberry = (a) => () => {
+    a |= 0;
+    a = a + 1831565813 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  var hashStr = (s) => {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  };
+
+  // src/library/acid.js
+  var ACID = {
+    techno: ["Techno", [9, 0, 4, 5, 2], ["techno", "minimal", "acidtechno"], 33],
+    house: ["House", [9, 5, 7, 2], ["classichouse", "techhouse", "deephouse"], 33],
+    trance: ["Trance", [9, 6, 1, 4], ["trance", "progtrance"], 33],
+    electro: ["Electro", [9, 4, 7, 0], ["electro", "breakbeat"], 33],
+    dnb: ["DnB", [5, 2, 7, 9], ["jungle", "neuro", "jumpup"], 33]
+  };
+  var DEG = [
+    [0, 34],
+    [12, 14],
+    [3, 10],
+    [7, 10],
+    [10, 9],
+    [5, 7],
+    [1, 6],
+    [6, 4],
+    [15, 3],
+    [-2, 3]
+  ];
+  var WORDS = [
+    "Squelch",
+    "Rubber",
+    "Phuture",
+    "Resonator",
+    "Slide Rule",
+    "Snake",
+    "Bubble",
+    "Wire",
+    "Mutant",
+    "Acid Rain",
+    "Liquid Acid",
+    "Hard Acid"
+  ];
+  function weighted(r) {
+    const tot = DEG.reduce((a, d) => a + d[1], 0);
+    let x = r() * tot;
+    for (const [st, w] of DEG) if ((x -= w) < 0) return st;
+    return 0;
+  }
+  function bar(r, base, density) {
+    const on = [], out = [];
+    for (let s = 0; s < 16; s++) on.push(s === 0 || r() < density);
+    for (let s = 0; s < 16; s++) {
+      if (!on[s]) continue;
+      const next = on[(s + 1) % 16] && s < 15, slide = next && r() < 0.28, acc = s % 4 === 0 ? r() < 0.5 : r() < 0.25;
+      out.push({ s, l: slide ? 1.25 : r() < 0.5 ? 0.5 : 0.75, n: base + weighted(r), v: acc ? 122 : 86 });
+    }
+    return out;
+  }
+  function answer(r, first, base) {
+    return first.map((n) => {
+      const x = { ...n, s: n.s + 16 };
+      const q = r();
+      if (q < 0.15) x.n = base + weighted(r);
+      else if (q < 0.25) x.n = n.n + 12 <= base + 24 ? n.n + 12 : n.n;
+      else if (q < 0.32) x.v = n.v > 100 ? 86 : 122;
+      return x;
+    });
+  }
+  for (const g of Object.keys(ACID)) {
+    const [tag, roots, styles, low] = ACID[g], r = mulberry(44061 + g.length * 977 + g.charCodeAt(0));
+    for (let i = 0; i < 12; i++) {
+      const root = roots[i % roots.length], base = low + (root - low % 12 + 12) % 12, bars = i % 3 === 2 ? 1 : 2, density = [0.62, 0.72, 0.8, 0.55][i % 4];
+      const one = bar(r, base, density), notes = bars === 2 ? [...one, ...answer(r, one, base)] : one;
+      FAC.push({
+        id: "ac-" + g + "-" + i,
+        name: tag + " Acid: " + WORDS[i] + (bars === 1 ? " 1-bar" : "") + " (" + NOTE_NAMES[root] + "m)",
+        type: "tone",
+        genre: g,
+        bpm: null,
+        bars,
+        notes: notes.sort((a, b) => a.s - b.s || a.n - b.n),
+        key: { root, scale: "minor" },
+        keyName: NOTE_NAMES[root] + " minor",
+        role: "Acid",
+        pool: "acid",
+        styles,
+        gen: true,
+        lively: true
+      });
+    }
+  }
+
   // src/library/user-lib.js
   var KEY = "mc707-user-patterns";
   var LIST = null;
@@ -13903,6 +14012,7 @@ input[type='number'] {
   }
 
   // src/library/index.js
+  for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === "rock") FAC.splice(i, 1);
   function instFactory(f) {
     const found = Object.keys(S.patterns).find(
       (k) => S.patterns[k].src === f.id && !S.patterns[k].mod && !S.patterns[k].shift
@@ -13993,8 +14103,8 @@ input[type='number'] {
     const c = edClip();
     return c ? patOf(c) : null;
   };
-  function clipAt(t, bar) {
-    for (const c of S.clips) if (c.t === t && bar >= c.start && bar < c.start + c.len) return c;
+  function clipAt(t, bar2) {
+    for (const c of S.clips) if (c.t === t && bar2 >= c.start && bar2 < c.start + c.len) return c;
     return null;
   }
   function songEnd() {
@@ -14279,11 +14389,12 @@ input[type='number'] {
     ["pad", "Pad", "#a283ff"],
     ["lead", "Lead", "#84d95b"],
     ["pluck", "Pluck / arp", "#e9d94a"],
+    ["acid", "Acid", "#ff9f1c"],
     ["fx", "FX / other", "#9aa0ad"]
   ];
   var CT_DEF = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
-  var CT_POOL = { bass: "bass", chords: "chords", pad: "pad", lead: "lead", pluck: "pluck" };
-  var ctInfo = (k) => CLIP_TYPES.find((x) => x[0] === k) || CLIP_TYPES[6];
+  var CT_POOL = { bass: "bass", chords: "chords", pad: "pad", lead: "lead", pluck: "pluck", acid: "acid" };
+  var ctInfo = (k) => CLIP_TYPES.find((x) => x[0] === k) || CLIP_TYPES[CLIP_TYPES.length - 1];
   var PCLAST = {};
   function cmFix() {
     if (!Array.isArray(S.clipMap) || S.clipMap.length !== 8)
@@ -14309,7 +14420,8 @@ input[type='number'] {
       pad: "pad",
       lead: "lead",
       flead: "lead",
-      pluck: "pluck"
+      pluck: "pluck",
+      acid: "acid"
     }[pool];
     if (m) return m;
     const r = String(p.role || f && f.role || "").toLowerCase();
@@ -14341,9 +14453,9 @@ input[type='number'] {
     setTimeout(() => hooks.cmChipSet(t, k), d);
   }
   var cmMarks = () => S.clipMarks || (S.clipMarks = []);
-  function clipMarkAt(t, bar) {
+  function clipMarkAt(t, bar2) {
     let r = null;
-    for (const m of cmMarks()) if (m.t === t && m.bar <= bar + 1e-9 && (!r || m.bar > r.bar)) r = m;
+    for (const m of cmMarks()) if (m.t === t && m.bar <= bar2 + 1e-9 && (!r || m.bar > r.bar)) r = m;
     return r;
   }
   var CMK = { last: -9 };
@@ -14355,10 +14467,10 @@ input[type='number'] {
     const jump = tick !== CMK.last + 1;
     CMK.last = tick;
     if (!jump && tick % 32) return;
-    const bar = Math.floor(tick / 32);
+    const bar2 = Math.floor(tick / 32);
     for (let t = 0; t < 8; t++) {
       if (!devOn(t)) continue;
-      const mk = jump ? clipMarkAt(t, bar) : S.clipMarks.find((m) => m.t === t && m.bar === bar);
+      const mk = jump ? clipMarkAt(t, bar2) : S.clipMarks.find((m) => m.t === t && m.bar === bar2);
       if (!mk) {
         if (jump) delete CLIPPIN[t];
         continue;
@@ -14411,14 +14523,14 @@ input[type='number'] {
     AUTOLAST[k] = v;
     sendMidi([176 | S.tracks[ti].ch - 1, c.cc.n, v], time + (S.midiOffset || 0) / 1e3);
   }
-  function tempoAtBar(bar) {
+  function tempoAtBar(bar2) {
     let b = S.bpm;
     for (const m of S.markers) {
-      if (m.bpm && m.bar <= bar + 1e-9) b = m.bpm;
+      if (m.bpm && m.bar <= bar2 + 1e-9) b = m.bpm;
     }
     return b;
   }
-  var tickDurAt = (bar) => 60 / tempoAtBar(bar) / 8;
+  var tickDurAt = (bar2) => 60 / tempoAtBar(bar2) / 8;
   function sendCC(ti, n, v) {
     if (!MIDI.out) return false;
     ensureAudio();
@@ -14491,11 +14603,11 @@ input[type='number'] {
       }
       songClipTick(tick, time);
       const solo = S.tracks.some((t) => t.solo);
-      const bar = tick / 32;
+      const bar2 = tick / 32;
       for (let ti = 0; ti < 8; ti++) {
         const t = S.tracks[ti];
         if (t.mute || solo && !t.solo) continue;
-        const c = clipAt(ti, bar);
+        const c = clipAt(ti, bar2);
         if (!c || c.mute) continue;
         const p = S.patterns[c.pat];
         if (!p) continue;
@@ -14522,10 +14634,10 @@ input[type='number'] {
       }
     } else if (TR.mode === "wiz") {
       const wz = TR.wz;
-      const bar = Math.floor(tick / 32);
-      const sec = wz.plan.sections.find((x) => bar >= x.start && bar < x.start + x.bars);
+      const bar2 = Math.floor(tick / 32);
+      const sec = wz.plan.sections.find((x) => bar2 >= x.start && bar2 < x.start + x.bars);
       if (sec) {
-        const rel = bar - sec.start;
+        const rel = bar2 - sec.start;
         for (let t = 0; t < 8; t++) {
           const at2 = hooks.wizCellAt(sec, t, rel);
           if (!at2) continue;
@@ -15335,7 +15447,16 @@ input[type='number'] {
     if (typeof hooks.renderArr === "function" && $("#arrInner")) hooks.renderArr();
     if (typeof hooks.liveRenderSceneEd === "function") hooks.liveRenderSceneEd();
   }
-  var CM_ABBR = { drums: "KIT", bass: "BAS", chords: "CHD", pad: "PAD", lead: "LD", pluck: "ARP", fx: "FX" };
+  var CM_ABBR = {
+    drums: "KIT",
+    bass: "BAS",
+    chords: "CHD",
+    pad: "PAD",
+    lead: "LD",
+    pluck: "ARP",
+    acid: "ACD",
+    fx: "FX"
+  };
   var CM_ICON = {
     drums: "M2 9h2v3H2zM6 6h2v6H6zM10 8h2v4h-2zM14 4h2v8h-2z",
     bass: "M1 11h4v1H1zM5 8h3v1H5zM8 11h4v1H8zM12 6h3v1h-3z",
@@ -15343,6 +15464,7 @@ input[type='number'] {
     pad: "M1 5h14v1H1zM1 8h14v1H1z",
     lead: "M1 9h2v1H1zM3 7h2v1H3zM5 5h3v1H5zM8 7h2v1H8zM10 3h3v1h-3zM13 6h2v1h-2z",
     pluck: "M1 10h1v1H1zM3 8h1v1H3zM5 6h1v1H5zM7 4h1v1H7zM9 6h1v1H9zM11 8h1v1h-1zM13 6h1v1h-1z",
+    acid: "M1 10h2v1H1zM3 6h2v1H3zM5 10h2v1H5zM7 4h2v1H7zM9 8h2v1H9zM11 5h2v1h-2zM13 9h2v1h-2z",
     fx: "M7 1h2v4H7zM7 11h2v4H7zM1 7h4v2H1zM11 7h4v2h-4z"
   };
   function cmScreen(map, kk) {
@@ -15890,12 +16012,12 @@ input[type='number'] {
     items.push("-", { label: "Set up track " + devNum(t) + " clips…", action: () => clipMapOpen(t) });
     return items;
   }
-  function setClipMark(t, bar, k) {
+  function setClipMark(t, bar2, k) {
     pushUndo();
-    bar = Math.max(0, Math.floor(bar));
-    const ms = cmMarks(), ex = ms.find((m) => m.t === t && m.bar === bar);
+    bar2 = Math.max(0, Math.floor(bar2));
+    const ms = cmMarks(), ex = ms.find((m) => m.t === t && m.bar === bar2);
     if (ex) ex.k = k;
-    else ms.push({ t, bar, k });
+    else ms.push({ t, bar: bar2, k });
     ms.sort((a, b) => a.bar - b.bar || a.t - b.t);
     scheduleSave();
     hooks.renderArr();
@@ -15906,11 +16028,11 @@ input[type='number'] {
     scheduleSave();
     hooks.renderArr();
   }
-  function cmAtBar(t, bar) {
-    const mk = clipMarkAt(t, bar);
+  function cmAtBar(t, bar2) {
+    const mk = clipMarkAt(t, bar2);
     if (mk && mk.k >= 0) return mk.k;
     let last = null;
-    for (const c of S.clips) if (c.t === t && c.start <= bar + 1e-9 && (!last || c.start > last.start)) last = c;
+    for (const c of S.clips) if (c.t === t && c.start <= bar2 + 1e-9 && (!last || c.start > last.start)) last = c;
     if (last && last.pc != null) return last.pc;
     if (S.clipAuto && last) {
       const k = clipFor(t, patType(S.patterns[last.pat]));
@@ -16009,7 +16131,7 @@ input[type='number'] {
     if (o.cc) piece.cc = o.cc;
     return piece;
   }
-  function splitClip(c, bar) {
+  function splitClip(c, bar2) {
     pushUndo();
     const orig = { ...c }, end = c.start + c.len;
     S.clips.push(
@@ -16017,29 +16139,29 @@ input[type='number'] {
         {
           ...c,
           id: "c" + S.nextId++,
-          start: bar,
-          len: q16(end - bar),
-          off: wrapOff(c.off + (bar - c.start), loopLen(c))
+          start: bar2,
+          len: q16(end - bar2),
+          off: wrapOff(c.off + (bar2 - c.start), loopLen(c))
         },
-        shapeSlice(orig, bar, end)
+        shapeSlice(orig, bar2, end)
       )
     );
-    c.len = q16(bar - c.start);
-    applyShape(c, shapeSlice(orig, orig.start, bar));
+    c.len = q16(bar2 - c.start);
+    applyShape(c, shapeSlice(orig, orig.start, bar2));
     renderArr();
     scheduleSave();
   }
-  function clipBlock(c, bar) {
-    const L2 = loopLen(c), pos = bar - c.start + c.off, r = Math.floor(pos / L2 + 1e-9);
+  function clipBlock(c, bar2) {
+    const L2 = loopLen(c), pos = bar2 - c.start + c.off, r = Math.floor(pos / L2 + 1e-9);
     const bs = c.start + r * L2 - c.off;
     return { a: Math.max(c.start, q16(bs)), b: Math.min(c.start + c.len, q16(bs + L2)) };
   }
   var blkLabel = (a, b) => b - a > 1 + 1e-6 ? "bars " + (Math.floor(a) + 1) + "–" + Math.ceil(b) : "bar " + (Math.floor(a) + 1);
   var clipHasBlocks = (c) => c.len > loopLen(c) + 1e-6 || S.clips.filter((x) => x.pat === c.pat).length > 1;
-  function editBlock(c, bar) {
+  function editBlock(c, bar2) {
     const p = patOf(c), L2 = loopLen(c);
     if (!p) return;
-    const { a, b } = clipBlock(c, bar), end = c.start + c.len, shared = S.clips.filter((x) => x.pat === c.pat).length > 1;
+    const { a, b } = clipBlock(c, bar2), end = c.start + c.len, shared = S.clips.filter((x) => x.pat === c.pat).length > 1;
     if (!(c.len > L2 + 1e-6) && !shared) {
       selectClip(c.id);
       return;
@@ -16203,7 +16325,7 @@ input[type='number'] {
     renderEditor();
     scheduleSave();
   }
-  function pasteClip(t, bar) {
+  function pasteClip(t, bar2) {
     if (!CLIPB) {
       toast("Copy a clip first");
       return;
@@ -16218,19 +16340,19 @@ input[type='number'] {
       return;
     }
     pushUndo();
-    carve(t, bar, bar + CLIPB.len);
-    const n = { ...CLIPB, id: "c" + S.nextId++, t, start: bar };
+    carve(t, bar2, bar2 + CLIPB.len);
+    const n = { ...CLIPB, id: "c" + S.nextId++, t, start: bar2 };
     S.clips.push(n);
-    ensureBars(bar + n.len);
+    ensureBars(bar2 + n.len);
     selectClip(n.id);
     renderArr();
     scheduleSave();
   }
-  function newPatternAt(t, bar) {
+  function newPatternAt(t, bar2) {
     pushUndo();
     const type = S.tracks[t].type;
     const pid = addPattern(type, type === "drum" ? "New beat" : "New part", 1, [], { key: null });
-    const c = placeClip(t, bar, pid, 1);
+    const c = placeClip(t, bar2, pid, 1);
     selectClip(c.id);
     renderArr();
     scheduleSave();
@@ -16238,16 +16360,16 @@ input[type='number'] {
 
   // src/song/clip-change.js
   var short = (k) => "C" + (k + 1);
-  function cmFlipTarget(t, bar) {
+  function cmFlipTarget(t, bar2) {
     const n = cmFix()[t].n;
     if (n < 2) return null;
-    const now = bar > 0 ? cmAtBar(t, bar - 1) : null;
-    const earlier = cmMarks().filter((m) => m.t === t && m.bar < bar && m.k >= 0 && m.k < n).sort((a, b) => b.bar - a.bar).map((m) => m.k).find((k) => k !== now);
+    const now = bar2 > 0 ? cmAtBar(t, bar2 - 1) : null;
+    const earlier = cmMarks().filter((m) => m.t === t && m.bar < bar2 && m.k >= 0 && m.k < n).sort((a, b) => b.bar - a.bar).map((m) => m.k).find((k) => k !== now);
     if (earlier != null) return earlier;
     return now == null || now <= 0 ? 1 : 0;
   }
-  function clipChangeItems(t, bar) {
-    const b = Math.max(0, Math.floor(bar)), mk = cmMarks().find((m) => m.t === t && m.bar === b), f = cmFlipTarget(t, b);
+  function clipChangeItems(t, bar2) {
+    const b = Math.max(0, Math.floor(bar2)), mk = cmMarks().find((m) => m.t === t && m.bar === b), f = cmFlipTarget(t, b);
     return [
       f != null ? { label: "⇄ Flip to " + cmLabel(t, f), hint: "Shift+K", action: () => setClipMark(t, b, f) } : null,
       ...cmPickItems(t, mk ? mk.k : null, (k) => setClipMark(t, b, k), "Back to automatic here"),
@@ -16300,13 +16422,13 @@ input[type='number'] {
     return c && devOn(c.t) ? c.t : null;
   };
   function clipChangeMenu(x, y) {
-    const bar = Math.floor(posBarNow()), t0 = selTrack(), tracks = S.tracks.map((_, i) => i).filter((i) => devOn(i));
-    const trackItem = (t) => ({ label: "Track " + devNum(t) + ": " + S.tracks[t].name, sub: clipChangeItems(t, bar) });
+    const bar2 = Math.floor(posBarNow()), t0 = selTrack(), tracks = S.tracks.map((_, i) => i).filter((i) => devOn(i));
+    const trackItem = (t) => ({ label: "Track " + devNum(t) + ": " + S.tracks[t].name, sub: clipChangeItems(t, bar2) });
     showMenu(x, y, [
-      { label: devNm() + " clip change at bar " + (bar + 1) + " (playhead)", disabled: true },
+      { label: devNm() + " clip change at bar " + (bar2 + 1) + " (playhead)", disabled: true },
       ...t0 != null ? [
         { label: "Track " + devNum(t0) + ": " + S.tracks[t0].name, disabled: true },
-        ...clipChangeItems(t0, bar),
+        ...clipChangeItems(t0, bar2),
         "-",
         { label: "Another track", sub: tracks.filter((t) => t !== t0).map(trackItem) }
       ] : tracks.map(trackItem)
@@ -16318,13 +16440,13 @@ input[type='number'] {
       toast("Select a clip on the track first, or press K to choose a track");
       return;
     }
-    const bar = Math.floor(posBarNow()), f = cmFlipTarget(t, bar);
+    const bar2 = Math.floor(posBarNow()), f = cmFlipTarget(t, bar2);
     if (f == null) {
       toast("Track " + devNum(t) + " has one clip set up. Set up more in Your " + devNm() + " clips.");
       return;
     }
-    setClipMark(t, bar, f);
-    toast("Bar " + (bar + 1) + ": track " + devNum(t) + " → " + cmLabel(t, f));
+    setClipMark(t, bar2, f);
+    toast("Bar " + (bar2 + 1) + ": track " + devNum(t) + " → " + cmLabel(t, f));
   }
 
   // src/song/import.js
@@ -16634,7 +16756,7 @@ input[type='number'] {
             pushUndo();
             if (tempoCk && tempoCk.checked && tempo.tempo) S.bpm = clamp(tempo.tempo, 40, 240);
             const place = dest.value === "place";
-            const bar = Math.max(0, Math.floor(posBarNow()));
+            const bar2 = Math.max(0, Math.floor(posBarNow()));
             const rot = { drum: 0, tone: 0 };
             let last = null, placed = 0;
             pick2.forEach((p) => {
@@ -16652,11 +16774,11 @@ input[type='number'] {
               }
               if (t == null) {
                 const free = pool.filter(
-                  (i) => !S.clips.some((c) => c.t === i && c.start < bar + r.bars && c.start + c.len > bar)
+                  (i) => !S.clips.some((c) => c.t === i && c.start < bar2 + r.bars && c.start + c.len > bar2)
                 );
                 t = (free.length ? free : pool)[rot[p.type]++ % (free.length ? free.length : pool.length)];
               }
-              last = placeClip(t, bar, pid, r.bars);
+              last = placeClip(t, bar2, pid, r.bars);
               placed++;
             });
             close(true);
@@ -16675,7 +16797,7 @@ input[type='number'] {
             hooks.syncControls();
             scheduleSave();
             toast(
-              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar + 1) : "Added " + pick2.length + " to the Project library. Drag them onto a track."
+              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar2 + 1) : "Added " + pick2.length + " to the Project library. Drag them onto a track."
             );
           }
         },
@@ -16929,24 +17051,24 @@ input[type='number'] {
       splits: cl.filter((c) => c.start < a || Number.isFinite(b) && c.start + c.len > b).length
     };
   }
-  function splitAtBar(bar, set) {
+  function splitAtBar(bar2, set) {
     for (const c of S.clips.slice()) {
-      if (!set.has(c.t) || !(bar > c.start && bar < c.start + c.len)) continue;
+      if (!set.has(c.t) || !(bar2 > c.start && bar2 < c.start + c.len)) continue;
       const orig = { ...c }, end = c.start + c.len;
       S.clips.push(
         applyShape(
           {
             ...c,
             id: "c" + S.nextId++,
-            start: bar,
-            len: q16(end - bar),
-            off: wrapOff(c.off + (bar - c.start), loopLen(c))
+            start: bar2,
+            len: q16(end - bar2),
+            off: wrapOff(c.off + (bar2 - c.start), loopLen(c))
           },
-          shapeSlice(orig, bar, end)
+          shapeSlice(orig, bar2, end)
         )
       );
-      c.len = q16(bar - c.start);
-      applyShape(c, shapeSlice(orig, orig.start, bar));
+      c.len = q16(bar2 - c.start);
+      applyShape(c, shapeSlice(orig, orig.start, bar2));
     }
   }
   function mergeClips() {
@@ -17351,16 +17473,16 @@ input[type='number'] {
     S.cursor = m.bar;
     hooks.updPlayhead(m.bar);
   }
-  function addMarker(bar) {
+  function addMarker(bar2) {
     pushUndo();
-    const ex = S.markers.findIndex((m) => m.bar === bar);
+    const ex = S.markers.findIndex((m) => m.bar === bar2);
     if (ex < 0) {
-      S.markers.push({ bar, name: "Section " + (S.markers.length + 1) });
+      S.markers.push({ bar: bar2, name: "Section " + (S.markers.length + 1) });
       S.markers.sort((a, b) => a.bar - b.bar);
     }
     scheduleSave();
     renderArr();
-    renameMarker(S.markers.findIndex((m) => m.bar === bar));
+    renameMarker(S.markers.findIndex((m) => m.bar === bar2));
   }
   function renameMarker(i) {
     const m = S.markers[i];
@@ -18414,12 +18536,12 @@ input[type='number'] {
       { label: "Open in editor", action: () => selectClip(c.id) },
       ...clipHasBlocks(c) && UI.ctxBar != null ? (() => {
         const { a, b } = clipBlock(c, UI.ctxBar);
-        const bar = UI.ctxBar;
+        const bar2 = UI.ctxBar;
         return [
           {
             label: "Edit " + blkLabel(a, b) + " on its own",
             hint: "Double-click",
-            action: () => editBlock(c, bar)
+            action: () => editBlock(c, bar2)
           }
         ];
       })() : [],
@@ -18599,7 +18721,7 @@ input[type='number'] {
       { label: "Delete clip", danger: true, hint: "Del", action: () => deleteClipById(c.id) }
     ];
   }
-  function libSubmenu(t, bar) {
+  function libSubmenu(t, bar2) {
     const type = S.tracks[t].type;
     const saved = [...FAVS].map((k) => k.split(":")).filter(([kind, id]) => kind === "fac" && facById(id) && facById(id).type === type).slice(0, 10);
     const items = [
@@ -18607,7 +18729,7 @@ input[type='number'] {
         label: "Random " + (type === "drum" ? "drum" : "tone") + " pattern",
         action: () => {
           const f = randomLibPattern(type);
-          if (f) placeSrc({ kind: "fac", id: f.id }, t, bar);
+          if (f) placeSrc({ kind: "fac", id: f.id }, t, bar2);
         }
       }
     ];
@@ -18617,14 +18739,14 @@ input[type='number'] {
         label: "Random " + role.toLowerCase(),
         action: () => {
           const f = randomLibPattern(type, (x) => x.role === role);
-          if (f) placeSrc({ kind: "fac", id: f.id }, t, bar);
+          if (f) placeSrc({ kind: "fac", id: f.id }, t, bar2);
         }
       })
     );
     if (saved.length) {
       items.push("-");
       saved.forEach(
-        ([kind, id]) => items.push({ label: "★ " + facById(id).name, action: () => placeSrc({ kind: "fac", id }, t, bar) })
+        ([kind, id]) => items.push({ label: "★ " + facById(id).name, action: () => placeSrc({ kind: "fac", id }, t, bar2) })
       );
     }
     items.push("-", {
@@ -18638,22 +18760,22 @@ input[type='number'] {
     });
     return items;
   }
-  function laneMenuItems(t, bar) {
+  function laneMenuItems(t, bar2) {
     const tr = S.tracks[t];
     return [
-      { label: "New pattern here", action: () => newPatternAt(t, bar) },
-      { label: "Paste clip here", disabled: !CLIPB, action: () => pasteClip(t, bar) },
-      { label: "Add from library", sub: libSubmenu(t, bar) },
+      { label: "New pattern here", action: () => newPatternAt(t, bar2) },
+      { label: "Paste clip here", disabled: !CLIPB, action: () => pasteClip(t, bar2) },
+      { label: "Add from library", sub: libSubmenu(t, bar2) },
       devOn(t) ? {
-        label: "Insert " + devNm() + " clip change at bar " + (Math.floor(bar) + 1),
-        sub: clipChangeItems(t, bar)
+        label: "Insert " + devNm() + " clip change at bar " + (Math.floor(bar2) + 1),
+        sub: clipChangeItems(t, bar2)
       } : null,
       "-",
-      { label: "Play from here", action: () => playFrom(bar) },
-      { label: "Set playhead here", action: () => setCursor(bar) },
-      { label: "Loop starts here", action: () => setLoop(bar, Math.max(bar + 1, S.loop.end)) },
-      { label: "Loop ends after this bar", action: () => setLoop(Math.min(S.loop.start, bar), bar + 1) },
-      { label: "Loop 4 bars from here", action: () => setLoop(bar, bar + 4) },
+      { label: "Play from here", action: () => playFrom(bar2) },
+      { label: "Set playhead here", action: () => setCursor(bar2) },
+      { label: "Loop starts here", action: () => setLoop(bar2, Math.max(bar2 + 1, S.loop.end)) },
+      { label: "Loop ends after this bar", action: () => setLoop(Math.min(S.loop.start, bar2), bar2 + 1) },
+      { label: "Loop 4 bars from here", action: () => setLoop(bar2, bar2 + 4) },
       "-",
       {
         label: tr.mute ? "Unmute track" : "Mute track",
@@ -18681,24 +18803,24 @@ input[type='number'] {
       }
     ];
   }
-  function rulerMenuItems(bar) {
-    const mi = S.markers.map((m, i) => i).filter((i) => S.markers[i].bar <= bar).pop();
+  function rulerMenuItems(bar2) {
+    const mi = S.markers.map((m, i) => i).filter((i) => S.markers[i].bar <= bar2).pop();
     return [
-      { label: "Add marker here", action: () => addMarker(bar) },
-      { label: "Transpose from here…", action: () => openXpose({ scope: "from", fromBar: bar }) },
-      { label: "Range tools (loop range)", sub: rangeMenuItems(Math.floor(bar)) },
+      { label: "Add marker here", action: () => addMarker(bar2) },
+      { label: "Transpose from here…", action: () => openXpose({ scope: "from", fromBar: bar2 }) },
+      { label: "Range tools (loop range)", sub: rangeMenuItems(Math.floor(bar2)) },
       mi !== void 0 ? { label: "Loop section “" + S.markers[mi].name + "”", action: () => loopSection(mi) } : null,
       "-",
-      { label: "Move playhead here", action: () => setCursor(bar) },
-      { label: "Play from here", action: () => playFrom(bar) },
+      { label: "Move playhead here", action: () => setCursor(bar2) },
+      { label: "Play from here", action: () => playFrom(bar2) },
       "-",
-      { label: "Loop starts here", action: () => setLoop(bar, Math.max(bar + 1, S.loop.end)) },
-      { label: "Loop ends after this bar", action: () => setLoop(Math.min(S.loop.start, bar), bar + 1) },
+      { label: "Loop starts here", action: () => setLoop(bar2, Math.max(bar2 + 1, S.loop.end)) },
+      { label: "Loop ends after this bar", action: () => setLoop(Math.min(S.loop.start, bar2), bar2 + 1) },
       {
         label: "Loop from here",
         sub: [1, 2, 4, 8, 16, 32].map((n) => ({
           label: n + (n === 1 ? " bar" : " bars"),
-          action: () => setLoop(bar, bar + n)
+          action: () => setLoop(bar2, bar2 + n)
         }))
       },
       { label: "Loop the whole song", action: () => setLoop(0, Math.max(1, Math.ceil(songEnd()))) },
@@ -18984,8 +19106,7 @@ input[type='number'] {
     latin: "Latin and afro",
     synth: "Synthwave",
     pop: "Pop and indie",
-    ambient: "Ambient and cinematic",
-    rock: "Rock and punk"
+    ambient: "Ambient and cinematic"
   };
   var GENRE_ORDER = Object.keys(GENRE_LABELS);
   Object.keys(GENRE_LABELS).forEach((g) => {
@@ -19013,7 +19134,8 @@ input[type='number'] {
     ["Bass", "Bass"],
     ["Chords", "Chords"],
     ["Pad", "Pads"],
-    ["Lead", "Leads"]
+    ["Lead", "Leads"],
+    ["Acid", "Acid lines"]
   ];
   var SORT_OPTS = [
     ["default", "Library order"],
@@ -19494,8 +19616,8 @@ input[type='number'] {
     const m = metaOf(src);
     if (!m) return;
     const t = trackFor(m.type);
-    const bar = Math.floor(S.cursor);
-    placeSrc(src, t, bar);
+    const bar2 = Math.floor(S.cursor);
+    placeSrc(src, t, bar2);
   }
 
   // src/song/layout.js
@@ -19653,17 +19775,17 @@ input[type='number'] {
       const lane = e.target.closest(".lane");
       if (lane) {
         const t = +lane.dataset.t;
-        const bar = barFromX(e.clientX);
+        const bar2 = barFromX(e.clientX);
         if (e.altKey && devOn(t)) {
           e.preventDefault();
           showMenu(e.clientX, e.clientY, [
-            { label: "Track " + devNum(t) + ", bar " + (Math.max(0, bar) + 1), disabled: true },
-            ...clipChangeItems(t, Math.max(0, bar))
+            { label: "Track " + devNum(t) + ", bar " + (Math.max(0, bar2) + 1), disabled: true },
+            ...clipChangeItems(t, Math.max(0, bar2))
           ]);
           return;
         }
         if (UI.arm) {
-          placeSrc(UI.arm, t, bar);
+          placeSrc(UI.arm, t, bar2);
           return;
         }
         if (UI.sel) {
@@ -19688,12 +19810,12 @@ input[type='number'] {
       const lane = e.target.closest(".lane");
       if (!lane) return;
       const t = +lane.dataset.t;
-      const bar = Math.max(0, barFromX(e.clientX));
+      const bar2 = Math.max(0, barFromX(e.clientX));
       pushUndo();
       const pid = addPattern(S.tracks[t].type, S.tracks[t].type === "drum" ? "New beat" : "New part", 1, [], {
         key: null
       });
-      const c = placeClip(t, bar, pid, 1);
+      const c = placeClip(t, bar2, pid, 1);
       selectClip(c.id);
       renderArr();
       scheduleSave();
@@ -21522,7 +21644,7 @@ input[type='number'] {
       });
     }
   }
-  function placeSrc(src, t, bar) {
+  function placeSrc(src, t, bar2) {
     const meta = metaOf(src);
     if (!meta) return false;
     if (S.tracks[t].type !== meta.type) {
@@ -21531,7 +21653,7 @@ input[type='number'] {
     }
     pushUndo();
     const pid = src.kind === "fac" || src.kind === "user" ? instFactory(meta) : src.id;
-    const c = placeClip(t, Math.max(0, bar), pid, meta.bars);
+    const c = placeClip(t, Math.max(0, bar2), pid, meta.bars);
     selectClip(c.id);
     renderArr();
     scheduleSave();
@@ -21684,10 +21806,10 @@ input[type='number'] {
             id: "thClip" + i,
             onclick: (ev) => {
               ev.stopPropagation();
-              const r = ev.currentTarget.getBoundingClientRect(), bar = Math.floor(TR.playing && TR.mode === "song" ? posBarNow() : S.cursor);
+              const r = ev.currentTarget.getBoundingClientRect(), bar2 = Math.floor(TR.playing && TR.mode === "song" ? posBarNow() : S.cursor);
               showMenu(r.left, r.bottom + 2, [
-                { label: "Clip change at bar " + (bar + 1) + " (playhead)", disabled: true },
-                ...clipChangeItems(i, bar)
+                { label: "Clip change at bar " + (bar2 + 1) + " (playhead)", disabled: true },
+                ...clipChangeItems(i, bar2)
               ]);
             }
           });
@@ -21911,11 +22033,11 @@ input[type='number'] {
     const r = $("#rows").getBoundingClientRect();
     return clamp(Math.floor((clientY - r.top) / ROWH), 0, 7);
   }
-  function showGhost(row, bar, len, ok) {
+  function showGhost(row, bar2, len, ok) {
     const g = $("#ghost");
     if (!g) return;
     g.style.display = "block";
-    g.style.left = HEAD + bar * bw + "px";
+    g.style.left = HEAD + bar2 * bw + "px";
     g.style.width = len * bw - 2 + "px";
     g.style.top = row * ROWH + 4 + (row >= 3 ? 3 : 0) + "px";
     g.style.height = ROWH - 8 + "px";
@@ -22032,25 +22154,8 @@ input[type='number'] {
   });
   document.addEventListener("fullscreenchange", syncFullBtn);
 
-  // src/core/random.js
-  var mulberry = (a) => () => {
-    a |= 0;
-    a = a + 1831565813 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-  var hashStr = (s) => {
-    let h = 2166136261;
-    for (let i = 0; i < s.length; i++) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  };
-
   // src/library/pools.js
-  var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck"];
+  var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck", "acid"];
   var LV_POOLCACHE = {};
   function lvGenreOf(st) {
     if (st._genre) return st._genre;
@@ -22112,6 +22217,7 @@ input[type='number'] {
     if (LV_POOLCACHE[key]) return LV_POOLCACHE[key];
     const g = lvGenreOf(st), bpm = st.bpm[2];
     const hand = [...st.pools[pool] || [], ...st.more && st.more[pool] || []];
+    if (pool === "bass" && st.id === "acidtechno") hand.push(...lvPool(st, "acid"));
     const tone2 = TONE_POOLS.includes(pool);
     const lib = FAC.filter(
       (f) => f.genre === g && f.pool === pool && (!f.styles || f.styles.includes(st.id) || tone2 && !(f.notFor && f.notFor.includes(st.id))) && (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone2 ? 30 : 24))
@@ -22676,38 +22782,6 @@ input[type='number'] {
         "Sub"
       ),
       T2(
-        "rock",
-        "song",
-        "Rock",
-        "Straight-ahead drums, driving bass and open chords.",
-        [100, 140, 120],
-        50,
-        "major",
-        [
-          [4, "E: the classic rock key."],
-          [9, "A: open and strong."],
-          [2, "D: warm."]
-        ],
-        ["Keep the drums steady and let the bass follow the kick.", "Use a crash on the first beat of each new section."],
-        "Bass"
-      ),
-      T2(
-        "punk",
-        "song",
-        "Punk",
-        "Fast and raw.",
-        [150, 190, 170],
-        50,
-        "major",
-        [
-          [4, "E: raw and open."],
-          [9, "A: punchy."],
-          [2, "D: sharp."]
-        ],
-        ["Fast, straight drums and driving bass. Keep it simple.", "Short sections with big fills keep the energy."],
-        "Bass"
-      ),
-      T2(
         "phonk",
         "hh",
         "Phonk",
@@ -22885,7 +22959,7 @@ input[type='number'] {
         for (let b = fe; b <= sec.bars; b += fe) if (b < sec.bars || next) set.add(b - 1);
         if (sec.bars % fe !== 0 && sec.bars >= 4 && next) set.add(sec.bars - 1);
       }
-      [...set].filter((x) => x > 0).sort((a, b) => a - b).forEach((bar) => sec.fills.push({ bar, id: picks.fill[fillN++ % picks.fill.length] }));
+      [...set].filter((x) => x > 0).sort((a, b) => a - b).forEach((bar2) => sec.fills.push({ bar: bar2, id: picks.fill[fillN++ % picks.fill.length] }));
     });
     if (w.fills && w.complexity >= 2 && (DEV === "101" || w.layers[2] !== false) && picks.build && picks.build.length) {
       let bn = 0;
@@ -24723,7 +24797,7 @@ input[type='number'] {
       if (fx) sc.fx = fx;
       scenes.push(sc);
     }
-    if (S.clipAuto) {
+    {
       for (const t of [3, 4, 5, 6, 7]) {
         if (!devOn(t)) continue;
         const mm = cmFix()[t], own = patType({ pool: TRACK_POOLS[t] });
@@ -24733,7 +24807,7 @@ input[type='number'] {
           if (/ B$/.test(sc.name) && sc.cells[t]) {
             const cb = facById(sets.B[4]), pB = cb && lvProg(cb);
             const id = take(CT_POOL[alt], (f) => !pB || !lvProg(f) || lvProg(f) === pB && f.bars === cb.bars);
-            if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play };
+            if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
           }
         });
       }
@@ -24761,14 +24835,14 @@ input[type='number'] {
     ["rest", "Rests every 4th bar"],
     ["four", "Only every 4th bar"]
   ];
-  function lvPlayOn(p, bar, bars) {
+  function lvPlayOn(p, bar2, bars) {
     if (!p || p === "all" || bars < 2) return true;
-    if (p === "h1") return bar < bars / 2;
-    if (p === "h2") return bar >= bars / 2;
-    if (p === "alt") return bars < 4 ? bar % 2 === 0 : Math.floor(bar / 2) % 2 === 0;
-    if (p === "odd") return bar % 2 === 0;
-    if (p === "rest") return bar % 4 !== 3;
-    if (p === "four") return bar % 4 === 3 || bars < 4 && bar === bars - 1;
+    if (p === "h1") return bar2 < bars / 2;
+    if (p === "h2") return bar2 >= bars / 2;
+    if (p === "alt") return bars < 4 ? bar2 % 2 === 0 : Math.floor(bar2 / 2) % 2 === 0;
+    if (p === "odd") return bar2 % 2 === 0;
+    if (p === "rest") return bar2 % 4 !== 3;
+    if (p === "four") return bar2 % 4 === 3 || bars < 4 && bar2 === bars - 1;
     return true;
   }
   function lvMaskOff(t, tick) {
@@ -27039,14 +27113,14 @@ input[type='number'] {
     saveLive();
   }
   function liveRenderCtlBar() {
-    const bar = $("#lvCtlBar");
-    if (!bar) return;
-    bar.textContent = "";
+    const bar2 = $("#lvCtlBar");
+    if (!bar2) return;
+    bar2.textContent = "";
     if (!CTL.inp) {
-      bar.hidden = true;
+      bar2.hidden = true;
       return;
     }
-    bar.hidden = false;
+    bar2.hidden = false;
     const c = LV.ctl, b = c.base, z = c.zones, solo = c.soloT >= 0 ? S.tracks[c.soloT].name : "off";
     const parts2 = [ctlPreset()[1]];
     if (z === "raven")
@@ -27057,7 +27131,7 @@ input[type='number'] {
       );
     else if (z === "keysolo") parts2.push("key " + noteLbl(b) + "–" + noteLbl(b + 11), "solo on " + solo + " elsewhere");
     else parts2.push("solo on " + solo);
-    bar.append(el("b", {}, "🎹 "), parts2.join(" · "), el("span", { class: "ctlAct", id: "ctlAct" }, ""));
+    bar2.append(el("b", {}, "🎹 "), parts2.join(" · "), el("span", { class: "ctlAct", id: "ctlAct" }, ""));
   }
   function ctlKeyboard() {
     const c = LV.ctl, wrap = el("div", { class: "ctlKb" }), lo = c.low, hi = c.low + c.keys - 1, blk = [1, 3, 6, 8, 10];
@@ -27300,25 +27374,17 @@ input[type='number'] {
     const D2 = oneKit() ? {} : { 1: "full" }, keys2 = has(cells, 5) ? { 5: "full" } : { 4: "sus" };
     const hit = { bars: 1, ids: loop(cells, { 0: "hit", 3: "roots" }), last: true };
     const recipes = {
-      "wind down": [
-        { 0: "full", ...D2, 2: "full", 3: "full", 4: "full", 5: "full" },
-        { 0: "thin", ...D2, 3: "roots", 4: "hits", 5: "full" },
-        { ...keys2, 1: "full" }
-      ],
-      "breakdown and hit": [
-        { 0: "nosn", ...D2, 3: "full", 4: "full", 5: "full" },
-        { 1: "full", 2: "full", 4: "hits", 5: "sus" }
-      ],
-      "fade away": [
-        { 0: "full", ...D2, 3: "full", 4: "full", 5: "full", 7: "full" },
-        { 1: "full", 3: "roots", 4: "full", 5: "full" },
-        { ...keys2 }
-      ]
+      "cut to the hit": [],
+      "thin out and hit": [{ 0: "thin", ...D2, 3: "roots", 5: "sus" }],
+      "breakdown and hit": [{ 1: "full", 2: "full", 4: "hits", 5: "sus" }],
+      "fade away": [{ ...keys2, 1: "full", 3: "roots" }]
     };
-    const name = pick(Object.keys(recipes));
-    const loops = recipes[name].map((spec) => ({ bars: 2, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length);
-    if (name !== "fade away" && Object.keys(hit.ids).length) loops.push(hit);
-    return { name, loops, fade: name === "fade away" };
+    const names = Object.keys(recipes).filter((n) => n !== "cut to the hit" || Object.keys(hit.ids).length);
+    const name = pick(names);
+    const fade = name === "fade away";
+    const loops = recipes[name].map((spec) => ({ bars: fade ? 2 : 1, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length);
+    if (!fade && Object.keys(hit.ids).length) loops.push(hit);
+    return { name, loops, fade };
   }
   function liveJamStart(now) {
     if (lvOn()) return;
@@ -27369,7 +27435,7 @@ input[type='number'] {
       liveStop();
       return;
     }
-    const at2 = lvBoundary(2);
+    const at2 = lvBoundary(1);
     LV.cues = LV.cues.filter((c) => !["scene", "swap", "fill", "guest", "gap", "thin", "bov", "stop"].includes(c.type));
     LV.auto = false;
     LV.jam = { kind: "out", name, loops, i: -1, next: at2, fade };
@@ -27462,7 +27528,7 @@ input[type='number'] {
     const v = lvTop(t);
     return v ? v.f.id : null;
   });
-  var lvEmute = (t) => LV_PRI.indexOf(t) >= LV.energy;
+  var lvEmute = (t) => LV_PRI.indexOf(t) >= LV.energy || !!LV.blend && S.tracks[t].type === "tone";
   var lvTarget = (t) => LV.mute[t] || lvEmute(t) ? 0 : 1;
   function lvApplyGain(tick) {
     for (let t = 0; t < 8; t++) {
@@ -27485,7 +27551,6 @@ input[type='number'] {
   function liveReplace(t, id, tick, fade, entry) {
     const f = facById(id);
     if (!f) return;
-    if (S.clipAuto) autoClip(t, f, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
     LV.voices[t] = [];
     const ent = t === 5 ? entry : Math.min(entry, 8);
     LV.voices[t].push({
@@ -27521,18 +27586,25 @@ input[type='number'] {
     LV.bars.set(tick / 32, snap);
     if (LV.bars.size > 48) LV.bars.delete(LV.bars.keys().next().value);
   }
+  var LV_RCLIP = {};
   function lvCellClip(t, cell, time) {
     if (!devOn(t)) return;
-    if (cell && cell.clip != null && cell.clip < cmFix()[t].n) {
-      CLIPPIN[t] = cell.clip;
-      if (PCLAST[t] !== cell.clip) sendClip(t, cell.clip, time);
+    const n = cmFix()[t].n;
+    let k = cell ? cell.clip : null;
+    if (k === "random") {
+      const cur = PCLAST[t];
+      k = n > 1 ? Math.floor(Math.random() * n) : null;
+      if (k != null && k === cur) k = (k + 1 + Math.floor(Math.random() * (n - 1))) % n;
+      if (k != null) LV_RCLIP[LV.scenes.indexOf(LV.scenes.find((s) => s.cells[t] === cell)) + ":" + t] = k;
+    }
+    if (k != null && k >= 0 && k < n) {
+      CLIPPIN[t] = k;
+      if (PCLAST[t] !== k) sendClip(t, k, time);
     } else if (CLIPPIN[t] != null) {
       delete CLIPPIN[t];
       delete PCLAST[t];
-      if (cell) {
-        const f = facById(cell.id);
-        if (f) autoClip(t, f, time);
-      }
+      const f = cell && facById(cell.id), h = f ? clipFor(t, patType(f)) : -1;
+      if (h >= 0) sendClip(t, h, time);
     }
   }
   function liveScene(idx, tick, hard) {
@@ -27544,6 +27616,10 @@ input[type='number'] {
     LV.gap = null;
     LV.thin = null;
     LV.bov = null;
+    if (LV.blend) {
+      LV.blend = null;
+      lvApplyGain(tick);
+    }
     LV.cues = LV.cues.filter((c) => c.type !== "guestOut" && !(c.type === "mute" && c.auto));
     if (hard) {
       lvSlam(AU.ctx ? AU.ctx.currentTime : 0, (a) => a.tag !== "q");
@@ -27673,6 +27749,16 @@ input[type='number'] {
         LV.mute[t] = c.on;
       });
       lvApplyGain(tick);
+      lvLog(tick);
+    } else if (c.type === "blend") {
+      LV.blend = { tick };
+      lvApplyGain(tick);
+      lvHistMark(tick, "New patterns");
+      lvLog(tick);
+    } else if (c.type === "blendDrums") {
+      const sc = LV.scenes[0];
+      for (let t = 0; t < 8; t++)
+        if (S.tracks[t].type !== "tone" && sc && sc.cells[t]) liveReplace(t, sc.cells[t].id, tick, 0, 0);
       lvLog(tick);
     } else if (c.type === "energy") {
       LV.energy = c.n;
@@ -28408,12 +28494,13 @@ input[type='number'] {
             const cc = sc.cells[ti];
             if (!cc) return;
             if (e.target.value === "") delete cc.clip;
-            else cc.clip = +e.target.value;
+            else cc.clip = e.target.value === "random" ? "random" : +e.target.value;
             save3();
             if (lvOn() && LV.cur === i) lvCellClip(ti, cc, AU.ctx.currentTime + 0.05);
           }
         },
-        el("option", { value: "" }, S.clipAuto ? "Clip: auto" : "Clip: as is")
+        el("option", { value: "" }, "Clip: as is"),
+        el("option", { value: "random", selected: !!c && c.clip === "random" }, "Clip: random")
       );
       for (let k = 0; k < mm.n; k++) cl.append(el("option", { value: k, selected: c && c.clip === k }, cmLabel(ti, k)));
       parts2.append(
@@ -28853,6 +28940,19 @@ input[type='number'] {
     if (b) b.value = LV.bpm;
     liveStatus(lvTickF());
   }
+  function lvBlendIn() {
+    LV.jam = null;
+    LV.cues = LV.cues.filter(
+      (c) => !["scene", "gap", "thin", "bov", "swap", "guest", "blend", "blendDrums"].includes(c.type) && !(c.type === "fill" && c.auto)
+    );
+    const t0 = lvBoundary(1), bars = 2 + Math.floor(Math.random() * 5), end = t0 + bars * 32;
+    LV.cues.push({ type: "blend", tick: t0 });
+    LV.cues.push({ type: "blendDrums", tick: t0 + Math.max(1, Math.floor(bars / 2)) * 32 });
+    LV.cues.push({ type: "scene", idx: 0, tick: end });
+    lvSortCues();
+    LV.ver++;
+    return bars;
+  }
 
   // src/live/moves.js
   var LV_TONES = [3, 4, 5, 6, 7];
@@ -29040,7 +29140,7 @@ input[type='number'] {
       toast("Press Start Jam first");
       return;
     }
-    const beat = Math.ceil(TR.tick / 8) * 8, bar = Math.ceil(TR.tick / 32) * 32;
+    const beat = Math.ceil(TR.tick / 8) * 8, bar2 = Math.ceil(TR.tick / 32) * 32;
     if (kind === "wash") {
       lvMove({
         id: "qwash",
@@ -29051,8 +29151,8 @@ input[type='number'] {
         from: "rest",
         to: 110,
         curve: "exp",
-        start: bar,
-        end: bar + 64
+        start: bar2,
+        end: bar2 + 64
       });
       toast("Reverb wash over 2 bars");
     } else if (kind === "throw") {
@@ -29079,8 +29179,8 @@ input[type='number'] {
         from: lvFilterAway(0.85),
         to: "rest",
         curve: "exp",
-        start: bar,
-        end: bar + 32
+        start: bar2,
+        end: bar2 + 32
       });
       toast("Filter dip for 1 bar");
     } else if (kind === "pump") {
@@ -29301,8 +29401,107 @@ input[type='number'] {
         },
         "＋ Save as scene"
       ),
-      sel("Loops", reps),
       sel("Style", styleSel),
+      sel("Key", el("span", { class: "lvsw" }, keySel, modeSel)),
+      el("span", { class: "lvKeyRec", id: "lvKeyRec", "aria-label": "Suggested keys for this style" }),
+      el(
+        "span",
+        { class: "lvf" },
+        "BPM",
+        el("button", { class: "btn sm", onclick: () => liveBpm(-1), title: "Slower" }, "−"),
+        bpm,
+        el("button", { class: "btn sm", onclick: () => liveBpm(1), title: "Faster" }, "+"),
+        el("button", { class: "btn sm", onclick: liveTap, title: "Tap the tempo" }, "Tap")
+      ),
+      el("span", { class: "lvf" }, "Swing", sw, el("b", { id: "lvSwV", class: "lvSwV" }, LV.swing + "%")),
+      el(
+        "button",
+        {
+          class: "btn",
+          id: "lvNew",
+          onclick: () => {
+            liveNewSet();
+            if (lvOn()) {
+              const bars = lvBlendIn();
+              toast("New patterns: down to the drums, the new set comes in over " + bars + " bars");
+            } else toast("New set built from " + lvStyle().name);
+            liveRender();
+          },
+          title: "Build a fresh set of scenes and patterns in this style"
+        },
+        "🎲 New patterns"
+      ),
+      el("span", { class: "hint", id: "lvMidiSt" }, ""),
+      /* tools opened from the Live menu: kept here hidden so the menu, shortcuts and Fullscreen label find them */
+      el(
+        "span",
+        { class: "lvTools", hidden: true },
+        el(
+          "button",
+          {
+            class: "btn",
+            id: "lvMidi",
+            onclick: async () => {
+              await hooks.suAutoConnect();
+              liveRender();
+            },
+            title: "Connect to the MC-707 over USB MIDI"
+          },
+          "Connect MC-707"
+        ),
+        el(
+          "button",
+          {
+            class: "btn",
+            id: "lvGrab",
+            onclick: (ev) => hooks.grabOpen(ev.currentTarget),
+            title: "Sample grabber: record a few bars of one track to a WAV"
+          },
+          "◉ Grab sample"
+        ),
+        el(
+          "button",
+          {
+            class: "btn",
+            id: "lvCapture",
+            onclick: hooks.liveCapture,
+            title: "Turn what you just played into an arrangement in Song Mode"
+          },
+          "⏺ Capture to Song"
+        ),
+        el(
+          "button",
+          { class: "btn", id: "lvFull", onclick: toggleFull, title: "Fill the whole screen (F11)" },
+          "⛶ Fullscreen"
+        ),
+        el(
+          "button",
+          {
+            class: "btn",
+            onclick: () => clipMapOpen(),
+            title: "Tell the app what sound each MC-707 clip holds, so tracks can switch sounds"
+          },
+          "▦ Clips"
+        ),
+        el(
+          "button",
+          {
+            class: "btn",
+            id: "lvPadSet",
+            onclick: () => {
+              const d = $("#lvSetDet");
+              d.open = true;
+              d.scrollIntoView({ block: "nearest" });
+            }
+          },
+          "Mapping"
+        )
+      )
+    );
+    const playOpts = el(
+      "div",
+      { class: "lvPlayOpts" },
+      sel("Loops", reps),
       sel(
         "Patterns",
         el(
@@ -29326,18 +29525,6 @@ input[type='number'] {
           el("option", { value: "classic" }, "Classic")
         )
       ),
-      sel("Key", el("span", { class: "lvsw" }, keySel, modeSel)),
-      el("span", { class: "lvKeyRec", id: "lvKeyRec", "aria-label": "Suggested keys for this style" }),
-      el(
-        "span",
-        { class: "lvf" },
-        "BPM",
-        el("button", { class: "btn sm", onclick: () => liveBpm(-1), title: "Slower" }, "−"),
-        bpm,
-        el("button", { class: "btn sm", onclick: () => liveBpm(1), title: "Faster" }, "+"),
-        el("button", { class: "btn sm", onclick: liveTap, title: "Tap the tempo" }, "Tap")
-      ),
-      el("span", { class: "lvf" }, "Swing", sw, el("b", { id: "lvSwV", class: "lvSwV" }, LV.swing + "%")),
       sel("Launch on", qs),
       sel("Entry", es),
       el(
@@ -29368,69 +29555,6 @@ input[type='number'] {
         "Preview sound"
       ),
       el(
-        "button",
-        {
-          class: "btn",
-          id: "lvNew",
-          onclick: () => {
-            liveNewSet();
-            if (lvOn()) stopPlay();
-            liveRender();
-            toast("New set built from " + lvStyle().name);
-          },
-          title: "Build a fresh set of scenes and patterns in this style"
-        },
-        "🎲 New patterns"
-      ),
-      el(
-        "button",
-        {
-          class: "btn",
-          id: "lvMidi",
-          onclick: async () => {
-            await hooks.suAutoConnect();
-            liveRender();
-          },
-          title: "Connect to the MC-707 over USB MIDI"
-        },
-        "Connect MC-707"
-      ),
-      el("span", { class: "hint", id: "lvMidiSt" }, ""),
-      el(
-        "button",
-        {
-          class: "btn",
-          id: "lvGrab",
-          onclick: (ev) => hooks.grabOpen(ev.currentTarget),
-          title: "Sample grabber: record a few bars of one track to a WAV"
-        },
-        "◉ Grab sample"
-      ),
-      el(
-        "button",
-        {
-          class: "btn",
-          id: "lvCapture",
-          onclick: hooks.liveCapture,
-          title: "Turn what you just played into an arrangement in Song Mode"
-        },
-        "⏺ Capture to Song"
-      ),
-      el(
-        "button",
-        { class: "btn", id: "lvFull", onclick: toggleFull, title: "Fill the whole screen (F11)" },
-        "⛶ Fullscreen"
-      ),
-      el(
-        "button",
-        {
-          class: "btn",
-          onclick: () => clipMapOpen(),
-          title: "Tell the app what sound each MC-707 clip holds, so tracks can switch sounds"
-        },
-        "▦ Clips"
-      ),
-      el(
         "label",
         { class: "lvf" },
         "Theme",
@@ -29439,19 +29563,6 @@ input[type='number'] {
           { id: "lvTheme", "aria-label": "Colour theme", onchange: (e) => liveSetTheme(e.target.value) },
           ...Object.entries(LV_THEMES).map(([k, v]) => el("option", { value: k, selected: LV.theme === k }, v.name))
         )
-      ),
-      el(
-        "button",
-        {
-          class: "btn",
-          id: "lvPadSet",
-          onclick: () => {
-            const d = $("#lvSetDet");
-            d.open = true;
-            d.scrollIntoView({ block: "nearest" });
-          }
-        },
-        "Mapping"
       )
     );
     const hero = el(
@@ -29556,11 +29667,7 @@ input[type='number'] {
             saveLive();
           }
         }),
-        el(
-          "div",
-          { class: "hint" },
-          "How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is. Past High is Extreme: every repeat changes, with snare rolls, kick drop-outs and 808 octave flicks. Trap, drill, phonk and Memphis hats roll at any setting."
-        )
+        el("div", { class: "hint" }, "How often the set changes by itself. 0 holds every scene; past High is Extreme.")
       ),
       el(
         "div",
@@ -29669,7 +29776,7 @@ input[type='number'] {
               saveLive();
             }
           }),
-          "Epic builds: resonance, reverb wash, pump and autopan climb into every drop"
+          "Epic builds: resonance, reverb wash and pump climb into every drop"
         ),
         el(
           "div",
@@ -29787,7 +29894,9 @@ input[type='number'] {
     const sets = el(
       "details",
       { class: "lvSet", id: "lvSetDet" },
-      el("summary", {}, "Mapping and settings"),
+      el("summary", {}, "Settings and mapping"),
+      el("h4", {}, "Playback"),
+      playOpts,
       el("div", { id: "lvSetBody" })
     );
     root.append(top, hero, el("div", { class: "lvMain" }, left, fx), sets);
@@ -29957,8 +30066,8 @@ input[type='number'] {
                         if (k < 0) {
                           delete CLIPPIN[i];
                           delete PCLAST[i];
-                          const v = lvTop(i);
-                          if (v) autoClip(i, v.f, AU.ctx ? AU.ctx.currentTime : 0);
+                          const v = lvTop(i), h = v ? clipFor(i, patType(v.f)) : -1;
+                          if (h >= 0) sendClip(i, h, AU.ctx ? AU.ctx.currentTime : 0);
                           return;
                         }
                         ensureAudio();
@@ -30056,9 +30165,9 @@ input[type='number'] {
         }
         const f = facById(id);
         if (!f) continue;
-        const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar = Math.floor((tk - sStart(s)) / 32);
-        const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar % ssc.bars, ssc.bars);
-        const phase = bar % f.bars;
+        const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar2 = Math.floor((tk - sStart(s)) / 32);
+        const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars);
+        const phase = bar2 % f.bars;
         const isFill = ti === 0 && pendFill.some((c) => c.tick <= tk && tk < c.tick + 32);
         const label = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
         row.append(
@@ -33934,13 +34043,13 @@ input[type='number'] {
       e.preventDefault();
       const rc = e.target.closest(".rcells");
       if (rc) {
-        const bar = clamp(Math.floor((e.clientX - rc.getBoundingClientRect().left) / bw), 0, S.bars - 1);
-        showMenu(e.clientX, e.clientY, rulerMenuItems(bar));
+        const bar2 = clamp(Math.floor((e.clientX - rc.getBoundingClientRect().left) / bw), 0, S.bars - 1);
+        showMenu(e.clientX, e.clientY, rulerMenuItems(bar2));
         return;
       }
       const ck2 = e.target.closest(".cmk");
       if (ck2) {
-        const lane2 = ck2.closest(".lane"), t = +lane2.dataset.t, bar = Math.round(parseFloat(ck2.style.left) / bw), mk = cmMarks().find((m) => m.t === t && m.bar === bar);
+        const lane2 = ck2.closest(".lane"), t = +lane2.dataset.t, bar2 = Math.round(parseFloat(ck2.style.left) / bw), mk = cmMarks().find((m) => m.t === t && m.bar === bar2);
         if (mk) showMenu(e.clientX, e.clientY, cmkMenu(mk));
         return;
       }
@@ -33992,297 +34101,6 @@ input[type='number'] {
     });
     $("#bLoopAll").addEventListener("click", () => setLoop(0, Math.max(1, Math.ceil(songEnd()))));
     updLoopUI();
-  }
-
-  // src/ui/mode.js
-  function setMode(m) {
-    if (document.body.dataset.mode === m) return;
-    stopAll();
-    panic(true);
-    closePops();
-    document.body.dataset.mode = m;
-    try {
-      localStorage.setItem("mc707-mode", m);
-    } catch (e) {
-    }
-    $$("#menubar .mtab").forEach((b) => {
-      b.classList.toggle("on", b.dataset.mode === m);
-      b.setAttribute("aria-selected", String(b.dataset.mode === m));
-    });
-    if (m === "live") {
-      liveRender();
-      vizStart();
-    } else {
-      updTransport();
-      renderArr();
-    }
-  }
-
-  // src/ui/menubar.js
-  function initMenubar() {
-    const nav = $("#menubar");
-    if (!nav) return;
-    const go = (id) => () => {
-      const e = $(id);
-      if (e) e.click();
-    };
-    const on = (id) => () => {
-      const e = $(id);
-      return !!(e && e.classList.contains("on"));
-    };
-    const M = [
-      [
-        "File",
-        "",
-        [
-          ["New project", projNew, "Ctrl+N"],
-          ["Open project…", projOpen, "Ctrl+O"],
-          "recent",
-          ["Save", projSave, "Ctrl+S"],
-          ["Save as…", projSaveAs, "Ctrl+Shift+S"],
-          0,
-          ["Saved songs (quick slots)…", go("#bFile")],
-          ["Load demo song", go("#fDemo")],
-          ["Export MIDI (.zip)", go("#fMidi")],
-          0,
-          ["Open project folder", () => projFolder("projects")],
-          ["Open recording folder", () => projFolder("recordings")],
-          ["Choose project folder…", () => projChooseFolder("projects")],
-          ["Choose recording folder…", () => projChooseFolder("recordings")],
-          0,
-          ["Reset autosave and reload", go("#fReset")],
-          0,
-          ["Exit", exitApp]
-        ]
-      ],
-      [
-        "Edit",
-        "song",
-        [
-          ["New pattern or load MIDI…", go("#bNewPat")],
-          0,
-          ["Undo", go("#bUndo"), "Ctrl+Z"],
-          ["Redo", go("#bRedo"), "Ctrl+Shift+Z"],
-          0,
-          ["Transpose…", go("#bXpose")],
-          ["Structure tools…", go("#bStruct")],
-          0,
-          ["Add 8 bars to the end", go("#bAddBars")]
-        ]
-      ],
-      [
-        "Song",
-        "song",
-        [
-          ["Song wizard…", go("#bWiz")],
-          ["Transpose…", go("#bXpose")],
-          ["Structure tools…", go("#bStruct")],
-          0,
-          ["Loop the whole song", go("#bLoopAll")],
-          ["Loop the selected clip", go("#bLoopClip"), "\\"],
-          ["Tap tempo", go("#bTap")]
-        ]
-      ],
-      [
-        "Audio",
-        "song",
-        [
-          ["Record audio", go("#bAudRec"), "R"],
-          ["Audio inputs and settings…", go("#bAudSet")]
-        ]
-      ],
-      [
-        "Live",
-        "live",
-        [
-          ["Start / stop", go("#lvStart"), "Space"],
-          ["Stop at end of phrase", () => liveStopCue()],
-          0,
-          ["Fullscreen", toggleFull, "F11", isFull],
-          ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
-          0,
-          ["Connect MC-707", go("#lvMidi")],
-          ["New patterns", go("#lvNew")],
-          ["Pad and key mapping…", go("#lvPadSet")]
-        ]
-      ],
-      [
-        "Settings",
-        "",
-        [
-          ["Device: MC-707 (8 tracks)", () => setDevice("707"), "", () => DEV === "707"],
-          ["Device: MC-101 (4 tracks)", () => setDevice("101"), "", () => DEV === "101"],
-          ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
-          ["Your MC-707 clips…", () => clipMapOpen()],
-          0,
-          ["Quick setup…", go("#bSetup")],
-          ["MIDI and sound…", go("#bMidi")],
-          ["Track MIDI controls…", go("#bTrackCtl")],
-          ["Audio inputs…", go("#bAudSet")],
-          0,
-          ["Send test note", go("#bTest")],
-          ["All notes off", go("#bPanic")]
-        ]
-      ],
-      [
-        "View",
-        "song",
-        [
-          ["Fullscreen", toggleFull, "F11", isFull],
-          ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
-          0,
-          ["Pattern library", go("#bLibT")],
-          ["Follow the playhead", go("#bFollow"), "", on("#bFollow")],
-          ["Metronome click", go("#bMetro"), "", on("#bMetro")]
-        ]
-      ],
-      ["Help", "", [["Shortcuts and tips", go("#bHelp")]]]
-    ];
-    let openB = null;
-    const closeAll = () => {
-      nav.querySelectorAll(".mdrop").forEach((d) => d.hidden = true);
-      nav.querySelectorAll(".mb").forEach((b) => {
-        b.classList.remove("open");
-        b.setAttribute("aria-expanded", "false");
-      });
-      openB = null;
-    };
-    const show = (b, d) => {
-      closeAll();
-      d.hidden = false;
-      b.classList.add("open");
-      b.setAttribute("aria-expanded", "true");
-      openB = b;
-      d.style.left = b.offsetLeft + "px";
-      d.querySelectorAll(".mi[data-chk]").forEach((m) => {
-        const f = m._chk;
-        m.firstChild.textContent = (f && f() ? "✔ " : "") + m.dataset.label;
-      });
-      if (d._recent) {
-        d._recent.textContent = "";
-        const rl = HOST ? projRecents() : [];
-        if (rl.length) {
-          d._recent.append(
-            el("div", { class: "msep" }),
-            el("div", { class: "hint", style: "padding:2px 10px" }, "Recent")
-          );
-          rl.forEach(
-            (r) => d._recent.append(
-              el(
-                "button",
-                {
-                  class: "mi",
-                  role: "menuitem",
-                  title: r.path,
-                  onclick: (ev) => {
-                    ev.stopPropagation();
-                    closeAll();
-                    projOpenPath(r.path);
-                  }
-                },
-                el("span", {}, r.name),
-                el("small", {}, "")
-              )
-            )
-          );
-          d._recent.append(el("div", { class: "msep" }));
-        }
-      }
-    };
-    nav.append(el("span", { class: "mbrand" }, "MC-707 Toolbox"));
-    M.forEach(([name, modes, items]) => {
-      const b = el("button", { class: "mb", role: "menuitem", "aria-haspopup": "true", "aria-expanded": "false" }, name);
-      const d = el("div", { class: "mdrop", role: "menu", hidden: true });
-      if (modes) {
-        b.dataset.m = modes;
-        d.dataset.m = modes;
-      }
-      items.forEach((it) => {
-        if (!it) {
-          d.append(el("div", { class: "msep" }));
-          return;
-        }
-        if (it === "recent") {
-          d._recent = el("div", {});
-          d.append(d._recent);
-          return;
-        }
-        const [label, fn, key, chk] = it;
-        const mi = el(
-          "button",
-          {
-            class: "mi",
-            role: "menuitem",
-            onclick: (ev) => {
-              ev.stopPropagation();
-              closeAll();
-              try {
-                fn();
-              } catch (e) {
-              }
-            }
-          },
-          el("span", {}, label),
-          el("small", {}, key || "")
-        );
-        if (chk) {
-          mi.dataset.chk = "1";
-          mi.dataset.label = label;
-          mi._chk = chk;
-        }
-        d.append(mi);
-      });
-      b.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        closePops();
-        if (openB === b) closeAll();
-        else show(b, d);
-      });
-      b.addEventListener("mouseenter", () => {
-        if (openB && openB !== b) show(b, d);
-      });
-      nav.append(b, d);
-    });
-    const tabs = el("div", { class: "mtabs", role: "tablist", "aria-label": "Mode" });
-    [
-      ["song", "Song Mode"],
-      ["live", "Live Mode"]
-    ].forEach(
-      ([m, l]) => tabs.append(
-        el(
-          "button",
-          {
-            class: "mtab" + (document.body.dataset.mode === m ? " on" : ""),
-            role: "tab",
-            "data-mode": m,
-            "aria-selected": String(document.body.dataset.mode === m),
-            onclick: () => setMode(m)
-          },
-          l
-        )
-      )
-    );
-    nav.append(el("span", { class: "mproj", "data-m": "song", id: "mProj" }, "Untitled"), tabs);
-    document.addEventListener(
-      "pointerdown",
-      (e) => {
-        if (openB && !e.target.closest("#menubar")) closeAll();
-      },
-      true
-    );
-    addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && openB) closeAll();
-    });
-    addEventListener("blur", closeAll);
-  }
-  function initSetup() {
-    initMenubar();
-    $("#bSetup").addEventListener("click", openSetup);
-    $("#bSetupFromMidi").addEventListener("click", openSetup);
-    $("#setup").addEventListener("pointerdown", (e) => {
-      if (e.target.id === "setup") closeSetup();
-    });
-    if (S.midiIn) SU.pendingIn = S.midiIn;
   }
 
   // src/ui/grabber.js
@@ -34711,6 +34529,414 @@ input[type='number'] {
         "Grabs appear here. Save them as WAV files and load them into the MC-707 as samples."
       )
     );
+  }
+
+  // src/ui/mode.js
+  function setMode(m) {
+    if (document.body.dataset.mode === m) return;
+    stopAll();
+    panic(true);
+    closePops();
+    document.body.dataset.mode = m;
+    try {
+      localStorage.setItem("mc707-mode", m);
+    } catch (e) {
+    }
+    $$("#menubar .mtab").forEach((b) => {
+      b.classList.toggle("on", b.dataset.mode === m);
+      b.setAttribute("aria-selected", String(b.dataset.mode === m));
+    });
+    if (m === "live") {
+      liveRender();
+      vizStart();
+    } else {
+      updTransport();
+      renderArr();
+    }
+  }
+
+  // src/ui/live-capture.js
+  function lvCapPat(f, key, mode, st) {
+    if (f.type !== "tone" || !f.key || lvModeFam(f.key.scale) === mode)
+      return instShift(f, shiftFor(f, key), key, st.scale);
+    const sh = shiftFor(f, key), k0 = LV.key, m0 = LV.mode;
+    LV.key = key;
+    LV.mode = mode;
+    const notes = f.notes.map((n) => ({ ...n, n: lvModeNote(n.n + sh) }));
+    LV.key = k0;
+    LV.mode = m0;
+    return addPattern("tone", f.name + " (" + mode + ")", f.bars, notes, {
+      src: f.id,
+      genre: f.genre,
+      key: { root: key, scale: mode },
+      role: f.role,
+      shift: sh
+    });
+  }
+  async function liveCapture() {
+    if (!LV.log.length || LV.lastTick < 32) {
+      toast("Play a set first, then capture it");
+      return;
+    }
+    const st = lvStyle();
+    const endBar = lvOn() ? Math.max(1, Math.floor(TR.tick / 32)) : Math.max(1, Math.ceil((LV.lastTick + 1) / 32));
+    const segs = LV.log.map((e, i) => ({
+      s: Math.round(e.tick / 32),
+      e: Math.min(endBar, i + 1 < LV.log.length ? Math.round(LV.log[i + 1].tick / 32) : endBar),
+      x: e
+    })).filter((g) => g.e > g.s);
+    if (!segs.length) {
+      toast("Nothing to capture yet");
+      return;
+    }
+    if (S.clips.length) {
+      const ok = await askDlg({
+        title: "Add the captured set to Song Mode?",
+        text: "It will be placed after the current arrangement, with a marker for each scene.",
+        ok: "Capture"
+      });
+      if (!ok) return;
+    }
+    stopAll();
+    pushUndo();
+    const base = S.clips.length ? Math.ceil(songEnd() / 8) * 8 : 0;
+    if (!S.clips.length) {
+      S.bpm = LV.bpm;
+      S.swing = LV.swing;
+      S.key = LV.key;
+      S.scale = st.scale || "minor";
+      S.tracks.forEach((t, i) => {
+        t.name = trackLabel(st, i);
+        t.vol = LEVELS[i];
+        t.mute = false;
+        t.solo = false;
+      });
+    }
+    let count = 0, lastIdx = -1;
+    for (let t = 0; t < 8; t++) {
+      let run2 = null;
+      const close = () => {
+        if (!run2) return;
+        const f = facById(run2.id);
+        if (f) {
+          const pid = lvCapPat(f, run2.key, run2.mode || LV.mode, st);
+          S.clips.push({ id: "c" + S.nextId++, t, start: base + run2.s, len: run2.e - run2.s, off: 0, pat: pid });
+          count++;
+        }
+        run2 = null;
+      };
+      for (const g of segs) {
+        const id = g.x.mute[t] ? null : g.x.ids[t];
+        if (!id) {
+          close();
+          continue;
+        }
+        if (run2 && run2.id === id && run2.key === g.x.key && run2.mode === g.x.mode && run2.e === g.s) run2.e = g.e;
+        else {
+          close();
+          run2 = { id, key: g.x.key, mode: g.x.mode, s: g.s, e: g.e };
+        }
+      }
+      close();
+    }
+    const pin = {};
+    segs.forEach((g) => {
+      if (g.x.idx !== lastIdx) {
+        lastIdx = g.x.idx;
+        const sc = LV.scenes[g.x.idx];
+        S.markers.push({ bar: base + g.s, name: (sc ? sc.name : "Scene").slice(0, 20) });
+        if (sc)
+          for (let t = 0; t < 8; t++) {
+            if (!devOn(t)) continue;
+            const c = sc.cells[t], r = c && c.clip === "random" ? LV_RCLIP[g.x.idx + ":" + t] : null, k = c && c.clip != null ? c.clip === "random" ? r != null ? r : -1 : c.clip : -1;
+            if (k !== (pin[t] == null ? -1 : pin[t])) {
+              const ms = cmMarks();
+              ms.filter((m) => m.t === t && m.bar === base + g.s).forEach((m) => ms.splice(ms.indexOf(m), 1));
+              ms.push({ t, bar: base + g.s, k });
+              pin[t] = k;
+            }
+          }
+      }
+    });
+    cmMarks().sort((a, b) => a.bar - b.bar || a.t - b.t);
+    S.markers.sort((a, b) => a.bar - b.bar);
+    ensureBars(base + endBar);
+    setMode("song");
+    renderAll();
+    $("#arr").scrollLeft = Math.max(0, base * bw);
+    scheduleSave();
+    toast("Captured " + endBar + " bars into Song Mode (" + count + " clips)");
+  }
+
+  // src/ui/menubar.js
+  function initMenubar() {
+    const nav = $("#menubar");
+    if (!nav) return;
+    const go = (id) => () => {
+      const e = $(id);
+      if (e) e.click();
+    };
+    const on = (id) => () => {
+      const e = $(id);
+      return !!(e && e.classList.contains("on"));
+    };
+    const M = [
+      [
+        "File",
+        "",
+        [
+          ["New project", projNew, "Ctrl+N"],
+          ["Open project…", projOpen, "Ctrl+O"],
+          "recent",
+          ["Save", projSave, "Ctrl+S"],
+          ["Save as…", projSaveAs, "Ctrl+Shift+S"],
+          0,
+          ["Saved songs (quick slots)…", go("#bFile")],
+          ["Load demo song", go("#fDemo")],
+          ["Export MIDI (.zip)", go("#fMidi")],
+          0,
+          ["Open project folder", () => projFolder("projects")],
+          ["Open recording folder", () => projFolder("recordings")],
+          ["Choose project folder…", () => projChooseFolder("projects")],
+          ["Choose recording folder…", () => projChooseFolder("recordings")],
+          0,
+          ["Reset autosave and reload", go("#fReset")],
+          0,
+          ["Exit", exitApp]
+        ]
+      ],
+      [
+        "Edit",
+        "song",
+        [
+          ["New pattern or load MIDI…", go("#bNewPat")],
+          0,
+          ["Undo", go("#bUndo"), "Ctrl+Z"],
+          ["Redo", go("#bRedo"), "Ctrl+Shift+Z"],
+          0,
+          ["Transpose…", go("#bXpose")],
+          ["Structure tools…", go("#bStruct")],
+          0,
+          ["Add 8 bars to the end", go("#bAddBars")]
+        ]
+      ],
+      [
+        "Song",
+        "song",
+        [
+          ["Song wizard…", go("#bWiz")],
+          ["Transpose…", go("#bXpose")],
+          ["Structure tools…", go("#bStruct")],
+          0,
+          ["Loop the whole song", go("#bLoopAll")],
+          ["Loop the selected clip", go("#bLoopClip"), "\\"],
+          ["Tap tempo", go("#bTap")]
+        ]
+      ],
+      [
+        "Audio",
+        "song",
+        [
+          ["Record audio", go("#bAudRec"), "R"],
+          ["Audio inputs and settings…", go("#bAudSet")]
+        ]
+      ],
+      [
+        "Live",
+        "live",
+        [
+          ["Start / stop", go("#lvStart"), "Space"],
+          ["Stop at end of phrase", () => liveStopCue()],
+          0,
+          ["Fullscreen", toggleFull, "F11", isFull],
+          ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
+          0,
+          ["Connect MC-707", go("#lvMidi")],
+          ["New patterns", go("#lvNew")],
+          0,
+          ["Grab a sample…", () => grabOpen($(".mb.open") || $("#lvStart"))],
+          ["Capture to Song", () => liveCapture()],
+          ["Your MC-707 clips…", () => clipMapOpen()],
+          ["Settings and mapping…", go("#lvPadSet")]
+        ]
+      ],
+      [
+        "Settings",
+        "",
+        [
+          ["Device: MC-707 (8 tracks)", () => setDevice("707"), "", () => DEV === "707"],
+          ["Device: MC-101 (4 tracks)", () => setDevice("101"), "", () => DEV === "101"],
+          ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
+          ["Your MC-707 clips…", () => clipMapOpen()],
+          0,
+          ["Quick setup…", go("#bSetup")],
+          ["MIDI and sound…", go("#bMidi")],
+          ["Track MIDI controls…", go("#bTrackCtl")],
+          ["Audio inputs…", go("#bAudSet")],
+          0,
+          ["Send test note", go("#bTest")],
+          ["All notes off", go("#bPanic")]
+        ]
+      ],
+      [
+        "View",
+        "song",
+        [
+          ["Fullscreen", toggleFull, "F11", isFull],
+          ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
+          0,
+          ["Pattern library", go("#bLibT")],
+          ["Follow the playhead", go("#bFollow"), "", on("#bFollow")],
+          ["Metronome click", go("#bMetro"), "", on("#bMetro")]
+        ]
+      ],
+      ["Help", "", [["Shortcuts and tips", go("#bHelp")]]]
+    ];
+    let openB = null;
+    const closeAll = () => {
+      nav.querySelectorAll(".mdrop").forEach((d) => d.hidden = true);
+      nav.querySelectorAll(".mb").forEach((b) => {
+        b.classList.remove("open");
+        b.setAttribute("aria-expanded", "false");
+      });
+      openB = null;
+    };
+    const show = (b, d) => {
+      closeAll();
+      d.hidden = false;
+      b.classList.add("open");
+      b.setAttribute("aria-expanded", "true");
+      openB = b;
+      d.style.left = b.offsetLeft + "px";
+      d.querySelectorAll(".mi[data-chk]").forEach((m) => {
+        const f = m._chk;
+        m.firstChild.textContent = (f && f() ? "✔ " : "") + m.dataset.label;
+      });
+      if (d._recent) {
+        d._recent.textContent = "";
+        const rl = HOST ? projRecents() : [];
+        if (rl.length) {
+          d._recent.append(
+            el("div", { class: "msep" }),
+            el("div", { class: "hint", style: "padding:2px 10px" }, "Recent")
+          );
+          rl.forEach(
+            (r) => d._recent.append(
+              el(
+                "button",
+                {
+                  class: "mi",
+                  role: "menuitem",
+                  title: r.path,
+                  onclick: (ev) => {
+                    ev.stopPropagation();
+                    closeAll();
+                    projOpenPath(r.path);
+                  }
+                },
+                el("span", {}, r.name),
+                el("small", {}, "")
+              )
+            )
+          );
+          d._recent.append(el("div", { class: "msep" }));
+        }
+      }
+    };
+    nav.append(el("span", { class: "mbrand" }, "MC-707 Toolbox"));
+    M.forEach(([name, modes, items]) => {
+      const b = el("button", { class: "mb", role: "menuitem", "aria-haspopup": "true", "aria-expanded": "false" }, name);
+      const d = el("div", { class: "mdrop", role: "menu", hidden: true });
+      if (modes) {
+        b.dataset.m = modes;
+        d.dataset.m = modes;
+      }
+      items.forEach((it) => {
+        if (!it) {
+          d.append(el("div", { class: "msep" }));
+          return;
+        }
+        if (it === "recent") {
+          d._recent = el("div", {});
+          d.append(d._recent);
+          return;
+        }
+        const [label, fn, key, chk] = it;
+        const mi = el(
+          "button",
+          {
+            class: "mi",
+            role: "menuitem",
+            onclick: (ev) => {
+              ev.stopPropagation();
+              closeAll();
+              try {
+                fn();
+              } catch (e) {
+              }
+            }
+          },
+          el("span", {}, label),
+          el("small", {}, key || "")
+        );
+        if (chk) {
+          mi.dataset.chk = "1";
+          mi.dataset.label = label;
+          mi._chk = chk;
+        }
+        d.append(mi);
+      });
+      b.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        closePops();
+        if (openB === b) closeAll();
+        else show(b, d);
+      });
+      b.addEventListener("mouseenter", () => {
+        if (openB && openB !== b) show(b, d);
+      });
+      nav.append(b, d);
+    });
+    const tabs = el("div", { class: "mtabs", role: "tablist", "aria-label": "Mode" });
+    [
+      ["song", "Song Mode"],
+      ["live", "Live Mode"]
+    ].forEach(
+      ([m, l]) => tabs.append(
+        el(
+          "button",
+          {
+            class: "mtab" + (document.body.dataset.mode === m ? " on" : ""),
+            role: "tab",
+            "data-mode": m,
+            "aria-selected": String(document.body.dataset.mode === m),
+            onclick: () => setMode(m)
+          },
+          l
+        )
+      )
+    );
+    nav.append(el("span", { class: "mproj", "data-m": "song", id: "mProj" }, "Untitled"), tabs);
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (openB && !e.target.closest("#menubar")) closeAll();
+      },
+      true
+    );
+    addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && openB) closeAll();
+    });
+    addEventListener("blur", closeAll);
+  }
+  function initSetup() {
+    initMenubar();
+    $("#bSetup").addEventListener("click", openSetup);
+    $("#bSetupFromMidi").addEventListener("click", openSetup);
+    $("#setup").addEventListener("pointerdown", (e) => {
+      if (e.target.id === "setup") closeSetup();
+    });
+    if (S.midiIn) SU.pendingIn = S.midiIn;
   }
 
   // src/ui/live-menus.js
@@ -42502,119 +42728,6 @@ input[type='number'] {
       showMenu(e.clientX, e.clientY, items);
     }
   });
-
-  // src/ui/live-capture.js
-  function lvCapPat(f, key, mode, st) {
-    if (f.type !== "tone" || !f.key || lvModeFam(f.key.scale) === mode)
-      return instShift(f, shiftFor(f, key), key, st.scale);
-    const sh = shiftFor(f, key), k0 = LV.key, m0 = LV.mode;
-    LV.key = key;
-    LV.mode = mode;
-    const notes = f.notes.map((n) => ({ ...n, n: lvModeNote(n.n + sh) }));
-    LV.key = k0;
-    LV.mode = m0;
-    return addPattern("tone", f.name + " (" + mode + ")", f.bars, notes, {
-      src: f.id,
-      genre: f.genre,
-      key: { root: key, scale: mode },
-      role: f.role,
-      shift: sh
-    });
-  }
-  async function liveCapture() {
-    if (!LV.log.length || LV.lastTick < 32) {
-      toast("Play a set first, then capture it");
-      return;
-    }
-    const st = lvStyle();
-    const endBar = lvOn() ? Math.max(1, Math.floor(TR.tick / 32)) : Math.max(1, Math.ceil((LV.lastTick + 1) / 32));
-    const segs = LV.log.map((e, i) => ({
-      s: Math.round(e.tick / 32),
-      e: Math.min(endBar, i + 1 < LV.log.length ? Math.round(LV.log[i + 1].tick / 32) : endBar),
-      x: e
-    })).filter((g) => g.e > g.s);
-    if (!segs.length) {
-      toast("Nothing to capture yet");
-      return;
-    }
-    if (S.clips.length) {
-      const ok = await askDlg({
-        title: "Add the captured set to Song Mode?",
-        text: "It will be placed after the current arrangement, with a marker for each scene.",
-        ok: "Capture"
-      });
-      if (!ok) return;
-    }
-    stopAll();
-    pushUndo();
-    const base = S.clips.length ? Math.ceil(songEnd() / 8) * 8 : 0;
-    if (!S.clips.length) {
-      S.bpm = LV.bpm;
-      S.swing = LV.swing;
-      S.key = LV.key;
-      S.scale = st.scale || "minor";
-      S.tracks.forEach((t, i) => {
-        t.name = trackLabel(st, i);
-        t.vol = LEVELS[i];
-        t.mute = false;
-        t.solo = false;
-      });
-    }
-    let count = 0, lastIdx = -1;
-    for (let t = 0; t < 8; t++) {
-      let run2 = null;
-      const close = () => {
-        if (!run2) return;
-        const f = facById(run2.id);
-        if (f) {
-          const pid = lvCapPat(f, run2.key, run2.mode || LV.mode, st);
-          S.clips.push({ id: "c" + S.nextId++, t, start: base + run2.s, len: run2.e - run2.s, off: 0, pat: pid });
-          count++;
-        }
-        run2 = null;
-      };
-      for (const g of segs) {
-        const id = g.x.mute[t] ? null : g.x.ids[t];
-        if (!id) {
-          close();
-          continue;
-        }
-        if (run2 && run2.id === id && run2.key === g.x.key && run2.mode === g.x.mode && run2.e === g.s) run2.e = g.e;
-        else {
-          close();
-          run2 = { id, key: g.x.key, mode: g.x.mode, s: g.s, e: g.e };
-        }
-      }
-      close();
-    }
-    const pin = {};
-    segs.forEach((g) => {
-      if (g.x.idx !== lastIdx) {
-        lastIdx = g.x.idx;
-        const sc = LV.scenes[g.x.idx];
-        S.markers.push({ bar: base + g.s, name: (sc ? sc.name : "Scene").slice(0, 20) });
-        if (sc)
-          for (let t = 0; t < 8; t++) {
-            if (!devOn(t)) continue;
-            const c = sc.cells[t], k = c && c.clip != null ? c.clip : -1;
-            if (k !== (pin[t] == null ? -1 : pin[t])) {
-              const ms = cmMarks();
-              ms.filter((m) => m.t === t && m.bar === base + g.s).forEach((m) => ms.splice(ms.indexOf(m), 1));
-              ms.push({ t, bar: base + g.s, k });
-              pin[t] = k;
-            }
-          }
-      }
-    });
-    cmMarks().sort((a, b) => a.bar - b.bar || a.t - b.t);
-    S.markers.sort((a, b) => a.bar - b.bar);
-    ensureBars(base + endBar);
-    setMode("song");
-    renderAll();
-    $("#arr").scrollLeft = Math.max(0, base * bw);
-    scheduleSave();
-    toast("Captured " + endBar + " bars into Song Mode (" + count + " clips)");
-  }
 
   // src/ui/grab-pattern.js
   async function grabPattern(p, t, loops = 1, anchor) {

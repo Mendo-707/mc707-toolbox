@@ -182,6 +182,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 
 | Module | What it does | Owns |
 | --- | --- | --- |
+| `library/acid.js` | Acid lines: TB-303 style 16th-note basslines with accents, slides (overlapping notes, so the MC-707 glides with portamento on) and octave jumps, in each genre's keys, for techno, house, trance, electro and breaks, and drum and bass. They go in their own 'acid' pool and show in the library as Acid lines. Give a clip the Acid kind on the clips screen and Live Mode plays them on it (in the B scenes and from the scene editor); acid techno's basslines include them too. |  |
 | `library/factory.js` | The hand-written factory patterns (drums and tone parts for drum and bass and hip hop). FAC, the list every factory pattern goes into, is created here. | FAC (the pattern library) |
 | `library/flash.js` | Flash-break patterns: 1 to 2 bar unison hits for every genre (FLASH_RH lists the rhythms). |  |
 | `library/generate.js` | Generates most of the factory library: kits, drum layers, fills, chords, basslines, arps, leads and pads for every genre. Order matters: each pattern's id comes from the order it is made in. |  |
@@ -193,7 +194,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `library/live-extras.js` | Extra patterns for Live Mode: fills, builds and drop impacts for every genre. |  |
 | `library/lively.js` | Lively variants: busier, syncopated basslines, arps, chords and leads built on each genre's progressions. |  |
 | `library/pools.js` | Which patterns suit a style: pools by genre, sub-style and tempo, full kits for one drum track, and the Lively / Classic flavour filter. Used by Live Mode and the song wizard. |  |
-| `library/styles.js` | The song styles (43 of them): tempo, key, structure, parts and tips, used by the song wizard and Live Mode. |  |
+| `library/styles.js` | The song styles (41 of them): tempo, key, structure, parts and tips, used by the song wizard and Live Mode. |  |
 | `library/user-lib.js` | My patterns: patterns you save from the editor into your own library. Kept in this browser (or the Windows app) under one localStorage key, apart from songs, so they are there in every song. | the My patterns list (read it with userLib()) |
 | `library/variety.js` | The variety pack: 38 extra progressions with voice-led chords, chord-aware basslines, pads and arps for every genre. |  |
 
@@ -263,7 +264,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `live/engine.js` | The Live Mode engine: the voices playing on each track, what plays on every tick, scene changes, swaps, and start and stop. |  |
 | `live/extreme.js` | Hi-hat rolls for the trap family (trap, drill, phonk, Memphis), at any Variation level, and Extreme variation (Variation above 100): every repeat of a loop changes, with snare rolls and kick drop-outs on the kit and octave flicks on the 808. |  |
 | `live/harmony.js` | Keeping a Live set in tune with itself: the chord progression that is playing now, which patterns fit it when parts swap or a guest melody comes in, and where a new part should start so it lines up with the progression already playing. |  |
-| `live/jam.js` | Start Jam and End Jam. A jam opens with a few 2-bar intro loops that build into the first scene (parts arrive one group at a time, the filter opens, the last loop rolls and rises into the drop) and closes with 2-bar outro loops that wind the scene down to a final hit. The loops are made from the set's own patterns, so they suit every genre and lead straight into (or out of) the music, and the recipe is picked at random each time. | LV.jam (the intro or outro in progress) |
+| `live/jam.js` | Start Jam and End Jam. A jam opens with a few 2-bar intro loops that build into the first scene (parts arrive one group at a time, the filter opens, the last loop rolls and rises into the drop) and closes with a quick 1-2 bar outro that winds the scene down to a final hit. The loops are made from the set's own patterns, so they suit every genre and lead straight into (or out of) the music, and the recipe is picked at random each time. | LV.jam (the intro or outro in progress) |
 | `live/lanes.js` | The Live Mode timeline: lanes showing what each track plays, the status panel and the per-frame update. |  |
 | `live/midi-in.js` | MIDI input in Live Mode: the MC-707 pads and keys (Raven keys), the pad test, and the computer keyboard. |  |
 | `live/moves.js` | Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan) for builds, drops and scene moves. |  |

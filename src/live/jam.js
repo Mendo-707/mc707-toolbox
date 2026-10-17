@@ -1,6 +1,6 @@
 // Start Jam and End Jam. A jam opens with a few 2-bar intro loops that build into the first scene
 // (parts arrive one group at a time, the filter opens, the last loop rolls and rises into the drop)
-// and closes with 2-bar outro loops that wind the scene down to a final hit. The loops are made
+// and closes with a quick 1-2 bar outro that winds the scene down to a final hit. The loops are made
 // from the set's own patterns, so they suit every genre and lead straight into (or out of) the
 // music, and the recipe is picked at random each time.
 //
@@ -158,30 +158,25 @@ function introLoops(cells) {
   if (Math.random() < 0.4) r = [r[0], r[1], r[3]];
   return { name, loops: r.map(spec => ({ bars: 2, ids: loop(cells, spec) })).filter(l => Object.keys(l.ids).length) };
 }
+/* Outros are short: one or two bars from the press, ending on a hit (or a quick fade). */
 function outroLoops(cells) {
   const D = oneKit() ? {} : { 1: 'full' },
     keys = has(cells, 5) ? { 5: 'full' } : { 4: 'sus' };
   const hit = { bars: 1, ids: loop(cells, { 0: 'hit', 3: 'roots' }), last: true };
   const recipes = {
-    'wind down': [
-      { 0: 'full', ...D, 2: 'full', 3: 'full', 4: 'full', 5: 'full' },
-      { 0: 'thin', ...D, 3: 'roots', 4: 'hits', 5: 'full' },
-      { ...keys, 1: 'full' }
-    ],
-    'breakdown and hit': [
-      { 0: 'nosn', ...D, 3: 'full', 4: 'full', 5: 'full' },
-      { 1: 'full', 2: 'full', 4: 'hits', 5: 'sus' }
-    ],
-    'fade away': [
-      { 0: 'full', ...D, 3: 'full', 4: 'full', 5: 'full', 7: 'full' },
-      { 1: 'full', 3: 'roots', 4: 'full', 5: 'full' },
-      { ...keys }
-    ]
+    'cut to the hit': [],
+    'thin out and hit': [{ 0: 'thin', ...D, 3: 'roots', 5: 'sus' }],
+    'breakdown and hit': [{ 1: 'full', 2: 'full', 4: 'hits', 5: 'sus' }],
+    'fade away': [{ ...keys, 1: 'full', 3: 'roots' }]
   };
-  const name = pick(Object.keys(recipes));
-  const loops = recipes[name].map(spec => ({ bars: 2, ids: loop(cells, spec) })).filter(l => Object.keys(l.ids).length);
-  if (name !== 'fade away' && Object.keys(hit.ids).length) loops.push(hit);
-  return { name, loops, fade: name === 'fade away' };
+  const names = Object.keys(recipes).filter(n => n !== 'cut to the hit' || Object.keys(hit.ids).length);
+  const name = pick(names);
+  const fade = name === 'fade away';
+  const loops = recipes[name]
+    .map(spec => ({ bars: fade ? 2 : 1, ids: loop(cells, spec) }))
+    .filter(l => Object.keys(l.ids).length);
+  if (!fade && Object.keys(hit.ids).length) loops.push(hit);
+  return { name, loops, fade };
 }
 
 /* ---- playing a jam ---- */
@@ -238,7 +233,7 @@ export function liveJamEnd() {
     liveStop();
     return;
   }
-  const at = lvBoundary(2);
+  const at = lvBoundary(1);
   LV.cues = LV.cues.filter(c => !['scene', 'swap', 'fill', 'guest', 'gap', 'thin', 'bov', 'stop'].includes(c.type));
   LV.auto = false;
   LV.jam = { kind: 'out', name, loops, i: -1, next: at, fade };

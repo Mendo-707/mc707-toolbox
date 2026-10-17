@@ -21,12 +21,13 @@ export const CLIP_TYPES = [
   ['pad', 'Pad', '#a283ff'],
   ['lead', 'Lead', '#84d95b'],
   ['pluck', 'Pluck / arp', '#e9d94a'],
+  ['acid', 'Acid', '#ff9f1c'],
   ['fx', 'FX / other', '#9aa0ad']
 ];
 export const CT_DEF = ['drums', 'drums', 'drums', 'bass', 'chords', 'pad', 'lead', 'pluck'];
-export const CT_POOL = { bass: 'bass', chords: 'chords', pad: 'pad', lead: 'lead', pluck: 'pluck' };
+export const CT_POOL = { bass: 'bass', chords: 'chords', pad: 'pad', lead: 'lead', pluck: 'pluck', acid: 'acid' };
 /** [id, label, colour] for a clip type ('bass', 'lead' …). */
-export const ctInfo = k => CLIP_TYPES.find(x => x[0] === k) || CLIP_TYPES[6];
+export const ctInfo = k => CLIP_TYPES.find(x => x[0] === k) || CLIP_TYPES[CLIP_TYPES.length - 1];
 export const PCLAST = {};
 /** The clip map (S.clipMap), created and repaired if needed. @returns {import('../core/types.js').ClipMapEntry[]} */
 export function cmFix() {
@@ -56,7 +57,8 @@ export function patType(p) {
     pad: 'pad',
     lead: 'lead',
     flead: 'lead',
-    pluck: 'pluck'
+    pluck: 'pluck',
+    acid: 'acid'
   }[pool];
   if (m) return m;
   const r = String(p.role || (f && f.role) || '').toLowerCase();

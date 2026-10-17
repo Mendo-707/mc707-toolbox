@@ -10,9 +10,13 @@ import './flash.js';
 import './genre-drums.js';
 import './genre-keys.js';
 import './groove-pack.js';
+import './acid.js';
 import { FAC } from './factory.js';
 import { userById } from './user-lib.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';
+
+/* Punk and rock were taken out in 1.2: their patterns leave the library. Every other pattern keeps its id. */
+for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === 'rock') FAC.splice(i, 1);
 
 /** Copy a factory pattern into the song and return the song pattern id. An unedited copy already in the song is reused. */
 export function instFactory(f) {

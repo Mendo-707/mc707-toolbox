@@ -30,6 +30,7 @@ import {
   liveRiser,
   liveStutter,
   liveTap,
+  lvBlendIn,
   lvOn,
   lvVaryLabel
 } from './cues.js';
@@ -221,8 +222,108 @@ export function liveInit() {
       },
       '＋ Save as scene'
     ),
-    sel('Loops', reps),
     sel('Style', styleSel),
+    sel('Key', el('span', { class: 'lvsw' }, keySel, modeSel)),
+    el('span', { class: 'lvKeyRec', id: 'lvKeyRec', 'aria-label': 'Suggested keys for this style' }),
+    el(
+      'span',
+      { class: 'lvf' },
+      'BPM',
+      el('button', { class: 'btn sm', onclick: () => liveBpm(-1), title: 'Slower' }, '−'),
+      bpm,
+      el('button', { class: 'btn sm', onclick: () => liveBpm(1), title: 'Faster' }, '+'),
+      el('button', { class: 'btn sm', onclick: liveTap, title: 'Tap the tempo' }, 'Tap')
+    ),
+    el('span', { class: 'lvf' }, 'Swing', sw, el('b', { id: 'lvSwV', class: 'lvSwV' }, LV.swing + '%')),
+    el(
+      'button',
+      {
+        class: 'btn',
+        id: 'lvNew',
+        onclick: () => {
+          liveNewSet();
+          if (lvOn()) {
+            const bars = lvBlendIn();
+            toast('New patterns: down to the drums, the new set comes in over ' + bars + ' bars');
+          } else toast('New set built from ' + lvStyle().name);
+          liveRender();
+        },
+        title: 'Build a fresh set of scenes and patterns in this style'
+      },
+      '🎲 New patterns'
+    ),
+    el('span', { class: 'hint', id: 'lvMidiSt' }, ''),
+    /* tools opened from the Live menu: kept here hidden so the menu, shortcuts and Fullscreen label find them */
+    el(
+      'span',
+      { class: 'lvTools', hidden: true },
+      el(
+        'button',
+        {
+          class: 'btn',
+          id: 'lvMidi',
+          onclick: async () => {
+            await hooks.suAutoConnect();
+            liveRender();
+          },
+          title: 'Connect to the MC-707 over USB MIDI'
+        },
+        'Connect MC-707'
+      ),
+      el(
+        'button',
+        {
+          class: 'btn',
+          id: 'lvGrab',
+          onclick: ev => hooks.grabOpen(ev.currentTarget),
+          title: 'Sample grabber: record a few bars of one track to a WAV'
+        },
+        '◉ Grab sample'
+      ),
+      el(
+        'button',
+        {
+          class: 'btn',
+          id: 'lvCapture',
+          onclick: hooks.liveCapture,
+          title: 'Turn what you just played into an arrangement in Song Mode'
+        },
+        '⏺ Capture to Song'
+      ),
+      el(
+        'button',
+        { class: 'btn', id: 'lvFull', onclick: toggleFull, title: 'Fill the whole screen (F11)' },
+        '⛶ Fullscreen'
+      ),
+      el(
+        'button',
+        {
+          class: 'btn',
+          onclick: () => clipMapOpen(),
+          title: 'Tell the app what sound each MC-707 clip holds, so tracks can switch sounds'
+        },
+        '▦ Clips'
+      ),
+      el(
+        'button',
+        {
+          class: 'btn',
+          id: 'lvPadSet',
+          onclick: () => {
+            const d = $('#lvSetDet');
+            d.open = true;
+            d.scrollIntoView({ block: 'nearest' });
+          }
+        },
+        'Mapping'
+      )
+    )
+  );
+  /* playback options, in the settings panel at the bottom */
+  const playOpts = el(
+    'div',
+    { class: 'lvPlayOpts' },
+    sel('Loops', reps),
     sel(
       'Patterns',
       el(
@@ -246,18 +347,6 @@ export function liveInit() {
         el('option', { value: 'classic' }, 'Classic')
       )
     ),
-    sel('Key', el('span', { class: 'lvsw' }, keySel, modeSel)),
-    el('span', { class: 'lvKeyRec', id: 'lvKeyRec', 'aria-label': 'Suggested keys for this style' }),
-    el(
-      'span',
-      { class: 'lvf' },
-      'BPM',
-      el('button', { class: 'btn sm', onclick: () => liveBpm(-1), title: 'Slower' }, '−'),
-      bpm,
-      el('button', { class: 'btn sm', onclick: () => liveBpm(1), title: 'Faster' }, '+'),
-      el('button', { class: 'btn sm', onclick: liveTap, title: 'Tap the tempo' }, 'Tap')
-    ),
-    el('span', { class: 'lvf' }, 'Swing', sw, el('b', { id: 'lvSwV', class: 'lvSwV' }, LV.swing + '%')),
     sel('Launch on', qs),
     sel('Entry', es),
     el(
@@ -288,69 +377,6 @@ export function liveInit() {
       'Preview sound'
     ),
     el(
-      'button',
-      {
-        class: 'btn',
-        id: 'lvNew',
-        onclick: () => {
-          liveNewSet();
-          if (lvOn()) stopPlay();
-          liveRender();
-          toast('New set built from ' + lvStyle().name);
-        },
-        title: 'Build a fresh set of scenes and patterns in this style'
-      },
-      '🎲 New patterns'
-    ),
-    el(
-      'button',
-      {
-        class: 'btn',
-        id: 'lvMidi',
-        onclick: async () => {
-          await hooks.suAutoConnect();
-          liveRender();
-        },
-        title: 'Connect to the MC-707 over USB MIDI'
-      },
-      'Connect MC-707'
-    ),
-    el('span', { class: 'hint', id: 'lvMidiSt' }, ''),
-    el(
-      'button',
-      {
-        class: 'btn',
-        id: 'lvGrab',
-        onclick: ev => hooks.grabOpen(ev.currentTarget),
-        title: 'Sample grabber: record a few bars of one track to a WAV'
-      },
-      '◉ Grab sample'
-    ),
-    el(
-      'button',
-      {
-        class: 'btn',
-        id: 'lvCapture',
-        onclick: hooks.liveCapture,
-        title: 'Turn what you just played into an arrangement in Song Mode'
-      },
-      '⏺ Capture to Song'
-    ),
-    el(
-      'button',
-      { class: 'btn', id: 'lvFull', onclick: toggleFull, title: 'Fill the whole screen (F11)' },
-      '⛶ Fullscreen'
-    ),
-    el(
-      'button',
-      {
-        class: 'btn',
-        onclick: () => clipMapOpen(),
-        title: 'Tell the app what sound each MC-707 clip holds, so tracks can switch sounds'
-      },
-      '▦ Clips'
-    ),
-    el(
       'label',
       { class: 'lvf' },
       'Theme',
@@ -359,19 +385,6 @@ export function liveInit() {
         { id: 'lvTheme', 'aria-label': 'Colour theme', onchange: e => liveSetTheme(e.target.value) },
         ...Object.entries(LV_THEMES).map(([k, v]) => el('option', { value: k, selected: LV.theme === k }, v.name))
       )
-    ),
-    el(
-      'button',
-      {
-        class: 'btn',
-        id: 'lvPadSet',
-        onclick: () => {
-          const d = $('#lvSetDet');
-          d.open = true;
-          d.scrollIntoView({ block: 'nearest' });
-        }
-      },
-      'Mapping'
     )
   );
   const hero = el(
@@ -476,11 +489,7 @@ export function liveInit() {
           saveLive();
         }
       }),
-      el(
-        'div',
-        { class: 'hint' },
-        'How often the set changes by itself: part swaps, fills, short drop-outs and guest melodies, and repeats come back with octave jumps, runs, echoes and ghost notes. 0 keeps every scene exactly as it is. Past High is Extreme: every repeat changes, with snare rolls, kick drop-outs and 808 octave flicks. Trap, drill, phonk and Memphis hats roll at any setting.'
-      )
+      el('div', { class: 'hint' }, 'How often the set changes by itself. 0 holds every scene; past High is Extreme.')
     ),
     el(
       'div',
@@ -590,7 +599,7 @@ export function liveInit() {
             saveLive();
           }
         }),
-        'Epic builds: resonance, reverb wash, pump and autopan climb into every drop'
+        'Epic builds: resonance, reverb wash and pump climb into every drop'
       ),
       el(
         'div',
@@ -707,7 +716,9 @@ export function liveInit() {
   const sets = el(
     'details',
     { class: 'lvSet', id: 'lvSetDet' },
-    el('summary', {}, 'Mapping and settings'),
+    el('summary', {}, 'Settings and mapping'),
+    el('h4', {}, 'Playback'),
+    playOpts,
     el('div', { id: 'lvSetBody' })
   );
   root.append(top, hero, el('div', { class: 'lvMain' }, left, fx), sets);

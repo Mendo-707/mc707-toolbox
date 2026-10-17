@@ -11,6 +11,8 @@ import { setDevice, setOneKit } from './device.js';
 import { closePops } from './controls.js';
 import { SU, closeSetup, openSetup } from './setup-wizard.js';
 import { liveStopCue } from '../live/cues.js';
+import { grabOpen } from './grabber.js';
+import { liveCapture } from './live-capture.js';
 import { setMode } from './mode.js';
 import {
   exitApp,
@@ -109,7 +111,11 @@ function initMenubar() {
         0,
         ['Connect MC-707', go('#lvMidi')],
         ['New patterns', go('#lvNew')],
-        ['Pad and key mapping…', go('#lvPadSet')]
+        0,
+        ['Grab a sample…', () => grabOpen($('.mb.open') || $('#lvStart'))],
+        ['Capture to Song', () => liveCapture()],
+        ['Your MC-707 clips…', () => clipMapOpen()],
+        ['Settings and mapping…', go('#lvPadSet')]
       ]
     ],
     [

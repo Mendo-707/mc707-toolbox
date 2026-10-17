@@ -43,7 +43,16 @@ function clipMapClose() {
 /* The MC-707 HOME screen, as the reference manual lays it out: project name and tempo on top, a column per track
    (number + T/D type), a clip grid showing 8 clips at a time with a scroll bar, level meters, the current
    track-clip number and name, and a command area. White on black. */
-export const CM_ABBR = { drums: 'KIT', bass: 'BAS', chords: 'CHD', pad: 'PAD', lead: 'LD', pluck: 'ARP', fx: 'FX' };
+export const CM_ABBR = {
+  drums: 'KIT',
+  bass: 'BAS',
+  chords: 'CHD',
+  pad: 'PAD',
+  lead: 'LD',
+  pluck: 'ARP',
+  acid: 'ACD',
+  fx: 'FX'
+};
 /* tiny pixel icon per clip type for the preview box */
 const CM_ICON = {
   drums: 'M2 9h2v3H2zM6 6h2v6H6zM10 8h2v4h-2zM14 4h2v8h-2z',
@@ -52,6 +61,7 @@ const CM_ICON = {
   pad: 'M1 5h14v1H1zM1 8h14v1H1z',
   lead: 'M1 9h2v1H1zM3 7h2v1H3zM5 5h3v1H5zM8 7h2v1H8zM10 3h3v1h-3zM13 6h2v1h-2z',
   pluck: 'M1 10h1v1H1zM3 8h1v1H3zM5 6h1v1H5zM7 4h1v1H7zM9 6h1v1H9zM11 8h1v1h-1zM13 6h1v1h-1z',
+  acid: 'M1 10h2v1H1zM3 6h2v1H3zM5 10h2v1H5zM7 4h2v1H7zM9 8h2v1H9zM11 5h2v1h-2zM13 9h2v1h-2z',
   fx: 'M7 1h2v4H7zM7 11h2v4H7zM1 7h4v2H1zM11 7h4v2h-4z'
 };
 /* The MC-707 HOME screen as it looks on the unit: blue backlit display. Project name and tempo on top, a preview panel

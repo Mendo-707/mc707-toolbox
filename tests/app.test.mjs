@@ -78,7 +78,7 @@ test('every screen and dialog opens without errors', async () => {
   await closeMenus();
   await page.locator('.lvEdit').first().click();
   assert.equal(await page.isVisible('#lvScEd'), true);
-  await page.click('#lvPadSet');
+  await page.evaluate(() => document.querySelector('#lvPadSet').click()); // Live › Settings and mapping
   await page.waitForTimeout(200);
   assert.ok((await page.locator('.rvP').count()) >= 8);
   await page.click('#lvStart');
@@ -144,7 +144,7 @@ test('Live Mode: lock holds the loop, a controller keyboard mutes and solos', as
   const { page, errors } = await openApp({ storage: SAVED });
   await page.click('#menubar .mtab[data-mode=live]');
   await page.waitForTimeout(200);
-  await page.click('#lvMidi');
+  await page.evaluate(() => document.querySelector('#lvMidi').click()); // Live › Connect MC-707
   await page.waitForTimeout(300);
   const r = await page.evaluate(async () => {
     const a = window.__app,

@@ -7,7 +7,7 @@ import { FACMAP, facById } from './index.js';
 import { hashStr, mulberry } from '../core/random.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
-const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck'];
+const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
 const LV_POOLCACHE = {};
 /** The genre a style draws from ('dnb', 'house' …), worked out from its hand-picked patterns. */
 export function lvGenreOf(st) {
@@ -92,6 +92,8 @@ export function lvPool(st, pool) {
   const g = lvGenreOf(st),
     bpm = st.bpm[2];
   const hand = [...(st.pools[pool] || []), ...((st.more && st.more[pool]) || [])];
+  /* acid techno's basslines include the acid lines */
+  if (pool === 'bass' && st.id === 'acidtechno') hand.push(...lvPool(st, 'acid'));
   /* drums keep to their own sub-style (the feel is in the beat); tone parts may come from any sub-style of
      the genre at a nearby tempo, unless a pattern was marked as not for this style (notFor) */
   const tone = TONE_POOLS.includes(pool);

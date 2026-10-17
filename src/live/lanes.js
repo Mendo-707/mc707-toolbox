@@ -8,7 +8,7 @@ import { S } from '../core/state.js';
 import { facById } from '../library/index.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
-import { CLIPPIN, CMNOW, PCLAST, autoClip, sendClip } from '../services/clip-switch.js';
+import { CLIPPIN, CMNOW, PCLAST, clipFor, patType, sendClip } from '../services/clip-switch.js';
 import { cmChipFill, cmPickItems } from '../clips/clip-map.js';
 import { NK } from '../library/styles.js';
 import { showMenu } from '../ui/menu.js';
@@ -59,8 +59,9 @@ export function liveRenderLanes(b0, force) {
                       if (k < 0) {
                         delete CLIPPIN[i];
                         delete PCLAST[i];
-                        const v = lvTop(i);
-                        if (v) autoClip(i, v.f, AU.ctx ? AU.ctx.currentTime : 0);
+                        const v = lvTop(i),
+                          h = v ? clipFor(i, patType(v.f)) : -1;
+                        if (h >= 0) sendClip(i, h, AU.ctx ? AU.ctx.currentTime : 0);
                         return;
                       }
                       ensureAudio();

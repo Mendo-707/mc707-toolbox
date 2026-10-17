@@ -539,38 +539,6 @@ STYLES.forEach(s => {
       'Sub'
     ),
     T(
-      'rock',
-      'song',
-      'Rock',
-      'Straight-ahead drums, driving bass and open chords.',
-      [100, 140, 120],
-      50,
-      'major',
-      [
-        [4, 'E: the classic rock key.'],
-        [9, 'A: open and strong.'],
-        [2, 'D: warm.']
-      ],
-      ['Keep the drums steady and let the bass follow the kick.', 'Use a crash on the first beat of each new section.'],
-      'Bass'
-    ),
-    T(
-      'punk',
-      'song',
-      'Punk',
-      'Fast and raw.',
-      [150, 190, 170],
-      50,
-      'major',
-      [
-        [4, 'E: raw and open.'],
-        [9, 'A: punchy.'],
-        [2, 'D: sharp.']
-      ],
-      ['Fast, straight drums and driving bass. Keep it simple.', 'Short sections with big fills keep the energy.'],
-      'Bass'
-    ),
-    T(
       'phonk',
       'hh',
       'Phonk',

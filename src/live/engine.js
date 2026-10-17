@@ -12,7 +12,7 @@ import { patIndex, subTick } from '../core/song-model.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
 import { REC, TICKER, TR, emitNote, sched, stopAll, stopPlay } from '../services/transport.js';
-import { CLIPPIN, PCLAST, autoClip, autoClipReset, cmFix, sendClip } from '../services/clip-switch.js';
+import { CLIPPIN, PCLAST, autoClipReset, clipFor, cmFix, patType, sendClip } from '../services/clip-switch.js';
 import { hashStr } from '../core/random.js';
 import { AUTOLAST, sendTrackCCs } from '../services/mc-controls.js';
 import { LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
@@ -47,7 +47,8 @@ export const lvIds = () =>
     const v = lvTop(t);
     return v ? v.f.id : null;
   });
-export const lvEmute = t => LV_PRI.indexOf(t) >= LV.energy;
+/* muted by the energy level, or a tone part while New patterns blends in on the drums */
+export const lvEmute = t => LV_PRI.indexOf(t) >= LV.energy || (!!LV.blend && S.tracks[t].type === 'tone');
 export const lvTarget = t => (LV.mute[t] || lvEmute(t) ? 0 : 1);
 function lvApplyGain(tick) {
   for (let t = 0; t < 8; t++) {
@@ -76,7 +77,6 @@ export function lvLog(tick) {
 export function liveReplace(t, id, tick, fade, entry) {
   const f = facById(id);
   if (!f) return;
-  if (S.clipAuto) autoClip(t, f, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
   LV.voices[t] = [];
   const ent = t === 5 ? entry : Math.min(entry, 8);
   LV.voices[t].push({
@@ -122,18 +122,33 @@ function lvBarSnap(tick) {
   if (LV.bars.size > 48) LV.bars.delete(LV.bars.keys().next().value);
 }
 /* a scene part can name the MC-707 clip it plays on; otherwise the track follows the kind of part (when automatic switching is on) */
+/* the clip each Live scene played on each track when its setting is Random, for Capture to Song (scene:track) */
+export const LV_RCLIP = {};
+/**
+ * Switch track t to the clip a scene part asks for: a clip number, 'random' (any of the track's
+ * clips, a different one each time when it can) or nothing (the track stays as it is). Live Mode
+ * keeps its own clip choices: Song Mode's automatic switching does not apply here. A track a scene
+ * pinned goes back to the clip for its own kind of part when the next scene leaves it as is.
+ */
 export function lvCellClip(t, cell, time) {
   if (!devOn(t)) return;
-  if (cell && cell.clip != null && cell.clip < cmFix()[t].n) {
-    CLIPPIN[t] = cell.clip;
-    if (PCLAST[t] !== cell.clip) sendClip(t, cell.clip, time);
+  const n = cmFix()[t].n;
+  let k = cell ? cell.clip : null;
+  if (k === 'random') {
+    const cur = PCLAST[t];
+    k = n > 1 ? Math.floor(Math.random() * n) : null;
+    if (k != null && k === cur) k = (k + 1 + Math.floor(Math.random() * (n - 1))) % n;
+    if (k != null) LV_RCLIP[LV.scenes.indexOf(LV.scenes.find(s => s.cells[t] === cell)) + ':' + t] = k;
+  }
+  if (k != null && k >= 0 && k < n) {
+    CLIPPIN[t] = k;
+    if (PCLAST[t] !== k) sendClip(t, k, time);
   } else if (CLIPPIN[t] != null) {
     delete CLIPPIN[t];
     delete PCLAST[t];
-    if (cell) {
-      const f = facById(cell.id);
-      if (f) autoClip(t, f, time);
-    }
+    const f = cell && facById(cell.id),
+      h = f ? clipFor(t, patType(f)) : -1;
+    if (h >= 0) sendClip(t, h, time);
   }
 }
 export function liveScene(idx, tick, hard) {
@@ -146,6 +161,10 @@ export function liveScene(idx, tick, hard) {
   LV.gap = null;
   LV.thin = null;
   LV.bov = null;
+  if (LV.blend) {
+    LV.blend = null;
+    lvApplyGain(tick);
+  }
   LV.cues = LV.cues.filter(c => c.type !== 'guestOut' && !(c.type === 'mute' && c.auto));
   if (hard) {
     lvSlam(AU.ctx ? AU.ctx.currentTime : 0, a => a.tag !== 'q');
@@ -282,6 +301,18 @@ function liveFire(c, tick) {
       LV.mute[t] = c.on;
     });
     lvApplyGain(tick);
+    lvLog(tick);
+  } else if (c.type === 'blend') {
+    /* New patterns: the tone parts drop out and the drums carry on */
+    LV.blend = { tick };
+    lvApplyGain(tick);
+    lvHistMark(tick, 'New patterns');
+    lvLog(tick);
+  } else if (c.type === 'blendDrums') {
+    /* halfway: the new set's drums take over, then the whole first scene comes in */
+    const sc = LV.scenes[0];
+    for (let t = 0; t < 8; t++)
+      if (S.tracks[t].type !== 'tone' && sc && sc.cells[t]) liveReplace(t, sc.cells[t].id, tick, 0, 0);
     lvLog(tick);
   } else if (c.type === 'energy') {
     LV.energy = c.n;

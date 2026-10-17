@@ -371,3 +371,25 @@ export function liveBpm(d) {
   if (b) b.value = LV.bpm;
   liveStatus(lvTickF());
 }
+
+/**
+ * New patterns while playing: from the next bar the tone parts drop out and the drums carry on; the
+ * new set's drums take over halfway, and its first scene comes in after 2 to 6 bars.
+ */
+export function lvBlendIn() {
+  LV.jam = null;
+  LV.cues = LV.cues.filter(
+    c =>
+      !['scene', 'gap', 'thin', 'bov', 'swap', 'guest', 'blend', 'blendDrums'].includes(c.type) &&
+      !(c.type === 'fill' && c.auto)
+  );
+  const t0 = lvBoundary(1),
+    bars = 2 + Math.floor(Math.random() * 5),
+    end = t0 + bars * 32;
+  LV.cues.push({ type: 'blend', tick: t0 });
+  LV.cues.push({ type: 'blendDrums', tick: t0 + Math.max(1, Math.floor(bars / 2)) * 32 });
+  LV.cues.push({ type: 'scene', idx: 0, tick: end });
+  lvSortCues();
+  LV.ver++;
+  return bars;
+}

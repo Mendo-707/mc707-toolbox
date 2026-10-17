@@ -5,7 +5,7 @@
 import { DEV, devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
 import { TRACK_POOLS, facById } from '../library/index.js';
-import { CT_POOL, cmFix, patType } from '../services/clip-switch.js';
+import { CT_POOL, clipFor, cmFix, patType } from '../services/clip-switch.js';
 import { mulberry } from '../core/random.js';
 import { LV, lvStyle } from './state.js';
 import { lvIsFlash } from './themes.js';
@@ -139,8 +139,9 @@ export function liveBuild() {
     if (fx) sc.fx = fx;
     scenes.push(sc);
   }
-  if (S.clipAuto) {
-    /* a track with clips of another kind (e.g. a lead sound on the Chords track) switches to it in the B scenes, then back */
+  {
+    /* a track with clips of another kind (e.g. a lead sound on the Chords track) switches to it in the B scenes, then back.
+       Live Mode picks the clip itself, whatever Song Mode's automatic switching is set to. */
     for (const t of [3, 4, 5, 6, 7]) {
       if (!devOn(t)) continue;
       const mm = cmFix()[t],
@@ -152,7 +153,7 @@ export function liveBuild() {
           const cb = facById(sets.B[4]),
             pB = cb && lvProg(cb);
           const id = take(CT_POOL[alt], f => !pB || !lvProg(f) || (lvProg(f) === pB && f.bars === cb.bars));
-          if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play };
+          if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
         }
       });
     }

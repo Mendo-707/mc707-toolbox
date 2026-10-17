@@ -15,7 +15,7 @@ import { trackLabel } from '../library/styles.js';
 import { instShift } from '../song/wizard-plan.js';
 import { LV, lvStyle } from '../live/state.js';
 import { lvModeFam } from '../library/pools.js';
-import { lvModeNote } from '../live/engine.js';
+import { LV_RCLIP, lvModeNote } from '../live/engine.js';
 import { lvOn } from '../live/cues.js';
 import { setMode } from './mode.js';
 import { askDlg } from './dialogs.js';
@@ -120,7 +120,8 @@ export async function liveCapture() {
         for (let t = 0; t < 8; t++) {
           if (!devOn(t)) continue;
           const c = sc.cells[t],
-            k = c && c.clip != null ? c.clip : -1;
+            r = c && c.clip === 'random' ? LV_RCLIP[g.x.idx + ':' + t] : null,
+            k = c && c.clip != null ? (c.clip === 'random' ? (r != null ? r : -1) : c.clip) : -1;
           if (k !== (pin[t] == null ? -1 : pin[t])) {
             const ms = cmMarks();
             ms.filter(m => m.t === t && m.bar === base + g.s).forEach(m => ms.splice(ms.indexOf(m), 1));

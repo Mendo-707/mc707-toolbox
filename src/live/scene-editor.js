@@ -250,12 +250,13 @@ export function liveRenderSceneEd() {
             const cc = sc.cells[ti];
             if (!cc) return;
             if (e.target.value === '') delete cc.clip;
-            else cc.clip = +e.target.value;
+            else cc.clip = e.target.value === 'random' ? 'random' : +e.target.value;
             save();
             if (lvOn() && LV.cur === i) lvCellClip(ti, cc, AU.ctx.currentTime + 0.05);
           }
         },
-        el('option', { value: '' }, S.clipAuto ? 'Clip: auto' : 'Clip: as is')
+        el('option', { value: '' }, 'Clip: as is'),
+        el('option', { value: 'random', selected: !!c && c.clip === 'random' }, 'Clip: random')
       );
     for (let k = 0; k < mm.n; k++) cl.append(el('option', { value: k, selected: c && c.clip === k }, cmLabel(ti, k)));
     parts.append(

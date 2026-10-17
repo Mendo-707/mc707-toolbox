@@ -56,8 +56,7 @@ const GENRE_LABELS = {
   latin: 'Latin and afro',
   synth: 'Synthwave',
   pop: 'Pop and indie',
-  ambient: 'Ambient and cinematic',
-  rock: 'Rock and punk'
+  ambient: 'Ambient and cinematic'
 };
 const GENRE_ORDER = Object.keys(GENRE_LABELS);
 Object.keys(GENRE_LABELS).forEach(g => {
@@ -85,7 +84,8 @@ const ROLE_OPTS = [
   ['Bass', 'Bass'],
   ['Chords', 'Chords'],
   ['Pad', 'Pads'],
-  ['Lead', 'Leads']
+  ['Lead', 'Leads'],
+  ['Acid', 'Acid lines']
 ];
 const SORT_OPTS = [
   ['default', 'Library order'],
