@@ -7,6 +7,7 @@ import { updTransport } from './transport-view.js';
 import { closePops } from './controls.js';
 import { liveRender } from '../live/panels.js';
 import { vizStart } from '../live/visualizer.js';
+import { liveGenrePick, livePickOnOpen } from '../live/genre-picker.js';
 
 /* ---- mode switch ---- */
 export function setMode(m) {
@@ -25,6 +26,7 @@ export function setMode(m) {
   if (m === 'live') {
     liveRender();
     vizStart();
+    if (livePickOnOpen()) liveGenrePick();
   } else {
     updTransport();
     renderArr();

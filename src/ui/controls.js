@@ -19,6 +19,7 @@ import {
 } from '../core/state.js';
 import { bw, hideGhost, renderArr, setBarWidth } from '../song/arrangement.js';
 import { makeDemo } from '../library/index.js';
+import { clipMapOpen } from '../clips/clips-screen.js';
 import { MAXBARS, curPat, songEnd, touch } from '../core/song-model.js';
 import { drawEditor, layoutEditor, renderEditor } from '../song/editor.js';
 import { ensureAudio } from '../services/synth.js';
@@ -283,6 +284,7 @@ export function initControls() {
     afterReplaceKeepUndo();
     closePops();
   });
+  $('#bClips').addEventListener('click', () => clipMapOpen());
   $('#fDemo').addEventListener('click', () => {
     pushUndo();
     const m = S.midiOut;

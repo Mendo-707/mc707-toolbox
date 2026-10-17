@@ -1532,6 +1532,123 @@ input[type='range'] {
   flex: 1;
   min-width: 0;
 }
+
+/* the start screen (src/ui/start-screen.js) */
+.stBox {
+  max-width: 760px;
+}
+.stBox h2 {
+  margin: 0 0 2px;
+  font-size: 26px;
+}
+.stGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.stCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #ffffff22;
+  background: #ffffff08;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.stCard:hover,
+.stCard:focus-visible,
+.stCard.on {
+  border-color: #ff8a3d;
+}
+.stCard:hover,
+.stCard:focus-visible {
+  background: #ff8a3d14;
+}
+.stCard b {
+  font-size: 17px;
+}
+.stCard small {
+  color: #b9bccb;
+  line-height: 1.35;
+}
+.stIcon {
+  font-size: 22px;
+  color: #ff8a3d;
+}
+.stShow {
+  font-size: 13px;
+  color: #b9bccb;
+}
+
+/* Live Mode's genre picker (src/live/genre-picker.js) */
+.lpBox {
+  max-width: 900px;
+}
+.lpHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lpHead h3 {
+  font-size: 22px;
+}
+.lpFam h4 {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #ff8a3d;
+}
+.lpGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.lpStyle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid #ffffff22;
+  background: #ffffff08;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.lpStyle small {
+  color: #b9bccb;
+}
+.lpStyle:hover,
+.lpStyle:focus-visible,
+.lpStyle.on {
+  border-color: #ff8a3d;
+}
+.lpStyle:hover,
+.lpStyle:focus-visible {
+  background: #ff8a3d14;
+}
+
+.suSteps {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+  line-height: 1.45;
+}
+.suSteps li {
+  margin: 4px 0;
+}
+.suSteps small {
+  opacity: 0.75;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -5142,6 +5259,9 @@ input[type='number'] {
         <button class="btn sm" id="bUndo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
         <button class="btn sm" id="bRedo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
         <button class="btn on mbh" id="bWiz" title="Build a full arrangement from a style">Song wizard</button>
+        <button class="btn mbh" id="bClips" title="Your MC-707 clips, and the ZenCore editor for the sound in each clip">
+          Clips &amp; ZenCore
+        </button>
         <button class="btn mbh" id="bXpose" title="Transpose the whole song or just part of it">Transpose</button>
         <button class="btn mbh" id="bStruct" title="Copy, paste, repeat, insert and delete whole sections of the song">
           Structure
@@ -32772,25 +32892,48 @@ input[type='number'] {
       )
     );
     b.append(c4);
+    const step = (where, what, why) => el("li", {}, el("b", {}, where), " ", what, why ? el("small", {}, " " + why) : null);
     const chk = el(
       "details",
-      { class: "wcard", style: "margin-top:12px" },
-      el("summary", {}, "Settings to check on the MC-707")
-    );
-    chk.append(
+      { class: "wcard", style: "margin-top:12px", open: true },
+      el("summary", {}, "Settings on the MC-707"),
       el(
-        "ul",
-        {},
-        el(
-          "li",
-          {},
-          "USB driver: press SHIFT + KNOB ASSIGN, choose SET, then USB DRIVER. Use VENDOR (needs Roland’s driver) or GENERIC. ",
-          el("a", { href: ROLAND_USB_URL, target: "_blank", rel: "noopener" }, "Roland’s instructions")
+        "p",
+        { class: "hint" },
+        "Hold SHIFT and press KNOB ASSIGN, choose SET, then open the MIDI tab. These stay set on the MC-707."
+      ),
+      el(
+        "ol",
+        { class: "suSteps" },
+        step(
+          "MIDI Rx Auto Channel: OFF.",
+          "Otherwise everything the app sends on that channel goes to whichever track is selected on the MC-707.",
+          "(Added in firmware 1.30.)"
         ),
-        el("li", {}, "Tracks 1–3 hold drum kits and tracks 4–8 hold tone sounds, unmuted with their levels up."),
-        el("li", {}, "Each track receives on its own channel (default: track 1 = channel 1 … track 8 = channel 8)."),
-        el("li", {}, "Scene and clip changes are optional: the MC-707 must receive control and program change over USB.")
-      )
+        step(
+          "Track Channel 1-8: CH1 to CH8.",
+          "Each track on its own channel, the same as the app’s tracks (track 1 = channel 1 … track 8 = channel 8)."
+        ),
+        step(
+          "MIDI Sync: AUTO (or USB),",
+          "so the MC-707 follows the app’s tempo when “Make the MC-707 follow this app” is on."
+        ),
+        step(
+          "RX Start Stop USB: OFF",
+          "if your clips hold notes and you only want the app’s parts. With it ON, Play here also starts the MC-707’s own sequencer."
+        ),
+        step("Device ID: 17", "(the default) for the ZenCore editor."),
+        step("USB driver:", "VENDOR (with Roland’s driver) or GENERIC, under SET › USB DRIVER. ", null),
+        step(
+          "For the pads in Live Mode:",
+          "select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON."
+        ),
+        step(
+          "Sounds:",
+          "tracks 1-3 hold drum kits and 4-8 tone sounds, unmuted with their levels up. Clips that hold a sound but no notes work best."
+        )
+      ),
+      el("a", { href: ROLAND_USB_URL, target: "_blank", rel: "noopener" }, "Roland’s USB driver instructions")
     );
     b.append(chk);
     const help = el("details", { class: "wcard", style: "margin-top:12px" }, el("summary", {}, "Not showing up?"));
@@ -33410,6 +33553,7 @@ input[type='number'] {
       afterReplaceKeepUndo();
       closePops();
     });
+    $("#bClips").addEventListener("click", () => clipMapOpen());
     $("#fDemo").addEventListener("click", () => {
       pushUndo();
       const m = S.midiOut;
@@ -34103,6 +34247,224 @@ input[type='number'] {
     updLoopUI();
   }
 
+  // src/live/genre-picker.js
+  var KEY2 = "mc707-live-pick";
+  function livePickOnOpen() {
+    try {
+      return localStorage.getItem(KEY2) !== "0";
+    } catch (e) {
+      return true;
+    }
+  }
+  function liveGenrePick() {
+    if ($("#lvPickOv")) return;
+    const cur = lvStyle();
+    const close = () => ov.remove();
+    const pick2 = (id) => {
+      close();
+      if (id !== LV.style || !LV.scenes.length) liveNewSet(id);
+      liveRender();
+    };
+    const fams = ["dnb", "hh", "edm", "song"].map((f) => {
+      const list = STYLES.filter((s) => s.fam === f);
+      return list.length ? el(
+        "section",
+        { class: "lpFam" },
+        el("h4", {}, FAMLABEL[f]),
+        el(
+          "div",
+          { class: "lpGrid" },
+          ...list.map(
+            (s) => el(
+              "button",
+              {
+                type: "button",
+                class: "lpStyle" + (s.id === cur.id ? " on" : ""),
+                title: s.vibe || s.name,
+                onclick: () => pick2(s.id)
+              },
+              el("b", {}, s.name),
+              el("small", {}, Math.round(s.bpm[2]) + " BPM")
+            )
+          )
+        )
+      ) : null;
+    });
+    const ov = el(
+      "div",
+      { id: "lvPickOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Pick a genre" },
+      el(
+        "div",
+        { class: "ptBox lpBox" },
+        el(
+          "div",
+          { class: "lpHead" },
+          el("h3", {}, "What are we jamming?"),
+          el("button", { type: "button", class: "btn on", onclick: () => pick2(cur.id) }, "Keep " + cur.name + " →")
+        ),
+        el("p", { class: "hint" }, "Pick a style for a fresh set of scenes, or keep the one you had."),
+        ...fams,
+        el(
+          "label",
+          { class: "stShow" },
+          el("input", {
+            type: "checkbox",
+            checked: true,
+            onchange: (e) => {
+              try {
+                localStorage.setItem(KEY2, e.target.checked ? "1" : "0");
+              } catch (er) {
+              }
+            }
+          }),
+          " Ask when Live Mode opens"
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+    document.body.append(ov);
+    setTimeout(() => {
+      const b = ov.querySelector(".lpStyle.on");
+      if (b) b.focus();
+    }, 30);
+  }
+
+  // src/ui/mode.js
+  function setMode(m) {
+    if (document.body.dataset.mode === m) return;
+    stopAll();
+    panic(true);
+    closePops();
+    document.body.dataset.mode = m;
+    try {
+      localStorage.setItem("mc707-mode", m);
+    } catch (e) {
+    }
+    $$("#menubar .mtab").forEach((b) => {
+      b.classList.toggle("on", b.dataset.mode === m);
+      b.setAttribute("aria-selected", String(b.dataset.mode === m));
+    });
+    if (m === "live") {
+      liveRender();
+      vizStart();
+      if (livePickOnOpen()) liveGenrePick();
+    } else {
+      updTransport();
+      renderArr();
+    }
+  }
+
+  // src/ui/start-screen.js
+  var KEY3 = "mc707-start";
+  function startOnOpen() {
+    try {
+      return localStorage.getItem(KEY3) !== "0";
+    } catch (e) {
+      return true;
+    }
+  }
+  var TEMPLATE = [
+    [0, "Intro"],
+    [8, "Build"],
+    [16, "Drop"],
+    [32, "Break"],
+    [40, "Build 2"],
+    [48, "Drop 2"],
+    [56, "Outro"]
+  ];
+  function fresh(template) {
+    pushUndo();
+    const m = S.midiOut;
+    replaceState(newState());
+    S.midiOut = m;
+    if (template) {
+      S.bars = 64;
+      S.markers = TEMPLATE.map(([bar2, name]) => ({ bar: bar2, name }));
+    }
+    UI.sel = null;
+    afterReplaceKeepUndo();
+  }
+  function startOpen(last = true) {
+    if ($("#startOv")) return;
+    const has2 = !!last;
+    const close = () => ov.remove();
+    const card = (icon, title, text, fn, on) => el(
+      "button",
+      {
+        type: "button",
+        class: "stCard" + (on ? " on" : ""),
+        onclick: () => {
+          close();
+          fn();
+        }
+      },
+      el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
+      el("b", {}, title),
+      el("small", {}, text)
+    );
+    const ov = el(
+      "div",
+      { id: "startOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Start" },
+      el(
+        "div",
+        { class: "ptBox stBox" },
+        el("h2", {}, "MC-707 Toolbox"),
+        el("p", { class: "hint" }, "What would you like to do?"),
+        el(
+          "div",
+          { class: "stGrid" },
+          has2 ? card(
+            "↻",
+            last === "menu" ? "Back to this song" : "Load last session",
+            (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
+            () => {
+            },
+            true
+          ) : null,
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
+          card(
+            "▤",
+            "Empty template",
+            "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
+            () => fresh(true)
+          ),
+          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
+          card(
+            "◉",
+            "Live Mode",
+            "Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.",
+            () => setMode("live")
+          )
+        ),
+        el(
+          "label",
+          { class: "stShow" },
+          el("input", {
+            type: "checkbox",
+            checked: true,
+            onchange: (e) => {
+              try {
+                localStorage.setItem(KEY3, e.target.checked ? "1" : "0");
+              } catch (er) {
+              }
+            }
+          }),
+          " Show this when the app opens (also in File › Start screen)"
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+    document.body.append(ov);
+    setTimeout(() => {
+      const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
+      if (b) b.focus();
+    }, 30);
+  }
+
   // src/ui/grabber.js
   var GRAB = {
     on: false,
@@ -34531,30 +34893,6 @@ input[type='number'] {
     );
   }
 
-  // src/ui/mode.js
-  function setMode(m) {
-    if (document.body.dataset.mode === m) return;
-    stopAll();
-    panic(true);
-    closePops();
-    document.body.dataset.mode = m;
-    try {
-      localStorage.setItem("mc707-mode", m);
-    } catch (e) {
-    }
-    $$("#menubar .mtab").forEach((b) => {
-      b.classList.toggle("on", b.dataset.mode === m);
-      b.setAttribute("aria-selected", String(b.dataset.mode === m));
-    });
-    if (m === "live") {
-      liveRender();
-      vizStart();
-    } else {
-      updTransport();
-      renderArr();
-    }
-  }
-
   // src/ui/live-capture.js
   function lvCapPat(f, key, mode, st) {
     if (f.type !== "tone" || !f.key || lvModeFam(f.key.scale) === mode)
@@ -34692,6 +35030,7 @@ input[type='number'] {
           ["Save as…", projSaveAs, "Ctrl+Shift+S"],
           0,
           ["Saved songs (quick slots)…", go("#bFile")],
+          ["Start screen…", () => startOpen("menu")],
           ["Load demo song", go("#fDemo")],
           ["Export MIDI (.zip)", go("#fMidi")],
           0,
@@ -34753,6 +35092,7 @@ input[type='number'] {
           0,
           ["Connect MC-707", go("#lvMidi")],
           ["New patterns", go("#lvNew")],
+          ["Pick a genre…", () => liveGenrePick()],
           0,
           ["Grab a sample…", () => grabOpen($(".mb.open") || $("#lvStart"))],
           ["Capture to Song", () => liveCapture()],
@@ -38543,13 +38883,13 @@ input[type='number'] {
   var copySound = (snd) => ({ kind: snd.kind, v: { ...snd.v }, known: new Set(snd.known) });
 
   // src/zen/zc-library.js
-  var KEY2 = "mc707-zen";
+  var KEY4 = "mc707-zen";
   var ZLIB = { lib: [], clips: {}, loaded: false };
   function load2() {
     if (ZLIB.loaded) return;
     ZLIB.loaded = true;
     try {
-      const o = JSON.parse(localStorage.getItem(KEY2) || "{}");
+      const o = JSON.parse(localStorage.getItem(KEY4) || "{}");
       if (Array.isArray(o.lib)) ZLIB.lib = o.lib.filter((e) => e && typeof e.id === "string" && soundFrom(e.s));
       if (o.clips && typeof o.clips === "object") ZLIB.clips = o.clips;
     } catch (e) {
@@ -38557,7 +38897,7 @@ input[type='number'] {
   }
   function save2() {
     try {
-      localStorage.setItem(KEY2, JSON.stringify({ lib: ZLIB.lib, clips: ZLIB.clips }));
+      localStorage.setItem(KEY4, JSON.stringify({ lib: ZLIB.lib, clips: ZLIB.clips }));
       return true;
     } catch (e) {
       return false;
@@ -42894,10 +43234,7 @@ input[type='number'] {
     $("#bLibT").classList.toggle("on", !$("#main").classList.contains("nolib"));
     renderAll();
     projTitle();
-    try {
-      if (localStorage.getItem("mc707-mode") === "live") setMode("live");
-    } catch (e) {
-    }
+    if (startOnOpen()) startOpen(!!saved);
     requestAnimationFrame(frame);
     (async () => {
       try {

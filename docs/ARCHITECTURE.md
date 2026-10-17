@@ -263,6 +263,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `live/cues.js` | Live Mode cues: everything that waits for the next beat, bar or phrase (scene changes, swaps, mutes, key changes, energy) and the Variation engine. |  |
 | `live/engine.js` | The Live Mode engine: the voices playing on each track, what plays on every tick, scene changes, swaps, and start and stop. |  |
 | `live/extreme.js` | Hi-hat rolls for the trap family (trap, drill, phonk, Memphis), at any Variation level, and Extreme variation (Variation above 100): every repeat of a loop changes, with snare rolls and kick drop-outs on the kit and octave flicks on the 808. |  |
+| `live/genre-picker.js` | The genre picker: when Live Mode opens (and nothing is playing) it asks which style to jam in, grouped by family, with the current set one click away. Picking a style builds a fresh set. | localStorage 'mc707-live-pick' ('0' = do not ask when Live Mode opens) |
 | `live/harmony.js` | Keeping a Live set in tune with itself: the chord progression that is playing now, which patterns fit it when parts swap or a guest melody comes in, and where a new part should start so it lines up with the progression already playing. |  |
 | `live/jam.js` | Start Jam and End Jam. A jam opens with a few 2-bar intro loops that build into the first scene (parts arrive one group at a time, the filter opens, the last loop rolls and rises into the drop) and closes with a quick 1-2 bar outro that winds the scene down to a final hit. The loops are made from the set's own patterns, so they suit every genre and lead straight into (or out of) the music, and the recipe is picked at random each time. | LV.jam (the intro or outro in progress) |
 | `live/lanes.js` | The Live Mode timeline: lanes showing what each track plays, the status panel and the per-frame update. |  |
@@ -316,6 +317,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/projects.js` | Project files: new, open, save, recent projects and the project title, through the Windows app or the browser. |  |
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |
 | `ui/setup-wizard.js` | The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio. | SU (the setup wizard) |
+| `ui/start-screen.js` | The start screen: when the app opens (in Song Mode) it offers to load the last session, start a blank song or an empty template with its sections marked, open the song wizard, or go to Live Mode. A tick box turns it off. | localStorage 'mc707-start' ('0' = do not show at start) |
 | `ui/transport-view.js` | The transport display: position, play state, and moving the playhead in Song Mode, the editor and the wizard. |  |
 
 ### main.js (layer: app)

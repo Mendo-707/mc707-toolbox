@@ -74,8 +74,13 @@ Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download 
 2. Open **Settings › Quick setup** and press **Auto-connect MC-707**.
 3. Press **Play tracks 1 → 8**. Each MC-707 track should sound in turn. If one is wrong, change its channel there.
 4. Optional: tick **Make the MC-707 follow this app** to send MIDI clock and start/stop. On the MC-707, set sync to AUTO or USB.
+5. On the MC-707 (SHIFT + KNOB ASSIGN › SET › MIDI tab), set **MIDI Rx Auto Channel** to **OFF** and **Track Channel 1-8** to CH1–CH8. Quick setup lists every setting that matters, step by step.
 
 ---
+
+## Opening the app
+
+The app opens in Song Mode with a start screen: **Load last session**, **Blank song**, **Empty template** (64 bars with intro, build, drop, break, drop 2 and outro marked), **Song wizard** or **Live Mode**. Untick *Show this when the app opens* to skip it; **File › Start screen** brings it back. Live Mode opens with a genre picker: choose a style for a fresh set, or keep the one you had (**Live › Pick a genre** any time).
 
 ## Song Mode
 
@@ -134,7 +139,7 @@ Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download 
 
 ## ZenCore editor
 
-Edit the sounds inside your MC-707 from the app: every parameter of a ZEN-Core tone, on big screens instead of menu diving. Open **Settings › Your MC-707 clips**, pick a clip and press **Edit ZenCore** (or right-click a clip, or press ZENCORE on the clip screen). Drum tracks open their drum kit.
+Edit the sounds inside your MC-707 from the app: every parameter of a ZEN-Core tone, on big screens instead of menu diving. Press **Clips & ZenCore** in Song Mode's toolbar (or **Settings › Your MC-707 clips**), pick a clip and press **Edit ZenCore** (or right-click a clip, or press ZENCORE on the clip screen). Drum tracks open their drum kit.
 
 ![ZenCore editor](docs/zencore-editor.png)
 

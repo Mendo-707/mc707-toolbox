@@ -132,6 +132,7 @@ import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
+import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zenOpen } from './zen/zc-editor.js';
 import { hooks } from './core/hooks.js';
@@ -256,9 +257,8 @@ PROJ.t = projTitle;
   $('#bLibT').classList.toggle('on', !$('#main').classList.contains('nolib'));
   renderAll();
   projTitle();
-  try {
-    if (localStorage.getItem('mc707-mode') === 'live') setMode('live');
-  } catch (e) {}
+  /* the app opens in Song Mode with the start screen: last session, blank song, template, wizard or Live Mode */
+  if (startOnOpen()) startOpen(!!saved);
   requestAnimationFrame(frame);
   (async () => {
     try {

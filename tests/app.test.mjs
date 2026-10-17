@@ -330,3 +330,26 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   assert.equal(await page.locator('#zcOv').count(), 0);
   assert.deepEqual(errors, []);
 });
+
+test('the start screen opens the last session or Live Mode, which asks for a genre', async () => {
+  const { page, errors } = await openApp({
+    storage: { ...SAVED, 'mc707-start': '1', 'mc707-live-pick': '1' }
+  });
+  await page.waitForSelector('#startOv');
+  const cards = await page.$$eval('.stCard b', b => b.map(x => x.textContent));
+  assert.deepEqual(cards, ['Load last session', 'Blank song', 'Empty template', 'Song wizard', 'Live Mode']);
+  const clips = await page.evaluate(() => window.__app.S.clips.length);
+  assert.ok(clips > 0, 'the saved song is loaded behind the screen');
+  await page.locator('.stCard', { hasText: 'Empty template' }).click();
+  assert.equal(await page.evaluate(() => window.__app.S.clips.length), 0);
+  assert.equal(await page.evaluate(() => window.__app.S.markers.length), 7);
+  /* File › Start screen, then Live Mode: the genre picker opens and builds a set in the chosen style */
+  await page.locator('#menubar .mb', { hasText: 'File' }).click();
+  await page.locator('.mdrop:not([hidden]) button', { hasText: 'Start screen' }).click();
+  await page.locator('.stCard', { hasText: 'Live Mode' }).click();
+  await page.waitForSelector('#lvPickOv');
+  await page.locator('.lpStyle', { hasText: 'Acid techno' }).click();
+  assert.equal(await page.locator('#lvPickOv').count(), 0);
+  assert.equal(await page.evaluate(() => document.querySelector('#lvStyle').value), 'acidtechno');
+  assert.deepEqual(errors, []);
+});

@@ -11,6 +11,8 @@ import { setDevice, setOneKit } from './device.js';
 import { closePops } from './controls.js';
 import { SU, closeSetup, openSetup } from './setup-wizard.js';
 import { liveStopCue } from '../live/cues.js';
+import { startOpen } from './start-screen.js';
+import { liveGenrePick } from '../live/genre-picker.js';
 import { grabOpen } from './grabber.js';
 import { liveCapture } from './live-capture.js';
 import { setMode } from './mode.js';
@@ -50,6 +52,7 @@ function initMenubar() {
         ['Save as…', projSaveAs, 'Ctrl+Shift+S'],
         0,
         ['Saved songs (quick slots)…', go('#bFile')],
+        ['Start screen…', () => startOpen('menu')],
         ['Load demo song', go('#fDemo')],
         ['Export MIDI (.zip)', go('#fMidi')],
         0,
@@ -111,6 +114,7 @@ function initMenubar() {
         0,
         ['Connect MC-707', go('#lvMidi')],
         ['New patterns', go('#lvNew')],
+        ['Pick a genre…', () => liveGenrePick()],
         0,
         ['Grab a sample…', () => grabOpen($('.mb.open') || $('#lvStart'))],
         ['Capture to Song', () => liveCapture()],

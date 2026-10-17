@@ -444,3 +444,120 @@
   flex: 1;
   min-width: 0;
 }
+
+/* the start screen (src/ui/start-screen.js) */
+.stBox {
+  max-width: 760px;
+}
+.stBox h2 {
+  margin: 0 0 2px;
+  font-size: 26px;
+}
+.stGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.stCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #ffffff22;
+  background: #ffffff08;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.stCard:hover,
+.stCard:focus-visible,
+.stCard.on {
+  border-color: #ff8a3d;
+}
+.stCard:hover,
+.stCard:focus-visible {
+  background: #ff8a3d14;
+}
+.stCard b {
+  font-size: 17px;
+}
+.stCard small {
+  color: #b9bccb;
+  line-height: 1.35;
+}
+.stIcon {
+  font-size: 22px;
+  color: #ff8a3d;
+}
+.stShow {
+  font-size: 13px;
+  color: #b9bccb;
+}
+
+/* Live Mode's genre picker (src/live/genre-picker.js) */
+.lpBox {
+  max-width: 900px;
+}
+.lpHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lpHead h3 {
+  font-size: 22px;
+}
+.lpFam h4 {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #ff8a3d;
+}
+.lpGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.lpStyle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid #ffffff22;
+  background: #ffffff08;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.lpStyle small {
+  color: #b9bccb;
+}
+.lpStyle:hover,
+.lpStyle:focus-visible,
+.lpStyle.on {
+  border-color: #ff8a3d;
+}
+.lpStyle:hover,
+.lpStyle:focus-visible {
+  background: #ff8a3d14;
+}
+
+.suSteps {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+  line-height: 1.45;
+}
+.suSteps li {
+  margin: 4px 0;
+}
+.suSteps small {
+  opacity: 0.75;
+}

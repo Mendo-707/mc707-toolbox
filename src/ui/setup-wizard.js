@@ -416,25 +416,50 @@ function renderSetup(keep) {
     )
   );
   b.append(c4);
+  /* the MC-707 settings that matter, as simple steps */
+  const step = (where, what, why) =>
+    el('li', {}, el('b', {}, where), ' ', what, why ? el('small', {}, ' ' + why) : null);
   const chk = el(
     'details',
-    { class: 'wcard', style: 'margin-top:12px' },
-    el('summary', {}, 'Settings to check on the MC-707')
-  );
-  chk.append(
+    { class: 'wcard', style: 'margin-top:12px', open: true },
+    el('summary', {}, 'Settings on the MC-707'),
     el(
-      'ul',
-      {},
-      el(
-        'li',
-        {},
-        'USB driver: press SHIFT + KNOB ASSIGN, choose SET, then USB DRIVER. Use VENDOR (needs Roland’s driver) or GENERIC. ',
-        el('a', { href: ROLAND_USB_URL, target: '_blank', rel: 'noopener' }, 'Roland’s instructions')
+      'p',
+      { class: 'hint' },
+      'Hold SHIFT and press KNOB ASSIGN, choose SET, then open the MIDI tab. These stay set on the MC-707.'
+    ),
+    el(
+      'ol',
+      { class: 'suSteps' },
+      step(
+        'MIDI Rx Auto Channel: OFF.',
+        'Otherwise everything the app sends on that channel goes to whichever track is selected on the MC-707.',
+        '(Added in firmware 1.30.)'
       ),
-      el('li', {}, 'Tracks 1–3 hold drum kits and tracks 4–8 hold tone sounds, unmuted with their levels up.'),
-      el('li', {}, 'Each track receives on its own channel (default: track 1 = channel 1 … track 8 = channel 8).'),
-      el('li', {}, 'Scene and clip changes are optional: the MC-707 must receive control and program change over USB.')
-    )
+      step(
+        'Track Channel 1-8: CH1 to CH8.',
+        'Each track on its own channel, the same as the app’s tracks (track 1 = channel 1 … track 8 = channel 8).'
+      ),
+      step(
+        'MIDI Sync: AUTO (or USB),',
+        'so the MC-707 follows the app’s tempo when “Make the MC-707 follow this app” is on.'
+      ),
+      step(
+        'RX Start Stop USB: OFF',
+        'if your clips hold notes and you only want the app’s parts. With it ON, Play here also starts the MC-707’s own sequencer.'
+      ),
+      step('Device ID: 17', '(the default) for the ZenCore editor.'),
+      step('USB driver:', 'VENDOR (with Roland’s driver) or GENERIC, under SET › USB DRIVER. ', null),
+      step(
+        'For the pads in Live Mode:',
+        'select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON.'
+      ),
+      step(
+        'Sounds:',
+        'tracks 1-3 hold drum kits and 4-8 tone sounds, unmuted with their levels up. Clips that hold a sound but no notes work best.'
+      )
+    ),
+    el('a', { href: ROLAND_USB_URL, target: '_blank', rel: 'noopener' }, 'Roland’s USB driver instructions')
   );
   b.append(chk);
   const help = el('details', { class: 'wcard', style: 'margin-top:12px' }, el('summary', {}, 'Not showing up?'));
