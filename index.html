@@ -28976,18 +28976,6 @@ input[type='number'] {
       end: t2,
       tag
     });
-    lvMove({
-      id: tag + "pan",
-      tracks: [6, 7],
-      cc: 10,
-      kind: "lfo",
-      depth: 0.75,
-      p0: 32,
-      p1: 4,
-      start: t1,
-      end: t2,
-      tag
-    });
   }
   function lvSceneFx(sc, tick) {
     lvSlam(AU.ctx ? AU.ctx.currentTime : 0, (a) => a.tag === "scene");

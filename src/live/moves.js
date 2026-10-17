@@ -103,7 +103,7 @@ export function lvSlam(nt, filter) {
   LV.autos = keep;
   LV.ver++;
 }
-/* The epic build: filter and resonance climb, reverb washes up, the tone parts pump harder and faster, leads pan wider. */
+/* The epic build: filter and resonance climb, reverb washes up, the tone parts pump harder and faster. */
 export function lvBuildMoves(t1, t2, tag) {
   if (!LV.buildFx) return;
   const T = LV_TONES;
@@ -141,18 +141,6 @@ export function lvBuildMoves(t1, t2, tag) {
     period: 8,
     fastAt: Math.max(0, 1 - 32 / Math.max(32, t2 - t1)),
     fastPer: 4,
-    start: t1,
-    end: t2,
-    tag
-  });
-  lvMove({
-    id: tag + 'pan',
-    tracks: [6, 7],
-    cc: 10,
-    kind: 'lfo',
-    depth: 0.75,
-    p0: 32,
-    p1: 4,
     start: t1,
     end: t2,
     tag
