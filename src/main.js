@@ -109,7 +109,7 @@ import { applyDevice } from './ui/device.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
 import { closePops, initControls, renderAll, syncControls } from './ui/controls.js';
-import { setDownloads } from './song/export.js';
+import { saveFile, setDownloads } from './song/export.js';
 import { glueClips, glueRun } from './song/clip-ops.js';
 import { initExtra } from './song/editor-menus.js';
 import { suAutoConnect, testNote } from './ui/setup-wizard.js';
@@ -133,6 +133,7 @@ import { liveInit } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
 import { projTitle } from './ui/projects.js';
+import { ZE, zenOpen } from './zen/zc-editor.js';
 import { hooks } from './core/hooks.js';
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
@@ -164,7 +165,9 @@ Object.assign(hooks, {
   updPlayhead,
   updTransport,
   vizNote,
-  wizCellAt
+  wizCellAt,
+  saveFile,
+  zenOpen
 });
 
 PROJ.t = projTitle;
@@ -195,6 +198,12 @@ PROJ.t = projTitle;
     });
   /* Test hook: the automated tests in tests/ reach the app's internals through this. The app itself never uses it. */
   window.__app = {
+    zen: {
+      open: zenOpen,
+      get ZE() {
+        return ZE;
+      }
+    },
     get S() {
       return S;
     },

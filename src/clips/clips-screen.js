@@ -221,6 +221,7 @@ function cmScreen(map, kk) {
         m.types[kk] = opts[(opts.indexOf(m.types[kk]) + 1) % opts.length];
         clipMapRender();
       }),
+      cmd('ZENCORE', () => hooks.zenOpen(CMAP.t, kk)),
       cmd('RENAME', () => {
         const i = $('.cmEdit input[type=text]');
         if (i) {
@@ -434,6 +435,15 @@ export function clipMapRender() {
           }
         },
         'Switch to it now'
+      ),
+      el(
+        'button',
+        {
+          class: 'btn sm on zcOpen',
+          title: 'Edit the sound in this clip: oscillators, filter, envelopes, LFOs, effects',
+          onclick: () => hooks.zenOpen(CMAP.t, kk)
+        },
+        'Edit ZenCore'
       )
     ),
     el(

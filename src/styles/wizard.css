@@ -422,7 +422,7 @@
   padding: 7px 14px;
   border-radius: 99px;
   font-weight: 600;
-  z-index: 100;
+  z-index: 9700;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s;

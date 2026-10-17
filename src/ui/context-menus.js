@@ -21,6 +21,7 @@ import { GRAB, grabKeys, grabName, grabOpen, grabRenderPop, grabSave, grabStart,
 import { lvKeyMenu, lvPadMenu, lvSceneMenu, lvTrackMenu } from './live-menus.js';
 import { openAudio } from '../song/audio-dialog.js';
 import { askDlg } from './dialogs.js';
+import { zenOpen } from '../zen/zc-editor.js';
 
 /* Song Mode transport */
 function songPlayMenu() {
@@ -217,6 +218,14 @@ function cmClipMenu(t, k) {
           re();
         }
       }
+    },
+    {
+      label: 'Edit ZenCore…',
+      action: () => zenOpen(t, k)
+    },
+    {
+      label: 'Edit ZenCore: the track sound…',
+      action: () => zenOpen(t, 16)
     },
     {
       label: 'Switch the ' + devNm() + ' to it now',

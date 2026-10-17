@@ -39,6 +39,7 @@ src/
   clips/            the "Your MC-707 clips" screen and clip chips
   song/             Song Mode: arrangement, pattern editor, library panel, wizard, export, recording
   live/             Live Mode: engine, scenes, cues, moves, breaks, pads, Raven mode, controller keyboard
+  zen/              the ZenCore editor: MC-707 SysEx, tone and kit parameter tables, MFX types, editor pages
   ui/               the app shell: menu bar, toolbar and shortcuts, projects, menus, dialogs, grabber
 scripts/            build, dev server, import-layer check, module-map generator
 tests/              Playwright tests, baselines (expected output) and fixtures (saved data from v0.10.0)
@@ -54,8 +55,8 @@ To find code, read the module map in `docs/ARCHITECTURE.md`, or search the heade
 
 1. **Never edit `index.html` at the repo root.** Change `src/`, then `npm run build`. CI fails if
    the two differ.
-2. **Imports only point down the layers:** core → library → services → clips → song and
-   live → ui and main.js. Song and Live never import each other. A call that has to point up goes
+2. **Imports only point down the layers:** core → library → services → clips → song, live
+   and zen → ui and main.js. Song, Live and zen never import each other. A call that has to point up goes
    through `core/hooks.js`; add it there and fill it in `main.js`. `npm run check` enforces this.
 3. **Never change a factory pattern's id**, or the order the library is generated in. Saved songs
    and Live scenes refer to patterns by id. Add new patterns at the end of a generator, with a new

@@ -25,6 +25,7 @@
 //   refreshIns         src/ui/saved-songs.js
 //   renderAll          src/ui/controls.js
 //   renderArr          src/song/arrangement.js
+//   saveFile           src/song/export.js
 //   scheduleUI         src/song/arrangement.js
 //   stopAll            src/services/transport.js
 //   suAutoConnect      src/ui/setup-wizard.js
@@ -35,4 +36,5 @@
 //   updTransport       src/ui/transport-view.js
 //   vizNote            src/live/visualizer.js
 //   wizCellAt          src/song/wizard-plan.js
+//   zenOpen            src/zen/zc-editor.js
 export const hooks = {};

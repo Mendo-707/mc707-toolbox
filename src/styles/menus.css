@@ -2,7 +2,7 @@
 /* menus + clip options */
 .cmenu {
   position: fixed;
-  z-index: 300;
+  z-index: 9500;
   min-width: 200px;
   background: var(--panel);
   border: 1px solid var(--line);

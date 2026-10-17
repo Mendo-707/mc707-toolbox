@@ -7,13 +7,16 @@ It has two modes, switched with the tabs at the top right:
 - **Song Mode** – build a whole track on a timeline, then play it on the MC-707 note for note.
 - **Live Mode** – a looping set of scenes you perform from 16 pads, with drops, breaks, swaps and effects that land on the beat.
 
-> **Version 1.0.** Free to use and share, not for sale (see [Licence](#licence)). This is an unofficial fan project and is not made by or affiliated with Roland.
+And a **ZenCore editor** for the sounds in your MC-707's clips.
+
+> **Version 1.2.** Free to use and share, not for sale (see [Licence](#licence)). This is an unofficial fan project and is not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
 ![Live Mode](docs/live-mode.png)
 ![Song Mode](docs/song-mode.png)
 ![Your MC-707 clips](docs/mc707-clips.png)
+![ZenCore editor](docs/zencore-editor.png)
 
 <details>
 <summary><b>Feature overview (9 cards)</b></summary>
@@ -127,6 +130,33 @@ Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download 
 
 ---
 
+## ZenCore editor
+
+Edit the sounds inside your MC-707 from the app: every parameter of a ZEN-Core tone, on big screens instead of menu diving. Open **Settings › Your MC-707 clips**, pick a clip and press **Edit ZenCore** (or right-click a clip, or press ZENCORE on the clip screen). Drum tracks open their drum kit.
+
+![ZenCore editor](docs/zencore-editor.png)
+
+| Page | What you can change |
+|---|---|
+| **Common** | Name, category, level, tuning, mono/poly, legato, portamento, bend range, unison and pitch drift. |
+| **Oscillator** | Each of the 4 partials: PCM wave, VA (saw, square, triangle, sine, Juno …), PCM-Sync, SuperSAW or noise; pulse width and PWM, supersaw detune, FXM, tuning and stereo width. |
+| **Filter** | TVF (LPF, BPF, HPF, peaking, LPF2/3) or the VCF models (JP, M, P) at -12, -18 or -24 dB, cutoff, resonance, key follow, HPF, Fat, and the filter envelope you drag on screen. |
+| **Amp and Pitch** | The amp and pitch envelopes as draggable graphs, velocity, bias, pan, sends and the partial's delay. |
+| **LFO** | Two LFOs per partial with tempo sync, fades and depths, and the 16-step STEP wave drawn as bars. |
+| **Matrix, EQ, Partials** | The four matrix controls (any CC, velocity, LFO or envelope to up to four destinations), each partial's EQ, key and velocity ranges, and ring and cross modulation between partials. |
+| **MFX** | All 91 effect types with their own parameters (delays, choruses, amp sims, saturators, the DJFX and BPM loopers, Juno-106 chorus …) and MFX control. |
+| **Drum kits** | The kit's level and effect, each key's instrument, level, pan, tuning, filter and envelope offsets and EQ, and the six drum compressors. Your pads are marked on the key grid. |
+
+- **Live:** every change goes to the MC-707 as you make it, so you hear it straight away. Play the sound from the keyboard at the bottom of the editor, or with the MC-707's pads.
+- **Read from MC-707** reads the clip's sound when the editor opens. Anything that could not be read shows faded until you change it.
+- **Starters** (saw lead, supersaw, square bass, sub 808, pluck, warm pad, noise sweep), **My sounds** (save and load your own), **File** (save a sound to a file and open it again), **Partial** (copy, paste or reset a partial) and **Copy to** (send the sound to another clip). Undo and redo with Ctrl+Z and Ctrl+Shift+Z, and tick **Edit all four** to change all four partials together.
+- **Track sound:** a track can play its clip's sound or its own track sound (the MC-707's Sound Source setting); choose **Track sound** in the clip menu to edit that one.
+- **Saving on the MC-707:** the editor changes the sound in the MC-707's memory. Save the project on the MC-707 to keep it.
+
+The MC-707 has no published SysEx documentation, so the editor builds on community reverse engineering: [mc-programmer](https://github.com/rsenna/mc-programmer) and [mcpoker / mctools_basic](https://github.com/Locriana/mctools_basic) found how the MC-707 answers Roland SysEx and where the clip tones live, and [Roland-Zen-Decode-XML](https://github.com/DrKnackeratorStrikesAgain/Roland-Zen-Decode-XML) decoded Roland's own parameter list for the MC and MV-1 family. Effect names and settings come from the MC-707 Reference Manual. Tone editing follows those maps closely; drum kit editing and the values of some effect settings have only been tested against a simulated MC-707 so far, so reports from real hardware are very welcome. PCM wave and drum instrument names are not published by Roland, so they show as numbers.
+
+---
+
 ## Files and folders (Windows app)
 
 | What | Where |
@@ -166,7 +196,7 @@ More are listed under **Help › Shortcuts and tips**.
 
 ```
 index.html      the whole app in one file, built from src/ (do not edit it directly)
-src/            the source: about 90 JavaScript modules, the page markup and the styles
+src/            the source: about 120 JavaScript modules, the page markup and the styles
 scripts/        build, development server and code checks
 tests/          automated tests (Playwright, with a simulated MC-707)
 main.js         Windows app window, file dialogs, folders, keep-awake
@@ -185,7 +215,7 @@ LICENSE.md      PolyForm Noncommercial 1.0.0
 
 ## Reporting problems
 
-Open an [issue](../../issues) and say what you pressed, what you expected and what happened. Your Windows version and MC-707 firmware version help. Some newer features (20-channel recording, the Break pad and controller keyboards) have only been tested against a simulated MC-707 so far, so reports from real hardware are very welcome.
+Open an [issue](../../issues) and say what you pressed, what you expected and what happened. Your Windows version and MC-707 firmware version help. Some newer features (20-channel recording, the Break pad, controller keyboards and the ZenCore editor) have only been tested against a simulated MC-707 so far, so reports from real hardware are very welcome.
 
 ## Licence
 

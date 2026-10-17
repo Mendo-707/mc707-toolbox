@@ -32,7 +32,7 @@ export function header(file) {
 export function table() {
   const g = graph();
   const files = Object.keys(g).sort();
-  const order = ['core', 'library', 'services', 'clips', 'song', 'live', 'ui', 'main.js'];
+  const order = ['core', 'library', 'services', 'clips', 'song', 'live', 'zen', 'ui', 'main.js'];
   const group = f => (f.includes('/') ? f.split('/')[0] : f);
   let md = '';
   for (const grp of order) {

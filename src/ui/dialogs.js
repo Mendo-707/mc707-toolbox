@@ -10,7 +10,7 @@ export function askDlg(o) {
   return new Promise(res => {
     const back = el('div', {
       style:
-        'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px'
+        'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9600;padding:16px'
     });
     let inp = null;
     const done = v => {

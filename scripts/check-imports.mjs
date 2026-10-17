@@ -9,7 +9,7 @@
 //   library   the factory pattern library
 //   services  MIDI, transport, sound, audio inputs, and the generic UI pieces (menus, dialogs)
 //   clips     the MC-707 clips screen and clip chips, used by both Song and Live
-//   features  song/ and live/
+//   features  song/, live/ and zen/ (the ZenCore editor)
 //   app       the shell that ties features together (menu bar, right-click menus, projects, main.js)
 // Song and Live never import each other directly; anything they share lives lower down,
 // and the app layer wires them together through core/hooks.js.
@@ -30,7 +30,7 @@ export function layerOf(rel) {
   if (dir === 'library') return 'library';
   if (dir === 'services') return 'services';
   if (dir === 'clips') return 'clips';
-  if (dir === 'song' || dir === 'live') return 'features';
+  if (dir === 'song' || dir === 'live' || dir === 'zen') return 'features';
   if (dir === 'ui') return ['ui/dialogs.js', 'ui/menu.js', 'ui/fullscreen.js'].includes(rel) ? 'services' : 'app';
   return 'app';
 }

@@ -31,11 +31,29 @@ export const FIXTURES = path.join(ROOT, 'tests', 'fixtures');
 const MIDI_MOCK = `
 window.__out=[];
 (()=>{
-  const out={id:'o1',name:'MC-707 MIDI 1',type:'output',state:'connected',send:(b,t)=>{window.__out.push([...b]);(window.__times=window.__times||[]).push(t);}};
-  const inp={id:'i1',name:'MC-707 MIDI 1',type:'input',state:'connected',onmidimessage:null};
-  const fl={id:'i2',name:'FLkey 61 MIDI',type:'input',state:'connected',onmidimessage:null};
-  window.__inject=b=>{if(inp.onmidimessage)inp.onmidimessage({data:new Uint8Array(b),timeStamp:performance.now()});};
-  window.__key=b=>{if(fl.onmidimessage)fl.onmidimessage({data:new Uint8Array(b),timeStamp:performance.now()});};
+  /* a fake MC-707 memory for SysEx: DT1 writes land in it, RQ1 reads answer from it like the real unit does
+     (the reply carries the linear address with each byte masked to 7 bits) */
+  const mem=window.__zcMem=new Map();
+  const lin=a=>(a[0]<<21)|(a[1]<<14)|(a[2]<<7)|a[3];
+  const reply=b=>{
+    if(b[0]!==0xf0||b[1]!==0x41)return;
+    const l=lin(b.slice(8,12));
+    if(b[7]===0x12){b.slice(12,b.length-2).forEach((x,i)=>mem.set(l+i,x));return;}
+    if(b[7]!==0x11||window.__zcMute)return;
+    const n=lin(b.slice(12,16)),data=[];
+    for(let i=0;i<n;i++){if(!mem.has(l+i))return;data.push(mem.get(l+i));}
+    const a=[(l>>>24)&127,(l>>>16)&127,(l>>>8)&127,l&127],body=[...a,...data];
+    const cs=(128-(body.reduce((x,y)=>x+y,0)&127))&127;
+    setTimeout(()=>window.__inject([0xf0,0x41,0x10,0,0,0,b[6],0x12,...body,cs,0xf7]),2);
+  };
+  const out={id:'o1',name:'MC-707 MIDI 1',type:'output',state:'connected',send:(b,t)=>{window.__out.push([...b]);(window.__times=window.__times||[]).push(t);reply([...b]);}};
+  const port=(id,name)=>{const p={id,name,type:'input',state:'connected',onmidimessage:null,_l:[],
+    addEventListener:(t,f)=>{if(t==='midimessage')p._l.push(f);},removeEventListener:(t,f)=>{p._l=p._l.filter(x=>x!==f);},
+    _fire:d=>{const e={data:new Uint8Array(d),timeStamp:performance.now()};if(p.onmidimessage)p.onmidimessage(e);p._l.forEach(f=>f(e));}};return p;};
+  const inp=port('i1','MC-707 MIDI 1');
+  const fl=port('i2','FLkey 61 MIDI');
+  window.__inject=b=>inp._fire(b);
+  window.__key=b=>fl._fire(b);
   navigator.requestMIDIAccess=async()=>({outputs:new Map([['o1',out]]),inputs:new Map([['i1',inp],['i2',fl]]),onstatechange:null});
 })();`;
 

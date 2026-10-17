@@ -101,6 +101,10 @@ test('every screen and dialog opens without errors', async () => {
   });
   await page.waitForTimeout(200);
   assert.equal(await page.locator('#cmOv').count(), 1);
+  await page.locator('.zcOpen').click();
+  assert.equal(await page.locator('#zcOv').count(), 1, 'Edit ZenCore opens the editor');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#zcOv').count(), 0);
   await page.locator('.cmPad').nth(2).click({ button: 'right' });
   assert.ok((await page.locator('.cmenu').count()) > 0);
   await closeMenus();
@@ -260,5 +264,69 @@ test('a library pattern opens in the editor, is placed, saved to My patterns; K 
     { t: 0, bar: 4, k: 1 },
     { t: 0, bar: 6, k: 0 }
   ]);
+  assert.deepEqual(errors, []);
+});
+
+test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and kits open', async () => {
+  const { page, errors } = await openApp();
+  const hex = b => b.map(x => x.toString(16).padStart(2, '0')).join(' ');
+  const sysex = n => page.evaluate(n => window.__out.slice(n).filter(b => b[0] === 0xf0 && b[7] === 0x12), n);
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 20000
+    });
+  /* track 4, clip 1: the fake MC-707 is empty, so the first read finds nothing and gives up quickly */
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await idle();
+  assert.match(await page.textContent('#zcStat'), /did not answer/);
+  /* a cutoff change is one DT1 at track 4 clip 1's partial 1 (30 66 20 32), value 500 in four nibbles */
+  await page.locator('.zcTab', { hasText: 'Filter' }).click();
+  let n = await page.evaluate(() => window.__out.length);
+  await page.evaluate(() => {
+    const r = [...document.querySelectorAll('.zcC')]
+      .find(c => c.textContent.startsWith('Cutoff'))
+      .querySelector('input[type=range]');
+    r.value = 500;
+    r.dispatchEvent(new Event('input'));
+    r.dispatchEvent(new Event('change'));
+  });
+  await page.waitForTimeout(80);
+  assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5d 12 30 66 20 32 00 01 0f 04 04 f7']);
+  /* undo sends the old value back */
+  n = await page.evaluate(() => window.__out.length);
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(80);
+  assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5d 12 30 66 20 32 00 03 0f 0f 77 f7']);
+  /* a starter goes to the MC-707 whole; scrambled here and read back, every value matches */
+  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+  await page.locator('.cmenu .cmi', { hasText: 'Sub 808' }).click();
+  await page.waitForTimeout(600);
+  const want = await page.evaluate(() => ({ ...window.__app.zen.ZE.snd.v }));
+  await page.evaluate(() => {
+    const E = window.__app.zen.ZE;
+    for (const k in E.snd.v) if (typeof E.snd.v[k] === 'number') E.snd.v[k] = 0;
+  });
+  await page.locator('.zcActs button', { hasText: 'Read from' }).click();
+  await idle();
+  assert.match(await page.textContent('#zcStat'), /Read 1151 values/);
+  const got = await page.evaluate(() => window.__app.zen.ZE.snd.v);
+  assert.deepEqual(
+    Object.keys(want).filter(k => want[k] !== got[k]),
+    []
+  );
+  /* MFX: choosing Delay writes the type (30 66 01 00 = 37) and shows its parameters */
+  await page.locator('.zcTab', { hasText: 'MFX' }).click();
+  n = await page.evaluate(() => window.__out.length);
+  await page.selectOption('.zcG select', '37');
+  await page.waitForTimeout(500);
+  assert.ok((await sysex(n)).map(hex).includes('f0 41 10 00 00 00 5d 12 30 66 01 00 25 44 f7'));
+  assert.ok((await page.locator('.zcG legend', { hasText: 'Delay' }).count()) > 0);
+  /* a drum track opens the kit editor with all 88 keys */
+  await page.evaluate(() => window.__app.zen.open(0, 0));
+  await idle();
+  await page.locator('.zcTab', { hasText: 'Keys' }).click();
+  assert.equal(await page.locator('.zcKey').count(), 88);
+  await page.locator('.zcActs button', { hasText: 'Done' }).click();
+  assert.equal(await page.locator('#zcOv').count(), 0);
   assert.deepEqual(errors, []);
 });
