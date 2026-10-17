@@ -201,6 +201,13 @@ export function zenClose() {
   const o = $('#zcOv');
   if (o) o.remove();
   removeEventListener('keydown', keys, true);
+  /* all notes off on the track the editor played */
+  const ch = (S.tracks[ZE.t] && S.tracks[ZE.t].ch) || ZE.t + 1,
+    off = [0xb0 | (ch - 1), 123, 0];
+  try {
+    if (ZX.out) ZX.out.send(off);
+    else if (MIDI.out) MIDI.out.send(off);
+  } catch (e) {}
   if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
   ZX.onState = null;
 }
@@ -253,11 +260,12 @@ function audition(n) {
     else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
   };
   send(n, true);
+  /* release on pointer up, a cancelled touch or the window losing focus, so no note is left hanging */
   const up = () => {
     send(n, false);
-    removeEventListener('pointerup', up);
+    for (const ev of ['pointerup', 'pointercancel', 'blur']) removeEventListener(ev, up);
   };
-  addEventListener('pointerup', up);
+  for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, up);
 }
 /* two octaves from C3 to play the sound: white keys side by side, black keys on top */
 function keyboard() {

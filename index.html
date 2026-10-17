@@ -42066,6 +42066,12 @@ input[type='number'] {
     const o = $("#zcOv");
     if (o) o.remove();
     removeEventListener("keydown", keys, true);
+    const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1, off = [176 | ch - 1, 123, 0];
+    try {
+      if (ZX.out) ZX.out.send(off);
+      else if (MIDI.out) MIDI.out.send(off);
+    } catch (e) {
+    }
     if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
     ZX.onState = null;
   }
@@ -42116,9 +42122,9 @@ input[type='number'] {
     send(n, true);
     const up = () => {
       send(n, false);
-      removeEventListener("pointerup", up);
+      for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
     };
-    addEventListener("pointerup", up);
+    for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
   }
   function keyboard() {
     const box = el("div", { class: "zcKb", "aria-label": "Play notes" });
