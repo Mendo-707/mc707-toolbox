@@ -7,6 +7,7 @@ import { S } from '../core/state.js';
 import { LANES } from '../core/theory.js';
 import { ctl, group } from './zc-widgets.js';
 import { mfxNames, mfxParams, mfxText, shown, stored } from './zc-mfx.js';
+import { MFX_PRESETS, mfxPreset } from './zc-mfx-presets.js';
 import { KIT_LOW, pk } from './zc-tone.js';
 import { pageEq } from './zc-panels.js';
 
@@ -16,6 +17,21 @@ export function pageMfx(ctx) {
   const typeSel = el('select', { onchange: e => ctx.mfxType(+e.target.value) });
   mfxNames().forEach((n, i) =>
     typeSel.append(el('option', { value: i, selected: i === type }, String(i).padStart(2, '0') + ' ' + n))
+  );
+  const presetSel = el(
+    'select',
+    {
+      title: 'Ready-made settings: sets the type and its parameters (one undo step)',
+      onchange: e => {
+        const i = +e.target.value;
+        if (i >= 0) {
+          const p = mfxPreset(i);
+          ctx.mfxType(p.type, p.vals);
+        }
+      }
+    },
+    el('option', { value: -1 }, 'Preset…'),
+    ...MFX_PRESETS.map(([n], i) => el('option', { value: i }, n))
   );
   const params = sps.map((sp, i) => {
     const key = 'MFX.param_' + (i + 1),
@@ -77,6 +93,7 @@ export function pageMfx(ctx) {
     group(
       'Multi-effect',
       el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Type'), typeSel),
+      el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Presets'), presetSel),
       ctl(ctx, 'MFX.mfxSwitch', { label: 'On' }),
       ctl(ctx, 'MFX.choSend', { label: 'Delay send' }),
       ctl(ctx, 'MFX.revSend', { label: 'Reverb send' })

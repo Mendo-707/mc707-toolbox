@@ -4504,11 +4504,32 @@ input[type='number'] {
   border-color: var(--zc-acc);
   color: var(--zc-acc);
 }
-.zcLink {
-  font-size: 12px;
+.zcPart.linked {
+  outline: 1px dashed var(--zc-acc);
+  outline-offset: 2px;
+}
+.zcLinks {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 10px;
+}
+.zcLinkChip {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  border: 1px solid var(--zc-line);
+  background: transparent;
   color: var(--zc-dim);
-  margin-left: 6px;
-  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zcLinkChip.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #001a08;
 }
 .zcPage {
   flex: 1;
@@ -4831,6 +4852,35 @@ input[type='number'] {
     600 13px ui-monospace,
     Consolas,
     monospace;
+}
+.zcSeq {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 4px;
+}
+.zcSeqStep {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: stretch;
+  text-align: center;
+}
+.zcSeqStep select {
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 11px;
+}
+.zcSeqStep .zcSw {
+  font-size: 10px;
+  padding: 2px 0;
+}
+.zcSeqStep.off {
+  opacity: 0.35;
+}
+@media (max-width: 1100px) {
+  .zcSeq {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
 }
 </style>
     <style>
@@ -5676,13 +5726,13 @@ input[type='number'] {
   var clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   var el = (tag, props = {}, ...kids) => {
     const e = document.createElement(tag);
-    for (const k in props) {
-      const v = props[k];
-      if (k === "class") e.className = v;
-      else if (k === "style") e.style.cssText = v;
-      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
-      else if (v === true) e.setAttribute(k, "");
-      else if (v !== false && v != null) e.setAttribute(k, v);
+    for (const k2 in props) {
+      const v = props[k2];
+      if (k2 === "class") e.className = v;
+      else if (k2 === "style") e.style.cssText = v;
+      else if (k2.startsWith("on")) e.addEventListener(k2.slice(2), v);
+      else if (v === true) e.setAttribute(k2, "");
+      else if (v !== false && v != null) e.setAttribute(k2, v);
     }
     for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : document.createTextNode(c));
     return e;
@@ -6789,8 +6839,8 @@ input[type='number'] {
     const merge = (...ds) => Object.assign({}, ...ds);
     const concat = (a, b) => {
       const out = {};
-      (/* @__PURE__ */ new Set([...Object.keys(a), ...Object.keys(b)])).forEach((k) => {
-        out[k] = (a[k] || dots(16)) + (b[k] || dots(16));
+      (/* @__PURE__ */ new Set([...Object.keys(a), ...Object.keys(b)])).forEach((k2) => {
+        out[k2] = (a[k2] || dots(16)) + (b[k2] || dots(16));
       });
       return out;
     };
@@ -7662,7 +7712,7 @@ input[type='number'] {
           ])
         )
       ).slice(0, 60).forEach(([pi, ai, rate], i) => {
-        const [pn, prog] = PROGS[pi], [an, pat] = ARPS[ai];
+        const [pn, prog] = PROGS[pi], [an, pat2] = ARPS[ai];
         const bars = i % 2 ? 2 : 4;
         const kn = nextKey(), R3 = KEYS[kn].root;
         const notes = [];
@@ -7670,7 +7720,7 @@ input[type='number'] {
           const [off, q] = prog[b % 4];
           const ts = tones(R3, off, q, 72).sort((x, y) => x - y);
           for (let s = 0; s < 16; s += rate) {
-            const idx = pat[s / rate % pat.length];
+            const idx = pat2[s / rate % pat2.length];
             notes.push({
               s: b * 16 + s,
               l: rate,
@@ -9190,7 +9240,7 @@ input[type='number'] {
           ])
         )
       ).slice(0, C.arps).forEach(([pi, ai, rate], i) => {
-        const [pn, prog] = PG[pi], [an, pat] = ARPS[ai];
+        const [pn, prog] = PG[pi], [an, pat2] = ARPS[ai];
         const bars = i % 2 ? 2 : 4;
         const kn = nk(), R3 = KEYS[kn].root;
         const notes = [];
@@ -9198,7 +9248,7 @@ input[type='number'] {
           const [off, q] = prog[b % 4];
           const ts = tones(R3, off, q, 72).sort((x, y) => x - y);
           for (let s = 0; s < 16; s += rate) {
-            const idx = pat[s / rate % pat.length];
+            const idx = pat2[s / rate % pat2.length];
             notes.push({
               s: b * 16 + s,
               l: rate,
@@ -9339,17 +9389,17 @@ input[type='number'] {
   var tracksOf = (slot) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => slotOf(t) === slot);
   function bySlot(m, first) {
     const out = {};
-    for (const k in m) {
-      const ts = tracksOf(+k);
-      (first ? ts.slice(0, 1) : ts).forEach((t) => out[t] = m[k]);
+    for (const k2 in m) {
+      const ts = tracksOf(+k2);
+      (first ? ts.slice(0, 1) : ts).forEach((t) => out[t] = m[k2]);
     }
     return out;
   }
   var tracksFor = (slots) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => (slots || []).includes(slotOf(t)));
   var toneTracksAll = () => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t] && S.tracks[t].type === "tone");
   function kitTrack() {
-    const k = trackOf(0);
-    return k >= 0 ? k : S.tracks.findIndex((x) => x && x.type === "drum");
+    const k2 = trackOf(0);
+    return k2 >= 0 ? k2 : S.tracks.findIndex((x) => x && x.type === "drum");
   }
   var buildTrack = () => trackOf(2) >= 0 ? trackOf(2) : kitTrack();
 
@@ -9713,7 +9763,7 @@ input[type='number'] {
     };
     let uid = 0;
     const push = (o) => FAC.push(Object.assign({ id: "lx" + uid++, key: null, keyName: null, styles: null, bpm: null }, o));
-    const ramp = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
+    const ramp2 = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
     for (const g in G) {
       const q = G[g], nm = NAME[g];
       const groove = (upto) => {
@@ -9733,7 +9783,7 @@ input[type='number'] {
           "Snare 16ths",
           (fs) => {
             const ns = groove(fs);
-            for (let s = fs, i = 0; s < 16; s++, i++) ns.push({ s, l: 1, n: 2, v: ramp(i, 16 - fs, 72, 122) });
+            for (let s = fs, i = 0; s < 16; s++, i++) ns.push({ s, l: 1, n: 2, v: ramp2(i, 16 - fs, 72, 122) });
             return ns;
           }
         ],
@@ -9743,7 +9793,7 @@ input[type='number'] {
             const ns = groove(12);
             const st = q.roll ? 0.5 : 1;
             const n = Math.round(4 / st);
-            for (let i = 0; i < n; i++) ns.push({ s: 12 + i * st, l: st, n: 2, v: ramp(i, n, 60, 124) });
+            for (let i = 0; i < n; i++) ns.push({ s: 12 + i * st, l: st, n: 2, v: ramp2(i, n, 60, 124) });
             return ns;
           }
         ],
@@ -9757,7 +9807,7 @@ input[type='number'] {
                 s,
                 l: 1,
                 n: L2[Math.min(L2.length - 1, Math.floor(i * L2.length / (16 - fs)))],
-                v: ramp(i, 16 - fs, 90, 120)
+                v: ramp2(i, 16 - fs, 90, 120)
               });
             return ns;
           }
@@ -9766,7 +9816,7 @@ input[type='number'] {
           "Clap Build",
           (fs) => {
             const ns = groove(8);
-            [8, 10, 12, 13, 14, 15].forEach((s, i) => ns.push({ s, l: 1, n: 3, v: ramp(i, 6, 70, 124) }));
+            [8, 10, 12, 13, 14, 15].forEach((s, i) => ns.push({ s, l: 1, n: 3, v: ramp2(i, 6, 70, 124) }));
             return ns;
           }
         ],
@@ -9774,7 +9824,7 @@ input[type='number'] {
           "Kick Stutter",
           (fs) => {
             const ns = groove(12);
-            [12, 13, 14].forEach((s, i) => ns.push({ s, l: 1, n: 0, v: ramp(i, 3, 95, 120) }));
+            [12, 13, 14].forEach((s, i) => ns.push({ s, l: 1, n: 0, v: ramp2(i, 3, 95, 120) }));
             ns.push({ s: 15, l: 1, n: 2, v: 124 });
             return ns;
           }
@@ -9844,12 +9894,12 @@ input[type='number'] {
             const p = N === 8 ? [4, 4, 4, 4, 2, 2, 1, q.roll ? 0.5 : 1][b] : [4, 2, 1, q.roll ? 0.5 : 1][b];
             for (let s = 0; s < 16; s += p) {
               const at2 = b * 16 + s;
-              const v = ramp(at2, total, 44, 124);
+              const v = ramp2(at2, total, 44, 124);
               lanes.forEach((n) => ns.push({ s: at2, l: Math.min(p, 1), n, v: n === 3 ? Math.max(40, v - 8) : v }));
             }
             if (bn === "Snare + Toms" && b === N - 1) {
               [6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8].forEach(
-                (n, i) => ns.push({ s: b * 16 + i, l: 1, n, v: ramp(i, 16, 96, 124) })
+                (n, i) => ns.push({ s: b * 16 + i, l: 1, n, v: ramp2(i, 16, 96, 124) })
               );
             }
           }
@@ -10206,15 +10256,15 @@ input[type='number'] {
           ["Bounce", "x.xx.x.xx.xx.x.x", [0, 2, 1, 3, 4, 2, 1, 0]],
           ["Skip", "x.x..xx.x.x.xx.x", [0, 3, 1, 4, 2, 3, 0, 4]],
           ["Cascade", "xxx.xxx.xx.xxxx.", [4, 3, 2, 1, 0, 1, 2, 3]]
-        ].forEach(([an, mask, seq]) => {
+        ].forEach(([an, mask, seq2]) => {
           const notes = [];
           for (let b = 0; b < bars; b++) {
             const [off, q] = prog[b % 4];
             const ts = chordTones(R4, off, q, 72);
-            let k = 0;
+            let k2 = 0;
             for (let s = 0; s < 16; s++) {
               if (mask[s] !== "x") continue;
-              const idx = seq[k++ % seq.length];
+              const idx = seq2[k2++ % seq2.length];
               notes.push({
                 s: b * 16 + s,
                 l: 1,
@@ -11314,8 +11364,8 @@ input[type='number'] {
       iv = thin(iv);
       let best = null, bc = 1e9;
       for (let r = 0; r < iv.length; r++)
-        for (let k = -2; k <= 2; k++) {
-          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k + 48).sort((a, b) => a - b);
+        for (let k2 = -2; k2 <= 2; k2++) {
+          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k2 + 48).sort((a, b) => a - b);
           const m = ns.reduce((a, b) => a + b, 0) / ns.length;
           let c = Math.abs(m - center) * (prev ? 0.7 : 2) + (ns[ns.length - 1] - ns[0] > 19 ? 6 : 0);
           if (prev) c += ns.reduce((a, n) => a + Math.min(...prev.map((p) => Math.abs(p - n))), 0);
@@ -11505,11 +11555,11 @@ input[type='number'] {
             ["Spiral", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3, 4, 3, 2, 1]],
             ["Skip", "x..x..x.x..x..x.", [0, 3, 1, 4, 2, 0]]
           ];
-          const [an, mask, seq] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
-          let k = 0;
+          const [an, mask, seq2] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
+          let k2 = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
-            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq[k++ % seq.length];
+            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
             notes.push({
               s,
               l: 1,
@@ -11671,7 +11721,7 @@ input[type='number'] {
         o
       )
     );
-    const ramp = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
+    const ramp2 = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
     const genres = [...new Set(FAC.map((f) => f.genre))].filter((g) => G[g]);
     for (const g of genres) {
       const q = G[g], nm = NAME[g] || g;
@@ -11692,7 +11742,7 @@ input[type='number'] {
               s: pick2 + i * st,
               l: st,
               n: rid === "answer" && i < n / 2 ? [6, 6, 7, 7, 8, 8, 8, 8][Math.floor(i * 8 / n)] : 2,
-              v: ramp(i, n, 64, 124)
+              v: ramp2(i, n, 64, 124)
             });
         }
         if (rid === "rush") hits.slice(4).forEach(([s]) => dn.push({ s, l: 1, n: 2, v: 118 }));
@@ -11749,7 +11799,7 @@ input[type='number'] {
                 s: pick2 + i,
                 l: 1,
                 n: deg(Math.round(i * 7 / Math.max(1, n - 1))),
-                v: ramp(i, n, 84, 120)
+                v: ramp2(i, n, 84, 120)
               });
           }
           push(
@@ -11787,7 +11837,7 @@ input[type='number'] {
     t8x2: [0, 4 / 3, 8 / 3, 4, 16 / 3, 20 / 3]
   };
   var r4 = (x) => Math.round(x * 1e4) / 1e4;
-  var isRoll = (k) => /^(t16|32|h32|ht16|s24|64)$/.test(k);
+  var isRoll = (k2) => /^(t16|32|h32|ht16|s24|64)$/.test(k2);
   function rollNotes(kind, at2, lane, top = 100, fall = false) {
     if (/^[xXog.]{4}$/.test(kind))
       return [...kind].flatMap((c, i) => {
@@ -11837,18 +11887,18 @@ input[type='number'] {
   var tidy = (notes) => {
     const seen = /* @__PURE__ */ new Set();
     return notes.filter((n) => {
-      const k = n.s + ":" + n.n;
-      if (seen.has(k)) return false;
-      seen.add(k);
+      const k2 = n.s + ":" + n.n;
+      if (seen.has(k2)) return false;
+      seen.add(k2);
       return true;
     }).sort((a, b) => a.s - b.s || a.n - b.n);
   };
   function kit(id, name, o) {
     const { bars, genre, bpm, styles, hats: hats2, extra = [], role = "Full kit", pool = "kit", lively = true } = o;
     const lanes = {};
-    for (const k in LANE_KEY) if (o[k]) lanes[k] = o[k];
-    for (const k in lanes)
-      if (lanes[k].replace(/[\s|]/g, "").length !== 16 * bars) throw new Error("genre-drums " + id + " lane " + k);
+    for (const k2 in LANE_KEY) if (o[k2]) lanes[k2] = o[k2];
+    for (const k2 in lanes)
+      if (lanes[k2].replace(/[\s|]/g, "").length !== 16 * bars) throw new Error("genre-drums " + id + " lane " + k2);
     const notes = [
       ...D(bars, lanes).notes,
       ...hats2 ? hatLine(hats2, o.hatLane ?? LANE_KEY.h, o.hatTop || 100) : [],
@@ -14350,7 +14400,7 @@ input[type='number'] {
   for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === "rock") FAC.splice(i, 1);
   function instFactory(f) {
     const found = Object.keys(S.patterns).find(
-      (k) => S.patterns[k].src === f.id && !S.patterns[k].mod && !S.patterns[k].shift
+      (k2) => S.patterns[k2].src === f.id && !S.patterns[k2].mod && !S.patterns[k2].shift
     );
     if (found) return found;
     return addPattern(f.type, f.name, f.bars, f.notes, {
@@ -14403,12 +14453,12 @@ input[type='number'] {
     if (!m) {
       m = /* @__PURE__ */ new Map();
       for (const n of p.notes) {
-        const k = Math.floor(n.s * 2 + 1e-6);
-        if (k < 0 || k >= p.bars * 32) continue;
-        let a = m.get(k);
+        const k2 = Math.floor(n.s * 2 + 1e-6);
+        if (k2 < 0 || k2 >= p.bars * 32) continue;
+        let a = m.get(k2);
         if (!a) {
           a = [];
-          m.set(k, a);
+          m.set(k2, a);
         }
         a.push(n);
       }
@@ -14710,7 +14760,7 @@ input[type='number'] {
         o.send([176 | ch, 64, 0], ms);
         if (hard) o.send([176 | ch, 120, 0], ms);
       }
-      NOTEHIST.forEach((k) => o.send([128 | k >> 7, k & 127, 0], ms));
+      NOTEHIST.forEach((k2) => o.send([128 | k2 >> 7, k2 & 127, 0], ms));
     };
     try {
       burst(now);
@@ -14733,7 +14783,7 @@ input[type='number'] {
   ];
   var CT_DEF = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
   var CT_POOL = { bass: "bass", chords: "chords", pad: "pad", lead: "lead", pluck: "pluck", acid: "acid" };
-  var ctInfo = (k) => CLIP_TYPES.find((x) => x[0] === k) || CLIP_TYPES[CLIP_TYPES.length - 1];
+  var ctInfo = (k2) => CLIP_TYPES.find((x) => x[0] === k2) || CLIP_TYPES[CLIP_TYPES.length - 1];
   var PCLAST = {};
   function cmFix() {
     if (!Array.isArray(S.clipMap) || S.clipMap.length !== 8)
@@ -14741,8 +14791,8 @@ input[type='number'] {
     S.clipMap.forEach((m, i) => {
       m.n = clamp(Math.round(+m.n || 1), 1, 16);
       if (!Array.isArray(m.types)) m.types = [];
-      for (let k = 0; k < 16; k++)
-        if (!ctInfo(m.types[k]) || !m.types[k]) m.types[k] = k === 0 ? CT_DEF[i] : m.types[k - 1] || CT_DEF[i];
+      for (let k2 = 0; k2 < 16; k2++)
+        if (!ctInfo(m.types[k2]) || !m.types[k2]) m.types[k2] = k2 === 0 ? CT_DEF[i] : m.types[k2 - 1] || CT_DEF[i];
       if (!Array.isArray(m.names)) m.names = [];
     });
     return S.clipMap;
@@ -14769,27 +14819,27 @@ input[type='number'] {
   function clipFor(t, type) {
     if (!type) return -1;
     const m = cmFix()[t];
-    for (let k = 0; k < m.n; k++) if (m.types[k] === type) return k;
+    for (let k2 = 0; k2 < m.n; k2++) if (m.types[k2] === type) return k2;
     return -1;
   }
   function autoClip(t, p, time) {
     if (!S.clipAuto || !devOn(t) || CLIPPIN[t] != null) return;
-    const k = clipFor(t, patType(p));
-    if (k < 0 || PCLAST[t] === k) return;
-    sendClip(t, k, time);
+    const k2 = clipFor(t, patType(p));
+    if (k2 < 0 || PCLAST[t] === k2) return;
+    sendClip(t, k2, time);
   }
   var CLIPPIN = {};
   var CMNOW = {};
   var autoClipReset = () => {
-    for (const k in PCLAST) delete PCLAST[k];
-    for (const k in CLIPPIN) delete CLIPPIN[k];
+    for (const k2 in PCLAST) delete PCLAST[k2];
+    for (const k2 in CLIPPIN) delete CLIPPIN[k2];
   };
-  function sendClip(t, k, time) {
-    if (!devOn(t) || k == null || k < 0) return;
-    PCLAST[t] = k;
-    if (MIDI.out) sendMidi([192 | S.tracks[t].ch - 1, k], Math.max(0, time - 4e-3));
+  function sendClip(t, k2, time) {
+    if (!devOn(t) || k2 == null || k2 < 0) return;
+    PCLAST[t] = k2;
+    if (MIDI.out) sendMidi([192 | S.tracks[t].ch - 1, k2], Math.max(0, time - 4e-3));
     const d = AU.ctx && time ? Math.max(0, (time - AU.ctx.currentTime) * 1e3) : 0;
-    setTimeout(() => hooks.cmChipSet(t, k), d);
+    setTimeout(() => hooks.cmChipSet(t, k2), d);
   }
   var cmMarks = () => S.clipMarks || (S.clipMarks = []);
   function clipMarkAt(t, bar2) {
@@ -14857,9 +14907,9 @@ input[type='number'] {
     const x = (tick / 32 - c.start) / c.len;
     if (x < 0 || x > 1) return;
     const v = Math.round(clamp(envInterp(c.cc.pts, x, 0.5), 0, 1) * 127);
-    const k = ti + ":" + c.cc.n;
-    if (AUTOLAST[k] === v) return;
-    AUTOLAST[k] = v;
+    const k2 = ti + ":" + c.cc.n;
+    if (AUTOLAST[k2] === v) return;
+    AUTOLAST[k2] = v;
     sendMidi([176 | S.tracks[ti].ch - 1, c.cc.n, v], time + (S.midiOffset || 0) / 1e3);
   }
   function tempoAtBar(bar2) {
@@ -14962,9 +15012,9 @@ input[type='number'] {
               else sendMidi([192 | t.ch - 1, clamp(c.pc, 0, 127)], at2);
             } else if (S.clipAuto) autoClip(ti, p, at2);
           } else if (c.pc == null && S.clipAuto && PCLAST[ti] == null && c0 < tick) autoClip(ti, p, time);
-          const a = ((tick - c0 + c.off * 32) % Lc + Lc) % Lc + 1e-9, k = Math.floor(a), idx = patIndex(p);
+          const a = ((tick - c0 + c.off * 32) % Lc + Lc) % Lc + 1e-9, k2 = Math.floor(a), idx = patIndex(p);
           const tone2 = t.type === "tone", trs = c.tr || 0;
-          for (const key of [k, k + 1]) {
+          for (const key of [k2, k2 + 1]) {
             const evs = idx.get(key % Lc);
             if (!evs) continue;
             for (const n of evs) {
@@ -15121,7 +15171,7 @@ input[type='number'] {
         sendMidi([251], TR.nextTime);
       }
     }
-    Object.keys(AUTOLAST).forEach((k) => delete AUTOLAST[k]);
+    Object.keys(AUTOLAST).forEach((k2) => delete AUTOLAST[k2]);
     sendTrackCCs();
     autoClipReset();
     CMK.last = -9;
@@ -15895,26 +15945,26 @@ input[type='number'] {
       9
     );
     for (let r = 0; r < 8; r++) {
-      const k = page * 8 + r;
-      at2(el("span", { class: "lcdNum" + (k === kk ? " on" : "") }, String(k + 1)), 2, 2 + r);
+      const k2 = page * 8 + r;
+      at2(el("span", { class: "lcdNum" + (k2 === kk ? " on" : "") }, String(k2 + 1)), 2, 2 + r);
       tracks.forEach((t, i) => {
-        const mm = map[t], used = k < mm.n, cur = t === CMAP.t && k === kk, pl = PCLAST[t] === k;
+        const mm = map[t], used = k2 < mm.n, cur = t === CMAP.t && k2 === kk, pl = PCLAST[t] === k2;
         at2(
           el(
             "span",
             {
               "data-t": t,
-              "data-k": k,
-              class: "lcdCell" + (used ? " used" : "") + (cur ? " cur" : "") + (pl ? " play" : "") + (t === CMAP.t ? " col" : "") + (k === kk ? " row" : ""),
-              title: "Track " + devNum(t) + ", clip " + (k + 1) + (used ? ": " + ctInfo(mm.types[k])[1] + (mm.names[k] ? " (" + mm.names[k] + ")" : "") : " (not used)"),
+              "data-k": k2,
+              class: "lcdCell" + (used ? " used" : "") + (cur ? " cur" : "") + (pl ? " play" : "") + (t === CMAP.t ? " col" : "") + (k2 === kk ? " row" : ""),
+              title: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used ? ": " + ctInfo(mm.types[k2])[1] + (mm.names[k2] ? " (" + mm.names[k2] + ")" : "") : " (not used)"),
               onclick: () => {
                 CMAP.t = t;
-                if (k >= mm.n) mm.n = k + 1;
-                CMAP.k = k;
+                if (k2 >= mm.n) mm.n = k2 + 1;
+                CMAP.k = k2;
                 clipMapRender();
               }
             },
-            used ? String(mm.names[k] || ctInfo(mm.types[k])[1].split(" ")[0]).slice(0, 9).toUpperCase() : ""
+            used ? String(mm.names[k2] || ctInfo(mm.types[k2])[1].split(" ")[0]).slice(0, 9).toUpperCase() : ""
           ),
           C0 + i,
           2 + r
@@ -16008,9 +16058,9 @@ input[type='number'] {
             { class: "cmDots" },
             ...Array.from(
               { length: mm.n },
-              (_, k) => el("i", {
-                style: "background:" + ctInfo(mm.types[k])[2],
-                title: "Clip " + (k + 1) + ": " + ctInfo(mm.types[k])[1]
+              (_, k2) => el("i", {
+                style: "background:" + ctInfo(mm.types[k2])[2],
+                title: "Clip " + (k2 + 1) + ": " + ctInfo(mm.types[k2])[1]
               })
             )
           ),
@@ -16020,26 +16070,26 @@ input[type='number'] {
       );
     });
     const pads = el("div", { class: "cmPads" });
-    for (let k = 0; k < 16; k++) {
-      const on2 = k < m.n, ty = ctInfo(m.types[k]);
+    for (let k2 = 0; k2 < 16; k2++) {
+      const on2 = k2 < m.n, ty = ctInfo(m.types[k2]);
       pads.append(
         el(
           "button",
           {
-            "data-k": k,
-            class: "cmPad" + (on2 ? " lit" : "") + (k === CMAP.k && on2 ? " cur" : ""),
+            "data-k": k2,
+            class: "cmPad" + (on2 ? " lit" : "") + (k2 === CMAP.k && on2 ? " cur" : ""),
             style: "--c:" + (on2 ? ty[2] : "#555"),
-            title: on2 ? "Clip " + (k + 1) + ": " + ty[1] : "Clip " + (k + 1) + " is not used. Click to use clips up to here.",
+            title: on2 ? "Clip " + (k2 + 1) + ": " + ty[1] : "Clip " + (k2 + 1) + " is not used. Click to use clips up to here.",
             onclick: () => {
-              if (k >= m.n) {
-                m.n = k + 1;
+              if (k2 >= m.n) {
+                m.n = k2 + 1;
               }
-              CMAP.k = k;
+              CMAP.k = k2;
               clipMapRender();
             }
           },
-          el("b", {}, String(k + 1)),
-          on2 ? el("span", {}, m.names[k] || ty[1]) : el("span", { class: "off" }, "—")
+          el("b", {}, String(k2 + 1)),
+          on2 ? el("span", {}, m.names[k2] || ty[1]) : el("span", { class: "off" }, "—")
         )
       );
     }
@@ -16341,39 +16391,39 @@ input[type='number'] {
   }
 
   // src/clips/clip-map.js
-  function cmChipSet(t, k) {
-    CMNOW[t] = k;
+  function cmChipSet(t, k2) {
+    CMNOW[t] = k2;
     ["thClip", "lvClip"].forEach((p) => {
       const e = document.getElementById(p + t);
-      if (e) cmChipFill(e, t, k);
+      if (e) cmChipFill(e, t, k2);
     });
   }
-  function cmChipFill(e, t, k) {
-    const m = cmFix()[t], on2 = k != null && k >= 0;
-    e.textContent = on2 ? "C" + (k + 1) + " " + (m.names[k] ? m.names[k].slice(0, 7) : CM_ABBR[m.types[k]]) : "Clip";
-    e.style.setProperty("--k", on2 ? ctInfo(m.types[k])[2] : "transparent");
+  function cmChipFill(e, t, k2) {
+    const m = cmFix()[t], on2 = k2 != null && k2 >= 0;
+    e.textContent = on2 ? "C" + (k2 + 1) + " " + (m.names[k2] ? m.names[k2].slice(0, 7) : CM_ABBR[m.types[k2]]) : "Clip";
+    e.style.setProperty("--k", on2 ? ctInfo(m.types[k2])[2] : "transparent");
     e.classList.toggle("on", on2);
-    e.title = (on2 ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k) : "No clip chosen yet") + ". Click to change.";
+    e.title = (on2 ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k2) : "No clip chosen yet") + ". Click to change.";
   }
-  var cmLabel = (t, k) => {
-    if (k < 0) return "Automatic";
+  var cmLabel = (t, k2) => {
+    if (k2 < 0) return "Automatic";
     const m = cmFix()[t];
-    return "Clip " + (k + 1) + " · " + (m.names[k] || ctInfo(m.types[k])[1]);
+    return "Clip " + (k2 + 1) + " · " + (m.names[k2] || ctInfo(m.types[k2])[1]);
   };
   function cmPickItems(t, cur, fn, autoLabel) {
     const m = cmFix()[t], items = [];
-    for (let k = 0; k < m.n; k++) items.push({ label: cmLabel(t, k), checked: cur === k, action: () => fn(k) });
+    for (let k2 = 0; k2 < m.n; k2++) items.push({ label: cmLabel(t, k2), checked: cur === k2, action: () => fn(k2) });
     if (autoLabel && (S.clipAuto || cur === -1))
       items.push("-", { label: autoLabel, checked: cur === -1, action: () => fn(-1) });
     items.push("-", { label: "Set up track " + devNum(t) + " clips…", action: () => clipMapOpen(t) });
     return items;
   }
-  function setClipMark(t, bar2, k) {
+  function setClipMark(t, bar2, k2) {
     pushUndo();
     bar2 = Math.max(0, Math.floor(bar2));
     const ms = cmMarks(), ex = ms.find((m) => m.t === t && m.bar === bar2);
-    if (ex) ex.k = k;
-    else ms.push({ t, bar: bar2, k });
+    if (ex) ex.k = k2;
+    else ms.push({ t, bar: bar2, k: k2 });
     ms.sort((a, b) => a.bar - b.bar || a.t - b.t);
     scheduleSave();
     hooks.renderArr();
@@ -16391,8 +16441,8 @@ input[type='number'] {
     for (const c of S.clips) if (c.t === t && c.start <= bar2 + 1e-9 && (!last || c.start > last.start)) last = c;
     if (last && last.pc != null) return last.pc;
     if (S.clipAuto && last) {
-      const k = clipFor(t, patType(S.patterns[last.pat]));
-      if (k >= 0) return k;
+      const k2 = clipFor(t, patType(S.patterns[last.pat]));
+      if (k2 >= 0) return k2;
     }
     return null;
   }
@@ -16591,10 +16641,10 @@ input[type='number'] {
       const p = patOf(c);
       if (!p) continue;
       const L2 = loopLen(c), vm = (c.vel || 100) / 100, shaped = c.fi > 0 || c.fo > 0 || c.ve && c.ve.length;
-      for (let k = Math.floor(c.off / L2) - 1; k * L2 - c.off < c.len; k++)
+      for (let k2 = Math.floor(c.off / L2) - 1; k2 * L2 - c.off < c.len; k2++)
         for (const n of p.notes) {
           if (n.s / 16 >= L2 - 1e-9) continue;
-          const pos = n.s / 16 + k * L2 - c.off;
+          const pos = n.s / 16 + k2 * L2 - c.off;
           if (pos < -1e-9 || pos >= c.len - 1e-9) continue;
           notes.push({
             ...n,
@@ -16609,7 +16659,7 @@ input[type='number'] {
     for (const P of GLUE_BARS) {
       if (P >= total - 1e-6 || Math.abs(total / P - Math.round(total / P)) > 1e-6) continue;
       const base = notes.filter((n) => n.s < P * 16 - 1e-6), reps = Math.round(total / P), exp = [];
-      for (let k = 0; k < reps; k++) base.forEach((n) => exp.push({ ...n, s: n.s + k * P * 16 }));
+      for (let k2 = 0; k2 < reps; k2++) base.forEach((n) => exp.push({ ...n, s: n.s + k2 * P * 16 }));
       if (glueSig(exp) === glueSig(notes)) {
         bars = P;
         body = base;
@@ -16715,12 +16765,12 @@ input[type='number'] {
   }
 
   // src/song/clip-change.js
-  var short = (k) => "C" + (k + 1);
+  var short = (k2) => "C" + (k2 + 1);
   function cmFlipTarget(t, bar2) {
     const n = cmFix()[t].n;
     if (n < 2) return null;
     const now = bar2 > 0 ? cmAtBar(t, bar2 - 1) : null;
-    const earlier = cmMarks().filter((m) => m.t === t && m.bar < bar2 && m.k >= 0 && m.k < n).sort((a, b) => b.bar - a.bar).map((m) => m.k).find((k) => k !== now);
+    const earlier = cmMarks().filter((m) => m.t === t && m.bar < bar2 && m.k >= 0 && m.k < n).sort((a, b) => b.bar - a.bar).map((m) => m.k).find((k2) => k2 !== now);
     if (earlier != null) return earlier;
     return now == null || now <= 0 ? 1 : 0;
   }
@@ -16728,7 +16778,7 @@ input[type='number'] {
     const b = Math.max(0, Math.floor(bar2)), mk = cmMarks().find((m) => m.t === t && m.bar === b), f = cmFlipTarget(t, b);
     return [
       f != null ? { label: "⇄ Flip to " + cmLabel(t, f), hint: "Shift+K", action: () => setClipMark(t, b, f) } : null,
-      ...cmPickItems(t, mk ? mk.k : null, (k) => setClipMark(t, b, k), "Back to automatic here"),
+      ...cmPickItems(t, mk ? mk.k : null, (k2) => setClipMark(t, b, k2), "Back to automatic here"),
       mk ? { label: "Remove the clip change at bar " + (b + 1), danger: true, action: () => delClipMark(mk) } : null,
       cmFix()[t].n > 1 ? { label: "Switch back and forth", sub: alternateItems(t, b) } : null
     ];
@@ -16749,12 +16799,12 @@ input[type='number'] {
       action: () => alternate(t, from, to, x, y, e)
     }));
     const others = [];
-    for (let k = 0; k < n; k++) if (k !== a && k !== f) others.push(k);
+    for (let k2 = 0; k2 < n; k2++) if (k2 !== a && k2 !== f) others.push(k2);
     return [
       ...every(a, f),
       others.length ? {
         label: "With another clip",
-        sub: others.map((k) => ({ label: cmLabel(t, k), sub: every(a, k) }))
+        sub: others.map((k2) => ({ label: cmLabel(t, k2), sub: every(a, k2) }))
       } : null
     ];
   }
@@ -16882,11 +16932,11 @@ input[type='number'] {
           run2 = st;
           p++;
         } else st = run2;
-        const k = st & 240, ch = st & 15;
+        const k2 = st & 240, ch = st & 15;
         let a = u[p++], b = 0;
-        if (k !== 192 && k !== 208) b = u[p++];
-        if (k === 144 && b > 0) open.set(ch * 128 + a, { t, v: b });
-        else if (k === 128 || k === 144 && b === 0) {
+        if (k2 !== 192 && k2 !== 208) b = u[p++];
+        if (k2 === 144 && b > 0) open.set(ch * 128 + a, { t, v: b });
+        else if (k2 === 128 || k2 === 144 && b === 0) {
           const o = open.get(ch * 128 + a);
           if (o) {
             notes.push({ t: o.t, d: Math.max(1, t - o.t), n: a, v: o.v, ch });
@@ -16905,12 +16955,12 @@ input[type='number'] {
     return out;
   }
   function midiPartToNotes(part, ppq, type) {
-    const k = 4 / ppq, seen = /* @__PURE__ */ new Set(), notes = [];
+    const k2 = 4 / ppq, seen = /* @__PURE__ */ new Set(), notes = [];
     part.notes.sort((a, b) => a.t - b.t).forEach((n) => {
-      const s = Math.round(n.t * k);
+      const s = Math.round(n.t * k2);
       if (s >= 16 * 32) return;
       const nn = type === "drum" ? GMDRUM[n.n] !== void 0 ? GMDRUM[n.n] : 11 : n.n;
-      const l = type === "drum" ? 1 : Math.max(1, Math.round(n.d * k));
+      const l = type === "drum" ? 1 : Math.max(1, Math.round(n.d * k2));
       const key = s + ":" + nn;
       if (seen.has(key)) return;
       seen.add(key);
@@ -17939,12 +17989,12 @@ input[type='number'] {
           "-",
           ...Array.from({ length: 8 }, (_, g) => ({
             label: "Scenes " + (g * 16 + 1) + "–" + (g * 16 + 16),
-            sub: Array.from({ length: 16 }, (_2, k) => ({
-              label: "Scene " + (g * 16 + k + 1),
-              checked: m.scene === g * 16 + k,
+            sub: Array.from({ length: 16 }, (_2, k2) => ({
+              label: "Scene " + (g * 16 + k2 + 1),
+              checked: m.scene === g * 16 + k2,
               action: () => {
                 pushUndo();
-                m.scene = g * 16 + k;
+                m.scene = g * 16 + k2;
                 scheduleSave();
                 renderArr();
               }
@@ -17959,7 +18009,7 @@ input[type='number'] {
           sub: cmPickItems(
             t,
             (cmMarks().find((x) => x.t === t && x.bar === m.bar) || {}).k,
-            (k) => setClipMark(t, m.bar, k),
+            (k2) => setClipMark(t, m.bar, k2),
             "Back to automatic switching"
           )
         }))
@@ -18356,7 +18406,7 @@ input[type='number'] {
           ["lfo", "Slow wave"],
           ["saw", "Sawtooth"],
           ["gate", "Gate (8 pulses)"]
-        ].map(([k, l]) => ({ label: l, action: () => shapePreset(k) })),
+        ].map(([k2, l]) => ({ label: l, action: () => shapePreset(k2) })),
         "-",
         { label: "Reset this shape", danger: true, action: shapeReset }
       );
@@ -18462,7 +18512,7 @@ input[type='number'] {
       ["lfo", "Slow wave"],
       ["saw", "Sawtooth"],
       ["gate", "Gate"]
-    ].forEach(([k, l]) => pr.append(el("option", { value: k }, l)));
+    ].forEach(([k2, l]) => pr.append(el("option", { value: k2 }, l)));
     h.append(
       el(
         "div",
@@ -18565,9 +18615,9 @@ input[type='number'] {
       x.setLineDash([]);
     }
   }
-  function quickFade(c, k, v) {
+  function quickFade(c, k2, v) {
     pushUndo();
-    c[k] = v;
+    c[k2] = v;
     renderArr();
     scheduleSave();
   }
@@ -18813,7 +18863,7 @@ input[type='number'] {
     const r = { len: b - a, pieces: piecesIn(a, b), marks: markersIn(a, b), cm: cmarksIn(a, b) };
     pushUndo();
     shiftAfter(b, r.len * times);
-    for (let k = 0; k < times; k++) placeRange(r, b + k * r.len);
+    for (let k2 = 0; k2 < times; k2++) placeRange(r, b + k2 * r.len);
     structDone("Repeated bars " + (a + 1) + "–" + b + " ×" + times);
   }
   function insertBarsAt(at2, n) {
@@ -19079,7 +19129,7 @@ input[type='number'] {
   }
   function libSubmenu(t, bar2) {
     const type = S.tracks[t].type;
-    const saved = [...FAVS].map((k) => k.split(":")).filter(([kind, id]) => kind === "fac" && facById(id) && facById(id).type === type).slice(0, 10);
+    const saved = [...FAVS].map((k2) => k2.split(":")).filter(([kind, id]) => kind === "fac" && facById(id) && facById(id).type === type).slice(0, 10);
     const items = [
       {
         label: "Random " + (type === "drum" ? "drum" : "tone") + " pattern",
@@ -19335,7 +19385,7 @@ input[type='number'] {
     const faved = FAVS.has(fk);
     const tracks = S.tracks.map((x, i) => i).filter((i) => S.tracks[i].type === m.type);
     const styles = itemStyles(it);
-    const k = keyLabel(m);
+    const k2 = keyLabel(m);
     return [
       { label: "Open in editor", action: () => openView(src, previewTrackFor(m, true)) },
       { label: "Preview", action: () => auditionLib(m) },
@@ -19391,10 +19441,10 @@ input[type='number'] {
           renderLibrary();
         }
       },
-      k ? {
-        label: "Show same key (" + k + ")",
+      k2 ? {
+        label: "Show same key (" + k2 + ")",
         action: () => {
-          UI.libKey = k;
+          UI.libKey = k2;
           renderLibrary();
         }
       } : null,
@@ -19520,14 +19570,14 @@ input[type='number'] {
   }
   function libHay(it) {
     const m = it.m;
-    const k = keyLabel(m);
+    const k2 = keyLabel(m);
     const parts2 = [
       m.name,
       m.role || "",
       m.type === "drum" ? "drums drum beat kit" : "tone melodic synth",
       GENRE_WORDS[m.genre] || "",
       itemStyles(it).map((id) => STYLES.find((s) => s.id === id).name + " " + SHORT[id]).join(" "),
-      k ? k + " " + NOTE_NAMES[m.key ? m.key.root : 0] + " minor" : "",
+      k2 ? k2 + " " + NOTE_NAMES[m.key ? m.key.root : 0] + " minor" : "",
       m.bpm ? m.bpm + " bpm" : "",
       m.bars + (m.bars === 1 ? " bar" : " bars")
     ];
@@ -19649,10 +19699,10 @@ input[type='number'] {
     ];
     const keyMap = /* @__PURE__ */ new Map();
     base.forEach((it) => {
-      const k = keyLabel(it.m);
-      if (k) keyMap.set(k, it.m.key ? it.m.key.root : 99);
+      const k2 = keyLabel(it.m);
+      if (k2) keyMap.set(k2, it.m.key ? it.m.key.root : 99);
     });
-    const keyOpts = [["all", "Any key"], ...[...keyMap.entries()].sort((a, b) => a[1] - b[1]).map(([k]) => [k, k])];
+    const keyOpts = [["all", "Any key"], ...[...keyMap.entries()].sort((a, b) => a[1] - b[1]).map(([k2]) => [k2, k2])];
     const bars = [...new Set(base.map((it) => it.m.bars))].sort((a, b) => a - b);
     const barOpts = [["all", "Any length"], ...bars.map((n) => [String(n), n + (n === 1 ? " bar" : " bars")])];
     const sel = $("#libSel");
@@ -19693,10 +19743,10 @@ input[type='number'] {
       key: (a, b) => (a.m.key ? a.m.key.root : 99) - (b.m.key ? b.m.key.root : 99) || byName(a, b)
     };
     if (sorters[UI.libSort]) items.sort(sorters[UI.libSort]);
-    const active = ["libType", "libGenre", "libRole", "libStyle", "libKey", "libBars", "libTempo"].filter((k) => UI[k] !== "all").length + (UI.libFav ? 1 : 0) + (tokens.length ? 1 : 0);
+    const active = ["libType", "libGenre", "libRole", "libStyle", "libKey", "libBars", "libTempo"].filter((k2) => UI[k2] !== "all").length + (UI.libFav ? 1 : 0) + (tokens.length ? 1 : 0);
     $("#libCount").textContent = items.length + " of " + base.length + " patterns";
     $("#libClear").style.visibility = active || UI.libSort !== "default" ? "visible" : "hidden";
-    const hidden = ["libRole", "libStyle", "libKey", "libBars", "libTempo"].filter((k) => UI[k] !== "all").length + (UI.libSort !== "default" ? 1 : 0);
+    const hidden = ["libRole", "libStyle", "libKey", "libBars", "libTempo"].filter((k2) => UI[k2] !== "all").length + (UI.libSort !== "default" ? 1 : 0);
     $("#libMoreSum").textContent = hidden ? "More filters (" + hidden + " active)" : "More filters";
     const list = $("#libList");
     list.textContent = "";
@@ -20025,10 +20075,10 @@ input[type='number'] {
   function clipArrow(e) {
     const c = curClip();
     if (!c) return false;
-    const s = SNAP(), k = e.key;
-    if (k === "ArrowUp" || k === "ArrowDown") {
+    const s = SNAP(), k2 = e.key;
+    if (k2 === "ArrowUp" || k2 === "ArrowDown") {
       const type = S.tracks[c.t].type;
-      const dir = k === "ArrowUp" ? -1 : 1;
+      const dir = k2 === "ArrowUp" ? -1 : 1;
       let t = c.t + dir;
       while (t >= 0 && t < 8 && S.tracks[t].type !== type) t += dir;
       if (t < 0 || t > 7) return true;
@@ -20036,7 +20086,7 @@ input[type='number'] {
       setGeom(c, { t }, true);
       return true;
     }
-    const d = k === "ArrowRight" ? 1 : k === "ArrowLeft" ? -1 : 0;
+    const d = k2 === "ArrowRight" ? 1 : k2 === "ArrowLeft" ? -1 : 0;
     if (!d) return false;
     e.preventDefault();
     if (e.shiftKey) setGeom(c, { len: c.len + d * s }, true);
@@ -20491,13 +20541,13 @@ input[type='number'] {
         },
         el("option", { value: "" }, S.clipAuto ? "Automatic (by kind of part)" : "No clip change")
       );
-      for (let k = 0; k < 16; k++)
-        if (k < mm.n || c.pc === k)
+      for (let k2 = 0; k2 < 16; k2++)
+        if (k2 < mm.n || c.pc === k2)
           ps.append(
             el(
               "option",
-              { value: k, selected: c.pc === k },
-              k < mm.n ? cmLabel(c.t, k) : "Clip " + (k + 1) + " (not set up)"
+              { value: k2, selected: c.pc === k2 },
+              k2 < mm.n ? cmLabel(c.t, k2) : "Clip " + (k2 + 1) + " (not set up)"
             )
           );
       panel.append(row("Launch " + devNm() + " clip", ps));
@@ -20687,7 +20737,7 @@ input[type='number'] {
     if (!REC.on || e.ctrlKey || e.metaKey || e.altKey) return false;
     const p = REC.pat;
     if (!p) return false;
-    const k = e.key.toLowerCase();
+    const k2 = e.key.toLowerCase();
     if (down && e.key === "Escape") {
       recStop();
       return true;
@@ -20700,10 +20750,10 @@ input[type='number'] {
       return true;
     }
     const map = p.type === "drum" ? KEYMAP_DRUM : KEYMAP_TONE;
-    if (!(k in map)) {
-      if (p.type === "tone" && (k === "z" || k === "x")) {
+    if (!(k2 in map)) {
+      if (p.type === "tone" && (k2 === "z" || k2 === "x")) {
         if (down) {
-          REC.oct += k === "x" ? 12 : -12;
+          REC.oct += k2 === "x" ? 12 : -12;
           toast("Keyboard octave " + (REC.oct > 0 ? "+" : "") + REC.oct / 12);
         }
         return true;
@@ -20711,12 +20761,12 @@ input[type='number'] {
       return false;
     }
     if (down && e.repeat) return true;
-    const nn = p.type === "drum" ? map[k] : clamp(60 + REC.oct + map[k], 0, 127);
+    const nn = p.type === "drum" ? map[k2] : clamp(60 + REC.oct + map[k2], 0, 127);
     const at2 = AU.ctx.currentTime;
     if (down) {
       e.preventDefault();
-      recNoteOn("k" + k, nn, 100, at2);
-    } else recNoteOff("k" + k, at2);
+      recNoteOn("k" + k2, nn, 100, at2);
+    } else recNoteOff("k" + k2, at2);
     return true;
   }
   function stepAdv(d) {
@@ -21288,17 +21338,17 @@ input[type='number'] {
     const idx = sc.indexOf(((root - key.root) % 12 + 12) % 12);
     if (idx < 0) return count > 3 ? [0, 4, 7, 11] : [0, 4, 7];
     const out = [];
-    for (let k = 0; k < count; k++) {
-      const di = idx + 2 * k;
+    for (let k2 = 0; k2 < count; k2++) {
+      const di = idx + 2 * k2;
       out.push(sc[di % L2] + 12 * Math.floor(di / L2) - sc[idx]);
     }
     return out;
   }
-  function euclidRow(p, id, k) {
+  function euclidRow(p, id, k2) {
     p.notes = p.notes.filter((n) => n.n !== id);
     for (let b = 0; b < p.bars; b++)
       for (let i = 0; i < 16; i++)
-        if (i * k % 16 < k) p.notes.push({ s: b * 16 + i, l: 1, n: id, v: i % 4 === 0 ? 110 : 90 });
+        if (i * k2 % 16 < k2) p.notes.push({ s: b * 16 + i, l: 1, n: id, v: i % 4 === 0 ? 110 : 90 });
   }
   function lockPitch(id, p) {
     if (!ED.lock) return id;
@@ -21316,7 +21366,7 @@ input[type='number'] {
     return { 3: 24, 4: 48, 5: 48, 6: 60, 7: 60 }[t] || 48;
   }
   var LW = 100;
-  var css = (k) => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  var css = (k2) => getComputedStyle(document.documentElement).getPropertyValue(k2).trim();
   function sizeCanvas(cv, w, h) {
     const d = Math.max(1, Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12e6 / Math.max(1, w * h))));
     cv.width = Math.max(1, Math.round(w * d));
@@ -22234,21 +22284,21 @@ input[type='number'] {
     if (devOn(i))
       cmMarks().forEach((mk) => {
         if (mk.t !== i) return;
-        const m = cmFix()[i], k = mk.k, auto = k < 0;
+        const m = cmFix()[i], k2 = mk.k, auto = k2 < 0;
         lane.append(
           el(
             "div",
             {
               class: "cmk" + (auto ? " auto" : ""),
-              style: "left:" + mk.bar * bw + "px;--k:" + (auto ? "var(--mute)" : ctInfo(m.types[k])[2])
+              style: "left:" + mk.bar * bw + "px;--k:" + (auto ? "var(--mute)" : ctInfo(m.types[k2])[2])
             },
             el(
               "b",
               {
-                title: "Bar " + (mk.bar + 1) + ": " + devNm() + " track " + devNum(i) + " → " + cmLabel(i, k) + ". Drag to move, click to change, right-click to delete.",
+                title: "Bar " + (mk.bar + 1) + ": " + devNm() + " track " + devNum(i) + " → " + cmLabel(i, k2) + ". Drag to move, click to change, right-click to delete.",
                 onpointerdown: (ev) => cmkDown(ev, mk)
               },
-              auto ? "AUTO" : "C" + (k + 1) + " " + (m.names[k] ? m.names[k].slice(0, 10) : ctInfo(m.types[k])[1])
+              auto ? "AUTO" : "C" + (k2 + 1) + " " + (m.names[k2] ? m.names[k2].slice(0, 10) : ctInfo(m.types[k2])[1])
             )
           )
         );
@@ -22294,9 +22344,9 @@ input[type='number'] {
       ...cmPickItems(
         mk.t,
         mk.k,
-        (k) => {
+        (k2) => {
           pushUndo();
-          mk.k = k;
+          mk.k = k2;
           scheduleSave();
           renderArr();
         },
@@ -22941,8 +22991,8 @@ input[type='number'] {
       iv = thin(iv);
       let best = null, bc = 1e9;
       for (let r = 0; r < iv.length; r++)
-        for (let k = -2; k <= 2; k++) {
-          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k + 48).sort((a, b) => a - b);
+        for (let k2 = -2; k2 <= 2; k2++) {
+          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k2 + 48).sort((a, b) => a - b);
           const m = ns.reduce((a, b) => a + b, 0) / ns.length;
           let c = Math.abs(m - center) * (prev ? 0.7 : 2) + (ns[ns.length - 1] - ns[0] > 19 ? 6 : 0);
           if (prev) c += ns.reduce((a, n) => a + Math.min(...prev.map((p) => Math.abs(p - n))), 0);
@@ -23072,7 +23122,7 @@ input[type='number'] {
           const g = segAt2(segs, total, s);
           if (mv === "C") {
             const tones = [];
-            g.v.forEach((n) => [-12, 0, 12].forEach((k) => tones.push(n + k + 12)));
+            g.v.forEach((n) => [-12, 0, 12].forEach((k2) => tones.push(n + k2 + 12)));
             const aim = cur + (answer2 ? 2 : 0);
             cur = tones.filter((n) => n >= 64 && n <= 86).sort((a, b) => Math.abs(a - aim) - Math.abs(b - aim))[0] || cur;
           } else {
@@ -23169,11 +23219,11 @@ input[type='number'] {
             ["Spiral", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3, 4, 3, 2, 1]],
             ["Skip", "x..x..x.x..x..x.", [0, 3, 1, 4, 2, 0]]
           ];
-          const [an, mask, seq] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
-          let k = 0;
+          const [an, mask, seq2] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
+          let k2 = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
-            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq[k++ % seq.length];
+            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
             notes.push({
               s,
               l: 1,
@@ -23221,7 +23271,7 @@ input[type='number'] {
     const n = FAC.length;
     addHarmonyPack();
     for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
-    for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
+    for (const k2 in LV_POOLCACHE) delete LV_POOLCACHE[k2];
   }
   var FULLKITS = {};
   function lvFullPool(st) {
@@ -23232,13 +23282,13 @@ input[type='number'] {
     if (!kits.length) return out;
     const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short2 = (x) => x.name.split(":").pop().trim();
     for (let i = 0; i < N * 3 && out.length < N; i++) {
-      const k = kits[i % kits.length], h = hats2.length ? hats2[Math.floor(r() * hats2.length)] : null, p = perc2.length && r() < 0.45 ? perc2[Math.floor(r() * perc2.length)] : null;
-      const key = k.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
+      const k2 = kits[i % kits.length], h = hats2.length ? hats2[Math.floor(r() * hats2.length)] : null, p = perc2.length && r() < 0.45 ? perc2[Math.floor(r() * perc2.length)] : null;
+      const key = k2.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
       if (seen.has(key)) continue;
       seen.add(key);
-      const parts2 = [k, h, p].filter(Boolean), L2 = Math.max(...parts2.map((x) => x.bars));
+      const parts2 = [k2, h, p].filter(Boolean), L2 = Math.max(...parts2.map((x) => x.bars));
       if (parts2.some((x) => L2 % x.bars)) continue;
-      const kitLanes = new Set(k.notes.map((n) => n.n)), m = /* @__PURE__ */ new Map();
+      const kitLanes = new Set(k2.notes.map((n) => n.n)), m = /* @__PURE__ */ new Map();
       parts2.forEach((x, pi) => {
         for (let rep2 = 0; rep2 < L2 / x.bars; rep2++)
           for (const n of x.notes) {
@@ -23249,10 +23299,10 @@ input[type='number'] {
       });
       const e = {
         id: "fk-" + st.id + "-" + out.length,
-        name: "Full Kit: " + short2(k) + (h ? " + " + short2(h) : "") + (p ? " + " + short2(p) : ""),
+        name: "Full Kit: " + short2(k2) + (h ? " + " + short2(h) : "") + (p ? " + " + short2(p) : ""),
         type: "drum",
-        genre: k.genre,
-        bpm: k.bpm,
+        genre: k2.genre,
+        bpm: k2.bpm,
         bars: L2,
         notes: [...m.values()].sort((a, b) => a.s - b.s || a.n - b.n),
         key: null,
@@ -23260,7 +23310,7 @@ input[type='number'] {
         role: "Full kit",
         styles: [st.id],
         pool: "full",
-        lively: !!(k.lively || h && h.lively)
+        lively: !!(k2.lively || h && h.lively)
       };
       FAC.push(e);
       FACMAP.set(e.id, e);
@@ -23872,7 +23922,7 @@ input[type='number'] {
     const list = STRUCT[st.fam];
     const def = list.find((x) => x.id === presetId) || list.find((x) => x.id === (st.fam === "dnb" || st.fam === "edm" ? "club" : "full")) || list[0];
     const K = kindsOf(st.fam);
-    return def.secs.map(([k, b]) => ({ kind: k, bars: b, name: K[k].name }));
+    return def.secs.map(([k2, b]) => ({ kind: k2, bars: b, name: K[k2].name }));
   }
   function defaultWiz(id) {
     const st = STYLES.find((s) => s.id === id);
@@ -23956,8 +24006,8 @@ input[type='number'] {
           );
           const arr = picks[pk2.base];
           const i0 = arr.indexOf(pk2.id);
-          for (let k = 0; k < arr.length; k++) {
-            const g = facById(arr[(i0 + k) % arr.length]);
+          for (let k2 = 0; k2 < arr.length; k2++) {
+            const g = facById(arr[(i0 + k2) % arr.length]);
             if (g && lvProg(g) && bk.has(lvProg(g) + "|" + g.bars)) {
               pk2.id = g.id;
               break;
@@ -24054,7 +24104,7 @@ input[type='number'] {
         "div",
         { class: "strip" },
         ...s.secs.map(
-          ([k, n]) => el("span", { style: "flex:" + n, title: K[k].name + ", " + n + " bars" }, n >= 6 ? K[k].name : "")
+          ([k2, n]) => el("span", { style: "flex:" + n, title: K[k2].name + ", " + n + " bars" }, n >= 6 ? K[k2].name : "")
         )
       );
       cards.append(
@@ -24089,13 +24139,13 @@ input[type='number'] {
         "aria-label": "Section type",
         onchange: (e) => {
           sec.kind = e.target.value;
-          if (!sec.name || Object.values(K).some((k) => k.name === sec.name)) sec.name = K[sec.kind].name;
+          if (!sec.name || Object.values(K).some((k2) => k2.name === sec.name)) sec.name = K[sec.kind].name;
           w.preset = "";
           w.ov = {};
           rerender();
         }
       });
-      Object.keys(K).forEach((k) => ksel.append(el("option", { value: k, selected: sec.kind === k }, K[k].name)));
+      Object.keys(K).forEach((k2) => ksel.append(el("option", { value: k2, selected: sec.kind === k2 }, K[k2].name)));
       const move = (d) => {
         const j = i + d;
         if (j < 0 || j >= w.secs.length) return;
@@ -24178,11 +24228,11 @@ input[type='number'] {
     ed.append(tbl);
     const addSel = el("select", { "aria-label": "Add a section" });
     addSel.append(el("option", { value: "" }, "Add a section…"));
-    Object.keys(K).forEach((k) => addSel.append(el("option", { value: k }, K[k].name)));
+    Object.keys(K).forEach((k2) => addSel.append(el("option", { value: k2 }, K[k2].name)));
     addSel.addEventListener("change", (e) => {
-      const k = e.target.value;
-      if (!k) return;
-      w.secs.push({ kind: k, bars: 8, name: K[k].name });
+      const k2 = e.target.value;
+      if (!k2) return;
+      w.secs.push({ kind: k2, bars: 8, name: K[k2].name });
       w.preset = "";
       w.ov = {};
       rerender();
@@ -24396,7 +24446,7 @@ input[type='number'] {
     const a = [];
     if (w.bpm < st.bpm[0] || w.bpm > st.bpm[1])
       a.push("Tempo is outside the usual " + st.bpm[0] + "–" + st.bpm[1] + " BPM for " + st.name + ".");
-    if (!st.keys.find((k) => k[0] === w.key))
+    if (!st.keys.find((k2) => k2[0] === w.key))
       a.push(
         NK(w.key, st.scale) + " is an unusual key for " + st.name + ". If the bass sounds too low or thin, try " + NK(st.keys[0][0], st.scale) + "."
       );
@@ -24663,7 +24713,7 @@ input[type='number'] {
   function soundRecs(st) {
     const g = SND_G[lvGenreOf(st)] || SND_G.dnb, s = SND_S[st.id] || {};
     const o = {};
-    ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k) => o[k] = s[k] || g[k]);
+    ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k2) => o[k2] = s[k2] || g[k2]);
     return o;
   }
   function customRows(st, r, row) {
@@ -24676,8 +24726,8 @@ input[type='number'] {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums.includes(t)).forEach((t) => {
-      const k = poolOf(t) === "acid" ? "bass" : KEY5[slotOf(t)];
-      out.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k].join(" · "), TRACK_COLORS[t]));
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY5[slotOf(t)];
+      out.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out;
   }
@@ -24825,7 +24875,7 @@ input[type='number'] {
               onclick: () => {
                 w.bump[pool] = (w.bump[pool] || 0) + 1;
                 if (t === trackOf(0)) w.bump.fill = (w.bump.fill || 0) + 1;
-                for (const k in w.ov) if (k.endsWith(":" + t)) delete w.ov[k];
+                for (const k2 in w.ov) if (k2.endsWith(":" + t)) delete w.ov[k2];
                 re();
               }
             },
@@ -24894,16 +24944,16 @@ input[type='number'] {
       ["names", "Name the tracks and set suggested levels", w.mode === "replace"],
       ["loop", "Loop the first drop or hook so you can hear it straight away", true]
     ].forEach(
-      ([k, l, en]) => opts.append(
+      ([k2, l, en]) => opts.append(
         el(
           "label",
           { class: "lay" },
           el("input", {
             type: "checkbox",
-            checked: w.opts[k],
+            checked: w.opts[k2],
             disabled: !en,
             onchange: (e) => {
-              w.opts[k] = e.target.checked;
+              w.opts[k2] = e.target.checked;
             }
           }),
           el("span", {}, l)
@@ -25228,7 +25278,7 @@ input[type='number'] {
     );
     const keys2 = el("div", { class: "chips", style: "margin:8px 0" });
     for (let r = 0; r < 12; r++) {
-      const rec = st.keys.find((k) => k[0] === r);
+      const rec = st.keys.find((k2) => k2[0] === r);
       keys2.append(
         el(
           "button",
@@ -25244,7 +25294,7 @@ input[type='number'] {
         )
       );
     }
-    const cur = st.keys.find((k) => k[0] === w.key);
+    const cur = st.keys.find((k2) => k2[0] === w.key);
     b.append(
       el(
         "div",
@@ -25281,8 +25331,8 @@ input[type='number'] {
     return { id: c.id, off: 0 };
   }
   function instShift(f, sh, rootPc, scale) {
-    const found = Object.keys(S.patterns).find((k) => {
-      const p = S.patterns[k];
+    const found = Object.keys(S.patterns).find((k2) => {
+      const p = S.patterns[k2];
       return p.src === f.id && !p.mod && (p.shift || 0) === sh;
     });
     if (found) return found;
@@ -25726,7 +25776,7 @@ input[type='number'] {
   function saveLive() {
     try {
       const o = {};
-      LV_SAVE.forEach((k) => o[k] = LV[k]);
+      LV_SAVE.forEach((k2) => o[k2] = LV[k2]);
       localStorage.setItem(LVK, JSON.stringify(o));
     } catch (e) {
     }
@@ -25735,8 +25785,8 @@ input[type='number'] {
     if (DEV === "101") return 0;
     const p = trackOf(2);
     if (p >= 0) return p;
-    const k = trackOf(0);
-    return k >= 0 ? k : S.tracks.findIndex((x) => x.type === "drum");
+    const k2 = trackOf(0);
+    return k2 >= 0 ? k2 : S.tracks.findIndex((x) => x.type === "drum");
   };
   var SWG = { drums: [0, 1], perc: [2], bass: [3], chords: [4, 5], pad: [5], lead: [6, 7] };
   var MUG = { drums: [0, 1, 2], bass: [3], chords: [4, 5], lead: [6, 7] };
@@ -25884,10 +25934,10 @@ input[type='number'] {
       for (const arr of pred ? [P[pool], A[pool]] : [P[pool]]) {
         if (!arr.length) continue;
         at2[pool] = at2[pool] || 0;
-        for (let k = 0; k < arr.length; k++) {
-          const id = arr[(at2[pool] + k) % arr.length];
+        for (let k2 = 0; k2 < arr.length; k2++) {
+          const id = arr[(at2[pool] + k2) % arr.length];
           if (!pred || pred(facById(id))) {
-            at2[pool] = (at2[pool] + k + 1) % arr.length;
+            at2[pool] = (at2[pool] + k2 + 1) % arr.length;
             return id;
           }
         }
@@ -26091,10 +26141,10 @@ input[type='number'] {
     knobUI(i, val);
   }
   function knobUI(i, val) {
-    const k = $("#lvKn" + i);
-    if (!k) return;
-    if (+k.value !== val) k.value = val;
-    const box = k.parentNode, r = LV.rest[i], away = Math.abs(val - r) > 1;
+    const k2 = $("#lvKn" + i);
+    if (!k2) return;
+    if (+k2.value !== val) k2.value = val;
+    const box = k2.parentNode, r = LV.rest[i], away = Math.abs(val - r) > 1;
     box.style.setProperty("--r", r / 127);
     box.style.setProperty("--a", Math.min(r, val) / 127);
     box.style.setProperty("--w", Math.abs(val - r) / 127);
@@ -26133,7 +26183,7 @@ input[type='number'] {
       if (!n) return;
       const base = LV.cues.filter((c) => c.type === "scene").pop();
       let j = base ? base.idx : LV.cur;
-      for (let k = 0; k < n; k++) {
+      for (let k2 = 0; k2 < n; k2++) {
         j = (j + (a === "next" ? 1 : n - 1)) % n;
         if (!lvIsFlash(LV.scenes[j])) break;
       }
@@ -26310,7 +26360,7 @@ input[type='number'] {
   ];
   var rvActive = () => {
     const c = LV.ctl;
-    return (RV_PRESETS.find((p) => RV_KEYS.every((k) => String(p[3][k]) === String(c[k]))) || [])[0] || null;
+    return (RV_PRESETS.find((p) => RV_KEYS.every((k2) => String(p[3][k2]) === String(c[k2]))) || [])[0] || null;
   };
   function rvUse(id) {
     const p = RV_PRESETS.find((x) => x[0] === id);
@@ -27203,8 +27253,8 @@ input[type='number'] {
     const typ = st & 240, ch = (st & 15) + 1;
     if (typ === 176 && d[1] >= 80 && d[1] <= 83) {
       LV.knobsIn[d[1] - 80] = d[2];
-      const k = $("#lvKi" + (d[1] - 80));
-      if (k) k.style.setProperty("--v", d[2] / 127);
+      const k2 = $("#lvKi" + (d[1] - 80));
+      if (k2) k2.style.setProperty("--v", d[2] / 127);
       return false;
     }
     const isOn = typ === 144 && d[2] > 0, isOff = typ === 128 || typ === 144 && d[2] === 0;
@@ -27218,9 +27268,9 @@ input[type='number'] {
         }
       }
       if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
-        const k = n - LV.keyBase;
-        if (k >= 0 && k < 12) {
-          ravenKeyKey(k, false);
+        const k2 = n - LV.keyBase;
+        if (k2 >= 0 && k2 < 12) {
+          ravenKeyKey(k2, false);
           return true;
         }
         const m = n - LV.muteBase;
@@ -27270,9 +27320,9 @@ input[type='number'] {
       }
     }
     if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
-      const k = n - LV.keyBase;
-      if (k >= 0 && k < 12) {
-        ravenKeyKey(k, true);
+      const k2 = n - LV.keyBase;
+      if (k2 >= 0 && k2 < 12) {
+        ravenKeyKey(k2, true);
         return true;
       }
       const m = n - LV.muteBase;
@@ -27308,9 +27358,9 @@ input[type='number'] {
   var LV_KEYROWS = ["qwertyui", "asdfghjk"];
   var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
   function lvKeyPad(e) {
-    const k = e.key.toLowerCase();
+    const k2 = e.key.toLowerCase();
     for (let r = 0; r < 2; r++) {
-      const c = LV_KEYROWS[r].indexOf(k);
+      const c = LV_KEYROWS[r].indexOf(k2);
       if (c >= 0) return lvPadIndex(r, c);
     }
     return -1;
@@ -27497,7 +27547,7 @@ input[type='number'] {
   }
   function lvActKind(a) {
     if (!a) return "";
-    const k = a.split(":")[0];
+    const k2 = a.split(":")[0];
     return {
       sw: "Swap",
       mu: "Mute",
@@ -27514,7 +27564,7 @@ input[type='number'] {
       next: "Scene",
       prev: "Scene",
       stop: "Stop"
-    }[k] || (/^s\d$/.test(a) ? lvIsFlash(LV.scenes[+a.slice(1)]) ? "Flash" : "Scene " + (+a.slice(1) + 1) : "");
+    }[k2] || (/^s\d$/.test(a) ? lvIsFlash(LV.scenes[+a.slice(1)]) ? "Flash" : "Scene " + (+a.slice(1) + 1) : "");
   }
   function liveRenderPads() {
     const g = $("#lvPads");
@@ -27553,12 +27603,12 @@ input[type='number'] {
     $("#lvPadHint").textContent = (LV.learn === "p1" ? "Press pad 1 (top left) on the MC-707 now. " : LV.padLayout === "kbd" ? "Laid out like the MC-707 pads in keyboard mode. " : "Pads 1–8 on top, 9–16 below, like the " + DEVS[DEV].name + ". ") + "Click, press the key shown, or hit the pad on the " + DEVS[DEV].name + " (" + (LV.padCh ? "channel " + LV.padCh : "any channel") + "). Cues wait for the launch point.";
   }
   function liveRenderPerf() {
-    const k = $("#lvKeys"), m = $("#lvMutes");
-    if (!k) return;
-    k.textContent = "";
+    const k2 = $("#lvKeys"), m = $("#lvMutes");
+    if (!k2) return;
+    k2.textContent = "";
     m.textContent = "";
     NOTEN.forEach(
-      (n, i) => k.append(
+      (n, i) => k2.append(
         el(
           "button",
           {
@@ -27760,7 +27810,7 @@ input[type='number'] {
     if (on2) {
       while (VZ.ev.length && VZ.ev[0].time <= actx) vizSpawn(VZ.ev.shift());
     } else VZ.ev.length = 0;
-    const dec = (k) => Math.pow(0.5, dt / k);
+    const dec = (k2) => Math.pow(0.5, dt / k2);
     VZ.kick *= dec(0.16);
     VZ.snare *= dec(0.1);
     VZ.hat *= dec(0.07);
@@ -28001,7 +28051,7 @@ input[type='number'] {
   function ctlFix() {
     const c = LV.ctl = Object.assign({}, CTL_DEF, LV.ctl && typeof LV.ctl === "object" ? LV.ctl : {});
     if (!c.map || typeof c.map !== "object") c.map = {};
-    ["low", "base", "keys"].forEach((k) => c[k] = clamp(Math.round(+c[k] || CTL_DEF[k]), 0, 127));
+    ["low", "base", "keys"].forEach((k2) => c[k2] = clamp(Math.round(+c[k2] || CTL_DEF[k2]), 0, 127));
     c.keyCh = clamp(Math.round(+c.keyCh || 0), 0, 16);
     c.soloT = clamp(Math.round(Number.isFinite(+c.soloT) ? +c.soloT : 6), -1, 7);
     c.soloOct = clamp(Math.round(+c.soloOct || 0), -3, 3);
@@ -28010,7 +28060,7 @@ input[type='number'] {
   }
   function ctlIndex() {
     CTL.idx = {};
-    for (const k in LV.ctl.map) CTL.idx[LV.ctl.map[k]] = k;
+    for (const k2 in LV.ctl.map) CTL.idx[LV.ctl.map[k2]] = k2;
   }
   function ctlTargets() {
     const p = ctlPreset(), out = [];
@@ -28024,10 +28074,10 @@ input[type='number'] {
     out.push(["play", "Play button", "Start / stop"], ["stop", "Stop button", "Stop"], ["brk", "Any button", "Break"]);
     return out;
   }
-  var ctlKeyName = (k) => {
-    if (!k) return "not set";
-    const m = /^([cn])(\d+):(\d+)$/.exec(k);
-    return m ? (m[1] === "c" ? "CC " + m[3] : "Note " + m[3] + " (" + noteLbl(+m[3]) + ")") + " · ch " + m[2] : k;
+  var ctlKeyName = (k2) => {
+    if (!k2) return "not set";
+    const m = /^([cn])(\d+):(\d+)$/.exec(k2);
+    return m ? (m[1] === "c" ? "CC " + m[3] : "Note " + m[3] + " (" + noteLbl(+m[3]) + ")") + " · ch " + m[2] : k2;
   };
   function ctlZoneOf(n) {
     const c = LV.ctl, b = c.base;
@@ -28057,8 +28107,8 @@ input[type='number'] {
     lvSortCues();
     LV.ver++;
   }
-  function ctlTranspose(k) {
-    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc = k == null ? home : c.trMode === "rel" ? (home + k) % 12 : k;
+  function ctlTranspose(k2) {
+    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc = k2 == null ? home : c.trMode === "rel" ? (home + k2) % 12 : k2;
     if (!lvOn()) {
       LV.key = pc;
       LV.ver++;
@@ -28147,14 +28197,14 @@ input[type='number'] {
     if (z === "mute") ravenMuteKey(i, on2);
     else if (z === "key") ravenKeyKey(i, on2);
     else ctlSolo(n, v, on2);
-    const k = $("#ctlK" + n);
-    if (k) k.classList.toggle("hit", on2);
+    const k2 = $("#ctlK" + n);
+    if (k2) k2.classList.toggle("hit", on2);
     const a = $("#ctlAct");
     if (a && on2 && CTL.lastAct) a.textContent = " → " + CTL.lastAct;
   }
   function ctlDo(tg, val, press, release) {
-    const now = lvNow(), k = tg[0], i = +tg.slice(1) - 1;
-    if (k === "k") {
+    const now = lvNow(), k2 = tg[0], i = +tg.slice(1) - 1;
+    if (k2 === "k") {
       if (i < 4) sendKnob(i, val);
       else if (i === 4) toneTracksAll().forEach((t) => lvSendCC(t, 91, val, now));
       else if (i === 5) toneTracksAll().forEach((t) => lvSendCC(t, 71, val, now));
@@ -28171,14 +28221,14 @@ input[type='number'] {
         if (s) s.value = LV.chaos;
         saveLive();
       } else if (i === 8 && LV.ctl.soloT >= 0) lvSendCC(LV.ctl.soloT, 74, val, now);
-    } else if (k === "f") {
+    } else if (k2 === "f") {
       if (i < 8) lvSendCC(i, 7, val, now);
       else liveEnergy(1 + Math.round(val / 127 * 7));
-    } else if (k === "b") {
+    } else if (k2 === "b") {
       if (!press) return;
       if (i < 8) ctlMute([i], !lvEffMute(i));
       else ctlMute([0, 1, 2, 3, 4, 5, 6, 7], false);
-    } else if (k === "p") {
+    } else if (k2 === "p") {
       if (press) livePadDown(i);
       else if (release) livePadUp(i);
     } else if (tg === "play") {
@@ -28323,7 +28373,7 @@ input[type='number'] {
       if (zn === "mute") lab = i < 8 ? String(i + 1) : ["All", "Fill", "Drop", "Brk"][i - 8];
       else if (zn === "key") lab = c.trMode === "rel" ? i === 0 ? "0" : "+" + i : NOTEN[i];
       else if (pc === 0) lab = noteLbl(n);
-      const k = el(
+      const k2 = el(
         "i",
         {
           class: "ck " + (isB ? "b " : "w ") + zn,
@@ -28334,7 +28384,7 @@ input[type='number'] {
         isB ? "" : lab
       );
       if (!isB) wx++;
-      wrap.append(k);
+      wrap.append(k2);
     }
     wrap.style.width = wx * W + "px";
     return el("div", { class: "ctlKbWrap" }, wrap);
@@ -28782,16 +28832,16 @@ input[type='number'] {
   function lvCellClip(t, cell, time) {
     if (!devOn(t) || lvUserOwns(t)) return;
     const n = cmFix()[t].n;
-    let k = cell ? cell.clip : null;
-    if (k === "random") {
+    let k2 = cell ? cell.clip : null;
+    if (k2 === "random") {
       const cur = PCLAST[t];
-      k = n > 1 ? Math.floor(Math.random() * n) : null;
-      if (k != null && k === cur) k = (k + 1 + Math.floor(Math.random() * (n - 1))) % n;
-      if (k != null) LV_RCLIP[LV.scenes.indexOf(LV.scenes.find((s) => s.cells[t] === cell)) + ":" + t] = k;
+      k2 = n > 1 ? Math.floor(Math.random() * n) : null;
+      if (k2 != null && k2 === cur) k2 = (k2 + 1 + Math.floor(Math.random() * (n - 1))) % n;
+      if (k2 != null) LV_RCLIP[LV.scenes.indexOf(LV.scenes.find((s) => s.cells[t] === cell)) + ":" + t] = k2;
     }
-    if (k != null && k >= 0 && k < n) {
-      CLIPPIN[t] = k;
-      if (PCLAST[t] !== k) sendClip(t, k, time);
+    if (k2 != null && k2 >= 0 && k2 < n) {
+      CLIPPIN[t] = k2;
+      if (PCLAST[t] !== k2) sendClip(t, k2, time);
     } else if (CLIPPIN[t] != null) {
       delete CLIPPIN[t];
       delete PCLAST[t];
@@ -29055,13 +29105,13 @@ input[type='number'] {
     if (LV.mode === "major") return r === 3 || r === 8 || r === 10 ? n + 1 : n;
     return r === 4 || r === 9 || r === 11 ? n - 1 : n;
   }
-  function lvVarOf(v, t, k, L2) {
+  function lvVarOf(v, t, k2, L2) {
     const s = slotOf(t), th = trackOf(1), X = lvExtreme(), rolls = (s === 1 || s === 0 && !(th >= 0 && LV.voices[th].some((x) => x.env.v1 > 0))) && lvTrapRolls();
-    if (LV.lock || k < 1 || s === 5 || s === 2) return null;
-    const off = LV.vary <= 0 || !X && L2 < 64 && k % 2 === 0;
+    if (LV.lock || k2 < 1 || s === 5 || s === 2) return null;
+    const off = LV.vary <= 0 || !X && L2 < 64 && k2 % 2 === 0;
     if (off && !rolls) return null;
-    if (v._vk === k) return v._vt;
-    const hs = hashStr(v.f.id + ":" + t) + Math.imul(k, 2654435761) >>> 0;
+    if (v._vk === k2) return v._vt;
+    const hs = hashStr(v.f.id + ":" + t) + Math.imul(k2, 2654435761) >>> 0;
     let ty = rolls ? lvTrapRoll(v, t, hs) : null;
     if (ty || off) ty = ty || null;
     else if (X) ty = hs % 1e3 / 1e3 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
@@ -29069,7 +29119,7 @@ input[type='number'] {
       const o = s === 0 ? ["ghost", "kickx", "open"] : s === 1 ? ["open", "thin"] : s === 3 ? ["oct", "run", "thin", "echo"] : ["oct", "run", "echo", "thin", "up"];
       ty = o[(hs >>> 11) % o.length];
     }
-    v._vk = k;
+    v._vk = k2;
     v._vt = ty;
     return ty;
   }
@@ -29276,7 +29326,7 @@ input[type='number'] {
     LV.hist.push({ tick: 0, idx: i, ids: lvIds() });
     lvLog(0);
     if (S.clock && MIDI.out) sendMidi([250], TR.nextTime);
-    Object.keys(AUTOLAST).forEach((k) => delete AUTOLAST[k]);
+    Object.keys(AUTOLAST).forEach((k2) => delete AUTOLAST[k2]);
     sendTrackCCs();
     TICKER.start();
     sched();
@@ -29305,9 +29355,9 @@ input[type='number'] {
     } catch (e) {
     }
     LV.stut = null;
-    Object.keys(LV.held).forEach((k) => {
-      if (k.startsWith("sc")) {
-        const i = +k.slice(2);
+    Object.keys(LV.held).forEach((k2) => {
+      if (k2.startsWith("sc")) {
+        const i = +k2.slice(2);
         sendMidi([128 | (S.ctrlCh || 16) - 1, LV.scBase + i, 0], AU.ctx.currentTime);
       }
     });
@@ -29480,12 +29530,12 @@ input[type='number'] {
     lvLog(tick);
   }
   function lvRollTick(b, tick, nt, td) {
-    const t = b.kind === "roll" ? kitTrack() : lvBT(), k = kitTrack();
+    const t = b.kind === "roll" ? kitTrack() : lvBT(), k2 = kitTrack();
     if (t < 0 || S.tracks[t].mute || lvUserOwns(t) || tick >= b.end - 2) return;
     const rel = tick - b.start, u = rel / b.len, step = b.len >= 32 ? u < 0.5 ? 4 : u < 0.75 ? 2 : 1 : u < 0.5 ? 2 : 1;
     if (b.kind === "roll" && rel === 0) {
-      emitNote(k, 0, 120, nt, td);
-      emitNote(k, 9, 110, nt, td * 4);
+      emitNote(k2, 0, 120, nt, td);
+      emitNote(k2, 9, 110, nt, td * 4);
     }
     if (rel % step === 0) {
       emitNote(t, 2, clamp(Math.round(62 + 60 * u), 1, 127), nt, td);
@@ -29674,7 +29724,7 @@ input[type='number'] {
       if (!isF && S.tracks[ti].type === "tone") {
         const mm2 = cmFix()[ti], own = patType({ pool });
         [...new Set(mm2.types.slice(0, mm2.n))].filter((ty) => CT_POOL[ty] && ty !== own).forEach((ty) => {
-          const k = clipFor(ti, ty), og = el("optgroup", { label: ctInfo(ty)[1] + " parts (switches to clip " + (k + 1) + ")" });
+          const k2 = clipFor(ti, ty), og = el("optgroup", { label: ctInfo(ty)[1] + " parts (switches to clip " + (k2 + 1) + ")" });
           [
             .../* @__PURE__ */ new Set([
               ...c && patType(facById(c.id)) === ty ? [c.id] : [],
@@ -29723,7 +29773,7 @@ input[type='number'] {
         el("option", { value: "" }, "Clip: as is"),
         el("option", { value: "random", selected: !!c && c.clip === "random" }, "Clip: random")
       );
-      for (let k = 0; k < mm.n; k++) cl.append(el("option", { value: k, selected: c && c.clip === k }, cmLabel(ti, k)));
+      for (let k2 = 0; k2 < mm.n; k2++) cl.append(el("option", { value: k2, selected: c && c.clip === k2 }, cmLabel(ti, k2)));
       parts2.append(
         el(
           "label",
@@ -29912,8 +29962,8 @@ input[type='number'] {
     return base + Math.ceil((from - base) / U) * U;
   }
   function lvAutoFill(sc, nx, tick) {
-    const k = trackOf(0), newKit = nx.cells[k] && sc.cells[k] && nx.cells[k].id !== sc.cells[k].id;
-    if (LV.fills && sc.cells[k] && nx.cells[k] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
+    const k2 = trackOf(0), newKit = nx.cells[k2] && sc.cells[k2] && nx.cells[k2].id !== sc.cells[k2].id;
+    if (LV.fills && sc.cells[k2] && nx.cells[k2] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
       const f = facById(lvRand(LV.fillIds));
       if (f) LV.cues.push({ type: "fill", tick: tick - 32, end: tick, f, auto: true });
     }
@@ -30231,9 +30281,9 @@ input[type='number'] {
   function lvSendCC(t, cc, v, nt) {
     if (lvUserOwns(t)) return;
     v = clamp(Math.round(v), 0, 127);
-    const k = t + ":" + cc;
-    if (LV.ccLast[k] === v) return;
-    LV.ccLast[k] = v;
+    const k2 = t + ":" + cc;
+    if (LV.ccLast[k2] === v) return;
+    LV.ccLast[k2] = v;
     if (S.sendCC === false || S.tracks[t].mute) return;
     sendMidi([176 | S.tracks[t].ch - 1, cc, v], nt);
   }
@@ -30269,19 +30319,19 @@ input[type='number'] {
       const done = tick >= a.end;
       if (done && a.restore === false) continue;
       a.tracks.forEach((t) => {
-        const k = t + ":" + a.cc, v = done ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
-        if (a.tag === "fade") fade.set(k, { t, cc: a.cc, v });
-        else if (!done || !val.has(k)) val.set(k, { t, cc: a.cc, v });
+        const k2 = t + ":" + a.cc, v = done ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
+        if (a.tag === "fade") fade.set(k2, { t, cc: a.cc, v });
+        else if (!done || !val.has(k2)) val.set(k2, { t, cc: a.cc, v });
       });
       if (a.cc >= 80 && a.cc <= 83) {
         if (done) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
         else if (a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
       }
     }
-    for (const [k, f] of fade) {
-      const m = val.get(k);
+    for (const [k2, f] of fade) {
+      const m = val.get(k2);
       if (m) m.v = m.v * f.v / Math.max(1, lvRestCC(f.t, f.cc));
-      else val.set(k, f);
+      else val.set(k2, f);
     }
     for (const { t, cc, v } of val.values()) lvSendCC(t, cc, v, nt);
     LV.autos = LV.autos.filter((a) => tick < a.end);
@@ -30826,7 +30876,7 @@ input[type='number'] {
         el(
           "select",
           { id: "lvTheme", "aria-label": "Colour theme", onchange: (e) => liveSetTheme(e.target.value) },
-          ...Object.entries(LV_THEMES).map(([k, v]) => el("option", { value: k, selected: LV.theme === k }, v.name))
+          ...Object.entries(LV_THEMES).map(([k2, v]) => el("option", { value: k2, selected: LV.theme === k2 }, v.name))
         )
       )
     );
@@ -31327,8 +31377,8 @@ input[type='number'] {
                     ...cmPickItems(
                       i,
                       CLIPPIN[i] != null ? CLIPPIN[i] : null,
-                      (k) => {
-                        if (k < 0) {
+                      (k2) => {
+                        if (k2 < 0) {
                           delete CLIPPIN[i];
                           delete PCLAST[i];
                           const v = lvTop(i), h = v ? clipFor(i, patType(v.f)) : -1;
@@ -31336,8 +31386,8 @@ input[type='number'] {
                           return;
                         }
                         ensureAudio();
-                        CLIPPIN[i] = k;
-                        sendClip(i, k, AU.ctx.currentTime);
+                        CLIPPIN[i] = k2;
+                        sendClip(i, k2, AU.ctx.currentTime);
                         if (!MIDI.out) toast("Connect the " + devNm() + " to switch its clips");
                       },
                       "Back to automatic"
@@ -31370,13 +31420,13 @@ input[type='number'] {
     };
     const sStart = (s) => s.start != null ? s.start : s.tick;
     let prevSeg = null;
-    for (let k = 0; k < W + 2; k++) {
-      const tk2 = (b0 + k) * 32, s = segAt2(tk2), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
+    for (let k2 = 0; k2 < W + 2; k2++) {
+      const tk2 = (b0 + k2) * 32, s = segAt2(tk2), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
       const rel = Math.max(0, Math.floor((tk2 - sStart(s)) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
       hdr.append(
         el(
           "div",
-          { class: "lvBar" + (newSc ? " sc" : ""), style: "left:" + k * bw2 + "px;width:" + bw2 + "px" },
+          { class: "lvBar" + (newSc ? " sc" : ""), style: "left:" + k2 * bw2 + "px;width:" + bw2 + "px" },
           newSc || rel === 0 ? s.label || (LV.scenes[s.idx] ? LV.scenes[s.idx].name : "") : String(rel + 1)
         )
       );
@@ -31389,9 +31439,9 @@ input[type='number'] {
         style: "width:" + (W + 2) * bw2 + "px;--c:" + TRACK_COLORS[ti]
       });
       let prevId = null;
-      for (let k = 0; k < W + 2; k++) {
-        const tk2 = (b0 + k) * 32, s = segAt2(tk2);
-        const snap = k === 0 && lvOn() && LV.bars && LV.bars.get(b0);
+      for (let k2 = 0; k2 < W + 2; k2++) {
+        const tk2 = (b0 + k2) * 32, s = segAt2(tk2);
+        const snap = k2 === 0 && lvOn() && LV.bars && LV.bars.get(b0);
         if (snap) {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
           if (sf) {
@@ -31419,7 +31469,7 @@ input[type='number'] {
                 "div",
                 {
                   class: "lvCell st fill",
-                  style: "left:" + k * bw2 + "px;width:" + (bw2 - 1) + "px",
+                  style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
                   title: ovFill.f.name
                 },
                 "Fill"
@@ -31440,7 +31490,7 @@ input[type='number'] {
             "div",
             {
               class: "lvCell" + (phase === 0 || id !== prevId ? " st" : "") + (isFill ? " fill" : "") + (resting ? " rest" : "") + (lvEmute(ti) ? " em" : ""),
-              style: "left:" + k * bw2 + "px;width:" + (bw2 - 1) + "px",
+              style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
               title: f.name + (resting ? " (resting this bar)" : lvEmute(ti) ? " (held back by the energy level)" : "")
             },
             label
@@ -31450,15 +31500,15 @@ input[type='number'] {
       }
       pendSw.forEach((c) => {
         if (c.ids[ti]) {
-          const k = Math.floor(c.tick / 32) - b0;
-          if (k >= 0 && k < W + 2) {
+          const k2 = Math.floor(c.tick / 32) - b0;
+          if (k2 >= 0 && k2 < W + 2) {
             const nf = facById(c.ids[ti]);
             row.append(
               el(
                 "div",
                 {
                   class: "lvSwap",
-                  style: "left:" + k * bw2 + "px;width:" + (bw2 - 1) + "px",
+                  style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
                   title: "Swap to " + (nf ? nf.name : "")
                 },
                 "→ " + (nf ? nf.name : "")
@@ -31471,8 +31521,8 @@ input[type='number'] {
     });
     const cue = LV.cues.filter((c) => c.type === "scene")[0];
     if (cue) {
-      const k = Math.floor(cue.tick / 32) - b0;
-      if (k >= 0 && k <= W + 1) inner.append(el("div", { class: "lvLine", style: "left:" + k * bw2 + "px" }));
+      const k2 = Math.floor(cue.tick / 32) - b0;
+      if (k2 >= 0 && k2 <= W + 1) inner.append(el("div", { class: "lvLine", style: "left:" + k2 * bw2 + "px" }));
     }
     lvUI = { b0, bw: bw2, ver: LV.ver };
   }
@@ -31583,9 +31633,9 @@ input[type='number'] {
   }
   function liveFrame(tickf) {
     VZ.tickf = tickf;
-    const b0 = Math.floor(tickf / 32), k = b0 + "|" + LV.ver;
-    if (k !== LV.lastKey) {
-      LV.lastKey = k;
+    const b0 = Math.floor(tickf / 32), k2 = b0 + "|" + LV.ver;
+    if (k2 !== LV.lastKey) {
+      LV.lastKey = k2;
       liveRenderLanes(b0);
     }
     const inner = $("#lvInner");
@@ -31681,7 +31731,7 @@ input[type='number'] {
     const t = [];
     for (let n = 0; n < 256; n++) {
       let c = n;
-      for (let k = 0; k < 8; k++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+      for (let k2 = 0; k2 < 8; k2++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
       t[n] = c >>> 0;
     }
     return t;
@@ -31957,7 +32007,7 @@ input[type='number'] {
     while (!cond()) await sleep(every);
   };
   var capKey = (role) => role === "stem" && (!AUD.stemDev || AUD.stemDev === AUD.mixDev) ? "mix" : role;
-  var capDevId = (k) => k.startsWith("d:") ? k.slice(2) : k === "stem" ? AUD.stemDev : AUD.mixDev;
+  var capDevId = (k2) => k2.startsWith("d:") ? k2.slice(2) : k2 === "stem" ? AUD.stemDev : AUD.mixDev;
   function permMsg(e) {
     const n = e && e.name;
     if (n === "NotAllowedError" || n === "SecurityError")
@@ -32008,11 +32058,11 @@ input[type='number'] {
       AUDREC.err = e && e.message || String(e);
     }
   }
-  async function capOpen(k) {
-    capClose(k);
+  async function capOpen(k2) {
+    capClose(k2);
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
       throw new Error("This browser cannot record audio input.");
-    const id = capDevId(k);
+    const id = capDevId(k2);
     const audio = {
       echoCancellation: false,
       noiseSuppression: false,
@@ -32027,7 +32077,7 @@ input[type='number'] {
       throw new Error(permMsg(e));
     }
     let tr = stream.getAudioTracks()[0];
-    if ((k === "stem" || k.startsWith("d:") || audMode() === "mc707" && AUD.mixFrom !== "other") && (tr.getSettings().channelCount || 2) <= 2) {
+    if ((k2 === "stem" || k2.startsWith("d:") || audMode() === "mc707" && AUD.mixFrom !== "other") && (tr.getSettings().channelCount || 2) <= 2) {
       for (const n of [20, 18, 16, 12, 10, 8, 6, 4]) {
         try {
           const s2 = await navigator.mediaDevices.getUserMedia({
@@ -32045,14 +32095,14 @@ input[type='number'] {
       }
     }
     const c = {
-      k,
+      k: k2,
       stream,
       ch: Math.max(1, tr.getSettings().channelCount || 2),
       peaks: [],
       max: [],
       label: tr.label || ""
     };
-    AUDREC.caps[k] = c;
+    AUDREC.caps[k2] = c;
     return c;
   }
   function capProcess(e, c) {
@@ -32063,8 +32113,8 @@ input[type='number'] {
     for (let i = 0; i < chans.length; i++) {
       let m = 0;
       const d = chans[i];
-      for (let k = 0; k < n; k += 8) {
-        const a = d[k] < 0 ? -d[k] : d[k];
+      for (let k2 = 0; k2 < n; k2 += 8) {
+        const a = d[k2] < 0 ? -d[k2] : d[k2];
         if (a > m) m = a;
       }
       c.peaks[i] = Math.max(m, (c.peaks[i] || 0) * 0.85);
@@ -32073,17 +32123,17 @@ input[type='number'] {
     for (const sk of AUDREC.sinks)
       if (sk.cap === c.k) sk.feed(chans[sk.l] || chans[0], chans[sk.r] || chans[sk.l] || chans[0], n);
   }
-  function capAttachOne(k) {
-    if (AUDREC.procs.some((p) => p.k === k)) return;
+  function capAttachOne(k2) {
+    if (AUDREC.procs.some((p) => p.k === k2)) return;
     ensureAudio();
     const ctx2 = AU.ctx;
     let c, src, n;
-    if (k === "pv") {
+    if (k2 === "pv") {
       c = AUDREC.pv;
       src = AU.out;
       n = 2;
     } else {
-      c = AUDREC.caps[k];
+      c = AUDREC.caps[k2];
       if (!c) return;
       src = ctx2.createMediaStreamSource(c.stream);
       n = c.ch;
@@ -32095,7 +32145,7 @@ input[type='number'] {
     proc.onaudioprocess = (e) => capProcess(e, c);
     src.connect(proc);
     proc.connect(ctx2.destination);
-    AUDREC.procs.push({ k, proc, src });
+    AUDREC.procs.push({ k: k2, proc, src });
   }
   function capAttach() {
     capDetach();
@@ -32105,9 +32155,9 @@ input[type='number'] {
     }
     new Set(AUDREC.sinks.map((s) => s.cap)).forEach(capAttachOne);
   }
-  function capDetach(k) {
+  function capDetach(k2) {
     AUDREC.procs = AUDREC.procs.filter((p) => {
-      if (k && p.k !== k) return true;
+      if (k2 && p.k !== k2) return true;
       try {
         p.src.disconnect(p.proc);
       } catch (e) {
@@ -32120,12 +32170,12 @@ input[type='number'] {
       return false;
     });
   }
-  function capClose(k) {
-    capDetach(k);
-    const c = AUDREC.caps[k];
+  function capClose(k2) {
+    capDetach(k2);
+    const c = AUDREC.caps[k2];
     if (c) {
       c.stream.getTracks().forEach((t) => t.stop());
-      delete AUDREC.caps[k];
+      delete AUDREC.caps[k2];
     }
   }
   function capCloseAll() {
@@ -32133,24 +32183,24 @@ input[type='number'] {
     Object.keys(AUDREC.caps).forEach(capClose);
   }
   var RT_KEYS = ["mix", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "ext"];
-  var rtDefPair = (k) => k === "mix" ? 0 : k === "ext" ? 9 : AUD.stemPairs[+k.slice(1)] >= 0 ? AUD.stemPairs[+k.slice(1)] : +k.slice(1) + 1;
-  var rtLabel = (k) => k === "mix" ? "Mix" : k === "ext" ? "Ext In" : +k.slice(1) + 1 + ". " + S.tracks[+k.slice(1)].name;
-  function rtGet(k) {
-    const r = (AUD.route || {})[k];
-    return { dev: r && r.dev || "", pair: r && Number.isFinite(r.pair) ? r.pair : rtDefPair(k) };
+  var rtDefPair = (k2) => k2 === "mix" ? 0 : k2 === "ext" ? 9 : AUD.stemPairs[+k2.slice(1)] >= 0 ? AUD.stemPairs[+k2.slice(1)] : +k2.slice(1) + 1;
+  var rtLabel = (k2) => k2 === "mix" ? "Mix" : k2 === "ext" ? "Ext In" : +k2.slice(1) + 1 + ". " + S.tracks[+k2.slice(1)].name;
+  function rtGet(k2) {
+    const r = (AUD.route || {})[k2];
+    return { dev: r && r.dev || "", pair: r && Number.isFinite(r.pair) ? r.pair : rtDefPair(k2) };
   }
-  function rtSet(k, v) {
+  function rtSet(k2, v) {
     AUD.route = AUD.route || {};
-    AUD.route[k] = { ...rtGet(k), ...v };
+    AUD.route[k2] = { ...rtGet(k2), ...v };
     saveAud();
   }
-  var rtCap = (k) => "d:" + (rtGet(k).dev || AUD.stemDev || "");
+  var rtCap = (k2) => "d:" + (rtGet(k2).dev || AUD.stemDev || "");
   var rtMulti = () => new Set(RT_KEYS.map(rtCap)).size > 1;
   var rtMcDevs = () => AUDREC.devices.filter((d) => /MC-?707|MC-?101/i.test(d.label));
   function rtAutoMatch() {
     let n = 0;
-    const set = (k, dev) => {
-      rtSet(k, { dev, pair: 0 });
+    const set = (k2, dev) => {
+      rtSet(k2, { dev, pair: 0 });
       n++;
     };
     for (const d of rtMcDevs()) {
@@ -32161,8 +32211,8 @@ input[type='number'] {
       else if (/\bext/i.test(L2)) set("ext", d.deviceId);
       else if (m = /(\d{1,2})\s*[-–]\s*(\d{1,2})/.exec(L2)) {
         const p = +m[1] - 1 >> 1;
-        const k = p === 0 ? "mix" : p === 9 ? "ext" : p <= 8 ? "t" + (p - 1) : null;
-        if (k) set(k, d.deviceId);
+        const k2 = p === 0 ? "mix" : p === 9 ? "ext" : p <= 8 ? "t" + (p - 1) : null;
+        if (k2) set(k2, d.deviceId);
       }
     }
     return n;
@@ -32402,20 +32452,20 @@ input[type='number'] {
   }
   function audioJobs() {
     const pv = AUD.source === "preview";
-    const chN = (k) => {
-      const c = AUDREC.caps[k];
-      return c ? c.ch : audMode() === "mc707" && (k === capKey("stem") || k.startsWith("d:")) ? 20 : 2;
+    const chN = (k2) => {
+      const c = AUDREC.caps[k2];
+      return c ? c.ch : audMode() === "mc707" && (k2 === capKey("stem") || k2.startsWith("d:")) ? 20 : 2;
     };
-    const pairIdx = (k, p) => {
-      const N = chN(k);
+    const pairIdx = (k2, p) => {
+      const N = chN(k2);
       return { l: Math.min(p * 2, N - 1), r: Math.min(p * 2 + 1, N - 1) };
     };
     const withClips = S.tracks.map((t, i) => i).filter((i) => S.clips.some((c) => c.t === i));
     const mixDef = () => {
       if (pv) return { name: "Mix", key: "mix", cap: "pv", l: 0, r: 1 };
       if (audMode() === "mc707" && AUD.mixFrom !== "other") {
-        const k = rtCap("mix"), p2 = pairIdx(k, rtGet("mix").pair);
-        return { name: "Mix", key: "mix", cap: k, l: p2.l, r: p2.r };
+        const k2 = rtCap("mix"), p2 = pairIdx(k2, rtGet("mix").pair);
+        return { name: "Mix", key: "mix", cap: k2, l: p2.l, r: p2.r };
       }
       const p = pairIdx("mix", Math.min(AUD.mixPair, Math.max(0, Math.ceil(chN("mix") / 2) - 1)));
       return { name: "Mix", key: "mix", cap: "mix", l: p.l, r: p.r };
@@ -32426,10 +32476,10 @@ input[type='number'] {
       if (AUD.mix) sinks.push(mixDef());
       S.tracks.forEach((t, i) => {
         if (AUD.stemPairs[i] < 0 || !devOn(i)) return;
-        const k = "t" + i, cap = rtCap(k), pr = rtGet(k).pair;
+        const k2 = "t" + i, cap = rtCap(k2), pr = rtGet(k2).pair;
         if (pr >= Math.ceil(chN(cap) / 2)) return;
         const p = pairIdx(cap, pr);
-        sinks.push({ name: t.name, key: k, track: i, cap, l: p.l, r: p.r });
+        sinks.push({ name: t.name, key: k2, track: i, cap, l: p.l, r: p.r });
       });
       if (AUD.extIn) {
         const cap = rtCap("ext"), pr = rtGet("ext").pair;
@@ -32498,9 +32548,9 @@ input[type='number'] {
       }
       if (AUD.source === "input") {
         const need = new Set(
-          audioJobs().flatMap((j) => j.sinks.map((x) => x.cap)).filter((k) => k !== "pv")
+          audioJobs().flatMap((j) => j.sinks.map((x) => x.cap)).filter((k2) => k2 !== "pv")
         );
-        for (const k of need) if (!AUDREC.caps[k]) await capOpen(k);
+        for (const k2 of need) if (!AUDREC.caps[k2]) await capOpen(k2);
       }
       const jobs = audioJobs();
       if (!jobs.length) throw new Error("Nothing to record. Turn on the full mix or stems.");
@@ -32693,9 +32743,9 @@ input[type='number'] {
   async function audMeterStart() {
     try {
       const ks = new Set(sigRows().map((r) => r.cap));
-      for (const k of ks) {
-        if (!AUDREC.caps[k]) await capOpen(k);
-        capAttachOne(k);
+      for (const k2 of ks) {
+        if (!AUDREC.caps[k2]) await capOpen(k2);
+        capAttachOne(k2);
       }
       AUDREC.metering = true;
       AUDREC.err = "";
@@ -32716,14 +32766,14 @@ input[type='number'] {
     }
     if (!AUDREC.metering) await audMeterStart();
     for (const d of rtMcDevs()) {
-      const k = "d:" + d.deviceId;
+      const k2 = "d:" + d.deviceId;
       try {
-        if (!AUDREC.caps[k]) await capOpen(k);
-        capAttachOne(k);
+        if (!AUDREC.caps[k2]) await capOpen(k2);
+        capAttachOne(k2);
       } catch (e) {
       }
     }
-    const caps = Object.keys(AUDREC.caps).filter((k) => k.startsWith("d:")).map((k) => AUDREC.caps[k]);
+    const caps = Object.keys(AUDREC.caps).filter((k2) => k2.startsWith("d:")).map((k2) => AUDREC.caps[k2]);
     if (!caps.length) {
       toast("Open the MC-707 audio input first");
       return;
@@ -33095,23 +33145,23 @@ input[type='number'] {
           { class: "rtable" },
           el("div", { class: "rth" }, el("span", {}, "Record"), el("span", {}, "Input"), el("span", {}, "Channels"))
         );
-        RT_KEYS.forEach((k) => {
-          const ti = k[0] === "t" ? +k.slice(1) : null;
+        RT_KEYS.forEach((k2) => {
+          const ti = k2[0] === "t" ? +k2.slice(1) : null;
           if (ti != null && !devOn(ti)) return;
-          if (k === "mix" && AUD.mixFrom === "other") return;
-          const r = rtGet(k), col = k === "mix" ? "var(--hot)" : k === "ext" ? "var(--mute)" : TRACK_COLORS[ti];
+          if (k2 === "mix" && AUD.mixFrom === "other") return;
+          const r = rtGet(k2), col = k2 === "mix" ? "var(--hot)" : k2 === "ext" ? "var(--mute)" : TRACK_COLORS[ti];
           tb.append(
             el(
               "div",
               { class: "rtr", style: "--c:" + col },
-              el("span", { class: "rtl" }, rtLabel(k)),
+              el("span", { class: "rtl" }, rtLabel(k2)),
               devSel(
                 r.dev,
-                (v) => rtSet(k, { dev: v, pair: v && v !== AUD.stemDev ? 0 : rtDefPair(k) }),
+                (v) => rtSet(k2, { dev: v, pair: v && v !== AUD.stemDev ? 0 : rtDefPair(k2) }),
                 "Main MC-707 input",
-                { "aria-label": "Input for " + rtLabel(k) }
+                { "aria-label": "Input for " + rtLabel(k2) }
               ),
-              pairSel(r.pair, (v) => rtSet(k, { pair: v }))
+              pairSel(r.pair, (v) => rtSet(k2, { pair: v }))
             )
           );
         });
@@ -33477,7 +33527,7 @@ input[type='number'] {
       }
     }
     b.append(wh);
-    const fm = el("div", { class: "wcard", style: "margin-top:12px" }, el("h3", {}, "4. File format"));
+    const fm2 = el("div", { class: "wcard", style: "margin-top:12px" }, el("h3", {}, "4. File format"));
     const fs = el("select", {
       "aria-label": "Format",
       disabled: rec,
@@ -33518,7 +33568,7 @@ input[type='number'] {
     const files = jobs.reduce((a, j) => a + j.sinks.length, 0);
     const sr = AU.ctx && AU.ctx.sampleRate || 48e3;
     const per = AUD.format === "wav" ? secs * sr * 2 * AUD.bits / 8 : secs * AUD.kbps * 125;
-    fm.append(
+    fm2.append(
       el("div", { class: "xrow" }, el("label", {}, "Format", fs), el("label", {}, "Quality", q)),
       el(
         "div",
@@ -33576,8 +33626,8 @@ input[type='number'] {
         "If recordings start late compared with the song, raise Trim start until the first beat lines up."
       )
     );
-    fm.append(adv);
-    b.append(fm);
+    fm2.append(adv);
+    b.append(fm2);
     b.append(
       el(
         "div",
@@ -33693,9 +33743,9 @@ input[type='number'] {
     if (!m) return;
     const l = SU.last;
     m.textContent = l ? "Last note in: channel " + l.ch + ", note " + noteName(l.note) + " (" + l.note + "), velocity " + l.vel : MIDI.inp ? "Waiting for MIDI from the MC-707. Press a pad or key on it." : "No MIDI input selected.";
-    const k = $("#suClk");
-    if (k)
-      k.textContent = SU.clkN ? "Clock detected from the MC-707 (about " + SU.clkBpm + " BPM)" + (SU.tr ? ". Last transport message: " + SU.tr + "." : "") : "No MIDI clock received from the MC-707 yet.";
+    const k2 = $("#suClk");
+    if (k2)
+      k2.textContent = SU.clkN ? "Clock detected from the MC-707 (about " + SU.clkBpm + " BPM)" + (SU.tr ? ". Last transport message: " + SU.tr + "." : "") : "No MIDI clock received from the MC-707 yet.";
   }
   function onMidiIn(ev) {
     if (document.body.dataset.mode === "live" && $("#setup").hidden && liveMidi(ev)) return;
@@ -34797,18 +34847,18 @@ input[type='number'] {
       return;
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
-      const k = e.key.toLowerCase();
-      if (k === "s") {
+      const k2 = e.key.toLowerCase();
+      if (k2 === "s") {
         e.preventDefault();
         e.shiftKey ? projSaveAs() : projSave();
         return;
       }
-      if (k === "o") {
+      if (k2 === "o") {
         e.preventDefault();
         projOpen();
         return;
       }
-      if (k === "n" && !e.shiftKey) {
+      if (k2 === "n" && !e.shiftKey) {
         e.preventDefault();
         projNew();
         return;
@@ -34988,9 +35038,9 @@ input[type='number'] {
       })),
       {
         label: "Euclidean rhythm",
-        sub: [3, 4, 5, 6, 7, 9, 11].map((k) => ({
-          label: k + " hits per bar",
-          action: () => edOp((p) => euclidRow(p, r.id, k))
+        sub: [3, 4, 5, 6, 7, 9, 11].map((k2) => ({
+          label: k2 + " hits per bar",
+          action: () => edOp((p) => euclidRow(p, r.id, k2))
         }))
       },
       "-",
@@ -35788,9 +35838,9 @@ input[type='number'] {
     pv: null
   };
   var grabKeys = () => ["mix", ...DEVS[DEV].tracks.map((i) => "t" + i), "ext"];
-  var grabName = (k) => k === "mix" ? "Mix" : k === "ext" ? "Ext In" : "Track " + devNum(+k.slice(1)) + ": " + S.tracks[+k.slice(1)].name;
+  var grabName = (k2) => k2 === "mix" ? "Mix" : k2 === "ext" ? "Ext In" : "Track " + devNum(+k2.slice(1)) + ": " + S.tracks[+k2.slice(1)].name;
   var grabPv = () => AUD.source === "preview";
-  function grabDef(k) {
+  function grabDef(k2) {
     const keep = { stems: AUD.stems, mix: AUD.mix, extIn: AUD.extIn };
     AUD.stems = "channels";
     AUD.mix = true;
@@ -35803,10 +35853,10 @@ input[type='number'] {
     }
     if (grabPv()) {
       const m = sinks.find((x) => x.key === "mix");
-      return m && k !== "ext" ? { ...m, name: grabName(k), key: k, track: k === "mix" ? void 0 : +k.slice(1) } : null;
+      return m && k2 !== "ext" ? { ...m, name: grabName(k2), key: k2, track: k2 === "mix" ? void 0 : +k2.slice(1) } : null;
     }
-    if (audMode() !== "mc707" && k !== "mix") return null;
-    return sinks.find((x) => x.key === k) || null;
+    if (audMode() !== "mc707" && k2 !== "mix") return null;
+    return sinks.find((x) => x.key === k2) || null;
   }
   function grabSecs(fromBar, bars) {
     let s = 0;
@@ -35823,7 +35873,7 @@ input[type='number'] {
       return;
     }
     ensureAudio();
-    const ctx2 = AU.ctx, sr = ctx2.sampleRate, k = GRAB.src, def = grabDef(k);
+    const ctx2 = AU.ctx, sr = ctx2.sampleRate, k2 = GRAB.src, def = grabDef(k2);
     if (!def) {
       toast(
         grabPv() ? "Ext In needs the MC-707's USB audio. Choose it in Audio." : "Grabbing one track needs the MC-707's USB audio (8-channel). Set it up in Audio, or grab the Mix."
@@ -35880,7 +35930,7 @@ input[type='number'] {
         t.solo = i === def.track;
       });
     }
-    grabArm(def, k, startTime, Math.round(grabSecs(fromBar, bars) * sr), { bars, fromBar, label: grabName(k) }, () => {
+    grabArm(def, k2, startTime, Math.round(grabSecs(fromBar, bars) * sr), { bars, fromBar, label: grabName(k2) }, () => {
       if (GRAB.pv) {
         GRAB.pv.was.forEach((s, i) => {
           S.tracks[i].solo = s;
@@ -35901,7 +35951,7 @@ input[type='number'] {
       }
     });
   }
-  function grabArm(def, k, startTime, need, info, after) {
+  function grabArm(def, k2, startTime, need, info, after) {
     const ctx2 = AU.ctx, sr = ctx2.sampleRate;
     const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16);
     let got = 0;
@@ -36069,12 +36119,12 @@ input[type='number'] {
           grabRenderPop();
         }
       },
-      ...grabKeys().map((k) => {
-        const ok = pv ? k !== "ext" : mc || k === "mix";
+      ...grabKeys().map((k2) => {
+        const ok = pv ? k2 !== "ext" : mc || k2 === "mix";
         return el(
           "option",
-          { value: k, selected: GRAB.src === k, disabled: !ok },
-          grabName(k) + (ok ? "" : " (needs 8-channel USB audio)")
+          { value: k2, selected: GRAB.src === k2, disabled: !ok },
+          grabName(k2) + (ok ? "" : " (needs 8-channel USB audio)")
         );
       })
     );
@@ -36291,12 +36341,12 @@ input[type='number'] {
         if (sc)
           for (let t = 0; t < 8; t++) {
             if (!devOn(t)) continue;
-            const c = sc.cells[t], r = c && c.clip === "random" ? LV_RCLIP[g.x.idx + ":" + t] : null, k = c && c.clip != null ? c.clip === "random" ? r != null ? r : -1 : c.clip : -1;
-            if (k !== (pin[t] == null ? -1 : pin[t])) {
+            const c = sc.cells[t], r = c && c.clip === "random" ? LV_RCLIP[g.x.idx + ":" + t] : null, k2 = c && c.clip != null ? c.clip === "random" ? r != null ? r : -1 : c.clip : -1;
+            if (k2 !== (pin[t] == null ? -1 : pin[t])) {
               const ms = cmMarks();
               ms.filter((m) => m.t === t && m.bar === base + g.s).forEach((m) => ms.splice(ms.indexOf(m), 1));
-              ms.push({ t, bar: base + g.s, k });
-              pin[t] = k;
+              ms.push({ t, bar: base + g.s, k: k2 });
+              pin[t] = k2;
             }
           }
       }
@@ -36687,15 +36737,15 @@ input[type='number'] {
           sub: cmPickItems(
             t,
             CLIPPIN[t] != null ? CLIPPIN[t] : null,
-            (k) => {
-              if (k < 0) {
+            (k2) => {
+              if (k2 < 0) {
                 delete CLIPPIN[t];
                 delete PCLAST[t];
                 return;
               }
               ensureAudio();
-              CLIPPIN[t] = k;
-              sendClip(t, k, AU.ctx.currentTime);
+              CLIPPIN[t] = k2;
+              sendClip(t, k2, AU.ctx.currentTime);
             },
             "Back to automatic"
           )
@@ -36764,11 +36814,11 @@ input[type='number'] {
       },
       {
         label: "Energy",
-        sub: Array.from({ length: 10 }, (_, k) => ({
-          label: String(k + 1),
-          checked: sc.e === k + 1,
+        sub: Array.from({ length: 10 }, (_, k2) => ({
+          label: String(k2 + 1),
+          checked: sc.e === k2 + 1,
           action: () => {
-            sc.e = k + 1;
+            sc.e = k2 + 1;
             lvSaveScenes();
             liveRenderCards();
           }
@@ -36872,18 +36922,18 @@ input[type='number'] {
         }
       },
       "-",
-      grp("Scenes", [...LV.scenes.map((_, k) => "s" + k), "next", "prev", "stop"]),
+      grp("Scenes", [...LV.scenes.map((_, k2) => "s" + k2), "next", "prev", "stop"]),
       grp("Swaps", ["sw:drums", "sw:perc", "sw:bass", "sw:chords", "sw:pad", "sw:lead"]),
       grp("Mutes", ["mu:drums", "mu:bass", "mu:chords", "mu:lead", ...DEVS[DEV].tracks.map((t) => "mt:" + t)]),
       grp("Builds and breaks", ["brk", "fill", "bd", "rise:up", "rise:down", "stut:4", "stut:8", "stut:16"]),
       grp("Energy and control", ["en:up", "en:down", "auto", "lock"]),
       grp(
         "Key",
-        NOTEN.map((_, k) => "key:" + k)
+        NOTEN.map((_, k2) => "key:" + k2)
       ),
       grp(
         "Scatter (hold)",
-        Array.from({ length: 16 }, (_, k) => "sc:" + k)
+        Array.from({ length: 16 }, (_, k2) => "sc:" + k2)
       )
     ];
     if (a === "brk")
@@ -36954,8 +37004,8 @@ input[type='number'] {
   var KIT_SLOT = lin(196608);
   var TRK_SET = lin(268437504);
   var devTrack = (t) => DEV === "101" ? Math.max(0, devNum(t) - 1) : t;
-  function slotAddr(kind, t, k) {
-    const i = devTrack(t) * 17 + k;
+  function slotAddr(kind, t, k2) {
+    const i = devTrack(t) * 17 + k2;
     return kind === "kit" ? KIT0 + i * KIT_SLOT : TONE0 + i * TONE_SLOT;
   }
   var trackSetAddr = (t) => TRK_SET + devTrack(t) * lin(512);
@@ -40107,12 +40157,12 @@ input[type='number'] {
   }
   var INDEX = {};
   function paramOf(kind, key) {
-    if (!INDEX[kind]) INDEX[kind] = Object.fromEntries(allParams(kind).map(([k, p, o]) => [k, [p, o]]));
+    if (!INDEX[kind]) INDEX[kind] = Object.fromEntries(allParams(kind).map(([k2, p, o]) => [k2, [p, o]]));
     return INDEX[kind][key];
   }
   function newSound(kind) {
     const v = {};
-    for (const [k, p] of allParams(kind)) v[k] = p[8] && p[8].ascii ? "INIT " + (kind === "kit" ? "KIT" : "TONE") : p[5];
+    for (const [k2, p] of allParams(kind)) v[k2] = p[8] && p[8].ascii ? "INIT " + (kind === "kit" ? "KIT" : "TONE") : p[5];
     return { kind, v, known: new Set(Object.keys(v)) };
   }
   function encode(p, val) {
@@ -40143,9 +40193,9 @@ input[type='number'] {
     snd.known.add(key);
     if (base != null) zxWrite(base + off, encode(p, val));
   }
-  var blockOf = (k) => k.slice(0, k.indexOf("."));
+  var blockOf = (k2) => k2.slice(0, k2.indexOf("."));
   function runs(kind, keys2) {
-    const ps = allParams(kind).filter(([k]) => !keys2 || keys2.has(k)).sort((a, b) => a[2] - b[2]);
+    const ps = allParams(kind).filter(([k2]) => !keys2 || keys2.has(k2)).sort((a, b) => a[2] - b[2]);
     const out = [];
     for (const it of ps) {
       const r = out[out.length - 1];
@@ -40159,7 +40209,7 @@ input[type='number'] {
   function writeRuns(snd, base, keys2) {
     for (const r of runs(snd.kind, keys2)) {
       const data = [];
-      for (const [k, p] of r.items) data.push(...encode(p, snd.v[k]));
+      for (const [k2, p] of r.items) data.push(...encode(p, snd.v[k2]));
       zxWrite(base + r.start, data);
     }
   }
@@ -40179,11 +40229,11 @@ input[type='number'] {
       const copy = { kind: snd.kind, v: { ...snd.v }, known: /* @__PURE__ */ new Set() };
       const r = await readSound(copy, base, new Set(ks));
       if (job !== mfxJob.get(base)) return;
-      if (!r.ok || ks.every((k) => copy.v[k] === snd.v[k])) return;
+      if (!r.ok || ks.every((k2) => copy.v[k2] === snd.v[k2])) return;
     }
   }
   function sendSound(snd, base, keys2) {
-    const has2 = (k) => !keys2 || keys2.has(k);
+    const has2 = (k2) => !keys2 || keys2.has(k2);
     if (!has2(MFX_TYPE)) {
       writeRuns(snd, base, keys2);
       return Promise.resolve();
@@ -40193,7 +40243,7 @@ input[type='number'] {
       snd,
       base,
       new Set(
-        allParams(snd.kind).map((x) => x[0]).filter((k) => has2(k) && !later.includes(k))
+        allParams(snd.kind).map((x) => x[0]).filter((k2) => has2(k2) && !later.includes(k2))
       )
     );
     return later.length ? mfxAfterReset(snd, base, later) : Promise.resolve();
@@ -40248,11 +40298,11 @@ input[type='number'] {
   function soundFrom(o) {
     if (!o || o.zencore !== 1 || o.kind !== "tone" && o.kind !== "kit" || typeof o.v !== "object") return null;
     const snd = newSound(o.kind);
-    for (const k in snd.v)
-      if (k in o.v) {
-        const [p] = paramOf(o.kind, k);
-        const x = o.v[k];
-        if (p[8] && p[8].ascii ? typeof x === "string" : Number.isFinite(x) && x >= p[3] && x <= p[4]) snd.v[k] = x;
+    for (const k2 in snd.v)
+      if (k2 in o.v) {
+        const [p] = paramOf(o.kind, k2);
+        const x = o.v[k2];
+        if (p[8] && p[8].ascii ? typeof x === "string" : Number.isFinite(x) && x >= p[3] && x <= p[4]) snd.v[k2] = x;
       }
     return snd;
   }
@@ -40293,367 +40343,19 @@ input[type='number'] {
     ZLIB.lib = ZLIB.lib.filter((e) => e.id !== id);
     save2();
   }
-  var ck = (kind, t, k) => kind + ":" + t + ":" + k;
-  function clipMemory(kind, t, k) {
+  var ck = (kind, t, k2) => kind + ":" + t + ":" + k2;
+  function clipMemory(kind, t, k2) {
     load2();
-    const e = ZLIB.clips[ck(kind, t, k)];
+    const e = ZLIB.clips[ck(kind, t, k2)];
     return e ? soundFrom(e.s) : null;
   }
-  function rememberClip(snd, t, k) {
+  function rememberClip(snd, t, k2) {
     load2();
-    ZLIB.clips[ck(snd.kind, t, k)] = { at: Date.now(), s: soundJSON(snd) };
+    ZLIB.clips[ck(snd.kind, t, k2)] = { at: Date.now(), s: soundJSON(snd) };
     const keys2 = Object.keys(ZLIB.clips).sort((a, b) => ZLIB.clips[b].at - ZLIB.clips[a].at);
     keys2.slice(40).forEach((x) => delete ZLIB.clips[x]);
     save2();
   }
-  function tone(name, fn) {
-    const s = newSound("tone");
-    const set = (key, i, id, v) => s.v[pk(key, i, id)] = v;
-    s.v["CMN.NAME"] = name;
-    for (let i = 0; i < 4; i++) set("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
-    set("SPTL", 0, "OSC_TYPE", 1);
-    fn(
-      (id, v, i = 0) => set(
-        id.split(".")[0],
-        ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(id.split(".")[0]) ? null : i,
-        id.split(".")[1],
-        v
-      )
-    );
-    return s;
-  }
-  var STARTERS = [
-    ["Init tone", () => tone("INIT TONE", () => {
-    })],
-    [
-      "Saw lead",
-      () => tone("SAW LEAD", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_TIME", 120);
-        s("PTL.CUTOFF", 760);
-        s("PTL.RESO", 260);
-        s("FENV.DEPTH", 24);
-        s("FENV.T2", 420);
-        s("FENV.L2", 600);
-        s("AENV.T3", 0);
-        s("AENV.T4", 260);
-        s("PTL.REV_SEND", 30);
-      })
-    ],
-    [
-      "Supersaw stack",
-      () => tone("SUPERSAW", (s) => {
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 92);
-        s("PTL.CUTOFF", 880);
-        s("AENV.T1", 40);
-        s("AENV.T4", 520);
-        s("PTL.CHO_SEND", 40);
-        s("PTL.REV_SEND", 60);
-      })
-    ],
-    [
-      "Square bass",
-      () => tone("SQUARE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 1);
-        s("PTL.CUTOFF", 420);
-        s("PTL.RESO", 180);
-        s("FENV.DEPTH", 30);
-        s("FENV.T2", 300);
-        s("FENV.L2", 200);
-        s("FENV.L3", 150);
-        s("AENV.T4", 120);
-      })
-    ],
-    [
-      "Sub 808",
-      () => tone("SUB 808", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_MODE", 1);
-        s("CMN.PORTA_TIME", 260);
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 3);
-        s("PTL.CUTOFF", 1023);
-        s("PENV.DEPTH", 12);
-        s("PENV.L0", 300);
-        s("PENV.T1", 120);
-        s("PENV.L1", 0);
-        s("PENV.L2", 0);
-        s("PENV.L3", 0);
-        s("AENV.T2", 760);
-        s("AENV.L2", 700);
-        s("AENV.L3", 0);
-        s("AENV.T3", 760);
-        s("AENV.T4", 300);
-      })
-    ],
-    [
-      "Pluck",
-      () => tone("PLUCK", (s) => {
-        s("PTL.CUTOFF", 380);
-        s("PTL.RESO", 160);
-        s("FENV.DEPTH", 50);
-        s("FENV.T1", 0);
-        s("FENV.T2", 360);
-        s("FENV.L2", 0);
-        s("FENV.L3", 0);
-        s("AENV.T2", 420);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 300);
-        s("PTL.REV_SEND", 40);
-      })
-    ],
-    [
-      "Warm pad",
-      () => tone("WARM PAD", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPTL.VA_FORM", 2, 1);
-        s("PTL.PIT_FINE", -8);
-        s("PTL.PIT_FINE", 8, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 560, i);
-          s("AENV.T1", 620, i);
-          s("AENV.T4", 640, i);
-          s("LFO.LFO1_TVF_DEPTH", 12, i);
-          s("LFO.LFO1_RATE", 380, i);
-          s("PTL.REV_SEND", 80, i);
-          s("PTL.CHO_SEND", 50, i);
-        }
-      })
-    ],
-    [
-      "Noise sweep",
-      () => tone("NOISE SWEEP", (s) => {
-        s("SPTL.OSC_TYPE", 4);
-        s("PTL.FILTER_TYPE", 2);
-        s("PTL.CUTOFF", 200);
-        s("PTL.RESO", 500);
-        s("FENV.DEPTH", 50);
-        s("FENV.T1", 820);
-        s("FENV.L1", 1023);
-        s("AENV.T1", 300);
-        s("AENV.T4", 700);
-        s("PTL.REV_SEND", 90);
-      })
-    ],
-    [
-      "Acid bass",
-      () => tone("ACID BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_MODE", 1);
-        s("CMN.PORTA_TIME", 90);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 300);
-        s("PTL.RESO", 820);
-        s("FENV.DEPTH", 42);
-        s("FENV.T2", 180);
-        s("FENV.L2", 150);
-        s("FENV.L3", 100);
-        s("AENV.T4", 80);
-      })
-    ],
-    [
-      "Reese bass",
-      () => tone("REESE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -14);
-        s("PTL.PIT_FINE", 14, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 520, i);
-          s("PTL.RESO", 120, i);
-          s("AENV.T4", 140, i);
-        }
-      })
-    ],
-    [
-      "Wobble bass",
-      () => tone("WOBBLE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 300);
-        s("PTL.RESO", 420);
-        s("LFO.LFO1_FORM", 0);
-        s("LFO.LFO1_RATE_SYNC", 1);
-        s("LFO.LFO1_RATE_NOTE", 9);
-        s("LFO.LFO1_TVF_DEPTH", 70);
-        s("AENV.T4", 120);
-      })
-    ],
-    [
-      "Juno pad",
-      () => tone("JUNO PAD", (s) => {
-        s("SPTL.VA_FORM", 5);
-        s("SCMN.UNISON_SW", 1);
-        s("SCMN.UNISON_SIZE", 4);
-        s("SCMN.UNISON_DETN", 30);
-        s("PTL.CUTOFF", 640);
-        s("AENV.T1", 520);
-        s("AENV.T4", 620);
-        s("PTL.CHO_SEND", 80);
-        s("PTL.REV_SEND", 70);
-      })
-    ],
-    [
-      "Strings",
-      () => tone("STRINGS", (s) => {
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 50);
-        s("PTL.CUTOFF", 700);
-        s("AENV.T1", 420);
-        s("AENV.T4", 520);
-        s("PTL.CHO_SEND", 40);
-        s("PTL.REV_SEND", 60);
-      })
-    ],
-    [
-      "Brass stab",
-      () => tone("BRASS STAB", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -6);
-        s("PTL.PIT_FINE", 6, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 520, i);
-          s("FENV.DEPTH", 30, i);
-          s("FENV.T1", 120, i);
-          s("FENV.T2", 320, i);
-          s("FENV.L2", 700, i);
-          s("AENV.T1", 60, i);
-          s("AENV.T4", 200, i);
-        }
-      })
-    ],
-    [
-      "Hoover",
-      () => tone("HOOVER", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_TIME", 200);
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 110);
-        s("PENV.DEPTH", 30);
-        s("PENV.L0", -150);
-        s("PENV.T1", 160);
-        s("PENV.L1", 0);
-        s("PTL.CUTOFF", 820);
-        s("PTL.CHO_SEND", 60);
-      })
-    ],
-    [
-      "Sync lead",
-      () => tone("SYNC LEAD", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPMT.STRUCT12", 1);
-        s("PTL.PIT_CRS", 19, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 860, i);
-          s("AENV.T4", 200, i);
-        }
-        s("PTL.REV_SEND", 30);
-      })
-    ],
-    [
-      "Bell",
-      () => tone("BELL", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPTL.VA_FORM", 3);
-        s("SPTL.VA_FORM", 3, 1);
-        s("SPMT.STRUCT12", 2);
-        s("PTL.PIT_CRS", 19, 1);
-        for (const i of [0, 1]) {
-          s("AENV.T2", 700, i);
-          s("AENV.L2", 0, i);
-          s("AENV.L3", 0, i);
-          s("AENV.T4", 600, i);
-          s("PTL.REV_SEND", 70, i);
-        }
-      })
-    ],
-    [
-      "Organ",
-      () => tone("ORGAN", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("PMT.PMT3_PTL_SW", 1);
-        [0, 12, 19].forEach((crs, i) => {
-          s("SPTL.OSC_TYPE", 1, i);
-          s("SPTL.VA_FORM", 3, i);
-          s("PTL.PIT_CRS", crs, i);
-          s("PTL.LEVEL", [127, 100, 80][i], i);
-          s("AENV.T1", 0, i);
-          s("AENV.T4", 40, i);
-          s("PTL.CHO_SEND", 60, i);
-        });
-      })
-    ],
-    [
-      "PWM pad",
-      () => tone("PWM PAD", (s) => {
-        s("SPTL.VA_FORM", 1);
-        s("SPTL.PWM_DEPTH", 40);
-        s("LFO.LFO1_RATE", 300);
-        s("PTL.CUTOFF", 620);
-        s("AENV.T1", 560);
-        s("AENV.T4", 640);
-        s("PTL.CHO_SEND", 60);
-        s("PTL.REV_SEND", 70);
-      })
-    ],
-    [
-      "House chord stab",
-      () => tone("CHORD STAB", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -7);
-        s("PTL.PIT_FINE", 7, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 560, i);
-          s("FENV.DEPTH", 36, i);
-          s("FENV.T2", 200, i);
-          s("FENV.L2", 0, i);
-          s("FENV.L3", 0, i);
-          s("AENV.T2", 260, i);
-          s("AENV.L2", 0, i);
-          s("AENV.L3", 0, i);
-          s("AENV.T4", 160, i);
-          s("PTL.REV_SEND", 50, i);
-        }
-      })
-    ],
-    [
-      "Kick",
-      () => tone("KICK", (s) => {
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 3);
-        s("PTL.CUTOFF", 1023);
-        s("PENV.DEPTH", 60);
-        s("PENV.L0", 511);
-        s("PENV.T1", 120);
-        s("PENV.L1", 0);
-        s("PENV.L2", 0);
-        s("PENV.L3", 0);
-        s("AENV.T2", 300);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 60);
-      })
-    ]
-  ];
 
   // src/zen/zc-mfx-data.js
   var MFX_TYPES = [
@@ -43365,14 +43067,159 @@ input[type='number'] {
   }
   var group = (title, ...kids) => el("fieldset", { class: "zcG" }, el("legend", {}, title), ...kids);
 
+  // src/zen/zc-stepseq.js
+  var UNIT = 4;
+  var REST = -72;
+  var RATES = ["1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"];
+  var RATE_IX = { "1/32": 3, "1/16T": 4, "1/16": 6, "1/8T": 7, "1/8": 9, "1/4": 12 };
+  var SHAPES = [
+    ["Smooth", 1],
+    ["Plucky", 11],
+    ["Punchy", 15],
+    ["Short", 20]
+  ];
+  var SEQ_PATTERNS = [
+    ["Octave bounce", [0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12]],
+    ["Minor arp up", [0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12]],
+    ["Major arp up and down", [0, 4, 7, 12, 16, 12, 7, 4, 0, 4, 7, 12, 16, 12, 7, 4]],
+    ["Acid run", [0, 0, 12, 0, 3, null, 0, 15, 0, 12, null, 7, 0, 10, 12, 0]],
+    ["Trance gate (root)", [0, 0, null, 0, 0, null, 0, null, 0, 0, null, 0, 0, null, 0, null]],
+    ["Rolling bass", [0, null, 0, 12, 0, null, 0, 7, 0, null, 0, 12, 0, null, 10, 7]],
+    ["Fifths stab", [0, null, null, 7, null, null, 12, null, 0, null, null, 7, null, 10, null, null]],
+    ["Rest all", Array(16).fill(null)]
+  ];
+  var k = (ctx2, lfo, id) => pk("LFO", ctx2.part, "LFO" + lfo + "_" + id);
+  var isSeq = (ctx2) => ctx2.get(k(ctx2, 1, "FORM")) === 10 && ctx2.get(k(ctx2, 1, "PIT_DEPTH")) === 63;
+  function seqTemplate(ctx2, shape = 11) {
+    const set = (key, v) => ctx2.set(key, v, false);
+    for (const lfo of [1, 2]) {
+      set(k(ctx2, lfo, "FORM"), 10);
+      set(k(ctx2, lfo, "RATE_SYNC"), 1);
+      set(k(ctx2, lfo, "RATE_NOTE"), RATE_IX["1/16"]);
+      set(k(ctx2, lfo, "STEP_MAX"), 15);
+      set(k(ctx2, lfo, "KEY_TRIG"), 1);
+      for (const d of ["DELAY", "FADE", "OFST", "PAN_DEPTH", "TVF_DEPTH"]) set(k(ctx2, lfo, d), 0);
+    }
+    set(k(ctx2, 1, "PIT_DEPTH"), 63);
+    set(k(ctx2, 1, "TVA_DEPTH"), 0);
+    set(k(ctx2, 2, "PIT_DEPTH"), 0);
+    set(k(ctx2, 2, "TVA_DEPTH"), 100);
+    for (let i = 1; i <= 16; i++) {
+      set(k(ctx2, 1, "STEP_" + i), 0);
+      set(k(ctx2, 2, "STEP_" + i), 0);
+      set(k(ctx2, 2, "STEP_CURVE_" + i), shape);
+    }
+    for (const s of ["FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]) set(pk("SPTL", ctx2.part, s), 1);
+    ctx2.commit();
+  }
+  function seqPattern(ctx2, notes) {
+    notes.forEach((n, i) => {
+      ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), n == null ? 0 : n * UNIT, false);
+      ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), n == null ? REST : 0, false);
+    });
+    ctx2.commit();
+  }
+  var both = (ctx2, id, v) => {
+    ctx2.set(k(ctx2, 1, id), v, false);
+    ctx2.set(k(ctx2, 2, id), v, false);
+    ctx2.commit();
+  };
+  var interval = (s) => (s > 0 ? "+" : "") + s + ({ 0: " root", 12: " oct", "-12": " oct", 7: " 5th", "-5": " 5th", 3: " m3", 4: " M3" }[s] || "");
+  function stepCell(ctx2, i, len) {
+    const semis = Math.round(ctx2.get(k(ctx2, 1, "STEP_" + (i + 1))) / UNIT), rest = ctx2.get(k(ctx2, 2, "STEP_" + (i + 1))) <= REST + 8;
+    const sel = el(
+      "select",
+      { onchange: (e) => ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), +e.target.value * UNIT, true) },
+      ...[...Array(37)].map((_, j) => el("option", { value: 18 - j, selected: 18 - j === semis }, interval(18 - j)))
+    );
+    const gate2 = el(
+      "button",
+      {
+        type: "button",
+        class: "zcSw" + (rest ? "" : " on"),
+        title: rest ? "Rest: click to play this step" : "Plays: click to rest this step",
+        onclick: () => ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), rest ? 0 : REST, true)
+      },
+      rest ? "rest" : "play"
+    );
+    return el(
+      "div",
+      { class: "zcSeqStep" + (i > len ? " off" : "") },
+      el("span", { class: "zcL" }, String(i + 1)),
+      sel,
+      gate2
+    );
+  }
+  function seqTools(ctx2) {
+    const pick2 = (label, opts, cur, on2) => el(
+      "label",
+      { class: "zcC" },
+      el("span", { class: "zcL" }, label),
+      el(
+        "select",
+        { onchange: (e) => on2(e.target.value) },
+        ...opts.map(([t, v]) => el("option", { value: v, selected: String(v) === String(cur) }, t))
+      )
+    );
+    const rate = ctx2.get(k(ctx2, 1, "RATE_NOTE")), len = ctx2.get(k(ctx2, 1, "STEP_MAX")), shape = ctx2.get(k(ctx2, 2, "STEP_CURVE_1"));
+    return [
+      pick2(
+        "Step length",
+        RATES.map((r) => [r, RATE_IX[r]]),
+        rate,
+        (v) => both(ctx2, "RATE_NOTE", +v)
+      ),
+      pick2(
+        "Steps",
+        [...Array(16)].map((_, i) => [String(i + 1), i]),
+        len,
+        (v) => both(ctx2, "STEP_MAX", +v)
+      ),
+      pick2("Step shape", SHAPES, shape, (v) => {
+        for (let i = 1; i <= 16; i++) ctx2.set(k(ctx2, 2, "STEP_CURVE_" + i), +v, false);
+        ctx2.commit();
+      }),
+      pick2("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
+        if (+v >= 0) seqPattern(ctx2, SEQ_PATTERNS[+v][1]);
+      })
+    ];
+  }
+  function stepSeq(ctx2) {
+    if (!isSeq(ctx2))
+      return group(
+        "Step sequencer",
+        el(
+          "p",
+          { class: "hint zcWide" },
+          "Turns this partial into a 16-step riff that plays in time while you hold a key: LFO 1 plays the notes, LFO 2 shapes each step. Link partials first to set up several at once, then give each its own pattern for up to four voices. VA, SuperSAW and noise oscillators restart on every step; PCM waves only at the start of the note."
+        ),
+        el(
+          "button",
+          { type: "button", class: "btn", onclick: () => seqTemplate(ctx2) },
+          "Make this partial a step sequence"
+        )
+      );
+    const len = ctx2.get(k(ctx2, 1, "STEP_MAX"));
+    return group(
+      "Step sequencer",
+      ...seqTools(ctx2),
+      el("div", { class: "zcSeq zcWide" }, ...[...Array(16)].map((_, i) => stepCell(ctx2, i, len))),
+      el(
+        "p",
+        { class: "hint zcWide" },
+        "Hold a key: each step plays its interval from that key. Mono (Common page) keeps one riff per key; the steps follow the MC-707 tempo."
+      )
+    );
+  }
+
   // src/zen/zc-env.js
   var NS = "http://www.w3.org/2000/svg";
   var sv = (tag, a = {}) => {
     const e = document.createElementNS(NS, tag);
-    for (const k in a) e.setAttribute(k, a[k]);
+    for (const k2 in a) e.setAttribute(k2, a[k2]);
     return e;
   };
-  var SHAPES = {
+  var SHAPES2 = {
     amp: [
       ["Pluck", [0, 300, 380, 260], [0, 1, 0.22, 0, 0]],
       ["Stab", [0, 160, 220, 140], [0, 1, 0.5, 0, 0]],
@@ -43504,12 +43351,12 @@ input[type='number'] {
       ...levels.map((id, i) => id ? num(id, "Level " + i) : null).filter(Boolean)
     );
     const put = (e, pt, T2, Lf) => {
-      const k = (id) => e + pt + "." + id, ls = LEVELS2[e];
-      T2.forEach((t, i) => ctx2.set(k("T" + (i + 1)), t, false));
+      const k2 = (id) => e + pt + "." + id, ls = LEVELS2[e];
+      T2.forEach((t, i) => ctx2.set(k2("T" + (i + 1)), t, false));
       ls.forEach((id, i) => {
         if (!id) return;
-        const [p] = paramOf(ctx2.kind, k(id));
-        ctx2.set(k(id), Math.round(Math.max(p[3], Math.min(p[4], Lf[i] * (Lf[i] < 0 ? -p[3] : p[4])))), false);
+        const [p] = paramOf(ctx2.kind, k2(id));
+        ctx2.set(k2(id), Math.round(Math.max(p[3], Math.min(p[4], Lf[i] * (Lf[i] < 0 ? -p[3] : p[4])))), false);
       });
     };
     const shape = () => {
@@ -43526,7 +43373,7 @@ input[type='number'] {
       {
         "aria-label": "Shape preset",
         onchange: (e) => {
-          const s = SHAPES[KIND[env]][+e.target.value];
+          const s = SHAPES2[KIND[env]][+e.target.value];
           e.target.value = "";
           if (!s) return;
           put(env, part, s[1], s[2]);
@@ -43534,7 +43381,7 @@ input[type='number'] {
         }
       },
       el("option", { value: "" }, "Shape preset…"),
-      ...SHAPES[KIND[env]].map(([n], i) => el("option", { value: i }, n))
+      ...SHAPES2[KIND[env]].map(([n], i) => el("option", { value: i }, n))
     );
     const others = Object.keys(KIND).filter((e) => e !== env);
     const copy = el(
@@ -43556,7 +43403,7 @@ input[type='number'] {
       ...others.map((e) => el("option", { value: e }, "to the " + KIND[e] + " envelope (this partial)"))
     );
     draw();
-    ctx2.watch((k) => k.startsWith(blk + ".") && draw());
+    ctx2.watch((k2) => k2.startsWith(blk + ".") && draw());
     return el(
       "div",
       { class: "zcEnvBox" },
@@ -43615,7 +43462,7 @@ input[type='number'] {
   var NS2 = "http://www.w3.org/2000/svg";
   var sv2 = (tag, a = {}) => {
     const e = document.createElementNS(NS2, tag);
-    for (const k in a) e.setAttribute(k, a[k]);
+    for (const k2 in a) e.setAttribute(k2, a[k2]);
     return e;
   };
   var path = (pts) => "M" + pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L");
@@ -43657,7 +43504,7 @@ input[type='number'] {
         cap.textContent = "VA " + form + (form === "SQR" ? " · width " + Math.round(duty * 100) + "%" : "");
       } else if (ty === 3) {
         const det = S2("SSAW_DETUNE") / 127;
-        [-1, -0.5, 0.5, 1].forEach((k) => line((ph) => 1 - 2 * ((ph + k * det * 0.08 + 1) % 1), "line ghost"));
+        [-1, -0.5, 0.5, 1].forEach((k2) => line((ph) => 1 - 2 * ((ph + k2 * det * 0.08 + 1) % 1), "line ghost"));
         line((ph) => 1 - 2 * ph);
         cap.textContent = "SuperSAW · detune " + S2("SSAW_DETUNE");
       } else if (ty === 4) {
@@ -43674,7 +43521,7 @@ input[type='number'] {
     };
     draw();
     ctx2.watch(
-      (k) => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k) && draw()
+      (k2) => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k2) && draw()
     );
     return el("div", { class: "zcEnvBox" }, svg, cap);
   }
@@ -43717,7 +43564,7 @@ input[type='number'] {
       cap.textContent = (type === "OFF" ? "Filter off" : (vcf ? "VCF " : "TVF ") + type + " · about " + hz) + (vcf ? " · " + ["-12", "-18", "-24"][S2("FILTER_SLOPE")] + " dB" : "") + " · drawn from the settings, so the shape is approximate";
     };
     draw();
-    ctx2.watch((k) => /\.(FILTER_TYPE|VCF_TYPE|FILTER_SLOPE|CUTOFF|RESO|HPF_CUTOFF)$/.test(k) && draw());
+    ctx2.watch((k2) => /\.(FILTER_TYPE|VCF_TYPE|FILTER_SLOPE|CUTOFF|RESO|HPF_CUTOFF)$/.test(k2) && draw());
     return el("div", { class: "zcEnvBox" }, svg, cap);
   }
   var LFO_F = {
@@ -43764,7 +43611,7 @@ input[type='number'] {
       svg.append(sv2("path", { d: path(pts), class: "line" }));
     };
     draw();
-    ctx2.watch((k) => k.startsWith(pre) && draw());
+    ctx2.watch((k2) => k2.startsWith(pre) && draw());
     return svg;
   }
 
@@ -43924,7 +43771,11 @@ input[type='number'] {
       "div",
       {},
       el("div", { class: "zcCols2" }, one(1), one(2)),
-      group("Envelopes restart the LFO", ...at(ctx2, "SPTL", ["PENV_LFO_TRIG_SW", "FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]))
+      group(
+        "Envelopes restart the LFO",
+        ...at(ctx2, "SPTL", ["PENV_LFO_TRIG_SW", "FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"])
+      ),
+      stepSeq(ctx2)
     );
   }
   function pageMatrix(ctx2) {
@@ -44009,12 +43860,170 @@ input[type='number'] {
     );
   }
 
+  // src/zen/zc-mfx-presets.js
+  var gate = (s) => Object.fromEntries([...s].map((c, i) => ["Step " + (i + 1), c === "x" ? 127 : c === "-" ? 0 : 64]));
+  var ramp = (a, b) => Object.fromEntries([...Array(16)].map((_, i) => ["Step " + (i + 1), Math.round(a + (b - a) * i / 15)]));
+  var MFX_PRESETS = [
+    [
+      "Delay: dotted 1/8 ping-pong",
+      "Delay",
+      {
+        "Delay Left (sync sw)": "ON",
+        "Delay Left (note)": "1/8.",
+        "Delay Right (sync sw)": "ON",
+        "Delay Right (note)": "1/4",
+        "Feedback Mode": "CROSS",
+        Feedback: 35,
+        "HF Damp": "4000",
+        Balance: 25
+      }
+    ],
+    ["Delay: short slapback", "Delay", { "Delay Left (msec)": 90, "Delay Right (msec)": 115, Feedback: 0, Balance: 22 }],
+    [
+      "Delay: long 1/4 wash",
+      "Delay",
+      {
+        "Delay Left (sync sw)": "ON",
+        "Delay Left (note)": "1/4",
+        "Delay Right (sync sw)": "ON",
+        "Delay Right (note)": "1/2",
+        Feedback: 55,
+        "HF Damp": "2000",
+        Balance: 30
+      }
+    ],
+    [
+      "Tape echo: dub",
+      "Tape Echo",
+      {
+        Mode: "M+L",
+        "Repeat Rate": 70,
+        Intensity: 85,
+        Bass: 3,
+        Treble: -4,
+        "Tape Distortion": 2,
+        "W/F Rate": 20,
+        "W/F Depth": 20,
+        "Echo Level": 100,
+        "Direct Level": 127
+      }
+    ],
+    [
+      "Reverse delay: swell",
+      "Reverse Delay",
+      {
+        "Rev Delay Time (sync sw)": "ON",
+        "Rev Delay Time (note)": "1/4",
+        "Rev Delay Feedback": 30,
+        "Rev Delay Level": 110,
+        Balance: 40
+      }
+    ],
+    ["Juno chorus I", "JUNO-106 Chorus", { Mode: "I", Balance: 50 }],
+    ["Juno chorus II", "JUNO-106 Chorus", { Mode: "II", Balance: 50 }],
+    ["Juno chorus I+II (fast and deep)", "JUNO-106 Chorus", { Mode: "I+II", Balance: 50 }],
+    ["CE-1: warm chorus", "CE-1", { Intensity: 90 }],
+    ["Space-D: wide stereo", "Space-D", { "Rate (Hz)": 0.5, Depth: 60, Balance: 50 }],
+    ["Flanger: jet sweep", "Flanger", { "Rate (Hz)": 0.2, Depth: 100, Feedback: 60, Balance: 50 }],
+    ["Rotary: slow Leslie", "Rotary", { Speed: "SLOW" }],
+    ["Rotary: fast Leslie", "Rotary", { Speed: "FAST" }],
+    ["Tremolo: 1/8 chop", "Tremolo", { "Mod Wave": "SQR", "Rate (sync sw)": "ON", "Rate (note)": "1/8", Depth: 110 }],
+    [
+      "Auto pan: 1/2 bar sweep",
+      "Auto Pan",
+      { "Mod Wave": "SIN", "Rate (sync sw)": "ON", "Rate (note)": "1/2", Depth: 90 }
+    ],
+    [
+      "Slicer: trance gate (1/16)",
+      "Slicer",
+      { ...gate("xx-xx-x-xx-xx-x-"), "Rate (sync sw)": "ON", "Rate (note)": "1/1", Attack: 12, Mode: "SLASH" }
+    ],
+    [
+      "Slicer: half-time chop",
+      "Slicer",
+      { ...gate("x--x--x-x---x-x-"), "Rate (sync sw)": "ON", "Rate (note)": "2/1", Attack: 20, Mode: "LEGATO" }
+    ],
+    [
+      "Step filter: rising 1/16 sweep",
+      "Step Filter",
+      {
+        ...ramp(10, 120),
+        "Rate (sync sw)": "ON",
+        "Rate (note)": "1/1",
+        "Filter Type": "LPF",
+        "Filter Slope": "-24",
+        "Filter Resonance": 60
+      }
+    ],
+    [
+      "Super filter: 1/8 wobble",
+      "Super Filter",
+      {
+        "Filter Type": "LPF",
+        "Filter Slope": "-24",
+        "Filter Cutoff": 60,
+        "Filter Resonance": 70,
+        "Modulation Sw": "ON",
+        "Modulation Wave": "SIN",
+        "Rate (sync sw)": "ON",
+        "Rate (note)": "1/8",
+        Depth: 90
+      }
+    ],
+    [
+      "Multi mode filter: dark",
+      "Multi Mode Filter",
+      { "Filter Type": "LPF", "Filter Tone": 90, "Filter Color": 120, "Filter Slope": "-24" }
+    ],
+    ["Bit crusher: 8-bit", "Bit Crusher", { "Sample Rate": 70, "Bit Down": 8, Filter: 90 }],
+    [
+      "Lo-fi: worn cassette",
+      "LOFI Compress",
+      { "Pre Filter Type": "2", "LoFi Type": "5", "Post Filter Type": "LPF", "Post Filter Cutoff": "4000", Balance: 60 }
+    ],
+    ["Distortion: gritty bass", "Distortion", { Drive: 70, Tone: 60, Level: 90 }],
+    ["Overdrive: warm", "Overdrive", { Drive: 40, Tone: 70, Level: 100 }],
+    ["Compressor: punch", "Compressor", { Attack: 20, Release: 40, Threshold: -20, Ratio: "4:1", "Post Gain": 6 }],
+    ["Isolator: no lows", "Isolator", { "Boost/Cut Low": -60 }],
+    ["Ring mod: metallic", "Ring Modulator", { Frequency: 90, Balance: 50 }],
+    ["Pitch shifter: octave down", "Pitch Shifter", { Coarse: -12, Balance: 50 }]
+  ];
+  function mfxPreset(i) {
+    const [label, typeName, set] = MFX_PRESETS[i];
+    const type = mfxNames().indexOf(typeName);
+    if (type < 0) throw new Error(label + ": no MFX type " + typeName);
+    const sps = mfxParams(type), vals = mfxDefaults(type);
+    for (const [name, val] of Object.entries(set)) {
+      const j = sps.findIndex((sp2) => sp2.name === name), sp = sps[j];
+      if (!sp) throw new Error(label + ": " + typeName + " has no " + name);
+      const v = sp.kind === "L" ? (sp.list === NOTES ? NOTES : sp.list).indexOf(String(val)) : val;
+      if (sp.kind === "L" ? v < 0 : v < sp.lo || v > sp.hi) throw new Error(label + ": " + name + " = " + val);
+      vals[j] = stored(sp, v);
+    }
+    return { type, vals };
+  }
+
   // src/zen/zc-pages-fx.js
   function pageMfx(ctx2) {
     const type = ctx2.get("MFX.mfxType"), sps = mfxParams(type);
     const typeSel = el("select", { onchange: (e) => ctx2.mfxType(+e.target.value) });
     mfxNames().forEach(
       (n, i) => typeSel.append(el("option", { value: i, selected: i === type }, String(i).padStart(2, "0") + " " + n))
+    );
+    const presetSel = el(
+      "select",
+      {
+        title: "Ready-made settings: sets the type and its parameters (one undo step)",
+        onchange: (e) => {
+          const i = +e.target.value;
+          if (i >= 0) {
+            const p = mfxPreset(i);
+            ctx2.mfxType(p.type, p.vals);
+          }
+        }
+      },
+      el("option", { value: -1 }, "Preset…"),
+      ...MFX_PRESETS.map(([n], i) => el("option", { value: i }, n))
     );
     const params = sps.map((sp, i) => {
       const key = "MFX.param_" + (i + 1), known2 = ctx2.snd.known.has(key), v = shown(sp, ctx2.get(key));
@@ -44074,6 +44083,7 @@ input[type='number'] {
       group(
         "Multi-effect",
         el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Type"), typeSel),
+        el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Presets"), presetSel),
         ctl(ctx2, "MFX.mfxSwitch", { label: "On" }),
         ctl(ctx2, "MFX.choSend", { label: "Delay send" }),
         ctl(ctx2, "MFX.revSend", { label: "Reverb send" })
@@ -44127,7 +44137,7 @@ input[type='number'] {
         )
       );
     }
-    const k = (id) => ctl(ctx2, pk("KPTL", cur, id));
+    const k2 = (id) => ctl(ctx2, pk("KPTL", cur, id));
     return el(
       "div",
       {},
@@ -44135,22 +44145,22 @@ input[type='number'] {
       keys2,
       group(
         "Key " + noteName2(KIT_LOW + cur) + (pads.get(KIT_LOW + cur) ? " · " + pads.get(KIT_LOW + cur) : ""),
-        k("INST_GTYPE"),
-        k("INST_GID"),
-        k("INST_NUM"),
-        k("LEVEL"),
-        k("PAN"),
-        k("KEY_OFST"),
-        k("PIT_FINE_OFST"),
-        k("CUTOFF_OFST"),
-        k("RESO_OFST"),
-        k("TVA_ATK_OFST"),
-        k("TVA_DCY_OFST"),
-        k("TVA_REL_OFST"),
-        k("MUTE_GRP"),
-        k("CHO_SEND"),
-        k("REV_SEND"),
-        k("OUT_ASGN")
+        k2("INST_GTYPE"),
+        k2("INST_GID"),
+        k2("INST_NUM"),
+        k2("LEVEL"),
+        k2("PAN"),
+        k2("KEY_OFST"),
+        k2("PIT_FINE_OFST"),
+        k2("CUTOFF_OFST"),
+        k2("RESO_OFST"),
+        k2("TVA_ATK_OFST"),
+        k2("TVA_DCY_OFST"),
+        k2("TVA_REL_OFST"),
+        k2("MUTE_GRP"),
+        k2("CHO_SEND"),
+        k2("REV_SEND"),
+        k2("OUT_ASGN")
       ),
       pageEq(ctx2, "KEQ", cur)
     );
@@ -44168,6 +44178,543 @@ input[type='number'] {
         )
       )
     );
+  }
+
+  // src/zen/zc-starters.js
+  function tone(name, fn) {
+    const s = newSound("tone");
+    const set = (key, i, id, v) => s.v[pk(key, i, id)] = v;
+    s.v["CMN.NAME"] = name;
+    for (let i = 0; i < 4; i++) set("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
+    set("SPTL", 0, "OSC_TYPE", 1);
+    fn(
+      (id, v, i = 0) => set(
+        id.split(".")[0],
+        ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(id.split(".")[0]) ? null : i,
+        id.split(".")[1],
+        v
+      )
+    );
+    return s;
+  }
+  var STARTERS = [
+    ["Init tone", () => tone("INIT TONE", () => {
+    })],
+    [
+      "Saw lead",
+      () => tone("SAW LEAD", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_TIME", 120);
+        s("PTL.CUTOFF", 760);
+        s("PTL.RESO", 260);
+        s("FENV.DEPTH", 24);
+        s("FENV.T2", 420);
+        s("FENV.L2", 600);
+        s("AENV.T3", 0);
+        s("AENV.T4", 260);
+        s("PTL.REV_SEND", 30);
+      })
+    ],
+    [
+      "Supersaw stack",
+      () => tone("SUPERSAW", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 92);
+        s("PTL.CUTOFF", 880);
+        s("AENV.T1", 40);
+        s("AENV.T4", 520);
+        s("PTL.CHO_SEND", 40);
+        s("PTL.REV_SEND", 60);
+      })
+    ],
+    [
+      "Square bass",
+      () => tone("SQUARE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 1);
+        s("PTL.CUTOFF", 420);
+        s("PTL.RESO", 180);
+        s("FENV.DEPTH", 30);
+        s("FENV.T2", 300);
+        s("FENV.L2", 200);
+        s("FENV.L3", 150);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Sub 808",
+      () => tone("SUB 808", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_MODE", 1);
+        s("CMN.PORTA_TIME", 260);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 3);
+        s("PTL.CUTOFF", 1023);
+        s("PENV.DEPTH", 12);
+        s("PENV.L0", 300);
+        s("PENV.T1", 120);
+        s("PENV.L1", 0);
+        s("PENV.L2", 0);
+        s("PENV.L3", 0);
+        s("AENV.T2", 760);
+        s("AENV.L2", 700);
+        s("AENV.L3", 0);
+        s("AENV.T3", 760);
+        s("AENV.T4", 300);
+      })
+    ],
+    [
+      "Pluck",
+      () => tone("PLUCK", (s) => {
+        s("PTL.CUTOFF", 380);
+        s("PTL.RESO", 160);
+        s("FENV.DEPTH", 50);
+        s("FENV.T1", 0);
+        s("FENV.T2", 360);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        s("AENV.T2", 420);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 300);
+        s("PTL.REV_SEND", 40);
+      })
+    ],
+    [
+      "Warm pad",
+      () => tone("WARM PAD", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 2, 1);
+        s("PTL.PIT_FINE", -8);
+        s("PTL.PIT_FINE", 8, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 560, i);
+          s("AENV.T1", 620, i);
+          s("AENV.T4", 640, i);
+          s("LFO.LFO1_TVF_DEPTH", 12, i);
+          s("LFO.LFO1_RATE", 380, i);
+          s("PTL.REV_SEND", 80, i);
+          s("PTL.CHO_SEND", 50, i);
+        }
+      })
+    ],
+    [
+      "Noise sweep",
+      () => tone("NOISE SWEEP", (s) => {
+        s("SPTL.OSC_TYPE", 4);
+        s("PTL.FILTER_TYPE", 2);
+        s("PTL.CUTOFF", 200);
+        s("PTL.RESO", 500);
+        s("FENV.DEPTH", 50);
+        s("FENV.T1", 820);
+        s("FENV.L1", 1023);
+        s("AENV.T1", 300);
+        s("AENV.T4", 700);
+        s("PTL.REV_SEND", 90);
+      })
+    ],
+    [
+      "Acid bass",
+      () => tone("ACID BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_MODE", 1);
+        s("CMN.PORTA_TIME", 90);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 820);
+        s("FENV.DEPTH", 42);
+        s("FENV.T2", 180);
+        s("FENV.L2", 150);
+        s("FENV.L3", 100);
+        s("AENV.T4", 80);
+      })
+    ],
+    [
+      "Reese bass",
+      () => tone("REESE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -14);
+        s("PTL.PIT_FINE", 14, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("PTL.RESO", 120, i);
+          s("AENV.T4", 140, i);
+        }
+      })
+    ],
+    [
+      "Wobble bass",
+      () => tone("WOBBLE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 420);
+        s("LFO.LFO1_FORM", 0);
+        s("LFO.LFO1_RATE_SYNC", 1);
+        s("LFO.LFO1_RATE_NOTE", 9);
+        s("LFO.LFO1_TVF_DEPTH", 70);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Juno pad",
+      () => tone("JUNO PAD", (s) => {
+        s("SPTL.VA_FORM", 5);
+        s("SCMN.UNISON_SW", 1);
+        s("SCMN.UNISON_SIZE", 4);
+        s("SCMN.UNISON_DETN", 30);
+        s("PTL.CUTOFF", 640);
+        s("AENV.T1", 520);
+        s("AENV.T4", 620);
+        s("PTL.CHO_SEND", 80);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "Strings",
+      () => tone("STRINGS", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 50);
+        s("PTL.CUTOFF", 700);
+        s("AENV.T1", 420);
+        s("AENV.T4", 520);
+        s("PTL.CHO_SEND", 40);
+        s("PTL.REV_SEND", 60);
+      })
+    ],
+    [
+      "Brass stab",
+      () => tone("BRASS STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -6);
+        s("PTL.PIT_FINE", 6, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("FENV.DEPTH", 30, i);
+          s("FENV.T1", 120, i);
+          s("FENV.T2", 320, i);
+          s("FENV.L2", 700, i);
+          s("AENV.T1", 60, i);
+          s("AENV.T4", 200, i);
+        }
+      })
+    ],
+    [
+      "Hoover",
+      () => tone("HOOVER", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_TIME", 200);
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 110);
+        s("PENV.DEPTH", 30);
+        s("PENV.L0", -150);
+        s("PENV.T1", 160);
+        s("PENV.L1", 0);
+        s("PTL.CUTOFF", 820);
+        s("PTL.CHO_SEND", 60);
+      })
+    ],
+    [
+      "Sync lead",
+      () => tone("SYNC LEAD", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPMT.STRUCT12", 1);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 860, i);
+          s("AENV.T4", 200, i);
+        }
+        s("PTL.REV_SEND", 30);
+      })
+    ],
+    [
+      "Bell",
+      () => tone("BELL", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 3);
+        s("SPTL.VA_FORM", 3, 1);
+        s("SPMT.STRUCT12", 2);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("AENV.T2", 700, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 600, i);
+          s("PTL.REV_SEND", 70, i);
+        }
+      })
+    ],
+    [
+      "Organ",
+      () => tone("ORGAN", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("PMT.PMT3_PTL_SW", 1);
+        [0, 12, 19].forEach((crs, i) => {
+          s("SPTL.OSC_TYPE", 1, i);
+          s("SPTL.VA_FORM", 3, i);
+          s("PTL.PIT_CRS", crs, i);
+          s("PTL.LEVEL", [127, 100, 80][i], i);
+          s("AENV.T1", 0, i);
+          s("AENV.T4", 40, i);
+          s("PTL.CHO_SEND", 60, i);
+        });
+      })
+    ],
+    [
+      "PWM pad",
+      () => tone("PWM PAD", (s) => {
+        s("SPTL.VA_FORM", 1);
+        s("SPTL.PWM_DEPTH", 40);
+        s("LFO.LFO1_RATE", 300);
+        s("PTL.CUTOFF", 620);
+        s("AENV.T1", 560);
+        s("AENV.T4", 640);
+        s("PTL.CHO_SEND", 60);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "House chord stab",
+      () => tone("CHORD STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -7);
+        s("PTL.PIT_FINE", 7, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 560, i);
+          s("FENV.DEPTH", 36, i);
+          s("FENV.T2", 200, i);
+          s("FENV.L2", 0, i);
+          s("FENV.L3", 0, i);
+          s("AENV.T2", 260, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 160, i);
+          s("PTL.REV_SEND", 50, i);
+        }
+      })
+    ],
+    [
+      "Kick",
+      () => tone("KICK", (s) => {
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 3);
+        s("PTL.CUTOFF", 1023);
+        s("PENV.DEPTH", 60);
+        s("PENV.L0", 511);
+        s("PENV.T1", 120);
+        s("PENV.L1", 0);
+        s("PENV.L2", 0);
+        s("PENV.L3", 0);
+        s("AENV.T2", 300);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 60);
+      })
+    ]
+  ];
+
+  // src/zen/zc-starters-more.js
+  var pat = (name) => SEQ_PATTERNS.find((p) => p[0] === name)[1];
+  var RATE_1_16 = 6;
+  function seq(s, i, notes, shape = 11, rate = RATE_1_16) {
+    for (const l of [1, 2]) {
+      s("LFO.LFO" + l + "_FORM", 10, i);
+      s("LFO.LFO" + l + "_RATE_SYNC", 1, i);
+      s("LFO.LFO" + l + "_RATE_NOTE", rate, i);
+      s("LFO.LFO" + l + "_STEP_MAX", 15, i);
+      s("LFO.LFO" + l + "_KEY_TRIG", 1, i);
+    }
+    s("LFO.LFO1_PIT_DEPTH", 63, i);
+    s("LFO.LFO2_TVA_DEPTH", 100, i);
+    notes.forEach((n, j) => {
+      s("LFO.LFO1_STEP_" + (j + 1), n == null ? 0 : n * 4, i);
+      s("LFO.LFO2_STEP_" + (j + 1), n == null ? -72 : 0, i);
+      s("LFO.LFO2_STEP_CURVE_" + (j + 1), shape, i);
+    });
+    s("SPTL.FENV_LFO_TRIG_SW", 1, i);
+    s("SPTL.AENV_LFO_TRIG_SW", 1, i);
+  }
+  function fm(s, ratio, depth, modDecay) {
+    s("PMT.PMT2_PTL_SW", 1);
+    s("SPTL.OSC_TYPE", 1, 1);
+    s("SPTL.VA_FORM", 3);
+    s("SPTL.VA_FORM", 3, 1);
+    s("SPMT.STRUCT12", 3);
+    s("SPMT.XMOD12_DEPTH", depth);
+    s("PTL.PIT_CRS", ratio, 1);
+    s("AENV.T2", modDecay, 1);
+    s("AENV.L2", 0, 1);
+    s("AENV.L3", 0, 1);
+  }
+  var MORE_STARTERS = [
+    [
+      "Seq: acid riff",
+      () => tone("SEQ ACID", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 380);
+        s("PTL.RESO", 780);
+        s("FENV.DEPTH", 40);
+        s("FENV.T2", 120);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        seq(s, 0, pat("Acid run"), 11);
+      })
+    ],
+    [
+      "Seq: trance gate",
+      () => tone("SEQ GATE", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("PTL.CUTOFF", 760);
+        s("PTL.REV_SEND", 50);
+        seq(s, 0, pat("Trance gate (root)"), 15);
+      })
+    ],
+    [
+      "Seq: octave bass",
+      () => tone("SEQ OCT BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 1);
+        s("PTL.CUTOFF", 520);
+        seq(s, 0, pat("Octave bounce"), 11);
+      })
+    ],
+    [
+      "Seq: rolling bass",
+      () => tone("SEQ ROLL BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 460);
+        s("PTL.RESO", 300);
+        seq(s, 0, pat("Rolling bass"), 15);
+      })
+    ],
+    [
+      "Seq: two-voice arp",
+      () => tone("SEQ ARP 2V", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 2, 1);
+        s("PTL.PIT_CRS", 12, 1);
+        s("PTL.REV_SEND", 40);
+        s("PTL.REV_SEND", 40, 1);
+        seq(s, 0, pat("Minor arp up"), 11);
+        seq(s, 1, pat("Fifths stab"), 20);
+      })
+    ],
+    [
+      "FM: electric piano",
+      () => tone("FM EPIANO", (s) => {
+        fm(s, 12, 1800, 420);
+        s("AENV.T2", 900);
+        s("AENV.L2", 300);
+        s("AENV.L3", 0);
+        s("AENV.T4", 300);
+        s("PTL.REV_SEND", 40);
+      })
+    ],
+    [
+      "FM: glass bell",
+      () => tone("FM BELL", (s) => {
+        fm(s, 26, 3600, 900);
+        s("AENV.T2", 950);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 800);
+        s("PTL.REV_SEND", 80);
+      })
+    ],
+    [
+      "FM: bass",
+      () => tone("FM BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        fm(s, 0, 2400, 260);
+        s("AENV.T4", 80);
+      })
+    ],
+    [
+      "FM: metallic pluck",
+      () => tone("FM PLUCK", (s) => {
+        fm(s, 7, 4800, 150);
+        s("AENV.T2", 260);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Bass: deep sine sub",
+      () => tone("SINE SUB", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -2);
+        s("SPTL.VA_FORM", 3);
+        s("AENV.T4", 60);
+      })
+    ],
+    [
+      "Bass: punchy pluck",
+      () => tone("PLUCK BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 260);
+        s("PTL.RESO", 260);
+        s("FENV.DEPTH", 52);
+        s("FENV.T2", 90);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        s("AENV.T2", 380);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 60);
+      })
+    ]
+  ];
+  var GROUP = {
+    Basic: ["Init tone", "Saw lead", "Supersaw stack", "Pluck", "Noise sweep"],
+    Bass: [
+      "Square bass",
+      "Sub 808",
+      "Acid bass",
+      "Reese bass",
+      "Wobble bass",
+      "Bass: deep sine sub",
+      "Bass: punchy pluck"
+    ],
+    "Leads and stabs": ["Brass stab", "Hoover", "Sync lead", "House chord stab"],
+    "Pads and strings": ["Warm pad", "Juno pad", "Strings", "PWM pad"],
+    "Keys and bells": ["Bell", "Organ"],
+    "Step sequences": MORE_STARTERS.filter(([n]) => n.startsWith("Seq:")).map(([n]) => n),
+    "FM-style": MORE_STARTERS.filter(([n]) => n.startsWith("FM:")).map(([n]) => n),
+    Drums: ["Kick"]
+  };
+  function starterMenu() {
+    const all = [...STARTERS, ...MORE_STARTERS], used = /* @__PURE__ */ new Set(), out = Object.entries(GROUP).map(([g, names]) => [
+      g,
+      names.map((n) => all.find((x) => x[0] === n)).filter(Boolean).map((x) => (used.add(x[0]), x))
+    ]);
+    const rest = all.filter((x) => !used.has(x[0]));
+    if (rest.length) out.push(["Other", rest]);
+    return out.filter(([, list]) => list.length);
   }
 
   // src/zen/zc-actions.js
@@ -44239,12 +44786,12 @@ input[type='number'] {
   }
   function partMenu() {
     const p = ZE.part;
-    const keysOf = (i) => Object.keys(ZE.snd.v).filter((k) => PBLKS.some((b) => k.startsWith(b + i + ".")));
+    const keysOf = (i) => Object.keys(ZE.snd.v).filter((k2) => PBLKS.some((b) => k2.startsWith(b + i + ".")));
     return [
       {
         label: "Copy partial " + (p + 1),
         action: () => {
-          CLIP = Object.fromEntries(keysOf(p).map((k) => [k.replace(/^(\D+)\d\./, "$1."), ZE.snd.v[k]]));
+          CLIP = Object.fromEntries(keysOf(p).map((k2) => [k2.replace(/^(\D+)\d\./, "$1."), ZE.snd.v[k2]]));
           toast("Copied partial " + (p + 1));
         }
       },
@@ -44253,7 +44800,7 @@ input[type='number'] {
         disabled: !CLIP,
         action: () => {
           const s = copySound(ZE.snd);
-          for (const k in CLIP) s.v[k.replace(".", p + ".")] = CLIP[k];
+          for (const k2 in CLIP) s.v[k2.replace(".", p + ".")] = CLIP[k2];
           zeLoad(s, "Pasted into partial " + (p + 1));
         }
       },
@@ -44261,7 +44808,7 @@ input[type='number'] {
         label: "Reset partial " + (p + 1),
         action: () => {
           const s = copySound(ZE.snd), init = newSound("tone");
-          for (const k of keysOf(p)) s.v[k] = init.v[k];
+          for (const k2 of keysOf(p)) s.v[k2] = init.v[k2];
           zeLoad(s, "Reset partial " + (p + 1));
         }
       }
@@ -44273,14 +44820,14 @@ input[type='number'] {
       if (S.tracks[t].type === "drum" !== (ZE.kind === "kit")) continue;
       out.push({
         label: "Track " + devNum(t) + " · " + S.tracks[t].name,
-        sub: [...Array.from({ length: 16 }, (_, k) => k), 16].map((k) => ({
-          label: targetName(k),
-          disabled: t === ZE.t && k === ZE.k,
+        sub: [...Array.from({ length: 16 }, (_, k2) => k2), 16].map((k2) => ({
+          label: targetName(k2),
+          disabled: t === ZE.t && k2 === ZE.k,
           action: async () => {
             if (!await zxConnect()) return toast("Connect the " + DEVS[DEV].name + " first");
-            sendSound(ZE.snd, slotAddr(ZE.kind, t, k));
-            rememberClip(copySound(ZE.snd), t, k);
-            toast("Copied to track " + devNum(t) + ", " + targetName(k));
+            sendSound(ZE.snd, slotAddr(ZE.kind, t, k2));
+            rememberClip(copySound(ZE.snd), t, k2);
+            toast("Copied to track " + devNum(t) + ", " + targetName(k2));
           }
         }))
       });
@@ -44294,8 +44841,8 @@ input[type='number'] {
       (t) => trk.append(el("option", { value: t, selected: t === ZE.t }, "Track " + devNum(t) + " · " + S.tracks[t].name))
     );
     const clip = el("select", { title: "Clip", onchange: (e) => zenOpen(ZE.t, +e.target.value) });
-    [...Array.from({ length: 16 }, (_, k) => k), 16].forEach(
-      (k) => clip.append(el("option", { value: k, selected: k === ZE.k }, targetName(k).replace(/^c/, "C").replace(/^t/, "T")))
+    [...Array.from({ length: 16 }, (_, k2) => k2), 16].forEach(
+      (k2) => clip.append(el("option", { value: k2, selected: k2 === ZE.k }, targetName(k2).replace(/^c/, "C").replace(/^t/, "T")))
     );
     return el(
       "div",
@@ -44337,7 +44884,10 @@ input[type='number'] {
           "Starters ▾",
           (e) => menuAt(
             e,
-            STARTERS.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), "Loaded " + n) }))
+            starterMenu().map(([g, list]) => ({
+              label: g,
+              sub: list.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), "Loaded " + n) }))
+            }))
           )
         ) : btn("Init kit", () => zeLoad(newSound("kit"), "Reset the kit")),
         btn("My sounds ▾", (e) => menuAt(e, myMenu())),
@@ -44345,6 +44895,71 @@ input[type='number'] {
         ZE.kind === "tone" ? btn("Partial ▾", (e) => menuAt(e, partMenu())) : null,
         btn("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
         btn("Done", () => zenClose(), { on: true })
+      )
+    );
+  }
+
+  // src/zen/zc-partbar.js
+  var PARTIAL = /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)(\d)\./;
+  function linkedKeys(key, linked) {
+    const m = PARTIAL.exec(key);
+    if (!m || !linked || !linked[+m[2]]) return [key];
+    return [0, 1, 2, 3].filter((i) => linked[i]).map((i) => key.replace(/\d\./, i + "."));
+  }
+  function partialBar(ze, redraw) {
+    const linked = ze.linked || (ze.linked = [false, false, false, false]), all = linked.every(Boolean), chip = (i) => el(
+      "button",
+      {
+        type: "button",
+        class: "zcLinkChip" + (linked[i] ? " on" : ""),
+        title: linked[i] ? "Partial " + (i + 1) + " is linked" : "Link partial " + (i + 1),
+        onclick: () => {
+          linked[i] = !linked[i];
+          redraw();
+        }
+      },
+      String(i + 1)
+    );
+    return el(
+      "div",
+      { class: "zcParts" },
+      el("span", { class: "zcL" }, "Partial"),
+      ...[0, 1, 2, 3].map((i) => {
+        const on2 = ze.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
+        return el(
+          "button",
+          {
+            type: "button",
+            class: "zcPart" + (i === ze.part ? " on" : "") + (on2 ? " lit" : "") + (linked[i] ? " linked" : ""),
+            title: on2 ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
+            onclick: () => {
+              ze.part = i;
+              redraw();
+            }
+          },
+          String(i + 1)
+        );
+      }),
+      el(
+        "span",
+        {
+          class: "zcLinks",
+          title: "Linked partials change together: a change to any linked partial goes to all of them"
+        },
+        el("span", { class: "zcL" }, "Link"),
+        ...[0, 1, 2, 3].map(chip),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "zcLinkChip all" + (all ? " on" : ""),
+            onclick: () => {
+              linked.fill(!all);
+              redraw();
+            }
+          },
+          "All"
+        )
       )
     );
   }
@@ -44358,7 +44973,7 @@ input[type='number'] {
     tab: "common",
     part: 0,
     key: 15,
-    link: false,
+    linked: [false, false, false, false],
     live: true,
     undo: [],
     redo: [],
@@ -44366,7 +44981,6 @@ input[type='number'] {
     busy: "",
     srcNote: ""
   };
-  var PARTIAL = /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)\d\./;
   var TABS = {
     tone: [
       ["common", "Common", pageCommon],
@@ -44419,18 +45033,18 @@ input[type='number'] {
     }, 450);
   }
   function apply(key, v) {
-    const keys2 = ZE.link && PARTIAL.test(key) ? [0, 1, 2, 3].map((i) => key.replace(/\d\./, i + ".")) : [key];
-    for (const k of keys2) {
-      if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
-      setVal(ZE.snd, k, v, sending() ? zeBase() : null);
+    const keys2 = linkedKeys(key, ZE.linked);
+    for (const k2 of keys2) {
+      if (!(k2 in ZE.pend)) ZE.pend[k2] = ZE.snd.v[k2];
+      setVal(ZE.snd, k2, v, sending() ? zeBase() : null);
     }
   }
   function commit() {
     const ch = ZE.pend;
     ZE.pend = {};
-    const keys2 = Object.keys(ch).filter((k) => ch[k] !== ZE.snd.v[k]);
+    const keys2 = Object.keys(ch).filter((k2) => ch[k2] !== ZE.snd.v[k2]);
     if (!keys2.length) return;
-    ZE.undo.push(Object.fromEntries(keys2.map((k) => [k, ch[k]])));
+    ZE.undo.push(Object.fromEntries(keys2.map((k2) => [k2, ch[k2]])));
     ZE.undo.length = Math.min(ZE.undo.length, 200);
     ZE.redo = [];
     remember();
@@ -44439,8 +45053,8 @@ input[type='number'] {
     const from = redo2 ? ZE.redo : ZE.undo, to = redo2 ? ZE.undo : ZE.redo;
     const step = from.pop();
     if (!step) return;
-    to.push(Object.fromEntries(Object.keys(step).map((k) => [k, ZE.snd.v[k]])));
-    for (const k in step) setVal(ZE.snd, k, step[k], null);
+    to.push(Object.fromEntries(Object.keys(step).map((k2) => [k2, ZE.snd.v[k2]])));
+    for (const k2 in step) setVal(ZE.snd, k2, step[k2], null);
     if (sending()) sendSound(ZE.snd, zeBase(), new Set(Object.keys(step)));
     remember();
     zeRender();
@@ -44451,7 +45065,7 @@ input[type='number'] {
     memT = setTimeout(() => ZE.snd && rememberClip(ZE.snd, ZE.t, ZE.k), 800);
   }
   function zeLoad(snd, why) {
-    ZE.undo.push(Object.fromEntries(Object.keys(ZE.snd.v).map((k) => [k, ZE.snd.v[k]])));
+    ZE.undo.push(Object.fromEntries(Object.keys(ZE.snd.v).map((k2) => [k2, ZE.snd.v[k2]])));
     ZE.redo = [];
     ZE.snd = snd;
     if (sending()) sendSound(snd, zeBase());
@@ -44459,12 +45073,12 @@ input[type='number'] {
     zeRender();
     if (why) toast(why + (sending() ? " and sent to the " + DEVS[DEV].name : ""));
   }
-  function mfxType(type) {
-    const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = mfxDefaults(type);
-    keys2.forEach((k, i) => {
-      if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
-      ZE.snd.v[k] = i ? d[i - 1] : type;
-      ZE.snd.known.add(k);
+  function mfxType(type, vals) {
+    const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = vals || mfxDefaults(type);
+    keys2.forEach((k2, i) => {
+      if (!(k2 in ZE.pend)) ZE.pend[k2] = ZE.snd.v[k2];
+      ZE.snd.v[k2] = i ? d[i - 1] : type;
+      ZE.snd.known.add(k2);
     });
     commit();
     zeRender();
@@ -44476,14 +45090,14 @@ input[type='number'] {
       toast("No MIDI input from the " + DEVS[DEV].name + ": cannot read, but changes are still sent");
       return;
     }
-    const t = ZE.t, k = ZE.k;
+    const t = ZE.t, k2 = ZE.k;
     ZE.busy = "Reading…";
     status();
     const r = await readSound(ZE.snd, zeBase(), null, (d, n) => {
       ZE.busy = "Reading… " + Math.round(d / n * 100) + "%";
       status();
     });
-    if (ZE.t !== t || ZE.k !== k) return;
+    if (ZE.t !== t || ZE.k !== k2) return;
     ZE.busy = "";
     ZE.srcNote = r.ok ? "Read " + r.ok + " of " + r.total + " values" + (r.bad ? " (" + r.bad + " could not be read; they show faded)" : "") : "The " + DEVS[DEV].name + " did not answer the read. Edits are still sent.";
     remember();
@@ -44503,13 +45117,13 @@ input[type='number'] {
     sendSound(ZE.snd, zeBase());
     toast("Sent the whole " + (ZE.kind === "kit" ? "kit" : "tone") + " to track " + devNum(ZE.t) + ", " + targetName());
   }
-  var targetName = (k = ZE.k) => k === 16 ? "track sound" : "clip " + (k + 1);
-  async function zenOpen(t, k) {
+  var targetName = (k2 = ZE.k) => k2 === 16 ? "track sound" : "clip " + (k2 + 1);
+  async function zenOpen(t, k2) {
     ZE.t = t;
-    ZE.k = k;
+    ZE.k = k2;
     ZE.kind = S.tracks[t].type === "drum" ? "kit" : "tone";
     if (!TABS[ZE.kind].some((x) => x[0] === ZE.tab)) ZE.tab = "common";
-    const mem = clipMemory(ZE.kind, t, k);
+    const mem = clipMemory(ZE.kind, t, k2);
     ZE.snd = mem || newSound(ZE.kind);
     if (!mem) ZE.snd.known.clear();
     ZE.undo = [];
@@ -44663,30 +45277,7 @@ input[type='number'] {
         )
       )
     );
-    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur[0]) ? el(
-      "div",
-      { class: "zcParts" },
-      el("span", { class: "zcL" }, "Partial"),
-      ...[0, 1, 2, 3].map((i) => {
-        const on2 = ZE.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
-        return el(
-          "button",
-          {
-            type: "button",
-            class: "zcPart" + (i === ZE.part ? " on" : "") + (on2 ? " lit" : ""),
-            title: on2 ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
-            onclick: () => (ZE.part = i, zeRender())
-          },
-          String(i + 1)
-        );
-      }),
-      el(
-        "label",
-        { class: "zcLink", title: "Changes apply to all four partials at once" },
-        el("input", { type: "checkbox", checked: ZE.link, onchange: (e) => ZE.link = e.target.checked }),
-        " Edit all four"
-      )
-    ) : null;
+    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur[0]) ? partialBar(ZE, zeRender) : null;
     const page = el("div", { class: "zcPage" }, cur[2](c));
     ov.append(
       el(
@@ -44820,13 +45411,13 @@ input[type='number'] {
       })),
       {
         label: "Grab from",
-        sub: grabKeys().map((k) => ({
-          label: grabName(k),
-          checked: GRAB.src === k,
+        sub: grabKeys().map((k2) => ({
+          label: grabName(k2),
+          checked: GRAB.src === k2,
           action: () => {
-            GRAB.src = k;
+            GRAB.src = k2;
             try {
-              localStorage.setItem("mc707-grab-src", k);
+              localStorage.setItem("mc707-grab-src", k2);
             } catch (e) {
             }
             grabRenderPop();
@@ -44839,27 +45430,27 @@ input[type='number'] {
       { label: "Save the last grab", disabled: !GRAB.list.length, action: () => grabSave(GRAB.list[0]) }
     ];
   }
-  function cmClipMenu(t, k) {
-    const m = cmFix()[t], used = k < m.n, tr = S.tracks[t], re = () => {
+  function cmClipMenu(t, k2) {
+    const m = cmFix()[t], used = k2 < m.n, tr = S.tracks[t], re = () => {
       scheduleSave();
       clipMapRender();
     };
     const types = CLIP_TYPES.filter((x) => tr.type === "drum" ? x[0] === "drums" || x[0] === "fx" : x[0] !== "drums");
     return [
       {
-        label: "Track " + devNum(t) + ", clip " + (k + 1) + (used ? " · " + (m.names[k] || ctInfo(m.types[k])[1]) : " (not used)"),
+        label: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used ? " · " + (m.names[k2] || ctInfo(m.types[k2])[1]) : " (not used)"),
         disabled: true
       },
       {
         label: used ? "Holds" : "Use it for",
         sub: types.map(([v, l]) => ({
           label: l,
-          checked: used && m.types[k] === v,
+          checked: used && m.types[k2] === v,
           action: () => {
-            if (k >= m.n) m.n = k + 1;
-            m.types[k] = v;
+            if (k2 >= m.n) m.n = k2 + 1;
+            m.types[k2] = v;
             CMAP.t = t;
-            CMAP.k = k;
+            CMAP.k = k2;
             re();
           }
         }))
@@ -44869,20 +45460,20 @@ input[type='number'] {
         disabled: !used,
         action: async () => {
           const n = await askDlg({
-            title: "Name clip " + (k + 1),
+            title: "Name clip " + (k2 + 1),
             input: true,
-            def: m.names[k] || "",
+            def: m.names[k2] || "",
             ok: "Save"
           });
           if (n != null) {
-            m.names[k] = n.slice(0, 16);
+            m.names[k2] = n.slice(0, 16);
             re();
           }
         }
       },
       {
         label: "Edit ZenCore…",
-        action: () => zenOpen(t, k)
+        action: () => zenOpen(t, k2)
       },
       {
         label: "Edit ZenCore: the track sound…",
@@ -44892,8 +45483,8 @@ input[type='number'] {
         label: "Switch the " + devNm() + " to it now",
         disabled: !used || !MIDI.out,
         action: () => {
-          sendClip(t, k, AU.ctx ? AU.ctx.currentTime : 0);
-          toast("Sent: track " + devNum(t) + " → clip " + (k + 1));
+          sendClip(t, k2, AU.ctx ? AU.ctx.currentTime : 0);
+          toast("Sent: track " + devNum(t) + " → clip " + (k2 + 1));
         }
       },
       "-",
@@ -44901,18 +45492,18 @@ input[type='number'] {
         label: "Duplicate into the next clip",
         disabled: !used || m.n >= 16,
         action: () => {
-          m.types.splice(k + 1, 0, m.types[k]);
+          m.types.splice(k2 + 1, 0, m.types[k2]);
           m.types.length = 16;
-          m.names.splice(k + 1, 0, m.names[k]);
+          m.names.splice(k2 + 1, 0, m.names[k2]);
           m.n++;
           re();
         }
       },
       {
         label: "Use clips up to here",
-        disabled: k + 1 === m.n,
+        disabled: k2 + 1 === m.n,
         action: () => {
-          m.n = k + 1;
+          m.n = k2 + 1;
           re();
         }
       },
@@ -44921,9 +45512,9 @@ input[type='number'] {
         danger: true,
         disabled: !used || m.n <= 1,
         action: () => {
-          m.types.splice(k, 1);
+          m.types.splice(k2, 1);
           m.types.push(m.types[m.types.length - 1]);
-          m.names.splice(k, 1);
+          m.names.splice(k2, 1);
           m.n--;
           CMAP.k = Math.min(CMAP.k, m.n - 1);
           re();
@@ -45002,10 +45593,10 @@ input[type='number'] {
       return;
     }
     ensureAudio();
-    let k = "t" + t, def = grabDef(k);
+    let k2 = "t" + t, def = grabDef(k2);
     if (!def) {
-      k = "mix";
-      def = grabDef(k);
+      k2 = "mix";
+      def = grabDef(k2);
     }
     if (!def) {
       toast("Recording needs an audio input. Choose the MC-707's USB audio (or the app's own sound) in Audio.");
@@ -45023,8 +45614,8 @@ input[type='number'] {
     const was = { preview: S.preview, bars: GRAB.bars };
     if (AUD.source === "preview") S.preview = true;
     startPat(p, t);
-    const bars = p.bars * loops, need = Math.round(bars * 32 * tickDur() * AU.ctx.sampleRate), label = p.name + " on " + S.tracks[t].name + (k === "mix" || def.cap === "pv" ? "" : " (own channel)");
-    grabArm(def, k, TR.nextTime, need, { bars, fromBar: 0, label, anchor }, () => {
+    const bars = p.bars * loops, need = Math.round(bars * 32 * tickDur() * AU.ctx.sampleRate), label = p.name + " on " + S.tracks[t].name + (k2 === "mix" || def.cap === "pv" ? "" : " (own channel)");
+    grabArm(def, k2, TR.nextTime, need, { bars, fromBar: 0, label, anchor }, () => {
       if (TR.playing && TR.mode === "pat") stopPlay();
       S.preview = was.preview;
       GRAB.bars = was.bars;

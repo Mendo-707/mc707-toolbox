@@ -11,7 +11,8 @@ import { showMenu } from '../ui/menu.js';
 import { askDlg } from '../ui/dialogs.js';
 import { slotAddr, zxConnect } from './zc-sysex.js';
 import { copySound, newSound, sendSound, soundFrom, soundJSON } from './zc-tone.js';
-import { STARTERS, myDelete, myList, mySave, rememberClip } from './zc-library.js';
+import { myDelete, myList, mySave, rememberClip } from './zc-library.js';
+import { starterMenu } from './zc-starters-more.js';
 import {
   ZE,
   targetName,
@@ -203,7 +204,10 @@ export function headerBar() {
         ? btn('Starters ▾', e =>
             menuAt(
               e,
-              STARTERS.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), 'Loaded ' + n) }))
+              starterMenu().map(([g, list]) => ({
+                label: g,
+                sub: list.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), 'Loaded ' + n) }))
+              }))
             )
           )
         : btn('Init kit', () => zeLoad(newSound('kit'), 'Reset the kit')),

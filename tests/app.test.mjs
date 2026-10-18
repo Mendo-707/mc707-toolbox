@@ -12,6 +12,14 @@ const SAVED = {
   'mc707-live': readFixture('live-settings-v0.10.json')
 };
 
+/* open the editor's Starters menu, the group holding `name`, and pick it */
+async function starter(page, name) {
+  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+  const item = page.locator('.cmenu.subm .cmi', { hasText: name }).first();
+  await page.locator('.cmenu .cmi.sub', { has: item }).first().click();
+  await item.click();
+}
+
 test('a song and Live settings saved by v0.10.0 load unchanged', async () => {
   const { page, errors } = await openApp({ storage: SAVED });
   const r = await page.evaluate(() => {
@@ -327,8 +335,7 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   await page.waitForTimeout(80);
   assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5d 12 30 66 20 32 00 03 0f 0f 77 f7']);
   /* a starter goes to the MC-707 whole; scrambled here and read back, every value matches */
-  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
-  await page.locator('.cmenu .cmi', { hasText: 'Sub 808' }).click();
+  await starter(page, 'Sub 808');
   await page.waitForTimeout(600);
   const want = await page.evaluate(() => ({ ...window.__app.zen.ZE.snd.v }));
   await page.evaluate(() => {
@@ -368,8 +375,7 @@ test('ZenCore editor reads a whole tone from an MC-707 that splits replies and s
     });
   await page.evaluate(() => window.__app.zen.open(3, 0));
   await idle();
-  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
-  await page.locator('.cmenu .cmi', { hasText: 'Saw lead' }).click();
+  await starter(page, 'Saw lead');
   await page.waitForTimeout(600);
   const want = await page.evaluate(() => ({ ...window.__app.zen.ZE.snd.v }));
   /* from now on the fake MC-707 answers like the real one */
@@ -447,12 +453,11 @@ test('ZenCore previews, envelope numbers, shape presets, copying and the starter
   await idle();
   /* every starter loads without errors */
   await page.locator('.zcActs button', { hasText: 'Starters' }).click();
-  const names = await page.$$eval('.cmenu .cmi', m => m.map(x => x.textContent.trim()));
+  const names = await page.$$eval('.cmenu.subm .cmi', m => m.map(x => x.textContent.trim()));
   await page.keyboard.press('Escape');
-  assert.ok(names.length >= 21, names.length + ' starters');
+  assert.ok(names.length >= 32, names.length + ' starters');
   for (const n of names) {
-    await page.locator('.zcActs button', { hasText: 'Starters' }).click();
-    await page.locator('.cmenu .cmi', { hasText: n }).first().click();
+    await starter(page, n);
     await page.waitForTimeout(80);
   }
   /* previews on the Oscillator, Filter and LFO pages; the filter curve follows Cutoff while it moves */
@@ -525,8 +530,7 @@ test('ZenCore editor on the MC-101: its own track numbers, model byte, and it le
   await cutoff(500);
   assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5e 12 30 22 20 32 00 01 0f 04 48 f7']);
   /* a read: the 0x5E request gets no answer, the 0x5D one does, and from then on everything uses 0x5D */
-  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
-  await page.locator('.cmenu .cmi', { hasText: 'Sub 808' }).click();
+  await starter(page, 'Sub 808');
   await page.waitForTimeout(600);
   await page.locator('.zcActs button', { hasText: 'Read from' }).click();
   await idle();
@@ -624,5 +628,53 @@ test('track setup: 8 drum or 8 tone tracks, and the wizard and Live Mode follow 
   await pick('Default');
   assert.equal(await types(), 'drum,drum,drum,tone,tone,tone,tone,tone');
   assert.equal(await page.evaluate(() => window.__app.S.tracks.some(t => t.role)), false, 'the default saves no roles');
+  assert.deepEqual(errors, []);
+});
+
+test('ZenCore ideas: linked partials, effect presets and the step sequencer', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+    timeout: 30000
+  });
+  const v = k => page.evaluate(k => window.__app.zen.ZE.snd.v[k], k);
+  /* link partials 1 and 3: a cutoff change on partial 1 reaches 3, not 2 */
+  await page.locator('.zcTab', { hasText: 'Filter' }).click();
+  await page.locator('.zcLinkChip', { hasText: /^1$/ }).click();
+  await page.locator('.zcLinkChip', { hasText: /^3$/ }).click();
+  const before2 = await v('PTL1.CUTOFF');
+  await page.evaluate(() => {
+    const r = [...document.querySelectorAll('.zcC')]
+      .find(c => c.textContent.startsWith('Cutoff'))
+      .querySelector('input[type=range]');
+    r.value = 321;
+    r.dispatchEvent(new Event('change'));
+  });
+  assert.equal(await v('PTL0.CUTOFF'), 321);
+  assert.equal(await v('PTL2.CUTOFF'), 321);
+  assert.equal(await v('PTL1.CUTOFF'), before2);
+  await page.locator('.zcLinkChip', { hasText: /^1$/ }).click();
+  await page.locator('.zcLinkChip', { hasText: /^3$/ }).click();
+  /* an effect preset sets the type and its settings in one go, and goes to the MC-707 */
+  await page.locator('.zcTab', { hasText: 'MFX' }).click();
+  const n = await page.evaluate(() => window.__out.length);
+  await page.selectOption('.zcC:has-text("Presets") select', { label: 'Delay: dotted 1/8 ping-pong' });
+  await page.waitForTimeout(700);
+  assert.equal(await v('MFX.mfxType'), 37);
+  assert.equal(await v('MFX.param_9'), 1, 'feedback mode CROSS');
+  const sent = await page.evaluate(n => window.__out.slice(n).filter(b => b[0] === 0xf0 && b[7] === 0x12).length, n);
+  assert.ok(sent >= 2, 'the type and its settings go to the MC-707 (' + sent + ' messages)');
+  /* the step sequencer: the template, then a pattern; one undo takes the pattern back */
+  await page.locator('.zcTab', { hasText: 'LFO' }).click();
+  await page.locator('button', { hasText: 'Make this partial a step sequence' }).click();
+  assert.equal(await v('LFO0.LFO1_FORM'), 10);
+  assert.equal(await v('LFO0.LFO1_PIT_DEPTH'), 63);
+  assert.equal(await v('LFO0.LFO2_TVA_DEPTH'), 100);
+  assert.equal(await page.locator('.zcSeqStep').count(), 16);
+  await page.selectOption('.zcC:has-text("Pattern") select', { label: 'Minor arp up' });
+  assert.equal(await v('LFO0.LFO1_STEP_2'), 12, 'a minor third is 3 semitones = 12 units');
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(100);
+  assert.equal(await v('LFO0.LFO1_STEP_2'), 0);
   assert.deepEqual(errors, []);
 });

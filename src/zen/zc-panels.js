@@ -3,6 +3,7 @@
 //
 // Reads: the sound through the editor's ctx.
 import { el } from '../core/dom.js';
+import { stepSeq } from './zc-stepseq.js';
 import { ctl, group } from './zc-widgets.js';
 import { envGraph, stepGraph } from './zc-env.js';
 import { filterCurve, lfoPreview, oscPreview } from './zc-preview.js';
@@ -179,7 +180,11 @@ export function pageLfo(ctx) {
     'div',
     {},
     el('div', { class: 'zcCols2' }, one(1), one(2)),
-    group('Envelopes restart the LFO', ...at(ctx, 'SPTL', ['PENV_LFO_TRIG_SW', 'FENV_LFO_TRIG_SW', 'AENV_LFO_TRIG_SW']))
+    group(
+      'Envelopes restart the LFO',
+      ...at(ctx, 'SPTL', ['PENV_LFO_TRIG_SW', 'FENV_LFO_TRIG_SW', 'AENV_LFO_TRIG_SW'])
+    ),
+    stepSeq(ctx)
   );
 }
 

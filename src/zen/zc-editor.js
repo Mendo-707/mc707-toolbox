@@ -27,6 +27,7 @@ import {
 } from './zc-panels.js';
 import { pageComp, pageKeys, pageKit, pageMfx } from './zc-pages-fx.js';
 import { headerBar } from './zc-actions.js';
+import { linkedKeys, partialBar } from './zc-partbar.js';
 
 export const ZE = {
   t: 0,
@@ -36,7 +37,7 @@ export const ZE = {
   tab: 'common',
   part: 0,
   key: 15 /* kit key index: 36 (C2) */,
-  link: false,
+  linked: [false, false, false, false],
   live: true,
   undo: [],
   redo: [],
@@ -44,7 +45,6 @@ export const ZE = {
   busy: '',
   srcNote: ''
 };
-const PARTIAL = /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)\d\./;
 const TABS = {
   tone: [
     ['common', 'Common', pageCommon],
@@ -104,7 +104,7 @@ function screenNudge() {
 
 /* ---- changing values ---- */
 function apply(key, v) {
-  const keys = ZE.link && PARTIAL.test(key) ? [0, 1, 2, 3].map(i => key.replace(/\d\./, i + '.')) : [key];
+  const keys = linkedKeys(key, ZE.linked);
   for (const k of keys) {
     if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
     setVal(ZE.snd, k, v, sending() ? zeBase() : null);
@@ -147,11 +147,11 @@ export function zeLoad(snd, why) {
   zeRender();
   if (why) toast(why + (sending() ? ' and sent to the ' + DEVS[DEV].name : ''));
 }
-function mfxType(type) {
-  /* the type and the new effect's starting values, as one undo step; sendSound sends the settings once
-     the MC-707 has finished resetting them for the new type */
+function mfxType(type, vals) {
+  /* the type and the new effect's starting values (or a preset's), as one undo step; sendSound sends the
+     settings once the MC-707 has finished resetting them for the new type */
   const keys = ['MFX.mfxType', ...MFX_PARAMS],
-    d = mfxDefaults(type);
+    d = vals || mfxDefaults(type);
   keys.forEach((k, i) => {
     if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
     ZE.snd.v[k] = i ? d[i - 1] : type;
@@ -384,33 +384,7 @@ export function zeRender() {
       )
     )
   );
-  const parts =
-    ZE.kind === 'tone' && PART_TABS.includes(cur[0])
-      ? el(
-          'div',
-          { class: 'zcParts' },
-          el('span', { class: 'zcL' }, 'Partial'),
-          ...[0, 1, 2, 3].map(i => {
-            const on = ZE.snd.v[pk('PMT', null, 'PMT' + (i + 1) + '_PTL_SW')];
-            return el(
-              'button',
-              {
-                type: 'button',
-                class: 'zcPart' + (i === ZE.part ? ' on' : '') + (on ? ' lit' : ''),
-                title: on ? 'Partial ' + (i + 1) : 'Partial ' + (i + 1) + ' is switched off (Partials page)',
-                onclick: () => ((ZE.part = i), zeRender())
-              },
-              String(i + 1)
-            );
-          }),
-          el(
-            'label',
-            { class: 'zcLink', title: 'Changes apply to all four partials at once' },
-            el('input', { type: 'checkbox', checked: ZE.link, onchange: e => (ZE.link = e.target.checked) }),
-            ' Edit all four'
-          )
-        )
-      : null;
+  const parts = ZE.kind === 'tone' && PART_TABS.includes(cur[0]) ? partialBar(ZE, zeRender) : null;
   const page = el('div', { class: 'zcPage' }, cur[2](c));
   ov.append(
     el(
