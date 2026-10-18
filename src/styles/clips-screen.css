@@ -397,7 +397,7 @@
 .cmBox .lvf,
 .cmAuto b,
 .cmEdit > b {
-  color: #eef0ff;
+  color: var(--ink);
 }
 .cmAuto {
   display: flex;
@@ -406,12 +406,8 @@
   margin-top: 6px;
 }
 .cmAuto small {
-  color: #a9aecb;
+  color: var(--mute);
 }
 .cmBox input[type='text'] {
-  background: #2a2d40;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-  border-radius: 6px;
   padding: 5px 8px;
 }

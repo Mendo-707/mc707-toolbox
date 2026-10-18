@@ -1,19 +1,21 @@
-/* Pad test and other pop-up overlays (.ptOv / .ptBox), shared by the clips screen. Loaded after clips-screen.css. */
+/* Pad test and other pop-up overlays (.ptOv / .ptBox), shared by the clips screen, start screen, genre picker and
+   track setup. They use the Song Mode colour tokens, so they match it in light and dark. Loaded after clips-screen.css. */
 .ptOv {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: #000a;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 .ptBox {
-  background: #171925;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 12px;
   padding: 18px 20px;
   max-width: 880px;
   width: 100%;
@@ -22,25 +24,14 @@
 }
 .ptBox h3 {
   margin: 0 0 6px;
-  color: #fff;
-}
-.ptBox p {
-  color: #d6d9ee;
+  font-size: 20px;
+  font-weight: 700;
 }
 .ptBox .hint {
-  color: #a9aecb;
-}
-.ptBox .btn {
-  background: #2a2d40;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-}
-.ptBox .btn.on {
-  background: #ffd23f;
-  color: #1a1200;
+  color: var(--mute);
 }
 .ptWarn {
-  color: #ff8a80;
+  color: var(--hot);
 }
 .ptGrid {
   display: grid;
@@ -51,24 +42,24 @@
 .ptPad {
   aspect-ratio: 1;
   border-radius: 10px;
-  background: #2a2d40;
+  background: var(--panel2);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 6px 8px;
   font-size: 12px;
-  border: 2px solid transparent;
+  border: 2px solid var(--line);
 }
 .ptPad b {
   font-size: 15px;
   opacity: 0.7;
 }
 .ptPad.now {
-  border-color: #ffd23f;
-  box-shadow: 0 0 18px #ffd23f66;
+  border-color: var(--hot);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--hot) 45%, transparent);
 }
 .ptPad.got {
-  background: #1f6f66;
+  background: color-mix(in srgb, #2e9e6a 35%, var(--panel2));
 }
 .ptOut {
   width: 100%;

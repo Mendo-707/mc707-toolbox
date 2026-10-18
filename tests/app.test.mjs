@@ -292,6 +292,35 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   });
   await page.waitForTimeout(80);
   assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5d 12 30 66 20 32 00 01 0f 04 04 f7']);
+  /* once the edits settle, the clip is selected again (program change 0 on track 4's channel) so the
+     MC-707 redraws its screen; with the Screen switch off it is not */
+  const pcs = n =>
+    page.evaluate(
+      n =>
+        window.__out
+          .slice(n)
+          .filter(b => (b[0] & 0xf0) === 0xc0)
+          .map(b => b.join(',')),
+      n
+    );
+  await page.waitForTimeout(600);
+  assert.deepEqual(await pcs(n), ['195,0']);
+  await page.locator('.zcActs button', { hasText: 'Screen' }).click();
+  n = await page.evaluate(() => window.__out.length);
+  await page.evaluate(() => {
+    const r = [...document.querySelectorAll('.zcC')]
+      .find(c => c.textContent.startsWith('Cutoff'))
+      .querySelector('input[type=range]');
+    r.value = 600;
+    r.dispatchEvent(new Event('input'));
+    r.dispatchEvent(new Event('change'));
+  });
+  await page.waitForTimeout(600);
+  assert.equal((await sysex(n)).length, 1);
+  assert.deepEqual(await pcs(n), []);
+  await page.locator('.zcActs button', { hasText: 'Screen' }).click();
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(600);
   /* undo sends the old value back */
   n = await page.evaluate(() => window.__out.length);
   await page.keyboard.press('Control+z');
@@ -328,6 +357,56 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   assert.equal(await page.locator('.zcKey').count(), 88);
   await page.locator('.zcActs button', { hasText: 'Done' }).click();
   assert.equal(await page.locator('#zcOv').count(), 0);
+  assert.deepEqual(errors, []);
+});
+
+test('ZenCore editor on the MC-101: its own track numbers, model byte, and it learns the byte that answers', async () => {
+  const { page, errors } = await openApp({ storage: { 'mc-device': '101' } });
+  const hex = b => b.map(x => x.toString(16).padStart(2, '0')).join(' ');
+  const sysex = n => page.evaluate(n => window.__out.slice(n).filter(b => b[0] === 0xf0 && b[7] === 0x12), n);
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 20000
+    });
+  const cutoff = async v => {
+    await page.evaluate(v => {
+      const r = [...document.querySelectorAll('.zcC')]
+        .find(c => c.textContent.startsWith('Cutoff'))
+        .querySelector('input[type=range]');
+      r.value = v;
+      r.dispatchEvent(new Event('input'));
+      r.dispatchEvent(new Event('change'));
+    }, v);
+    await page.waitForTimeout(80);
+  };
+  /* this fake MC-101 only answers reads sent with the MC-707's model byte */
+  await page.evaluate(async () => {
+    const acc = await navigator.requestMIDIAccess();
+    const o = [...acc.outputs.values()][0],
+      send = o.send;
+    o.send = (b, t) => (b[0] === 0xf0 && b[7] === 0x11 && b[6] !== 0x5d ? window.__out.push([...b]) : send(b, t));
+  });
+  /* app track 4 is the MC-101's track 2 (device index 1), so its clip 1 is at 30 22 00 00 */
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await idle();
+  const opts = await page.$$eval('.zcTarget select:first-child option', o => o.map(x => x.textContent));
+  assert.equal(opts.length, 4, 'four tracks to pick from');
+  await page.locator('.zcTab', { hasText: 'Filter' }).click();
+  let n = await page.evaluate(() => window.__out.length);
+  await cutoff(500);
+  assert.deepEqual((await sysex(n)).map(hex), ['f0 41 10 00 00 00 5e 12 30 22 20 32 00 01 0f 04 48 f7']);
+  /* a read: the 0x5E request gets no answer, the 0x5D one does, and from then on everything uses 0x5D */
+  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+  await page.locator('.cmenu .cmi', { hasText: 'Sub 808' }).click();
+  await page.waitForTimeout(600);
+  await page.locator('.zcActs button', { hasText: 'Read from' }).click();
+  await idle();
+  assert.match(await page.textContent('#zcStat'), /Read \d+ values/);
+  n = await page.evaluate(() => window.__out.length);
+  await cutoff(300);
+  const w = (await sysex(n)).map(hex);
+  assert.equal(w.length, 1);
+  assert.match(w[0], /^f0 41 10 00 00 00 5d 12 30 22 20 32 /);
   assert.deepEqual(errors, []);
 });
 

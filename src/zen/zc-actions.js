@@ -12,7 +12,19 @@ import { askDlg } from '../ui/dialogs.js';
 import { slotAddr, zxConnect } from './zc-sysex.js';
 import { copySound, newSound, sendSound, soundFrom, soundJSON } from './zc-tone.js';
 import { STARTERS, myDelete, myList, mySave, rememberClip } from './zc-library.js';
-import { ZE, targetName, zeLoad, zeRead, zeRender, zeSendAll, zeUndo, zenClose, zenOpen } from './zc-editor.js';
+import {
+  ZE,
+  targetName,
+  zeLoad,
+  zeRead,
+  zeRefreshOn,
+  zeRender,
+  zeSendAll,
+  zeSetRefresh,
+  zeUndo,
+  zenClose,
+  zenOpen
+} from './zc-editor.js';
 
 const menuAt = (e, items) => {
   const r = e.currentTarget.getBoundingClientRect();
@@ -168,6 +180,22 @@ export function headerBar() {
           zeRender();
         },
         { on: ZE.live, title: 'Send each change to the ' + dn + ' as you make it' }
+      ),
+      btn(
+        zeRefreshOn() ? '● Screen' : '○ Screen',
+        () => {
+          zeSetRefresh(!zeRefreshOn());
+          zeRender();
+        },
+        {
+          on: zeRefreshOn(),
+          title:
+            'Refresh the ' +
+            dn +
+            "'s screen after each change, by selecting this clip again (the " +
+            dn +
+            ' only redraws when a clip is selected)'
+        }
       ),
       btn('↶', () => zeUndo(false), { off: !ZE.undo.length, title: 'Undo (Ctrl+Z)' }),
       btn('↷', () => zeUndo(true), { off: !ZE.redo.length, title: 'Redo (Ctrl+Shift+Z)' }),

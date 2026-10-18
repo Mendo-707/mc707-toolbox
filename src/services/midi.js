@@ -5,6 +5,7 @@
 // Calls up the layers through hooks (core/hooks.js).
 import { $, el } from '../core/dom.js';
 import { S } from '../core/state.js';
+import { mcFind } from '../core/device.js';
 import { AU } from './synth.js';
 import { hooks } from '../core/hooks.js';
 
@@ -49,7 +50,7 @@ export function refreshOuts() {
   sel.textContent = '';
   sel.append(el('option', { value: '' }, outs.length ? 'No output' : 'No devices found'));
   outs.forEach(o => sel.append(el('option', { value: o.id }, o.name)));
-  let pick = outs.find(o => o.id === S.midiOut) || outs.find(o => /MC-?707/i.test(o.name));
+  let pick = outs.find(o => o.id === S.midiOut) || mcFind(outs);
   sel.value = pick ? pick.id : '';
   MIDI.out = pick || null;
   if (pick) S.midiOut = pick.id;

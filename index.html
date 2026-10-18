@@ -1554,8 +1554,8 @@ input[type='range'] {
   text-align: left;
   padding: 14px;
   border-radius: 12px;
-  border: 1px solid #ffffff22;
-  background: #ffffff08;
+  border: 1px solid var(--line);
+  background: var(--panel2);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -1563,26 +1563,26 @@ input[type='range'] {
 .stCard:hover,
 .stCard:focus-visible,
 .stCard.on {
-  border-color: #ff8a3d;
+  border-color: var(--hot);
 }
 .stCard:hover,
 .stCard:focus-visible {
-  background: #ff8a3d14;
+  background: color-mix(in srgb, var(--hot) 10%, var(--panel2));
 }
 .stCard b {
   font-size: 17px;
 }
 .stCard small {
-  color: #b9bccb;
+  color: var(--mute);
   line-height: 1.35;
 }
 .stIcon {
   font-size: 22px;
-  color: #ff8a3d;
+  color: var(--hot);
 }
 .stShow {
   font-size: 13px;
-  color: #b9bccb;
+  color: var(--mute);
 }
 
 /* Track setup (src/ui/track-setup.js) */
@@ -1606,22 +1606,13 @@ input[type='range'] {
   gap: 8px;
   padding: 6px 10px;
   border-radius: 10px;
-  background: #ffffff08;
+  background: var(--panel2);
   border-left: 4px solid var(--c);
 }
 .tsRow select,
 .tsRow input {
   min-width: 0;
-  background: #22253a;
-  color: #eef0ff;
-  border: 1px solid #ffffff2a;
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-.tsRow optgroup,
-.tsRow option {
-  background: #22253a;
-  color: #eef0ff;
+  padding: 5px 8px;
 }
 .tsType {
   font: 700 10px var(--font);
@@ -1631,12 +1622,12 @@ input[type='range'] {
   padding: 2px 6px;
 }
 .tsType.d {
-  background: #ff5f4533;
-  color: #ff8a70;
+  background: color-mix(in srgb, var(--hot) 18%, transparent);
+  color: var(--hot);
 }
 .tsType.t {
-  background: #4da3ff33;
-  color: #8cc3ff;
+  background: color-mix(in srgb, #3d8bfd 18%, transparent);
+  color: #3d8bfd;
 }
 @media (max-width: 640px) {
   .tsRow {
@@ -1662,7 +1653,7 @@ input[type='range'] {
   font-size: 11px;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  color: #ff8a3d;
+  color: var(--hot);
 }
 .lpGrid {
   display: grid;
@@ -1676,24 +1667,24 @@ input[type='range'] {
   gap: 2px;
   padding: 9px 11px;
   border-radius: 10px;
-  border: 1px solid #ffffff22;
-  background: #ffffff08;
+  border: 1px solid var(--line);
+  background: var(--panel2);
   color: inherit;
   font: inherit;
   cursor: pointer;
   text-align: left;
 }
 .lpStyle small {
-  color: #b9bccb;
+  color: var(--mute);
 }
 .lpStyle:hover,
 .lpStyle:focus-visible,
 .lpStyle.on {
-  border-color: #ff8a3d;
+  border-color: var(--hot);
 }
 .lpStyle:hover,
 .lpStyle:focus-visible {
-  background: #ff8a3d14;
+  background: color-mix(in srgb, var(--hot) 10%, var(--panel2));
 }
 
 .suSteps {
@@ -4251,7 +4242,7 @@ input[type='number'] {
 .cmBox .lvf,
 .cmAuto b,
 .cmEdit > b {
-  color: #eef0ff;
+  color: var(--ink);
 }
 .cmAuto {
   display: flex;
@@ -4260,33 +4251,31 @@ input[type='number'] {
   margin-top: 6px;
 }
 .cmAuto small {
-  color: #a9aecb;
+  color: var(--mute);
 }
 .cmBox input[type='text'] {
-  background: #2a2d40;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-  border-radius: 6px;
   padding: 5px 8px;
 }
 </style>
     <style>
-/* Pad test and other pop-up overlays (.ptOv / .ptBox), shared by the clips screen. Loaded after clips-screen.css. */
+/* Pad test and other pop-up overlays (.ptOv / .ptBox), shared by the clips screen, start screen, genre picker and
+   track setup. They use the Song Mode colour tokens, so they match it in light and dark. Loaded after clips-screen.css. */
 .ptOv {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: #000a;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 .ptBox {
-  background: #171925;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 12px;
   padding: 18px 20px;
   max-width: 880px;
   width: 100%;
@@ -4295,25 +4284,14 @@ input[type='number'] {
 }
 .ptBox h3 {
   margin: 0 0 6px;
-  color: #fff;
-}
-.ptBox p {
-  color: #d6d9ee;
+  font-size: 20px;
+  font-weight: 700;
 }
 .ptBox .hint {
-  color: #a9aecb;
-}
-.ptBox .btn {
-  background: #2a2d40;
-  color: #eef0ff;
-  border: 1px solid #ffffff22;
-}
-.ptBox .btn.on {
-  background: #ffd23f;
-  color: #1a1200;
+  color: var(--mute);
 }
 .ptWarn {
-  color: #ff8a80;
+  color: var(--hot);
 }
 .ptGrid {
   display: grid;
@@ -4324,24 +4302,24 @@ input[type='number'] {
 .ptPad {
   aspect-ratio: 1;
   border-radius: 10px;
-  background: #2a2d40;
+  background: var(--panel2);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 6px 8px;
   font-size: 12px;
-  border: 2px solid transparent;
+  border: 2px solid var(--line);
 }
 .ptPad b {
   font-size: 15px;
   opacity: 0.7;
 }
 .ptPad.now {
-  border-color: #ffd23f;
-  box-shadow: 0 0 18px #ffd23f66;
+  border-color: var(--hot);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--hot) 45%, transparent);
 }
 .ptPad.got {
-  background: #1f6f66;
+  background: color-mix(in srgb, #2e9e6a 35%, var(--panel2));
 }
 .ptOut {
   width: 100%;
@@ -4350,7 +4328,8 @@ input[type='number'] {
 }
 </style>
     <style>
-/* The ZenCore editor (src/zen/): a large panel over the app, in the clips screen's dark hardware look. Loaded after pad-test.css (it builds on .ptOv/.ptBox). */
+/* The ZenCore editor (src/zen/): a large panel over the app in an MC-707 hardware look: black, with bright green
+   sliders, values and highlights. Loaded after pad-test.css (it builds on .ptOv/.ptBox). */
 .zcBox {
   max-width: 1180px;
   height: min(92vh, 980px);
@@ -4359,11 +4338,40 @@ input[type='number'] {
   gap: 8px;
   padding: 14px 16px 10px;
   overflow: hidden;
-  background: linear-gradient(180deg, #1d1f27, #15161c);
-  --zc-acc: #ff8a3d;
-  --zc-dim: #8b8fa3;
-  --zc-line: #ffffff1c;
-  --zc-well: #0e0f14;
+  background: #000;
+  color: #d9ffe3;
+  border-color: #1f3a27;
+  box-shadow:
+    0 0 0 1px #000,
+    0 18px 50px #000c;
+  --zc-acc: #39ff7a;
+  --zc-glow: #39ff7a55;
+  --zc-dim: #6f9c7c;
+  --zc-line: #1f3a27;
+  --zc-well: #050906;
+}
+.zcBox .hint {
+  color: var(--zc-dim);
+}
+.zcBox .btn {
+  background: #070d09;
+  color: #c9f7d5;
+  border: 1px solid #23462f;
+}
+.zcBox .btn:hover:not(:disabled) {
+  border-color: var(--zc-acc);
+  color: #fff;
+}
+.zcBox .btn.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+  box-shadow: 0 0 10px var(--zc-glow);
+}
+.zcBox option,
+.zcBox optgroup {
+  background: #050906;
+  color: #d9ffe3;
 }
 .zcHead {
   display: flex;
@@ -4388,7 +4396,8 @@ input[type='number'] {
     'Cascadia Mono',
     Consolas,
     monospace;
-  color: #f3f4ff;
+  color: var(--zc-acc);
+  text-shadow: 0 0 8px var(--zc-glow);
   white-space: nowrap;
 }
 .zcTarget {
@@ -4400,9 +4409,9 @@ input[type='number'] {
 .zcBox input[type='text'],
 .zcBox input[type='number'] {
   background: var(--zc-well);
-  color: #eef0ff;
+  color: #d9ffe3;
   border: 1px solid var(--zc-line);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 4px 6px;
   font: inherit;
   min-width: 0;
@@ -4452,11 +4461,12 @@ input[type='number'] {
   cursor: pointer;
 }
 .zcTab:hover {
-  color: #eef0ff;
+  color: #d9ffe3;
 }
 .zcTab.on {
-  color: #111;
+  color: #000;
   background: var(--zc-acc);
+  box-shadow: 0 0 10px var(--zc-glow);
 }
 .zcParts {
   display: flex;
@@ -4474,8 +4484,8 @@ input[type='number'] {
   cursor: pointer;
 }
 .zcPart.lit {
-  color: #eef0ff;
-  box-shadow: inset 0 -3px 0 #43d17a;
+  color: #d9ffe3;
+  box-shadow: inset 0 -3px 0 var(--zc-acc);
 }
 .zcPart.on {
   border-color: var(--zc-acc);
@@ -4500,7 +4510,7 @@ input[type='number'] {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 6px 14px;
-  background: #ffffff05;
+  background: #030604;
 }
 .zcG > legend {
   font-size: 11px;
@@ -4518,7 +4528,7 @@ input[type='number'] {
   min-width: 0;
 }
 .zcC .zcL {
-  color: #c9ccdb;
+  color: #a9d9b5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4527,8 +4537,43 @@ input[type='number'] {
   grid-column: 1 / -1;
   grid-row: 2;
   width: 100%;
-  accent-color: var(--zc-acc);
-  margin: 0;
+  margin: 4px 0 2px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  background: #0b1a10;
+  border: 1px solid var(--zc-line);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+/* a lit bar from the left up to the value, like the MC-707's level meters */
+.zcC input[type='range']::-webkit-slider-runnable-track {
+  height: 100%;
+}
+.zcC input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 10px;
+  background: #e6ffee;
+  box-shadow: -800px 0 0 800px var(--zc-acc);
+}
+.zcC input[type='range']::-moz-range-progress {
+  height: 100%;
+  background: var(--zc-acc);
+}
+.zcC input[type='range']::-moz-range-thumb {
+  width: 4px;
+  height: 10px;
+  border: 0;
+  border-radius: 0;
+  background: #e6ffee;
+}
+.zcC input[type='range']:hover,
+.zcC input[type='range']:focus-visible {
+  outline: none;
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-glow);
 }
 .zcC .zcV {
   grid-row: 1;
@@ -4537,7 +4582,7 @@ input[type='number'] {
     600 12px ui-monospace,
     Consolas,
     monospace;
-  color: #eef0ff;
+  color: var(--zc-acc);
 }
 .zcC select,
 .zcC .zcNum,
@@ -4571,7 +4616,7 @@ input[type='number'] {
 .zcSw.on {
   background: var(--zc-acc);
   border-color: var(--zc-acc);
-  color: #111;
+  color: #000;
 }
 /* not read from the MC-707 yet: shown faded until read or changed */
 .zcC.unk {
@@ -4625,15 +4670,15 @@ input[type='number'] {
   stroke-width: 2;
 }
 .zcEnv .fill {
-  fill: #ff8a3d22;
+  fill: #39ff7a1f;
 }
 .zcEnv .zero {
-  stroke: #ffffff26;
+  stroke: #39ff7a33;
   stroke-dasharray: 3 3;
 }
 .zcEnv .h {
-  fill: #15161c;
-  stroke: #fff;
+  fill: #000;
+  stroke: #e6ffee;
   stroke-width: 2;
   cursor: grab;
 }
@@ -4647,7 +4692,7 @@ input[type='number'] {
   fill: var(--zc-acc);
 }
 .zcSteps .bar.off {
-  fill: #ffffff22;
+  fill: #1f3a27;
 }
 .zcKeys {
   display: grid;
@@ -4659,7 +4704,7 @@ input[type='number'] {
   height: 34px;
   border-radius: 5px;
   border: 1px solid var(--zc-line);
-  background: #2a2c36;
+  background: #0b140e;
   color: var(--zc-dim);
   font: 600 10px var(--font);
   cursor: pointer;
@@ -4669,8 +4714,8 @@ input[type='number'] {
   background: var(--zc-well);
 }
 .zcKey.pad {
-  color: #eef0ff;
-  box-shadow: inset 0 -3px 0 #43d17a;
+  color: #d9ffe3;
+  box-shadow: inset 0 -3px 0 var(--zc-acc);
 }
 .zcKey.on {
   border-color: var(--zc-acc);
@@ -4682,21 +4727,22 @@ input[type='number'] {
   flex-shrink: 0;
   border-radius: 6px;
   overflow: hidden;
-  background: #0e0f14;
+  background: #000;
+  border: 1px solid var(--zc-line);
 }
 .zcKbK {
   position: absolute;
   top: 0;
   bottom: 0;
   border: 0;
-  border-right: 1px solid #9a9cab;
-  background: #ecedf3;
+  border-right: 1px solid #000;
+  background: #cfd8d2;
   cursor: pointer;
   padding: 0;
 }
 .zcKbK.b {
   bottom: 40%;
-  background: #22232b;
+  background: #0b140e;
   border: 0;
   border-radius: 0 0 3px 3px;
   z-index: 1;
@@ -9558,6 +9604,11 @@ input[type='number'] {
     }
   };
   var devNm = () => DEV === "101" ? "MC-101" : "MC-707";
+  var isMcName = (n) => /MC-?(707|101)/i.test(n || "");
+  function mcFind(list, key = "name") {
+    const mine = DEV === "101" ? /MC-?101/i : /MC-?707/i;
+    return list.find((x) => mine.test(x[key] || "")) || list.find((x) => isMcName(x[key])) || null;
+  }
 
   // src/library/live-extras.js
   (function() {
@@ -14571,7 +14622,7 @@ input[type='number'] {
     sel.textContent = "";
     sel.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
     outs.forEach((o) => sel.append(el("option", { value: o.id }, o.name)));
-    let pick2 = outs.find((o) => o.id === S.midiOut) || outs.find((o) => /MC-?707/i.test(o.name));
+    let pick2 = outs.find((o) => o.id === S.midiOut) || mcFind(outs);
     sel.value = pick2 ? pick2.id : "";
     MIDI.out = pick2 || null;
     if (pick2) S.midiOut = pick2.id;
@@ -32806,12 +32857,12 @@ input[type='number'] {
         if (!$("#setup").hidden) renderSetup(true);
       };
       const outs = [...MIDI.access.outputs.values()], ins = [...MIDI.access.inputs.values()];
-      const mo = outs.find((o) => /MC-?707/i.test(o.name));
-      if (mo && (!MIDI.out || !/MC-?707/i.test(MIDI.out.name))) {
+      const mo = mcFind(outs);
+      if (mo && (!MIDI.out || !isMcName(MIDI.out.name))) {
         S.midiOut = mo.id;
         refreshOuts();
       }
-      const mi = ins.find((i) => /MC-?707/i.test(i.name)) || ins.find((i) => i.id === S.midiIn);
+      const mi = mcFind(ins) || ins.find((i) => i.id === S.midiIn);
       if (mi) setMidiIn(mi.id);
       if (mo && !S.clock) {
         S.clock = true;
@@ -32834,7 +32885,7 @@ input[type='number'] {
     b.textContent = "";
     const sup = !!navigator.requestMIDIAccess;
     const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [], ins = MIDI.access ? [...MIDI.access.inputs.values()] : [];
-    const mcOut = outs.find((o) => /MC-?707/i.test(o.name));
+    const mcOut = mcFind(outs);
     b.append(
       el("p", { class: "wlead" }, "Plug in the MC-707 over USB, then press one button. Everything below is optional.")
     );
@@ -33206,7 +33257,7 @@ input[type='number'] {
     sel.textContent = "";
     sel.append(el("option", { value: "" }, "No input"));
     ins.forEach((i) => sel.append(el("option", { value: i.id }, i.name)));
-    const pick2 = ins.find((i) => i.id === S.midiIn) || ins.find((i) => /MC-?707/i.test(i.name));
+    const pick2 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
     if (pick2) {
       sel.value = pick2.id;
       if (!MIDI.inp || MIDI.inp.id !== pick2.id) setMidiIn(pick2.id);
@@ -35940,16 +35991,19 @@ input[type='number'] {
   var TONE_SLOT = lin(131072);
   var KIT_SLOT = lin(196608);
   var TRK_SET = lin(268437504);
+  var devTrack = (t) => DEV === "101" ? Math.max(0, devNum(t) - 1) : t;
   function slotAddr(kind, t, k) {
-    const i = t * 17 + k;
+    const i = devTrack(t) * 17 + k;
     return kind === "kit" ? KIT0 + i * KIT_SLOT : TONE0 + i * TONE_SLOT;
   }
-  var trackSetAddr = (t) => TRK_SET + t * lin(512);
+  var trackSetAddr = (t) => TRK_SET + devTrack(t) * lin(512);
   function checksum(bytes) {
     const s = bytes.reduce((a, b) => a + (b & 127), 0) & 127;
     return 128 - s & 127;
   }
-  var modelId = () => DEV === "mc101" ? 94 : 93;
+  var MODELS = [93, 94];
+  var known = () => ZX.model && ZX.modelFor === DEV + ":" + (ZX.out && ZX.out.name) ? ZX.model : 0;
+  var modelId = () => known() || (DEV === "101" ? 94 : 93);
   function dt1(l, data, dev = 16) {
     const body = [...addrBytes(l), ...data.map((b) => b & 127)];
     return [240, 65, dev, 0, 0, 0, modelId(), 18, ...body, checksum(body), 247];
@@ -35968,8 +36022,11 @@ input[type='number'] {
     sent: 0,
     wait: null,
     onState: null,
-    log: []
-    /* the last messages, for the editor's details view */
+    log: [],
+    model: 0,
+    modelFor: "",
+    onIdle: null
+    /* called each time the write queue empties */
   };
   var setState = (s) => {
     ZX.state = s;
@@ -36034,6 +36091,7 @@ input[type='number'] {
     ZX.q.delete(l);
     rawSend(dt1(l, data));
     if (ZX.q.size) ZX.timer = setTimeout(pump, PACE);
+    else if (ZX.onIdle) ZX.onIdle();
   }
   function zxFlush() {
     return new Promise((res) => {
@@ -36052,7 +36110,10 @@ input[type='number'] {
     if (!w) return;
     if (d[1] === 126 && d[3] === 6 && d[4] === 2 && w.kind === "id") return w.done([...d]);
     if (d[1] !== 65 || d[7] !== 18 || w.kind !== "rq") return;
+    if (!MODELS.includes(d[6])) return;
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
+    ZX.model = d[6];
+    ZX.modelFor = DEV + ":" + (ZX.out && ZX.out.name);
     w.done({ a, data });
   }
   function ask(msg, kind, ms) {
@@ -36077,8 +36138,12 @@ input[type='number'] {
   function zxRead(l, n, ms = 450) {
     return serial(async () => {
       if (!ZX.inp) return void 0;
-      for (let tries = 0; tries < 2; tries++) {
-        const r = await ask(rq1(l, n), "rq", ms);
+      for (let tries = 0; tries < 3; tries++) {
+        const guess = !known() && tries === 2 ? MODELS.find((m) => m !== modelId()) : 0;
+        if (tries === 2 && !guess) break;
+        const msg = rq1(l, n);
+        if (guess) msg[6] = guess;
+        const r = await ask(msg, "rq", ms);
         if (!r) continue;
         const want = replyBytes(l);
         if (r.data.length === n && r.a.every((b, i) => b === want[i])) return r.data;
@@ -42018,10 +42083,10 @@ input[type='number'] {
     return (v > 0 && p[3] < 0 ? "+" : "") + v + u;
   }
   function ctl(ctx2, key, opts = {}) {
-    const [p] = paramOf(ctx2.kind, key), list = listOf(ctx2.kind, key), v = ctx2.get(key), known = ctx2.snd.known.has(key), label = opts.label || nameOf(ctx2.kind, key);
+    const [p] = paramOf(ctx2.kind, key), list = listOf(ctx2.kind, key), v = ctx2.get(key), known2 = ctx2.snd.known.has(key), label = opts.label || nameOf(ctx2.kind, key);
     const box = el("label", {
-      class: "zcC" + (known ? "" : " unk") + (opts.wide ? " wide" : ""),
-      title: (known ? "" : "Not read from the MC-707 yet. ") + p[7]
+      class: "zcC" + (known2 ? "" : " unk") + (opts.wide ? " wide" : ""),
+      title: (known2 ? "" : "Not read from the MC-707 yet. ") + p[7]
     });
     box.append(el("span", { class: "zcL" }, label));
     if (p[8] && p[8].ascii) {
@@ -42457,9 +42522,9 @@ input[type='number'] {
       (n, i) => typeSel.append(el("option", { value: i, selected: i === type }, String(i).padStart(2, "0") + " " + n))
     );
     const params = sps.map((sp, i) => {
-      const key = "MFX.param_" + (i + 1), known = ctx2.snd.known.has(key), v = shown(sp, ctx2.get(key));
+      const key = "MFX.param_" + (i + 1), known2 = ctx2.snd.known.has(key), v = shown(sp, ctx2.get(key));
       const box = el("label", {
-        class: "zcC" + (known ? "" : " unk"),
+        class: "zcC" + (known2 ? "" : " unk"),
         title: "MFX parameter " + (i + 1) + " (stored " + ctx2.get(key) + ")"
       });
       box.append(el("span", { class: "zcL" }, sp.name));
@@ -42760,6 +42825,17 @@ input[type='number'] {
           },
           { on: ZE.live, title: "Send each change to the " + dn + " as you make it" }
         ),
+        btn(
+          zeRefreshOn() ? "● Screen" : "○ Screen",
+          () => {
+            zeSetRefresh(!zeRefreshOn());
+            zeRender();
+          },
+          {
+            on: zeRefreshOn(),
+            title: "Refresh the " + dn + "'s screen after each change, by selecting this clip again (the " + dn + " only redraws when a clip is selected)"
+          }
+        ),
         btn("↶", () => zeUndo(false), { off: !ZE.undo.length, title: "Undo (Ctrl+Z)" }),
         btn("↷", () => zeUndo(true), { off: !ZE.redo.length, title: "Redo (Ctrl+Shift+Z)" }),
         ZE.kind === "tone" ? btn(
@@ -42819,6 +42895,33 @@ input[type='number'] {
   var PART_TABS = ["osc", "filter", "amp", "pitch", "lfo", "matrix", "eq"];
   var zeBase = () => slotAddr(ZE.kind, ZE.t, ZE.k);
   var sending = () => ZE.live && ZX.state === "ready";
+  var REFRESH_KEY = "mc707-zen-refresh";
+  function zeRefreshOn() {
+    try {
+      return localStorage.getItem(REFRESH_KEY) !== "0";
+    } catch (e) {
+      return true;
+    }
+  }
+  function zeSetRefresh(on) {
+    try {
+      localStorage.setItem(REFRESH_KEY, on ? "1" : "0");
+    } catch (e) {
+    }
+  }
+  var nudgeT = 0;
+  function screenNudge() {
+    clearTimeout(nudgeT);
+    nudgeT = setTimeout(() => {
+      if (!$("#zcOv") || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
+      const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
+      try {
+        ZX.out.send([192 | ch - 1, ZE.k]);
+        PCLAST[ZE.t] = ZE.k;
+      } catch (e) {
+      }
+    }, 450);
+  }
   function apply(key, v) {
     const keys2 = ZE.link && PARTIAL.test(key) ? [0, 1, 2, 3].map((i) => key.replace(/\d\./, i + ".")) : [key];
     for (const k of keys2) {
@@ -42928,6 +43031,7 @@ input[type='number'] {
       addEventListener("keydown", keys, true);
     }
     ZX.onState = status;
+    ZX.onIdle = screenNudge;
     zeRender();
     if (await zxConnect()) zeRead();
     else status();
@@ -42944,6 +43048,8 @@ input[type='number'] {
     }
     if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
     ZX.onState = null;
+    ZX.onIdle = null;
+    clearTimeout(nudgeT);
   }
   function keys(e) {
     if (!$("#zcOv") || $("[role=dialog][aria-modal]:not([hidden])") || $(".cmenu")) return;

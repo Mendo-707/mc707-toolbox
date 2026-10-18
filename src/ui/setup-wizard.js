@@ -4,7 +4,7 @@
 // Reads: S, REC, MIDI, AU.
 import { $, el, toast } from '../core/dom.js';
 import { LANES, noteName } from '../core/theory.js';
-import { TRACK_COLORS } from '../core/device.js';
+import { TRACK_COLORS, isMcName, mcFind } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, connectMidi, refreshOuts, sendMidi } from '../services/midi.js';
@@ -180,12 +180,12 @@ export async function suAutoConnect() {
     };
     const outs = [...MIDI.access.outputs.values()],
       ins = [...MIDI.access.inputs.values()];
-    const mo = outs.find(o => /MC-?707/i.test(o.name));
-    if (mo && (!MIDI.out || !/MC-?707/i.test(MIDI.out.name))) {
+    const mo = mcFind(outs);
+    if (mo && (!MIDI.out || !isMcName(MIDI.out.name))) {
       S.midiOut = mo.id;
       refreshOuts();
     }
-    const mi = ins.find(i => /MC-?707/i.test(i.name)) || ins.find(i => i.id === S.midiIn);
+    const mi = mcFind(ins) || ins.find(i => i.id === S.midiIn);
     if (mi) setMidiIn(mi.id);
     if (mo && !S.clock) {
       S.clock = true;
@@ -209,7 +209,7 @@ function renderSetup(keep) {
   const sup = !!navigator.requestMIDIAccess;
   const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [],
     ins = MIDI.access ? [...MIDI.access.inputs.values()] : [];
-  const mcOut = outs.find(o => /MC-?707/i.test(o.name));
+  const mcOut = mcFind(outs);
   b.append(
     el('p', { class: 'wlead' }, 'Plug in the MC-707 over USB, then press one button. Everything below is optional.')
   );

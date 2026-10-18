@@ -76,6 +76,7 @@ there, and `tests/fixtures` holds real saves from v0.10.0 that must keep loading
 | `mc707-recent` | recent projects (Windows app) | `ui/projects.js` |
 | `mc-device` | MC-707 or MC-101 | `core/device.js` reads it, `ui/device.js` sets it |
 | `mc707-zen` | ZenCore editor: My sounds and the last edit of each MC-707 clip | `zen/zc-library.js` |
+| `mc707-zen-refresh` | ZenCore editor's Screen switch ('0' = do not re-select the clip after edits) | `zen/zc-editor.js` |
 | `mc707-mode` | Song or Live Mode on start | `ui/mode.js` sets it, `main.js` reads it |
 | `mc707-song-favs`, `mc707-prevmap`, `mc707-grab-src`, `mc707-edh`, `mc707-awake` | small screen preferences | library panel, grabber, layout, fullscreen |
 

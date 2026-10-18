@@ -1,4 +1,5 @@
-/* The ZenCore editor (src/zen/): a large panel over the app, in the clips screen's dark hardware look. Loaded after pad-test.css (it builds on .ptOv/.ptBox). */
+/* The ZenCore editor (src/zen/): a large panel over the app in an MC-707 hardware look: black, with bright green
+   sliders, values and highlights. Loaded after pad-test.css (it builds on .ptOv/.ptBox). */
 .zcBox {
   max-width: 1180px;
   height: min(92vh, 980px);
@@ -7,11 +8,40 @@
   gap: 8px;
   padding: 14px 16px 10px;
   overflow: hidden;
-  background: linear-gradient(180deg, #1d1f27, #15161c);
-  --zc-acc: #ff8a3d;
-  --zc-dim: #8b8fa3;
-  --zc-line: #ffffff1c;
-  --zc-well: #0e0f14;
+  background: #000;
+  color: #d9ffe3;
+  border-color: #1f3a27;
+  box-shadow:
+    0 0 0 1px #000,
+    0 18px 50px #000c;
+  --zc-acc: #39ff7a;
+  --zc-glow: #39ff7a55;
+  --zc-dim: #6f9c7c;
+  --zc-line: #1f3a27;
+  --zc-well: #050906;
+}
+.zcBox .hint {
+  color: var(--zc-dim);
+}
+.zcBox .btn {
+  background: #070d09;
+  color: #c9f7d5;
+  border: 1px solid #23462f;
+}
+.zcBox .btn:hover:not(:disabled) {
+  border-color: var(--zc-acc);
+  color: #fff;
+}
+.zcBox .btn.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+  box-shadow: 0 0 10px var(--zc-glow);
+}
+.zcBox option,
+.zcBox optgroup {
+  background: #050906;
+  color: #d9ffe3;
 }
 .zcHead {
   display: flex;
@@ -36,7 +66,8 @@
     'Cascadia Mono',
     Consolas,
     monospace;
-  color: #f3f4ff;
+  color: var(--zc-acc);
+  text-shadow: 0 0 8px var(--zc-glow);
   white-space: nowrap;
 }
 .zcTarget {
@@ -48,9 +79,9 @@
 .zcBox input[type='text'],
 .zcBox input[type='number'] {
   background: var(--zc-well);
-  color: #eef0ff;
+  color: #d9ffe3;
   border: 1px solid var(--zc-line);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 4px 6px;
   font: inherit;
   min-width: 0;
@@ -100,11 +131,12 @@
   cursor: pointer;
 }
 .zcTab:hover {
-  color: #eef0ff;
+  color: #d9ffe3;
 }
 .zcTab.on {
-  color: #111;
+  color: #000;
   background: var(--zc-acc);
+  box-shadow: 0 0 10px var(--zc-glow);
 }
 .zcParts {
   display: flex;
@@ -122,8 +154,8 @@
   cursor: pointer;
 }
 .zcPart.lit {
-  color: #eef0ff;
-  box-shadow: inset 0 -3px 0 #43d17a;
+  color: #d9ffe3;
+  box-shadow: inset 0 -3px 0 var(--zc-acc);
 }
 .zcPart.on {
   border-color: var(--zc-acc);
@@ -148,7 +180,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 6px 14px;
-  background: #ffffff05;
+  background: #030604;
 }
 .zcG > legend {
   font-size: 11px;
@@ -166,7 +198,7 @@
   min-width: 0;
 }
 .zcC .zcL {
-  color: #c9ccdb;
+  color: #a9d9b5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -175,8 +207,43 @@
   grid-column: 1 / -1;
   grid-row: 2;
   width: 100%;
-  accent-color: var(--zc-acc);
-  margin: 0;
+  margin: 4px 0 2px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  background: #0b1a10;
+  border: 1px solid var(--zc-line);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+/* a lit bar from the left up to the value, like the MC-707's level meters */
+.zcC input[type='range']::-webkit-slider-runnable-track {
+  height: 100%;
+}
+.zcC input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 10px;
+  background: #e6ffee;
+  box-shadow: -800px 0 0 800px var(--zc-acc);
+}
+.zcC input[type='range']::-moz-range-progress {
+  height: 100%;
+  background: var(--zc-acc);
+}
+.zcC input[type='range']::-moz-range-thumb {
+  width: 4px;
+  height: 10px;
+  border: 0;
+  border-radius: 0;
+  background: #e6ffee;
+}
+.zcC input[type='range']:hover,
+.zcC input[type='range']:focus-visible {
+  outline: none;
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-glow);
 }
 .zcC .zcV {
   grid-row: 1;
@@ -185,7 +252,7 @@
     600 12px ui-monospace,
     Consolas,
     monospace;
-  color: #eef0ff;
+  color: var(--zc-acc);
 }
 .zcC select,
 .zcC .zcNum,
@@ -219,7 +286,7 @@
 .zcSw.on {
   background: var(--zc-acc);
   border-color: var(--zc-acc);
-  color: #111;
+  color: #000;
 }
 /* not read from the MC-707 yet: shown faded until read or changed */
 .zcC.unk {
@@ -273,15 +340,15 @@
   stroke-width: 2;
 }
 .zcEnv .fill {
-  fill: #ff8a3d22;
+  fill: #39ff7a1f;
 }
 .zcEnv .zero {
-  stroke: #ffffff26;
+  stroke: #39ff7a33;
   stroke-dasharray: 3 3;
 }
 .zcEnv .h {
-  fill: #15161c;
-  stroke: #fff;
+  fill: #000;
+  stroke: #e6ffee;
   stroke-width: 2;
   cursor: grab;
 }
@@ -295,7 +362,7 @@
   fill: var(--zc-acc);
 }
 .zcSteps .bar.off {
-  fill: #ffffff22;
+  fill: #1f3a27;
 }
 .zcKeys {
   display: grid;
@@ -307,7 +374,7 @@
   height: 34px;
   border-radius: 5px;
   border: 1px solid var(--zc-line);
-  background: #2a2c36;
+  background: #0b140e;
   color: var(--zc-dim);
   font: 600 10px var(--font);
   cursor: pointer;
@@ -317,8 +384,8 @@
   background: var(--zc-well);
 }
 .zcKey.pad {
-  color: #eef0ff;
-  box-shadow: inset 0 -3px 0 #43d17a;
+  color: #d9ffe3;
+  box-shadow: inset 0 -3px 0 var(--zc-acc);
 }
 .zcKey.on {
   border-color: var(--zc-acc);
@@ -330,21 +397,22 @@
   flex-shrink: 0;
   border-radius: 6px;
   overflow: hidden;
-  background: #0e0f14;
+  background: #000;
+  border: 1px solid var(--zc-line);
 }
 .zcKbK {
   position: absolute;
   top: 0;
   bottom: 0;
   border: 0;
-  border-right: 1px solid #9a9cab;
-  background: #ecedf3;
+  border-right: 1px solid #000;
+  background: #cfd8d2;
   cursor: pointer;
   padding: 0;
 }
 .zcKbK.b {
   bottom: 40%;
-  background: #22232b;
+  background: #0b140e;
   border: 0;
   border-radius: 0 0 3px 3px;
   z-index: 1;

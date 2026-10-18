@@ -466,8 +466,8 @@
   text-align: left;
   padding: 14px;
   border-radius: 12px;
-  border: 1px solid #ffffff22;
-  background: #ffffff08;
+  border: 1px solid var(--line);
+  background: var(--panel2);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -475,26 +475,26 @@
 .stCard:hover,
 .stCard:focus-visible,
 .stCard.on {
-  border-color: #ff8a3d;
+  border-color: var(--hot);
 }
 .stCard:hover,
 .stCard:focus-visible {
-  background: #ff8a3d14;
+  background: color-mix(in srgb, var(--hot) 10%, var(--panel2));
 }
 .stCard b {
   font-size: 17px;
 }
 .stCard small {
-  color: #b9bccb;
+  color: var(--mute);
   line-height: 1.35;
 }
 .stIcon {
   font-size: 22px;
-  color: #ff8a3d;
+  color: var(--hot);
 }
 .stShow {
   font-size: 13px;
-  color: #b9bccb;
+  color: var(--mute);
 }
 
 /* Track setup (src/ui/track-setup.js) */
@@ -518,22 +518,13 @@
   gap: 8px;
   padding: 6px 10px;
   border-radius: 10px;
-  background: #ffffff08;
+  background: var(--panel2);
   border-left: 4px solid var(--c);
 }
 .tsRow select,
 .tsRow input {
   min-width: 0;
-  background: #22253a;
-  color: #eef0ff;
-  border: 1px solid #ffffff2a;
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-.tsRow optgroup,
-.tsRow option {
-  background: #22253a;
-  color: #eef0ff;
+  padding: 5px 8px;
 }
 .tsType {
   font: 700 10px var(--font);
@@ -543,12 +534,12 @@
   padding: 2px 6px;
 }
 .tsType.d {
-  background: #ff5f4533;
-  color: #ff8a70;
+  background: color-mix(in srgb, var(--hot) 18%, transparent);
+  color: var(--hot);
 }
 .tsType.t {
-  background: #4da3ff33;
-  color: #8cc3ff;
+  background: color-mix(in srgb, #3d8bfd 18%, transparent);
+  color: #3d8bfd;
 }
 @media (max-width: 640px) {
   .tsRow {
@@ -574,7 +565,7 @@
   font-size: 11px;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  color: #ff8a3d;
+  color: var(--hot);
 }
 .lpGrid {
   display: grid;
@@ -588,24 +579,24 @@
   gap: 2px;
   padding: 9px 11px;
   border-radius: 10px;
-  border: 1px solid #ffffff22;
-  background: #ffffff08;
+  border: 1px solid var(--line);
+  background: var(--panel2);
   color: inherit;
   font: inherit;
   cursor: pointer;
   text-align: left;
 }
 .lpStyle small {
-  color: #b9bccb;
+  color: var(--mute);
 }
 .lpStyle:hover,
 .lpStyle:focus-visible,
 .lpStyle.on {
-  border-color: #ff8a3d;
+  border-color: var(--hot);
 }
 .lpStyle:hover,
 .lpStyle:focus-visible {
-  background: #ff8a3d14;
+  background: color-mix(in srgb, var(--hot) 10%, var(--panel2));
 }
 
 .suSteps {

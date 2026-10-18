@@ -43,3 +43,12 @@ export const oneKit = () => {
 };
 /** 'MC-707' or 'MC-101'. */
 export const devNm = () => (DEV === '101' ? 'MC-101' : 'MC-707');
+/** True for a MIDI port or audio device name of an MC-707 or MC-101. */
+export const isMcName = n => /MC-?(707|101)/i.test(n || '');
+/** The MC port or device in a list: the chosen device's model first, then the other one.
+ * @param {Array<object>} list  ports or audio devices
+ * @param {string} [key] the field holding the name ('name' for MIDI ports, 'label' for audio devices) */
+export function mcFind(list, key = 'name') {
+  const mine = DEV === '101' ? /MC-?101/i : /MC-?707/i;
+  return list.find(x => mine.test(x[key] || '')) || list.find(x => isMcName(x[key])) || null;
+}

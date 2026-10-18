@@ -8,6 +8,7 @@ import { $, el, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
+import { PCLAST } from '../services/clip-switch.js';
 import { ZX, slotAddr, trackSetAddr, zxConnect, zxNote, zxRead } from './zc-sysex.js';
 import { newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
@@ -67,6 +68,36 @@ const PART_TABS = ['osc', 'filter', 'amp', 'pitch', 'lfo', 'matrix', 'eq'];
 /** The MC-707 address of the sound being edited. */
 export const zeBase = () => slotAddr(ZE.kind, ZE.t, ZE.k);
 const sending = () => ZE.live && ZX.state === 'ready';
+
+/* The MC-707 changes the sound at once but only redraws its screen when the clip is selected again (as
+   moving the cursor does). So when a burst of edits has gone out, the editor re-selects the clip it is
+   editing: program change k on the track's channel, the way the app switches clips. On by default;
+   the "Screen" switch turns it off (kept under its own localStorage key). */
+const REFRESH_KEY = 'mc707-zen-refresh';
+export function zeRefreshOn() {
+  try {
+    return localStorage.getItem(REFRESH_KEY) !== '0';
+  } catch (e) {
+    return true;
+  }
+}
+export function zeSetRefresh(on) {
+  try {
+    localStorage.setItem(REFRESH_KEY, on ? '1' : '0');
+  } catch (e) {}
+}
+let nudgeT = 0;
+function screenNudge() {
+  clearTimeout(nudgeT);
+  nudgeT = setTimeout(() => {
+    if (!$('#zcOv') || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
+    const ch = (S.tracks[ZE.t] && S.tracks[ZE.t].ch) || ZE.t + 1;
+    try {
+      ZX.out.send([0xc0 | (ch - 1), ZE.k]);
+      PCLAST[ZE.t] = ZE.k;
+    } catch (e) {}
+  }, 450);
+}
 
 /* ---- changing values ---- */
 function apply(key, v) {
@@ -193,6 +224,7 @@ export async function zenOpen(t, k) {
     addEventListener('keydown', keys, true);
   }
   ZX.onState = status;
+  ZX.onIdle = screenNudge;
   zeRender();
   if (await zxConnect()) zeRead();
   else status();
@@ -210,6 +242,8 @@ export function zenClose() {
   } catch (e) {}
   if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
   ZX.onState = null;
+  ZX.onIdle = null;
+  clearTimeout(nudgeT);
 }
 /* while the editor is open it takes undo, redo and Escape (and keeps Space and the app's other
    shortcuts from reaching the song behind it) */

@@ -5,6 +5,7 @@
 import { $, clamp, el, toast } from '../core/dom.js';
 import { S, STORE, UI, fixState, pushUndo, replaceState, scheduleSave } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
+import { mcFind } from '../core/device.js';
 import { stopAll } from '../services/transport.js';
 import { afterReplaceKeepUndo, closePops } from './controls.js';
 import { setMidiIn } from './setup-wizard.js';
@@ -121,7 +122,7 @@ export function refreshIns() {
   sel.textContent = '';
   sel.append(el('option', { value: '' }, 'No input'));
   ins.forEach(i => sel.append(el('option', { value: i.id }, i.name)));
-  const pick = ins.find(i => i.id === S.midiIn) || ins.find(i => /MC-?707/i.test(i.name));
+  const pick = ins.find(i => i.id === S.midiIn) || mcFind(ins);
   if (pick) {
     sel.value = pick.id;
     if (!MIDI.inp || MIDI.inp.id !== pick.id) setMidiIn(pick.id);

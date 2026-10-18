@@ -9,7 +9,7 @@
 // Owns: ZX (the SysEx link: ports, queue, status).
 // Reads: MIDI, DEV.
 import { MIDI } from '../services/midi.js';
-import { DEV } from '../core/device.js';
+import { DEV, devNum } from '../core/device.js';
 
 /* ---- addresses: four 7-bit bytes on the wire, plain (linear) numbers in the code ---- */
 /** A packed address (as Roland writes it, 0x30000000) as a linear byte number. */
@@ -30,24 +30,31 @@ const TONE0 = lin(0x30000000),
   TONE_SLOT = lin(0x20000),
   KIT_SLOT = lin(0x30000),
   TRK_SET = lin(0x10000800);
+/** The device's own track index (0-7, or 0-3 on the MC-101) for app track t. The MC-101's four
+   tracks are the app's tracks 1, 4, 5 and 7, so they are renumbered here. */
+export const devTrack = t => (DEV === '101' ? Math.max(0, devNum(t) - 1) : t);
 /**
- * Where a tone or drum kit lives: track t (0-7), clip k (0-15), or k = 16 for the track's own sound
+ * Where a tone or drum kit lives: app track t (0-7), clip k (0-15), or k = 16 for the track's own sound
  * (used when the track's Sound Source is TRACK).
  * @returns {number} linear address of the block's start
  */
 export function slotAddr(kind, t, k) {
-  const i = t * 17 + k;
+  const i = devTrack(t) * 17 + k;
   return kind === 'kit' ? KIT0 + i * KIT_SLOT : TONE0 + i * TONE_SLOT;
 }
 /** A track's settings: Sound Source (+4: 0 TRACK, 1 CLIP) and type (+0x14: 0 tone, 1 drum, 127 off). */
-export const trackSetAddr = t => TRK_SET + t * lin(0x200);
+export const trackSetAddr = t => TRK_SET + devTrack(t) * lin(0x200);
 
 /** Roland checksum over address and data bytes. */
 export function checksum(bytes) {
   const s = bytes.reduce((a, b) => a + (b & 0x7f), 0) & 0x7f;
   return (128 - s) & 0x7f;
 }
-export const modelId = () => (DEV === 'mc101' ? 0x5e : 0x5d);
+/* Roland's model byte: 0x5D on the MC-707 and 0x5E expected on the MC-101. Neither is documented, so
+   the one the device answers to is learnt from its replies (ZX.model) and used from then on. */
+const MODELS = [0x5d, 0x5e];
+const known = () => (ZX.model && ZX.modelFor === DEV + ':' + (ZX.out && ZX.out.name) ? ZX.model : 0);
+export const modelId = () => known() || (DEV === '101' ? 0x5e : 0x5d);
 /** A DT1 (data set) message writing bytes at linear address l. */
 export function dt1(l, data, dev = 0x10) {
   const body = [...addrBytes(l), ...data.map(b => b & 0x7f)];
@@ -70,7 +77,10 @@ export const ZX = {
   sent: 0,
   wait: null /* the read waiting for its reply */,
   onState: null,
-  log: [] /* the last messages, for the editor's details view */
+  log: [] /* the last messages, for the editor's details view */,
+  model: 0 /* the model byte the device answered to (0 = not known yet) */,
+  modelFor: '' /* the device setting and port it was learnt for */,
+  onIdle: null /* called each time the write queue empties */
 };
 const setState = s => {
   ZX.state = s;
@@ -147,6 +157,7 @@ function pump() {
   ZX.q.delete(l);
   rawSend(dt1(l, data));
   if (ZX.q.size) ZX.timer = setTimeout(pump, PACE);
+  else if (ZX.onIdle) ZX.onIdle();
 }
 /** Resolves once every queued write has gone out. */
 export function zxFlush() {
@@ -168,8 +179,11 @@ function onIn(e) {
   if (!w) return;
   if (d[1] === 0x7e && d[3] === 0x06 && d[4] === 0x02 && w.kind === 'id') return w.done([...d]);
   if (d[1] !== 0x41 || d[7] !== 0x12 || w.kind !== 'rq') return;
+  if (!MODELS.includes(d[6])) return;
   const a = [...d.slice(8, 12)],
     data = [...d.slice(12, d.length - 2)];
+  ZX.model = d[6];
+  ZX.modelFor = DEV + ':' + (ZX.out && ZX.out.name);
   w.done({ a, data });
 }
 function ask(msg, kind, ms) {
@@ -200,8 +214,13 @@ const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
 export function zxRead(l, n, ms = 450) {
   return serial(async () => {
     if (!ZX.inp) return undefined;
-    for (let tries = 0; tries < 2; tries++) {
-      const r = await ask(rq1(l, n), 'rq', ms);
+    for (let tries = 0; tries < 3; tries++) {
+      /* the last try, while the model byte is still unknown, asks with the other model's byte */
+      const guess = !known() && tries === 2 ? MODELS.find(m => m !== modelId()) : 0;
+      if (tries === 2 && !guess) break;
+      const msg = rq1(l, n);
+      if (guess) msg[6] = guess;
+      const r = await ask(msg, 'rq', ms);
       if (!r) continue;
       const want = replyBytes(l);
       if (r.data.length === n && r.a.every((b, i) => b === want[i])) return r.data;
