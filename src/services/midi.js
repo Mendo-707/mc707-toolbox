@@ -11,6 +11,13 @@ import { hooks } from '../core/hooks.js';
 
 /* ---------- MIDI ---------- */
 export const MIDI = { access: null, out: null };
+/* when each note was last sent (performance.now ms), so a note echoed back by the MC-707 is not taken for a player */
+const SENTAT = new Map();
+/** True if the app itself sent this note (channel 1-16) within the last `ms` milliseconds. */
+export function sentRecently(ch, note, ms = 80) {
+  const at = SENTAT.get(((ch - 1) << 7) | note);
+  return at != null && Math.abs(performance.now() - at) < ms;
+}
 /**
  * Send a MIDI message to the chosen output at an AudioContext time (seconds).
  * @param {number[]} bytes
@@ -21,7 +28,10 @@ export function sendMidi(bytes, at) {
   if (!o) return;
   try {
     const ms = performance.now() + (at - AU.ctx.currentTime) * 1000;
-    if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
+    if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) {
+      NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
+      SENTAT.set(((bytes[0] & 15) << 7) | bytes[1], Math.max(ms, performance.now()));
+    }
     o.send(bytes, Math.max(ms, 0));
   } catch (e) {}
 }

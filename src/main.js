@@ -80,7 +80,8 @@ import './live/scene-templates.js';
 import './library/pools.js';
 import './live/set-builder.js';
 import './live/engine.js';
-import './live/cues.js';
+import { liveBuildDrop } from './live/cues.js';
+import { lvUserOwns } from './live/moves.js';
 import './live/pads.js';
 import './live/controller.js';
 import './live/raven.js';
@@ -236,6 +237,8 @@ PROJ.t = projTitle;
     liveStart,
     liveScene,
     lvFadeKind,
+    lvUserOwns,
+    liveBuildDrop,
     stopAll,
     startSong,
     ensureAudio,

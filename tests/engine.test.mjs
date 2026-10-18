@@ -333,3 +333,70 @@ test('fills end on the downbeat they lead into; bass and melodies never fade, pa
   assert.ok(r.faded.includes('pad') || r.faded.includes('chords'), 'pads and chords still fade');
   assert.deepEqual(errors, []);
 });
+
+test('Raven mode: a track you play is left alone (no pattern, no effects) until 4 bars after your last note', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV,
+      S = a.S;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.assign(LV, { style: 'liquid', seed: 5, custom: false, auto: true, vary: 60, buildFx: true, perfOn: true });
+    a.liveBuild();
+    a.liveStart(0);
+    a.TICKER.stop();
+    const t = 6,
+      ch = S.tracks[t].ch;
+    let note = 100;
+    while (
+      LV.padNotes.includes(note) ||
+      (note >= LV.keyBase && note < LV.keyBase + 12) ||
+      (note >= LV.muteBase && note < LV.muteBase + 12)
+    )
+      note++;
+    const step = n => {
+      const end = a.TR.tick + n;
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+    };
+    /* the app's messages to the lead's channel: notes and effects */
+    const count = from => {
+      const m = window.__out.slice(from).filter(b => (b[0] & 15) === ch - 1);
+      return {
+        notes: m.filter(b => (b[0] & 0xf0) === 0x90 && b[2] > 0 && b[1] !== note).length,
+        cc: m.filter(b => (b[0] & 0xf0) === 0xb0).length
+      };
+    };
+    step(32 * 4);
+    /* play a short phrase on the lead track for 4 bars, then a rising build is fired on every track */
+    window.__out.length = 0;
+    const pre = window.__out.length;
+    for (let i = 0; i < 8; i++) {
+      window.__inject([0x90 | (ch - 1), note, 100]);
+      step(8);
+      window.__inject([0x80 | (ch - 1), note, 0]);
+      step(8);
+    }
+    a.liveBuildDrop();
+    const ownedMid = a.lvUserOwns(t);
+    step(32 * 3);
+    const during = count(pre),
+      stillOwned = a.lvUserOwns(t);
+    const mark = window.__out.length;
+    step(32 * 3);
+    const back = !a.lvUserOwns(t),
+      after = count(mark);
+    a.stopAll();
+    return { ownedMid, stillOwned, during, back, after };
+  });
+  assert.ok(r.ownedMid && r.stillOwned, 'the track is yours while you play and for a while after');
+  assert.equal(r.during.notes, 0, 'the app plays no pattern notes on it');
+  assert.ok(r.during.cc <= 4, 'only the reset to rest is sent, no build effects (' + r.during.cc + ')');
+  assert.ok(r.back, 'the app takes it back 4 bars after your last note');
+  assert.ok(r.after.notes > 0, 'and plays its pattern again');
+  assert.deepEqual(errors, []);
+});

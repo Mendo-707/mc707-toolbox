@@ -7,7 +7,7 @@
 import { S } from '../core/state.js';
 import { sendMidi } from '../services/midi.js';
 import { LV } from './state.js';
-import { lvMove, lvRestCC, lvSendCC } from './moves.js';
+import { lvMove, lvRestCC, lvSendCC, lvUserOwns } from './moves.js';
 
 const EXPR = 11;
 const ends = () => LV.fadeEnds || (LV.fadeEnds = []);
@@ -68,7 +68,7 @@ export function lvFadeTick(tick, nt) {
   LV.fadeEnds = LV.fadeEnds.filter(e => {
     if (!e.off && tick >= e.at) {
       e.off = true;
-      if (on() && !S.tracks[e.t].mute) sendMidi([0xb0 | (S.tracks[e.t].ch - 1), 123, 0], nt);
+      if (on() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([0xb0 | (S.tracks[e.t].ch - 1), 123, 0], nt);
     }
     if (tick >= e.back) {
       lvLevelBack(e.t, nt);

@@ -14654,12 +14654,20 @@ input[type='number'] {
 
   // src/services/midi.js
   var MIDI = { access: null, out: null };
+  var SENTAT = /* @__PURE__ */ new Map();
+  function sentRecently(ch, note, ms = 80) {
+    const at2 = SENTAT.get(ch - 1 << 7 | note);
+    return at2 != null && Math.abs(performance.now() - at2) < ms;
+  }
   function sendMidi(bytes, at2) {
     const o = MIDI.out;
     if (!o) return;
     try {
       const ms = performance.now() + (at2 - AU.ctx.currentTime) * 1e3;
-      if (bytes.length > 2 && (bytes[0] & 240) === 144 && bytes[2] > 0) NOTEHIST.add((bytes[0] & 15) << 7 | bytes[1]);
+      if (bytes.length > 2 && (bytes[0] & 240) === 144 && bytes[2] > 0) {
+        NOTEHIST.add((bytes[0] & 15) << 7 | bytes[1]);
+        SENTAT.set((bytes[0] & 15) << 7 | bytes[1], Math.max(ms, performance.now()));
+      }
       o.send(bytes, Math.max(ms, 0));
     } catch (e) {
     }
@@ -25827,7 +25835,7 @@ input[type='number'] {
     LV.fadeEnds = LV.fadeEnds.filter((e) => {
       if (!e.off && tick >= e.at) {
         e.off = true;
-        if (on() && !S.tracks[e.t].mute) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
+        if (on() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
       }
       if (tick >= e.back) {
         lvLevelBack(e.t, nt);
@@ -27221,6 +27229,7 @@ input[type='number'] {
           return true;
         }
       }
+      lvPlayedHere(ch, n, false);
       return false;
     }
     if (!isOn) return false;
@@ -27272,7 +27281,14 @@ input[type='number'] {
         return true;
       }
     }
+    lvPlayedHere(ch, n, true);
     return false;
+  }
+  function lvPlayedHere(ch, n, on2) {
+    if (!LV.perfOn || !ch) return;
+    if (on2 && sentRecently(ch, n)) return;
+    const t = S.tracks.findIndex((tr) => tr.ch === ch);
+    if (t >= 0) lvUserNote(t, on2);
   }
   function lvFollowOctave(n) {
     const pc = (n % 12 + 12) % 12;
@@ -28070,6 +28086,7 @@ input[type='number'] {
       if (c.soloSnap) nn = ctlSnap(nn);
       if (CTL.held[n] != null) sendMidi([128 | tr.ch - 1, CTL.held[n], 0], now);
       CTL.held[n] = { nn, t, ch: tr.ch };
+      lvUserNote(t, true);
       if (MIDI.out) sendMidi([144 | tr.ch - 1, nn, v], now);
       if (typeof vizNote === "function" && TR.mode === "live") vizNote(t, nn, v, now, 0.25);
       if (S.preview) voice3(t, nn, now, 0.35, v);
@@ -28078,6 +28095,7 @@ input[type='number'] {
       const h = CTL.held[n];
       if (!h) return;
       delete CTL.held[n];
+      lvUserNote(h.t, false);
       if (MIDI.out) sendMidi([128 | h.ch - 1, h.nn, 0], now);
     }
   }
@@ -28762,7 +28780,7 @@ input[type='number'] {
   }
   var LV_RCLIP = {};
   function lvCellClip(t, cell, time) {
-    if (!devOn(t)) return;
+    if (!devOn(t) || lvUserOwns(t)) return;
     const n = cmFix()[t].n;
     let k = cell ? cell.clip : null;
     if (k === "random") {
@@ -28877,7 +28895,7 @@ input[type='number'] {
     if (!r) return;
     LV.rise = null;
     lvTracksFor(r.target).forEach(
-      (t) => sendMidi([176 | S.tracks[t].ch - 1, r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
+      (t) => lvUserOwns(t) ? 0 : sendMidi([176 | S.tracks[t].ch - 1, r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
     );
     LV.knobs[r.cc - 80] = LV.rest[r.cc - 80];
     knobUI(r.cc - 80, LV.rest[r.cc - 80]);
@@ -28890,7 +28908,9 @@ input[type='number'] {
       return;
     }
     const u = (tick - r.start) / (r.end - r.start), v = Math.round(r.from + (r.to - r.from) * u);
-    lvTracksFor(r.target).forEach((t) => sendMidi([176 | S.tracks[t].ch - 1, r.cc, clamp(v, 0, 127)], nt));
+    lvTracksFor(r.target).forEach(
+      (t) => lvUserOwns(t) || sendMidi([176 | S.tracks[t].ch - 1, r.cc, clamp(v, 0, 127)], nt)
+    );
     knobUI(r.cc - 80, clamp(v, 0, 127));
   }
   function liveFire(c, tick) {
@@ -29090,7 +29110,7 @@ input[type='number'] {
     if (LV.crash) {
       LV.crash = false;
       const tk2 = trackOf(0);
-      if (tk2 >= 0 && !S.tracks[tk2].mute) emitNote(tk2, 9, 110, nt, 0.5);
+      if (tk2 >= 0 && !S.tracks[tk2].mute && !lvUserOwns(tk2)) emitNote(tk2, 9, 110, nt, 0.5);
     }
     const rel = tick - LV.sceneStart;
     if (rel % 32 === 0) {
@@ -29121,7 +29141,7 @@ input[type='number'] {
     if (LV.impact && tick >= LV.impact.tick) {
       const im = LV.impact;
       LV.impact = null;
-      if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute) {
+      if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute && !lvUserOwns(lvBT())) {
         const evs = patIndex(im.f).get(0);
         if (evs) for (const n of evs) emitNote(lvBT(), n.n, n.v, nt, 0.4);
         LV.pulse[lvBT()] = { time: nt, v: 1 };
@@ -29138,7 +29158,7 @@ input[type='number'] {
     if (fl && (fl.kind === "roll" || fl.kind === "drop")) lvRollTick(fl, tick, nt, td);
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
-      if (trk.mute || solo && !trk.solo) continue;
+      if (trk.mute || solo && !trk.solo || lvUserOwns(t)) continue;
       const tg = envAt(LV.tg[t], tick);
       if (tg <= 0.01) continue;
       const tone2 = trk.type === "tone";
@@ -29461,7 +29481,7 @@ input[type='number'] {
   }
   function lvRollTick(b, tick, nt, td) {
     const t = b.kind === "roll" ? kitTrack() : lvBT(), k = kitTrack();
-    if (t < 0 || S.tracks[t].mute || tick >= b.end - 2) return;
+    if (t < 0 || S.tracks[t].mute || lvUserOwns(t) || tick >= b.end - 2) return;
     const rel = tick - b.start, u = rel / b.len, step = b.len >= 32 ? u < 0.5 ? 4 : u < 0.75 ? 2 : 1 : u < 0.5 ? 2 : 1;
     if (b.kind === "roll" && rel === 0) {
       emitNote(k, 0, 120, nt, td);
@@ -30178,7 +30198,38 @@ input[type='number'] {
     const p = MC_PARAMS.find((x) => x.n === cc);
     return p ? p.def : 64;
   }
+  var TAKE_TICKS = 128;
+  function lvUserOwns(t) {
+    const u = LV.userPlay && LV.userPlay[t];
+    if (!u) return false;
+    if (LV.perfOn && TR.playing && TR.mode === "live" && (u.held > 0 || TR.tick - u.last < TAKE_TICKS)) return true;
+    delete LV.userPlay[t];
+    LV.ver++;
+    if (LV.perfOn && TR.playing) toast("Back to the app: " + S.tracks[t].name);
+    return false;
+  }
+  function lvUserNote(t, on2) {
+    if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
+    const all = LV.userPlay || (LV.userPlay = {}), fresh2 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
+    u.last = TR.tick;
+    u.held = Math.max(0, u.held + (on2 ? 1 : -1));
+    if (!fresh2) return;
+    const nt = AU.ctx ? AU.ctx.currentTime : 0, ccs = /* @__PURE__ */ new Set([11]);
+    LV.autos.forEach((a) => a.tracks.includes(t) && ccs.add(a.cc));
+    if (LV.rise) [80].forEach((c) => ccs.add(c));
+    if (S.sendCC !== false && !S.tracks[t].mute)
+      ccs.forEach((cc) => {
+        const v = lvRestCC(t, cc);
+        LV.ccLast[t + ":" + cc] = v;
+        sendMidi([176 | S.tracks[t].ch - 1, cc, v], nt);
+      });
+    if (LV.low) delete LV.low[t];
+    if (LV.fadeEnds) LV.fadeEnds = LV.fadeEnds.filter((e) => e.t !== t);
+    LV.ver++;
+    toast("You have " + S.tracks[t].name + ": the app hands it back 4 bars after you stop");
+  }
   function lvSendCC(t, cc, v, nt) {
+    if (lvUserOwns(t)) return;
     v = clamp(Math.round(v), 0, 127);
     const k = t + ":" + cc;
     if (LV.ccLast[k] === v) return;
@@ -45077,6 +45128,8 @@ input[type='number'] {
       liveStart,
       liveScene,
       lvFadeKind,
+      lvUserOwns,
+      liveBuildDrop,
       stopAll,
       startSong,
       ensureAudio,

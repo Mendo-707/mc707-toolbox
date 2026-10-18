@@ -19,7 +19,7 @@ import { AUTOLAST, sendTrackCCs } from '../services/mc-controls.js';
 import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
 import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
-import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam } from './moves.js';
+import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
 import { lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -157,7 +157,7 @@ export const LV_RCLIP = {};
  * pinned goes back to the clip for its own kind of part when the next scene leaves it as is.
  */
 export function lvCellClip(t, cell, time) {
-  if (!devOn(t)) return;
+  if (!devOn(t) || lvUserOwns(t)) return;
   const n = cmFix()[t].n;
   let k = cell ? cell.clip : null;
   if (k === 'random') {
@@ -284,7 +284,7 @@ function lvRiseReset(tick) {
   if (!r) return;
   LV.rise = null;
   lvTracksFor(r.target).forEach(t =>
-    sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
+    lvUserOwns(t) ? 0 : sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, LV.rest[r.cc - 80]], AU.ctx.currentTime)
   );
   LV.knobs[r.cc - 80] = LV.rest[r.cc - 80];
   knobUI(r.cc - 80, LV.rest[r.cc - 80]);
@@ -298,7 +298,9 @@ function lvRiseTick(tick, nt) {
   }
   const u = (tick - r.start) / (r.end - r.start),
     v = Math.round(r.from + (r.to - r.from) * u);
-  lvTracksFor(r.target).forEach(t => sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, clamp(v, 0, 127)], nt));
+  lvTracksFor(r.target).forEach(
+    t => lvUserOwns(t) || sendMidi([0xb0 | (S.tracks[t].ch - 1), r.cc, clamp(v, 0, 127)], nt)
+  );
   knobUI(r.cc - 80, clamp(v, 0, 127));
 }
 function liveFire(c, tick) {
@@ -525,7 +527,7 @@ export function liveTick(tick, nt, td) {
   if (LV.crash) {
     LV.crash = false;
     const tk = trackOf(0);
-    if (tk >= 0 && !S.tracks[tk].mute) emitNote(tk, 9, 110, nt, 0.5);
+    if (tk >= 0 && !S.tracks[tk].mute && !lvUserOwns(tk)) emitNote(tk, 9, 110, nt, 0.5);
   }
   const rel = tick - LV.sceneStart;
   if (rel % 32 === 0) {
@@ -562,7 +564,7 @@ export function liveTick(tick, nt, td) {
   if (LV.impact && tick >= LV.impact.tick) {
     const im = LV.impact;
     LV.impact = null;
-    if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute) {
+    if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute && !lvUserOwns(lvBT())) {
       const evs = patIndex(im.f).get(0);
       if (evs) for (const n of evs) emitNote(lvBT(), n.n, n.v, nt, 0.4);
       LV.pulse[lvBT()] = { time: nt, v: 1 };
@@ -582,7 +584,7 @@ export function liveTick(tick, nt, td) {
   if (fl && (fl.kind === 'roll' || fl.kind === 'drop')) lvRollTick(fl, tick, nt, td);
   for (let t = 0; t < 8; t++) {
     const trk = S.tracks[t];
-    if (trk.mute || (solo && !trk.solo)) continue;
+    if (trk.mute || (solo && !trk.solo) || lvUserOwns(t)) continue;
     const tg = envAt(LV.tg[t], tick);
     if (tg <= 0.01) continue;
     const tone = trk.type === 'tone';

@@ -8,7 +8,7 @@ import { facById } from '../library/index.js';
 import { TR, emitNote } from '../services/transport.js';
 import { FLASH_RH } from '../library/flash.js';
 import { LV, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
-import { lvMove } from './moves.js';
+import { lvMove, lvUserOwns } from './moves.js';
 import { lvModeFam, lvPool } from '../library/pools.js';
 import { lvLog } from './engine.js';
 import { lvOn, lvSortCues } from './cues.js';
@@ -187,7 +187,7 @@ export function lvBreakStart(b, tick) {
 export function lvRollTick(b, tick, nt, td) {
   const t = b.kind === 'roll' ? kitTrack() : lvBT(),
     k = kitTrack();
-  if (t < 0 || S.tracks[t].mute || tick >= b.end - 2) return;
+  if (t < 0 || S.tracks[t].mute || lvUserOwns(t) || tick >= b.end - 2) return;
   const rel = tick - b.start,
     u = rel / b.len,
     step = b.len >= 32 ? (u < 0.5 ? 4 : u < 0.75 ? 2 : 1) : u < 0.5 ? 2 : 1;

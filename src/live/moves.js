@@ -40,7 +40,50 @@ export function lvRestCC(t, cc) {
   const p = MC_PARAMS.find(x => x.n === cc);
   return p ? p.def : 64;
 }
+/* ---- Raven takeover: while you play a track yourself, the app leaves it alone ---- */
+/** How long a track stays yours after your last note: 4 bars. */
+export const TAKE_TICKS = 128;
+/**
+ * True while you are playing track t in Raven mode: from your first note until 4 bars after the
+ * last one (and never while a key is held). The app then sends that track no pattern notes, no
+ * effects, fades or clip changes. When it lapses, the app picks the track up again.
+ */
+export function lvUserOwns(t) {
+  const u = LV.userPlay && LV.userPlay[t];
+  if (!u) return false;
+  if (LV.perfOn && TR.playing && TR.mode === 'live' && (u.held > 0 || TR.tick - u.last < TAKE_TICKS)) return true;
+  delete LV.userPlay[t];
+  LV.ver++;
+  if (LV.perfOn && TR.playing) toast('Back to the app: ' + S.tracks[t].name);
+  return false;
+}
+/** You played (on) or released (off) a note on track t. The first one takes the track over. */
+export function lvUserNote(t, on) {
+  if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
+  const all = LV.userPlay || (LV.userPlay = {}),
+    fresh = !all[t],
+    u = all[t] || (all[t] = { held: 0, last: TR.tick });
+  u.last = TR.tick;
+  u.held = Math.max(0, u.held + (on ? 1 : -1));
+  if (!fresh) return;
+  /* every effect the app has moving on this track goes back to rest, so you play it clean */
+  const nt = AU.ctx ? AU.ctx.currentTime : 0,
+    ccs = new Set([11]);
+  LV.autos.forEach(a => a.tracks.includes(t) && ccs.add(a.cc));
+  if (LV.rise) [80].forEach(c => ccs.add(c));
+  if (S.sendCC !== false && !S.tracks[t].mute)
+    ccs.forEach(cc => {
+      const v = lvRestCC(t, cc);
+      LV.ccLast[t + ':' + cc] = v;
+      sendMidi([0xb0 | (S.tracks[t].ch - 1), cc, v], nt);
+    });
+  if (LV.low) delete LV.low[t];
+  if (LV.fadeEnds) LV.fadeEnds = LV.fadeEnds.filter(e => e.t !== t);
+  LV.ver++;
+  toast('You have ' + S.tracks[t].name + ': the app hands it back 4 bars after you stop');
+}
 export function lvSendCC(t, cc, v, nt) {
+  if (lvUserOwns(t)) return;
   v = clamp(Math.round(v), 0, 127);
   const k = t + ':' + cc;
   if (LV.ccLast[k] === v) return;

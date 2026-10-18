@@ -12,7 +12,7 @@ import { MIDI, sendMidi } from '../services/midi.js';
 import { REC, TR } from '../services/transport.js';
 import { LV, NOTEN, mkEnv, noteLbl, saveLive } from './state.js';
 import { actLabel, lvNow } from './themes.js';
-import { lvSendCC } from './moves.js';
+import { lvSendCC, lvUserNote } from './moves.js';
 import { liveBreak } from './breaks.js';
 import { liveStart, liveStop, lvTarget } from './engine.js';
 import {
@@ -207,6 +207,7 @@ function ctlSolo(n, v, on) {
     if (c.soloSnap) nn = ctlSnap(nn);
     if (CTL.held[n] != null) sendMidi([0x80 | (tr.ch - 1), CTL.held[n], 0], now);
     CTL.held[n] = { nn, t, ch: tr.ch };
+    lvUserNote(t, true);
     if (MIDI.out) sendMidi([0x90 | (tr.ch - 1), nn, v], now);
     if (typeof vizNote === 'function' && TR.mode === 'live') vizNote(t, nn, v, now, 0.25);
     if (S.preview) voice(t, nn, now, 0.35, v);
@@ -215,6 +216,7 @@ function ctlSolo(n, v, on) {
     const h = CTL.held[n];
     if (!h) return;
     delete CTL.held[n];
+    lvUserNote(h.t, false);
     if (MIDI.out) sendMidi([0x80 | (h.ch - 1), h.nn, 0], now);
   }
 }
