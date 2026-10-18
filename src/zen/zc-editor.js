@@ -9,8 +9,9 @@ import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
+import { TR } from '../services/transport.js';
 import { ZX, slotAddr, trackSetAddr, zxConnect, zxNote, zxRead } from './zc-sysex.js';
-import { newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
+import { MFX_PARAMS, newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
 import { mfxDefaults } from './zc-mfx.js';
 import {
@@ -91,6 +92,8 @@ function screenNudge() {
   clearTimeout(nudgeT);
   nudgeT = setTimeout(() => {
     if (!$('#zcOv') || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
+    /* never switch the clip under a held note: wait until the keys are let go */
+    if (HELD.size) return screenNudge();
     const ch = (S.tracks[ZE.t] && S.tracks[ZE.t].ch) || ZE.t + 1;
     try {
       ZX.out.send([0xc0 | (ch - 1), ZE.k]);
@@ -124,7 +127,8 @@ export function zeUndo(redo) {
   const step = from.pop();
   if (!step) return;
   to.push(Object.fromEntries(Object.keys(step).map(k => [k, ZE.snd.v[k]])));
-  for (const k in step) setVal(ZE.snd, k, step[k], sending() ? zeBase() : null);
+  for (const k in step) setVal(ZE.snd, k, step[k], null);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(Object.keys(step)));
   remember();
   zeRender();
 }
@@ -144,21 +148,18 @@ export function zeLoad(snd, why) {
   if (why) toast(why + (sending() ? ' and sent to the ' + DEVS[DEV].name : ''));
 }
 function mfxType(type) {
-  apply('MFX.mfxType', type);
-  /* the MC-707 resets the parameters for the new type: show sensible values until they are read back */
-  const d = mfxDefaults(type);
-  for (let i = 0; i < 32; i++) {
-    ZE.snd.v['MFX.param_' + (i + 1)] = d[i];
-    ZE.snd.known.delete('MFX.param_' + (i + 1));
-  }
+  /* the type and the new effect's starting values, as one undo step; sendSound sends the settings once
+     the MC-707 has finished resetting them for the new type */
+  const keys = ['MFX.mfxType', ...MFX_PARAMS],
+    d = mfxDefaults(type);
+  keys.forEach((k, i) => {
+    if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
+    ZE.snd.v[k] = i ? d[i - 1] : type;
+    ZE.snd.known.add(k);
+  });
   commit();
   zeRender();
-  if (sending())
-    setTimeout(async () => {
-      const keys = new Set(Array.from({ length: 32 }, (_, i) => 'MFX.param_' + (i + 1)));
-      await readSound(ZE.snd, zeBase(), keys);
-      zeRender();
-    }, 250);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys)).then(() => $('#zcOv') && zeRender());
 }
 
 /* ---- reading from the MC-707 ---- */
@@ -238,12 +239,18 @@ export function zenClose() {
   const o = $('#zcOv');
   if (o) o.remove();
   removeEventListener('keydown', keys, true);
-  /* all notes off on the track the editor played */
-  const ch = (S.tracks[ZE.t] && S.tracks[ZE.t].ch) || ZE.t + 1,
-    off = [0xb0 | (ch - 1), 123, 0];
+  /* release every note the editor started, then Hold, All Notes Off and, when nothing is playing,
+     All Sound Off, so no tone or tail carries on after closing */
+  const ch = (S.tracks[ZE.t] && S.tracks[ZE.t].ch) || ZE.t + 1;
   try {
-    if (ZX.out) ZX.out.send(off);
-    else if (MIDI.out) MIDI.out.send(off);
+    for (const [c, b] of HELD.values()) noteOut(c, b, false);
+    HELD.clear();
+    const out = ZX.out || MIDI.out;
+    if (out) {
+      out.send([0xb0 | (ch - 1), 64, 0]);
+      out.send([0xb0 | (ch - 1), 123, 0]);
+      if (!TR.playing) out.send([0xb0 | (ch - 1), 120, 0]);
+    }
   } catch (e) {}
   if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
   ZX.onState = null;
@@ -292,11 +299,18 @@ function ctx() {
     audition
   };
 }
+/* notes the editor's keyboard is holding: [channel, note] by 'ch:note' */
+const HELD = new Map();
+const noteOut = (ch, b, on) => {
+  if (ZX.out) zxNote(ch, b, on);
+  else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
+};
 function audition(n) {
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
   const send = (b, on) => {
-    if (ZX.out) zxNote(ch, b, on);
-    else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
+    noteOut(ch, b, on);
+    if (on) HELD.set(ch + ':' + b, [ch, b]);
+    else HELD.delete(ch + ':' + b);
   };
   send(n, true);
   /* release on pointer up, a cancelled touch or the window losing focus, so no note is left hanging */

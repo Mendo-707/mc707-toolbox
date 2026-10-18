@@ -40043,12 +40043,47 @@ input[type='number'] {
     }
     return out;
   }
-  function sendSound(snd, base, keys2) {
+  function writeRuns(snd, base, keys2) {
     for (const r of runs(snd.kind, keys2)) {
       const data = [];
       for (const [k, p] of r.items) data.push(...encode(p, snd.v[k]));
       zxWrite(base + r.start, data);
     }
+  }
+  var MFX_TYPE = "MFX.mfxType";
+  var MFX_PARAMS = Array.from({ length: 32 }, (_, i) => "MFX.param_" + (i + 1));
+  var MFX_RESET_MS = 300;
+  var pause2 = (ms) => new Promise((r) => setTimeout(r, ms));
+  var mfxJob = /* @__PURE__ */ new Map();
+  async function mfxAfterReset(snd, base, ks) {
+    const job = (mfxJob.get(base) || 0) + 1;
+    mfxJob.set(base, job);
+    for (let tryN = 0; tryN < 2; tryN++) {
+      await zxFlush();
+      await pause2(MFX_RESET_MS);
+      if (job !== mfxJob.get(base)) return;
+      writeRuns(snd, base, new Set(ks));
+      const copy = { kind: snd.kind, v: { ...snd.v }, known: /* @__PURE__ */ new Set() };
+      const r = await readSound(copy, base, new Set(ks));
+      if (job !== mfxJob.get(base)) return;
+      if (!r.ok || ks.every((k) => copy.v[k] === snd.v[k])) return;
+    }
+  }
+  function sendSound(snd, base, keys2) {
+    const has2 = (k) => !keys2 || keys2.has(k);
+    if (!has2(MFX_TYPE)) {
+      writeRuns(snd, base, keys2);
+      return Promise.resolve();
+    }
+    const later = MFX_PARAMS.filter(has2);
+    writeRuns(
+      snd,
+      base,
+      new Set(
+        allParams(snd.kind).map((x) => x[0]).filter((k) => has2(k) && !later.includes(k))
+      )
+    );
+    return later.length ? mfxAfterReset(snd, base, later) : Promise.resolve();
   }
   async function readSound(snd, base, keys2, progress) {
     const rs = runs(snd.kind, keys2);
@@ -43773,6 +43808,7 @@ input[type='number'] {
     clearTimeout(nudgeT);
     nudgeT = setTimeout(() => {
       if (!$("#zcOv") || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
+      if (HELD.size) return screenNudge();
       const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
       try {
         ZX.out.send([192 | ch - 1, ZE.k]);
@@ -43803,7 +43839,8 @@ input[type='number'] {
     const step = from.pop();
     if (!step) return;
     to.push(Object.fromEntries(Object.keys(step).map((k) => [k, ZE.snd.v[k]])));
-    for (const k in step) setVal(ZE.snd, k, step[k], sending() ? zeBase() : null);
+    for (const k in step) setVal(ZE.snd, k, step[k], null);
+    if (sending()) sendSound(ZE.snd, zeBase(), new Set(Object.keys(step)));
     remember();
     zeRender();
   }
@@ -43822,20 +43859,15 @@ input[type='number'] {
     if (why) toast(why + (sending() ? " and sent to the " + DEVS[DEV].name : ""));
   }
   function mfxType(type) {
-    apply("MFX.mfxType", type);
-    const d = mfxDefaults(type);
-    for (let i = 0; i < 32; i++) {
-      ZE.snd.v["MFX.param_" + (i + 1)] = d[i];
-      ZE.snd.known.delete("MFX.param_" + (i + 1));
-    }
+    const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = mfxDefaults(type);
+    keys2.forEach((k, i) => {
+      if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
+      ZE.snd.v[k] = i ? d[i - 1] : type;
+      ZE.snd.known.add(k);
+    });
     commit();
     zeRender();
-    if (sending())
-      setTimeout(async () => {
-        const keys2 = new Set(Array.from({ length: 32 }, (_, i) => "MFX.param_" + (i + 1)));
-        await readSound(ZE.snd, zeBase(), keys2);
-        zeRender();
-      }, 250);
+    if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys2)).then(() => $("#zcOv") && zeRender());
   }
   async function zeRead() {
     if (!await zxConnect()) return status();
@@ -43899,10 +43931,16 @@ input[type='number'] {
     const o = $("#zcOv");
     if (o) o.remove();
     removeEventListener("keydown", keys, true);
-    const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1, off = [176 | ch - 1, 123, 0];
+    const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
     try {
-      if (ZX.out) ZX.out.send(off);
-      else if (MIDI.out) MIDI.out.send(off);
+      for (const [c, b] of HELD.values()) noteOut(c, b, false);
+      HELD.clear();
+      const out = ZX.out || MIDI.out;
+      if (out) {
+        out.send([176 | ch - 1, 64, 0]);
+        out.send([176 | ch - 1, 123, 0]);
+        if (!TR.playing) out.send([176 | ch - 1, 120, 0]);
+      }
     } catch (e) {
     }
     if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
@@ -43948,11 +43986,17 @@ input[type='number'] {
       audition: audition2
     };
   }
+  var HELD = /* @__PURE__ */ new Map();
+  var noteOut = (ch, b, on2) => {
+    if (ZX.out) zxNote(ch, b, on2);
+    else if (MIDI.out) MIDI.out.send(on2 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+  };
   function audition2(n) {
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
     const send = (b, on2) => {
-      if (ZX.out) zxNote(ch, b, on2);
-      else if (MIDI.out) MIDI.out.send(on2 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+      noteOut(ch, b, on2);
+      if (on2) HELD.set(ch + ":" + b, [ch, b]);
+      else HELD.delete(ch + ":" + b);
     };
     send(n, true);
     const up = () => {

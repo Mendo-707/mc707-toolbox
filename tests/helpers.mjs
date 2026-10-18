@@ -38,7 +38,7 @@ window.__out=[];
   const reply=b=>{
     if(b[0]!==0xf0||b[1]!==0x41)return;
     const l=lin(b.slice(8,12));
-    if(b[7]===0x12){b.slice(12,b.length-2).forEach((x,i)=>mem.set(l+i,x));return;}
+    if(b[7]===0x12){b.slice(12,b.length-2).forEach((x,i)=>mem.set(l+i,x));if(window.__onDT1)window.__onDT1(l,b.slice(12,b.length-2));return;}
     if(b[7]!==0x11||window.__zcMute)return;
     const n=lin(b.slice(12,16)),data=[];
     for(let i=0;i<n;i++){if(!mem.has(l+i))return;data.push(mem.get(l+i));}
