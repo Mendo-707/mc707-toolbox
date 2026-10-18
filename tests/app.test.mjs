@@ -394,6 +394,49 @@ test('ZenCore editor reads a whole tone from an MC-707 that splits replies and s
   assert.deepEqual(errors, []);
 });
 
+test('ZenCore effects: settings survive the MC-707 resetting them after a type change', async () => {
+  const { page, errors } = await openApp();
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 30000
+    });
+  /* like a real MC-707: 150 ms after the MFX type is written, its 32 settings are set to 0 */
+  await page.evaluate(() => {
+    const lin = a => (a[0] << 21) | (a[1] << 14) | (a[2] << 7) | a[3];
+    const mfx = lin([0x30, 0x66, 0x01, 0x00]);
+    window.__onDT1 = l => {
+      if (l !== mfx) return;
+      setTimeout(() => {
+        for (let i = 0; i < 32; i++) [8, 0, 0, 0].forEach((x, j) => window.__zcMem.set(mfx + 16 + i * 4 + j, x));
+      }, 150);
+    };
+    window.__slot = n => {
+      const b = [0, 1, 2, 3].map(j => window.__zcMem.get(mfx + 16 + (n - 1) * 4 + j));
+      return ((b[0] << 12) | (b[1] << 8) | (b[2] << 4) | b[3]) - 32768;
+    };
+  });
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await idle();
+  await page.locator('.zcTab', { hasText: 'MFX' }).click();
+  /* Enhancer (7): Sens, Mix, Low Gain, High Gain, Level */
+  await page.selectOption('.zcG select', '7');
+  await page.waitForTimeout(1500);
+  assert.deepEqual(
+    await page.evaluate(() => [1, 2, 3, 4, 5].map(window.__slot)),
+    [64, 64, 0, 0, 127],
+    'the MC-707 ends up with the starting values'
+  );
+  const lvl = await page.evaluate(() =>
+    [...document.querySelectorAll('.zcC')].find(c => /^Level/.test(c.textContent)).textContent.replace(/\s+/g, '')
+  );
+  assert.equal(lvl, 'Level127');
+  /* undo goes back to the previous type and its settings, also after the reset */
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(1500);
+  assert.equal(await page.evaluate(() => window.__app.zen.ZE.snd.v['MFX.mfxType']), 0);
+  assert.deepEqual(errors, []);
+});
+
 test('ZenCore editor on the MC-101: its own track numbers, model byte, and it learns the byte that answers', async () => {
   const { page, errors } = await openApp({ storage: { 'mc-device': '101' } });
   const hex = b => b.map(x => x.toString(16).padStart(2, '0')).join(' ');

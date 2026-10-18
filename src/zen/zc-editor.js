@@ -11,7 +11,7 @@ import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR } from '../services/transport.js';
 import { ZX, slotAddr, trackSetAddr, zxConnect, zxNote, zxRead } from './zc-sysex.js';
-import { newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
+import { MFX_PARAMS, newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
 import { mfxDefaults } from './zc-mfx.js';
 import {
@@ -127,7 +127,8 @@ export function zeUndo(redo) {
   const step = from.pop();
   if (!step) return;
   to.push(Object.fromEntries(Object.keys(step).map(k => [k, ZE.snd.v[k]])));
-  for (const k in step) setVal(ZE.snd, k, step[k], sending() ? zeBase() : null);
+  for (const k in step) setVal(ZE.snd, k, step[k], null);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(Object.keys(step)));
   remember();
   zeRender();
 }
@@ -147,20 +148,18 @@ export function zeLoad(snd, why) {
   if (why) toast(why + (sending() ? ' and sent to the ' + DEVS[DEV].name : ''));
 }
 function mfxType(type) {
-  apply('MFX.mfxType', type);
-  /* Changing the type over MIDI does not reset the effect's settings on the MC-707 (its own screen does):
-     the 32 slots keep the old effect's numbers, so a Level slot can be left near 0 and the effect goes
-     quiet. So the editor sets the new type's starting values itself, like the MC-707's screen. */
-  const d = mfxDefaults(type);
-  for (let i = 0; i < 32; i++) apply('MFX.param_' + (i + 1), d[i]);
+  /* the type and the new effect's starting values, as one undo step; sendSound sends the settings once
+     the MC-707 has finished resetting them for the new type */
+  const keys = ['MFX.mfxType', ...MFX_PARAMS],
+    d = mfxDefaults(type);
+  keys.forEach((k, i) => {
+    if (!(k in ZE.pend)) ZE.pend[k] = ZE.snd.v[k];
+    ZE.snd.v[k] = i ? d[i - 1] : type;
+    ZE.snd.known.add(k);
+  });
   commit();
   zeRender();
-  if (sending())
-    setTimeout(async () => {
-      const keys = new Set(Array.from({ length: 32 }, (_, i) => 'MFX.param_' + (i + 1)));
-      await readSound(ZE.snd, zeBase(), keys);
-      zeRender();
-    }, 250);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys)).then(() => $('#zcOv') && zeRender());
 }
 
 /* ---- reading from the MC-707 ---- */

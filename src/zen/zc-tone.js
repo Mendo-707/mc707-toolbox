@@ -4,7 +4,7 @@
 //
 // Reads: ZC_BLOCKS.
 import { ZC_BLOCKS } from './zc-data.js';
-import { zxRead, zxWrite } from './zc-sysex.js';
+import { zxFlush, zxRead, zxWrite } from './zc-sysex.js';
 
 /* Each sound is made of blocks: [key, block, offset from the slot (linear bytes), count, stride]. */
 const L = n => ((n >> 8) << 7) | (n & 0x7f); /* packed 2-byte offset (0x2000) to linear */
@@ -114,13 +114,59 @@ export function runs(kind, keys) {
   }
   return out;
 }
-/** Send the whole sound (or the keys given) to the slot. */
-export function sendSound(snd, base, keys) {
+function writeRuns(snd, base, keys) {
   for (const r of runs(snd.kind, keys)) {
     const data = [];
     for (const [k, p] of r.items) data.push(...encode(p, snd.v[k]));
     zxWrite(base + r.start, data);
   }
+}
+/* The MC-707 resets an effect's 32 settings to 0 shortly AFTER its type changes over MIDI (seen on a real
+   unit), wiping settings sent with the type. So when the type is sent, the settings follow once the
+   reset is done, and are read back and sent once more if they did not stick. */
+const MFX_TYPE = 'MFX.mfxType';
+export const MFX_PARAMS = Array.from({ length: 32 }, (_, i) => 'MFX.param_' + (i + 1));
+export const MFX_RESET_MS = 300;
+const pause = ms => new Promise(r => setTimeout(r, ms));
+/* the latest pending job per slot address: a newer send to the same clip replaces an older one */
+const mfxJob = new Map();
+async function mfxAfterReset(snd, base, ks) {
+  const job = (mfxJob.get(base) || 0) + 1;
+  mfxJob.set(base, job);
+  for (let tryN = 0; tryN < 2; tryN++) {
+    await zxFlush();
+    await pause(MFX_RESET_MS);
+    if (job !== mfxJob.get(base)) return;
+    writeRuns(snd, base, new Set(ks));
+    /* read them back into a copy, and compare */
+    const copy = { kind: snd.kind, v: { ...snd.v }, known: new Set() };
+    const r = await readSound(copy, base, new Set(ks));
+    if (job !== mfxJob.get(base)) return;
+    if (!r.ok || ks.every(k => copy.v[k] === snd.v[k])) return;
+  }
+}
+/**
+ * Send the whole sound (or the keys given) to the slot. When the effect type is among them, the 32
+ * effect settings go a moment later (see above). Resolves when everything has been sent and checked.
+ * @returns {Promise<void>}
+ */
+export function sendSound(snd, base, keys) {
+  const has = k => !keys || keys.has(k);
+  if (!has(MFX_TYPE)) {
+    writeRuns(snd, base, keys);
+    return Promise.resolve();
+  }
+  const later = MFX_PARAMS.filter(has);
+  writeRuns(
+    snd,
+    base,
+    new Set(
+      allParams(snd.kind)
+        .map(x => x[0])
+        .filter(k => has(k) && !later.includes(k))
+    )
+  );
+  return later.length ? mfxAfterReset(snd, base, later) : Promise.resolve();
 }
 /**
  * Read the sound (or the keys given) from the slot. Values that read cleanly replace the sound's;
