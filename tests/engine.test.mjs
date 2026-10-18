@@ -234,7 +234,8 @@ test('Live fades ramp each track down and always leave it back at full level', a
   const { page, errors } = await openApp();
   const r = await page.evaluate(async () => {
     const a = window.__app,
-      LV = a.LV;
+      LV = a.LV,
+      S = a.S;
     a.ensureAudio();
     await a.connectMidi();
     Object.assign(LV, { style: 'liquid', seed: 5, custom: false, auto: true, vary: 60, entry: 'long', buildFx: false });
@@ -249,10 +250,19 @@ test('Live fades ramp each track down and always leave it back at full level', a
         a.advance();
       }
     };
-    step(32 * 16);
+    const fadedT = new Set(),
+      watch = n => {
+        const end = a.TR.tick + n;
+        while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+          a.processTick(a.TR.tick, a.TR.nextTime);
+          (LV.autos || []).forEach(m => m.tag === 'fade' && m.tracks.forEach(t => fadedT.add(S.tracks[t].ch)));
+          a.advance();
+        }
+      };
+    watch(32 * 16);
     for (let i = 1; i < 4; i++) {
       a.liveScene(i, a.TR.tick);
-      step(32 * 8);
+      watch(32 * 8);
     }
     LV.cues.push({ type: 'stop', tick: a.TR.tick + 32 });
     LV.cues.sort((x, y) => x.tick - y.tick);
@@ -263,15 +273,63 @@ test('Live fades ramp each track down and always leave it back at full level', a
       if ((b[0] & 0xf0) === 0xb0 && b[1] === 11) (ex[(b[0] & 15) + 1] = ex[(b[0] & 15) + 1] || []).push(b[2]);
     });
     return {
-      tracks: Object.keys(ex).length,
-      wentDown: Object.values(ex).every(v => Math.min(...v) < 20),
+      tracks: fadedT.size,
+      wentDown: [...fadedT].every(ch => ex[ch] && Math.min(...ex[ch]) < 20),
       endFull: Object.values(ex).every(v => v[v.length - 1] === 127),
       left: Object.keys(LV.low || {}).length
     };
   });
-  assert.ok(r.tracks >= 3, 'fades reach several tracks');
+  assert.ok(r.tracks >= 1, 'pads and chords fade');
   assert.ok(r.wentDown, 'each fade goes down');
   assert.ok(r.endFull, 'every track ends at full level');
   assert.equal(r.left, 0);
+  assert.deepEqual(errors, []);
+});
+
+test('fills end on the downbeat they lead into; bass and melodies never fade, pads still do', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV,
+      S = a.S;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.assign(LV, {
+      style: 'liquid',
+      seed: 5,
+      custom: false,
+      auto: true,
+      vary: 100,
+      entry: 'long',
+      buildFx: false
+    });
+    a.liveBuild();
+    window.__out.length = 0;
+    a.liveStart(0);
+    a.TICKER.stop();
+    const fills = [],
+      scenes = [];
+    let lastFill = null;
+    const fadedT = new Set(),
+      end = a.TR.tick + 32 * 64;
+    while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+      a.processTick(a.TR.tick, a.TR.nextTime);
+      if (LV.fill && LV.fill !== lastFill) fills.push([LV.fill.start, LV.fill.end]);
+      lastFill = LV.fill;
+      if (scenes[scenes.length - 1] !== LV.sceneStart) scenes.push(LV.sceneStart);
+      (LV.autos || []).forEach(m => m.tag === 'fade' && m.tracks.forEach(t => fadedT.add(t)));
+      a.advance();
+    }
+    a.stopAll();
+    const faded = [...fadedT].map(t => (S.tracks[t].type === 'tone' ? a.lvFadeKind(t) : 'drum'));
+    return { fills, faded };
+  });
+  assert.ok(r.fills.length >= 2, 'some fills played');
+  for (const [s, e] of r.fills) {
+    assert.equal(e - s, 32, 'a fill lasts one bar');
+    assert.equal(e % 32, 0, 'and ends on a bar line');
+  }
+  assert.ok(!r.faded.includes('cut'), 'bass and melodies are never faded');
+  assert.ok(r.faded.includes('pad') || r.faded.includes('chords'), 'pads and chords still fade');
   assert.deepEqual(errors, []);
 });

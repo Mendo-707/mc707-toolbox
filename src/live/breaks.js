@@ -90,8 +90,11 @@ export function liveBreak(kind) {
     toast('A break is already playing');
     return;
   }
+  /* it lands on the next bar line (a 2-bar break on the next even bar of the phrase) */
   const len = LV.brkLen || 32,
-    end = Math.ceil((TR.tick + 2 + len) / 32) * 32;
+    U = Math.max(32, len),
+    base = LV.sceneStart || 0,
+    end = base + Math.ceil((TR.tick + 2 + len - base) / U) * U;
   lvQueueBreak(lvMakeBreak(kind || LV.brkStyle, len), end - len);
 }
 function lvQueueBreak(b, tick) {

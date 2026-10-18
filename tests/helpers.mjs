@@ -91,7 +91,10 @@ export async function closeBrowser() {
 const OPEN = [];
 export async function openApp(o = {}) {
   const b = await launch();
-  while (OPEN.length) await OPEN.pop().close().catch(() => {});
+  while (OPEN.length)
+    await OPEN.pop()
+      .close()
+      .catch(() => {});
   const ctx = await b.newContext({
     viewport: o.viewport || { width: 1400, height: 950 },
     deviceScaleFactor: o.scale || 1

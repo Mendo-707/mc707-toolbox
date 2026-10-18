@@ -71,10 +71,20 @@ export function lvLog(tick) {
   if (LV.log.length > 600) LV.log.shift();
 }
 /**
+ * How a tone part on track t comes and goes at a change: 'pad' fades over the whole Entry time,
+ * 'chords' fade briefly, and 'cut' parts (bass, leads, plucks, arps) never fade: they land on the
+ * downbeat and stop at the change, letting the notes already playing ring out on their own.
+ */
+export function lvFadeKind(t) {
+  const s = slotOf(t);
+  return s === 5 ? 'pad' : s === 4 ? 'chords' : 'cut';
+}
+/**
  * Put pattern `id` on track t from `tick`. One track is one MC-707 part, so the old pattern stops
  * where the new one starts (two patterns on one track sound like a mistake). A tone part that shares
  * the progression already playing starts in step with it. `entry` fades it in over that many ticks
- * (pads take the whole fade; other parts at most a quarter bar so they still land on the beat).
+ * (pads take the whole fade, chords at most a quarter bar (a bar on the long settings), drums a
+ * quarter bar, and bass and melodies none, so they land on the beat with their full attack).
  */
 export function liveReplace(t, id, tick, fade, entry) {
   const f = facById(id);
@@ -82,8 +92,15 @@ export function liveReplace(t, id, tick, fade, entry) {
   const was = LV.voices[t].some(v => v.env.v1 > 0),
     tone = S.tracks[t].type === 'tone';
   LV.voices[t] = [];
-  /* pads take the whole fade, and so does every tone part on the slow and long settings */
-  const ent = slotOf(t) === 5 || (tone && entry >= 64) ? entry : Math.min(entry, 8);
+  const kind = tone ? lvFadeKind(t) : 'drum',
+    ent =
+      kind === 'pad'
+        ? entry
+        : kind === 'chords'
+          ? Math.min(entry, entry >= 64 ? 32 : 8)
+          : kind === 'cut'
+            ? 0
+            : Math.min(entry, 8);
   LV.voices[t].push({
     f,
     start: lvAnchorStart(t, f, tick),
@@ -214,11 +231,12 @@ export function liveScene(idx, tick, hard) {
     lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
     if (!cell) {
       const clash = top && newProg && lvProg(top.f) && lvProg(top.f) !== newProg;
-      if (tone && toneFade > 0)
+      const kind = tone ? lvFadeKind(t) : 'drum';
+      /* pads may linger over the change and chords thin out briefly; bass and melodies simply stop on the change */
+      if (tone && toneFade > 0 && kind !== 'cut')
         LV.voices[t].forEach(v => {
-          /* pads may linger over the change; a melody that is leaving gets out of the way within a beat or two */
           if (v.env.v1 > 0) {
-            const d = clash ? 4 : slotOf(t) === 5 || toneFade >= 64 ? toneFade : Math.min(toneFade, 12);
+            const d = clash ? 4 : kind === 'pad' ? toneFade : Math.min(toneFade, toneFade >= 64 ? 32 : 12);
             v.env = mkEnv(envAt(v.env, tick), 0, tick, d);
             lvFadeOut(t, tick, d);
           }
@@ -301,8 +319,11 @@ function liveFire(c, tick) {
   } else if (c.type === 'guestOut') {
     const v = lvTop(c.t);
     if (v && v.f.id === c.id) {
-      v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
-      lvFadeOut(c.t, tick, 32);
+      /* a guest melody stops at the end of its phrase; a guest pad fades */
+      if (lvFadeKind(c.t) === 'pad') {
+        v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+        lvFadeOut(c.t, tick, 32);
+      } else LV.voices[c.t] = [];
       lvHistMark(tick);
       lvLog(tick);
     }
@@ -312,8 +333,11 @@ function liveFire(c, tick) {
         liveReplace(+t, c.ids[t], tick, S.tracks[+t].type === 'tone' ? 16 : 0, S.tracks[+t].type === 'tone' ? 16 : 0);
     lvHistMark(tick);
     lvLog(tick);
-  } else if (c.type === 'fill') LV.fill = { f: c.f, start: tick, end: tick + Math.min(c.f.bars, 2) * 32 };
-  else if (c.type === 'mute') {
+  } else if (c.type === 'fill') {
+    /* a fill always ends on its boundary (the downbeat it leads into) and plays the end of the fill pattern */
+    const end = c.end != null && c.end > tick ? c.end : tick + 32;
+    LV.fill = { f: c.f, start: tick, end, org: end - c.f.bars * 32 };
+  } else if (c.type === 'mute') {
     c.tracks.forEach(t => {
       LV.mute[t] = c.on;
     });
@@ -340,8 +364,12 @@ function liveFire(c, tick) {
     if (c.mode) LV.mode = c.mode;
     lvLog(tick);
   } else if (c.type === 'stop') {
-    /* fade everything out over 2 bars, then stop */
+    /* bass and melodies finish with the phrase; drums, chords and pads fade out over 2 bars, then stop */
     for (let t = 0; t < 8; t++) {
+      if (S.tracks[t].type === 'tone' && lvFadeKind(t) === 'cut') {
+        LV.voices[t] = [];
+        continue;
+      }
       let fading = false;
       LV.voices[t].forEach(v => {
         if (v.env.v1 > 0) {
@@ -403,20 +431,22 @@ function liveAutoStep(tick, rel) {
     LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined });
     if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
       const f = facById(lvRand(LV.fillIds));
-      if (f) LV.cues.push({ type: 'fill', tick: fire - 32, f, auto: true });
+      if (f) LV.cues.push({ type: 'fill', tick: fire - 32, end: fire, f, auto: true });
     }
     lvSortCues();
     LV.ver++;
   } else if (rel > 0 && rel % loop === 0 && rel < total - 64 && Math.random() < (LV.chaos / 100) * 0.6) {
-    if (Math.random() < 0.3 && lvAutoFlash(tick + loop)) LV.ver++;
+    /* everything lands on the end of this loop: a break or fill leads into the next pass, a swap starts with it */
+    const nxt = tick + loop;
+    if (Math.random() < 0.3 && lvAutoFlash(nxt)) LV.ver++;
     else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
       const f = facById(lvRand(LV.fillIds));
       if (f) {
-        LV.cues.push({ type: 'fill', tick: tick + 32, f });
+        LV.cues.push({ type: 'fill', tick: nxt - 32, end: nxt, f });
         lvSortCues();
         LV.ver++;
       }
-    } else lvSwapCue(lvRand(['drums', 'bass', 'chords', 'lead', 'perc']), tick + 32);
+    } else if (nxt < LV.sceneStart + total) lvSwapCue(lvRand(['drums', 'bass', 'chords', 'lead', 'perc']), nxt);
   }
 }
 /* turn a note from a minor-family pattern into major (or the reverse), relative to the current key */
@@ -569,7 +599,8 @@ export function liveTick(tick, nt, td) {
     }
     if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
       const f = LV.fill.f,
-        evs = patIndex(f).get((ft - LV.fill.start + f.bars * 32 * 8) % (f.bars * 32));
+        L = f.bars * 32,
+        evs = patIndex(f).get((((ft - LV.fill.org) % L) + L) % L);
       if (evs) {
         for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
         LV.pulse[0] = { time: nt, v: 1 };

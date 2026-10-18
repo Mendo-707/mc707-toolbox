@@ -58,7 +58,7 @@ export function liveVaryStep(tick, rel) {
   ) {
     const f = facById(lvRand(LV.fillIds));
     if (f) {
-      LV.cues.push({ type: 'fill', tick: end - 32, f, auto: true });
+      LV.cues.push({ type: 'fill', tick: end - 32, end, f, auto: true });
       fill = true;
       did++;
     }
@@ -81,7 +81,10 @@ export function liveVaryStep(tick, rel) {
       const t = lvRand(empty),
         id = lvRand(lvFitIds(t, liveSwapIds(t), null, slotOf(t) === 6));
       if (id) {
-        LV.cues.push({ type: 'guest', t, id, tick: end }, { type: 'guestOut', t, id, tick: end + U });
+        /* it stays for at least one whole pass of its own pattern, and leaves on a phrase line */
+        const gf = facById(id),
+          stay = Math.ceil(Math.max(U, (gf ? gf.bars : 1) * 32) / U) * U;
+        LV.cues.push({ type: 'guest', t, id, tick: end }, { type: 'guestOut', t, id, tick: end + stay });
         did++;
       }
     }
@@ -110,7 +113,7 @@ function lvAutoFill(sc, nx, tick) {
     newKit = nx.cells[k] && sc.cells[k] && nx.cells[k].id !== sc.cells[k].id;
   if (LV.fills && sc.cells[k] && nx.cells[k] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
     const f = facById(lvRand(LV.fillIds));
-    if (f) LV.cues.push({ type: 'fill', tick: tick - 32, f, auto: true });
+    if (f) LV.cues.push({ type: 'fill', tick: tick - 32, end: tick, f, auto: true });
   }
 }
 export function liveCue(idx) {
@@ -209,7 +212,8 @@ export function liveFillNow() {
   }
   const f = facById(lvRand(LV.fillIds));
   LV.cues = LV.cues.filter(c => !(c.type === 'fill' && !c.auto));
-  LV.cues.push({ type: 'fill', tick: lvBoundary(1), f });
+  const at = lvBoundary(1);
+  LV.cues.push({ type: 'fill', tick: at, end: at + 32, f });
   lvSortCues();
   LV.ver++;
 }
@@ -376,7 +380,7 @@ export function liveBpm(d) {
 
 /**
  * New patterns while playing: from the next bar the tone parts drop out and the drums carry on; the
- * new set's drums take over halfway, and its first scene comes in after 2 to 6 bars.
+ * new set's drums take over halfway, and its first scene comes in after 2 or 4 bars (on a phrase line).
  */
 export function lvBlendIn() {
   LV.jam = null;
@@ -386,7 +390,7 @@ export function lvBlendIn() {
       !(c.type === 'fill' && c.auto)
   );
   const t0 = lvBoundary(1),
-    bars = 2 + Math.floor(Math.random() * 5),
+    bars = Math.random() < 0.5 ? 2 : 4,
     end = t0 + bars * 32;
   LV.cues.push({ type: 'blend', tick: t0 });
   LV.cues.push({ type: 'blendDrums', tick: t0 + Math.max(1, Math.floor(bars / 2)) * 32 });

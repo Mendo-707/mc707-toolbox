@@ -28714,12 +28714,16 @@ input[type='number'] {
     });
     if (LV.log.length > 600) LV.log.shift();
   }
+  function lvFadeKind(t) {
+    const s = slotOf(t);
+    return s === 5 ? "pad" : s === 4 ? "chords" : "cut";
+  }
   function liveReplace(t, id, tick, fade, entry) {
     const f = facById(id);
     if (!f) return;
     const was = LV.voices[t].some((v) => v.env.v1 > 0), tone2 = S.tracks[t].type === "tone";
     LV.voices[t] = [];
-    const ent = slotOf(t) === 5 || tone2 && entry >= 64 ? entry : Math.min(entry, 8);
+    const kind = tone2 ? lvFadeKind(t) : "drum", ent = kind === "pad" ? entry : kind === "chords" ? Math.min(entry, entry >= 64 ? 32 : 8) : kind === "cut" ? 0 : Math.min(entry, 8);
     LV.voices[t].push({
       f,
       start: lvAnchorStart(t, f, tick),
@@ -28823,10 +28827,11 @@ input[type='number'] {
       lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
       if (!cell) {
         const clash = top && newProg && lvProg(top.f) && lvProg(top.f) !== newProg;
-        if (tone2 && toneFade > 0)
+        const kind = tone2 ? lvFadeKind(t) : "drum";
+        if (tone2 && toneFade > 0 && kind !== "cut")
           LV.voices[t].forEach((v) => {
             if (v.env.v1 > 0) {
-              const d = clash ? 4 : slotOf(t) === 5 || toneFade >= 64 ? toneFade : Math.min(toneFade, 12);
+              const d = clash ? 4 : kind === "pad" ? toneFade : Math.min(toneFade, toneFade >= 64 ? 32 : 12);
               v.env = mkEnv(envAt(v.env, tick), 0, tick, d);
               lvFadeOut(t, tick, d);
             }
@@ -28906,8 +28911,10 @@ input[type='number'] {
     } else if (c.type === "guestOut") {
       const v = lvTop(c.t);
       if (v && v.f.id === c.id) {
-        v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
-        lvFadeOut(c.t, tick, 32);
+        if (lvFadeKind(c.t) === "pad") {
+          v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+          lvFadeOut(c.t, tick, 32);
+        } else LV.voices[c.t] = [];
         lvHistMark(tick);
         lvLog(tick);
       }
@@ -28917,8 +28924,10 @@ input[type='number'] {
           liveReplace(+t, c.ids[t], tick, S.tracks[+t].type === "tone" ? 16 : 0, S.tracks[+t].type === "tone" ? 16 : 0);
       lvHistMark(tick);
       lvLog(tick);
-    } else if (c.type === "fill") LV.fill = { f: c.f, start: tick, end: tick + Math.min(c.f.bars, 2) * 32 };
-    else if (c.type === "mute") {
+    } else if (c.type === "fill") {
+      const end = c.end != null && c.end > tick ? c.end : tick + 32;
+      LV.fill = { f: c.f, start: tick, end, org: end - c.f.bars * 32 };
+    } else if (c.type === "mute") {
       c.tracks.forEach((t) => {
         LV.mute[t] = c.on;
       });
@@ -28944,6 +28953,10 @@ input[type='number'] {
       lvLog(tick);
     } else if (c.type === "stop") {
       for (let t = 0; t < 8; t++) {
+        if (S.tracks[t].type === "tone" && lvFadeKind(t) === "cut") {
+          LV.voices[t] = [];
+          continue;
+        }
         let fading = false;
         LV.voices[t].forEach((v) => {
           if (v.env.v1 > 0) {
@@ -29000,20 +29013,21 @@ input[type='number'] {
       LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0 });
       if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
         const f = facById(lvRand(LV.fillIds));
-        if (f) LV.cues.push({ type: "fill", tick: fire - 32, f, auto: true });
+        if (f) LV.cues.push({ type: "fill", tick: fire - 32, end: fire, f, auto: true });
       }
       lvSortCues();
       LV.ver++;
     } else if (rel > 0 && rel % loop2 === 0 && rel < total - 64 && Math.random() < LV.chaos / 100 * 0.6) {
-      if (Math.random() < 0.3 && lvAutoFlash(tick + loop2)) LV.ver++;
+      const nxt = tick + loop2;
+      if (Math.random() < 0.3 && lvAutoFlash(nxt)) LV.ver++;
       else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
         const f = facById(lvRand(LV.fillIds));
         if (f) {
-          LV.cues.push({ type: "fill", tick: tick + 32, f });
+          LV.cues.push({ type: "fill", tick: nxt - 32, end: nxt, f });
           lvSortCues();
           LV.ver++;
         }
-      } else lvSwapCue(lvRand(["drums", "bass", "chords", "lead", "perc"]), tick + 32);
+      } else if (nxt < LV.sceneStart + total) lvSwapCue(lvRand(["drums", "bass", "chords", "lead", "perc"]), nxt);
     }
   }
   function lvModeNote(n) {
@@ -29138,7 +29152,7 @@ input[type='number'] {
         continue;
       }
       if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
-        const f = LV.fill.f, evs = patIndex(f).get((ft - LV.fill.start + f.bars * 32 * 8) % (f.bars * 32));
+        const f = LV.fill.f, L2 = f.bars * 32, evs = patIndex(f).get(((ft - LV.fill.org) % L2 + L2) % L2);
         if (evs) {
           for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
           LV.pulse[0] = { time: nt, v: 1 };
@@ -29359,7 +29373,7 @@ input[type='number'] {
       toast("A break is already playing");
       return;
     }
-    const len = LV.brkLen || 32, end = Math.ceil((TR.tick + 2 + len) / 32) * 32;
+    const len = LV.brkLen || 32, U = Math.max(32, len), base = LV.sceneStart || 0, end = base + Math.ceil((TR.tick + 2 + len - base) / U) * U;
     lvQueueBreak(lvMakeBreak(kind || LV.brkStyle, len), end - len);
   }
   function lvQueueBreak(b, tick) {
@@ -29834,7 +29848,7 @@ input[type='number'] {
     if (LV.fills && sc.cells[trackOf(0)] && LV.fillIds.length && !LV.cues.some((c) => c.type === "fill") && R3() < (X ? 0.9 : p * 0.6)) {
       const f = facById(lvRand(LV.fillIds));
       if (f) {
-        LV.cues.push({ type: "fill", tick: end - 32, f, auto: true });
+        LV.cues.push({ type: "fill", tick: end - 32, end, f, auto: true });
         fill2 = true;
         did++;
       }
@@ -29855,7 +29869,8 @@ input[type='number'] {
       if (empty.length) {
         const t = lvRand(empty), id = lvRand(lvFitIds(t, liveSwapIds(t), null, slotOf(t) === 6));
         if (id) {
-          LV.cues.push({ type: "guest", t, id, tick: end }, { type: "guestOut", t, id, tick: end + U });
+          const gf = facById(id), stay = Math.ceil(Math.max(U, (gf ? gf.bars : 1) * 32) / U) * U;
+          LV.cues.push({ type: "guest", t, id, tick: end }, { type: "guestOut", t, id, tick: end + stay });
           did++;
         }
       }
@@ -29880,7 +29895,7 @@ input[type='number'] {
     const k = trackOf(0), newKit = nx.cells[k] && sc.cells[k] && nx.cells[k].id !== sc.cells[k].id;
     if (LV.fills && sc.cells[k] && nx.cells[k] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
       const f = facById(lvRand(LV.fillIds));
-      if (f) LV.cues.push({ type: "fill", tick: tick - 32, f, auto: true });
+      if (f) LV.cues.push({ type: "fill", tick: tick - 32, end: tick, f, auto: true });
     }
   }
   function liveCue(idx) {
@@ -29974,7 +29989,8 @@ input[type='number'] {
     }
     const f = facById(lvRand(LV.fillIds));
     LV.cues = LV.cues.filter((c) => !(c.type === "fill" && !c.auto));
-    LV.cues.push({ type: "fill", tick: lvBoundary(1), f });
+    const at2 = lvBoundary(1);
+    LV.cues.push({ type: "fill", tick: at2, end: at2 + 32, f });
     lvSortCues();
     LV.ver++;
   }
@@ -30132,7 +30148,7 @@ input[type='number'] {
     LV.cues = LV.cues.filter(
       (c) => !["scene", "gap", "thin", "bov", "swap", "guest", "blend", "blendDrums"].includes(c.type) && !(c.type === "fill" && c.auto)
     );
-    const t0 = lvBoundary(1), bars = 2 + Math.floor(Math.random() * 5), end = t0 + bars * 32;
+    const t0 = lvBoundary(1), bars = Math.random() < 0.5 ? 2 : 4, end = t0 + bars * 32;
     LV.cues.push({ type: "blend", tick: t0 });
     LV.cues.push({ type: "blendDrums", tick: t0 + Math.max(1, Math.floor(bars / 2)) * 32 });
     LV.cues.push({ type: "scene", idx: 0, tick: end });
@@ -45060,6 +45076,7 @@ input[type='number'] {
       liveBuild,
       liveStart,
       liveScene,
+      lvFadeKind,
       stopAll,
       startSong,
       ensureAudio,
