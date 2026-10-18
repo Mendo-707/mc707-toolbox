@@ -114,8 +114,9 @@ export async function openApp(o = {}) {
     } catch (e) {}
   }, storage);
   /* the app loads web fonts and the MP3 encoder from CDNs; tests do not need them, and a stalled
-     connection can hold up the page load, so every web request is refused (the app copes without them) */
-  await page.route(/^https?:\/\//, r => r.abort());
+     connection can hold up the page load, so every web request is refused (the app copes without them).
+     The app's own local server (the source tests load it from localhost) is still allowed. */
+  await page.route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, r => r.abort());
   await page.goto(APP_URL);
   await page.waitForFunction(() => window.__app && document.querySelector('#arrInner'));
   await page.waitForTimeout(300);
