@@ -136,6 +136,8 @@ import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zenOpen } from './zen/zc-editor.js';
 import { hooks } from './core/hooks.js';
+import { finishLibrary } from './library/pools.js';
+import { STYLES } from './library/styles.js';
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
@@ -174,6 +176,8 @@ Object.assign(hooks, {
 PROJ.t = projTitle;
 
 (function boot() {
+  /* full kits, then the harmony pack: the library is complete before anything reads it */
+  finishLibrary(STYLES);
   const saved = loadSaved();
   if (saved) replaceState(saved);
   else makeDemo();

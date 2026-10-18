@@ -165,6 +165,8 @@ export function liveInit() {
   [
     ['smooth', 'Smooth (1 bar)'],
     ['slow', 'Slow (2 bars)'],
+    ['long', 'Long (4 bars)'],
+    ['vlong', 'Very long (8 bars)'],
     ['hard', 'Hard cut']
   ].forEach(([v, l]) => es.append(el('option', { value: v }, l)));
   const reps = el('select', {

@@ -60,7 +60,9 @@ To find code, read the module map in `docs/ARCHITECTURE.md`, or search the heade
    through `core/hooks.js`; add it there and fill it in `main.js`. `npm run check` enforces this.
 3. **Never change a factory pattern's id**, or the order the library is generated in. Saved songs
    and Live scenes refer to patterns by id. Add new patterns at the end of a generator, with a new
-   id prefix.
+   id prefix. A new pack goes in through `finishLibrary()` in `library/pools.js`, which runs at
+   start-up and adds packs after the full kits (the harmony pack, `hx` ids, is the first), so every
+   older pattern keeps its place.
 4. **Never rename a localStorage key or change a saved data shape** without a migration in
    `fixState()` (songs) or the loader that reads it. `tests/fixtures` holds real saves that must
    keep loading.

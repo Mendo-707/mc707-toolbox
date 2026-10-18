@@ -7,6 +7,8 @@ import { DEV } from '../core/device.js';
 import { STYLES } from '../library/styles.js';
 import { S } from '../core/state.js';
 import { trackOf } from '../core/tracks.js';
+/** How long a part fades in or out at a scene change, in ticks, for each Entry setting ('hard' = 0). */
+export const ENTRY_TICKS = { smooth: 32, slow: 64, long: 128, vlong: 256 };
 
 /* ---------- Live Mode ---------- */
 const LVK = 'mc707-live';
@@ -218,7 +220,7 @@ export const liveSwingAmt = () => LV.swing;
   LV.swing = clamp(+LV.swing || 50, 50, 75);
   if (!(LV.quant === 'phrase' || [1, 2, 4, 8].includes(+LV.quant))) LV.quant = 4;
   else if (LV.quant !== 'phrase') LV.quant = +LV.quant;
-  if (!['hard', 'smooth', 'slow'].includes(LV.entry)) LV.entry = 'smooth';
+  if (!ENTRY_TICKS[LV.entry] && LV.entry !== 'hard') LV.entry = 'smooth';
   LV.keyBase = clamp(Math.round(+LV.keyBase || 60), 0, 115);
   LV.muteBase = clamp(Math.round(+LV.muteBase || 72), 0, 119);
   LV.padCh = clamp(Math.round(+LV.padCh || 0), 0, 16);

@@ -96,18 +96,18 @@ export function carve(t, a, b, exceptId) {
       S.clips.push({
         ...c,
         id: 'c' + S.nextId++,
-        start: q16(b),
-        len: q16(cb - b),
+        start: qBar(b),
+        len: qBar(cb - b),
         off: wrapOff(c.off + (b - ca), pb)
       });
-      c.len = q16(a - ca);
+      c.len = qBar(a - ca);
     } else if (ca < a) {
-      c.len = q16(a - ca);
+      c.len = qBar(a - ca);
     } else {
       const d = b - ca;
       c.off = wrapOff(c.off + d, pb);
-      c.start = q16(b);
-      c.len = q16(cb - b);
+      c.start = qBar(b);
+      c.len = qBar(cb - b);
     }
   }
 }
@@ -122,7 +122,9 @@ export function placeClip(t, start, pid, len) {
 
 /** Round bars to the nearest 16th (one step). */
 export const q16 = v => Math.round(v * 16) / 16;
+/** Round a clip position or length (in bars) to 1/256 bar: clips can start and end that finely. */
+export const qBar = v => Math.round(v * 256) / 256;
 /** How many bars of its pattern a clip loops (its own loop length, or the pattern's). */
 export const loopLen = c => c.ll || S.patterns[c.pat].bars;
 /** Wrap a pattern offset into [0, L). */
-export const wrapOff = (o, L) => q16(((o % L) + L) % L);
+export const wrapOff = (o, L) => qBar(((o % L) + L) % L);

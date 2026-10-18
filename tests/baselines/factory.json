@@ -1,16 +1,16 @@
 {
- "count": 8842,
+ "count": 10842,
  "pools": {
   "-": 434,
   "kit": 605,
   "hats": 81,
   "perc": 49,
   "fill": 150,
-  "chords": 1675,
-  "bass": 1687,
-  "pluck": 956,
-  "lead": 461,
-  "pad": 555,
+  "chords": 2425,
+  "bass": 2187,
+  "pluck": 1206,
+  "lead": 711,
+  "pad": 805,
   "intro": 51,
   "build": 140,
   "impact": 42,
@@ -39,6 +39,10 @@
   "6a4ecf27",
   "a0ef6a0b",
   "8cded9a5",
-  "9d167c38"
+  "dc31eb3f",
+  "4b2d40f1",
+  "ef3efe0b",
+  "9041f110",
+  "bb255f76"
  ]
 }

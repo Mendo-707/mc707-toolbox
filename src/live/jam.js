@@ -12,6 +12,7 @@ import { oneKit } from '../core/device.js';
 import { rollNotes } from '../core/rolls.js';
 import { FACMAP, facById } from '../library/index.js';
 import { LV, mkEnv } from './state.js';
+import { lvFadeOut } from './fades.js';
 import { lvTrapRolls } from './extreme.js';
 import { lvFilterAway, lvMove } from './moves.js';
 import { liveReplace, liveScene, liveStart, liveStop, lvHistMark, lvLog, lvTop } from './engine.js';
@@ -284,7 +285,11 @@ export function lvJamStep(tick) {
       start: tick,
       end: tick + l.bars * 32
     });
-    if (j.fade) for (let t = 0; t < 8; t++) LV.tg[t] = mkEnv(1, 0, tick, l.bars * 32);
+    if (j.fade)
+      for (let t = 0; t < 8; t++) {
+        LV.tg[t] = mkEnv(1, 0, tick, l.bars * 32);
+        if (LV.voices[t].length) lvFadeOut(t, tick, l.bars * 32);
+      }
   }
   j.next = tick + l.bars * 32;
   lvHistMark(tick, (j.kind === 'in' ? 'Intro ' : 'Outro ') + (j.i + 1));

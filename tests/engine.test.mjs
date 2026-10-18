@@ -169,3 +169,109 @@ test('Start Jam plays intro loops into the first scene; End Jam winds down and s
   assert.ok(r.outro && r.ended, 'End Jam plays an outro and stops');
   assert.deepEqual(errors, []);
 });
+
+test('Song Mode clips can start and end between steps (down to 1/256 bar)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      S = a.S;
+    a.ensureAudio();
+    await a.connectMidi();
+    /* freeze both clocks, so MIDI times come straight from the player's schedule (no wall-clock jitter) */
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
+    performance.now = () => 0;
+    /* a reference clip on track 1 and the same 16-step pattern on track 2, placed finely */
+    const run = (start, len, off) => {
+      S.clips = [];
+      S.patterns.pf = {
+        id: 'pf',
+        type: 'drum',
+        name: 'x',
+        bars: 1,
+        notes: Array.from({ length: 16 }, (_, i) => ({ s: i, l: 1, n: 0, v: 100 }))
+      };
+      S.clips.push(
+        { id: 'ref', t: 0, start: 1, len: 1, off: 0, pat: 'pf' },
+        { id: 'cf', t: 1, start, len, off, pat: 'pf' }
+      );
+      S.cursor = 0;
+      S.loop.on = false;
+      window.__out.length = 0;
+      window.__times = [];
+      a.startSong();
+      a.TICKER.stop();
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < 96) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+      a.stopAll();
+      const on = ch =>
+        window.__out
+          .map((b, i) => [b, window.__times[i]])
+          .filter(([b]) => b[0] === (0x90 | ch) && b[2] > 0)
+          .map(x => x[1]);
+      const ref = on(0),
+        f = on(S.tracks[1].ch - 1),
+        bar = (60 / S.bpm) * 4 * 1000;
+      /* in 1/256 bars after the reference clip's first note */
+      return [f.length, Math.round(((f[0] - ref[0]) / bar) * 256)];
+    };
+    const out = {
+      grid: run(1, 1, 0),
+      late64: run(1 + 1 / 64, 1 - 1 / 32, 0),
+      late256: run(1 + 1 / 256, 1, 0),
+      off64: run(1, 1, 1 / 64)
+    };
+    delete a.AU.ctx.currentTime;
+    delete performance.now;
+    return out;
+  });
+  assert.deepEqual(r, { grid: [16, 0], late64: [16, 4], late256: [16, 1], off64: [16, 12] });
+  assert.deepEqual(errors, []);
+});
+
+test('Live fades ramp each track down and always leave it back at full level', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.assign(LV, { style: 'liquid', seed: 5, custom: false, auto: true, vary: 60, entry: 'long', buildFx: false });
+    a.liveBuild();
+    window.__out.length = 0;
+    a.liveStart(0);
+    a.TICKER.stop();
+    const step = n => {
+      const end = a.TR.tick + n;
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+    };
+    step(32 * 16);
+    for (let i = 1; i < 4; i++) {
+      a.liveScene(i, a.TR.tick);
+      step(32 * 8);
+    }
+    LV.cues.push({ type: 'stop', tick: a.TR.tick + 32 });
+    LV.cues.sort((x, y) => x.tick - y.tick);
+    step(32 * 6);
+    a.stopAll();
+    const ex = {};
+    window.__out.forEach(b => {
+      if ((b[0] & 0xf0) === 0xb0 && b[1] === 11) (ex[(b[0] & 15) + 1] = ex[(b[0] & 15) + 1] || []).push(b[2]);
+    });
+    return {
+      tracks: Object.keys(ex).length,
+      wentDown: Object.values(ex).every(v => Math.min(...v) < 20),
+      endFull: Object.values(ex).every(v => v[v.length - 1] === 127),
+      left: Object.keys(LV.low || {}).length
+    };
+  });
+  assert.ok(r.tracks >= 3, 'fades reach several tracks');
+  assert.ok(r.wentDown, 'each fade goes down');
+  assert.ok(r.endFull, 'every track ends at full level');
+  assert.equal(r.left, 0);
+  assert.deepEqual(errors, []);
+});

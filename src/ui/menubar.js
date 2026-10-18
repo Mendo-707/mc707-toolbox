@@ -2,9 +2,9 @@
 // buttons.
 //
 // Reads: S, SU, STAGE, DEV.
-import { $, el } from '../core/dom.js';
+import { $, el, toast } from '../core/dom.js';
 import { DEV, oneKit } from '../core/device.js';
-import { HOST, S } from '../core/state.js';
+import { HOST, S, scheduleSave } from '../core/state.js';
 import { STAGE, isFull, setAwake, toggleFull } from './fullscreen.js';
 import { clipMapOpen } from '../clips/clips-screen.js';
 import { setDevice, setOneKit } from './device.js';
@@ -29,6 +29,17 @@ import {
   projSaveAs
 } from './projects.js';
 
+/* App sounds: the app's own sound in this browser (the preview synth and drums), on or off. The same setting
+   as the "Preview sound" boxes in MIDI and sound and in Live Mode. */
+function toggleAppSound() {
+  S.preview = !S.preview;
+  ['#cPrev', '#lvPrev'].forEach(id => {
+    const b = $(id);
+    if (b) b.checked = S.preview;
+  });
+  scheduleSave();
+  toast(S.preview ? 'App sounds on: you hear the app in this browser too' : 'App sounds off: only the MC-707 plays');
+}
 /* ---------- menu bar ---------- */
 function initMenubar() {
   const nav = $('#menubar');
@@ -127,6 +138,8 @@ function initMenubar() {
       'Settings',
       '',
       [
+        ['App sounds (hear the app in this browser)', toggleAppSound, '', () => !!S.preview],
+        0,
         ['Device: MC-707 (8 tracks)', () => setDevice('707'), '', () => DEV === '707'],
         ['Device: MC-101 (4 tracks)', () => setDevice('101'), '', () => DEV === '101'],
         ['Track setup…', () => trackSetupOpen()],

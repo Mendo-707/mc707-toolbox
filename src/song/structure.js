@@ -5,7 +5,7 @@
 import { $, toast } from '../core/dom.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
-import { carve, ensureBars, loopLen, q16, songEnd, wrapOff } from '../core/song-model.js';
+import { carve, ensureBars, loopLen, qBar, songEnd, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { cmMarks } from '../services/clip-switch.js';
 import { showMenu } from '../ui/menu.js';
@@ -24,8 +24,8 @@ function piecesIn(a, b) {
     const pc = {
       ...c,
       id: undefined,
-      start: q16(s0 - a),
-      len: q16(e0 - s0),
+      start: qBar(s0 - a),
+      len: qBar(e0 - s0),
       off: wrapOff(c.off + (s0 - c.start), loopLen(c))
     };
     out.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc, shapeSlice(c, s0, e0)) : pc);
@@ -43,7 +43,7 @@ const carveAll = (a, b) => {
 function shiftAfter(at, d) {
   for (let t = 0; t < 8; t++) splitAtBar(at, new Set([t]));
   S.clips.forEach(c => {
-    if (c.start >= at - 1e-9) c.start = q16(c.start + d);
+    if (c.start >= at - 1e-9) c.start = qBar(c.start + d);
   });
   S.markers.forEach(m => {
     if (m.bar >= at) m.bar = Math.max(0, m.bar + d);
@@ -53,7 +53,7 @@ function shiftAfter(at, d) {
   });
 }
 function placeRange(r, at) {
-  r.pieces.forEach(p => S.clips.push({ ...p, id: 'c' + S.nextId++, start: q16(at + p.start) }));
+  r.pieces.forEach(p => S.clips.push({ ...p, id: 'c' + S.nextId++, start: qBar(at + p.start) }));
   r.marks.forEach(m => {
     if (!S.markers.some(x => x.bar === at + m.bar)) S.markers.push({ ...m, bar: at + m.bar });
   });

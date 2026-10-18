@@ -16,7 +16,8 @@ import { REC, TICKER, TR, emitNote, sched, stopAll, stopPlay } from '../services
 import { CLIPPIN, PCLAST, autoClipReset, clipFor, cmFix, patType, sendClip } from '../services/clip-switch.js';
 import { hashStr } from '../core/random.js';
 import { AUTOLAST, sendTrackCCs } from '../services/mc-controls.js';
-import { LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
+import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
+import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam } from './moves.js';
 import { lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
@@ -78,13 +79,20 @@ export function lvLog(tick) {
 export function liveReplace(t, id, tick, fade, entry) {
   const f = facById(id);
   if (!f) return;
+  const was = LV.voices[t].some(v => v.env.v1 > 0),
+    tone = S.tracks[t].type === 'tone';
   LV.voices[t] = [];
-  const ent = slotOf(t) === 5 ? entry : Math.min(entry, 8);
+  /* pads take the whole fade, and so does every tone part on the slow and long settings */
+  const ent = slotOf(t) === 5 || (tone && entry >= 64) ? entry : Math.min(entry, 8);
   LV.voices[t].push({
     f,
     start: lvAnchorStart(t, f, tick),
     env: ent > 0 ? mkEnv(0, 1, tick, ent) : mkEnv(1, 1, tick, 0)
   });
+  /* a tone part coming in from silence also fades its MC-707 track up; anything else plays at full level */
+  const now = AU.ctx ? AU.ctx.currentTime : 0;
+  if (tone && !was && ent > 0) lvFadeIn(t, tick, ent, now);
+  else lvLevelBack(t, now);
 }
 /** Note what is playing from `tick` (for the timeline), inside the current scene. */
 export function lvHistMark(tick, label) {
@@ -157,7 +165,7 @@ export function liveScene(idx, tick, hard) {
     sc = LV.scenes[idx];
   if (!sc || lvIsFlash(sc)) return;
   const jump = sc.e - (prev ? prev.e : 0);
-  const base = hard || LV.entry === 'hard' ? 0 : LV.entry === 'slow' ? 64 : 32;
+  const base = hard || LV.entry === 'hard' ? 0 : ENTRY_TICKS[LV.entry] || 32;
   const toneFade = jump >= 4 ? Math.min(base, 8) : base;
   LV.gap = null;
   LV.thin = null;
@@ -168,7 +176,7 @@ export function liveScene(idx, tick, hard) {
   }
   LV.cues = LV.cues.filter(c => c.type !== 'guestOut' && !(c.type === 'mute' && c.auto));
   if (hard) {
-    lvSlam(AU.ctx ? AU.ctx.currentTime : 0, a => a.tag !== 'q');
+    lvSlam(AU.ctx ? AU.ctx.currentTime : 0, a => a.tag !== 'q' && a.tag !== 'fade');
     if (LV.buildFx)
       lvMove({
         id: 'dropthrow',
@@ -209,8 +217,11 @@ export function liveScene(idx, tick, hard) {
       if (tone && toneFade > 0)
         LV.voices[t].forEach(v => {
           /* pads may linger over the change; a melody that is leaving gets out of the way within a beat or two */
-          if (v.env.v1 > 0)
-            v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : slotOf(t) === 5 ? toneFade : Math.min(toneFade, 12));
+          if (v.env.v1 > 0) {
+            const d = clash ? 4 : slotOf(t) === 5 || toneFade >= 64 ? toneFade : Math.min(toneFade, 12);
+            v.env = mkEnv(envAt(v.env, tick), 0, tick, d);
+            lvFadeOut(t, tick, d);
+          }
         });
       else LV.voices[t] = [];
       continue;
@@ -291,6 +302,7 @@ function liveFire(c, tick) {
     const v = lvTop(c.t);
     if (v && v.f.id === c.id) {
       v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+      lvFadeOut(c.t, tick, 32);
       lvHistMark(tick);
       lvLog(tick);
     }
@@ -328,11 +340,18 @@ function liveFire(c, tick) {
     if (c.mode) LV.mode = c.mode;
     lvLog(tick);
   } else if (c.type === 'stop') {
-    for (let t = 0; t < 8; t++)
+    /* fade everything out over 2 bars, then stop */
+    for (let t = 0; t < 8; t++) {
+      let fading = false;
       LV.voices[t].forEach(v => {
-        if (v.env.v1 > 0) v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+        if (v.env.v1 > 0) {
+          v.env = mkEnv(envAt(v.env, tick), 0, tick, 64);
+          fading = true;
+        }
       });
-    LV.stopAt = tick + 32;
+      if (fading) lvFadeOut(t, tick, 64);
+    }
+    LV.stopAt = tick + 64;
   }
   LV.ver++;
 }
@@ -454,6 +473,7 @@ function lvVarExtra(t, v, vt, local, L, nt, td, g) {
   else if (vt === 'kickx' && slotOf(t) === 0 && local === L - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
 }
 export function liveTick(tick, nt, td) {
+  lvFadeTick(tick, nt);
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
   if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
   if (tick % 32 === 0) lvBarSnap(tick);
@@ -656,6 +676,7 @@ export function liveStart(idx) {
     lvCellClip(t, c, TR.nextTime);
     if (c) liveReplace(t, c.id, 0, 0, 0);
   }
+  lvFadesReset(TR.nextTime);
   LV.autos = [];
   LV.ccLast = {};
   lvSceneFx(sc, 0);
@@ -673,6 +694,7 @@ export function liveCleanup() {
   try {
     ctlAllOff();
   } catch (e) {}
+  if (MIDI.out && AU.ctx) lvFadesReset(AU.ctx.currentTime);
   if (LV.autos && LV.autos.length && MIDI.out && AU.ctx) {
     const nt = AU.ctx.currentTime;
     LV.autos.forEach(a =>

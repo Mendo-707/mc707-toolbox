@@ -77,19 +77,33 @@ function lvMoveVal(a, t, tick) {
 }
 export function lvAutoTick(tick, nt) {
   if (!LV.autos.length || tick % 2) return;
+  /* one value per track and control this tick: a move's value (or its rest when it ends), scaled by a fade
+     on the same control, so a fade and a pump never fight */
+  const val = new Map(),
+    fade = new Map();
   for (const a of LV.autos) {
     if (tick < a.start) continue;
-    if (tick >= a.end) {
-      if (a.restore !== false) a.tracks.forEach(t => lvSendCC(t, a.cc, lvRestCC(t, a.cc), nt));
-      if (a.cc >= 80 && a.cc <= 83) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
-      continue;
+    const done = tick >= a.end;
+    if (done && a.restore === false) continue;
+    a.tracks.forEach(t => {
+      const k = t + ':' + a.cc,
+        v = done ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
+      if (a.tag === 'fade') fade.set(k, { t, cc: a.cc, v });
+      else if (!done || !val.has(k)) val.set(k, { t, cc: a.cc, v });
+    });
+    if (a.cc >= 80 && a.cc <= 83) {
+      if (done) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
+      else if (a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
     }
-    a.tracks.forEach(t => lvSendCC(t, a.cc, lvMoveVal(a, t, tick), nt));
-    if (a.cc >= 80 && a.cc <= 83 && a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
   }
+  for (const [k, f] of fade) {
+    const m = val.get(k);
+    if (m) m.v = (m.v * f.v) / Math.max(1, lvRestCC(f.t, f.cc));
+    else val.set(k, f);
+  }
+  for (const { t, cc, v } of val.values()) lvSendCC(t, cc, v, nt);
   LV.autos = LV.autos.filter(a => tick < a.end);
 }
-/* Put everything back where it was: used when a drop slams in or a scene with its own moves ends. */
 export function lvSlam(nt, filter) {
   const keep = [];
   LV.autos.forEach(a => {

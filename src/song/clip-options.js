@@ -39,13 +39,13 @@ export function clipOptionsEl(c, p, isDrum) {
       el('input', {
         type: 'number',
         min,
-        step: 1,
-        value: Math.round(val * 16),
+        step: 0.0625,
+        value: +(val * 16).toFixed(4),
         style: 'width:84px',
-        title: title || 'In steps (16 steps = 1 bar)',
+        title: title || 'In steps (16 steps = 1 bar). Fractions work: 2.5 is half a step later',
         'aria-label': label,
         onchange: e => {
-          const v = Math.round(+e.target.value);
+          const v = Math.round(+e.target.value * 16) / 16;
           fn(Number.isFinite(v) ? Math.max(min, v) : min);
         }
       })
@@ -54,10 +54,10 @@ export function clipOptionsEl(c, p, isDrum) {
     el(
       'div',
       { class: 'hint', style: 'margin-top:2px' },
-      'Fine position, in steps (16 steps = 1 bar, 4 steps = 1 beat):'
+      'Fine position, in steps (16 steps = 1 bar, 4 steps = 1 beat). Fractions work, down to 1/16 of a step:'
     ),
     stepIn('Start (from bar 1)', c.start, 0, v => setGeom(c, { start: v / 16 })),
-    stepIn('Length', c.len, 1, v => setGeom(c, { len: v / 16 })),
+    stepIn('Length', c.len, 0.25, v => setGeom(c, { len: v / 16 })),
     stepIn(
       'Start inside the pattern',
       c.off,

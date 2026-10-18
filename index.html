@@ -7825,9 +7825,9 @@ input[type='number'] {
         ]
       ]
     ];
-    const L2 = (on, gh, ac) => {
+    const L2 = (on2, gh, ac) => {
       const a = Array(16).fill(".");
-      (on || []).forEach((i) => {
+      (on2 || []).forEach((i) => {
         a[i] = "x";
       });
       (gh || []).forEach((i) => {
@@ -13996,13 +13996,13 @@ input[type='number'] {
     let prev = null;
     for (const g of sg) {
       const q = QUAL[g.q];
-      const low = clampN(48 + g.pc, 45, 56);
+      const low2 = clampN(48 + g.pc, 45, 56);
       const up = q.slice(1).map((x) => x % 12);
       const v = voice2({ pc: (g.pc + up[0]) % 12, q: "M" }, null);
       const tones = [...new Set(up.map((x) => clampN(60 + (g.pc + x) % 12, 60, 76)))].sort((a, b) => a - b);
       const pick2 = prev ? tones.map((n) => Math.abs(n + 12 - prev[0]) < Math.abs(n - prev[0]) && n + 12 <= 79 ? n + 12 : n) : tones;
       prev = pick2.length ? pick2 : v;
-      [low, ...pick2].forEach((n) => out.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
+      [low2, ...pick2].forEach((n) => out.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
     }
     return out;
   }
@@ -14201,11 +14201,11 @@ input[type='number'] {
     return 0;
   }
   function bar(r, base, density) {
-    const on = [], out = [];
-    for (let s = 0; s < 16; s++) on.push(s === 0 || r() < density);
+    const on2 = [], out = [];
+    for (let s = 0; s < 16; s++) on2.push(s === 0 || r() < density);
     for (let s = 0; s < 16; s++) {
-      if (!on[s]) continue;
-      const next = on[(s + 1) % 16] && s < 15, slide = next && r() < 0.28, acc = s % 4 === 0 ? r() < 0.5 : r() < 0.25;
+      if (!on2[s]) continue;
+      const next = on2[(s + 1) % 16] && s < 15, slide = next && r() < 0.28, acc = s % 4 === 0 ? r() < 0.5 : r() < 0.25;
       out.push({ s, l: slide ? 1.25 : r() < 0.5 ? 0.5 : 0.75, n: base + weighted(r), v: acc ? 122 : 86 });
     }
     return out;
@@ -14221,9 +14221,9 @@ input[type='number'] {
     });
   }
   for (const g of Object.keys(ACID)) {
-    const [tag, roots, styles, low] = ACID[g], r = mulberry(44061 + g.length * 977 + g.charCodeAt(0));
+    const [tag, roots, styles, low2] = ACID[g], r = mulberry(44061 + g.length * 977 + g.charCodeAt(0));
     for (let i = 0; i < 12; i++) {
-      const root = roots[i % roots.length], base = low + (root - low % 12 + 12) % 12, bars = i % 3 === 2 ? 1 : 2, density = [0.62, 0.72, 0.8, 0.55][i % 4];
+      const root = roots[i % roots.length], base = low2 + (root - low2 % 12 + 12) % 12, bars = i % 3 === 2 ? 1 : 2, density = [0.62, 0.72, 0.8, 0.55][i % 4];
       const one = bar(r, base, density), notes = bars === 2 ? [...one, ...answer(r, one, base)] : one;
       FAC.push({
         id: "ac-" + g + "-" + i,
@@ -14391,10 +14391,6 @@ input[type='number'] {
     const c = edClip();
     return c ? patOf(c) : null;
   };
-  function clipAt(t, bar2) {
-    for (const c of S.clips) if (c.t === t && bar2 >= c.start && bar2 < c.start + c.len) return c;
-    return null;
-  }
   function songEnd() {
     let e = 1;
     for (const c of S.clips) e = Math.max(e, c.start + c.len);
@@ -14417,18 +14413,18 @@ input[type='number'] {
         S.clips.push({
           ...c,
           id: "c" + S.nextId++,
-          start: q16(b),
-          len: q16(cb - b),
+          start: qBar(b),
+          len: qBar(cb - b),
           off: wrapOff(c.off + (b - ca), pb)
         });
-        c.len = q16(a - ca);
+        c.len = qBar(a - ca);
       } else if (ca < a) {
-        c.len = q16(a - ca);
+        c.len = qBar(a - ca);
       } else {
         const d = b - ca;
         c.off = wrapOff(c.off + d, pb);
-        c.start = q16(b);
-        c.len = q16(cb - b);
+        c.start = qBar(b);
+        c.len = qBar(cb - b);
       }
     }
   }
@@ -14440,8 +14436,9 @@ input[type='number'] {
     return c;
   }
   var q16 = (v) => Math.round(v * 16) / 16;
+  var qBar = (v) => Math.round(v * 256) / 256;
   var loopLen = (c) => c.ll || S.patterns[c.pat].bars;
-  var wrapOff = (o, L2) => q16((o % L2 + L2) % L2);
+  var wrapOff = (o, L2) => qBar((o % L2 + L2) % L2);
 
   // src/services/synth.js
   var AU = {};
@@ -14891,34 +14888,47 @@ input[type='number'] {
       }
       songClipTick(tick, time);
       const solo = S.tracks.some((t) => t.solo);
-      const bar2 = tick / 32;
       for (let ti = 0; ti < 8; ti++) {
         const t = S.tracks[ti];
         if (t.mute || solo && !t.solo) continue;
-        const c = clipAt(ti, bar2);
-        if (!c || c.mute) continue;
-        const p = S.patterns[c.pat];
-        if (!p) continue;
-        const Lc = Math.round((c.ll || p.bars) * 32);
-        const local = ((tick - Math.round(c.start * 32) + Math.round(c.off * 32)) % Lc + Lc) % Lc;
-        if (c.cc && c.cc.pts && c.cc.pts.length && tick % 2 === 0) autoCC(ti, c, tick, time);
-        if (c.pc != null && tick === Math.round(c.start * 32)) {
-          if (c.pc < 16) sendClip(ti, c.pc, time + 4e-3);
-          else sendMidi([192 | t.ch - 1, clamp(c.pc, 0, 127)], time);
-        } else if (c.pc == null && S.clipAuto && (tick === Math.round(c.start * 32) || PCLAST[ti] == null))
-          autoClip(ti, p, time);
-        const evs = patIndex(p).get(local);
-        if (!evs) continue;
-        const maxT = (c.start + c.len) * 32 - tick;
-        const tone2 = t.type === "tone", trs = c.tr || 0, vm = (c.vel || 100) / 100 * (c.fi || c.fo || c.ve ? velMul(c, tick / 32 - c.start) : 1);
-        for (const n of evs)
-          emitNote(
-            ti,
-            tone2 ? clamp(n.n + trs, 0, 127) : n.n,
-            n.v * vm,
-            nt + subTick(n) * td,
-            Math.min(n.l * 2, maxT) * td
-          );
+        for (const c of S.clips) {
+          if (c.t !== ti || c.mute) continue;
+          const c0 = c.start * 32, c1 = (c.start + c.len) * 32;
+          if (c0 >= tick + 1 - 1e-9 || c1 <= tick + 1e-9) continue;
+          const p = S.patterns[c.pat];
+          if (!p) continue;
+          const Lc = Math.round((c.ll || p.bars) * 32);
+          if (c0 <= tick + 1e-9) {
+            if (c.cc && c.cc.pts && c.cc.pts.length && tick % 2 === 0) autoCC(ti, c, tick, time);
+          }
+          if (c0 < tick + 1 - 1e-9 && c0 >= tick - 1e-9) {
+            const at2 = time + (c0 - tick) * td;
+            if (c.pc != null) {
+              if (c.pc < 16) sendClip(ti, c.pc, at2 + 4e-3);
+              else sendMidi([192 | t.ch - 1, clamp(c.pc, 0, 127)], at2);
+            } else if (S.clipAuto) autoClip(ti, p, at2);
+          } else if (c.pc == null && S.clipAuto && PCLAST[ti] == null && c0 < tick) autoClip(ti, p, time);
+          const a = ((tick - c0 + c.off * 32) % Lc + Lc) % Lc + 1e-9, k = Math.floor(a), idx = patIndex(p);
+          const tone2 = t.type === "tone", trs = c.tr || 0;
+          for (const key of [k, k + 1]) {
+            const evs = idx.get(key % Lc);
+            if (!evs) continue;
+            for (const n of evs) {
+              const rel = key + subTick(n) - a;
+              if (rel < -1e-6 || rel >= 1 - 1e-6) continue;
+              const abs = tick + Math.max(0, rel);
+              if (abs < c0 - 1e-6 || abs >= c1 - 1e-6) continue;
+              const vm = (c.vel || 100) / 100 * (c.fi || c.fo || c.ve ? velMul(c, abs / 32 - c.start) : 1);
+              emitNote(
+                ti,
+                tone2 ? clamp(n.n + trs, 0, 127) : n.n,
+                n.v * vm,
+                nt + Math.max(0, rel) * td,
+                Math.min(n.l * 2, c1 - abs) * td
+              );
+            }
+          }
+        }
       }
     } else if (TR.mode === "wiz") {
       const wz = TR.wz;
@@ -14964,7 +14974,7 @@ input[type='number'] {
       const rcd = TR.recEnd != null;
       const endT = rcd ? TR.recEnd : (S.loop.on ? S.loop.end : songEnd()) * 32;
       if (TR.tick >= endT) {
-        if (S.loop.on && !rcd) TR.tick = S.loop.start * 32;
+        if (S.loop.on && !rcd) TR.tick = Math.round(S.loop.start * 32);
         else {
           TR.ending = true;
           TR.endTime = TR.nextTime;
@@ -14995,10 +15005,10 @@ input[type='number'] {
     }
   }
   var TICKER = (() => {
-    let w = null, fb = null, on = false;
+    let w = null, fb = null, on2 = false;
     const fallback = () => {
       w = null;
-      if (on) {
+      if (on2) {
         clearInterval(fb);
         fb = setInterval(sched, 25);
       }
@@ -15007,7 +15017,7 @@ input[type='number'] {
       const src = "let t=null;onmessage=e=>{clearInterval(t);t=null;if(e.data)t=setInterval(()=>postMessage(0),25);};";
       w = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
       w.onmessage = () => {
-        if (on && TR.playing) sched();
+        if (on2 && TR.playing) sched();
       };
       w.onerror = (e) => {
         try {
@@ -15021,13 +15031,13 @@ input[type='number'] {
     }
     return {
       start() {
-        on = true;
+        on2 = true;
         clearInterval(fb);
         if (w) w.postMessage(1);
         else fb = setInterval(sched, 25);
       },
       stop() {
-        on = false;
+        on2 = false;
         clearInterval(fb);
         if (w) w.postMessage(0);
       }
@@ -15038,7 +15048,7 @@ input[type='number'] {
     stopAll();
     ensureAudio();
     let tick = Math.round(S.cursor * 32);
-    if (S.loop.on && tick >= S.loop.end * 32) tick = S.loop.start * 32;
+    if (S.loop.on && tick >= S.loop.end * 32) tick = Math.round(S.loop.start * 32);
     if (!S.loop.on && tick >= songEnd() * 32) tick = 0;
     Object.assign(TR, {
       playing: true,
@@ -15859,7 +15869,7 @@ input[type='number'] {
     }
     at2(el("span", { class: "lcdScroll" }, el("i", { style: "top:" + page * 50 + "%" })), 2, 10);
     tracks.forEach((t, i) => at2(el("span", { class: "lcdMeter" + (PCLAST[t] != null ? " on" : "") }), C0 + i, 10));
-    const cmd = (lab, fn, on) => el("span", { class: "lcdCmdI" + (on ? " on" : ""), onclick: fn }, lab);
+    const cmd = (lab, fn, on2) => el("span", { class: "lcdCmdI" + (on2 ? " on" : ""), onclick: fn }, lab);
     at2(
       el(
         "div",
@@ -15957,15 +15967,15 @@ input[type='number'] {
     });
     const pads = el("div", { class: "cmPads" });
     for (let k = 0; k < 16; k++) {
-      const on = k < m.n, ty = ctInfo(m.types[k]);
+      const on2 = k < m.n, ty = ctInfo(m.types[k]);
       pads.append(
         el(
           "button",
           {
             "data-k": k,
-            class: "cmPad" + (on ? " lit" : "") + (k === CMAP.k && on ? " cur" : ""),
-            style: "--c:" + (on ? ty[2] : "#555"),
-            title: on ? "Clip " + (k + 1) + ": " + ty[1] : "Clip " + (k + 1) + " is not used. Click to use clips up to here.",
+            class: "cmPad" + (on2 ? " lit" : "") + (k === CMAP.k && on2 ? " cur" : ""),
+            style: "--c:" + (on2 ? ty[2] : "#555"),
+            title: on2 ? "Clip " + (k + 1) + ": " + ty[1] : "Clip " + (k + 1) + " is not used. Click to use clips up to here.",
             onclick: () => {
               if (k >= m.n) {
                 m.n = k + 1;
@@ -15975,7 +15985,7 @@ input[type='number'] {
             }
           },
           el("b", {}, String(k + 1)),
-          on ? el("span", {}, m.names[k] || ty[1]) : el("span", { class: "off" }, "—")
+          on2 ? el("span", {}, m.names[k] || ty[1]) : el("span", { class: "off" }, "—")
         )
       );
     }
@@ -16285,11 +16295,11 @@ input[type='number'] {
     });
   }
   function cmChipFill(e, t, k) {
-    const m = cmFix()[t], on = k != null && k >= 0;
-    e.textContent = on ? "C" + (k + 1) + " " + (m.names[k] ? m.names[k].slice(0, 7) : CM_ABBR[m.types[k]]) : "Clip";
-    e.style.setProperty("--k", on ? ctInfo(m.types[k])[2] : "transparent");
-    e.classList.toggle("on", on);
-    e.title = (on ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k) : "No clip chosen yet") + ". Click to change.";
+    const m = cmFix()[t], on2 = k != null && k >= 0;
+    e.textContent = on2 ? "C" + (k + 1) + " " + (m.names[k] ? m.names[k].slice(0, 7) : CM_ABBR[m.types[k]]) : "Clip";
+    e.style.setProperty("--k", on2 ? ctInfo(m.types[k])[2] : "transparent");
+    e.classList.toggle("on", on2);
+    e.title = (on2 ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k) : "No clip chosen yet") + ". Click to change.";
   }
   var cmLabel = (t, k) => {
     if (k < 0) return "Automatic";
@@ -16370,8 +16380,8 @@ input[type='number'] {
     hooks.syncControls();
   }
   function setLoop(a, b) {
-    a = clamp(q16(a), 0, Math.max(0, S.bars - 0.0625));
-    b = clamp(q16(b), a + 0.0625, S.bars);
+    a = clamp(qBar(a), 0, Math.max(0, S.bars - 0.0625));
+    b = clamp(qBar(b), a + 0.0625, S.bars);
     S.loop = { on: true, start: a, end: b };
     updLoopUI();
     scheduleSave();
@@ -16388,7 +16398,7 @@ input[type='number'] {
   }
   function setClipLen(c, n) {
     pushUndo();
-    n = Math.max(0.0625, q16(n));
+    n = Math.max(0.0625, qBar(n));
     carve(c.t, c.start, c.start + n, c.id);
     c.len = n;
     ensureBars(c.start + n);
@@ -16432,13 +16442,13 @@ input[type='number'] {
           ...c,
           id: "c" + S.nextId++,
           start: bar2,
-          len: q16(end - bar2),
+          len: qBar(end - bar2),
           off: wrapOff(c.off + (bar2 - c.start), loopLen(c))
         },
         shapeSlice(orig, bar2, end)
       )
     );
-    c.len = q16(bar2 - c.start);
+    c.len = qBar(bar2 - c.start);
     applyShape(c, shapeSlice(orig, orig.start, bar2));
     renderArr();
     scheduleSave();
@@ -16446,7 +16456,7 @@ input[type='number'] {
   function clipBlock(c, bar2) {
     const L2 = loopLen(c), pos = bar2 - c.start + c.off, r = Math.floor(pos / L2 + 1e-9);
     const bs = c.start + r * L2 - c.off;
-    return { a: Math.max(c.start, q16(bs)), b: Math.min(c.start + c.len, q16(bs + L2)) };
+    return { a: Math.max(c.start, qBar(bs)), b: Math.min(c.start + c.len, qBar(bs + L2)) };
   }
   var blkLabel = (a, b) => b - a > 1 + 1e-6 ? "bars " + (Math.floor(a) + 1) + "–" + Math.ceil(b) : "bar " + (Math.floor(a) + 1);
   var clipHasBlocks = (c) => c.len > loopLen(c) + 1e-6 || S.clips.filter((x) => x.pat === c.pat).length > 1;
@@ -16464,18 +16474,18 @@ input[type='number'] {
     if (b < end - 1e-6) {
       S.clips.push(
         applyShape(
-          { ...c, id: "c" + S.nextId++, start: b, len: q16(end - b), off: wrapOff(c.off + (b - c.start), L2) },
+          { ...c, id: "c" + S.nextId++, start: b, len: qBar(end - b), off: wrapOff(c.off + (b - c.start), L2) },
           shapeSlice(orig, b, end)
         )
       );
-      c.len = q16(b - c.start);
+      c.len = qBar(b - c.start);
     }
     if (a > c.start + 1e-6) {
       const m = applyShape(
-        { ...c, id: "c" + S.nextId++, start: a, len: q16(b - a), off: wrapOff(c.off + (a - c.start), L2) },
+        { ...c, id: "c" + S.nextId++, start: a, len: qBar(b - a), off: wrapOff(c.off + (a - c.start), L2) },
         shapeSlice(orig, a, b)
       );
-      c.len = q16(a - c.start);
+      c.len = qBar(a - c.start);
       S.clips.push(m);
       target = m;
       applyShape(c, shapeSlice(orig, orig.start, a));
@@ -16516,7 +16526,7 @@ input[type='number'] {
       toast("Nothing to glue: the next clip has to start exactly where this one ends");
       return;
     }
-    const t = run2[0].t, tone2 = S.tracks[t].type === "tone", s0 = run2[0].start, total = q16(run2.reduce((n, x) => n + x.len, 0));
+    const t = run2[0].t, tone2 = S.tracks[t].type === "tone", s0 = run2[0].start, total = qBar(run2.reduce((n, x) => n + x.len, 0));
     if (total > 32 + 1e-6) {
       toast("Glue joins up to 32 bars at a time");
       return;
@@ -17353,13 +17363,13 @@ input[type='number'] {
             ...c,
             id: "c" + S.nextId++,
             start: bar2,
-            len: q16(end - bar2),
+            len: qBar(end - bar2),
             off: wrapOff(c.off + (bar2 - c.start), loopLen(c))
           },
           shapeSlice(orig, bar2, end)
         )
       );
-      c.len = q16(bar2 - c.start);
+      c.len = qBar(bar2 - c.start);
       applyShape(c, shapeSlice(orig, orig.start, bar2));
     }
   }
@@ -17371,7 +17381,7 @@ input[type='number'] {
         continue;
       const pb = loopLen(a);
       if (Math.abs(wrapOff(a.off + a.len, pb) - wrapOff(b.off, pb)) < 1e-6) {
-        a.len = q16(a.len + b.len);
+        a.len = qBar(a.len + b.len);
         if (UI.sel === b.id) UI.sel = a.id;
         S.clips.splice(i + 1, 1);
       }
@@ -18684,8 +18694,8 @@ input[type='number'] {
       const pc = {
         ...c,
         id: void 0,
-        start: q16(s0 - a),
-        len: q16(e0 - s0),
+        start: qBar(s0 - a),
+        len: qBar(e0 - s0),
         off: wrapOff(c.off + (s0 - c.start), loopLen(c))
       };
       out.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc, shapeSlice(c, s0, e0)) : pc);
@@ -18700,7 +18710,7 @@ input[type='number'] {
   function shiftAfter(at2, d) {
     for (let t = 0; t < 8; t++) splitAtBar(at2, /* @__PURE__ */ new Set([t]));
     S.clips.forEach((c) => {
-      if (c.start >= at2 - 1e-9) c.start = q16(c.start + d);
+      if (c.start >= at2 - 1e-9) c.start = qBar(c.start + d);
     });
     S.markers.forEach((m) => {
       if (m.bar >= at2) m.bar = Math.max(0, m.bar + d);
@@ -18710,7 +18720,7 @@ input[type='number'] {
     });
   }
   function placeRange(r, at2) {
-    r.pieces.forEach((p) => S.clips.push({ ...p, id: "c" + S.nextId++, start: q16(at2 + p.start) }));
+    r.pieces.forEach((p) => S.clips.push({ ...p, id: "c" + S.nextId++, start: qBar(at2 + p.start) }));
     r.marks.forEach((m) => {
       if (!S.markers.some((x) => x.bar === at2 + m.bar)) S.markers.push({ ...m, bar: at2 + m.bar });
     });
@@ -18912,7 +18922,7 @@ input[type='number'] {
           {
             label: "Halve",
             disabled: c.len <= 0.125,
-            action: () => setClipLen(c, Math.max(0.0625, q16(c.len / 2)))
+            action: () => setClipLen(c, Math.max(0.0625, qBar(c.len / 2)))
           }
         ])
       },
@@ -19913,7 +19923,8 @@ input[type='number'] {
   }
 
   // src/song/layout.js
-  var SNAP = () => [1, 0.5, 0.25, 0.0625].includes(+S.snap) ? +S.snap : 1;
+  var SNAPS = [1, 0.5, 0.25, 0.0625, 0.03125, 0.015625, 390625e-8];
+  var SNAP = () => SNAPS.includes(+S.snap) ? +S.snap : 1;
   var snapBar = (v) => Math.round(v / SNAP()) * SNAP();
   var snapFloor = (v) => Math.floor(v / SNAP() + 1e-9) * SNAP();
   function fitRows() {
@@ -19928,6 +19939,7 @@ input[type='number'] {
     }
     return false;
   }
+  var MINLEN = 0.015625;
   var GEOMT = 0;
   function setGeom(c, g, coal) {
     const now = performance.now();
@@ -19939,13 +19951,13 @@ input[type='number'] {
       else delete c.ll;
     }
     const L2 = loopLen(c);
-    let start = g.start != null ? q16(Math.max(0, g.start)) : c.start, len = g.len != null ? q16(Math.max(0.0625, g.len)) : c.len, off = g.off != null ? g.off : c.off;
+    let start = g.start != null ? qBar(Math.max(0, g.start)) : c.start, len = g.len != null ? qBar(Math.max(MINLEN, g.len)) : c.len, off = g.off != null ? g.off : c.off;
     if (g.trim != null) {
-      const nd = Math.min(g.trim, c.len - 0.0625);
+      const nd = Math.min(g.trim, c.len - MINLEN);
       const ns = Math.max(0, c.start + nd);
       const real = ns - c.start;
-      start = q16(ns);
-      len = q16(c.len - real);
+      start = qBar(ns);
+      len = qBar(c.len - real);
       off = c.off + real;
     }
     carve(c.t, start, start + len, c.id);
@@ -19984,7 +19996,10 @@ input[type='number'] {
       [1, "Bar"],
       [0.5, "1/2 bar"],
       [0.25, "Beat"],
-      [0.0625, "Step"]
+      [0.0625, "Step (1/16)"],
+      [0.03125, "1/32"],
+      [0.015625, "1/64"],
+      [390625e-8, "Free"]
     ].forEach(([v, l]) => sel.append(el("option", { value: v }, l)));
     sel.value = SNAP();
     sel.addEventListener("change", (e) => {
@@ -20164,17 +20179,19 @@ input[type='number'] {
       setDrag(null);
     });
   }
+  var tk = (v) => Math.round(v * 32) / 32;
+  var LSN = () => Math.max(SNAP(), 1 / 32);
   function rulerDown(e, rc) {
     const r = rc.getBoundingClientRect();
     const x0 = e.clientX;
-    const b0 = clamp(snapFloor((e.clientX - r.left) / bw), 0, S.bars - 1);
+    const b0 = tk(clamp(snapFloor((e.clientX - r.left) / bw), 0, S.bars - 1));
     const xr = e.clientX - r.left;
     const which = Math.abs(xr - S.loop.start * bw) <= 6 ? "s" : Math.abs(xr - S.loop.end * bw) <= 6 ? "e" : null;
     if (which) {
       const mv2 = (ev) => {
-        const bb = clamp(snapBar((ev.clientX - r.left) / bw), 0, S.bars);
-        if (which === "s") S.loop.start = Math.min(bb, S.loop.end - SNAP());
-        else S.loop.end = Math.max(bb, S.loop.start + SNAP());
+        const bb = tk(clamp(snapBar((ev.clientX - r.left) / bw), 0, S.bars));
+        if (which === "s") S.loop.start = Math.min(bb, S.loop.end - LSN());
+        else S.loop.end = Math.max(bb, S.loop.start + LSN());
         S.loop.on = true;
         updLoopUI();
       };
@@ -20191,9 +20208,9 @@ input[type='number'] {
     const mv = (ev) => {
       if (!moved && Math.abs(ev.clientX - x0) < 4) return;
       moved = true;
-      const b1 = clamp(snapFloor((ev.clientX - r.left) / bw), 0, S.bars - 1);
+      const b1 = tk(clamp(snapFloor((ev.clientX - r.left) / bw), 0, S.bars - 1));
       S.loop.start = Math.min(b0, b1);
-      S.loop.end = Math.max(b0, b1) + SNAP();
+      S.loop.end = tk(Math.max(b0, b1) + LSN());
       S.loop.on = true;
       updLoopUI();
     };
@@ -20247,21 +20264,21 @@ input[type='number'] {
       const dx = ev.clientX - d.x0;
       if (!d.moved && Math.abs(dx) < 4 && Math.abs(ev.clientY - e.clientY) < 4) return;
       d.moved = true;
-      const sn = SNAP();
+      const free = ev.shiftKey, sb = (v) => free ? qBar(v) : snapBar(v), sn = free ? 0.015625 : SNAP();
       if (d.mode === "resize") {
-        d.nl = q16(Math.max(sn, snapBar(d.len + dx / bw)));
+        d.nl = qBar(Math.max(sn, sb(d.len + dx / bw)));
         d.ns = d.start;
         d.nt = d.t;
       } else if (d.mode === "trimL") {
-        let delta = snapBar(dx / bw);
+        let delta = sb(dx / bw);
         delta = Math.min(delta, d.len - sn);
         delta = Math.max(delta, -d.start);
-        d.ns = q16(d.start + delta);
-        d.nl = q16(d.len - delta);
+        d.ns = qBar(d.start + delta);
+        d.nl = qBar(d.len - delta);
         d.nt = d.t;
         d.noff = wrapOff(d.off + delta, loopLen(d.c));
       } else {
-        d.ns = Math.max(0, q16(snapBar(d.start + dx / bw)));
+        d.ns = Math.max(0, qBar(sb(d.start + dx / bw)));
         d.nl = d.len;
         const row = rowFromY(ev.clientY);
         d.nt = S.tracks[row].type === S.tracks[d.t].type ? row : d.t;
@@ -20355,13 +20372,13 @@ input[type='number'] {
       el("input", {
         type: "number",
         min,
-        step: 1,
-        value: Math.round(val * 16),
+        step: 0.0625,
+        value: +(val * 16).toFixed(4),
         style: "width:84px",
-        title: title || "In steps (16 steps = 1 bar)",
+        title: title || "In steps (16 steps = 1 bar). Fractions work: 2.5 is half a step later",
         "aria-label": label,
         onchange: (e) => {
-          const v = Math.round(+e.target.value);
+          const v = Math.round(+e.target.value * 16) / 16;
           fn(Number.isFinite(v) ? Math.max(min, v) : min);
         }
       })
@@ -20370,10 +20387,10 @@ input[type='number'] {
       el(
         "div",
         { class: "hint", style: "margin-top:2px" },
-        "Fine position, in steps (16 steps = 1 bar, 4 steps = 1 beat):"
+        "Fine position, in steps (16 steps = 1 bar, 4 steps = 1 beat). Fractions work, down to 1/16 of a step:"
       ),
       stepIn("Start (from bar 1)", c.start, 0, (v) => setGeom(c, { start: v / 16 })),
-      stepIn("Length", c.len, 1, (v) => setGeom(c, { len: v / 16 })),
+      stepIn("Length", c.len, 0.25, (v) => setGeom(c, { len: v / 16 })),
       stepIn(
         "Start inside the pattern",
         c.off,
@@ -21180,7 +21197,7 @@ input[type='number'] {
     return [b, sel];
   }
   function viewGroup(c) {
-    const b = (label, fn, title, on) => el("button", { class: "btn sm" + (on ? " on" : ""), title: title || label, onclick: fn }, label);
+    const b = (label, fn, title, on2) => el("button", { class: "btn sm" + (on2 ? " on" : ""), title: title || label, onclick: fn }, label);
     return el(
       "div",
       { class: "grp edView" },
@@ -22368,8 +22385,8 @@ input[type='number'] {
   }
   function toggleFull() {
     if (FULLHOST) {
-      FULLHOST.toggleFullScreen().then((on) => {
-        STAGE.full = on;
+      FULLHOST.toggleFullScreen().then((on2) => {
+        STAGE.full = on2;
         syncFullBtn();
       }).catch(() => {
       });
@@ -22390,25 +22407,25 @@ input[type='number'] {
   }
   if (FULLHOST) {
     if (FULLHOST.onFullScreen)
-      FULLHOST.onFullScreen((on) => {
-        STAGE.full = on;
+      FULLHOST.onFullScreen((on2) => {
+        STAGE.full = on2;
         syncFullBtn();
       });
     if (FULLHOST.isFullScreen)
-      FULLHOST.isFullScreen().then((on) => {
-        STAGE.full = on;
+      FULLHOST.isFullScreen().then((on2) => {
+        STAGE.full = on2;
         syncFullBtn();
       }).catch(() => {
       });
   }
-  function setAwake(on) {
-    STAGE.awake = on;
+  function setAwake(on2) {
+    STAGE.awake = on2;
     try {
-      localStorage.setItem("mc707-awake", on ? "1" : "0");
+      localStorage.setItem("mc707-awake", on2 ? "1" : "0");
     } catch (e) {
     }
     syncAwake();
-    toast(on ? "The screen stays on while music is playing" : "Screen can sleep as normal");
+    toast(on2 ? "The screen stays on while music is playing" : "Screen can sleep as normal");
   }
   async function syncAwake() {
     const want = STAGE.awake && TR.playing && !document.hidden;
@@ -22446,6 +22463,688 @@ input[type='number'] {
   });
   document.addEventListener("fullscreenchange", syncFullBtn);
 
+  // src/library/harmony-pack.js
+  function addHarmonyPack() {
+    let seed3 = 20261018;
+    const rnd3 = () => {
+      seed3 = seed3 * 1103515245 + 12345 & 2147483647;
+      return seed3 / 2147483647;
+    };
+    const shuf = (a) => {
+      a = a.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd3() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    const Q2 = {
+      m: [0, 3, 7],
+      M: [0, 4, 7],
+      m7: [0, 3, 7, 10],
+      M7: [0, 4, 7, 11],
+      7: [0, 4, 7, 10],
+      m9: [0, 3, 7, 10, 14],
+      m11: [0, 3, 7, 10, 14, 17],
+      M9: [0, 4, 7, 11, 14],
+      9: [0, 4, 7, 10, 14],
+      13: [0, 4, 10, 14, 21],
+      m6: [0, 3, 7, 9],
+      m7b5: [0, 3, 6, 10],
+      "7b9": [0, 4, 7, 10, 13],
+      "7sus4": [0, 5, 7, 10],
+      sus4: [0, 5, 7],
+      add9: [0, 4, 7, 14],
+      madd9: [0, 3, 7, 14]
+    };
+    const MIN = [
+      [
+        "Lament",
+        "i-v6-iv6-V7",
+        [
+          [0, "m9", 8],
+          [7, "m", 8, 10],
+          [5, "m7", 8, 8],
+          [7, "7", 8]
+        ],
+        { timing: "2 bars each" }
+      ],
+      [
+        "Mediant Shift",
+        "im9-bVIM7-IIIM-V7sus4-V7",
+        [
+          [0, "m9", 8],
+          [8, "M7", 8],
+          [4, "M", 8],
+          [7, "7sus4", 4],
+          [7, "7", 4]
+        ],
+        { timing: "sus resolves late" }
+      ],
+      [
+        "Neapolitan",
+        "i-iv-bIIM7-V7-im9-bVIM7-bIIM7-V7b9",
+        [
+          [0, "m", 6],
+          [5, "m", 2],
+          [1, "M7", 6],
+          [7, "7", 2],
+          [0, "m9", 6],
+          [8, "M7", 2],
+          [1, "M7", 4],
+          [7, "7b9", 4]
+        ],
+        { timing: "long-short" }
+      ],
+      [
+        "Picardy",
+        "i-iv-bVII-bIII-bVI-iim7b5-V7-Iadd9",
+        [
+          [0, "m", 8],
+          [5, "m", 8],
+          [10, "M", 8],
+          [3, "M7", 8],
+          [8, "M7", 8],
+          [2, "m7b5", 8],
+          [7, "7", 8],
+          [0, "add9", 8]
+        ],
+        { timing: "16 bars, major ending" }
+      ],
+      [
+        "Dorian Drift",
+        "im7-IV7-bVIIM7-bIIIM7-bVIM7-V7sus4-im7-IV9-bVIIM7-bIIIM7-bIIM7-V7",
+        [
+          [0, "m7", 3],
+          [5, "7", 3],
+          [10, "M7", 2],
+          [3, "M7", 3],
+          [8, "M7", 3],
+          [7, "7sus4", 2],
+          [0, "m7", 3],
+          [5, "9", 3],
+          [10, "M7", 2],
+          [3, "M7", 3],
+          [1, "M7", 3],
+          [7, "7", 2]
+        ],
+        { timing: "3+3+2" }
+      ],
+      [
+        "Tritone Sub",
+        "im9-bII7-im9-bVI7-V7b9-im11-bII7-bVIM7-V7b9",
+        [
+          [0, "m9", 6],
+          [1, "7", 2],
+          [0, "m9", 4],
+          [8, "7", 2],
+          [7, "7b9", 2],
+          [0, "m11", 6],
+          [1, "7", 2],
+          [8, "M7", 4],
+          [7, "7b9", 4]
+        ],
+        { timing: "long-short" }
+      ],
+      [
+        "Dorian Light",
+        "im9-II-bVIIadd9-IV",
+        [
+          [0, "m9", 8],
+          [2, "M", 8],
+          [10, "add9", 8],
+          [5, "M", 8]
+        ],
+        { push: true, timing: "pushed" }
+      ],
+      [
+        "Long Night",
+        "i-bVI-bIII-bVII-iv-bVI-bVII-V7sus4-V7",
+        [
+          [0, "m", 8],
+          [8, "M", 8],
+          [3, "M", 8],
+          [10, "M", 8],
+          [5, "m7", 8],
+          [8, "M7", 8],
+          [10, "M", 8],
+          [7, "7sus4", 4],
+          [7, "7", 4]
+        ],
+        { timing: "16 bars" }
+      ],
+      [
+        "Push Minor",
+        "im7-bVIIadd9-bVIM7-vm7",
+        [
+          [0, "m7", 8],
+          [10, "add9", 8],
+          [8, "M7", 8],
+          [7, "m7", 8]
+        ],
+        { push: true, timing: "pushed" }
+      ],
+      [
+        "Slow Fast",
+        "im9-bIIIM7-bVIIadd9-ivm9",
+        [
+          [0, "m9", 12],
+          [3, "M7", 4],
+          [10, "add9", 12],
+          [5, "m9", 4]
+        ],
+        { timing: "3 bars + 1" }
+      ]
+    ];
+    const MAJ = [
+      [
+        "Royal Road",
+        "IVM7-V7-iiim7-vim7-IVM7-V7-Iadd9",
+        [
+          [5, "M7", 4],
+          [7, "7", 4],
+          [4, "m7", 4],
+          [9, "m7", 4],
+          [5, "M7", 4],
+          [7, "7", 4],
+          [0, "add9", 8]
+        ],
+        { timing: "bar each, long home" }
+      ],
+      [
+        "Mario Cadence",
+        "I-bVI-bVII-I-bVI-bVII-Iadd9",
+        [
+          [0, "M", 8],
+          [8, "M", 4],
+          [10, "M", 4],
+          [0, "M", 8],
+          [8, "M", 2],
+          [10, "M", 2],
+          [0, "add9", 4]
+        ],
+        { timing: "speeds up" }
+      ],
+      [
+        "Lydian Float",
+        "IM7-II-IVM7-Iadd9",
+        [
+          [0, "M7", 8],
+          [2, "M", 8],
+          [5, "M7", 8],
+          [0, "add9", 8]
+        ],
+        { push: true, timing: "pushed" }
+      ],
+      [
+        "Backdoor",
+        "IVM7-ivm6-bVII9-IM7",
+        [
+          [5, "M7", 8],
+          [5, "m6", 8],
+          [10, "9", 8],
+          [0, "M7", 8]
+        ],
+        { timing: "2 bars each" }
+      ],
+      [
+        "Hollywood",
+        "I-III-IV-iv",
+        [
+          [0, "M", 8],
+          [4, "M", 8],
+          [5, "M", 8],
+          [5, "m", 8]
+        ],
+        { timing: "2 bars each" }
+      ],
+      [
+        "Neo Soul",
+        "IM9-iiim7-vim9-II9-iim9-V13-IM7-bVII9",
+        [
+          [0, "M9", 4],
+          [4, "m7", 4],
+          [9, "m9", 4],
+          [2, "9", 4],
+          [2, "m9", 4],
+          [7, "13", 4],
+          [0, "M7", 6],
+          [10, "9", 2]
+        ],
+        { push: true, timing: "pushed" }
+      ],
+      [
+        "Gospel Turn",
+        "I-I7-IV-ivm6-I-vim7-iim7-V7sus4",
+        [
+          [0, "M", 4],
+          [0, "7", 4],
+          [5, "M", 4],
+          [5, "m6", 4],
+          [0, "M", 4],
+          [9, "m7", 4],
+          [2, "m7", 4],
+          [7, "7sus4", 4]
+        ],
+        { timing: "bar each" }
+      ],
+      [
+        "Mixo Cascade",
+        "I-bVIIadd9-IVadd9-I-bVII-IV-Isus4-I",
+        [
+          [0, "M", 3],
+          [10, "add9", 3],
+          [5, "add9", 2],
+          [0, "M", 8],
+          [10, "M", 3],
+          [5, "M", 3],
+          [0, "sus4", 2],
+          [0, "M", 8]
+        ],
+        { timing: "3+3+2" }
+      ],
+      [
+        "Journey",
+        "I-vi-IV-V-bVI-bVII-Iadd9-Isus4",
+        [
+          [0, "M", 8],
+          [9, "m", 8],
+          [5, "M", 8],
+          [7, "M", 8],
+          [8, "M", 8],
+          [10, "M", 8],
+          [0, "add9", 8],
+          [0, "sus4", 8]
+        ],
+        { timing: "16 bars" }
+      ],
+      [
+        "Mediant Glow",
+        "IM7-bIIIM7-bVIM7-bIIM7",
+        [
+          [0, "M7", 8],
+          [3, "M7", 8],
+          [8, "M7", 8],
+          [1, "M7", 8]
+        ],
+        { timing: "2 bars each" }
+      ]
+    ];
+    const CR = [
+      ["Hold", null],
+      [
+        "Charleston",
+        [
+          [0, 3, 104],
+          [6, 2, 92]
+        ]
+      ],
+      [
+        "Push Stab",
+        [
+          [0, 2, 100],
+          [7, 1, 84],
+          [14, 2, 96, 2]
+        ]
+      ],
+      [
+        "3-3-2",
+        [
+          [0, 5, 102],
+          [6, 5, 90],
+          [12, 3, 96]
+        ]
+      ],
+      [
+        "Skank",
+        [
+          [2, 1, 92],
+          [6, 1, 88],
+          [10, 1, 92],
+          [14, 1, 88]
+        ]
+      ],
+      [
+        "Long Short",
+        [
+          [0, 10, 100],
+          [11, 4, 86]
+        ]
+      ],
+      [
+        "Dotted",
+        [
+          [0, 2, 102],
+          [3, 2, 86],
+          [6, 2, 92],
+          [9, 2, 86],
+          [12, 3, 96]
+        ]
+      ],
+      [
+        "Halftime",
+        [
+          [0, 7, 100],
+          [8, 7, 90]
+        ]
+      ]
+    ];
+    const BG = [
+      [
+        "Follow",
+        [
+          [0, 6, "R", 112],
+          [6, 2, "O", 92],
+          [8, 6, "R", 104],
+          [14, 2, "A", 96]
+        ]
+      ],
+      [
+        "Tumble",
+        [
+          [0, 3, "R", 112],
+          [3, 3, "R", 90],
+          [6, 2, "5", 96],
+          [8, 3, "O", 100],
+          [11, 3, "7", 90],
+          [14, 2, "A", 96]
+        ]
+      ],
+      [
+        "Pocket",
+        [
+          [0, 2, "R", 112],
+          [3, 1, "R", 82],
+          [6, 1, "3", 90],
+          [7, 3, "5", 96],
+          [10, 2, "O", 94],
+          [13, 1, "5", 84],
+          [14, 2, "A", 98]
+        ]
+      ],
+      ["Sustain", [[0, 16, "R", 108]]],
+      [
+        "Octaves",
+        [
+          [0, 2, "R", 110],
+          [2, 2, "O", 90],
+          [4, 2, "R", 100],
+          [6, 2, "O", 88],
+          [8, 2, "R", 104],
+          [10, 2, "O", 90],
+          [12, 2, "5", 96],
+          [14, 2, "O", 92]
+        ]
+      ]
+    ];
+    const thin = (iv) => {
+      iv = iv.slice();
+      if (iv.length > 4 && iv.includes(7)) iv.splice(iv.indexOf(7), 1);
+      while (iv.length > 4) iv.splice(iv.length - 2, 1);
+      return iv;
+    };
+    function voice4(R3, off, iv, center, prev) {
+      iv = thin(iv);
+      let best = null, bc = 1e9;
+      for (let r = 0; r < iv.length; r++)
+        for (let k = -2; k <= 2; k++) {
+          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k + 48).sort((a, b) => a - b);
+          const m = ns.reduce((a, b) => a + b, 0) / ns.length;
+          let c = Math.abs(m - center) * (prev ? 0.7 : 2) + (ns[ns.length - 1] - ns[0] > 19 ? 6 : 0);
+          if (prev) c += ns.reduce((a, n) => a + Math.min(...prev.map((p) => Math.abs(p - n))), 0);
+          if (c < bc) {
+            bc = c;
+            best = ns;
+          }
+        }
+      return best;
+    }
+    function segsOf(P, R3, center) {
+      const [, , list, opt] = P;
+      let at2 = 0;
+      const segs = list.map(([off, q, beats, bass]) => {
+        const s = { s: at2 * 4, e: (at2 + beats) * 4, off, q, bass: bass == null ? off : bass };
+        at2 += beats;
+        return s;
+      });
+      if (opt.push) {
+        for (let i = 1; i < segs.length; i++) {
+          segs[i].s -= 2;
+          segs[i - 1].e -= 2;
+        }
+        const last = segs[segs.length - 1], f = segs[0];
+        last.e -= 2;
+        segs.push({ ...f, s: last.e, e: last.e + 2, wrap: true });
+      }
+      let prev = null;
+      for (let pass = 0; pass < 2; pass++)
+        segs.forEach((g) => {
+          g.v = voice4(R3, g.off, Q2[g.q], center, prev);
+          prev = g.v;
+        });
+      const w = segs.find((g) => g.wrap);
+      if (w) w.v = segs[0].v;
+      return segs;
+    }
+    const segAt2 = (segs, total, s) => {
+      s = (s % total + total) % total;
+      return segs.find((g) => s >= g.s && s < g.e) || segs[0];
+    };
+    const segNext2 = (segs, g) => {
+      const real = segs.filter((x) => !x.wrap);
+      return real[(real.indexOf(g.wrap ? real[0] : g) + 1) % real.length];
+    };
+    function tile(total, hits, segs, emit, bass) {
+      for (let base = 0; base < total; base += 16)
+        for (const h of hits) {
+          let s = base + h[0];
+          if (s >= total) continue;
+          let l = Math.min(h[1], total - s);
+          const look = bass ? 0 : h[3] || 0;
+          while (l > 0) {
+            const g = segAt2(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
+            emit(s, Math.max(1, end), h, g);
+            if (look) break;
+            s += end;
+            l -= end;
+          }
+        }
+    }
+    const MOT = [
+      [
+        "Call",
+        [
+          [0, 3, "C"],
+          [3, 1, 1],
+          [4, 4, "C"],
+          [10, 2, -1],
+          [12, 4, "C"],
+          [20, 2, 1],
+          [22, 2, 1],
+          [24, 6, "C"]
+        ]
+      ],
+      [
+        "Rise",
+        [
+          [2, 2, "C"],
+          [4, 2, 1],
+          [6, 2, 1],
+          [8, 6, "C"],
+          [16, 3, "C"],
+          [19, 3, -1],
+          [22, 2, -1],
+          [24, 8, "C"]
+        ]
+      ],
+      [
+        "Hook",
+        [
+          [0, 2, "C"],
+          [2, 2, "C"],
+          [6, 2, 1],
+          [8, 4, "C"],
+          [14, 2, -2],
+          [16, 2, "C"],
+          [18, 2, "C"],
+          [22, 2, -1],
+          [24, 6, "C"]
+        ]
+      ],
+      [
+        "Answer",
+        [
+          [4, 2, "C"],
+          [6, 2, -1],
+          [8, 6, "C"],
+          [20, 2, "C"],
+          [22, 2, 1],
+          [24, 2, 1],
+          [26, 6, "C"]
+        ]
+      ]
+    ];
+    const SC = { minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11] };
+    function lead(segs, total, R3, scale, mot) {
+      const sc = [];
+      for (let n = 55; n <= 91; n++) if (SC[scale].includes(((n - R3) % 12 + 12) % 12)) sc.push(n);
+      const notes = [];
+      let cur = 72 + R3 % 12;
+      for (let base = 0; base < total; base += 32) {
+        const answer2 = base / 32 % 2 === 1;
+        for (const [o, l, mv] of mot) {
+          const s = base + o;
+          if (s >= total) continue;
+          const g = segAt2(segs, total, s);
+          if (mv === "C") {
+            const tones = [];
+            g.v.forEach((n) => [-12, 0, 12].forEach((k) => tones.push(n + k + 12)));
+            const aim = cur + (answer2 ? 2 : 0);
+            cur = tones.filter((n) => n >= 64 && n <= 86).sort((a, b) => Math.abs(a - aim) - Math.abs(b - aim))[0] || cur;
+          } else {
+            let i = sc.findIndex((n) => n >= cur);
+            if (i < 0) i = sc.length - 1;
+            cur = sc[Math.max(0, Math.min(sc.length - 1, i + (answer2 ? -mv : mv)))];
+          }
+          notes.push({ s, l: Math.min(l, total - s), n: cur, v: o % 8 === 0 ? 104 : 90 });
+        }
+      }
+      return notes;
+    }
+    let uid = 0;
+    const genres = [...new Set(FAC.filter((f) => f.pool === "chords").map((f) => f.genre))];
+    for (const g of genres) {
+      const keysOf = (sc) => {
+        const m = /* @__PURE__ */ new Map();
+        FAC.forEach((f) => {
+          if (f.genre === g && f.pool === "chords" && f.keyName && f.key && f.key.scale === sc && !m.has(f.keyName))
+            m.set(f.keyName, { keyName: f.keyName, key: { root: f.key.root, scale: sc } });
+        });
+        return [...m.values()];
+      };
+      const km = keysOf("minor"), kM = keysOf("major");
+      const plan2 = [
+        ...MIN.map((p) => [p, km.length ? km : [{ keyName: "Am", key: KEYS.Am }], "minor"]),
+        ...kM.length ? MAJ.map((p) => [p, kM, "major"]) : []
+      ];
+      const cr = shuf(CR), bg = shuf(BG);
+      let ci = 0, bi = 0, ki = 0, mi = 0;
+      const push = (o) => FAC.push(Object.assign({ id: "hx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
+      for (const [P, keys2, scale] of plan2) {
+        const [title, pn, list, opt] = P, beats = list.reduce((a, c) => a + c[2], 0), bars = beats / 4, total = bars * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")";
+        const segs = segsOf(P, R3, 62);
+        const rhythms = [CR[0], cr[ci++ % cr.length], cr[ci++ % cr.length]].filter((c, i, a) => a.indexOf(c) === i);
+        if (rhythms.length < 3) rhythms.push(cr[ci++ % cr.length]);
+        for (const c of rhythms) {
+          const notes = [];
+          if (!c[1])
+            segs.forEach((sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i ? 88 : 96 })));
+          else tile(total, c[1], segs, (s, l, h, sg) => sg.v.forEach((n) => notes.push({ s, l, n, v: h[2] })));
+          push({
+            name: "Chords: " + tag + " " + c[0] + how,
+            bars,
+            notes,
+            ...K,
+            role: "Chords",
+            pool: "chords",
+            lively: c[0] !== "Hold"
+          });
+        }
+        for (let n = 0; n < 2; n++) {
+          const b = bg[bi++ % bg.length], notes = [];
+          const note = (tok, sg) => {
+            const root = 36 + ((R3 + sg.off) % 12 + 12) % 12, low2 = 36 + ((R3 + sg.bass) % 12 + 12) % 12, iv = Q2[sg.q], nx = segNext2(segs, sg), nr = 36 + ((R3 + nx.bass) % 12 + 12) % 12;
+            switch (tok) {
+              case "R":
+                return low2;
+              case "O":
+                return low2 + 12;
+              case "5":
+                return root + (iv[2] || 7);
+              case "3":
+                return root + iv[1];
+              case "7":
+                return root + (iv[3] != null && iv[3] < 12 ? iv[3] : 12);
+              case "A":
+                return nr === low2 ? low2 + 7 : nr < low2 ? nr + 1 : nr - 1;
+            }
+            return low2;
+          };
+          tile(total, b[1], segs, (s, l, h, sg) => notes.push({ s, l, n: note(h[2], sg), v: h[3] }), 1);
+          push({
+            name: "Bass: " + tag + " " + b[0] + how,
+            bars,
+            notes,
+            ...K,
+            role: "Bass",
+            pool: "bass",
+            lively: b[0] !== "Sustain"
+          });
+        }
+        {
+          const pv = segsOf(P, R3, 57), notes = [];
+          pv.forEach(
+            (sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 82 }))
+          );
+          push({ name: "Pad: " + tag + how, bars, notes, ...K, role: "Pad", pool: "pad" });
+        }
+        {
+          const A = [
+            ["Ripple", "xxx.xxx.xx.xxxx.", [0, 1, 2, 3, 2, 1, 0, 1, 3, 2]],
+            ["Gallop", "x.xxx.xxx.xxx.xx", [0, 2, 1, 3, 1, 2, 0, 3]],
+            ["Spiral", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3, 4, 3, 2, 1]],
+            ["Skip", "x..x..x.x..x..x.", [0, 3, 1, 4, 2, 0]]
+          ];
+          const [an, mask, seq] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
+          let k = 0;
+          for (let s = 0; s < total; s++) {
+            if (mask[s % 16] !== "x") continue;
+            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq[k++ % seq.length];
+            notes.push({
+              s,
+              l: 1,
+              n: ts[idx % ts.length] + 12 * Math.floor(idx / ts.length),
+              v: s % 4 === 0 ? 102 : s % 2 ? 76 : 88
+            });
+          }
+          push({ name: "Arp: " + an + " " + tag + how, bars, notes, ...K, role: "Lead", pool: "pluck", lively: true });
+        }
+        {
+          const m = MOT[mi++ % MOT.length];
+          push({
+            name: "Lead: " + m[0] + " " + tag + how,
+            bars,
+            notes: lead(segs, total, R3, scale, m[1]),
+            ...K,
+            role: "Lead",
+            pool: "lead",
+            lively: true
+          });
+        }
+      }
+    }
+  }
+
   // src/library/pools.js
   var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck", "acid"];
   var LV_POOLCACHE = {};
@@ -22457,6 +23156,18 @@ input[type='number'] {
       if (f) c[f.genre] = (c[f.genre] || 0) + 1;
     });
     return st._genre = Object.keys(c).sort((a, b) => c[b] - c[a])[0] || "dnb";
+  }
+  function finishLibrary(styles) {
+    if (FAC._done) return;
+    FAC._done = true;
+    try {
+      styles.forEach((st) => lvFullPool(st));
+    } catch (e) {
+    }
+    const n = FAC.length;
+    addHarmonyPack();
+    for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
+    for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
   }
   var FULLKITS = {};
   function lvFullPool(st) {
@@ -24702,24 +25413,24 @@ input[type='number'] {
     const wz = TR.playing && TR.mode === "wiz" ? TR.wz : null;
     const sb = $("#wzSong");
     if (sb) {
-      const on = !!wz && !wz.loop;
-      sb.textContent = on ? "■ Stop preview" : "▶ Preview the song";
-      sb.classList.toggle("on", on);
+      const on2 = !!wz && !wz.loop;
+      sb.textContent = on2 ? "■ Stop preview" : "▶ Preview the song";
+      sb.classList.toggle("on", on2);
     }
     $$(".wzsec").forEach((b) => {
-      const on = !!wz && wz.secIdx === +b.dataset.si;
-      b.textContent = on ? "■" : "▶";
-      b.classList.toggle("on", on);
+      const on2 = !!wz && wz.secIdx === +b.dataset.si;
+      b.textContent = on2 ? "■" : "▶";
+      b.classList.toggle("on", on2);
     });
     $$(".wzcell").forEach((b) => {
-      const on = TR.playing && TR.mode === "pat" && TR.pat === b._f && TR.patTrack === +b.dataset.t;
-      b.textContent = on ? "■" : "▶";
-      b.classList.toggle("on", on);
+      const on2 = TR.playing && TR.mode === "pat" && TR.pat === b._f && TR.patTrack === +b.dataset.t;
+      b.textContent = on2 ? "■" : "▶";
+      b.classList.toggle("on", on2);
     });
     $$(".sdemo").forEach((b) => {
-      const on = !!wz && wz.demo === b.dataset.id;
-      b.textContent = on ? "■ Stop" : "▶ Hear it";
-      b.classList.toggle("on", on);
+      const on2 = !!wz && wz.demo === b.dataset.id;
+      b.textContent = on2 ? "■ Stop" : "▶ Hear it";
+      b.classList.toggle("on", on2);
     });
     if (!wz) $$(".tlh.playing").forEach((e) => e.classList.remove("playing"));
   }
@@ -24735,6 +25446,7 @@ input[type='number'] {
   }
 
   // src/live/state.js
+  var ENTRY_TICKS = { smooth: 32, slow: 64, long: 128, vlong: 256 };
   var LVK = "mc707-live";
   var LV_LAYOUT = 5;
   var LV_DRUM_NOTES = [37, 39, 42, 46, 49, 51, 54, 56, 36, 38, 41, 45, 48, 62, 63, 64];
@@ -24932,7 +25644,7 @@ input[type='number'] {
     LV.swing = clamp(+LV.swing || 50, 50, 75);
     if (!(LV.quant === "phrase" || [1, 2, 4, 8].includes(+LV.quant))) LV.quant = 4;
     else if (LV.quant !== "phrase") LV.quant = +LV.quant;
-    if (!["hard", "smooth", "slow"].includes(LV.entry)) LV.entry = "smooth";
+    if (!ENTRY_TICKS[LV.entry] && LV.entry !== "hard") LV.entry = "smooth";
     LV.keyBase = clamp(Math.round(+LV.keyBase || 60), 0, 115);
     LV.muteBase = clamp(Math.round(+LV.muteBase || 72), 0, 119);
     LV.padCh = clamp(Math.round(+LV.padCh || 0), 0, 16);
@@ -25013,6 +25725,79 @@ input[type='number'] {
     return { v0, v1, t0, t1: t0 + Math.max(0, dur) };
   }
   var lvHue = (e) => Math.round(215 - e * 19);
+
+  // src/live/fades.js
+  var EXPR = 11;
+  var ends = () => LV.fadeEnds || (LV.fadeEnds = []);
+  var low = () => LV.low || (LV.low = {});
+  var on = () => S.sendCC !== false;
+  function lvFadeOut(t, tick, dur) {
+    if (!on() || dur <= 0) return;
+    lvMove({
+      id: "fade" + t,
+      tag: "fade",
+      tracks: [t],
+      cc: EXPR,
+      kind: "ramp",
+      from: LV.ccLast && LV.ccLast[t + ":" + EXPR] != null ? LV.ccLast[t + ":" + EXPR] : low()[t] ? 0 : "rest",
+      to: 0,
+      curve: "lin",
+      start: tick,
+      end: tick + dur,
+      restore: false
+    });
+    low()[t] = true;
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    ends().push({ t, at: tick + dur, back: tick + dur + 8 });
+  }
+  function lvFadeIn(t, tick, dur, nt) {
+    if (!on()) return;
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    if (dur <= 0) return lvLevelBack(t, nt);
+    lvSendCC(t, EXPR, 0, nt);
+    lvMove({
+      id: "fade" + t,
+      tag: "fade",
+      tracks: [t],
+      cc: EXPR,
+      kind: "ramp",
+      from: 0,
+      to: "rest",
+      curve: "lin",
+      start: tick,
+      end: tick + dur
+    });
+    delete low()[t];
+  }
+  function lvLevelBack(t, nt) {
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    if (!low()[t] && !(LV.autos || []).some((a) => a.id === "fade" + t)) return;
+    LV.autos = LV.autos.filter((a) => a.id !== "fade" + t);
+    delete low()[t];
+    lvSendCC(t, EXPR, lvRestCC(t, EXPR), nt);
+  }
+  function lvFadeTick(tick, nt) {
+    if (!LV.fadeEnds || !LV.fadeEnds.length) return;
+    LV.fadeEnds = LV.fadeEnds.filter((e) => {
+      if (!e.off && tick >= e.at) {
+        e.off = true;
+        if (on() && !S.tracks[e.t].mute) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
+      }
+      if (tick >= e.back) {
+        lvLevelBack(e.t, nt);
+        return false;
+      }
+      return true;
+    });
+  }
+  function lvFadesReset(nt) {
+    const l = LV.low || {};
+    LV.fadeEnds = [];
+    for (const t in l) {
+      if (on()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
+      delete l[t];
+    }
+  }
 
   // src/live/set-builder.js
   var avgPitch = (f) => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
@@ -25230,13 +26015,13 @@ input[type='number'] {
   }
 
   // src/live/pads.js
-  function scatter(i, on) {
+  function scatter(i, on2) {
     if (!MIDI.out) {
-      if (on) toast("Connect the MC-707 first");
+      if (on2) toast("Connect the MC-707 first");
       return;
     }
     const ch = (S.ctrlCh || 16) - 1;
-    if (on) {
+    if (on2) {
       LV.held["sc" + i] = 1;
       lvSend([144 | ch, LV.scBase + i, 110]);
     } else {
@@ -25244,7 +26029,7 @@ input[type='number'] {
       lvSend([128 | ch, LV.scBase + i, 0]);
     }
     const b = $("#lvSc" + i);
-    if (b) b.classList.toggle("on", on);
+    if (b) b.classList.toggle("on", on2);
   }
   function sendKnob(i, val) {
     LV.knobs[i] = val;
@@ -25510,7 +26295,7 @@ input[type='number'] {
   }
   function ravenSection(chSel, noteIn) {
     const c = LV.ctl, act = rvActive(), wrap = el("div", { class: "rvWrap" + (LV.perfOn ? "" : " off") });
-    const seg = (label, val, opts, on) => el(
+    const seg = (label, val, opts, on2) => el(
       "div",
       { class: "rvSeg" },
       el("small", {}, label),
@@ -25524,7 +26309,7 @@ input[type='number'] {
               class: "btn sm" + (String(val) === String(v) ? " on" : ""),
               title: t || "",
               onclick: () => {
-                on(v);
+                on2(v);
                 saveLive();
                 liveRenderSettings();
                 liveRenderPerf();
@@ -25703,7 +26488,7 @@ input[type='number'] {
   // src/live/controller-settings.js
   function ctlRenderSettings(b, chSel) {
     const c = LV.ctl, ins = MIDI.access ? [...MIDI.access.inputs.values()].filter((i) => i !== MIDI.inp) : [], p = ctlPreset();
-    const sel = (id, label, val, opts, on) => el(
+    const sel = (id, label, val, opts, on2) => el(
       "label",
       { class: "lvf" },
       label,
@@ -25712,7 +26497,7 @@ input[type='number'] {
         {
           id,
           onchange: (e) => {
-            on(e.target.value);
+            on2(e.target.value);
             saveLive();
             liveRenderSettings();
             liveRenderCtlBar();
@@ -25975,19 +26760,19 @@ input[type='number'] {
     const b = $("#lvSetBody");
     if (!b) return;
     b.textContent = "";
-    const chSel = (val, on) => {
-      const s = el("select", { onchange: (e) => on(+e.target.value) });
+    const chSel = (val, on2) => {
+      const s = el("select", { onchange: (e) => on2(+e.target.value) });
       s.append(el("option", { value: 0, selected: val === 0 }, "Any channel"));
       for (let c = 1; c <= 16; c++) s.append(el("option", { value: c, selected: val === c }, "Channel " + c));
       return s;
     };
-    const noteIn = (val, on) => el("input", {
+    const noteIn = (val, on2) => el("input", {
       type: "number",
       min: 0,
       max: 127,
       value: val,
       style: "width:64px",
-      onchange: (e) => on(clamp(Math.round(+e.target.value) || 0, 0, 127))
+      onchange: (e) => on2(clamp(Math.round(+e.target.value) || 0, 0, 127))
     });
     b.append(
       el(
@@ -26533,9 +27318,9 @@ input[type='number'] {
   function liveSync() {
     const b = $("#lvStart");
     if (!b) return;
-    const on = lvOn();
-    b.textContent = !on ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
-    b.classList.toggle("stopb", on);
+    const on2 = lvOn();
+    b.textContent = !on2 ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
+    b.classList.toggle("stopb", on2);
     {
       const pb = $("#lvPumpB"), pn = $("#lvPanB");
       if (pb)
@@ -26567,7 +27352,7 @@ input[type='number'] {
       const x = $("#lvRate" + String(r).replace(".", "_"));
       if (x) x.classList.toggle("on", LV.rate === r);
     });
-    if (!on) liveStatus(0);
+    if (!on2) liveStatus(0);
   }
   function liveRenderKeyRec() {
     const b = $("#lvKeyRec");
@@ -26577,9 +27362,9 @@ input[type='number'] {
     b.append(el("small", {}, "Try"));
     st.keys.forEach(([pc, why]) => {
       const m = lvModeFam(st.scale);
-      const on = LV.key === pc && LV.mode === m;
+      const on2 = LV.key === pc && LV.mode === m;
       b.append(
-        el("button", { class: "lvkr" + (on ? " on" : ""), title: why, onclick: () => liveKeyCue(pc, m) }, NK(pc, m))
+        el("button", { class: "lvkr" + (on2 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc, m) }, NK(pc, m))
       );
     });
   }
@@ -26909,8 +27694,8 @@ input[type='number'] {
     }
     const x = cv.getContext("2d");
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const on = lvOn(), actx = AU.ctx ? AU.ctx.currentTime : 0;
-    if (on) {
+    const on2 = lvOn(), actx = AU.ctx ? AU.ctx.currentTime : 0;
+    if (on2) {
       while (VZ.ev.length && VZ.ev[0].time <= actx) vizSpawn(VZ.ev.shift());
     } else VZ.ev.length = 0;
     const dec = (k) => Math.pow(0.5, dt / k);
@@ -26919,11 +27704,11 @@ input[type='number'] {
     VZ.hat *= dec(0.07);
     VZ.crash *= dec(0.5);
     VZ.flash *= dec(0.12);
-    const t = now / 1e3, tk = VZ.tickf;
+    const t = now / 1e3, tk2 = VZ.tickf;
     const sc = LV.scenes[LV.cur];
     const hueT = sc ? lvHue(sc.e) : 215;
     VZ.hue += ((hueT - VZ.hue + 540) % 360 - 180) * Math.min(1, dt * 2);
-    const hue = VZ.hue, beat = on ? Math.pow(1 - tk % 8 / 8, 2.4) * (Math.floor(tk % 32 / 8) === 0 ? 1 : 0.55) : 0;
+    const hue = VZ.hue, beat = on2 ? Math.pow(1 - tk2 % 8 / 8, 2.4) * (Math.floor(tk2 % 32 / 8) === 0 ? 1 : 0.55) : 0;
     const hz = H * 0.58;
     let g = x.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "hsl(" + (hue + 250) % 360 + ",55%," + (6 + beat * 3) + "%)");
@@ -26952,13 +27737,13 @@ input[type='number'] {
     x.fill();
     x.fillStyle = "hsl(" + (hue + 300) % 360 + ",60%," + (14 + VZ.kick * 10) + "%)";
     for (let i = 0; i < 6; i++) {
-      const yy = sy + sr * (0.05 + i * 0.17), hh = sr * (0.02 + i * 0.022) * (1 + (on ? tk / 32 % 1 : t % 1) * 0);
+      const yy = sy + sr * (0.05 + i * 0.17), hh = sr * (0.02 + i * 0.022) * (1 + (on2 ? tk2 / 32 % 1 : t % 1) * 0);
       x.fillRect(sx - sr, yy, sr * 2, hh);
     }
     x.restore();
     const bw2 = W / VZ.nb;
     for (let i = 0; i < VZ.nb; i++) {
-      if (!on)
+      if (!on2)
         VZ.bars[i] = Math.max(
           VZ.bars[i] * 0.9,
           0.05 + 0.05 * Math.sin(t * 1.2 + i * 0.35) + 0.03 * Math.sin(t * 0.7 + i * 0.9)
@@ -26981,7 +27766,7 @@ input[type='number'] {
     x.fillRect(0, hz, W, H - hz);
     x.strokeStyle = "hsl(" + (hue + 300) % 360 + ",90%,62%)";
     x.lineWidth = 1;
-    const ph = on ? tk / 32 % 1 : t * 0.12 % 1;
+    const ph = on2 ? tk2 / 32 % 1 : t * 0.12 % 1;
     x.globalAlpha = 0.35 + 0.4 * beat;
     x.beginPath();
     for (let i = -14; i <= 14; i++) {
@@ -27049,7 +27834,7 @@ input[type='number'] {
     x.fillStyle = "#fff";
     x.globalAlpha = 0.55;
     x.font = "800 " + Math.max(14, Math.min(34, H * 0.1)) + 'px "Barlow Semi Condensed",system-ui,sans-serif';
-    x.fillText(on && sc ? sc.name.toUpperCase() : "READY", 14, H - 10);
+    x.fillText(on2 && sc ? sc.name.toUpperCase() : "READY", 14, H - 10);
     x.globalAlpha = 1;
   }
   function vizLoop(now) {
@@ -27196,17 +27981,17 @@ input[type='number'] {
     if (!lvOn()) return 0;
     return w === "now" ? TR.tick : w === "bar" ? lvBoundary(1) : Math.ceil((TR.tick + 1) / 8) * 8;
   }
-  function ctlMute(tracks, on) {
+  function ctlMute(tracks, on2) {
     if (!lvOn()) {
       tracks.forEach((t) => {
-        LV.mute[t] = on;
+        LV.mute[t] = on2;
       });
       LV.tg = Array.from({ length: 8 }, (_, t) => mkEnv(lvTarget(t), lvTarget(t), 0, 0));
       LV.ver++;
       return;
     }
     LV.cues = LV.cues.filter((c) => !(c.type === "mute" && c.tracks.some((t) => tracks.includes(t))));
-    LV.cues.push({ type: "mute", tracks, on, tick: ctlWhen(LV.ctl.muteWhen) });
+    LV.cues.push({ type: "mute", tracks, on: on2, tick: ctlWhen(LV.ctl.muteWhen) });
     lvSortCues();
     LV.ver++;
   }
@@ -27230,11 +28015,11 @@ input[type='number'] {
     }
     return n;
   }
-  function ctlSolo(n, v, on) {
+  function ctlSolo(n, v, on2) {
     const c = LV.ctl, t = c.soloT;
     if (t < 0) return;
     const tr = S.tracks[t], now = lvNow();
-    if (on) {
+    if (on2) {
       let nn = clamp(n + 12 * c.soloOct, 0, 127);
       if (c.soloSnap) nn = ctlSnap(nn);
       if (CTL.held[n] != null) sendMidi([128 | tr.ch - 1, CTL.held[n], 0], now);
@@ -27259,12 +28044,12 @@ input[type='number'] {
     CTL.held = {};
     CTL.trHeld = [];
   }
-  function ravenMuteKey(i, on) {
+  function ravenMuteKey(i, on2) {
     const c = LV.ctl;
     if (i < 8) {
-      if (c.muteMode === "hold" || on) ctlMute([i], !lvEffMute(i));
-      if (on) CTL.lastAct = (lvEffMute(i) ? "Mute " : "Unmute ") + S.tracks[i].name;
-    } else if (on) {
+      if (c.muteMode === "hold" || on2) ctlMute([i], !lvEffMute(i));
+      if (on2) CTL.lastAct = (lvEffMute(i) ? "Mute " : "Unmute ") + S.tracks[i].name;
+    } else if (on2) {
       if (i === 8) {
         ctlMute([0, 1, 2, 3, 4, 5, 6, 7], false);
         CTL.lastAct = "Unmute all";
@@ -27280,9 +28065,9 @@ input[type='number'] {
       }
     }
   }
-  function ravenKeyKey(i, on) {
+  function ravenKeyKey(i, on2) {
     const c = LV.ctl;
-    if (on) {
+    if (on2) {
       if (LV.homeKey == null) LV.homeKey = LV.key;
       CTL.trHeld = CTL.trHeld.filter((x) => x !== i);
       CTL.trHeld.push(i);
@@ -27293,15 +28078,15 @@ input[type='number'] {
       if (c.trHold) ctlTranspose(CTL.trHeld.length ? CTL.trHeld[CTL.trHeld.length - 1] : null);
     }
   }
-  function ctlKey(n, v, on) {
+  function ctlKey(n, v, on2) {
     const [z, i] = ctlZoneOf(n);
-    if (z === "mute") ravenMuteKey(i, on);
-    else if (z === "key") ravenKeyKey(i, on);
-    else ctlSolo(n, v, on);
+    if (z === "mute") ravenMuteKey(i, on2);
+    else if (z === "key") ravenKeyKey(i, on2);
+    else ctlSolo(n, v, on2);
     const k = $("#ctlK" + n);
-    if (k) k.classList.toggle("hit", on);
+    if (k) k.classList.toggle("hit", on2);
     const a = $("#ctlAct");
-    if (a && on && CTL.lastAct) a.textContent = " → " + CTL.lastAct;
+    if (a && on2 && CTL.lastAct) a.textContent = " → " + CTL.lastAct;
   }
   function ctlDo(tg, val, press, release) {
     const now = lvNow(), k = tg[0], i = +tg.slice(1) - 1;
@@ -27357,8 +28142,8 @@ input[type='number'] {
     }
     if (st >= 240 || d.length < 2) return;
     const typ = st & 240, ch = (st & 15) + 1, n = d[1], v = d.length > 2 ? d[2] : 0;
-    const on = typ === 144 && v > 0, off = typ === 128 || typ === 144 && v === 0;
-    if (CTL.learnLow && on) {
+    const on2 = typ === 144 && v > 0, off = typ === 128 || typ === 144 && v === 0;
+    if (CTL.learnLow && on2) {
       const c = LV.ctl;
       c.low = n;
       c.base = n + (12 - n % 12) % 12;
@@ -27368,7 +28153,7 @@ input[type='number'] {
       toast("Lowest key set: " + noteLbl(n) + ". Zones start at " + noteLbl(c.base));
       return;
     }
-    if (CTL.learn && (typ === 176 || on)) {
+    if (CTL.learn && (typ === 176 || on2)) {
       const key = (typ === 176 ? "c" : "n") + ch + ":" + n, map = LV.ctl.map;
       for (const t2 in map) if (map[t2] === key) delete map[t2];
       map[CTL.learn] = key;
@@ -27387,10 +28172,10 @@ input[type='number'] {
       hooks.recMidi(ev);
       return;
     }
-    if (typ === 176 || on || off) {
+    if (typ === 176 || on2 || off) {
       const tg = CTL.idx[(typ === 176 ? "c" : "n") + ch + ":" + n];
       if (tg) {
-        ctlDo(tg, v, typ === 176 ? v > 0 : on, typ === 176 ? v === 0 : off);
+        ctlDo(tg, v, typ === 176 ? v > 0 : on2, typ === 176 ? v === 0 : off);
         return;
       }
     }
@@ -27413,9 +28198,9 @@ input[type='number'] {
       if (tr && MIDI.out) sendMidi([176 | tr.ch - 1, 64, v], lvNow());
       return;
     }
-    if (on || off) {
+    if (on2 || off) {
       if (LV.ctl.keyCh && LV.ctl.keyCh !== ch) return;
-      ctlKey(n, v, on);
+      ctlKey(n, v, on2);
     }
   }
   function ctlAttach() {
@@ -27812,7 +28597,11 @@ input[type='number'] {
         start: tick,
         end: tick + l.bars * 32
       });
-      if (j.fade) for (let t = 0; t < 8; t++) LV.tg[t] = mkEnv(1, 0, tick, l.bars * 32);
+      if (j.fade)
+        for (let t = 0; t < 8; t++) {
+          LV.tg[t] = mkEnv(1, 0, tick, l.bars * 32);
+          if (LV.voices[t].length) lvFadeOut(t, tick, l.bars * 32);
+        }
     }
     j.next = tick + l.bars * 32;
     lvHistMark(tick, (j.kind === "in" ? "Intro " : "Outro ") + (j.i + 1));
@@ -27823,20 +28612,20 @@ input[type='number'] {
     const j = LV.jam;
     if (!j) return [];
     const out = [];
-    let tk = j.next;
+    let tk2 = j.next;
     for (let i = j.i + 1; i < j.loops.length; i++) {
       out.push({
-        tick: tk,
+        tick: tk2,
         ids: Array.from({ length: 8 }, (_, t) => j.loops[i].ids[t] || null),
         label: (j.kind === "in" ? "Intro " : "Outro ") + (i + 1)
       });
-      tk += j.loops[i].bars * 32;
+      tk2 += j.loops[i].bars * 32;
     }
     const sc = j.kind === "in" && LV.scenes[j.to];
-    if (j.kind === "out") out.push({ tick: tk, ids: Array(8).fill(null), label: "End" });
+    if (j.kind === "out") out.push({ tick: tk2, ids: Array(8).fill(null), label: "End" });
     if (sc)
       out.push({
-        tick: tk,
+        tick: tk2,
         ids: Array.from({ length: 8 }, (_, t) => sc.cells[t] ? sc.cells[t].id : null),
         scene: true
       });
@@ -27882,13 +28671,17 @@ input[type='number'] {
   function liveReplace(t, id, tick, fade, entry) {
     const f = facById(id);
     if (!f) return;
+    const was = LV.voices[t].some((v) => v.env.v1 > 0), tone2 = S.tracks[t].type === "tone";
     LV.voices[t] = [];
-    const ent = slotOf(t) === 5 ? entry : Math.min(entry, 8);
+    const ent = slotOf(t) === 5 || tone2 && entry >= 64 ? entry : Math.min(entry, 8);
     LV.voices[t].push({
       f,
       start: lvAnchorStart(t, f, tick),
       env: ent > 0 ? mkEnv(0, 1, tick, ent) : mkEnv(1, 1, tick, 0)
     });
+    const now = AU.ctx ? AU.ctx.currentTime : 0;
+    if (tone2 && !was && ent > 0) lvFadeIn(t, tick, ent, now);
+    else lvLevelBack(t, now);
   }
   function lvHistMark(tick, label) {
     LV.hist.push({ tick, idx: LV.cur, start: label ? tick : LV.sceneStart, ids: lvIds(), label });
@@ -27942,7 +28735,7 @@ input[type='number'] {
     const prev = LV.scenes[LV.cur], sc = LV.scenes[idx];
     if (!sc || lvIsFlash(sc)) return;
     const jump = sc.e - (prev ? prev.e : 0);
-    const base = hard || LV.entry === "hard" ? 0 : LV.entry === "slow" ? 64 : 32;
+    const base = hard || LV.entry === "hard" ? 0 : ENTRY_TICKS[LV.entry] || 32;
     const toneFade = jump >= 4 ? Math.min(base, 8) : base;
     LV.gap = null;
     LV.thin = null;
@@ -27953,7 +28746,7 @@ input[type='number'] {
     }
     LV.cues = LV.cues.filter((c) => c.type !== "guestOut" && !(c.type === "mute" && c.auto));
     if (hard) {
-      lvSlam(AU.ctx ? AU.ctx.currentTime : 0, (a) => a.tag !== "q");
+      lvSlam(AU.ctx ? AU.ctx.currentTime : 0, (a) => a.tag !== "q" && a.tag !== "fade");
       if (LV.buildFx)
         lvMove({
           id: "dropthrow",
@@ -27986,8 +28779,11 @@ input[type='number'] {
         const clash = top && newProg && lvProg(top.f) && lvProg(top.f) !== newProg;
         if (tone2 && toneFade > 0)
           LV.voices[t].forEach((v) => {
-            if (v.env.v1 > 0)
-              v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : slotOf(t) === 5 ? toneFade : Math.min(toneFade, 12));
+            if (v.env.v1 > 0) {
+              const d = clash ? 4 : slotOf(t) === 5 || toneFade >= 64 ? toneFade : Math.min(toneFade, 12);
+              v.env = mkEnv(envAt(v.env, tick), 0, tick, d);
+              lvFadeOut(t, tick, d);
+            }
           });
         else LV.voices[t] = [];
         continue;
@@ -28065,6 +28861,7 @@ input[type='number'] {
       const v = lvTop(c.t);
       if (v && v.f.id === c.id) {
         v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+        lvFadeOut(c.t, tick, 32);
         lvHistMark(tick);
         lvLog(tick);
       }
@@ -28100,11 +28897,17 @@ input[type='number'] {
       if (c.mode) LV.mode = c.mode;
       lvLog(tick);
     } else if (c.type === "stop") {
-      for (let t = 0; t < 8; t++)
+      for (let t = 0; t < 8; t++) {
+        let fading = false;
         LV.voices[t].forEach((v) => {
-          if (v.env.v1 > 0) v.env = mkEnv(envAt(v.env, tick), 0, tick, 32);
+          if (v.env.v1 > 0) {
+            v.env = mkEnv(envAt(v.env, tick), 0, tick, 64);
+            fading = true;
+          }
         });
-      LV.stopAt = tick + 32;
+        if (fading) lvFadeOut(t, tick, 64);
+      }
+      LV.stopAt = tick + 64;
     }
     LV.ver++;
   }
@@ -28205,6 +29008,7 @@ input[type='number'] {
     else if (vt === "kickx" && slotOf(t) === 0 && local === L2 - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
   }
   function liveTick(tick, nt, td) {
+    lvFadeTick(tick, nt);
     while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
     if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
     if (tick % 32 === 0) lvBarSnap(tick);
@@ -28225,8 +29029,8 @@ input[type='number'] {
     }
     if (LV.crash) {
       LV.crash = false;
-      const tk = trackOf(0);
-      if (tk >= 0 && !S.tracks[tk].mute) emitNote(tk, 9, 110, nt, 0.5);
+      const tk2 = trackOf(0);
+      if (tk2 >= 0 && !S.tracks[tk2].mute) emitNote(tk2, 9, 110, nt, 0.5);
     }
     const rel = tick - LV.sceneStart;
     if (rel % 32 === 0) {
@@ -28385,6 +29189,7 @@ input[type='number'] {
       lvCellClip(t, c, TR.nextTime);
       if (c) liveReplace(t, c.id, 0, 0, 0);
     }
+    lvFadesReset(TR.nextTime);
     LV.autos = [];
     LV.ccLast = {};
     lvSceneFx(sc, 0);
@@ -28403,6 +29208,7 @@ input[type='number'] {
       ctlAllOff();
     } catch (e) {
     }
+    if (MIDI.out && AU.ctx) lvFadesReset(AU.ctx.currentTime);
     if (LV.autos && LV.autos.length && MIDI.out && AU.ctx) {
       const nt = AU.ctx.currentTime;
       LV.autos.forEach(
@@ -29135,11 +29941,11 @@ input[type='number'] {
       toast("Press Start Jam first");
       return;
     }
-    const on = !tracks.every(lvEffMute);
+    const on2 = !tracks.every(lvEffMute);
     LV.cues = LV.cues.filter(
       (c) => !(c.type === "mute" && c.tracks.length === tracks.length && c.tracks.every((t) => tracks.includes(t)))
     );
-    LV.cues.push({ type: "mute", tracks, on, tick: lvBoundary(1) });
+    LV.cues.push({ type: "mute", tracks, on: on2, tick: lvBoundary(1) });
     lvSortCues();
     LV.ver++;
   }
@@ -29195,13 +30001,13 @@ input[type='number'] {
     }
     const t1 = lvBoundary(1), nextScene = LV.cues.find((c) => c.type === "scene" && c.tick > t1);
     const end = nextScene ? nextScene.tick : t1 + LV.riseBars * 32;
-    const r = LV.rest[0], low = r < 32;
-    LV.rise = dir === "down" ? { start: t1, end, from: low ? 127 : r, to: low ? r : 0, cc: 80, target: "all" } : { start: t1, end, from: r, to: 127, cc: 80, target: "all" };
+    const r = LV.rest[0], low2 = r < 32;
+    LV.rise = dir === "down" ? { start: t1, end, from: low2 ? 127 : r, to: low2 ? r : 0, cc: 80, target: "all" } : { start: t1, end, from: r, to: 127, cc: 80, target: "all" };
     LV.ver++;
   }
-  function liveStutter(len, on) {
+  function liveStutter(len, on2) {
     if (!lvOn()) return;
-    if (on) {
+    if (on2) {
       LV.stut = { press: TR.tick, len: Math.max(1, len) };
     } else LV.stut = null;
     LV.ver++;
@@ -29210,8 +30016,8 @@ input[type='number'] {
     LV.rate = r;
     LV.ver++;
   }
-  function liveLock(on) {
-    LV.lock = on == null ? !LV.lock : !!on;
+  function liveLock(on2) {
+    LV.lock = on2 == null ? !LV.lock : !!on2;
     if (LV.lock) {
       LV.cues = LV.cues.filter((c) => !c.gen && c.type !== "guestOut");
       toast("Loop locked: the parts playing now stay put until you unlock");
@@ -29252,8 +30058,8 @@ input[type='number'] {
     liveRenderCards();
     liveRenderPads();
   }
-  function liveAuto(on) {
-    LV.auto = on == null ? !LV.auto : on;
+  function liveAuto(on2) {
+    LV.auto = on2 == null ? !LV.auto : on2;
     LV.ver++;
     liveSync();
   }
@@ -29344,16 +30150,27 @@ input[type='number'] {
   }
   function lvAutoTick(tick, nt) {
     if (!LV.autos.length || tick % 2) return;
+    const val = /* @__PURE__ */ new Map(), fade = /* @__PURE__ */ new Map();
     for (const a of LV.autos) {
       if (tick < a.start) continue;
-      if (tick >= a.end) {
-        if (a.restore !== false) a.tracks.forEach((t) => lvSendCC(t, a.cc, lvRestCC(t, a.cc), nt));
-        if (a.cc >= 80 && a.cc <= 83) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
-        continue;
+      const done = tick >= a.end;
+      if (done && a.restore === false) continue;
+      a.tracks.forEach((t) => {
+        const k = t + ":" + a.cc, v = done ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
+        if (a.tag === "fade") fade.set(k, { t, cc: a.cc, v });
+        else if (!done || !val.has(k)) val.set(k, { t, cc: a.cc, v });
+      });
+      if (a.cc >= 80 && a.cc <= 83) {
+        if (done) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
+        else if (a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
       }
-      a.tracks.forEach((t) => lvSendCC(t, a.cc, lvMoveVal(a, t, tick), nt));
-      if (a.cc >= 80 && a.cc <= 83 && a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
     }
+    for (const [k, f] of fade) {
+      const m = val.get(k);
+      if (m) m.v = m.v * f.v / Math.max(1, lvRestCC(f.t, f.cc));
+      else val.set(k, f);
+    }
+    for (const { t, cc, v } of val.values()) lvSendCC(t, cc, v, nt);
     LV.autos = LV.autos.filter((a) => tick < a.end);
   }
   function lvSlam(nt, filter) {
@@ -29679,6 +30496,8 @@ input[type='number'] {
     [
       ["smooth", "Smooth (1 bar)"],
       ["slow", "Slow (2 bars)"],
+      ["long", "Long (4 bars)"],
+      ["vlong", "Very long (8 bars)"],
       ["hard", "Hard cut"]
     ].forEach(([v, l]) => es.append(el("option", { value: v }, l)));
     const reps = el("select", {
@@ -30120,7 +30939,7 @@ input[type='number'] {
             ["Stutter 1/16", 2]
           ].map(([l, len]) => {
             const b = el("button", { class: "btn lvhold", title: "Hold to repeat the last slice" }, l);
-            const on = (ev) => {
+            const on2 = (ev) => {
               ev.preventDefault();
               try {
                 b.setPointerCapture(ev.pointerId);
@@ -30133,7 +30952,7 @@ input[type='number'] {
               b.classList.remove("on");
               liveStutter(0, false);
             };
-            b.addEventListener("pointerdown", on);
+            b.addEventListener("pointerdown", on2);
             b.addEventListener("pointerup", off);
             b.addEventListener("pointercancel", off);
             b.addEventListener("lostpointercapture", off);
@@ -30431,16 +31250,16 @@ input[type='number'] {
     inner.style.width = (W + 2) * bw2 + "px";
     const hdr = el("div", { class: "lvHdr", style: "width:" + (W + 2) * bw2 + "px" });
     inner.append(hdr);
-    const segAt2 = (tk) => {
+    const segAt2 = (tk2) => {
       let s = segs[0];
-      for (const x of segs) if (x.tick <= tk) s = x;
+      for (const x of segs) if (x.tick <= tk2) s = x;
       return s;
     };
     const sStart = (s) => s.start != null ? s.start : s.tick;
     let prevSeg = null;
     for (let k = 0; k < W + 2; k++) {
-      const tk = (b0 + k) * 32, s = segAt2(tk), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
-      const rel = Math.max(0, Math.floor((tk - sStart(s)) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
+      const tk2 = (b0 + k) * 32, s = segAt2(tk2), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
+      const rel = Math.max(0, Math.floor((tk2 - sStart(s)) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
       hdr.append(
         el(
           "div",
@@ -30458,7 +31277,7 @@ input[type='number'] {
       });
       let prevId = null;
       for (let k = 0; k < W + 2; k++) {
-        const tk = (b0 + k) * 32, s = segAt2(tk);
+        const tk2 = (b0 + k) * 32, s = segAt2(tk2);
         const snap = k === 0 && lvOn() && LV.bars && LV.bars.get(b0);
         if (snap) {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
@@ -30479,7 +31298,7 @@ input[type='number'] {
           prevId = c ? c.id : null;
           continue;
         }
-        const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk && tk < c.tick + 32), id = s.ids[ti];
+        const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32), id = s.ids[ti];
         if (!id) {
           if (ovFill)
             row.append(
@@ -30498,10 +31317,10 @@ input[type='number'] {
         }
         const f = facById(id);
         if (!f) continue;
-        const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar2 = Math.floor((tk - sStart(s)) / 32);
+        const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar2 = Math.floor((tk2 - sStart(s)) / 32);
         const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars);
         const phase = bar2 % f.bars;
-        const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk && tk < c.tick + 32);
+        const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
         const label = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
         row.append(
           el(
@@ -30545,19 +31364,19 @@ input[type='number'] {
     lvUI = { b0, bw: bw2, ver: LV.ver };
   }
   function liveStatus(tickf) {
-    const on = lvOn(), sg = on ? lvSegs(tickf) : null;
+    const on2 = lvOn(), sg = on2 ? lvSegs(tickf) : null;
     let sc = LV.scenes[LV.cur], s0 = null;
-    if (on && sg) {
+    if (on2 && sg) {
       s0 = sg.filter((x) => x.tick <= tickf).pop() || sg[0];
       sc = LV.scenes[s0.idx];
     }
     const nm = $("#lvNowName");
     if (!nm) return;
-    nm.textContent = on && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on && sc ? sc.name : "Stopped";
+    nm.textContent = on2 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on2 && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on2 && sc ? sc.name : "Stopped";
     const root = $("#live");
     if (root && sc) root.style.setProperty("--acc", lvScCol(sc.e, 58));
-    const barNo = on && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
-    $("#lvNowBar").textContent = on && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad";
+    const barNo = on2 && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
+    $("#lvNowBar").textContent = on2 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad";
     const pg = $("#lvProg");
     if (pg && sc) {
       if (pg.children.length !== sc.bars) {
@@ -30565,14 +31384,14 @@ input[type='number'] {
         for (let i = 0; i < sc.bars; i++) pg.append(el("i", {}));
       }
       [...pg.children].forEach((x, i) => {
-        x.classList.toggle("done", on && i < barNo);
-        x.classList.toggle("now", on && i === barNo);
+        x.classList.toggle("done", on2 && i < barNo);
+        x.classList.toggle("now", on2 && i === barNo);
       });
     }
     const cue = LV.cues.filter((c) => c.type === "scene")[0], ns = cue ? LV.scenes[cue.idx] : null;
-    $("#lvNextName").textContent = on && ns ? ns.name : on && LV.auto ? "Auto" : "—";
+    $("#lvNextName").textContent = on2 && ns ? ns.name : on2 && LV.auto ? "Auto" : "—";
     const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-    $("#lvNextIn").textContent = on && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "";
+    $("#lvNextIn").textContent = on2 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "";
     const kc = LV.cues.filter((c) => c.type === "key")[0];
     $("#lvKeyShow").textContent = NK(LV.key, LV.mode);
     const ks = $("#lvKey");
@@ -30596,11 +31415,11 @@ input[type='number'] {
     LV.scenes.forEach((s, i) => {
       const c = $("#lvCard" + i);
       if (!c) return;
-      let isCur = on && sc === s && !(LV.flash && LV.flash.start <= tickf), isQ = on && cue && cue.idx === i, qn = nb;
+      let isCur = on2 && sc === s && !(LV.flash && LV.flash.start <= tickf), isQ = on2 && cue && cue.idx === i, qn = nb;
       if (lvIsFlash(s)) {
         const fc = LV.cues.find((x) => x.type === "flash" && x.idx === i);
-        isCur = !!(on && LV.flash && LV.flash.idx === i && LV.flash.start <= tickf);
-        isQ = !!(on && (fc || LV.flash && LV.flash.idx === i && LV.flash.start > tickf));
+        isCur = !!(on2 && LV.flash && LV.flash.idx === i && LV.flash.start <= tickf);
+        isQ = !!(on2 && (fc || LV.flash && LV.flash.idx === i && LV.flash.start > tickf));
         qn = fc ? Math.max(0, Math.ceil((fc.tick - tickf) / 32)) : 0;
       }
       c.classList.toggle("cur", !!isCur);
@@ -30616,19 +31435,19 @@ input[type='number'] {
       if (/^s\d$/.test(a)) {
         const ix = +a.slice(1);
         if (lvIsFlash(LV.scenes[ix])) {
-          cur = !!(on && LV.flash && LV.flash.idx === ix && LV.flash.start <= tickf);
+          cur = !!(on2 && LV.flash && LV.flash.idx === ix && LV.flash.start <= tickf);
           q = !cur && LV.cues.some((c) => c.type === "flash" && c.idx === ix);
         } else {
-          cur = !!(on && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
-          q = !!(on && cue && cue.idx === ix);
+          cur = !!(on2 && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
+          q = !!(on2 && cue && cue.idx === ix);
         }
-      } else if (a.startsWith("mu:")) cur = on && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
-      else if (a.startsWith("mt:")) cur = on && lvEffMute(+a.slice(3));
+      } else if (a.startsWith("mu:")) cur = on2 && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
+      else if (a.startsWith("mt:")) cur = on2 && lvEffMute(+a.slice(3));
       else if (a.startsWith("key:")) cur = LV.key === +a.slice(4);
       else if (a.startsWith("sw:")) q = LV.cues.some((c) => c.type === "swap" && c.group === a.slice(3));
       else if (a === "fill") q = LV.cues.some((c) => c.type === "fill" && !c.auto);
       else if (a === "brk") {
-        cur = !!(on && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf);
+        cur = !!(on2 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf);
         q = !cur && LV.cues.some((c) => c.type === "brk");
       } else if (a === "stop") q = LV.cues.some((c) => c.type === "stop");
       else if (a === "auto") cur = LV.auto;
@@ -30689,9 +31508,9 @@ input[type='number'] {
     if (typeof liveSync === "function") liveSync();
     if (typeof wizSyncPreview === "function" && !$("#wiz").hidden) wizSyncPreview();
     const pb = $("#bPlay");
-    const on = TR.playing && TR.mode === "song";
-    pb.innerHTML = on ? ICON.stop + " Stop" : ICON.play + " Play";
-    pb.classList.toggle("on", on);
+    const on2 = TR.playing && TR.mode === "song";
+    pb.innerHTML = on2 ? ICON.stop + " Stop" : ICON.play + " Play";
+    pb.classList.toggle("on", on2);
     const a = $("#bAud");
     if (a) {
       const p = curPat();
@@ -30699,8 +31518,8 @@ input[type='number'] {
       a.classList.toggle("on", TR.playing && TR.mode === "pat" && TR.pat === p);
     }
     $$(".li .aud").forEach((b) => {
-      const on2 = TR.playing && TR.mode === "pat" && TR.pat === b._pat;
-      b.textContent = on2 ? "■" : "▶";
+      const on22 = TR.playing && TR.mode === "pat" && TR.pat === b._pat;
+      b.textContent = on22 ? "■" : "▶";
     });
   }
   function frame() {
@@ -32099,11 +32918,11 @@ input[type='number'] {
           )
         )
       );
-      const devSel = (val, on, first, extra) => {
+      const devSel = (val, on2, first, extra) => {
         const s2 = el("select", {
           disabled: rec,
           onchange: (e) => {
-            on(e.target.value);
+            on2(e.target.value);
             saveAud();
             capCloseAll();
             AUDREC.metering = false;
@@ -32124,11 +32943,11 @@ input[type='number'] {
         );
         return s2;
       };
-      const pairSel = (val, on, n) => {
+      const pairSel = (val, on2, n) => {
         const s2 = el("select", {
           disabled: rec,
           onchange: (e) => {
-            on(+e.target.value);
+            on2(+e.target.value);
             saveAud();
             capCloseAll();
             AUDREC.metering = false;
@@ -32422,12 +33241,12 @@ input[type='number'] {
         )
       )
     );
-    const cb = (on, lab, fn, c) => el(
+    const cb = (on2, lab, fn, c) => el(
       "label",
       { class: "audtk", style: c ? "--c:" + c : "" },
       el("input", {
         type: "checkbox",
-        checked: on,
+        checked: on2,
         disabled: rec,
         onchange: (e) => {
           fn(e.target.checked);
@@ -32437,14 +33256,14 @@ input[type='number'] {
       }),
       el("span", {}, lab)
     );
-    const tk = el(
+    const tk2 = el(
       "div",
       { class: "audtks" },
       cb(AUD.mix, "Mix", (v) => AUD.mix = v, "var(--hot)")
     );
     if (m === "mc707") {
       S.tracks.forEach(
-        (t, i) => tk.append(
+        (t, i) => tk2.append(
           cb(
             AUD.stemPairs[i] >= 0,
             i + 1 + ". " + t.name,
@@ -32455,14 +33274,14 @@ input[type='number'] {
           )
         )
       );
-      tk.append(cb(!!AUD.extIn, "Ext In", (v) => AUD.extIn = v, "var(--mute)"));
+      tk2.append(cb(!!AUD.extIn, "Ext In", (v) => AUD.extIn = v, "var(--mute)"));
       wh.append(
         el(
           "div",
           { class: "hint", style: "margin-top:8px" },
           "Each ticked track becomes its own stereo file, recorded at the same time, so they line up perfectly in a DAW."
         ),
-        tk
+        tk2
       );
       const all = el(
         "div",
@@ -32497,7 +33316,7 @@ input[type='number'] {
       );
       wh.append(all);
     } else {
-      wh.append(tk);
+      wh.append(tk2);
       if (m === "interface") {
         const sm = el(
           "div",
@@ -34029,12 +34848,12 @@ input[type='number'] {
       d === "101" ? "MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits." : "MC-707 mode: 8 tracks on channels 1–8."
     );
   }
-  function setOneKit(on) {
+  function setOneKit(on2) {
     if (DEV === "101") {
       toast("The MC-101 always plays full kits on its one drum track");
       return;
     }
-    S.oneKit = !!on;
+    S.oneKit = !!on2;
     scheduleSave();
     if (typeof lvClearCustom === "function") {
       lvClearCustom();
@@ -34043,7 +34862,7 @@ input[type='number'] {
       if (typeof liveRender === "function") liveRender();
     }
     toast(
-      on ? "Drums 1 now plays full kits (kick, snare, hats and percussion). Drums 2 is free, and Drums 3 keeps builds and impacts." : "Drums are spread over Drums 1, 2 and 3 again."
+      on2 ? "Drums 1 now plays full kits (kick, snare, hats and percussion). Drums 2 is free, and Drums 3 keeps builds and impacts." : "Drums are spread over Drums 1, 2 and 3 again."
     );
   }
 
@@ -34603,11 +35422,11 @@ input[type='number'] {
     if ($("#startOv")) return;
     const has2 = !!last;
     const close = () => ov.remove();
-    const card = (icon, title, text, fn, on) => el(
+    const card = (icon, title, text, fn, on2) => el(
       "button",
       {
         type: "button",
-        class: "stCard" + (on ? " on" : ""),
+        class: "stCard" + (on2 ? " on" : ""),
         onclick: () => {
           close();
           fn();
@@ -35380,6 +36199,15 @@ input[type='number'] {
   }
 
   // src/ui/menubar.js
+  function toggleAppSound() {
+    S.preview = !S.preview;
+    ["#cPrev", "#lvPrev"].forEach((id) => {
+      const b = $(id);
+      if (b) b.checked = S.preview;
+    });
+    scheduleSave();
+    toast(S.preview ? "App sounds on: you hear the app in this browser too" : "App sounds off: only the MC-707 plays");
+  }
   function initMenubar() {
     const nav = $("#menubar");
     if (!nav) return;
@@ -35387,7 +36215,7 @@ input[type='number'] {
       const e = $(id);
       if (e) e.click();
     };
-    const on = (id) => () => {
+    const on2 = (id) => () => {
       const e = $(id);
       return !!(e && e.classList.contains("on"));
     };
@@ -35477,6 +36305,8 @@ input[type='number'] {
         "Settings",
         "",
         [
+          ["App sounds (hear the app in this browser)", toggleAppSound, "", () => !!S.preview],
+          0,
           ["Device: MC-707 (8 tracks)", () => setDevice("707"), "", () => DEV === "707"],
           ["Device: MC-101 (4 tracks)", () => setDevice("101"), "", () => DEV === "101"],
           ["Track setup…", () => trackSetupOpen()],
@@ -35500,8 +36330,8 @@ input[type='number'] {
           ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
           0,
           ["Pattern library", go("#bLibT")],
-          ["Follow the playhead", go("#bFollow"), "", on("#bFollow")],
-          ["Metronome click", go("#bMetro"), "", on("#bMetro")]
+          ["Follow the playhead", go("#bFollow"), "", on2("#bFollow")],
+          ["Metronome click", go("#bMetro"), "", on2("#bMetro")]
         ]
       ],
       ["Help", "", [["Shortcuts and tips", go("#bHelp")]]]
@@ -35655,14 +36485,14 @@ input[type='number'] {
 
   // src/ui/live-menus.js
   function lvTrackMenu(t) {
-    const tr = S.tracks[t], on = lvOn(), v = on ? lvTop(t) : null, sc = LV.scenes[LV.cur], cell = sc && sc.cells[t];
+    const tr = S.tracks[t], on2 = lvOn(), v = on2 ? lvTop(t) : null, sc = LV.scenes[LV.cur], cell = sc && sc.cells[t];
     const cur = v ? v.f.id : cell ? cell.id : null;
-    const ref = S.tracks[t].type === "tone" ? on && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0 ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4)) : null : null, prog = ref && lvProg(ref.f);
+    const ref = S.tracks[t].type === "tone" ? on2 && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0 ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4)) : null : null, prog = ref && lvProg(ref.f);
     let ids = liveSwapIds(t).filter((id) => id !== cur);
     if (prog)
       ids = [...ids.filter((id) => lvProg(facById(id)) === prog), ...ids.filter((id) => lvProg(facById(id)) !== prog)];
     const choose = (id) => {
-      if (on) {
+      if (on2) {
         LV.cues = LV.cues.filter((c) => !(c.type === "swap" && c.ids[t] && Object.keys(c.ids).length === 1));
         const f = facById(id);
         if (!lvTop(t)) {
@@ -35690,10 +36520,10 @@ input[type='number'] {
     };
     return [
       { label: tr.name + (cur ? " · " + facById(cur).name : " · silent"), disabled: true },
-      { label: lvEffMute(t) ? "Unmute" : "Mute", disabled: !on, action: () => liveMute([t]) },
+      { label: lvEffMute(t) ? "Unmute" : "Mute", disabled: !on2, action: () => liveMute([t]) },
       {
         label: "Mute everything else",
-        disabled: !on,
+        disabled: !on2,
         action: () => {
           const others = DEVS[DEV].tracks.filter((i) => i !== t && !lvEffMute(i));
           if (lvEffMute(t)) liveMute([t]);
@@ -35702,7 +36532,7 @@ input[type='number'] {
       },
       {
         label: "Unmute all",
-        disabled: !on,
+        disabled: !on2,
         action: () => {
           const m = DEVS[DEV].tracks.filter(lvEffMute);
           if (m.length) liveMute(m);
@@ -35721,12 +36551,12 @@ input[type='number'] {
       },
       {
         label: "Stop this part",
-        disabled: !(on ? v : cell),
+        disabled: !(on2 ? v : cell),
         action: () => {
-          if (on) {
-            const tk = lvBoundary(1);
+          if (on2) {
+            const tk2 = lvBoundary(1);
             LV.voices[t].forEach((x) => {
-              x.env = mkEnv(envAt(x.env, tk), 0, tk, S.tracks[t].type === "tone" ? 16 : 2);
+              x.env = mkEnv(envAt(x.env, tk2), 0, tk2, S.tracks[t].type === "tone" ? 16 : 2);
             });
             LV.ver++;
           } else {
@@ -35761,7 +36591,7 @@ input[type='number'] {
     ];
   }
   function lvSceneMenu(i) {
-    const sc = LV.scenes[i], on = lvOn();
+    const sc = LV.scenes[i], on2 = lvOn();
     if (!sc) return [];
     const move = (d) => {
       const j = i + d;
@@ -35775,10 +36605,10 @@ input[type='number'] {
     };
     return [
       { label: i + 1 + ". " + sc.name, disabled: true },
-      { label: on ? "Launch (as set in Launch on)" : "Start from here", action: () => liveCue(i) },
+      { label: on2 ? "Launch (as set in Launch on)" : "Start from here", action: () => liveCue(i) },
       {
         label: "Launch on the next bar",
-        disabled: !on || lvIsFlash(sc),
+        disabled: !on2 || lvIsFlash(sc),
         action: () => {
           LV.cues = LV.cues.filter((c) => c.type !== "scene");
           LV.cues.push({ type: "scene", idx: i, tick: lvBoundary(1) });
@@ -35788,7 +36618,7 @@ input[type='number'] {
       },
       {
         label: "Drop into it (hard cut)",
-        disabled: !on || lvIsFlash(sc),
+        disabled: !on2 || lvIsFlash(sc),
         action: () => {
           LV.cues = LV.cues.filter((c) => c.type !== "scene");
           LV.cues.push({ type: "scene", idx: i, tick: lvBoundary(1), hard: true });
@@ -35870,7 +36700,7 @@ input[type='number'] {
       },
       {
         label: "Replace with the loop playing now",
-        disabled: !on || i === LV.cur,
+        disabled: !on2 || i === LV.cur,
         action: () => {
           const keep = LV.cur;
           LV.cur = i;
@@ -36118,8 +36948,8 @@ input[type='number'] {
       chk();
     });
   }
-  function zxNote(ch, n, on) {
-    rawSend(on ? [144 | ch - 1, n, 100] : [128 | ch - 1, n, 0]);
+  function zxNote(ch, n, on2) {
+    rawSend(on2 ? [144 | ch - 1, n, 100] : [128 | ch - 1, n, 0]);
   }
   function onIn(e) {
     const d = e.data;
@@ -42922,9 +43752,9 @@ input[type='number'] {
       return true;
     }
   }
-  function zeSetRefresh(on) {
+  function zeSetRefresh(on2) {
     try {
-      localStorage.setItem(REFRESH_KEY, on ? "1" : "0");
+      localStorage.setItem(REFRESH_KEY, on2 ? "1" : "0");
     } catch (e) {
     }
   }
@@ -43110,9 +43940,9 @@ input[type='number'] {
   }
   function audition2(n) {
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
-    const send = (b, on) => {
-      if (ZX.out) zxNote(ch, b, on);
-      else if (MIDI.out) MIDI.out.send(on ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+    const send = (b, on2) => {
+      if (ZX.out) zxNote(ch, b, on2);
+      else if (MIDI.out) MIDI.out.send(on2 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
     };
     send(n, true);
     const up = () => {
@@ -43179,13 +44009,13 @@ input[type='number'] {
       { class: "zcParts" },
       el("span", { class: "zcL" }, "Partial"),
       ...[0, 1, 2, 3].map((i) => {
-        const on = ZE.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
+        const on2 = ZE.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
         return el(
           "button",
           {
             type: "button",
-            class: "zcPart" + (i === ZE.part ? " on" : "") + (on ? " lit" : ""),
-            title: on ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
+            class: "zcPart" + (i === ZE.part ? " on" : "") + (on2 ? " lit" : ""),
+            title: on2 ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
             onclick: () => (ZE.part = i, zeRender())
           },
           String(i + 1)
@@ -43578,6 +44408,7 @@ input[type='number'] {
   });
   PROJ.t = projTitle;
   (function boot() {
+    finishLibrary(STYLES);
     const saved = loadSaved();
     if (saved) replaceState(saved);
     else makeDemo();

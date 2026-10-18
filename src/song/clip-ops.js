@@ -7,7 +7,7 @@
 import { $, clamp, toast } from '../core/dom.js';
 import { ED, S, UI, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { HEAD, bw, renderArr, selectClip } from './arrangement.js';
-import { carve, ensureBars, loopLen, patOf, placeClip, q16, wrapOff } from '../core/song-model.js';
+import { carve, ensureBars, loopLen, patOf, placeClip, qBar, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { AU } from '../services/synth.js';
 import { TR, startSong, stopAll } from '../services/transport.js';
@@ -51,8 +51,8 @@ export function updLoopUI() {
   hooks.syncControls();
 }
 export function setLoop(a, b) {
-  a = clamp(q16(a), 0, Math.max(0, S.bars - 0.0625));
-  b = clamp(q16(b), a + 0.0625, S.bars);
+  a = clamp(qBar(a), 0, Math.max(0, S.bars - 0.0625));
+  b = clamp(qBar(b), a + 0.0625, S.bars);
   S.loop = { on: true, start: a, end: b };
   updLoopUI();
   scheduleSave();
@@ -69,7 +69,7 @@ export function setClipTr(c, v) {
 }
 export function setClipLen(c, n) {
   pushUndo();
-  n = Math.max(0.0625, q16(n));
+  n = Math.max(0.0625, qBar(n));
   carve(c.t, c.start, c.start + n, c.id);
   c.len = n;
   ensureBars(c.start + n);
@@ -119,13 +119,13 @@ export function splitClip(c, bar) {
         ...c,
         id: 'c' + S.nextId++,
         start: bar,
-        len: q16(end - bar),
+        len: qBar(end - bar),
         off: wrapOff(c.off + (bar - c.start), loopLen(c))
       },
       shapeSlice(orig, bar, end)
     )
   );
-  c.len = q16(bar - c.start);
+  c.len = qBar(bar - c.start);
   applyShape(c, shapeSlice(orig, orig.start, bar));
   renderArr();
   scheduleSave();
@@ -136,7 +136,7 @@ export function clipBlock(c, bar) {
     pos = bar - c.start + c.off,
     r = Math.floor(pos / L + 1e-9);
   const bs = c.start + r * L - c.off;
-  return { a: Math.max(c.start, q16(bs)), b: Math.min(c.start + c.len, q16(bs + L)) };
+  return { a: Math.max(c.start, qBar(bs)), b: Math.min(c.start + c.len, qBar(bs + L)) };
 }
 export const blkLabel = (a, b) =>
   b - a > 1 + 1e-6 ? 'bars ' + (Math.floor(a) + 1) + '–' + Math.ceil(b) : 'bar ' + (Math.floor(a) + 1);
@@ -159,18 +159,18 @@ export function editBlock(c, bar) {
   if (b < end - 1e-6) {
     S.clips.push(
       applyShape(
-        { ...c, id: 'c' + S.nextId++, start: b, len: q16(end - b), off: wrapOff(c.off + (b - c.start), L) },
+        { ...c, id: 'c' + S.nextId++, start: b, len: qBar(end - b), off: wrapOff(c.off + (b - c.start), L) },
         shapeSlice(orig, b, end)
       )
     );
-    c.len = q16(b - c.start);
+    c.len = qBar(b - c.start);
   }
   if (a > c.start + 1e-6) {
     const m = applyShape(
-      { ...c, id: 'c' + S.nextId++, start: a, len: q16(b - a), off: wrapOff(c.off + (a - c.start), L) },
+      { ...c, id: 'c' + S.nextId++, start: a, len: qBar(b - a), off: wrapOff(c.off + (a - c.start), L) },
       shapeSlice(orig, a, b)
     );
-    c.len = q16(a - c.start);
+    c.len = qBar(a - c.start);
     S.clips.push(m);
     target = m;
     applyShape(c, shapeSlice(orig, orig.start, a));
@@ -228,7 +228,7 @@ export function glueClips(run) {
   const t = run[0].t,
     tone = S.tracks[t].type === 'tone',
     s0 = run[0].start,
-    total = q16(run.reduce((n, x) => n + x.len, 0));
+    total = qBar(run.reduce((n, x) => n + x.len, 0));
   if (total > 32 + 1e-6) {
     toast('Glue joins up to 32 bars at a time');
     return;

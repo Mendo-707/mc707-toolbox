@@ -19,7 +19,7 @@ import {
   showGhost
 } from './arrangement.js';
 import { metaOf } from '../library/index.js';
-import { MAXBARS, carve, ensureBars, loopLen, placeClip, q16, wrapOff } from '../core/song-model.js';
+import { MAXBARS, carve, ensureBars, loopLen, placeClip, qBar, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { AU } from '../services/synth.js';
 import { TR } from '../services/transport.js';
@@ -164,17 +164,20 @@ export function initArr() {
     setDrag(null);
   });
 }
+/* loop points stay on the player's 1/32-bar ticks, whatever the clip snap */
+const tk = v => Math.round(v * 32) / 32,
+  LSN = () => Math.max(SNAP(), 1 / 32);
 function rulerDown(e, rc) {
   const r = rc.getBoundingClientRect();
   const x0 = e.clientX;
-  const b0 = clamp(snapFloor((e.clientX - r.left) / bw), 0, S.bars - 1);
+  const b0 = tk(clamp(snapFloor((e.clientX - r.left) / bw), 0, S.bars - 1));
   const xr = e.clientX - r.left;
   const which = Math.abs(xr - S.loop.start * bw) <= 6 ? 's' : Math.abs(xr - S.loop.end * bw) <= 6 ? 'e' : null;
   if (which) {
     const mv2 = ev => {
-      const bb = clamp(snapBar((ev.clientX - r.left) / bw), 0, S.bars);
-      if (which === 's') S.loop.start = Math.min(bb, S.loop.end - SNAP());
-      else S.loop.end = Math.max(bb, S.loop.start + SNAP());
+      const bb = tk(clamp(snapBar((ev.clientX - r.left) / bw), 0, S.bars));
+      if (which === 's') S.loop.start = Math.min(bb, S.loop.end - LSN());
+      else S.loop.end = Math.max(bb, S.loop.start + LSN());
       S.loop.on = true;
       updLoopUI();
     };
@@ -191,9 +194,9 @@ function rulerDown(e, rc) {
   const mv = ev => {
     if (!moved && Math.abs(ev.clientX - x0) < 4) return;
     moved = true;
-    const b1 = clamp(snapFloor((ev.clientX - r.left) / bw), 0, S.bars - 1);
+    const b1 = tk(clamp(snapFloor((ev.clientX - r.left) / bw), 0, S.bars - 1));
     S.loop.start = Math.min(b0, b1);
-    S.loop.end = Math.max(b0, b1) + SNAP();
+    S.loop.end = tk(Math.max(b0, b1) + LSN());
     S.loop.on = true;
     updLoopUI();
   };
@@ -248,21 +251,24 @@ function clipDown(e, ce) {
     const dx = ev.clientX - d.x0;
     if (!d.moved && Math.abs(dx) < 4 && Math.abs(ev.clientY - e.clientY) < 4) return;
     d.moved = true;
-    const sn = SNAP();
+    /* hold Shift while dragging to ignore the snap */
+    const free = ev.shiftKey,
+      sb = v => (free ? qBar(v) : snapBar(v)),
+      sn = free ? 0.015625 : SNAP();
     if (d.mode === 'resize') {
-      d.nl = q16(Math.max(sn, snapBar(d.len + dx / bw)));
+      d.nl = qBar(Math.max(sn, sb(d.len + dx / bw)));
       d.ns = d.start;
       d.nt = d.t;
     } else if (d.mode === 'trimL') {
-      let delta = snapBar(dx / bw);
+      let delta = sb(dx / bw);
       delta = Math.min(delta, d.len - sn);
       delta = Math.max(delta, -d.start);
-      d.ns = q16(d.start + delta);
-      d.nl = q16(d.len - delta);
+      d.ns = qBar(d.start + delta);
+      d.nl = qBar(d.len - delta);
       d.nt = d.t;
       d.noff = wrapOff(d.off + delta, loopLen(d.c));
     } else {
-      d.ns = Math.max(0, q16(snapBar(d.start + dx / bw)));
+      d.ns = Math.max(0, qBar(sb(d.start + dx / bw)));
       d.nl = d.len;
       const row = rowFromY(ev.clientY);
       d.nt = S.tracks[row].type === S.tracks[d.t].type ? row : d.t;

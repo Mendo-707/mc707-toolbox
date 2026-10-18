@@ -8,7 +8,7 @@ import { NOTE_NAMES } from '../core/theory.js';
 import { TRACK_COLORS } from '../core/device.js';
 import { S, UI, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { renderArr } from './arrangement.js';
-import { loopLen, q16, songEnd, wrapOff } from '../core/song-model.js';
+import { loopLen, qBar, songEnd, wrapOff } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { applyShape, playFrom, posBarNow, setLoop, shapeSlice } from './clip-ops.js';
 import { sectionEnd } from './markers.js';
@@ -78,13 +78,13 @@ export function splitAtBar(bar, set) {
           ...c,
           id: 'c' + S.nextId++,
           start: bar,
-          len: q16(end - bar),
+          len: qBar(end - bar),
           off: wrapOff(c.off + (bar - c.start), loopLen(c))
         },
         shapeSlice(orig, bar, end)
       )
     );
-    c.len = q16(bar - c.start);
+    c.len = qBar(bar - c.start);
     applyShape(c, shapeSlice(orig, orig.start, bar));
   }
 }
@@ -105,7 +105,7 @@ function mergeClips() {
       continue;
     const pb = loopLen(a);
     if (Math.abs(wrapOff(a.off + a.len, pb) - wrapOff(b.off, pb)) < 1e-6) {
-      a.len = q16(a.len + b.len);
+      a.len = qBar(a.len + b.len);
       if (UI.sel === b.id) UI.sel = a.id;
       S.clips.splice(i + 1, 1);
     }

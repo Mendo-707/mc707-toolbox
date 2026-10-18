@@ -6,10 +6,12 @@ import { $, clamp, el } from '../core/dom.js';
 import { devCount } from '../core/device.js';
 import { ED, S, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { ROWH, RULERH, renderArr, setRowHeight } from './arrangement.js';
-import { carve, ensureBars, loopLen, q16, wrapOff } from '../core/song-model.js';
+import { carve, ensureBars, loopLen, q16, qBar, wrapOff } from '../core/song-model.js';
 import { layoutEditor } from './editor.js';
 
-export const SNAP = () => ([1, 0.5, 0.25, 0.0625].includes(+S.snap) ? +S.snap : 1);
+/* clip snap in bars: bar, 1/2 bar, beat, step (1/16), 1/32, 1/64, or free (1/256 bar) */
+export const SNAPS = [1, 0.5, 0.25, 0.0625, 0.03125, 0.015625, 0.00390625];
+export const SNAP = () => (SNAPS.includes(+S.snap) ? +S.snap : 1);
 export const snapBar = v => Math.round(v / SNAP()) * SNAP();
 export const snapFloor = v => Math.floor(v / SNAP() + 1e-9) * SNAP();
 export function fitRows() {
@@ -24,6 +26,8 @@ export function fitRows() {
   }
   return false;
 }
+/* the shortest a clip can be: 1/64 bar */
+const MINLEN = 0.015625;
 let GEOMT = 0;
 export function setGeom(c, g, coal) {
   const now = performance.now();
@@ -35,15 +39,15 @@ export function setGeom(c, g, coal) {
     else delete c.ll;
   }
   const L = loopLen(c);
-  let start = g.start != null ? q16(Math.max(0, g.start)) : c.start,
-    len = g.len != null ? q16(Math.max(0.0625, g.len)) : c.len,
+  let start = g.start != null ? qBar(Math.max(0, g.start)) : c.start,
+    len = g.len != null ? qBar(Math.max(MINLEN, g.len)) : c.len,
     off = g.off != null ? g.off : c.off;
   if (g.trim != null) {
-    const nd = Math.min(g.trim, c.len - 0.0625);
+    const nd = Math.min(g.trim, c.len - MINLEN);
     const ns = Math.max(0, c.start + nd);
     const real = ns - c.start;
-    start = q16(ns);
-    len = q16(c.len - real);
+    start = qBar(ns);
+    len = qBar(c.len - real);
     off = c.off + real;
   }
   carve(c.t, start, start + len, c.id);
@@ -83,7 +87,10 @@ export function initPro() {
     [1, 'Bar'],
     [0.5, '1/2 bar'],
     [0.25, 'Beat'],
-    [0.0625, 'Step']
+    [0.0625, 'Step (1/16)'],
+    [0.03125, '1/32'],
+    [0.015625, '1/64'],
+    [0.00390625, 'Free']
   ].forEach(([v, l]) => sel.append(el('option', { value: v }, l)));
   sel.value = SNAP();
   sel.addEventListener('change', e => {

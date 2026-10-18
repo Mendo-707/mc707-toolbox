@@ -8,7 +8,7 @@ import { devNm, devOn } from '../core/device.js';
 import { ED, S, UI, pushUndo, scheduleSave } from '../core/state.js';
 import { placeSrc, renderArr, selectClip } from './arrangement.js';
 import { facById } from '../library/index.js';
-import { MAXBARS, patOf, q16, songEnd } from '../core/song-model.js';
+import { MAXBARS, patOf, qBar, songEnd } from '../core/song-model.js';
 import { renderEditor } from './editor.js';
 import { ensureAudio } from '../services/synth.js';
 import { audition, startPat } from '../services/transport.js';
@@ -164,7 +164,7 @@ export function clipMenuItems(c) {
           {
             label: 'Halve',
             disabled: c.len <= 0.125,
-            action: () => setClipLen(c, Math.max(0.0625, q16(c.len / 2)))
+            action: () => setClipLen(c, Math.max(0.0625, qBar(c.len / 2)))
           }
         ])
     },

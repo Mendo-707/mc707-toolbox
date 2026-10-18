@@ -9,7 +9,7 @@ import { clamp } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
-import { clipAt, patIndex, songEnd, subTick } from '../core/song-model.js';
+import { patIndex, songEnd, subTick } from '../core/song-model.js';
 import { AU, DRUMS, click, ensureAudio, voice } from './synth.js';
 import { MIDI, panic, sendMidi } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
@@ -102,36 +102,55 @@ export function processTick(tick, time) {
     }
     songClipTick(tick, time);
     const solo = S.tracks.some(t => t.solo);
-    const bar = tick / 32;
     for (let ti = 0; ti < 8; ti++) {
       const t = S.tracks[ti];
       if (t.mute || (solo && !t.solo)) continue;
-      const c = clipAt(ti, bar);
-      if (!c || c.mute) continue;
-      const p = S.patterns[c.pat];
-      if (!p) continue;
-      const Lc = Math.round((c.ll || p.bars) * 32);
-      const local = (((tick - Math.round(c.start * 32) + Math.round(c.off * 32)) % Lc) + Lc) % Lc;
-      if (c.cc && c.cc.pts && c.cc.pts.length && tick % 2 === 0) autoCC(ti, c, tick, time);
-      if (c.pc != null && tick === Math.round(c.start * 32)) {
-        if (c.pc < 16) sendClip(ti, c.pc, time + 0.004);
-        else sendMidi([0xc0 | (t.ch - 1), clamp(c.pc, 0, 127)], time);
-      } else if (c.pc == null && S.clipAuto && (tick === Math.round(c.start * 32) || PCLAST[ti] == null))
-        autoClip(ti, p, time);
-      const evs = patIndex(p).get(local);
-      if (!evs) continue;
-      const maxT = (c.start + c.len) * 32 - tick;
-      const tone = t.type === 'tone',
-        trs = c.tr || 0,
-        vm = ((c.vel || 100) / 100) * (c.fi || c.fo || c.ve ? velMul(c, tick / 32 - c.start) : 1);
-      for (const n of evs)
-        emitNote(
-          ti,
-          tone ? clamp(n.n + trs, 0, 127) : n.n,
-          n.v * vm,
-          nt + subTick(n) * td,
-          Math.min(n.l * 2, maxT) * td
-        );
+      /* every clip that overlaps this tick: clip edges can sit between ticks (down to 1/256 bar), so a
+         clip can start or end part-way through one */
+      for (const c of S.clips) {
+        if (c.t !== ti || c.mute) continue;
+        const c0 = c.start * 32,
+          c1 = (c.start + c.len) * 32;
+        if (c0 >= tick + 1 - 1e-9 || c1 <= tick + 1e-9) continue;
+        const p = S.patterns[c.pat];
+        if (!p) continue;
+        const Lc = Math.round((c.ll || p.bars) * 32);
+        if (c0 <= tick + 1e-9) {
+          if (c.cc && c.cc.pts && c.cc.pts.length && tick % 2 === 0) autoCC(ti, c, tick, time);
+        }
+        /* the clip's MC-707 clip change, on the tick where it starts */
+        if (c0 < tick + 1 - 1e-9 && c0 >= tick - 1e-9) {
+          const at = time + (c0 - tick) * td;
+          if (c.pc != null) {
+            if (c.pc < 16) sendClip(ti, c.pc, at + 0.004);
+            else sendMidi([0xc0 | (t.ch - 1), clamp(c.pc, 0, 127)], at);
+          } else if (S.clipAuto) autoClip(ti, p, at);
+        } else if (c.pc == null && S.clipAuto && PCLAST[ti] == null && c0 < tick) autoClip(ti, p, time);
+        /* where this tick falls in the pattern (a fraction of a tick when the clip is offset finely) */
+        const a = ((((tick - c0 + c.off * 32) % Lc) + Lc) % Lc) + 1e-9,
+          k = Math.floor(a),
+          idx = patIndex(p);
+        const tone = t.type === 'tone',
+          trs = c.tr || 0;
+        for (const key of [k, k + 1]) {
+          const evs = idx.get(key % Lc);
+          if (!evs) continue;
+          for (const n of evs) {
+            const rel = key + subTick(n) - a; /* ticks after this tick */
+            if (rel < -1e-6 || rel >= 1 - 1e-6) continue;
+            const abs = tick + Math.max(0, rel);
+            if (abs < c0 - 1e-6 || abs >= c1 - 1e-6) continue;
+            const vm = ((c.vel || 100) / 100) * (c.fi || c.fo || c.ve ? velMul(c, abs / 32 - c.start) : 1);
+            emitNote(
+              ti,
+              tone ? clamp(n.n + trs, 0, 127) : n.n,
+              n.v * vm,
+              nt + Math.max(0, rel) * td,
+              Math.min(n.l * 2, c1 - abs) * td
+            );
+          }
+        }
+      }
     }
   } else if (TR.mode === 'wiz') {
     const wz = TR.wz;
@@ -178,7 +197,7 @@ export function advance() {
     const rcd = TR.recEnd != null;
     const endT = rcd ? TR.recEnd : (S.loop.on ? S.loop.end : songEnd()) * 32;
     if (TR.tick >= endT) {
-      if (S.loop.on && !rcd) TR.tick = S.loop.start * 32;
+      if (S.loop.on && !rcd) TR.tick = Math.round(S.loop.start * 32);
       else {
         TR.ending = true;
         TR.endTime = TR.nextTime;
@@ -257,7 +276,7 @@ export function startSong(rec) {
   stopAll();
   ensureAudio();
   let tick = Math.round(S.cursor * 32);
-  if (S.loop.on && tick >= S.loop.end * 32) tick = S.loop.start * 32;
+  if (S.loop.on && tick >= S.loop.end * 32) tick = Math.round(S.loop.start * 32);
   if (!S.loop.on && tick >= songEnd() * 32) tick = 0;
   Object.assign(TR, {
     playing: true,
