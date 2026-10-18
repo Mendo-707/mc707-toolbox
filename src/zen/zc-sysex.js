@@ -182,9 +182,37 @@ function onIn(e) {
   if (!MODELS.includes(d[6])) return;
   const a = [...d.slice(8, 12)],
     data = [...d.slice(12, d.length - 2)];
+  /* a reply can come in more than one packet: each must carry the address where the last one ended.
+     Anything else is a stray (a late reply to an earlier request) and is set aside. */
+  const want = replyBytes(w.l + w.buf.length);
+  if (!a.every((b, i) => b === want[i])) {
+    w.stray++;
+    return;
+  }
   ZX.model = d[6];
   ZX.modelFor = DEV + ':' + (ZX.out && ZX.out.name);
-  w.done({ a, data });
+  w.buf.push(...data);
+  if (w.buf.length >= w.n) w.done();
+}
+/* send a request and gather its reply: {buf, stray} once n bytes are in, or whatever came by the timeout */
+function askRq(msg, l, n, ms) {
+  return new Promise(res => {
+    const w = {
+      kind: 'rq',
+      l,
+      n,
+      buf: [],
+      stray: 0,
+      done: () => {
+        clearTimeout(t);
+        ZX.wait = null;
+        res({ buf: w.buf, stray: w.stray });
+      }
+    };
+    const t = setTimeout(w.done, ms);
+    ZX.wait = w;
+    if (!rawSend(msg)) w.done();
+  });
 }
 function ask(msg, kind, ms) {
   return new Promise(res => {
@@ -203,12 +231,15 @@ function ask(msg, kind, ms) {
     if (!rawSend(msg)) ZX.wait.done(null);
   });
 }
+const pause = ms => new Promise(r => setTimeout(r, ms));
 let chain = Promise.resolve();
 /* one request at a time, after the queued writes */
 const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
 /**
  * Read n bytes at linear address l. Resolves to the bytes; null when a reply came but not exactly
  * for this address and length (see the module header); undefined when nothing answered.
+ * After a reply it waits a moment, so a late packet cannot be taken as the answer to the next request
+ * (partials 1 and 2, and 3 and 4, answer with the same address).
  * @returns {Promise<number[]|null|undefined>}
  */
 export function zxRead(l, n, ms = 450) {
@@ -220,15 +251,16 @@ export function zxRead(l, n, ms = 450) {
       if (tries === 2 && !guess) break;
       const msg = rq1(l, n);
       if (guess) msg[6] = guess;
-      const r = await ask(msg, 'rq', ms);
-      if (!r) continue;
-      const want = replyBytes(l);
-      if (r.data.length === n && r.a.every((b, i) => b === want[i])) return r.data;
-      return null;
+      const r = await askRq(msg, l, n, ms);
+      if (!r.buf.length && !r.stray) continue;
+      await pause(SETTLE);
+      return r.buf.length === n ? r.buf : null;
     }
     return undefined;
   });
 }
+/* how long to wait after each reply for stray packets (ms) */
+const SETTLE = 30;
 /** Ask the device who it is (Universal Identity Request). Resolves to the model byte or null. */
 export function zxIdentify() {
   return serial(async () => {

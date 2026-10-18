@@ -337,7 +337,7 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   });
   await page.locator('.zcActs button', { hasText: 'Read from' }).click();
   await idle();
-  assert.match(await page.textContent('#zcStat'), /Read 1151 values/);
+  assert.match(await page.textContent('#zcStat'), /Read 1151 of 1151 values/);
   const got = await page.evaluate(() => window.__app.zen.ZE.snd.v);
   assert.deepEqual(
     Object.keys(want).filter(k => want[k] !== got[k]),
@@ -357,6 +357,40 @@ test('ZenCore editor: edits go out as Roland SysEx, a sound reads back, MFX and 
   assert.equal(await page.locator('.zcKey').count(), 88);
   await page.locator('.zcActs button', { hasText: 'Done' }).click();
   assert.equal(await page.locator('#zcOv').count(), 0);
+  assert.deepEqual(errors, []);
+});
+
+test('ZenCore editor reads a whole tone from an MC-707 that splits replies and sends strays', async () => {
+  const { page, errors } = await openApp();
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 30000
+    });
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await idle();
+  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+  await page.locator('.cmenu .cmi', { hasText: 'Saw lead' }).click();
+  await page.waitForTimeout(600);
+  const want = await page.evaluate(() => ({ ...window.__app.zen.ZE.snd.v }));
+  /* from now on the fake MC-707 answers like the real one */
+  await page.evaluate(() => {
+    window.__zcReal = true;
+    window.__zcReqs = 0;
+    const E = window.__app.zen.ZE;
+    for (const k in E.snd.v) if (typeof E.snd.v[k] === 'number') E.snd.v[k] = 0;
+  });
+  await page.locator('.zcActs button', { hasText: 'Read from' }).click();
+  await idle();
+  assert.match(await page.textContent('#zcStat'), /Read 1151 of 1151 values/);
+  const got = await page.evaluate(() => window.__app.zen.ZE.snd.v);
+  assert.deepEqual(
+    Object.keys(want).filter(k => want[k] !== got[k]),
+    [],
+    'every value read back correctly'
+  );
+  /* one request per run, no slow one-by-one fallback */
+  const reqs = await page.evaluate(() => window.__zcReqs);
+  assert.ok(reqs <= 70, 'read in ' + reqs + ' requests');
   assert.deepEqual(errors, []);
 });
 
@@ -401,7 +435,7 @@ test('ZenCore editor on the MC-101: its own track numbers, model byte, and it le
   await page.waitForTimeout(600);
   await page.locator('.zcActs button', { hasText: 'Read from' }).click();
   await idle();
-  assert.match(await page.textContent('#zcStat'), /Read \d+ values/);
+  assert.match(await page.textContent('#zcStat'), /Read \d+ of \d+ values/);
   n = await page.evaluate(() => window.__out.length);
   await cutoff(300);
   const w = (await sysex(n)).map(hex);
