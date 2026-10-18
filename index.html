@@ -43773,6 +43773,7 @@ input[type='number'] {
     clearTimeout(nudgeT);
     nudgeT = setTimeout(() => {
       if (!$("#zcOv") || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
+      if (HELD.size) return screenNudge();
       const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
       try {
         ZX.out.send([192 | ch - 1, ZE.k]);
@@ -43899,10 +43900,16 @@ input[type='number'] {
     const o = $("#zcOv");
     if (o) o.remove();
     removeEventListener("keydown", keys, true);
-    const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1, off = [176 | ch - 1, 123, 0];
+    const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
     try {
-      if (ZX.out) ZX.out.send(off);
-      else if (MIDI.out) MIDI.out.send(off);
+      for (const [c, b] of HELD.values()) noteOut(c, b, false);
+      HELD.clear();
+      const out = ZX.out || MIDI.out;
+      if (out) {
+        out.send([176 | ch - 1, 64, 0]);
+        out.send([176 | ch - 1, 123, 0]);
+        if (!TR.playing) out.send([176 | ch - 1, 120, 0]);
+      }
     } catch (e) {
     }
     if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
@@ -43948,11 +43955,17 @@ input[type='number'] {
       audition: audition2
     };
   }
+  var HELD = /* @__PURE__ */ new Map();
+  var noteOut = (ch, b, on2) => {
+    if (ZX.out) zxNote(ch, b, on2);
+    else if (MIDI.out) MIDI.out.send(on2 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+  };
   function audition2(n) {
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
     const send = (b, on2) => {
-      if (ZX.out) zxNote(ch, b, on2);
-      else if (MIDI.out) MIDI.out.send(on2 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+      noteOut(ch, b, on2);
+      if (on2) HELD.set(ch + ":" + b, [ch, b]);
+      else HELD.delete(ch + ":" + b);
     };
     send(n, true);
     const up = () => {
