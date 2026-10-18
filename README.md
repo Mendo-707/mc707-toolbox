@@ -6,7 +6,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 
-> **Version 1.3.2.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.3.3.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
@@ -42,6 +42,9 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Acid** lines for a tone track, and **My MC-707 clips & ZenCore** at the top of Song Mode.
 - ZenCore editor: reads every parameter of a tone reliably (1.3.1 fixes how it asks the MC-707, found from a real dump), the MC-707's screen updates by itself, there's a black-and-green look, and MC-101 support is fixed.
 - **Settings › App sounds** turns the app's own sound on or off. Punk and rock are gone.
+- **1.3.3, ZenCore you can see:** a wave preview for each oscillator, a live filter response curve and a picture of each LFO. Envelopes take typed numbers as well as dragging, have shape presets (plucks, swells, stabs, gates and more) and copy to other partials or envelopes. 21 starter sounds.
+- **1.3.3, Live timing:** fills end exactly on the downbeat they lead into, auto-pilot's changes land on phrase lines, and 2-bar breaks come back on the phrase. Only pads and chords fade now: bass and melodies come in on the beat and stop cleanly.
+- **1.3.3, Raven takeover:** play a track yourself and the app leaves it alone until 4 bars after your last note.
 
 ---
 
@@ -111,14 +114,14 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Scenes** | Seven loops built for playing live: Groove, Lift, Peak, Stripped, Groove B, Tool and Peak B. Each has its own mix of parts and length, and parts come and go so the loop breathes. A big jump in energy lands as a drop. Press ✎ to edit any scene: its name, length, energy, the pattern and MC-707 clip on each track (stay, pick one or **random**), and which bars each part plays. |
 | **16 pads** | Laid out like the MC-707. Pads 1–7 hold the scenes and pad 8 is **Break**. The bottom row holds the Drums, Bass, Chords and Lead swaps, Fill, Stutter, Build → Drop and Next scene. Select a drum track on the MC-707 and its pads work straight away. You can also use the mouse or computer keys (`Q`–`I` top row, `A`–`K` bottom row). |
 | **Break and Build → Drop** | **Break** gives a quick flash (unison hits, stutter, snare roll or drop-out), then it's straight back in on the downbeat with a crash. **Build → Drop** brings a snare build that doubles to a roll, a filter riser, a cut and a beat of silence, then the drop with an impact, over 2, 4 or 8 bars. |
-| **Fades** | When a scene changes, parts that come in or leave fade on the MC-707's own volume (expression, CC 11), so held chords and pads fade too. **Entry** in Settings and mapping sets how long: Smooth (1 bar), Slow (2 bars), Long (4 bars), Very long (8 bars) or Hard cut. **Live › Stop at end of phrase** fades everything out over 2 bars. |
+| **Fades** | When a scene changes, pads fade in and out on the MC-707's own volume (expression, CC 11), so held notes fade too, and chords fade briefly. Bass, leads, plucks and arps never fade: they come in on the downbeat and stop on the change, letting their last notes ring out. **Entry** in Settings and mapping sets how long the pads take: Smooth (1 bar), Slow (2 bars), Long (4 bars), Very long (8 bars) or Hard cut. **Live › Stop at end of phrase** lets the melody finish with the phrase, then fades the drums, chords and pads over 2 bars. Fills always end exactly on the downbeat they lead into. |
 | **New patterns** | **🎲 New patterns** drops to the drums from the next bar, blends the new set's drums in, and brings in its first scene after 2–6 bars, so the music never stops. |
 | **Moves** | **Wash**, **Throw**, **Filter dip**, **Pump** and **Autopan** on the MC-707's own controls, and a move per scene. During builds, resonance climbs, reverb washes up and the tone parts pump; it all snaps back on the drop (untick **Epic builds** to turn that off). |
 | **Staying in tune** | Every tone part in a set follows one chord progression, and swaps and guest melodies only pick parts that fit it. Key and **minor/major** change any time; **Try** shows keys that suit the style. |
 | **Variation, Energy, Auto-pilot** | **Variation** sets how often the set changes by itself, up to **Extreme**. **Energy** goes from a sparse breakdown to all 8 parts. **Auto-pilot** runs the set, with a Chaos amount. **🔒 Lock loop** holds exactly what's playing; **＋ Save as scene** keeps it. |
 | **Acid** | 303-style lines with accents, slides and octave jumps for techno, acid techno, house, trance, electro, breakbeat and drum and bass. Mark a clip as **Acid** and Live Mode plays them on it. |
 | **Knobs, XY pad, Scatter** | The MC-707's FILTER, MOD, FX and SOUND knobs (CC 80–83), the XY pad and the 16 Scatter pads, each showing where it rests. |
-| **Raven mode** | Inspired by the Quasimidi Raven: one octave changes the key of every melodic part, another mutes and unmutes tracks, and four keys give Unmute all, Fill, Build → Drop and Break. There are eight presets (Classic Raven, Raven Mute B, DJ cuts, Key jockey, Drop builder, Lead player, Bass player and Chord jam), and it works from the MC-707's keys or a controller keyboard. |
+| **Raven mode** | Inspired by the Quasimidi Raven: one octave changes the key of every melodic part, another mutes and unmutes tracks, and four keys give Unmute all, Fill, Build → Drop and Break. There are eight presets (Classic Raven, Raven Mute B, DJ cuts, Key jockey, Drop builder, Lead player, Bass player and Chord jam), and it works from the MC-707's keys or a controller keyboard. **Takeover:** play a track yourself (the solo keys, or the MC-707's keys on that track) and the app stops playing its pattern there and stops sending it effects, fades and clip changes; it takes the track back 4 bars after your last note. |
 | **Controller keyboard** | Plug in a USB keyboard as well (FLkey, Launchkey, KeyLab, MPK, Oxygen Pro, Komplete Kontrol, Roland A-49 and others). Its keys mute, change key and play a live solo on any track. Knobs, faders and pads control the set, and **Learn all controls in order** matches your model. |
 | **Capture to Song** | Turns what you just played into a Song Mode arrangement, with a marker for each scene. |
 | **Stage ready** | Seven colour themes, a reactive visualizer, **F11** fullscreen, and the screen stays awake while playing. |
@@ -134,19 +137,20 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 | Page | What you can change |
 |---|---|
 | **Common** | Name, category, level, tuning, mono/poly, legato, portamento, bend range, unison and pitch drift. |
-| **Oscillator** | Each of the 4 partials: PCM wave, VA (saw, square, triangle, sine, Juno …), PCM-Sync, SuperSAW or noise, with pulse width, PWM, detune, FXM and stereo width. |
-| **Filter** | TVF or the VCF models (JP, M, P) at -12, -18 or -24 dB, cutoff, resonance, key follow, HPF, Fat, and a filter envelope you drag. |
-| **Amp, Pitch, LFO** | Draggable amp and pitch envelopes, velocity, pan and sends; two LFOs per partial with tempo sync and the 16-step STEP wave. |
+| **Oscillator** | Each of the 4 partials: PCM wave, VA (saw, square, triangle, sine, Juno …), PCM-Sync, SuperSAW or noise, with pulse width, PWM, detune, FXM and stereo width. A preview draws the wave, including pulse width, PWM and SuperSAW detune. |
+| **Filter** | TVF or the VCF models (JP, M, P) at -12, -18 or -24 dB, cutoff, resonance, key follow, HPF, Fat, and a filter envelope. A response curve shows the cutoff, resonance and slope as you change them. |
+| **Amp, Pitch, LFO** | Amp and pitch envelopes, velocity, pan and sends; two LFOs per partial with tempo sync and the 16-step STEP wave, each with a picture of its shape, delay and fade. |
 | **Matrix, EQ, Partials** | Four matrix controls, each partial's EQ, key and velocity ranges, and ring and cross modulation. |
 | **MFX** | All 91 effect types with their own settings. |
 | **Drum kits** | Kit level and effect; each key's instrument, level, pan, tuning, filter, envelope and EQ; the six drum compressors. |
 
+- **Envelopes:** drag the points or type the times and levels. **Shapes** sets a whole envelope at once (pluck, pad swell, stab, gate, reverse and more, different for amp, filter and pitch), and **Copy this shape** puts it on the other partials or on another envelope, scaled to fit.
 - **Live:** every change goes to the MC-707 as you make it. Play the sound from the editor's keyboard or the MC-707's pads.
 - **Screen:** the MC-707 only redraws when a clip is selected, so with **Screen** on (the default) the editor selects the clip again a moment after you stop changing things, and the MC-707's display catches up. That also makes it the clip playing on that track; turn **Screen** off to keep another clip playing while you edit.
 - **Effects:** picking an effect sets sensible starting values (levels full, balance in the middle, gains at 0 dB). The MC-707 resets an effect's settings just after its type changes, so the editor sends them a moment later and checks they stuck.
 - **Closing the editor** releases every note it played, so nothing keeps ringing.
 - **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
-- **Starters**, **My sounds**, **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
+- **Starters** (21 sounds to begin from: saw lead, acid, Reese and wobble basses, Juno and PWM pads, strings, brass, Hoover, sync lead, bell, organ, house chord stab, kick and more), **My sounds**, **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
 
 Roland hasn't published SysEx details for the MC-707, so the editor builds on community work: [mc-programmer](https://github.com/rsenna/mc-programmer) and [mcpoker / mctools_basic](https://github.com/Locriana/mctools_basic) found how the MC-707 answers SysEx and where clip tones live, and [Roland-Zen-Decode-XML](https://github.com/DrKnackeratorStrikesAgain/Roland-Zen-Decode-XML) decoded Roland's parameter list. Effect names come from the MC-707 Reference Manual. Drum kit editing and some effect values have only been tested against a simulated MC-707, so reports from real hardware are welcome. Wave and drum instrument names aren't published, so they show as numbers.
