@@ -6,7 +6,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 
-> **Version 1.3.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.3.2.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
@@ -143,6 +143,8 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 
 - **Live:** every change goes to the MC-707 as you make it. Play the sound from the editor's keyboard or the MC-707's pads.
 - **Screen:** the MC-707 only redraws when a clip is selected, so with **Screen** on (the default) the editor selects the clip again a moment after you stop changing things, and the MC-707's display catches up. That also makes it the clip playing on that track; turn **Screen** off to keep another clip playing while you edit.
+- **Effects:** picking an effect sets sensible starting values (levels full, balance in the middle, gains at 0 dB). The MC-707 resets an effect's settings just after its type changes, so the editor sends them a moment later and checks they stuck.
+- **Closing the editor** releases every note it played, so nothing keeps ringing.
 - **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
 - **Starters**, **My sounds**, **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
