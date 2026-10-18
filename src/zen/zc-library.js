@@ -200,5 +200,227 @@ export const STARTERS = [
         s('AENV.T4', 700);
         s('PTL.REV_SEND', 90);
       })
+  ],
+  [
+    'Acid bass',
+    () =>
+      tone('ACID BASS', s => {
+        s('CMN.MONO_POLY', 0);
+        s('CMN.LEGATO_SW', 1);
+        s('CMN.PORTA_SW', 1);
+        s('CMN.PORTA_MODE', 1);
+        s('CMN.PORTA_TIME', 90);
+        s('CMN.OCTAVE', -1);
+        s('PTL.CUTOFF', 300);
+        s('PTL.RESO', 820);
+        s('FENV.DEPTH', 42);
+        s('FENV.T2', 180);
+        s('FENV.L2', 150);
+        s('FENV.L3', 100);
+        s('AENV.T4', 80);
+      })
+  ],
+  [
+    'Reese bass',
+    () =>
+      tone('REESE BASS', s => {
+        s('CMN.MONO_POLY', 0);
+        s('CMN.OCTAVE', -1);
+        s('PMT.PMT2_PTL_SW', 1);
+        s('SPTL.OSC_TYPE', 1, 1);
+        s('PTL.PIT_FINE', -14);
+        s('PTL.PIT_FINE', 14, 1);
+        for (const i of [0, 1]) {
+          s('PTL.CUTOFF', 520, i);
+          s('PTL.RESO', 120, i);
+          s('AENV.T4', 140, i);
+        }
+      })
+  ],
+  [
+    'Wobble bass',
+    () =>
+      tone('WOBBLE BASS', s => {
+        s('CMN.MONO_POLY', 0);
+        s('CMN.OCTAVE', -1);
+        s('PTL.CUTOFF', 300);
+        s('PTL.RESO', 420);
+        s('LFO.LFO1_FORM', 0);
+        s('LFO.LFO1_RATE_SYNC', 1);
+        s('LFO.LFO1_RATE_NOTE', 9);
+        s('LFO.LFO1_TVF_DEPTH', 70);
+        s('AENV.T4', 120);
+      })
+  ],
+  [
+    'Juno pad',
+    () =>
+      tone('JUNO PAD', s => {
+        s('SPTL.VA_FORM', 5);
+        s('SCMN.UNISON_SW', 1);
+        s('SCMN.UNISON_SIZE', 4);
+        s('SCMN.UNISON_DETN', 30);
+        s('PTL.CUTOFF', 640);
+        s('AENV.T1', 520);
+        s('AENV.T4', 620);
+        s('PTL.CHO_SEND', 80);
+        s('PTL.REV_SEND', 70);
+      })
+  ],
+  [
+    'Strings',
+    () =>
+      tone('STRINGS', s => {
+        s('SPTL.OSC_TYPE', 3);
+        s('SPTL.SSAW_DETUNE', 50);
+        s('PTL.CUTOFF', 700);
+        s('AENV.T1', 420);
+        s('AENV.T4', 520);
+        s('PTL.CHO_SEND', 40);
+        s('PTL.REV_SEND', 60);
+      })
+  ],
+  [
+    'Brass stab',
+    () =>
+      tone('BRASS STAB', s => {
+        s('PMT.PMT2_PTL_SW', 1);
+        s('SPTL.OSC_TYPE', 1, 1);
+        s('PTL.PIT_FINE', -6);
+        s('PTL.PIT_FINE', 6, 1);
+        for (const i of [0, 1]) {
+          s('PTL.CUTOFF', 520, i);
+          s('FENV.DEPTH', 30, i);
+          s('FENV.T1', 120, i);
+          s('FENV.T2', 320, i);
+          s('FENV.L2', 700, i);
+          s('AENV.T1', 60, i);
+          s('AENV.T4', 200, i);
+        }
+      })
+  ],
+  [
+    'Hoover',
+    () =>
+      tone('HOOVER', s => {
+        s('CMN.MONO_POLY', 0);
+        s('CMN.PORTA_SW', 1);
+        s('CMN.PORTA_TIME', 200);
+        s('SPTL.OSC_TYPE', 3);
+        s('SPTL.SSAW_DETUNE', 110);
+        s('PENV.DEPTH', 30);
+        s('PENV.L0', -150);
+        s('PENV.T1', 160);
+        s('PENV.L1', 0);
+        s('PTL.CUTOFF', 820);
+        s('PTL.CHO_SEND', 60);
+      })
+  ],
+  [
+    'Sync lead',
+    () =>
+      tone('SYNC LEAD', s => {
+        s('CMN.MONO_POLY', 0);
+        s('PMT.PMT2_PTL_SW', 1);
+        s('SPTL.OSC_TYPE', 1, 1);
+        s('SPMT.STRUCT12', 1);
+        s('PTL.PIT_CRS', 19, 1);
+        for (const i of [0, 1]) {
+          s('PTL.CUTOFF', 860, i);
+          s('AENV.T4', 200, i);
+        }
+        s('PTL.REV_SEND', 30);
+      })
+  ],
+  [
+    'Bell',
+    () =>
+      tone('BELL', s => {
+        s('PMT.PMT2_PTL_SW', 1);
+        s('SPTL.OSC_TYPE', 1, 1);
+        s('SPTL.VA_FORM', 3);
+        s('SPTL.VA_FORM', 3, 1);
+        s('SPMT.STRUCT12', 2);
+        s('PTL.PIT_CRS', 19, 1);
+        for (const i of [0, 1]) {
+          s('AENV.T2', 700, i);
+          s('AENV.L2', 0, i);
+          s('AENV.L3', 0, i);
+          s('AENV.T4', 600, i);
+          s('PTL.REV_SEND', 70, i);
+        }
+      })
+  ],
+  [
+    'Organ',
+    () =>
+      tone('ORGAN', s => {
+        s('PMT.PMT2_PTL_SW', 1);
+        s('PMT.PMT3_PTL_SW', 1);
+        [0, 12, 19].forEach((crs, i) => {
+          s('SPTL.OSC_TYPE', 1, i);
+          s('SPTL.VA_FORM', 3, i);
+          s('PTL.PIT_CRS', crs, i);
+          s('PTL.LEVEL', [127, 100, 80][i], i);
+          s('AENV.T1', 0, i);
+          s('AENV.T4', 40, i);
+          s('PTL.CHO_SEND', 60, i);
+        });
+      })
+  ],
+  [
+    'PWM pad',
+    () =>
+      tone('PWM PAD', s => {
+        s('SPTL.VA_FORM', 1);
+        s('SPTL.PWM_DEPTH', 40);
+        s('LFO.LFO1_RATE', 300);
+        s('PTL.CUTOFF', 620);
+        s('AENV.T1', 560);
+        s('AENV.T4', 640);
+        s('PTL.CHO_SEND', 60);
+        s('PTL.REV_SEND', 70);
+      })
+  ],
+  [
+    'House chord stab',
+    () =>
+      tone('CHORD STAB', s => {
+        s('PMT.PMT2_PTL_SW', 1);
+        s('SPTL.OSC_TYPE', 1, 1);
+        s('PTL.PIT_FINE', -7);
+        s('PTL.PIT_FINE', 7, 1);
+        for (const i of [0, 1]) {
+          s('PTL.CUTOFF', 560, i);
+          s('FENV.DEPTH', 36, i);
+          s('FENV.T2', 200, i);
+          s('FENV.L2', 0, i);
+          s('FENV.L3', 0, i);
+          s('AENV.T2', 260, i);
+          s('AENV.L2', 0, i);
+          s('AENV.L3', 0, i);
+          s('AENV.T4', 160, i);
+          s('PTL.REV_SEND', 50, i);
+        }
+      })
+  ],
+  [
+    'Kick',
+    () =>
+      tone('KICK', s => {
+        s('CMN.OCTAVE', -1);
+        s('SPTL.VA_FORM', 3);
+        s('PTL.CUTOFF', 1023);
+        s('PENV.DEPTH', 60);
+        s('PENV.L0', 511);
+        s('PENV.T1', 120);
+        s('PENV.L1', 0);
+        s('PENV.L2', 0);
+        s('PENV.L3', 0);
+        s('AENV.T2', 300);
+        s('AENV.L2', 0);
+        s('AENV.L3', 0);
+        s('AENV.T4', 60);
+      })
   ]
 ];

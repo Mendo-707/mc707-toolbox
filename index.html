@@ -4786,6 +4786,52 @@ input[type='number'] {
   border-left: 3px solid var(--zc-acc);
   padding-left: 8px;
 }
+/* envelope numbers, presets and copy, under each graph */
+.zcEnvNums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 4px 8px;
+  max-width: 520px;
+  margin: 6px 0 2px;
+}
+.zcEnvN {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--zc-dim);
+}
+.zcEnvN input {
+  width: 100%;
+  color: var(--zc-acc);
+  font:
+    600 12px ui-monospace,
+    Consolas,
+    monospace;
+}
+.zcEnvTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+/* previews: oscillator wave, filter curve, LFO shape */
+.zcPrev {
+  max-height: 120px;
+}
+.zcPrev .ghost {
+  fill: none;
+  stroke: var(--zc-acc);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+.zcPrev .lbl {
+  fill: var(--zc-dim);
+  font:
+    600 13px ui-monospace,
+    Consolas,
+    monospace;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -10021,14 +10067,14 @@ input[type='number'] {
       return m ? m[1] : null;
     };
     let seed3 = 987654;
-    const rnd3 = () => {
+    const rnd4 = () => {
       seed3 = seed3 * 1103515245 + 12345 & 2147483647;
       return seed3 / 2147483647;
     };
     const pickN = (a, n) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd3() * (i + 1));
+        const j = Math.floor(rnd4() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a.slice(0, n);
@@ -10241,7 +10287,7 @@ input[type='number'] {
           });
         });
       });
-      const minorG = !["pop", "funk", "synth", "house"].includes(g) || rnd3() < 0.5;
+      const minorG = !["pop", "funk", "synth", "house"].includes(g) || rnd4() < 0.5;
       const SC = minorG ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11], kn = minorG ? "Am" : "C", R3 = KEYS[kn].root;
       const MOT = [
         [
@@ -10358,14 +10404,14 @@ input[type='number'] {
   // src/library/variety.js
   (function() {
     let seed3 = 20261014;
-    const rnd3 = () => {
+    const rnd4 = () => {
       seed3 = seed3 * 1103515245 + 12345 & 2147483647;
       return seed3 / 2147483647;
     };
     const shuf = (a) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd3() * (i + 1));
+        const j = Math.floor(rnd4() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a;
@@ -22466,14 +22512,14 @@ input[type='number'] {
   // src/library/harmony-pack.js
   function addHarmonyPack() {
     let seed3 = 20261018;
-    const rnd3 = () => {
+    const rnd4 = () => {
       seed3 = seed3 * 1103515245 + 12345 & 2147483647;
       return seed3 / 2147483647;
     };
     const shuf = (a) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd3() * (i + 1));
+        const j = Math.floor(rnd4() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a;
@@ -34183,15 +34229,15 @@ input[type='number'] {
       return [];
     }
   }
-  function projRecent(path) {
-    const name = path.split(/[\\/]/).pop().replace(/\.(json|mc707)$/i, "");
-    const l = [{ name, path }, ...projRecents().filter((r) => r.path !== path)].slice(0, 8);
+  function projRecent(path2) {
+    const name = path2.split(/[\\/]/).pop().replace(/\.(json|mc707)$/i, "");
+    const l = [{ name, path: path2 }, ...projRecents().filter((r) => r.path !== path2)].slice(0, 8);
     try {
       localStorage.setItem(RECK, JSON.stringify(l));
     } catch (e) {
     }
   }
-  function projLoadText(text, name, path) {
+  function projLoadText(text, name, path2) {
     let s;
     try {
       s = JSON.parse(text);
@@ -34209,9 +34255,9 @@ input[type='number'] {
     UI.sel = null;
     afterReplaceKeepUndo();
     PROJ.name = (name || "").replace(/\.(json|mc707)$/i, "");
-    PROJ.path = path || "";
+    PROJ.path = path2 || "";
     PROJ.dirty = false;
-    if (path) projRecent(path);
+    if (path2) projRecent(path2);
     projTitle();
     toast("Opened " + (PROJ.name || "project"));
     return true;
@@ -34252,14 +34298,14 @@ input[type='number'] {
       }
     } else $("#fileIn").click();
   }
-  async function projOpenPath(path) {
+  async function projOpenPath(path2) {
     if (!HOST) return;
     if (!await projConfirmLoss()) return;
     try {
-      const r = await HOST.readFile(path);
-      projLoadText(r.text, r.name, path);
+      const r = await HOST.readFile(path2);
+      projLoadText(r.text, r.name, path2);
     } catch (e) {
-      toast("Could not open " + path.split(/[\\/]/).pop());
+      toast("Could not open " + path2.split(/[\\/]/).pop());
     }
   }
   async function projSave() {
@@ -40330,6 +40376,215 @@ input[type='number'] {
         s("AENV.T4", 700);
         s("PTL.REV_SEND", 90);
       })
+    ],
+    [
+      "Acid bass",
+      () => tone("ACID BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_MODE", 1);
+        s("CMN.PORTA_TIME", 90);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 820);
+        s("FENV.DEPTH", 42);
+        s("FENV.T2", 180);
+        s("FENV.L2", 150);
+        s("FENV.L3", 100);
+        s("AENV.T4", 80);
+      })
+    ],
+    [
+      "Reese bass",
+      () => tone("REESE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -14);
+        s("PTL.PIT_FINE", 14, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("PTL.RESO", 120, i);
+          s("AENV.T4", 140, i);
+        }
+      })
+    ],
+    [
+      "Wobble bass",
+      () => tone("WOBBLE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 420);
+        s("LFO.LFO1_FORM", 0);
+        s("LFO.LFO1_RATE_SYNC", 1);
+        s("LFO.LFO1_RATE_NOTE", 9);
+        s("LFO.LFO1_TVF_DEPTH", 70);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Juno pad",
+      () => tone("JUNO PAD", (s) => {
+        s("SPTL.VA_FORM", 5);
+        s("SCMN.UNISON_SW", 1);
+        s("SCMN.UNISON_SIZE", 4);
+        s("SCMN.UNISON_DETN", 30);
+        s("PTL.CUTOFF", 640);
+        s("AENV.T1", 520);
+        s("AENV.T4", 620);
+        s("PTL.CHO_SEND", 80);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "Strings",
+      () => tone("STRINGS", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 50);
+        s("PTL.CUTOFF", 700);
+        s("AENV.T1", 420);
+        s("AENV.T4", 520);
+        s("PTL.CHO_SEND", 40);
+        s("PTL.REV_SEND", 60);
+      })
+    ],
+    [
+      "Brass stab",
+      () => tone("BRASS STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -6);
+        s("PTL.PIT_FINE", 6, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("FENV.DEPTH", 30, i);
+          s("FENV.T1", 120, i);
+          s("FENV.T2", 320, i);
+          s("FENV.L2", 700, i);
+          s("AENV.T1", 60, i);
+          s("AENV.T4", 200, i);
+        }
+      })
+    ],
+    [
+      "Hoover",
+      () => tone("HOOVER", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_TIME", 200);
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 110);
+        s("PENV.DEPTH", 30);
+        s("PENV.L0", -150);
+        s("PENV.T1", 160);
+        s("PENV.L1", 0);
+        s("PTL.CUTOFF", 820);
+        s("PTL.CHO_SEND", 60);
+      })
+    ],
+    [
+      "Sync lead",
+      () => tone("SYNC LEAD", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPMT.STRUCT12", 1);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 860, i);
+          s("AENV.T4", 200, i);
+        }
+        s("PTL.REV_SEND", 30);
+      })
+    ],
+    [
+      "Bell",
+      () => tone("BELL", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 3);
+        s("SPTL.VA_FORM", 3, 1);
+        s("SPMT.STRUCT12", 2);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("AENV.T2", 700, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 600, i);
+          s("PTL.REV_SEND", 70, i);
+        }
+      })
+    ],
+    [
+      "Organ",
+      () => tone("ORGAN", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("PMT.PMT3_PTL_SW", 1);
+        [0, 12, 19].forEach((crs, i) => {
+          s("SPTL.OSC_TYPE", 1, i);
+          s("SPTL.VA_FORM", 3, i);
+          s("PTL.PIT_CRS", crs, i);
+          s("PTL.LEVEL", [127, 100, 80][i], i);
+          s("AENV.T1", 0, i);
+          s("AENV.T4", 40, i);
+          s("PTL.CHO_SEND", 60, i);
+        });
+      })
+    ],
+    [
+      "PWM pad",
+      () => tone("PWM PAD", (s) => {
+        s("SPTL.VA_FORM", 1);
+        s("SPTL.PWM_DEPTH", 40);
+        s("LFO.LFO1_RATE", 300);
+        s("PTL.CUTOFF", 620);
+        s("AENV.T1", 560);
+        s("AENV.T4", 640);
+        s("PTL.CHO_SEND", 60);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "House chord stab",
+      () => tone("CHORD STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -7);
+        s("PTL.PIT_FINE", 7, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 560, i);
+          s("FENV.DEPTH", 36, i);
+          s("FENV.T2", 200, i);
+          s("FENV.L2", 0, i);
+          s("FENV.L3", 0, i);
+          s("AENV.T2", 260, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 160, i);
+          s("PTL.REV_SEND", 50, i);
+        }
+      })
+    ],
+    [
+      "Kick",
+      () => tone("KICK", (s) => {
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 3);
+        s("PTL.CUTOFF", 1023);
+        s("PENV.DEPTH", 60);
+        s("PENV.L0", 511);
+        s("PENV.T1", 120);
+        s("PENV.L1", 0);
+        s("PENV.L2", 0);
+        s("PENV.L3", 0);
+        s("AENV.T2", 300);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 60);
+      })
     ]
   ];
 
@@ -43050,12 +43305,53 @@ input[type='number'] {
     for (const k in a) e.setAttribute(k, a[k]);
     return e;
   };
+  var SHAPES = {
+    amp: [
+      ["Pluck", [0, 300, 380, 260], [0, 1, 0.22, 0, 0]],
+      ["Stab", [0, 160, 220, 140], [0, 1, 0.5, 0, 0]],
+      ["Ping", [0, 90, 110, 70], [0, 1, 0, 0, 0]],
+      ["Bass", [0, 260, 320, 90], [0, 1, 0.65, 0.55, 0]],
+      ["Organ (gate)", [0, 0, 0, 40], [0, 1, 1, 1, 0]],
+      ["Brass", [130, 320, 320, 220], [0, 1, 0.78, 0.7, 0]],
+      ["Strings", [420, 380, 380, 520], [0, 1, 0.92, 0.88, 0]],
+      ["Pad", [620, 520, 420, 720], [0, 1, 0.9, 0.85, 0]],
+      ["Swell", [900, 380, 300, 640], [0, 1, 1, 1, 0]],
+      ["Reverse", [820, 12, 12, 24], [0, 1, 0, 0, 0]],
+      ["Long tail", [0, 640, 720, 900], [0, 1, 0.3, 0, 0]]
+    ],
+    filter: [
+      ["Pluck sweep", [0, 280, 360, 260], [0.2, 1, 0.3, 0.15, 0.1]],
+      ["Acid (fast decay)", [0, 180, 240, 120], [0, 1, 0.18, 0.1, 0]],
+      ["Bass punch", [0, 140, 260, 120], [0.1, 1, 0.45, 0.35, 0.2]],
+      ["Brass swell", [180, 360, 360, 260], [0.2, 1, 0.7, 0.6, 0.3]],
+      ["Slow open", [820, 400, 300, 600], [0, 1, 1, 1, 0.4]],
+      ["Wah down", [0, 520, 520, 300], [1, 0.9, 0.2, 0, 0]],
+      ["Flat (open)", [0, 0, 0, 0], [1, 1, 1, 1, 1]]
+    ],
+    pitch: [
+      ["Flat", [0, 0, 0, 0], [0, 0, 0, 0, 0]],
+      ["Drop (kick, zap)", [0, 160, 200, 120], [0.8, 0, 0, 0, 0]],
+      ["Blip", [0, 40, 60, 40], [0.5, 0, 0, 0, 0]],
+      ["Rise in", [0, 260, 260, 160], [-0.5, 0, 0, 0, 0]],
+      ["Dive on release", [0, 0, 0, 520], [0, 0, 0, 0, -0.8]],
+      ["Scoop", [0, 120, 160, 100], [-0.25, 0.05, 0, 0, 0]]
+    ]
+  };
+  var KIND = { AENV: "amp", FENV: "filter", PENV: "pitch" };
+  var LEVELS2 = {
+    AENV: [null, "L1", "L2", "L3", null],
+    FENV: ["L0", "L1", "L2", "L3", "L4"],
+    PENV: ["L0", "L1", "L2", "L3", "L4"]
+  };
   function envGraph(ctx2, blk, levels) {
     const W = 420, H = 150, P = 10;
     const K = (id) => blk + "." + id;
+    const env = blk.replace(/\d+$/, ""), part = +blk.slice(env.length);
     const lv = levels.map((id) => id ? paramOf(ctx2.kind, K(id))[0] : null);
     const lo = lv.find(Boolean)[3], hi = lv.find(Boolean)[4];
     const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv", role: "img", "aria-label": "Envelope" });
+    const nums = [];
+    const sync = () => nums.forEach(([inp, id]) => document.activeElement !== inp && (inp.value = ctx2.get(K(id))));
     const draw = () => {
       svg.textContent = "";
       const T2 = [1, 2, 3, 4].map((i) => ctx2.get(K("T" + i)));
@@ -43096,6 +43392,7 @@ input[type='number'] {
         h.addEventListener("pointerdown", (e) => drag(e, null, 0, scale));
         svg.append(h);
       }
+      sync();
     };
     function drag(e, ti, li, scale) {
       e.preventDefault();
@@ -43120,12 +43417,90 @@ input[type='number'] {
       addEventListener("pointermove", move);
       addEventListener("pointerup", up);
     }
+    const num = (id, label) => {
+      const [p] = paramOf(ctx2.kind, K(id));
+      const inp = el("input", {
+        type: "number",
+        min: p[3],
+        max: p[4],
+        step: 1,
+        "aria-label": label,
+        onchange: (e) => ctx2.set(K(id), Math.round(Math.max(p[3], Math.min(p[4], +e.target.value || 0))), true)
+      });
+      nums.push([inp, id]);
+      return el("label", { class: "zcEnvN" }, el("span", {}, label), inp);
+    };
+    const row = el(
+      "div",
+      { class: "zcEnvNums" },
+      ...[1, 2, 3, 4].map((i) => num("T" + i, "Time " + i)),
+      ...levels.map((id, i) => id ? num(id, "Level " + i) : null).filter(Boolean)
+    );
+    const put = (e, pt, T2, Lf) => {
+      const k = (id) => e + pt + "." + id, ls = LEVELS2[e];
+      T2.forEach((t, i) => ctx2.set(k("T" + (i + 1)), t, false));
+      ls.forEach((id, i) => {
+        if (!id) return;
+        const [p] = paramOf(ctx2.kind, k(id));
+        ctx2.set(k(id), Math.round(Math.max(p[3], Math.min(p[4], Lf[i] * (Lf[i] < 0 ? -p[3] : p[4])))), false);
+      });
+    };
+    const shape = () => {
+      const T2 = [1, 2, 3, 4].map((i) => ctx2.get(K("T" + i)));
+      const L2 = LEVELS2[env].map((id) => {
+        if (!id) return 0;
+        const v = ctx2.get(K(id)), [p] = paramOf(ctx2.kind, K(id));
+        return v < 0 ? v / -p[3] : v / (p[4] || 1);
+      });
+      return [T2, L2];
+    };
+    const presets = el(
+      "select",
+      {
+        "aria-label": "Shape preset",
+        onchange: (e) => {
+          const s = SHAPES[KIND[env]][+e.target.value];
+          e.target.value = "";
+          if (!s) return;
+          put(env, part, s[1], s[2]);
+          ctx2.commit();
+        }
+      },
+      el("option", { value: "" }, "Shape preset…"),
+      ...SHAPES[KIND[env]].map(([n], i) => el("option", { value: i }, n))
+    );
+    const others = Object.keys(KIND).filter((e) => e !== env);
+    const copy = el(
+      "select",
+      {
+        "aria-label": "Copy this envelope",
+        onchange: (e) => {
+          const v = e.target.value;
+          e.target.value = "";
+          const [T2, L2] = shape();
+          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put(env, i, T2, L2));
+          else if (KIND[v]) put(v, part, T2, L2);
+          else return;
+          ctx2.commit();
+        }
+      },
+      el("option", { value: "" }, "Copy this shape…"),
+      el("option", { value: "parts" }, "to the other 3 partials"),
+      ...others.map((e) => el("option", { value: e }, "to the " + KIND[e] + " envelope (this partial)"))
+    );
     draw();
+    ctx2.watch((k) => k.startsWith(blk + ".") && draw());
     return el(
       "div",
       { class: "zcEnvBox" },
       svg,
-      el("small", { class: "hint" }, "Drag the points: sideways for time, up and down for level.")
+      row,
+      el("div", { class: "zcEnvTools" }, presets, copy),
+      el(
+        "small",
+        { class: "hint" },
+        "Drag the points (sideways for time, up and down for level), type the values, or pick a shape."
+      )
     );
   }
   function stepGraph(ctx2, pre) {
@@ -43169,6 +43544,163 @@ input[type='number'] {
     return svg;
   }
 
+  // src/zen/zc-preview.js
+  var NS2 = "http://www.w3.org/2000/svg";
+  var sv2 = (tag, a = {}) => {
+    const e = document.createElementNS(NS2, tag);
+    for (const k in a) e.setAttribute(k, a[k]);
+    return e;
+  };
+  var path = (pts) => "M" + pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L");
+  var rnd3 = (seed3) => () => ((seed3 = seed3 * 16807 % 2147483647) - 1) / 2147483646;
+  var VA = {
+    SAW: (ph) => 1 - 2 * ph,
+    RAMP: (ph) => 2 * ph - 1,
+    TRI: (ph) => ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph,
+    SIN: (ph) => Math.sin(2 * Math.PI * ph),
+    JUNO: (ph, d) => 0.6 * (1 - 2 * ph) + 0.4 * (ph < d ? 1 : -1),
+    TRI2: (ph) => Math.tanh(2.2 * (ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph)) / Math.tanh(2.2),
+    TRI3: (ph) => Math.sin(Math.PI / 2 * 1.8 * (ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph)),
+    SIN2: (ph) => Math.abs(Math.sin(2 * Math.PI * ph)) * 2 - 1
+  };
+  var FORMS = ["SAW", "SQR", "TRI", "SIN", "RAMP", "JUNO", "TRI2", "TRI3", "SIN2"];
+  function oscPreview(ctx2) {
+    const W = 420, H = 96, M = H / 2, A = H / 2 - 8;
+    const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "Wave preview" });
+    const cap = el("small", { class: "hint" });
+    const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P = (id) => ctx2.get(pk("PTL", ctx2.part, id));
+    const draw = () => {
+      svg.textContent = "";
+      svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
+      const ty = S2("OSC_TYPE"), inv = S2("VA_INVERT_SW") ? -1 : 1, line = (f, cls = "line") => {
+        const pts = [];
+        for (let x = 0; x <= W; x++) pts.push([x, M - A * f(x / W * 2 % 1, x)]);
+        svg.append(sv2("path", { d: path(pts), class: cls }));
+      };
+      if (ty === 1) {
+        const form = FORMS[S2("VA_FORM")] || "SAW", duty = Math.max(0.05, Math.min(0.95, 0.5 + (S2("PW") - 64) / 127 * 0.9));
+        if (form === "SQR") {
+          const pwm = S2("PWM_DEPTH");
+          if (pwm) {
+            const d2 = Math.max(0.05, Math.min(0.95, duty + pwm / 63 * 0.4));
+            line((ph) => inv * (ph < d2 ? 1 : -1), "line ghost");
+          }
+          line((ph) => inv * (ph < duty ? 1 : -1));
+        } else line((ph) => inv * VA[form](ph, duty));
+        cap.textContent = "VA " + form + (form === "SQR" ? " · width " + Math.round(duty * 100) + "%" : "");
+      } else if (ty === 3) {
+        const det = S2("SSAW_DETUNE") / 127;
+        [-1, -0.5, 0.5, 1].forEach((k) => line((ph) => 1 - 2 * ((ph + k * det * 0.08 + 1) % 1), "line ghost"));
+        line((ph) => 1 - 2 * ph);
+        cap.textContent = "SuperSAW · detune " + S2("SSAW_DETUNE");
+      } else if (ty === 4) {
+        const r = rnd3(7);
+        const pts = [];
+        for (let x = 0; x <= W; x += 2) pts.push([x, M - A * (r() * 2 - 1) * 0.9]);
+        svg.append(sv2("path", { d: path(pts), class: "line" }));
+        cap.textContent = "Noise";
+      } else {
+        svg.append(sv2("text", { x: W / 2, y: M + 5, class: "lbl", "text-anchor": "middle" }, ""));
+        svg.lastChild.textContent = (ty === 2 ? "PCM-Sync wave " + S2("SYNC_WAV_NUM") : "PCM wave " + P("WAV_NUM_L")) + " (a sample)";
+        cap.textContent = "PCM waves are recordings inside the MC-707, so there is no picture of them. Play a note to hear it.";
+      }
+    };
+    draw();
+    ctx2.watch(
+      (k) => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k) && draw()
+    );
+    return el("div", { class: "zcEnvBox" }, svg, cap);
+  }
+  function filterCurve(ctx2) {
+    const W = 420, H = 120, TOP = 18, LO = -42;
+    const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "Filter curve" });
+    const cap = el("small", { class: "hint" });
+    const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P = (id) => ctx2.get(pk("PTL", ctx2.part, id));
+    const fx = (x) => 20 * Math.pow(1e3, x / W);
+    const yOf = (db) => (TOP - Math.max(LO, Math.min(TOP, db))) / (TOP - LO) * (H - 8) + 4;
+    const draw = () => {
+      svg.textContent = "";
+      [100, 1e3, 1e4].forEach((f) => {
+        const x = Math.log(f / 20) / Math.log(1e3) * W;
+        svg.append(sv2("line", { x1: x, x2: x, y1: 0, y2: H, class: "zero" }));
+      });
+      svg.append(sv2("line", { x1: 0, x2: W, y1: yOf(0), y2: yOf(0), class: "zero" }));
+      const vcf = S2("FILTER_TYPE") === 1, tvf = ["OFF", "LPF", "BPF", "HPF", "PKG", "LPF2", "LPF3"][P("FILTER_TYPE")] || "LPF", type = vcf ? S2("VCF_TYPE") === 0 ? "OFF" : "LPF" : tvf, poles = vcf ? [2, 3, 4][S2("FILTER_SLOPE")] || 2 : tvf === "LPF2" ? 2 : tvf === "LPF3" ? 3 : tvf === "LPF" ? 4 : 2, fc = 20 * Math.pow(1e3, P("CUTOFF") / 1023), q = 0.6 + P("RESO") / 1023 * 10, hpc = S2("HPF_CUTOFF") ? 20 * Math.pow(1e3, S2("HPF_CUTOFF") / 1023) : 0;
+      const mag = (f) => {
+        const x = f / fc, d = Math.sqrt((1 - x * x) ** 2 + (x / q) ** 2);
+        let g = 1;
+        if (type === "LPF" || type === "LPF2" || type === "LPF3") {
+          g = 1 / d;
+          if (poles >= 3) g /= Math.sqrt(1 + x * x);
+          if (poles >= 4) g /= Math.sqrt(1 + x * x);
+        } else if (type === "HPF") g = x * x / d;
+        else if (type === "BPF") g = x / q / d;
+        else if (type === "PKG") g = 1 + P("RESO") / 1023 * 3 * (x / q) / d;
+        if (hpc) {
+          const h = f / hpc;
+          g *= h / Math.sqrt(1 + h * h);
+        }
+        return 20 * Math.log10(Math.max(1e-6, g));
+      };
+      const pts = [];
+      for (let x = 0; x <= W; x += 2) pts.push([x, yOf(mag(fx(x)))]);
+      svg.append(sv2("path", { d: path(pts) + ` L${W},${H} L0,${H} Z`, class: "fill" }));
+      svg.append(sv2("path", { d: path(pts), class: "line" }));
+      const hz = fc >= 1e3 ? (fc / 1e3).toFixed(1) + " kHz" : Math.round(fc) + " Hz";
+      cap.textContent = (type === "OFF" ? "Filter off" : (vcf ? "VCF " : "TVF ") + type + " · about " + hz) + (vcf ? " · " + ["-12", "-18", "-24"][S2("FILTER_SLOPE")] + " dB" : "") + " · drawn from the settings, so the shape is approximate";
+    };
+    draw();
+    ctx2.watch((k) => /\.(FILTER_TYPE|VCF_TYPE|FILTER_SLOPE|CUTOFF|RESO|HPF_CUTOFF)$/.test(k) && draw());
+    return el("div", { class: "zcEnvBox" }, svg, cap);
+  }
+  var LFO_F = {
+    SIN: (ph) => Math.sin(2 * Math.PI * ph),
+    TRI: (ph) => ph < 0.25 ? 4 * ph : ph < 0.75 ? 2 - 4 * ph : 4 * ph - 4,
+    "SAW-UP": (ph) => 2 * ph - 1,
+    "SAW-DW": (ph) => 1 - 2 * ph,
+    SQR: (ph) => ph < 0.5 ? 1 : -1,
+    TRP: (ph) => Math.max(-1, Math.min(1, 2 * (ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph))),
+    VSIN: (ph) => Math.sin(2 * Math.PI * ph) * (0.6 + 0.4 * Math.cos(4 * Math.PI * ph))
+  };
+  var LFO_FORMS = ["SIN", "TRI", "SAW-UP", "SAW-DW", "SQR", "RND", "TRP", "S&H", "CHS", "VSIN", "STEP"];
+  function lfoPreview(ctx2, n) {
+    const W = 420, H = 84, M = H / 2, A = H / 2 - 6;
+    const pre = pk("LFO", ctx2.part, "LFO" + n + "_");
+    const G = (id) => ctx2.get(pre + id);
+    const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "LFO preview" });
+    const draw = () => {
+      svg.textContent = "";
+      svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
+      const form = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd3(11), steps = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
+      const rand = Array.from({ length: cycles * 4 + 2 }, () => r() * 2 - 1);
+      const val = (ph) => {
+        const c = Math.floor(ph), f = ph - c;
+        if (form === "STEP") return steps[Math.floor(f * nSteps) % 16];
+        if (form === "S&H") return rand[c * 2 + (f < 0.5 ? 0 : 1)];
+        if (form === "RND" || form === "CHS") {
+          const a = rand[c], b = rand[c + 1], t = (1 - Math.cos(Math.PI * f)) / 2;
+          return (a + (b - a) * t) * (form === "CHS" ? 0.6 + 0.4 * Math.sin(17 * ph) : 1);
+        }
+        return LFO_F[form](f);
+      };
+      const pts = [];
+      for (let x = 0; x <= W; x++) {
+        let amp = 1, v = 0;
+        if (x < delay) v = 0;
+        else {
+          const t = x - delay;
+          if (fade > 0) amp = mode % 2 === 0 ? Math.min(1, t / fade) : Math.max(0, 1 - t / fade);
+          v = val(t / (W - delay || 1) * cycles);
+        }
+        pts.push([x, M - A * Math.max(-1, Math.min(1, v * amp + (x < delay ? 0 : off * 0.5)))]);
+      }
+      svg.append(sv2("path", { d: path(pts), class: "line" }));
+    };
+    draw();
+    ctx2.watch((k) => k.startsWith(pre) && draw());
+    return svg;
+  }
+
   // src/zen/zc-panels.js
   var at = (ctx2, blk, ids, o) => ids.map((id) => ctl(ctx2, pk(blk, ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(blk) ? null : ctx2.part, id), o));
   function pageCommon(ctx2) {
@@ -43205,7 +43737,7 @@ input[type='number'] {
     return el(
       "div",
       {},
-      group("Oscillator", ...s(["OSC_TYPE"]), ...p(["LEVEL"])),
+      group("Oscillator", ...s(["OSC_TYPE"]), ...p(["LEVEL"]), el("div", { class: "zcWide" }, oscPreview(ctx2))),
       ty === 1 ? group("VA waveform", ...s(["VA_FORM", "VA_INVERT_SW", "PW", "PWM_DEPTH"])) : null,
       ty === 3 ? group("SuperSAW", ...s(["SSAW_DETUNE"])) : null,
       ty === 2 ? group("PCM-Sync", ...s(["SYNC_WAV_NUM"])) : null,
@@ -43226,7 +43758,8 @@ input[type='number'] {
         ctl(ctx2, pk("SPTL", ctx2.part, "FILTER_TYPE"), { label: "Filter model" }),
         ...vcf ? s(["VCF_TYPE", "FILTER_SLOPE", "VCF_GC"]) : p(["FILTER_TYPE"]),
         ...p(["CUTOFF", "RESO", "CUTOFF_KF"]),
-        ...s(["CUTOFF_KF_BP", "HPF_CUTOFF", "FAT"])
+        ...s(["CUTOFF_KF_BP", "HPF_CUTOFF", "FAT"]),
+        el("div", { class: "zcWide" }, filterCurve(ctx2))
       ),
       group("Velocity", ...p(["CUTOFF_VCRV", "CUTOFF_VSENS", "RESO_VSENS"])),
       group(
@@ -43294,6 +43827,7 @@ input[type='number'] {
       const step = ctx2.get(pk("LFO", ctx2.part, pre + "FORM")) === 10;
       return group(
         "LFO " + n,
+        el("div", { class: "zcWide" }, lfoPreview(ctx2, n)),
         ...l(["FORM", "RATE_SYNC"]),
         ...ctx2.get(pk("LFO", ctx2.part, pre + "RATE_SYNC")) ? l(["RATE_NOTE"]) : l(["RATE"]),
         ...l([
@@ -43960,6 +44494,7 @@ input[type='number'] {
       zenClose();
     } else if (!typing && !e.ctrlKey && !e.metaKey) e.stopPropagation();
   }
+  var WATCH = [];
   function ctx() {
     return {
       kind: ZE.kind,
@@ -43969,6 +44504,7 @@ input[type='number'] {
       get: (key) => ZE.snd.v[key],
       set: (key, v, final) => {
         apply(key, v);
+        WATCH.forEach((f) => f(key));
         if (final) {
           commit();
           zeRender();
@@ -43978,6 +44514,7 @@ input[type='number'] {
         commit();
         zeRender();
       },
+      watch: (f) => WATCH.push(f),
       mfxType,
       pickKey: (i) => {
         ZE.key = i;
@@ -44044,6 +44581,7 @@ input[type='number'] {
   function zeRender() {
     const ov = $("#zcOv");
     if (!ov || !ZE.snd) return;
+    WATCH = [];
     const c = ctx(), tabs = TABS[ZE.kind], cur = tabs.find((x) => x[0] === ZE.tab) || tabs[0];
     const scroll = $(".zcPage", ov) ? $(".zcPage", ov).scrollTop : 0;
     ov.textContent = "";

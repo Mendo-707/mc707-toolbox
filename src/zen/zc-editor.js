@@ -273,6 +273,8 @@ function keys(e) {
 }
 
 /* ---- the screen ---- */
+/* previews and graphs that redraw while a value changes (cleared on each render) */
+let WATCH = [];
 function ctx() {
   return {
     kind: ZE.kind,
@@ -282,6 +284,7 @@ function ctx() {
     get: key => ZE.snd.v[key],
     set: (key, v, final) => {
       apply(key, v);
+      WATCH.forEach(f => f(key));
       if (final) {
         commit();
         zeRender();
@@ -291,6 +294,7 @@ function ctx() {
       commit();
       zeRender();
     },
+    watch: f => WATCH.push(f),
     mfxType,
     pickKey: i => {
       ZE.key = i;
@@ -363,6 +367,7 @@ export function status() {
 export function zeRender() {
   const ov = $('#zcOv');
   if (!ov || !ZE.snd) return;
+  WATCH = [];
   const c = ctx(),
     tabs = TABS[ZE.kind],
     cur = tabs.find(x => x[0] === ZE.tab) || tabs[0];

@@ -437,6 +437,58 @@ test('ZenCore effects: settings survive the MC-707 resetting them after a type c
   assert.deepEqual(errors, []);
 });
 
+test('ZenCore previews, envelope numbers, shape presets, copying and the starter sounds', async () => {
+  const { page, errors } = await openApp();
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 30000
+    });
+  await page.evaluate(() => window.__app.zen.open(3, 0));
+  await idle();
+  /* every starter loads without errors */
+  await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+  const names = await page.$$eval('.cmenu .cmi', m => m.map(x => x.textContent.trim()));
+  await page.keyboard.press('Escape');
+  assert.ok(names.length >= 21, names.length + ' starters');
+  for (const n of names) {
+    await page.locator('.zcActs button', { hasText: 'Starters' }).click();
+    await page.locator('.cmenu .cmi', { hasText: n }).first().click();
+    await page.waitForTimeout(80);
+  }
+  /* previews on the Oscillator, Filter and LFO pages; the filter curve follows Cutoff while it moves */
+  for (const [tab, n] of [
+    ['Oscillator', 1],
+    ['Filter', 1],
+    ['LFO', 2]
+  ]) {
+    await page.locator('.zcTab', { hasText: tab }).click();
+    assert.equal(await page.locator('.zcPrev').count(), n, tab + ' preview');
+  }
+  await page.locator('.zcTab', { hasText: 'Filter' }).click();
+  const curve = () => page.evaluate(() => document.querySelector('.zcPrev path.line').getAttribute('d'));
+  const c0 = await curve();
+  await page.evaluate(() => {
+    const r = [...document.querySelectorAll('.zcC')]
+      .find(c => c.textContent.startsWith('Cutoff'))
+      .querySelector('input[type=range]');
+    r.value = 200;
+    r.dispatchEvent(new Event('input'));
+  });
+  assert.notEqual(await curve(), c0);
+  /* envelope: a typed time, a shape preset, and copying it to the other partials (one undo each) */
+  await page.locator('.zcTab', { hasText: 'Amp' }).click();
+  await page.fill('.zcEnvN input[aria-label="Time 1"]', '300');
+  await page.locator('.zcEnvN input[aria-label="Time 1"]').dispatchEvent('change');
+  assert.equal(await page.evaluate(() => window.__app.zen.ZE.snd.v['AENV0.T1']), 300);
+  await page.selectOption('select[aria-label="Shape preset"]', { label: 'Pluck' });
+  await page.selectOption('select[aria-label="Copy this envelope"]', { label: 'to the other 3 partials' });
+  const env = () => page.evaluate(() => [0, 1, 2, 3].map(p => window.__app.zen.ZE.snd.v['AENV' + p + '.T2']));
+  assert.deepEqual(await env(), [300, 300, 300, 300]);
+  await page.keyboard.press('Control+z');
+  assert.equal((await env())[1] === 300, false, 'undo takes the copy back');
+  assert.deepEqual(errors, []);
+});
+
 test('ZenCore editor on the MC-101: its own track numbers, model byte, and it learns the byte that answers', async () => {
   const { page, errors } = await openApp({ storage: { 'mc-device': '101' } });
   const hex = b => b.map(x => x.toString(16).padStart(2, '0')).join(' ');

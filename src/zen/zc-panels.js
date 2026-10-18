@@ -5,6 +5,7 @@
 import { el } from '../core/dom.js';
 import { ctl, group } from './zc-widgets.js';
 import { envGraph, stepGraph } from './zc-env.js';
+import { filterCurve, lfoPreview, oscPreview } from './zc-preview.js';
 import { pk } from './zc-tone.js';
 
 const at = (ctx, blk, ids, o) =>
@@ -47,7 +48,7 @@ export function pageOsc(ctx) {
   return el(
     'div',
     {},
-    group('Oscillator', ...s(['OSC_TYPE']), ...p(['LEVEL'])),
+    group('Oscillator', ...s(['OSC_TYPE']), ...p(['LEVEL']), el('div', { class: 'zcWide' }, oscPreview(ctx))),
     ty === 1 ? group('VA waveform', ...s(['VA_FORM', 'VA_INVERT_SW', 'PW', 'PWM_DEPTH'])) : null,
     ty === 3 ? group('SuperSAW', ...s(['SSAW_DETUNE'])) : null,
     ty === 2 ? group('PCM-Sync', ...s(['SYNC_WAV_NUM'])) : null,
@@ -71,7 +72,8 @@ export function pageFilter(ctx) {
       ctl(ctx, pk('SPTL', ctx.part, 'FILTER_TYPE'), { label: 'Filter model' }),
       ...(vcf ? s(['VCF_TYPE', 'FILTER_SLOPE', 'VCF_GC']) : p(['FILTER_TYPE'])),
       ...p(['CUTOFF', 'RESO', 'CUTOFF_KF']),
-      ...s(['CUTOFF_KF_BP', 'HPF_CUTOFF', 'FAT'])
+      ...s(['CUTOFF_KF_BP', 'HPF_CUTOFF', 'FAT']),
+      el('div', { class: 'zcWide' }, filterCurve(ctx))
     ),
     group('Velocity', ...p(['CUTOFF_VCRV', 'CUTOFF_VSENS', 'RESO_VSENS'])),
     group(
@@ -145,6 +147,7 @@ export function pageLfo(ctx) {
     const step = ctx.get(pk('LFO', ctx.part, pre + 'FORM')) === 10;
     return group(
       'LFO ' + n,
+      el('div', { class: 'zcWide' }, lfoPreview(ctx, n)),
       ...l(['FORM', 'RATE_SYNC']),
       ...(ctx.get(pk('LFO', ctx.part, pre + 'RATE_SYNC')) ? l(['RATE_NOTE']) : l(['RATE'])),
       ...l([

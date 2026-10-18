@@ -87,13 +87,17 @@ export async function closeBrowser() {
  * @param {number} [o.scale] device pixel ratio (2 for sharp screenshots)
  * @returns {Promise<{page: import('playwright').Page, errors: string[]}>}
  */
+/* the pages earlier tests opened: closed when the next test opens one, so they do not pile up */
+const OPEN = [];
 export async function openApp(o = {}) {
   const b = await launch();
+  while (OPEN.length) await OPEN.pop().close().catch(() => {});
   const ctx = await b.newContext({
     viewport: o.viewport || { width: 1400, height: 950 },
     deviceScaleFactor: o.scale || 1
   });
   const page = await ctx.newPage();
+  OPEN.push(ctx);
   const errors = [];
   page.on('pageerror', e => errors.push(String((e && e.message) || e)));
   await page.addInitScript(MIDI_MOCK + SEEDED_RANDOM);
@@ -106,6 +110,9 @@ export async function openApp(o = {}) {
       }
     } catch (e) {}
   }, storage);
+  /* the app loads web fonts and the MP3 encoder from CDNs; tests do not need them, and a stalled
+     connection can hold up the page load, so every web request is refused (the app copes without them) */
+  await page.route(/^https?:\/\//, r => r.abort());
   await page.goto(APP_URL);
   await page.waitForFunction(() => window.__app && document.querySelector('#arrInner'));
   await page.waitForTimeout(300);

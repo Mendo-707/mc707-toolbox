@@ -443,3 +443,49 @@
   border-left: 3px solid var(--zc-acc);
   padding-left: 8px;
 }
+/* envelope numbers, presets and copy, under each graph */
+.zcEnvNums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 4px 8px;
+  max-width: 520px;
+  margin: 6px 0 2px;
+}
+.zcEnvN {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--zc-dim);
+}
+.zcEnvN input {
+  width: 100%;
+  color: var(--zc-acc);
+  font:
+    600 12px ui-monospace,
+    Consolas,
+    monospace;
+}
+.zcEnvTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+/* previews: oscillator wave, filter curve, LFO shape */
+.zcPrev {
+  max-height: 120px;
+}
+.zcPrev .ghost {
+  fill: none;
+  stroke: var(--zc-acc);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+.zcPrev .lbl {
+  fill: var(--zc-dim);
+  font:
+    600 13px ui-monospace,
+    Consolas,
+    monospace;
+}
