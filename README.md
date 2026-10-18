@@ -6,7 +6,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 
-> **Version 1.3.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.3.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
@@ -40,7 +40,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Finer clip edges** in Song Mode, down to 1/256 bar.
 - **Smoother Live fades** on the MC-707's own volume, with new 4- and 8-bar fades.
 - **Acid** lines for a tone track, and **My MC-707 clips & ZenCore** at the top of Song Mode.
-- ZenCore editor: the MC-707's screen now updates by itself, there's a black-and-green look, and MC-101 support is fixed.
+- ZenCore editor: reads every parameter of a tone reliably (1.3.1 fixes how it asks the MC-707, found from a real dump), the MC-707's screen updates by itself, there's a black-and-green look, and MC-101 support is fixed.
 - **Settings › App sounds** turns the app's own sound on or off. Punk and rock are gone.
 
 ---
@@ -143,7 +143,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 
 - **Live:** every change goes to the MC-707 as you make it. Play the sound from the editor's keyboard or the MC-707's pads.
 - **Screen:** the MC-707 only redraws when a clip is selected, so with **Screen** on (the default) the editor selects the clip again a moment after you stop changing things, and the MC-707's display catches up. That also makes it the clip playing on that track; turn **Screen** off to keep another clip playing while you edit.
-- **Read from MC-707** reads the clip's sound when the editor opens; anything it couldn't read shows faded until you change it.
+- **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
 - **Starters**, **My sounds**, **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
 
