@@ -497,6 +497,64 @@
   color: #b9bccb;
 }
 
+/* Track setup (src/ui/track-setup.js) */
+.tsBox {
+  max-width: 760px;
+}
+.tsPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.tsRows {
+  display: grid;
+  gap: 6px;
+}
+.tsRow {
+  display: grid;
+  grid-template-columns: 70px 52px minmax(140px, 1fr) minmax(110px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #ffffff08;
+  border-left: 4px solid var(--c);
+}
+.tsRow select,
+.tsRow input {
+  min-width: 0;
+  background: #22253a;
+  color: #eef0ff;
+  border: 1px solid #ffffff2a;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.tsRow optgroup,
+.tsRow option {
+  background: #22253a;
+  color: #eef0ff;
+}
+.tsType {
+  font: 700 10px var(--font);
+  letter-spacing: 1px;
+  text-align: center;
+  border-radius: 99px;
+  padding: 2px 6px;
+}
+.tsType.d {
+  background: #ff5f4533;
+  color: #ff8a70;
+}
+.tsType.t {
+  background: #4da3ff33;
+  color: #8cc3ff;
+}
+@media (max-width: 640px) {
+  .tsRow {
+    grid-template-columns: 60px 1fr;
+  }
+}
 /* Live Mode's genre picker (src/live/genre-picker.js) */
 .lpBox {
   max-width: 900px;

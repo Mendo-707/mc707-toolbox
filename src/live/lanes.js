@@ -13,6 +13,7 @@ import { cmChipFill, cmPickItems } from '../clips/clip-map.js';
 import { NK } from '../library/styles.js';
 import { showMenu } from '../ui/menu.js';
 import { LV, MUG } from './state.js';
+import { trackOf, tracksFor } from '../core/tracks.js';
 import { lvIsFlash, lvScCol } from './themes.js';
 import { lvPlayOn } from './scene-templates.js';
 import { lvEmute, lvTop } from './engine.js';
@@ -151,7 +152,7 @@ export function liveRenderLanes(b0, force) {
         prevId = c ? c.id : null;
         continue;
       }
-      const ovFill = ti === 0 && pendFill.find(c => c.tick <= tk && tk < c.tick + 32),
+      const ovFill = ti === trackOf(0) && pendFill.find(c => c.tick <= tk && tk < c.tick + 32),
         id = s.ids[ti];
       if (!id) {
         if (ovFill)
@@ -177,7 +178,7 @@ export function liveRenderLanes(b0, force) {
       /* a bar the part sits out (its scene says first half, every other bar …): a faint outline, so the part does not seem to vanish */
       const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar % ssc.bars, ssc.bars);
       const phase = bar % f.bars;
-      const isFill = ti === 0 && pendFill.some(c => c.tick <= tk && tk < c.tick + 32);
+      const isFill = ti === trackOf(0) && pendFill.some(c => c.tick <= tk && tk < c.tick + 32);
       const label = isFill ? 'Fill' : resting ? '' : phase === 0 || id !== prevId ? f.name : '';
       row.append(
         el(
@@ -333,7 +334,7 @@ export function liveStatus(tickf) {
         cur = !!(on && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
         q = !!(on && cue && cue.idx === ix);
       }
-    } else if (a.startsWith('mu:')) cur = on && (MUG[a.slice(3)] || []).every(lvEffMute);
+    } else if (a.startsWith('mu:')) cur = on && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
     else if (a.startsWith('mt:')) cur = on && lvEffMute(+a.slice(3));
     else if (a.startsWith('key:')) cur = LV.key === +a.slice(4);
     else if (a.startsWith('sw:')) q = LV.cues.some(c => c.type === 'swap' && c.group === a.slice(3));

@@ -37,6 +37,10 @@ And a **ZenCore editor** for the sounds in your MC-707's clips.
 
 Got an MC-101? Choose **Settings › Device: MC-101 (4 tracks)**. The app switches to the MC-101's four tracks: **Drums, Bass, Chords and Lead** on MIDI channels 1–4. Its 16 pads are laid out like the MC-707's (1–8 on top, 9–16 below), so the Live pads work the same way. Drums play **full kits** (kick, snare, hats and percussion in one pattern), so one drum track still sounds complete. The song wizard, Live Mode scenes, breaks, builds and drops all work with the four tracks. MC-101 mode hasn't been tested on hardware yet: if you try it, run **Live › Mapping › Pad test** and send the result in an issue.
 
+### Track setup
+
+**Settings › Track setup** lets you choose how the 8 tracks are split, from **8 drum tracks to 8 tone tracks** and anything in between. Pick a ready-made split (3 drums + 5 tone is the default, then 8 drums, 6 + 2, 4 + 4, 2 + 6, 1 + 7 and 8 tone), or set each track's job yourself: **kit, hats or perc** for drum tracks, **bass, chords, pad, lead, pluck or acid** for tone tracks. The song wizard and Live Mode follow it, so a second kit track gets its own grooves and a second lead gets its own line. Clips that no longer fit a track (a drum clip on a track that is now a tone track) are removed, and Undo brings them back. On the MC-707, load a drum kit on each drum track and a tone on each tone track to match.
+
 ### Full kits on the MC-707
 
 **Settings › Drums on one track (full kits)** puts the whole groove on Drums 1, which frees Drums 2 for another sound. Drums 3 keeps the builds and drop impacts. Over 1,100 full-kit patterns are built from the library's kits, hats and percussion.

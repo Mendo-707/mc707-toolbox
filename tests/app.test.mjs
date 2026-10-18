@@ -353,3 +353,68 @@ test('the start screen opens the last session or Live Mode, which asks for a gen
   assert.equal(await page.evaluate(() => document.querySelector('#lvStyle').value), 'acidtechno');
   assert.deepEqual(errors, []);
 });
+
+test('track setup: 8 drum or 8 tone tracks, and the wizard and Live Mode follow it', async () => {
+  const { page, errors } = await openApp({ storage: SAVED });
+  const types = () => page.evaluate(() => window.__app.S.tracks.map(t => t.type).join(','));
+  assert.equal(await types(), 'drum,drum,drum,tone,tone,tone,tone,tone', 'the default is 3 drum + 5 tone');
+  const openSetup = async () => {
+    await page.locator('#menubar .mb', { hasText: 'Settings' }).click();
+    await page.locator('.mdrop:not([hidden]) button', { hasText: 'Track setup' }).click();
+    await page.waitForSelector('#tsOv');
+  };
+  const pick = async name => {
+    await page.locator('#tsOv .tsPresets .btn', { hasText: name }).click();
+    const ask = page.locator('button', { hasText: 'Change and remove them' });
+    if (await ask.count()) await ask.click();
+    await page.waitForTimeout(150);
+  };
+  const check = async (want, label) => {
+    assert.equal(await types(), want, label);
+    const bad = await page.evaluate(() => {
+      const { S, LV } = window.__app;
+      const out = [];
+      S.clips.forEach(c => S.tracks[c.t].type !== S.patterns[c.pat].type && out.push('song ' + c.t));
+      (LV.scenes || []).forEach(sc =>
+        Object.entries(sc.cells || {}).forEach(([t, c]) => {
+          const p = c && window.__app.FAC.find(f => f.id === c.id);
+          if (p && p.type !== S.tracks[t].type) out.push('live ' + t + ' ' + c.id);
+        })
+      );
+      return out;
+    });
+    assert.deepEqual(bad, [], label + ': every clip fits its track');
+  };
+  await openSetup();
+  for (const [name, want] of [
+    ['8 drums', 'drum,drum,drum,drum,drum,drum,drum,drum'],
+    ['8 tone', 'tone,tone,tone,tone,tone,tone,tone,tone'],
+    ['4 drums + 4 tone', 'drum,drum,drum,drum,tone,tone,tone,tone']
+  ]) {
+    await pick(name);
+    await check(want, name);
+    /* the song wizard builds a song on this layout */
+    await page.click('#tsOv .cmHead .btn');
+    await page.evaluate(() => document.querySelector('#bWiz').click());
+    await page.locator('#wiz .scard', { hasText: 'Acid techno' }).first().click();
+    for (let i = 0; i < 6 && !(await page.locator('#wizFoot button', { hasText: 'Create song' }).count()); i++)
+      await page.locator('#wizFoot button', { hasText: 'Next' }).click();
+    await page.locator('#wizFoot button', { hasText: 'Create song' }).click();
+    await page.waitForTimeout(200);
+    assert.ok(await page.evaluate(() => window.__app.S.clips.length > 0), name + ': the wizard made a song');
+    await check(want, name + ' after the wizard');
+    /* Live Mode plays it */
+    await page.evaluate(() => {
+      window.__app.liveBuild();
+      window.__app.liveStart();
+    });
+    await page.waitForTimeout(800);
+    await page.evaluate(() => window.__app.stopAll());
+    await check(want, name + ' in Live Mode');
+    await openSetup();
+  }
+  await pick('Default');
+  assert.equal(await types(), 'drum,drum,drum,tone,tone,tone,tone,tone');
+  assert.equal(await page.evaluate(() => window.__app.S.tracks.some(t => t.role)), false, 'the default saves no roles');
+  assert.deepEqual(errors, []);
+});

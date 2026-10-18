@@ -10,6 +10,7 @@ import { LV, LV_LABEL, NOTEN, lvHue, saveLive } from './state.js';
 import { lvTickF } from './ui.js';
 import { liveStatus } from './lanes.js';
 import { liveRenderCards, liveRenderPads } from './panels.js';
+import { toneTracksAll } from '../core/tracks.js';
 
 /* Live Mode colour themes. Each sets the panel colours (CSS) and how scene colours run from low to high energy. */
 export const LV_THEMES = {
@@ -95,8 +96,8 @@ export function lvSend(bytes) {
   return true;
 }
 export function lvTracksFor(target) {
-  if (target === 'drums') return [0, 1, 2];
-  if (target === 'tone') return [3, 4, 5, 6, 7];
+  if (target === 'drums') return [0, 1, 2, 3, 4, 5, 6, 7].filter(t => S.tracks[t].type === 'drum');
+  if (target === 'tone') return toneTracksAll();
   if (target === 'all') return [0, 1, 2, 3, 4, 5, 6, 7];
   return [+target];
 }

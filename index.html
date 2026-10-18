@@ -1585,6 +1585,64 @@ input[type='range'] {
   color: #b9bccb;
 }
 
+/* Track setup (src/ui/track-setup.js) */
+.tsBox {
+  max-width: 760px;
+}
+.tsPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.tsRows {
+  display: grid;
+  gap: 6px;
+}
+.tsRow {
+  display: grid;
+  grid-template-columns: 70px 52px minmax(140px, 1fr) minmax(110px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #ffffff08;
+  border-left: 4px solid var(--c);
+}
+.tsRow select,
+.tsRow input {
+  min-width: 0;
+  background: #22253a;
+  color: #eef0ff;
+  border: 1px solid #ffffff2a;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.tsRow optgroup,
+.tsRow option {
+  background: #22253a;
+  color: #eef0ff;
+}
+.tsType {
+  font: 700 10px var(--font);
+  letter-spacing: 1px;
+  text-align: center;
+  border-radius: 99px;
+  padding: 2px 6px;
+}
+.tsType.d {
+  background: #ff5f4533;
+  color: #ff8a70;
+}
+.tsType.t {
+  background: #4da3ff33;
+  color: #8cc3ff;
+}
+@media (max-width: 640px) {
+  .tsRow {
+    grid-template-columns: 60px 1fr;
+  }
+}
 /* Live Mode's genre picker (src/live/genre-picker.js) */
 .lpBox {
   max-width: 900px;
@@ -7430,24 +7488,24 @@ input[type='number'] {
       }
     };
     const pickStyles = (F, n) => shuffle(F.styles).slice(0, n);
-    const tones = (R2, off, q, center) => {
-      const base = R2 + off + 48;
+    const tones = (R3, off, q, center) => {
+      const base = R3 + off + 48;
       const ns = QUAL2[q].map((i) => base + i);
       const m = ns.reduce((a, b) => a + b, 0) / ns.length;
       const sh = Math.round((center - m) / 12) * 12;
       return ns.map((n) => n + sh);
     };
-    const rootAbs = (R2, off) => 24 + ((R2 + off) % 12 + 12) % 12;
+    const rootAbs = (R3, off) => 24 + ((R3 + off) % 12 + 12) % 12;
     for (const fk in FAMS) {
       const F = FAMS[fk];
       shuffle(PROGS.flatMap((p, pi) => CR.map((r, ri) => [pi, ri]))).slice(0, 72).forEach(([pi, ri]) => {
         const [pn, prog] = PROGS[pi], [rn, rhy] = CR[ri];
         const bars = ri % 2 === 0 ? 4 : 2;
-        const kn = nextKey(), R2 = KEYS[kn].root;
+        const kn = nextKey(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
           const [off, q] = prog[b % 4];
-          const ts = tones(R2, off, q, 62);
+          const ts = tones(R3, off, q, 62);
           for (const [st, len, v] of rhy) for (const n of ts) notes.push({ s: b * 16 + st, l: len, n, v });
         }
         add({
@@ -7466,10 +7524,10 @@ input[type='number'] {
       shuffle(PROGS.flatMap((p, pi) => F.BT.map((t, ti) => [pi, ti]))).slice(0, 72).forEach(([pi, ti]) => {
         const [pn, prog] = PROGS[pi], [tn, tm, tstyles] = F.BT[ti];
         const bars = pi % 2 === 0 ? 4 : 2;
-        const kn = nextKey(), R2 = KEYS[kn].root;
+        const kn = nextKey(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
-          const root = rootAbs(R2, prog[b % 4][0]);
+          const root = rootAbs(R3, prog[b % 4][0]);
           for (const [st, len, iv, v] of tm) notes.push({ s: b * 16 + st, l: len, n: root + iv, v: v || 100 });
         }
         add({
@@ -7495,11 +7553,11 @@ input[type='number'] {
       ).slice(0, 60).forEach(([pi, ai, rate], i) => {
         const [pn, prog] = PROGS[pi], [an, pat] = ARPS[ai];
         const bars = i % 2 ? 2 : 4;
-        const kn = nextKey(), R2 = KEYS[kn].root;
+        const kn = nextKey(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
           const [off, q] = prog[b % 4];
-          const ts = tones(R2, off, q, 72).sort((x, y) => x - y);
+          const ts = tones(R3, off, q, 72).sort((x, y) => x - y);
           for (let s = 0; s < 16; s += rate) {
             const idx = pat[s / rate % pat.length];
             notes.push({
@@ -7525,7 +7583,7 @@ input[type='number'] {
       });
       shuffle(Object.keys(SC).flatMap((m) => RH.flatMap((r, ri) => CO.map((c, ci) => [m, ri, ci])))).slice(0, 50).forEach(([m, ri, ci]) => {
         const [rn, rhy] = RH[ri], [cn, con] = CO[ci];
-        const kn = nextKey(), R2 = KEYS[kn].root;
+        const kn = nextKey(), R3 = KEYS[kn].root;
         const sc = SC[m];
         const notes = [];
         rhy.forEach(([st, len], i) => {
@@ -7534,7 +7592,7 @@ input[type='number'] {
           notes.push({
             s: st,
             l: len,
-            n: 60 + R2 + sc[idx] + 12 * Math.floor(d / 7),
+            n: 60 + R3 + sc[idx] + 12 * Math.floor(d / 7),
             v: i % 3 === 0 ? 100 : 88
           });
         });
@@ -7553,11 +7611,11 @@ input[type='number'] {
       });
       shuffle(PROGS.flatMap((p, pi) => PADV.map((v, vi) => [pi, vi]))).slice(0, 30).forEach(([pi, vi]) => {
         const [pn, prog] = PROGS[pi], [vn, iv, base] = PADV[vi];
-        const kn = nextKey(), R2 = KEYS[kn].root;
+        const kn = nextKey(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < 4; b++) {
           const off = prog[b % 4][0];
-          let ns = iv.map((i) => R2 + off + base + i);
+          let ns = iv.map((i) => R3 + off + base + i);
           const m = ns.reduce((a, c) => a + c, 0) / ns.length;
           const sh = Math.round((55 - m) / 12) * 12;
           ns = ns.map((n) => n + sh);
@@ -8971,11 +9029,11 @@ input[type='number'] {
       shuffle(PG.flatMap((p, pi) => CR.map((r, ri) => [pi, ri]))).slice(0, C.chords).forEach(([pi, ri]) => {
         const [pn, prog] = PG[pi], [rn, rhy] = CR[ri];
         const bars = ri % 2 === 0 ? 4 : 2;
-        const kn = nk(), R2 = KEYS[kn].root;
+        const kn = nk(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
           const [off, q] = prog[b % 4];
-          const ts = tones(R2, off, q, 62);
+          const ts = tones(R3, off, q, 62);
           for (const [st, len, v] of rhy) for (const n of ts) notes.push({ s: b * 16 + st, l: len, n, v });
         }
         add({
@@ -8994,10 +9052,10 @@ input[type='number'] {
       shuffle(PG.flatMap((p, pi) => F.BT.map((t, ti) => [pi, ti]))).slice(0, C.bass).forEach(([pi, ti]) => {
         const [pn, prog] = PG[pi], [tn, tm] = F.BT[ti];
         const bars = pi % 2 === 0 ? 4 : 2;
-        const kn = nk(), R2 = KEYS[kn].root;
+        const kn = nk(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
-          const root = rootAbs(R2, prog[b % 4][0]);
+          const root = rootAbs(R3, prog[b % 4][0]);
           for (const [st, len, iv, v] of tm) notes.push({ s: b * 16 + st, l: len, n: root + iv, v: v || 100 });
         }
         add({
@@ -9023,11 +9081,11 @@ input[type='number'] {
       ).slice(0, C.arps).forEach(([pi, ai, rate], i) => {
         const [pn, prog] = PG[pi], [an, pat] = ARPS[ai];
         const bars = i % 2 ? 2 : 4;
-        const kn = nk(), R2 = KEYS[kn].root;
+        const kn = nk(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < bars; b++) {
           const [off, q] = prog[b % 4];
-          const ts = tones(R2, off, q, 72).sort((x, y) => x - y);
+          const ts = tones(R3, off, q, 72).sort((x, y) => x - y);
           for (let s = 0; s < 16; s += rate) {
             const idx = pat[s / rate % pat.length];
             notes.push({
@@ -9053,7 +9111,7 @@ input[type='number'] {
       });
       shuffle(F.modes.flatMap((m) => RH.flatMap((r, ri) => CO.map((c, ci) => [m, ri, ci])))).slice(0, C.leads).forEach(([m, ri, ci]) => {
         const [rn, rhy] = RH[ri], [cn, con] = CO[ci];
-        const kn = nk(), R2 = KEYS[kn].root;
+        const kn = nk(), R3 = KEYS[kn].root;
         const sc = SC[m];
         const notes = [];
         rhy.forEach(([st, len], i) => {
@@ -9062,7 +9120,7 @@ input[type='number'] {
           notes.push({
             s: st,
             l: len,
-            n: 60 + R2 + sc[idx] + 12 * Math.floor(d / 7),
+            n: 60 + R3 + sc[idx] + 12 * Math.floor(d / 7),
             v: i % 3 === 0 ? 100 : 88
           });
         });
@@ -9081,11 +9139,11 @@ input[type='number'] {
       });
       shuffle(PG.flatMap((p, pi) => PADV.map((v, vi) => [pi, vi]))).slice(0, C.pads).forEach(([pi, vi]) => {
         const [pn, prog] = PG[pi], [vn, iv, base] = PADV[vi];
-        const kn = nk(), R2 = KEYS[kn].root;
+        const kn = nk(), R3 = KEYS[kn].root;
         const notes = [];
         for (let b = 0; b < 4; b++) {
           const off = prog[b % 4][0];
-          let ns = iv.map((i) => R2 + off + base + i);
+          let ns = iv.map((i) => R3 + off + base + i);
           const m = ns.reduce((a, c) => a + c, 0) / ns.length;
           const sh = Math.round((55 - m) / 12) * 12;
           ns = ns.map((n) => n + sh);
@@ -9144,6 +9202,45 @@ input[type='number'] {
 
   // src/core/hooks.js
   var hooks = {};
+
+  // src/core/tracks.js
+  var ROLES = [
+    ["kit", "Drums: kit", "drum", 0, "kit"],
+    ["hats", "Drums: hats", "drum", 1, "hats"],
+    ["perc", "Drums: perc", "drum", 2, "perc"],
+    ["bass", "Bass", "tone", 3, "bass"],
+    ["chords", "Chords", "tone", 4, "chords"],
+    ["pad", "Pad", "tone", 5, "pad"],
+    ["lead", "Lead", "tone", 6, "lead"],
+    ["pluck", "Pluck / arp", "tone", 7, "pluck"],
+    ["acid", "Acid", "tone", 3, "acid"]
+  ];
+  var DEF_ROLES = ["kit", "hats", "perc", "bass", "chords", "pad", "lead", "pluck"];
+  var R = Object.fromEntries(ROLES.map((r) => [r[0], r]));
+  var roleInfo = (role, t = 0) => R[role] || R[DEF_ROLES[t]];
+  var roleOf = (t) => S.tracks[t] && R[S.tracks[t].role] ? S.tracks[t].role : DEF_ROLES[t];
+  var slotOf = (t) => roleInfo(roleOf(t), t)[3];
+  var poolOf = (t) => roleInfo(roleOf(t), t)[4];
+  function trackOf(slot) {
+    for (let t = 0; t < 8; t++) if (slotOf(t) === slot) return t;
+    return -1;
+  }
+  var tracksOf = (slot) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => slotOf(t) === slot);
+  function bySlot(m, first) {
+    const out = {};
+    for (const k in m) {
+      const ts = tracksOf(+k);
+      (first ? ts.slice(0, 1) : ts).forEach((t) => out[t] = m[k]);
+    }
+    return out;
+  }
+  var tracksFor = (slots) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => (slots || []).includes(slotOf(t)));
+  var toneTracksAll = () => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t] && S.tracks[t].type === "tone");
+  function kitTrack() {
+    const k = trackOf(0);
+    return k >= 0 ? k : S.tracks.findIndex((x) => x && x.type === "drum");
+  }
+  var buildTrack = () => trackOf(2) >= 0 ? trackOf(2) : kitTrack();
 
   // src/core/state.js
   var DEFAULT_TRACKS = [
@@ -9337,9 +9434,11 @@ input[type='number'] {
     s.drumMap = Array.isArray(s.drumMap) && s.drumMap.length === 12 ? s.drumMap.map((n, i) => Math.round(num(n, 0, 127, d.drumMap[i]))) : d.drumMap;
     s.tracks = d.tracks.map((dt, i) => {
       const t = s.tracks && s.tracks[i] || {};
+      const role = ROLES.some((r) => r[0] === t.role) && t.role !== DEF_ROLES[i] ? t.role : null;
       return {
         name: String(t.name || dt.name).slice(0, 16),
-        type: dt.type,
+        type: role ? roleInfo(role)[2] : dt.type,
+        ...role ? { role } : {},
         ch: Math.round(num(t.ch, 1, 16, i + 1)),
         mute: !!t.mute,
         solo: !!t.solo,
@@ -9867,8 +9966,8 @@ input[type='number'] {
     const FOUR = /* @__PURE__ */ new Set(["house", "techno", "trance", "pop", "synth"]);
     let uid = 0;
     const push = (o) => FAC.push(Object.assign({ id: "lv" + uid++, styles: null, bpm: null, lively: true }, o));
-    const chordTones = (R2, off, q, center) => {
-      const ns = Q2[q].map((i) => R2 + off + 48 + i);
+    const chordTones = (R3, off, q, center) => {
+      const ns = Q2[q].map((i) => R3 + off + 48 + i);
       const m = ns.reduce((a, b) => a + b, 0) / ns.length;
       const sh = Math.round((center - m) / 12) * 12;
       return ns.map((n) => n + sh).sort((a, b) => a - b);
@@ -9886,7 +9985,7 @@ input[type='number'] {
       const four = FOUR.has(g);
       pairs.forEach(({ p, bars, keyName }) => {
         const kn2 = keyName && KEYS[keyName] ? keyName : /^[iv]/.test(p) ? "Am" : "C";
-        const R3 = KEYS[kn2].root, prog = PR[p];
+        const R4 = KEYS[kn2].root, prog = PR[p];
         const BR = four ? {
           A: [
             [2, 2, 0],
@@ -9964,8 +10063,8 @@ input[type='number'] {
           const notes = [];
           for (let b = 0; b < bars; b++) {
             const [off] = prog[b % 4];
-            const root = 36 + ((R3 + off) % 12 + 12) % 12;
-            const nx = 36 + ((R3 + prog[(b + 1) % 4][0]) % 12 + 12) % 12;
+            const root = 36 + ((R4 + off) % 12 + 12) % 12;
+            const nx = 36 + ((R4 + prog[(b + 1) % 4][0]) % 12 + 12) % 12;
             rh.forEach(
               ([s, l, iv, v]) => notes.push({
                 s: b * 16 + s,
@@ -9995,7 +10094,7 @@ input[type='number'] {
           const notes = [];
           for (let b = 0; b < bars; b++) {
             const [off, q] = prog[b % 4];
-            const ts = chordTones(R3, off, q, 72);
+            const ts = chordTones(R4, off, q, 72);
             let k = 0;
             for (let s = 0; s < 16; s++) {
               if (mask[s] !== "x") continue;
@@ -10056,7 +10155,7 @@ input[type='number'] {
           for (let b = 0; b < bars; b++) {
             rh.forEach(([s, l, v, nx]) => {
               const [off, q] = prog[(b + (nx ? 1 : 0)) % 4];
-              chordTones(R3, off, q, 62).forEach((n) => notes.push({ s: b * 16 + s, l, n, v }));
+              chordTones(R4, off, q, 62).forEach((n) => notes.push({ s: b * 16 + s, l, n, v }));
             });
           }
           push({
@@ -10073,7 +10172,7 @@ input[type='number'] {
         });
       });
       const minorG = !["pop", "funk", "synth", "house"].includes(g) || rnd3() < 0.5;
-      const SC = minorG ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11], kn = minorG ? "Am" : "C", R2 = KEYS[kn].root;
+      const SC = minorG ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11], kn = minorG ? "Am" : "C", R3 = KEYS[kn].root;
       const MOT = [
         [
           "Hook",
@@ -10153,7 +10252,7 @@ input[type='number'] {
       ];
       MOT.forEach(([mn, mot]) => {
         const notes = [];
-        const deg = (d) => 60 + R2 + SC[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
+        const deg = (d) => 60 + R3 + SC[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
         const put = (bar2, shift, vel) => mot.forEach(
           ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
@@ -11095,12 +11194,12 @@ input[type='number'] {
       while (iv.length > 4) iv.splice(iv.length - 2, 1);
       return iv;
     };
-    function voice4(R2, off, iv, center, prev) {
+    function voice4(R3, off, iv, center, prev) {
       iv = thin(iv);
       let best = null, bc = 1e9;
       for (let r = 0; r < iv.length; r++)
         for (let k = -2; k <= 2; k++) {
-          const ns = iv.map((x, i) => R2 + off + x + (i < r ? 12 : 0) + 12 * k + 48).sort((a, b) => a - b);
+          const ns = iv.map((x, i) => R3 + off + x + (i < r ? 12 : 0) + 12 * k + 48).sort((a, b) => a - b);
           const m = ns.reduce((a, b) => a + b, 0) / ns.length;
           let c = Math.abs(m - center) * (prev ? 0.7 : 2) + (ns[ns.length - 1] - ns[0] > 19 ? 6 : 0);
           if (prev) c += ns.reduce((a, n) => a + Math.min(...prev.map((p) => Math.abs(p - n))), 0);
@@ -11111,7 +11210,7 @@ input[type='number'] {
         }
       return best;
     }
-    function segsOf(P, R2, center) {
+    function segsOf(P, R3, center) {
       const [, bars, list] = P;
       let at2 = 0;
       const segs = list.map(([off, q, d]) => {
@@ -11122,7 +11221,7 @@ input[type='number'] {
       let prev = null;
       for (let pass = 0; pass < 2; pass++)
         segs.forEach((g) => {
-          g.v = voice4(R2, g.off, Q2[g.q], center, prev);
+          g.v = voice4(R3, g.off, Q2[g.q], center, prev);
           prev = g.v;
         });
       return segs;
@@ -11171,8 +11270,8 @@ input[type='number'] {
       const cr = shuf(CRX), bg = shuf(grooves);
       const push = (o) => FAC.push(Object.assign({ id: "vx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
       for (const [P, keys2] of plan2) {
-        const pn = P[0], bars = P[1], opt = P[3] || {}, total = bars * 16, kn = keys2[ki++ % keys2.length], R2 = KEYS[kn].root, K = { keyName: kn, key: KEYS[kn] };
-        const segs = segsOf(P, R2, 62);
+        const pn = P[0], bars = P[1], opt = P[3] || {}, total = bars * 16, kn = keys2[ki++ % keys2.length], R3 = KEYS[kn].root, K = { keyName: kn, key: KEYS[kn] };
+        const segs = segsOf(P, R3, 62);
         for (let n = 0; n < 3; n++) {
           const c = cr[ci++ % cr.length], notes = [];
           if (c[0] === "Top Line") {
@@ -11201,7 +11300,7 @@ input[type='number'] {
               let v = sg.v;
               const t3 = Q2[sg.q][1];
               if (h[4] === "sus" && (t3 === 3 || t3 === 4)) {
-                const pc = (R2 + sg.off + t3) % 12;
+                const pc = (R3 + sg.off + t3) % 12;
                 v = sg.v.map((n2) => (n2 % 12 + 12) % 12 === pc ? n2 + (t3 === 3 ? 2 : 1) : n2);
               }
               v.forEach((n2) => notes.push({ s, l, n: n2, v: h[2] }));
@@ -11217,11 +11316,11 @@ input[type='number'] {
             lively: !CALM.has(c[0])
           });
         }
-        const tonic = 36 + R2 % 12;
+        const tonic = 36 + R3 % 12;
         for (let n = 0; n < 3; n++) {
           const b = bg[bi++ % bg.length], notes = [], turn = bars >= 4 && n === 2;
           const note = (tok, sg, s, l) => {
-            const root = 36 + ((R2 + sg.off) % 12 + 12) % 12, iv = Q2[sg.q], nx = segNext2(segs, sg), nr = 36 + ((R2 + nx.off) % 12 + 12) % 12;
+            const root = 36 + ((R3 + sg.off) % 12 + 12) % 12, iv = Q2[sg.q], nx = segNext2(segs, sg), nr = 36 + ((R3 + nx.off) % 12 + 12) % 12;
             switch (tok) {
               case "R":
                 return opt.pedal ? tonic : root;
@@ -11277,7 +11376,7 @@ input[type='number'] {
           });
         }
         {
-          const pv = segsOf(P, R2, 57), notes = [];
+          const pv = segsOf(P, R3, 57), notes = [];
           pv.forEach(
             (sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 84 }))
           );
@@ -11290,7 +11389,7 @@ input[type='number'] {
             ["Spiral", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3, 4, 3, 2, 1]],
             ["Skip", "x..x..x.x..x..x.", [0, 3, 1, 4, 2, 0]]
           ];
-          const [an, mask, seq] = A[(ki + uid) % A.length], pv = segsOf(P, R2, 70), notes = [];
+          const [an, mask, seq] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
           let k = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
@@ -11483,12 +11582,12 @@ input[type='number'] {
         if (rid === "rush") hits.slice(4).forEach(([s]) => dn.push({ s, l: 1, n: 2, v: 118 }));
         push(Object.assign({ name: nm + " Flash: " + rl, type: "drum", notes: dn, role: "Flash", pool: "fkit" }, base));
         for (const md of ["minor", "major"]) {
-          const kn = md === "minor" ? "Am" : "C", R2 = KEYS[kn].root, ch = CH[md], sc = SCL[md], tag = " (" + (md === "minor" ? "Minor" : "Major") + ")";
+          const kn = md === "minor" ? "Am" : "C", R3 = KEYS[kn].root, ch = CH[md], sc = SCL[md], tag = " (" + (md === "minor" ? "Minor" : "Major") + ")";
           const kk = { keyName: kn, key: KEYS[kn] };
           const bn = hits.map(([s, a, l, c], i) => ({
             s,
             l: Math.min(l, rid === "rush" ? 1 : l),
-            n: 36 + (R2 + ch[c][0]) % 12 + (rid === "rush" && i % 2 ? 12 : 0) + (a === 1 && l <= 2 && i > 0 ? 12 : 0),
+            n: 36 + (R3 + ch[c][0]) % 12 + (rid === "rush" && i % 2 ? 12 : 0) + (a === 1 && l <= 2 && i > 0 ? 12 : 0),
             v: Math.round(96 + 31 * a)
           }));
           push(
@@ -11501,7 +11600,7 @@ input[type='number'] {
           const cn = [];
           hits.forEach(([s, a, l, c]) => {
             const [off, iv] = ch[c];
-            let ns = iv.map((x) => R2 + off + x + 60);
+            let ns = iv.map((x) => R3 + off + x + 60);
             while (ns.reduce((p, x) => p + x, 0) / ns.length > 66) ns = ns.map((x) => x - 12);
             ns.forEach(
               (n) => cn.push({
@@ -11519,10 +11618,10 @@ input[type='number'] {
               kk
             )
           );
-          const ln = [], deg = (d) => 60 + R2 + sc[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
+          const ln = [], deg = (d) => 60 + R3 + sc[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
           hits.forEach(([s, a, l, c], i) => {
             const [off, iv] = ch[c];
-            let top = R2 + off + iv[2] + 72;
+            let top = R3 + off + iv[2] + 72;
             while (top > 86) top -= 12;
             while (top < 74) top += 12;
             ln.push({ s, l: Math.min(l, 2), n: rid === "rush" ? deg(i + 7) : top, v: Math.round(92 + 33 * a) });
@@ -12204,10 +12303,10 @@ input[type='number'] {
   }
   function parts(P, o) {
     const { tag, keyName, bpm, styles } = o;
-    const key = KEYS[keyName], R2 = key.root;
+    const key = KEYS[keyName], R3 = key.root;
     P.forEach(([prog, chords], pi) => {
       const ix = o.ix(pi);
-      const pcOf = ([d]) => (R2 + d) % 12;
+      const pcOf = ([d]) => (R3 + d) % 12;
       const id = (part) => "gx-" + tag.toLowerCase() + "-p" + (pi + 1) + "-" + part;
       const push = (part, name, pool, role, notes, lively) => FAC.push({
         id: id(part),
@@ -12375,7 +12474,7 @@ input[type='number'] {
           ],
           true,
           (notes, c, b, L2) => {
-            const up = b % 2 === 0, at2 = up ? 12 : 8, pos = up ? ROLL.t16 : ROLL2.t8x2, ns = run(R2, up ? L2(0) : L2(3), pos.length, up ? 1 : -1, c[1], c[0]);
+            const up = b % 2 === 0, at2 = up ? 12 : 8, pos = up ? ROLL.t16 : ROLL2.t8x2, ns = run(R3, up ? L2(0) : L2(3), pos.length, up ? 1 : -1, c[1], c[0]);
             pos.forEach((p, i) => notes.push({ s: b * 16 + at2 + p, l: up ? 0.6 : 1.2, n: ns[i], v: hum(78 + i * 5) }));
           }
         );
@@ -13458,7 +13557,7 @@ input[type='number'] {
       ]
     ]
   };
-  var R = (s, n) => Array(n).fill(s).join("|");
+  var R2 = (s, n) => Array(n).fill(s).join("|");
   var GDRUMS = {
     dnb: [
       [
@@ -13467,7 +13566,7 @@ input[type='number'] {
         {
           k: "x.........x.....|x.........x..x..",
           s: "....x..g.g..x..g|....x..g.g..x.g.",
-          h: R("xoxoxoxoxoxoxoxo", 2),
+          h: R2("xoxoxoxoxoxoxoxo", 2),
           oh: "..............o.|......o........."
         },
         ["liquid", "neuro", "jumpup"]
@@ -13475,7 +13574,7 @@ input[type='number'] {
       [
         "Liquid Shuffle",
         2,
-        { k: "x.........x.....|x......x..x.....", s: "....x.......x..g|....x..g....x...", h: R("x.xox.xox.xox.xo", 2) },
+        { k: "x.........x.....|x......x..x.....", s: "....x.......x..g|....x..g....x...", h: R2("x.xox.xox.xox.xo", 2) },
         ["liquid", "jungle"]
       ],
       [
@@ -13483,16 +13582,16 @@ input[type='number'] {
         2,
         {
           k: "x.....x...x.....|x.........x.....",
-          s: R("....x.......x...", 2),
-          rim: R("..g...g...g.g..g", 2),
-          h: R("x.x.x.x.x.x.x.x.", 2)
+          s: R2("....x.......x...", 2),
+          rim: R2("..g...g...g.g..g", 2),
+          h: R2("x.x.x.x.x.x.x.x.", 2)
         },
         ["liquid", "neuro", "jungle", "jumpup"]
       ],
       [
         "Tumbling Break",
         2,
-        { k: "x.x.......x.....|x.x.....x.x.....", s: "....x.......x...|....x..g....x.xg", h: R("xxoxxxoxxxoxxxox", 2) },
+        { k: "x.x.......x.....|x.x.....x.x.....", s: "....x.......x...|....x..g....x.xg", h: R2("xxoxxxoxxxoxxxox", 2) },
         ["jungle", "jumpup"]
       ]
     ],
@@ -13500,13 +13599,13 @@ input[type='number'] {
       [
         "Swung Boom Bap",
         2,
-        { k: "x.......x.x.....|x..x....x.x..x..", s: "....x..g....x...|....x......gx...", h: R("x.o.x.o.x.o.x.oo", 2) },
+        { k: "x.......x.x.....|x..x....x.x..x..", s: "....x..g....x...|....x......gx...", h: R2("x.o.x.o.x.o.x.oo", 2) },
         ["boombap", "lofi", "gfunk"]
       ],
       [
         "Dusty Ghosts",
         2,
-        { k: "x......x..x.....|x......x.x......", s: "....x..g.g..x...|....x..g...gx..g", h: R("xoxoxoxoxoxoxoxo", 2) },
+        { k: "x......x..x.....|x......x.x......", s: "....x..g.g..x...|....x..g...gx..g", h: R2("xoxoxoxoxoxoxoxo", 2) },
         ["boombap", "lofi", "neosoul"]
       ],
       [
@@ -13581,8 +13680,8 @@ input[type='number'] {
         2,
         {
           k: "x......x..x.....|x.........x..x..",
-          s: R("....x.......x...", 2),
-          h: R("..x.xx.x..x.xx.x", 2),
+          s: R2("....x.......x...", 2),
+          h: R2("..x.xx.x..x.xx.x", 2),
           oh: "......x.........|................"
         },
         null
@@ -13597,7 +13696,7 @@ input[type='number'] {
       [
         "Bumpy Garage",
         2,
-        { k: "x.....x...x.....|x..x......x.....", s: R("....x.......x...", 2), h: R("x.xxx.x.x.xxx.x.", 2) },
+        { k: "x.....x...x.....|x..x......x.....", s: R2("....x.......x...", 2), h: R2("x.xxx.x.x.xxx.x.", 2) },
         null
       ]
     ],
@@ -13637,13 +13736,13 @@ input[type='number'] {
       [
         "Electro Funk 808",
         2,
-        { k: "x.....x...x.....|x.....x.....x...", s: R("....x.......x...", 2), h: R("Xoxoxoxoxoxoxoxo", 2) },
+        { k: "x.....x...x.....|x.....x.....x...", s: R2("....x.......x...", 2), h: R2("Xoxoxoxoxoxoxoxo", 2) },
         null
       ],
       [
         "Breakbeat Chop",
         2,
-        { k: "x.........x.x...|x.x.......x.....", s: "....x.......x...|....x..g....x...", h: R("x.x.x.x.x.x.x.x.", 2) },
+        { k: "x.........x.x...|x.x.......x.....", s: "....x.......x...|....x..g....x...", h: R2("x.x.x.x.x.x.x.x.", 2) },
         null
       ],
       ["Robot Clap", 1, { k: "x..x..x...x.....", c: "....x.......x...", h: "x.xxx.xxx.xxx.xx" }, null],
@@ -13652,9 +13751,9 @@ input[type='number'] {
         2,
         {
           k: "x.......x.x.....|..x.......x..x..",
-          s: R("....x.......x...", 2),
+          s: R2("....x.......x...", 2),
           oh: "..............o.|................",
-          h: R("x.x.x.x.x.x.x.x.", 2)
+          h: R2("x.x.x.x.x.x.x.x.", 2)
         },
         null
       ]
@@ -13706,7 +13805,7 @@ input[type='number'] {
         {
           k: "x.....x.x.......|x.....x.x.......",
           rim: "x..x..x.........|..x...x.........",
-          mt: R("..x...x...x...x.", 2)
+          mt: R2("..x...x...x...x.", 2)
         },
         null
       ]
@@ -13766,10 +13865,10 @@ input[type='number'] {
     while (n > hi) n -= 12;
     return n;
   };
-  function lay(prog, R2) {
+  function lay(prog, R3) {
     let at2 = 0;
     return prog[2].map(([off, q, d]) => {
-      const g = { s: Math.round(at2 * 16), e: Math.round((at2 + d) * 16), pc: (R2 + off) % 12, q };
+      const g = { s: Math.round(at2 * 16), e: Math.round((at2 + d) * 16), pc: (R3 + off) % 12, q };
       at2 += d;
       return g;
     });
@@ -13812,15 +13911,15 @@ input[type='number'] {
     });
     return hitsOver(sg, bars, rh, (g, at2, l, [v]) => V.get(g).map((n) => ({ s: at2, l, n, v: hum2(v) })));
   }
-  function bassTone(g, tok, sg, R2) {
+  function bassTone(g, tok, sg, R3) {
     const base = 33 + (g.pc - 9 + 12) % 12, q = QUAL[g.q];
     const t = tok === "R" ? base : tok === "5" ? base + 7 : tok === "8" ? base + 12 : tok === "3" ? base + q[1] : tok === "7" ? base + (q[3] != null && q[3] < 12 ? q[3] : 10) : tok === "b" ? base + (q.includes(11) ? 11 : 10) : tok === "6" ? base + 9 : tok === "4" ? base + 5 : null;
     if (t != null) return clampN(t, 28, 55);
     const n = segNext(sg, g), nb = 33 + (n.pc - 9 + 12) % 12;
     return clampN(n.pc === g.pc ? base - 2 : nb - 1, 28, 55);
   }
-  function bassPart(sg, bars, rh, R2) {
-    return hitsOver(sg, bars, rh, (g, at2, l, [tok, v]) => [{ s: at2, l, n: bassTone(g, tok, sg, R2), v: hum2(v) }]);
+  function bassPart(sg, bars, rh, R3) {
+    return hitsOver(sg, bars, rh, (g, at2, l, [tok, v]) => [{ s: at2, l, n: bassTone(g, tok, sg, R3), v: hum2(v) }]);
   }
   function padPart(sg) {
     const out = [];
@@ -13837,13 +13936,13 @@ input[type='number'] {
     }
     return out;
   }
-  var scaleIn = (R2, mode, lo, hi) => {
+  var scaleIn = (R3, mode, lo, hi) => {
     const sc = MODE[mode].sc, out = [];
-    for (let n = lo; n <= hi; n++) if (sc.includes(((n - R2) % 12 + 12) % 12)) out.push(n);
+    for (let n = lo; n <= hi; n++) if (sc.includes(((n - R3) % 12 + 12) % 12)) out.push(n);
     return out;
   };
-  function leadPart(sg, bars, R2, mode, rh) {
-    const notes = scaleIn(R2, mode, 64, 86), color = (R2 + MODE[mode].color) % 12;
+  function leadPart(sg, bars, R3, mode, rh) {
+    const notes = scaleIn(R3, mode, 64, 86), color = (R3 + MODE[mode].color) % 12;
     const near = (n, set) => set.reduce((a, b) => Math.abs(b - n) < Math.abs(a - n) ? b : a, set[0]);
     const chordTones = (g) => notes.filter((n) => QUAL[g.q].some((x) => (g.pc + x) % 12 === n % 12));
     let cur = near(74, chordTones(sg[0]));
@@ -13904,7 +14003,7 @@ input[type='number'] {
       ...o
     });
     GPROGS.filter((p) => p[4].split(" ").includes(g)).forEach((p, pi) => {
-      const [name, bars, , mode] = p, R2 = set.keys[pi % set.keys.length][0], sg = lay(p, R2), keyName = NOTE_NAMES[R2] + " " + SCALE_OF(mode), K = { key: { root: R2, scale: SCALE_OF(mode) }, keyName }, tag = set.tag + " ", suf = bars === 2 ? " 2-bar" : "", notes = (list) => list.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
+      const [name, bars, , mode] = p, R3 = set.keys[pi % set.keys.length][0], sg = lay(p, R3), keyName = NOTE_NAMES[R3] + " " + SCALE_OF(mode), K = { key: { root: R3, scale: SCALE_OF(mode) }, keyName }, tag = set.tag + " ", suf = bars === 2 ? " 2-bar" : "", notes = (list) => list.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
       const rh = CH_RH[set.ch];
       ["Groove", "Push"].forEach(
         (lab, v) => push({
@@ -13921,7 +14020,7 @@ input[type='number'] {
         (lab, v) => push({
           name: tag + "Bass: " + name + suf + " (" + lab + ")",
           bars,
-          notes: notes(bassPart(sg, bars, BS_RH[set.bs][v], R2)),
+          notes: notes(bassPart(sg, bars, BS_RH[set.bs][v], R3)),
           ...K,
           role: "Bass",
           pool: "bass",
@@ -13939,7 +14038,7 @@ input[type='number'] {
       push({
         name: tag + "Lead: " + name + suf + " (" + mode + " hook)",
         bars,
-        notes: notes(leadPart(sg, bars, R2, mode, LD_RH[set.ld])),
+        notes: notes(leadPart(sg, bars, R3, mode, LD_RH[set.ld])),
         ...K,
         role: "Lead",
         pool: "lead",
@@ -14169,7 +14268,6 @@ input[type='number'] {
   var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
   var facById = (id) => FACMAP.get(id);
-  var TRACK_POOLS = ["kit", "hats", "perc", "bass", "chords", "pad", "lead", "pluck"];
   var LEVELS = [100, 80, 75, 105, 85, 70, 90, 80];
   function shiftFor(f, target) {
     if (f.type !== "tone" || !f.key) return 0;
@@ -15461,7 +15559,11 @@ input[type='number'] {
       if (st) (st.more[f.pool] = st.more[f.pool] || []).push(f.id);
     }
   }
-  var trackLabel = (st, t) => [oneKit() ? "Drums" : "Kit", "Hats", "Perc", st.bassName || "Bass", "Chords", "Pad", "Lead", "Pluck"][t];
+  var baseLabel = (st, t) => poolOf(t) === "acid" ? "Acid" : [oneKit() ? "Drums" : "Kit", "Hats", "Perc", st.bassName || "Bass", "Chords", "Pad", "Lead", "Pluck"][slotOf(t)];
+  var trackLabel = (st, t) => {
+    const b = baseLabel(st, t), same = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => baseLabel(st, i) === b);
+    return b + (same.length > 1 ? " " + (same.indexOf(t) + 1) : "");
+  };
   var FAMLABEL = { dnb: "Drum and bass", hh: "Hip hop", edm: "Dance and club", song: "Grooves and songs" };
   var NK = (n, sc) => NOTE_NAMES[n] + ((sc || "minor") === "minor" ? "m" : "");
 
@@ -17209,7 +17311,7 @@ input[type='number'] {
     const [a, b] = xpRange();
     const semi = reset ? 0 : XP.semi;
     const mode = reset ? "set" : XP.mode;
-    const allTone = [3, 4, 5, 6, 7].every((t) => XP.tracks.has(t));
+    const allTone = toneTracksAll().every((t) => XP.tracks.has(t));
     pushUndo();
     if (XP.scope === "song" && allTone) {
       S.transpose = clamp(mode === "add" ? (S.transpose || 0) + semi : semi, -24, 24);
@@ -17245,7 +17347,7 @@ input[type='number'] {
         mode: "add",
         fromBar: null,
         section: 0,
-        tracks: /* @__PURE__ */ new Set([3, 4, 5, 6, 7]),
+        tracks: new Set(toneTracksAll()),
         from: songKeyRoot(),
         to: songKeyRoot(),
         a: S.loop.start + 1,
@@ -17408,7 +17510,7 @@ input[type='number'] {
       b.append(el("div", { class: "xrow" }, el("label", {}, "Section", sl)));
     }
     const tw = el("div", { class: "xrow" });
-    [3, 4, 5, 6, 7].forEach(
+    toneTracksAll().forEach(
       (t) => tw.append(
         el(
           "label",
@@ -17522,7 +17624,7 @@ input[type='number'] {
       )
     );
     const cnt = xpCounts();
-    const allTone = [3, 4, 5, 6, 7].every((t) => XP.tracks.has(t));
+    const allTone = toneTracksAll().every((t) => XP.tracks.has(t));
     let txt;
     if (!XP.tracks.size) txt = "Choose at least one track.";
     else if (XP.scope === "song" && allTone) {
@@ -21490,15 +21592,15 @@ input[type='number'] {
     {
       const r = barRange(p);
       if (r) {
-        const L2 = r.a * 16 * g.cw, R2 = (r.b + 1) * 16 * g.cw;
+        const L2 = r.a * 16 * g.cw, R3 = (r.b + 1) * 16 * g.cw;
         x.fillStyle = bg;
         x.globalAlpha = 0.55;
         if (L2 > 0) x.fillRect(0, 0, L2, g.H);
-        if (R2 < g.W) x.fillRect(R2, 0, g.W - R2, g.H);
+        if (R3 < g.W) x.fillRect(R3, 0, g.W - R3, g.H);
         x.globalAlpha = 1;
         x.strokeStyle = col;
         x.lineWidth = 2;
-        x.strokeRect(L2 + 1, 1, R2 - L2 - 2, g.H - 2);
+        x.strokeRect(L2 + 1, 1, R3 - L2 - 2, g.H - 2);
       }
     }
     if (REC.on && REC.mode === "step" && REC.pat === p) {
@@ -22976,7 +23078,14 @@ input[type='number'] {
       secs = out;
     }
     const picks = {};
-    for (const pool of /* @__PURE__ */ new Set([...Object.keys(st.pools), "fill", "build", "impact", ...oneKit() ? ["full"] : []])) {
+    for (const pool of /* @__PURE__ */ new Set([
+      ...Object.keys(st.pools),
+      "fill",
+      "build",
+      "impact",
+      "acid",
+      ...oneKit() ? ["full"] : []
+    ])) {
       const arr = lvFlavor(lvPool(st, pool), w.flavor || "mixed").slice();
       const r = mulberry(hashStr(st.id + pool) ^ w.seed ^ (w.bump[pool] || 0) * 7919);
       for (let i = arr.length - 1; i > 0; i--) {
@@ -23001,12 +23110,12 @@ input[type='number'] {
       const K = kinds[sec.kind];
       const cells = {};
       for (let t = 0; t < 8; t++) {
-        const spec = K.rows[t];
+        const sl = slotOf(t), row = K.rows[sl], spec = row && poolOf(t) === "acid" ? row.replace(/^[a-z]+/, "acid") : row;
         if (!spec || !w.layers[t]) continue;
-        if (w.complexity === 1 && (t === 2 || t === 7)) continue;
+        if (w.complexity === 1 && (sl === 2 || sl === 7)) continue;
         const pk2 = pickFrom(spec, occ[sec.kind]);
         if (!pk2.id) continue;
-        if (t === 4 && K.rows[3] && picks.bass) {
+        if (sl === 4 && K.rows[3] && picks.bass) {
           const bk = new Set(
             picks.bass.map(facById).filter((f) => f && lvProg(f)).map((f) => lvProg(f) + "|" + f.bars)
           );
@@ -23024,22 +23133,18 @@ input[type='number'] {
         cells[t] = { id: ovv !== void 0 ? ovv === "" ? null : ovv : pk2.id, pool: pk2.base, auto: pk2.id };
       }
       if (oneKit()) {
-        const fk = picks.full && picks.full.length ? picks.full[(occ[sec.kind] - 1 + si) % picks.full.length] : null, ov0 = w.ov[si + ":0"];
-        if (cells[0] && fk) {
-          cells[0].pool = "full";
-          cells[0].auto = fk;
-          if (ov0 === void 0) cells[0].id = fk;
+        const fk = picks.full && picks.full.length ? picks.full[(occ[sec.kind] - 1 + si) % picks.full.length] : null, k0 = trackOf(0), ov0 = w.ov[si + ":" + k0];
+        if (cells[k0] && fk) {
+          cells[k0].pool = "full";
+          cells[k0].auto = fk;
+          if (ov0 === void 0) cells[k0].id = fk;
         }
-        delete cells[1];
-        delete cells[2];
+        tracksFor([1, 2]).forEach((t) => delete cells[t]);
       }
-      if (DEV === "101") {
-        delete cells[5];
-        delete cells[7];
-      }
-      const fch = cells[4] && cells[4].id && facById(cells[4].id), prog = lvProg(fch);
+      if (DEV === "101") tracksFor([5, 7]).forEach((t) => delete cells[t]);
+      const c4 = cells[trackOf(4)], fch = c4 && c4.id && facById(c4.id), prog = lvProg(fch);
       if (prog)
-        [3, 5, 7].forEach((t) => {
+        [3, 5, 7].flatMap(tracksOf).forEach((t) => {
           const c = cells[t];
           if (!c || !c.id || w.ov[si + ":" + t] !== void 0) return;
           const f = facById(c.id);
@@ -23069,7 +23174,7 @@ input[type='number'] {
     const fe = w.complexity >= 3 ? Math.min(w.fillEvery || 8, 4) : w.fillEvery || 8;
     sections.forEach((sec, i) => {
       const next = sections[i + 1];
-      const c0 = sec.cells[0];
+      const c0 = sec.cells[kitTrack()];
       if (!w.fills || !c0 || !c0.id || c0.pool !== "kit" && c0.pool !== "full" || !picks.fill || !picks.fill.length)
         return;
       const set = /* @__PURE__ */ new Set();
@@ -23399,7 +23504,7 @@ input[type='number'] {
       "Counter-melody"
     ];
     for (let t = 0; t < 8; t++)
-      if (devOn(t) && !(oneKit() && (t === 1 || t === 2)))
+      if (devOn(t) && !(oneKit() && (slotOf(t) === 1 || slotOf(t) === 2)))
         lay2.append(
           el(
             "label",
@@ -23416,7 +23521,11 @@ input[type='number'] {
               "span",
               {},
               el("b", {}, "Track " + devNum(t) + ": " + trackLabel(st, t)),
-              el("small", {}, t === 0 && oneKit() ? "Full kit: kick, snare, hats and percussion" : what[t])
+              el(
+                "small",
+                {},
+                t === trackOf(0) && oneKit() ? "Full kit: kick, snare, hats and percussion" : poolOf(t) === "acid" ? "Acid line" : what[slotOf(t)]
+              )
             )
           )
         );
@@ -23722,6 +23831,21 @@ input[type='number'] {
     ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k) => o[k] = s[k] || g[k]);
     return o;
   }
+  function customRows(st, r, row) {
+    const drums = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY5 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const out = drums.length ? [
+      row(
+        "Drum kits (track" + (drums.length > 1 ? "s " : " ") + drums.map((t) => t + 1).join(", ") + ")",
+        r.drums,
+        TRACK_COLORS[drums[0]]
+      )
+    ] : [];
+    [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums.includes(t)).forEach((t) => {
+      const k = poolOf(t) === "acid" ? "bass" : KEY5[slotOf(t)];
+      out.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k].join(" · "), TRACK_COLORS[t]));
+    });
+    return out;
+  }
   function soundCard(st) {
     const r = soundRecs(st), is101 = DEV === "101";
     const row = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
@@ -23741,7 +23865,7 @@ input[type='number'] {
         row(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
         row(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
         row(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
-      ) : el(
+      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row)) : el(
         "ul",
         {},
         row(
@@ -23851,8 +23975,8 @@ input[type='number'] {
       g.append(el("div", { class: "tlc en" }, el("i", { style: "height:" + Math.round(n / 8 * 100) + "%" })));
     });
     for (let t = 0; t < 8; t++) {
-      if (!devOn(t) || oneKit() && (t === 1 || t === 2)) continue;
-      const pool = t === 0 && oneKit() ? "full" : TRACK_POOLS[t];
+      if (!devOn(t) || oneKit() && (slotOf(t) === 1 || slotOf(t) === 2)) continue;
+      const pool = t === trackOf(0) && oneKit() ? "full" : poolOf(t);
       g.append(
         el(
           "div",
@@ -23865,7 +23989,7 @@ input[type='number'] {
               title: "Pick different patterns for this whole row",
               onclick: () => {
                 w.bump[pool] = (w.bump[pool] || 0) + 1;
-                if (t === 0) w.bump.fill = (w.bump.fill || 0) + 1;
+                if (t === trackOf(0)) w.bump.fill = (w.bump.fill || 0) + 1;
                 for (const k in w.ov) if (k.endsWith(":" + t)) delete w.ov[k];
                 re();
               }
@@ -24308,14 +24432,14 @@ input[type='number'] {
 
   // src/song/wizard-plan.js
   function wizCellAt(sec, t, rel) {
-    const c = sec.cells[t];
-    if (t === 2) {
+    const c = sec.cells[t], kT = kitTrack();
+    if (t === buildTrack() && DEV !== "101") {
       if (sec.impact && rel === 0) return { id: sec.impact, off: 0 };
       if (sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
     }
     if (!c || !c.id) return null;
-    if (t === 0 && DEV === "101" && sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
-    if (t === 0 && sec.fills.length) {
+    if (t === kT && DEV === "101" && sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
+    if (t === kT && sec.fills.length) {
       const fl = sec.fills.find((x) => x.bar === rel);
       if (fl) return { id: fl.id, off: rel };
     }
@@ -24376,39 +24500,40 @@ input[type='number'] {
       const pid = instShift(f, shiftFor(f, w.key), w.key, st.scale);
       S.clips.push({ id: "c" + S.nextId++, t, start: base + start, len, off: 0, pat: pid });
     };
+    const kT = kitTrack(), bT = buildTrack();
     plan2.sections.forEach((sec) => {
       S.markers.push({ bar: base + sec.start, name: sec.name.slice(0, 20) });
       if (DEV === "101" && (sec.build || sec.impact)) {
-        const c = sec.cells[0], end = sec.build ? sec.build.bar : sec.bars;
+        const c = sec.cells[kT], end = sec.build ? sec.build.bar : sec.bars;
         if (c && c.id) {
           let pos = 0;
           for (const fl of sec.fills.filter((x) => x.bar < end)) {
-            if (fl.bar > pos) add(0, sec.start + pos, fl.bar - pos, c.id);
-            add(0, sec.start + fl.bar, 1, fl.id);
+            if (fl.bar > pos) add(kT, sec.start + pos, fl.bar - pos, c.id);
+            add(kT, sec.start + fl.bar, 1, fl.id);
             pos = fl.bar + 1;
           }
-          if (pos < end) add(0, sec.start + pos, end - pos, c.id);
+          if (pos < end) add(kT, sec.start + pos, end - pos, c.id);
         }
-        if (sec.build) add(0, sec.start + sec.build.bar, sec.build.len, sec.build.id);
-      } else if (sec.build || sec.impact) {
-        const c = sec.cells[2], a2 = sec.impact ? 1 : 0, b = sec.build ? sec.build.bar : sec.bars;
-        if (sec.impact) add(2, sec.start, 1, sec.impact);
-        if (c && c.id && b > a2) add(2, sec.start + a2, b - a2, c.id);
-        if (sec.build) add(2, sec.start + sec.build.bar, sec.build.len, sec.build.id);
+        if (sec.build) add(kT, sec.start + sec.build.bar, sec.build.len, sec.build.id);
+      } else if (bT >= 0 && (sec.build || sec.impact)) {
+        const c = sec.cells[bT], a2 = sec.impact ? 1 : 0, b = sec.build ? sec.build.bar : sec.bars;
+        if (sec.impact) add(bT, sec.start, 1, sec.impact);
+        if (c && c.id && b > a2) add(bT, sec.start + a2, b - a2, c.id);
+        if (sec.build) add(bT, sec.start + sec.build.bar, sec.build.len, sec.build.id);
       }
       for (const t in sec.cells) {
         const c = sec.cells[t];
         if (!c.id) continue;
-        if (+t === 2 && (sec.build || sec.impact)) continue;
-        if (+t === 0 && DEV === "101" && (sec.build || sec.impact)) continue;
-        if (+t === 0 && sec.fills.length) {
+        if (+t === bT && DEV !== "101" && (sec.build || sec.impact)) continue;
+        if (+t === kT && DEV === "101" && (sec.build || sec.impact)) continue;
+        if (+t === kT && sec.fills.length) {
           let pos = 0;
           for (const fl of sec.fills) {
-            if (fl.bar > pos) add(0, sec.start + pos, fl.bar - pos, c.id);
-            add(0, sec.start + fl.bar, 1, fl.id);
+            if (fl.bar > pos) add(kT, sec.start + pos, fl.bar - pos, c.id);
+            add(kT, sec.start + fl.bar, 1, fl.id);
             pos = fl.bar + 1;
           }
-          if (pos < sec.bars) add(0, sec.start + pos, sec.bars - pos, c.id);
+          if (pos < sec.bars) add(kT, sec.start + pos, sec.bars - pos, c.id);
         } else add(+t, sec.start, sec.bars, c.id);
       }
     });
@@ -24770,7 +24895,13 @@ input[type='number'] {
     } catch (e) {
     }
   }
-  var lvBT = () => DEV === "101" ? 0 : 2;
+  var lvBT = () => {
+    if (DEV === "101") return 0;
+    const p = trackOf(2);
+    if (p >= 0) return p;
+    const k = trackOf(0);
+    return k >= 0 ? k : S.tracks.findIndex((x) => x.type === "drum");
+  };
   var SWG = { drums: [0, 1], perc: [2], bass: [3], chords: [4, 5], pad: [5], lead: [6, 7] };
   var MUG = { drums: [0, 1, 2], bass: [3], chords: [4, 5], lead: [6, 7] };
   var LV_LABEL = {
@@ -24883,49 +25014,59 @@ input[type='number'] {
         o[1] = o[2] = null;
       }
       if (DEV === "101") o[5] = o[7] = null;
-      return o;
+      const tr = { chords: o[4] }, seen = /* @__PURE__ */ new Set();
+      for (let t = 0; t < 8; t++) {
+        const s = slotOf(t), pool = poolOf(t), own = !seen.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
+        seen.add(s);
+        if (own || s === 0 && oneKit()) tr[t] = o[s];
+        else tr[t] = S.tracks[t].type === "drum" ? take(pool) : fit(pool);
+      }
+      return tr;
     };
     const sets = { A: mkSet(), B: mkSet() }, scenes = [];
     const MOVE = ["h2", "alt", "rest", "odd"];
     for (const [name, kind, bars, e, fx, parts2] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
       const cells = {};
-      for (const t in parts2) {
-        const [set, play0] = parts2[t].split(":");
-        let id, pool = TRACK_POOLS[t];
+      for (let t = 0; t < 8; t++) {
+        const spec = parts2[slotOf(t)];
+        if (!spec) continue;
+        const [set, play0] = spec.split(":");
+        let id, pool = poolOf(t);
         if (set === "R") {
           id = take("build", (f) => f.bars === bars) || take("build");
           pool = "build";
         }
-        if (+t === 0 && oneKit() && set !== "R") pool = "full";
+        if (t === trackOf(0) && oneKit() && set !== "R") pool = "full";
         if (!id) id = sets[set === "R" ? "A" : set][t];
         if (!id || !facById(id)) continue;
         let play = play0;
-        if (+t >= 3 && r() < 0.25) play = play ? r() < 0.5 ? null : play : MOVE[Math.floor(r() * MOVE.length)];
+        if (S.tracks[t].type === "tone" && r() < 0.25)
+          play = play ? r() < 0.5 ? null : play : MOVE[Math.floor(r() * MOVE.length)];
         cells[t] = { id, pool };
         if (play) cells[t].play = play;
       }
       if (!Object.keys(cells).length)
-        [0, 1, 3].forEach((t) => {
-          if (sets.A[t]) cells[t] = { id: sets.A[t], pool: TRACK_POOLS[t] };
+        [0, 1, 3].map(trackOf).forEach((t) => {
+          if (t >= 0 && sets.A[t]) cells[t] = { id: sets.A[t], pool: poolOf(t) };
         });
-      const ld = cells[6] && facById(cells[6].id), pk2 = cells[7] && facById(cells[7].id);
+      const tL = trackOf(6), tP = trackOf(7), ld = cells[tL] && facById(cells[tL].id), pk2 = cells[tP] && facById(cells[tP].id);
       if (ld && pk2 && bars >= 4 && !roomFor(ld, pk2)) {
-        cells[6].play = "h1";
-        cells[7].play = "h2";
+        cells[tL].play = "h1";
+        cells[tP].play = "h2";
       }
       const sc = { kind, name, bars, e, cells };
       if (fx) sc.fx = fx;
       scenes.push(sc);
     }
     {
-      for (const t of [3, 4, 5, 6, 7]) {
-        if (!devOn(t)) continue;
-        const mm = cmFix()[t], own = patType({ pool: TRACK_POOLS[t] });
+      for (let t = 0; t < 8; t++) {
+        if (!devOn(t) || S.tracks[t].type !== "tone") continue;
+        const mm = cmFix()[t], own = patType({ pool: poolOf(t) });
         const alt = mm.types.slice(0, mm.n).find((ty) => CT_POOL[ty] && ty !== own);
         if (!alt) continue;
         scenes.forEach((sc) => {
           if (/ B$/.test(sc.name) && sc.cells[t]) {
-            const cb = facById(sets.B[4]), pB = cb && lvProg(cb);
+            const cb = facById(sets.B.chords), pB = cb && lvProg(cb);
             const id = take(CT_POOL[alt], (f) => !pB || !lvProg(f) || lvProg(f) === pB && f.bars === cb.bars);
             if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
           }
@@ -24938,10 +25079,10 @@ input[type='number'] {
     LV.ver++;
   }
   function liveSwapIds(t) {
-    const st = lvStyle(), pool = t === 0 && oneKit() ? "full" : TRACK_POOLS[t];
+    const st = lvStyle(), pool = t === trackOf(0) && oneKit() ? "full" : poolOf(t);
     return lvFlavor(lvPool(st, pool), LV.flavor).filter((id) => {
       const f = facById(id);
-      return f && (t < 3 ? f.type === "drum" : f.type === "tone");
+      return f && f.type === S.tracks[t].type;
     });
   }
 
@@ -25102,7 +25243,7 @@ input[type='number'] {
       return liveEnergy((base ? base.n : LV.energy) + (a === "en:up" ? 1 : -1));
     }
     if (a.startsWith("sw:")) return liveSwap(a.slice(3));
-    if (a.startsWith("mu:")) return liveMute(MUG[a.slice(3)] || []);
+    if (a.startsWith("mu:")) return liveMute(tracksFor(MUG[a.slice(3)]));
     if (a.startsWith("mt:")) return liveMute([+a.slice(3)]);
     if (a.startsWith("key:")) return liveKeyCue(+a.slice(4));
   }
@@ -27096,8 +27237,8 @@ input[type='number'] {
     const now = lvNow(), k = tg[0], i = +tg.slice(1) - 1;
     if (k === "k") {
       if (i < 4) sendKnob(i, val);
-      else if (i === 4) LV_TONES.forEach((t) => lvSendCC(t, 91, val, now));
-      else if (i === 5) LV_TONES.forEach((t) => lvSendCC(t, 71, val, now));
+      else if (i === 4) toneTracksAll().forEach((t) => lvSendCC(t, 91, val, now));
+      else if (i === 5) toneTracksAll().forEach((t) => lvSendCC(t, 71, val, now));
       else if (i === 6) {
         LV.vary = Math.round(val / 127 * 25) * 5;
         const s = $("#lvVary");
@@ -27296,7 +27437,7 @@ input[type='number'] {
     return "hroll";
   }
   function lvXType(v, t, hs) {
-    const o = t === 0 ? ["sroll", "kdrop", "ghost", "kickx", "open", "sroll"] : t === 1 ? ["open", "thin"] : t === 3 ? ["slide", "slide", "oct", "run"] : ["oct", "run", "echo", "up", "thin"];
+    const s = slotOf(t), o = s === 0 ? ["sroll", "kdrop", "ghost", "kickx", "open", "sroll"] : s === 1 ? ["open", "thin"] : s === 3 ? ["slide", "slide", "oct", "run"] : ["oct", "run", "echo", "up", "thin"];
     const ty = o[(hs >>> 11) % o.length];
     if (ty === "sroll") plan(v, hs, lvTrapRolls() ? ["t16", "t16", "32", "64", "s24"] : ["16", "32", "32", "h32"]);
     return ty;
@@ -27361,7 +27502,7 @@ input[type='number'] {
     }
     return tick;
   }
-  var lvMelodicCount = () => [4, 5, 6, 7].filter((t) => live(t)).length;
+  var lvMelodicCount = () => tracksFor([4, 5, 6, 7]).filter((t) => live(t)).length;
 
   // src/live/jam.js
   var HATS = [1, 4, 5, 10, 11];
@@ -27449,9 +27590,9 @@ input[type='number'] {
     });
     return id;
   }
-  var has = (cells, t) => !!cells[t];
-  function loop(cells, spec) {
-    const ids = {};
+  var has = (cells, slot) => tracksOf(slot).some((t) => !!cells[t]);
+  function loop(cells, spec0) {
+    const ids = {}, spec = bySlot(spec0);
     for (const t in spec) {
       const c = cells[t];
       if (!c) continue;
@@ -27522,7 +27663,7 @@ input[type='number'] {
     lvMove({
       id: "jamin",
       tag: "jam",
-      tracks: [3, 4, 5, 6, 7],
+      tracks: toneTracksAll(),
       cc: 80,
       kind: "ramp",
       from: lvFilterAway(0.75),
@@ -27586,13 +27727,13 @@ input[type='number'] {
         continue;
       }
       if (top && top.f.id === id) continue;
-      liveReplace(t, id, tick, 0, S.tracks[t].type === "tone" && t === 5 ? 16 : 0);
+      liveReplace(t, id, tick, 0, S.tracks[t].type === "tone" && slotOf(t) === 5 ? 16 : 0);
     }
     if (j.kind === "out" && j.i === j.loops.length - 1 && !l.last) {
       lvMove({
         id: "jamwash",
         tag: "jam",
-        tracks: [3, 4, 5, 6, 7],
+        tracks: toneTracksAll(),
         cc: 91,
         kind: "ramp",
         from: "rest",
@@ -27648,7 +27789,7 @@ input[type='number'] {
     const v = lvTop(t);
     return v ? v.f.id : null;
   });
-  var lvEmute = (t) => LV_PRI.indexOf(t) >= LV.energy || !!LV.blend && S.tracks[t].type === "tone";
+  var lvEmute = (t) => LV_PRI.indexOf(slotOf(t)) >= LV.energy || !!LV.blend && S.tracks[t].type === "tone";
   var lvTarget = (t) => LV.mute[t] || lvEmute(t) ? 0 : 1;
   function lvApplyGain(tick) {
     for (let t = 0; t < 8; t++) {
@@ -27672,7 +27813,7 @@ input[type='number'] {
     const f = facById(id);
     if (!f) return;
     LV.voices[t] = [];
-    const ent = t === 5 ? entry : Math.min(entry, 8);
+    const ent = slotOf(t) === 5 ? entry : Math.min(entry, 8);
     LV.voices[t].push({
       f,
       start: lvAnchorStart(t, f, tick),
@@ -27687,10 +27828,10 @@ input[type='number'] {
     const pend = LV.cues.find((c) => c.type === "brk" && c.tick < tick + 32), fl = LV.flash && tick >= LV.flash.start ? LV.flash : pend && pend.b ? pend.b : null, snap = [];
     for (let t = 0; t < 8; t++) {
       let c = null;
-      const rollT = fl && (fl.kind === "roll" || fl.kind === "drop") ? fl.kind === "roll" ? 0 : lvBT() : -1;
+      const rollT = fl && (fl.kind === "roll" || fl.kind === "drop") ? fl.kind === "roll" ? kitTrack() : lvBT() : -1;
       if (t === rollT) c = { id: null, k: "roll" };
       else if (fl && !fl.loop && fl.v && fl.v[t]) c = { id: fl.v[t].f.id, k: "brk" };
-      else if (t === 0 && LV.fill && tick >= LV.fill.start) c = { id: LV.fill.f.id, k: "fill" };
+      else if (t === trackOf(0) && LV.fill && tick >= LV.fill.start) c = { id: LV.fill.f.id, k: "fill" };
       else if (t === lvBT() && LV.bov && tick >= LV.bov.start) c = { id: LV.bov.f.id, k: "bov" };
       else if (t === lvBT() && LV.impact && LV.impact.tick < tick + 32) c = { id: LV.impact.f.id, k: "imp" };
       else {
@@ -27747,7 +27888,7 @@ input[type='number'] {
         lvMove({
           id: "dropthrow",
           tag: "drop",
-          tracks: [2],
+          tracks: tracksFor([2]),
           cc: 91,
           kind: "ramp",
           from: 110,
@@ -27767,7 +27908,7 @@ input[type='number'] {
     }
     LV.cur = idx;
     LV.sceneStart = tick;
-    const newProg = [4, 3, 5, 7, 6].map((t) => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
+    const newProg = [4, 3, 5, 7, 6].flatMap(tracksOf).map((t) => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
     for (let t = 0; t < 8; t++) {
       const cell = sc.cells[t], tone2 = S.tracks[t].type === "tone", top = lvTop(t);
       lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
@@ -27776,7 +27917,7 @@ input[type='number'] {
         if (tone2 && toneFade > 0)
           LV.voices[t].forEach((v) => {
             if (v.env.v1 > 0)
-              v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : t === 5 ? toneFade : Math.min(toneFade, 12));
+              v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : slotOf(t) === 5 ? toneFade : Math.min(toneFade, 12));
           });
         else LV.voices[t] = [];
         continue;
@@ -27798,7 +27939,7 @@ input[type='number'] {
       lvMove({
         id: "landthrow",
         tag: "scene",
-        tracks: [3, 4, 5, 6, 7].filter((t) => sc.cells[t]),
+        tracks: toneTracksAll().filter((t) => sc.cells[t]),
         cc: 91,
         kind: "ramp",
         from: 96,
@@ -27911,12 +28052,13 @@ input[type='number'] {
   }
   function lvSwapCue(group2, tick) {
     const ids = {};
-    (SWG[group2] || []).forEach((t) => {
+    tracksFor(SWG[group2]).forEach((t) => {
       const v = lvTop(t);
       if (!v) return;
       const free = !lvProg(v.f);
       let fit = lvFitIds(t, liveSwapIds(t), v.f.id, free);
-      if (!fit.length) fit = lvFitIds(t, lvPool(lvStyle(), t === 0 && oneKit() ? "full" : TRACK_POOLS[t]), v.f.id, free);
+      if (!fit.length)
+        fit = lvFitIds(t, lvPool(lvStyle(), t === trackOf(0) && oneKit() ? "full" : poolOf(t)), v.f.id, free);
       if (!fit.length) return;
       ids[t] = lvRand(fit);
     });
@@ -27937,7 +28079,7 @@ input[type='number'] {
       const idx = lvAutoNext(), fire = LV.sceneStart + total, nx = LV.scenes[idx];
       const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
       LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0 });
-      if (!hard && LV.fills && sc.cells[0] && nx.cells[0] && nx.e >= sc.e && LV.fillIds.length) {
+      if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
         const f = facById(lvRand(LV.fillIds));
         if (f) LV.cues.push({ type: "fill", tick: fire - 32, f, auto: true });
       }
@@ -27945,7 +28087,7 @@ input[type='number'] {
       LV.ver++;
     } else if (rel > 0 && rel % loop2 === 0 && rel < total - 64 && Math.random() < LV.chaos / 100 * 0.6) {
       if (Math.random() < 0.3 && lvAutoFlash(tick + loop2)) LV.ver++;
-      else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[0]) {
+      else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
         const f = facById(lvRand(LV.fillIds));
         if (f) {
           LV.cues.push({ type: "fill", tick: tick + 32, f });
@@ -27961,8 +28103,8 @@ input[type='number'] {
     return r === 4 || r === 9 || r === 11 ? n - 1 : n;
   }
   function lvVarOf(v, t, k, L2) {
-    const X = lvExtreme(), rolls = (t === 1 || t === 0 && !LV.voices[1].some((x) => x.env.v1 > 0)) && lvTrapRolls();
-    if (LV.lock || k < 1 || t === 5 || t === 2) return null;
+    const s = slotOf(t), th = trackOf(1), X = lvExtreme(), rolls = (s === 1 || s === 0 && !(th >= 0 && LV.voices[th].some((x) => x.env.v1 > 0))) && lvTrapRolls();
+    if (LV.lock || k < 1 || s === 5 || s === 2) return null;
     const off = LV.vary <= 0 || !X && L2 < 64 && k % 2 === 0;
     if (off && !rolls) return null;
     if (v._vk === k) return v._vt;
@@ -27971,7 +28113,7 @@ input[type='number'] {
     if (ty || off) ty = ty || null;
     else if (X) ty = hs % 1e3 / 1e3 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
     else if (hs % 1e3 / 1e3 < LV.vary / 100 * 0.8) {
-      const o = t === 0 ? ["ghost", "kickx", "open"] : t === 1 ? ["open", "thin"] : t === 3 ? ["oct", "run", "thin", "echo"] : ["oct", "run", "echo", "thin", "up"];
+      const o = s === 0 ? ["ghost", "kickx", "open"] : s === 1 ? ["open", "thin"] : s === 3 ? ["oct", "run", "thin", "echo"] : ["oct", "run", "echo", "thin", "up"];
       ty = o[(hs >>> 11) % o.length];
     }
     v._vk = k;
@@ -27987,10 +28129,10 @@ input[type='number'] {
       const sc = SCALES[LV.mode === "major" ? "major" : "minor"], ins = (n) => sc.includes(((n - LV.key) % 12 + 12) % 12), run2 = [];
       for (let n = tgt - 1; run2.length < 4 && n > tgt - 15; n--) if (ins(n)) run2.unshift(n);
       run2.forEach((nn, i) => emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt + i * 2 * td, 1.6 * td));
-    } else if (vt === "ghost" && t === 0 && local >= L2 - 32 && [6, 14, 22, 30].includes(local - (L2 - 32)))
-      emitNote(0, 2, clamp(44 * g, 1, 127), nt, td);
+    } else if (vt === "ghost" && slotOf(t) === 0 && local >= L2 - 32 && [6, 14, 22, 30].includes(local - (L2 - 32)))
+      emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
     else if (vt === "open" && local === L2 - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
-    else if (vt === "kickx" && t === 0 && local === L2 - 6) emitNote(0, 0, clamp(104 * g, 1, 127), nt, td);
+    else if (vt === "kickx" && slotOf(t) === 0 && local === L2 - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
   }
   function liveTick(tick, nt, td) {
     while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
@@ -28013,7 +28155,8 @@ input[type='number'] {
     }
     if (LV.crash) {
       LV.crash = false;
-      if (!S.tracks[0].mute) emitNote(0, 9, 110, nt, 0.5);
+      const tk = trackOf(0);
+      if (tk >= 0 && !S.tracks[tk].mute) emitNote(tk, 9, 110, nt, 0.5);
     }
     const rel = tick - LV.sceneStart;
     if (rel % 32 === 0) {
@@ -28044,7 +28187,7 @@ input[type='number'] {
     if (LV.impact && tick >= LV.impact.tick) {
       const im = LV.impact;
       LV.impact = null;
-      if (tick === im.tick && !S.tracks[lvBT()].mute) {
+      if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute) {
         const evs = patIndex(im.f).get(0);
         if (evs) for (const n of evs) emitNote(lvBT(), n.n, n.v, nt, 0.4);
         LV.pulse[lvBT()] = { time: nt, v: 1 };
@@ -28065,7 +28208,7 @@ input[type='number'] {
       const tg = envAt(LV.tg[t], tick);
       if (tg <= 0.01) continue;
       const tone2 = trk.type === "tone";
-      if (LV.thin && tick >= LV.thin && (t === 0 || t === 3)) continue;
+      if (LV.thin && tick >= LV.thin && (slotOf(t) === 0 || slotOf(t) === 3)) continue;
       if (!fl && t === lvBT() && LV.bov && tick >= LV.bov.start) {
         const f = LV.bov.f, L2 = f.bars * 32, evs = patIndex(f).get((tick - LV.bov.start + LV.bov.off) % L2);
         if (evs) {
@@ -28074,7 +28217,7 @@ input[type='number'] {
         }
         continue;
       }
-      if (!fl && t === 0 && LV.fill && tick >= LV.fill.start) {
+      if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
         const f = LV.fill.f, evs = patIndex(f).get((ft - LV.fill.start + f.bars * 32 * 8) % (f.bars * 32));
         if (evs) {
           for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
@@ -28105,10 +28248,10 @@ input[type='number'] {
           if (vt === "thin" && local % 8 !== 0 && (local >> 1) % 3 === 1) continue;
           if (vt && lvXSkip(v, vt, local, L2, n)) continue;
           let nn = tone2 ? conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0) : n.n;
-          if (tone2 && (vt === "oct" && last && local >> 2 & 1 || vt === "up" && t >= 6))
-            nn = t === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
+          if (tone2 && (vt === "oct" && last && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
+            nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
           emitNote(t, tone2 ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
-          if (t === 3) v._last = nn;
+          if (slotOf(t) === 3) v._last = nn;
           if (vt === "echo" && last && tone2)
             emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
         }
@@ -28232,7 +28375,9 @@ input[type='number'] {
       [3, "fbass"],
       [4, "fchords"],
       [6, "flead"]
-    ].forEach(([t, p]) => {
+    ].forEach(([sl, p]) => {
+      const t = trackOf(sl);
+      if (t < 0) return;
       const ids = lvPool(st, p).filter((id) => {
         const f = facById(id);
         return f && f.flash === rid && (f.type === "drum" || f.name.endsWith(want));
@@ -28262,15 +28407,15 @@ input[type='number'] {
     if (kind === "drop" && len < 32) kind = "roll";
     const b = { kind, len, v: {} };
     if (kind === "hits") {
-      const opts = FLASH_RH.filter((R3) => R3[2] * 32 <= Math.max(32, len)), R2 = lvRand(opts.length ? opts : FLASH_RH);
-      const cells = lvFlashIds(st, R2[0], LV.mode || lvModeFam(st.scale));
+      const opts = FLASH_RH.filter((R4) => R4[2] * 32 <= Math.max(32, len)), R3 = lvRand(opts.length ? opts : FLASH_RH);
+      const cells = lvFlashIds(st, R3[0], LV.mode || lvModeFam(st.scale));
       for (const t in cells) {
         const f = facById(cells[t].id);
         if (f) b.v[t] = { f };
       }
       if (Object.keys(b.v).length) {
-        b.rh = R2[0];
-        b.name = R2[1];
+        b.rh = R3[0];
+        b.name = R3[1];
       } else b.kind = "roll";
     }
     b.name = b.name || { stutter: "Stutter", roll: "Snare roll", drop: "Drop-out" }[b.kind];
@@ -28312,7 +28457,7 @@ input[type='number'] {
     b.start = tick;
     b.end = tick + b.len;
     b.loop = b.kind !== "hits";
-    b.keep = b.kind === "stutter" ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === "drop" ? [4, 5, 6, 7] : [];
+    b.keep = b.kind === "stutter" ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === "drop" ? tracksFor([4, 5, 6, 7]) : [];
     if (b.kind === "hits")
       for (const t in b.v) {
         const P = b.v[t].f.bars * 32;
@@ -28327,7 +28472,7 @@ input[type='number'] {
         lvMove({
           id: "brkfx",
           tag: "flash",
-          tracks: [4, 5, 6, 7],
+          tracks: tracksFor([4, 5, 6, 7]),
           cc: 91,
           kind: "ramp",
           from: "rest",
@@ -28340,7 +28485,7 @@ input[type='number'] {
         lvMove({
           id: "brkfx",
           tag: "flash",
-          tracks: LV_TONES,
+          tracks: toneTracksAll(),
           cc: 91,
           kind: "ramp",
           from: 118,
@@ -28366,7 +28511,7 @@ input[type='number'] {
         lvMove({
           id: "brkfx",
           tag: "flash",
-          tracks: [4, 5, 6, 7],
+          tracks: tracksFor([4, 5, 6, 7]),
           cc: 91,
           kind: "ramp",
           from: "rest",
@@ -28379,12 +28524,12 @@ input[type='number'] {
     lvLog(tick);
   }
   function lvRollTick(b, tick, nt, td) {
-    const t = b.kind === "roll" ? 0 : lvBT();
-    if (S.tracks[t].mute || tick >= b.end - 2) return;
+    const t = b.kind === "roll" ? kitTrack() : lvBT(), k = kitTrack();
+    if (t < 0 || S.tracks[t].mute || tick >= b.end - 2) return;
     const rel = tick - b.start, u = rel / b.len, step = b.len >= 32 ? u < 0.5 ? 4 : u < 0.75 ? 2 : 1 : u < 0.5 ? 2 : 1;
     if (b.kind === "roll" && rel === 0) {
-      emitNote(0, 0, 120, nt, td);
-      emitNote(0, 9, 110, nt, td * 4);
+      emitNote(k, 0, 120, nt, td);
+      emitNote(k, 9, 110, nt, td * 4);
     }
     if (rel % step === 0) {
       emitNote(t, 2, clamp(Math.round(62 + 60 * u), 1, 127), nt, td);
@@ -28498,10 +28643,10 @@ input[type='number'] {
       {
         "aria-label": "Flash rhythm",
         onchange: (e) => {
-          const R2 = FLASH_RH.find((x) => x[0] === e.target.value);
-          sc.rh = R2[0];
-          sc.bars = R2[2];
-          sc.cells = lvFlashIds(st, R2[0], LV.mode);
+          const R3 = FLASH_RH.find((x) => x[0] === e.target.value);
+          sc.rh = R3[0];
+          sc.bars = R3[2];
+          sc.cells = lvFlashIds(st, R3[0], LV.mode);
           save3();
           liveRenderSceneEd();
         }
@@ -28526,7 +28671,7 @@ input[type='number'] {
     );
     const parts2 = el("div", { class: "lvScParts" });
     S.tracks.forEach((t, ti) => {
-      const c = sc.cells[ti], pool = isF ? FLPOOL[ti] : ti === 0 && oneKit() ? "full" : TRACK_POOLS[ti];
+      const c = sc.cells[ti], pool = isF ? FLPOOL[slotOf(ti)] : ti === trackOf(0) && oneKit() ? "full" : poolOf(ti);
       const s = el("select", {
         "aria-label": t.name + " in " + sc.name,
         style: "--c:" + TRACK_COLORS[ti],
@@ -28749,22 +28894,22 @@ input[type='number'] {
     if (rel % U !== U - 64) return;
     const end = tick + 64;
     if (LV.cues.some((c) => (c.type === "scene" || c.type === "bov" || c.type === "gap") && c.tick <= end + 32)) return;
-    const X = LV.vary > 100, p = Math.min(1, LV.vary / 100), R2 = Math.random;
+    const X = LV.vary > 100, p = Math.min(1, LV.vary / 100), R3 = Math.random;
     let fill2 = false, did = 0;
-    if (R2() < p * 0.3 && lvAutoFlash(end)) {
+    if (R3() < p * 0.3 && lvAutoFlash(end)) {
       LV.ver++;
       return;
     }
-    if (R2() < p * 0.85) {
+    if (R3() < p * 0.85) {
       const g = lvRand(["bass", "chords", "lead", "perc", "drums", "pad"]);
       if (lvSwapCue(g, end)) did++;
     }
     if (X && lvSwapCue(lvRand(["drums", "perc", "bass", "lead"]), end)) did++;
-    if (p > 0.6 && R2() < p - 0.5) {
+    if (p > 0.6 && R3() < p - 0.5) {
       const g = lvRand(["chords", "lead", "perc"]);
       if (lvSwapCue(g, end)) did++;
     }
-    if (LV.fills && sc.cells[0] && LV.fillIds.length && !LV.cues.some((c) => c.type === "fill") && R2() < (X ? 0.9 : p * 0.6)) {
+    if (LV.fills && sc.cells[trackOf(0)] && LV.fillIds.length && !LV.cues.some((c) => c.type === "fill") && R3() < (X ? 0.9 : p * 0.6)) {
       const f = facById(lvRand(LV.fillIds));
       if (f) {
         LV.cues.push({ type: "fill", tick: end - 32, f, auto: true });
@@ -28772,8 +28917,8 @@ input[type='number'] {
         did++;
       }
     }
-    if (R2() < p * 0.35) {
-      const cand = [0, 3, 4, 6].filter((t) => lvTop(t) && !LV.mute[t] && !(fill2 && t === 0));
+    if (R3() < p * 0.35) {
+      const cand = [0, 3, 4, 6].flatMap(tracksOf).filter((t) => lvTop(t) && !LV.mute[t] && !(fill2 && slotOf(t) === 0));
       if (cand.length) {
         const t = lvRand(cand);
         LV.cues.push(
@@ -28783,10 +28928,10 @@ input[type='number'] {
         did++;
       }
     }
-    if (R2() < p * 0.45 && lvMelodicCount() < 3) {
-      const empty = [6, 7, 5].filter((t) => !lvTop(t) && !LV.mute[t] && !lvEmute(t));
+    if (R3() < p * 0.45 && lvMelodicCount() < 3) {
+      const empty = [6, 7, 5].flatMap(tracksOf).filter((t) => !lvTop(t) && !LV.mute[t] && !lvEmute(t));
       if (empty.length) {
-        const t = lvRand(empty), id = lvRand(lvFitIds(t, liveSwapIds(t), null, t === 6));
+        const t = lvRand(empty), id = lvRand(lvFitIds(t, liveSwapIds(t), null, slotOf(t) === 6));
         if (id) {
           LV.cues.push({ type: "guest", t, id, tick: end }, { type: "guestOut", t, id, tick: end + U });
           did++;
@@ -28810,8 +28955,8 @@ input[type='number'] {
     return base + Math.ceil((from - base) / U) * U;
   }
   function lvAutoFill(sc, nx, tick) {
-    const newKit = nx.cells[0] && sc.cells[0] && nx.cells[0].id !== sc.cells[0].id;
-    if (LV.fills && sc.cells[0] && nx.cells[0] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
+    const k = trackOf(0), newKit = nx.cells[k] && sc.cells[k] && nx.cells[k].id !== sc.cells[k].id;
+    if (LV.fills && sc.cells[k] && nx.cells[k] && (nx.e >= sc.e || newKit) && LV.fillIds.length && tick - 32 >= TR.tick) {
       const f = facById(lvRand(LV.fillIds));
       if (f) LV.cues.push({ type: "fill", tick: tick - 32, f, auto: true });
     }
@@ -28890,7 +29035,7 @@ input[type='number'] {
     }
     const probe = {};
     let maxBars = 1;
-    (SWG[group2] || []).forEach((t) => {
+    tracksFor(SWG[group2]).forEach((t) => {
       if (lvTop(t)) maxBars = Math.max(maxBars, lvTop(t).f.bars);
     });
     const c = lvSwapCue(group2, lvBoundary(Math.min(maxBars, 4)));
@@ -28901,7 +29046,7 @@ input[type='number'] {
       toast("Press Start Jam first");
       return;
     }
-    if (!LV.fillIds.length || !LV.scenes[LV.cur].cells[0]) {
+    if (!LV.fillIds.length || !LV.scenes[LV.cur].cells[trackOf(0)]) {
       toast("No drum fill available here");
       return;
     }
@@ -29014,7 +29159,7 @@ input[type='number'] {
     ids.forEach((id, t) => {
       if (!id || !devOn(t) || lvEffMute(t)) return;
       const f = facById(id), old = sc.cells[t];
-      cells[t] = { id, pool: old && old.id === id ? old.pool : f && f.pool || TRACK_POOLS[t] };
+      cells[t] = { id, pool: old && old.id === id ? old.pool : f && f.pool || poolOf(t) };
       if (old && old.play) cells[t].play = old.play;
       if (old && old.clip != null) cells[t].clip = old.clip;
     });
@@ -29075,8 +29220,6 @@ input[type='number'] {
   }
 
   // src/live/moves.js
-  var LV_TONES = [3, 4, 5, 6, 7];
-  var LV_PUMP = [3, 4, 5, 6];
   var LV_SCFX = [
     ["none", "None"],
     ["build", "Build-up (filter, resonance, wash, pump)"],
@@ -29157,7 +29300,7 @@ input[type='number'] {
   }
   function lvBuildMoves(t1, t2, tag) {
     if (!LV.buildFx) return;
-    const T2 = LV_TONES;
+    const T2 = toneTracksAll();
     lvMove({
       id: tag + "res",
       tracks: T2,
@@ -29172,7 +29315,7 @@ input[type='number'] {
     });
     lvMove({
       id: tag + "rev",
-      tracks: [4, 5, 6, 7],
+      tracks: tracksFor([4, 5, 6, 7]),
       cc: 91,
       kind: "ramp",
       from: "rest",
@@ -29184,7 +29327,7 @@ input[type='number'] {
     });
     lvMove({
       id: tag + "pump",
-      tracks: LV_PUMP,
+      tracks: tracksFor([3, 4, 5, 6]),
       cc: 11,
       kind: "pump",
       d0: 0.15,
@@ -29205,7 +29348,7 @@ input[type='number'] {
       lvMove({
         id: "scpump",
         tag: "scene",
-        tracks: LV_PUMP,
+        tracks: tracksFor([3, 4, 5, 6]),
         cc: 11,
         kind: "pump",
         d0: 0.55,
@@ -29218,7 +29361,7 @@ input[type='number'] {
       lvMove({
         id: "scwash",
         tag: "scene",
-        tracks: [4, 5, 6, 7],
+        tracks: tracksFor([4, 5, 6, 7]),
         cc: 91,
         kind: "ramp",
         from: "rest",
@@ -29245,7 +29388,7 @@ input[type='number'] {
       lvMove({
         id: "scpan",
         tag: "scene",
-        tracks: [6, 7],
+        tracks: tracksFor([6, 7]),
         cc: 10,
         kind: "lfo",
         depth: 0.7,
@@ -29265,7 +29408,7 @@ input[type='number'] {
       lvMove({
         id: "qwash",
         tag: "q",
-        tracks: [4, 5, 6, 7],
+        tracks: tracksFor([4, 5, 6, 7]),
         cc: 91,
         kind: "ramp",
         from: "rest",
@@ -29279,7 +29422,7 @@ input[type='number'] {
       lvMove({
         id: "qthrow",
         tag: "q",
-        tracks: LV_TONES,
+        tracks: toneTracksAll(),
         cc: 91,
         kind: "ramp",
         from: 120,
@@ -29311,7 +29454,7 @@ input[type='number'] {
         lvMove({
           id: "qpump",
           tag: "q",
-          tracks: LV_PUMP,
+          tracks: tracksFor([3, 4, 5, 6]),
           cc: 11,
           kind: "pump",
           d0: 0.6,
@@ -29330,7 +29473,7 @@ input[type='number'] {
         lvMove({
           id: "qpan",
           tag: "q",
-          tracks: [6, 7],
+          tracks: tracksFor([6, 7]),
           cc: 10,
           kind: "lfo",
           depth: 0.8,
@@ -30144,8 +30287,8 @@ input[type='number'] {
     return true;
   }
   function lvTracksFor(target) {
-    if (target === "drums") return [0, 1, 2];
-    if (target === "tone") return [3, 4, 5, 6, 7];
+    if (target === "drums") return [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t].type === "drum");
+    if (target === "tone") return toneTracksAll();
     if (target === "all") return [0, 1, 2, 3, 4, 5, 6, 7];
     return [+target];
   }
@@ -30266,7 +30409,7 @@ input[type='number'] {
           prevId = c ? c.id : null;
           continue;
         }
-        const ovFill = ti === 0 && pendFill.find((c) => c.tick <= tk && tk < c.tick + 32), id = s.ids[ti];
+        const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk && tk < c.tick + 32), id = s.ids[ti];
         if (!id) {
           if (ovFill)
             row.append(
@@ -30288,7 +30431,7 @@ input[type='number'] {
         const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar2 = Math.floor((tk - sStart(s)) / 32);
         const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars);
         const phase = bar2 % f.bars;
-        const isFill = ti === 0 && pendFill.some((c) => c.tick <= tk && tk < c.tick + 32);
+        const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk && tk < c.tick + 32);
         const label = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
         row.append(
           el(
@@ -30409,7 +30552,7 @@ input[type='number'] {
           cur = !!(on && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
           q = !!(on && cue && cue.idx === ix);
         }
-      } else if (a.startsWith("mu:")) cur = on && (MUG[a.slice(3)] || []).every(lvEffMute);
+      } else if (a.startsWith("mu:")) cur = on && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
       else if (a.startsWith("mt:")) cur = on && lvEffMute(+a.slice(3));
       else if (a.startsWith("key:")) cur = LV.key === +a.slice(4);
       else if (a.startsWith("sw:")) q = LV.cues.some((c) => c.type === "swap" && c.group === a.slice(3));
@@ -31036,7 +31179,7 @@ input[type='number'] {
     const parts2 = [];
     let frames = 0;
     return {
-      push(L2, R2, a, b) {
+      push(L2, R3, a, b) {
         const n = b - a;
         if (bits === 16) {
           const o = new Int16Array(n * 2);
@@ -31044,7 +31187,7 @@ input[type='number'] {
             let x = L2[a + i];
             x = x < -1 ? -1 : x > 1 ? 1 : x;
             o[2 * i] = x < 0 ? x * 32768 : x * 32767;
-            x = R2[a + i];
+            x = R3[a + i];
             x = x < -1 ? -1 : x > 1 ? 1 : x;
             o[2 * i + 1] = x < 0 ? x * 32768 : x * 32767;
           }
@@ -31053,7 +31196,7 @@ input[type='number'] {
           const o = new Uint8Array(n * 6);
           let p = 0;
           for (let i = 0; i < n; i++) {
-            for (const arr of [L2, R2]) {
+            for (const arr of [L2, R3]) {
               let x = arr[a + i];
               x = x < -1 ? -1 : x > 1 ? 1 : x;
               const v = Math.round(x < 0 ? x * 8388608 : x * 8388607);
@@ -31114,14 +31257,14 @@ input[type='number'] {
       }
     };
     return {
-      push(L2, R2, a, b) {
+      push(L2, R3, a, b) {
         const n = b - a;
         const l = new Int16Array(n), r = new Int16Array(n);
         for (let i = 0; i < n; i++) {
           let x = L2[a + i];
           x = x < -1 ? -1 : x > 1 ? 1 : x;
           l[i] = x < 0 ? x * 32768 : x * 32767;
-          x = R2[a + i];
+          x = R3[a + i];
           x = x < -1 ? -1 : x > 1 ? 1 : x;
           r[i] = x < 0 ? x * 32768 : x * 32767;
         }
@@ -31236,7 +31379,7 @@ input[type='number'] {
       r: def.r,
       enc,
       skip: Math.max(0, Math.round((PRE + (AUD.trimMs + (def.cap === "stem" ? AUD.stemTrimMs : 0)) / 1e3) * sr)),
-      feed(L2, R2, n) {
+      feed(L2, R3, n) {
         let a = 0;
         if (sk.skip > 0) {
           const d = Math.min(sk.skip, n);
@@ -31244,7 +31387,7 @@ input[type='number'] {
           a = d;
           if (a >= n) return;
         }
-        enc.push(L2, R2, a, n);
+        enc.push(L2, R3, a, n);
       }
     };
     return sk;
@@ -31722,14 +31865,14 @@ input[type='number'] {
     rows.forEach((r, idx) => {
       const c = AUDREC.caps[r.cap], L2 = $("#sigL" + idx);
       if (!L2) return;
-      const pl = c ? c.peaks[r.pair * 2] || 0 : 0, pr = c ? c.peaks[r.pair * 2 + 1] || 0 : 0, R2 = $("#sigR" + idx), D2 = $("#sigD" + idx), S2 = $("#sigS" + idx);
+      const pl = c ? c.peaks[r.pair * 2] || 0 : 0, pr = c ? c.peaks[r.pair * 2 + 1] || 0 : 0, R3 = $("#sigR" + idx), D2 = $("#sigD" + idx), S2 = $("#sigS" + idx);
       const w = (p) => Math.max(0, Math.min(100, (dbOf(p) + 60) / 60 * 100)) + "%";
       L2.style.width = w(pl);
-      R2.style.width = w(pr);
+      R3.style.width = w(pr);
       const pk2 = Math.max(pl, pr), db = dbOf(pk2);
       D2.textContent = pk2 > 5e-4 ? db.toFixed(0) + " dB" : "−∞";
       L2.classList.toggle("hot", pl > 0.97);
-      R2.classList.toggle("hot", pr > 0.97);
+      R3.classList.toggle("hot", pr > 0.97);
       if (S2 && !(r.ti != null && AUDREC.check && AUDREC.check[r.ti])) {
         const st = pk2 > 0.97 ? ["bad", "Too loud"] : db > -40 ? ["ok", "Signal"] : db > -70 ? ["low", "Quiet"] : ["", "No signal"];
         S2.className = "sigchip " + st[0];
@@ -34465,6 +34608,166 @@ input[type='number'] {
     }, 30);
   }
 
+  // src/ui/track-setup.js
+  var DEF_NAMES = ["Drums 1", "Drums 2", "Drums 3", "Bass", "Chords", "Pad", "Lead", "Pluck"];
+  var SHORT2 = {
+    kit: "Kit",
+    hats: "Hats",
+    perc: "Perc",
+    bass: "Bass",
+    chords: "Chords",
+    pad: "Pad",
+    lead: "Lead",
+    pluck: "Pluck",
+    acid: "Acid"
+  };
+  var PRESETS = [
+    ["Default: 3 drums + 5 tone", DEF_ROLES],
+    ["8 drums", ["kit", "kit", "hats", "hats", "perc", "perc", "kit", "perc"]],
+    ["6 drums + 2 tone", ["kit", "kit", "hats", "perc", "perc", "kit", "bass", "lead"]],
+    ["4 drums + 4 tone", ["kit", "hats", "perc", "kit", "bass", "chords", "lead", "pluck"]],
+    ["2 drums + 6 tone", ["kit", "hats", "bass", "chords", "pad", "lead", "pluck", "acid"]],
+    ["1 drum + 7 tone", ["kit", "bass", "chords", "pad", "lead", "pluck", "acid", "lead"]],
+    ["8 tone", ["bass", "chords", "pad", "lead", "pluck", "acid", "chords", "lead"]]
+  ];
+  function nameFor(roles, t) {
+    if (roles.every((r, i) => r === DEF_ROLES[i])) return DEF_NAMES[t];
+    const same = roles.map((r, i) => i).filter((i) => SHORT2[roles[i]] === SHORT2[roles[t]]);
+    return SHORT2[roles[t]] + (same.length > 1 ? " " + (same.indexOf(t) + 1) : "");
+  }
+  var AUTO = new RegExp("^(" + [...DEF_NAMES, ...Object.values(SHORT2)].join("|") + ")( \\d)?$");
+  var autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
+  async function applyRoles(roles) {
+    const old = S.tracks.map((x, t) => roleOf(t)), types = roles.map((r, t) => roleInfo(r, t)[2]);
+    const lose = S.clips.filter((c) => types[c.t] !== S.tracks[c.t].type);
+    if (lose.length) {
+      const ok = await askDlg({
+        title: "Change the track setup?",
+        text: lose.length + " clip" + (lose.length === 1 ? "" : "s") + " on tracks that change between drum and tone will be removed. Undo brings them back.",
+        ok: "Change and remove them"
+      });
+      if (!ok) return false;
+    }
+    stopAll();
+    pushUndo();
+    const rename = S.tracks.map((x, t) => autoNamed(t, old));
+    roles.forEach((r, t) => {
+      const tr = S.tracks[t];
+      if (r === DEF_ROLES[t]) delete tr.role;
+      else tr.role = r;
+      tr.type = types[t];
+      if (rename[t]) tr.name = nameFor(roles, t);
+    });
+    S.clips = S.clips.filter((c) => S.tracks[c.t].type === S.patterns[c.pat].type);
+    cmFix().forEach((m, t) => {
+      const drum = types[t] === "drum", kind = drum ? "drums" : ["bass", "chords", "pad", "lead", "pluck", "acid"].includes(roles[t]) ? roles[t] : "lead";
+      m.types = m.types.map((ty) => drum ? ty === "fx" ? ty : "drums" : ty === "drums" ? kind : ty);
+      if (roles[t] !== old[t] && m.n === 1) m.types[0] = drum ? "drums" : kind;
+    });
+    liveBuild();
+    renderAll();
+    liveRender();
+    scheduleSave();
+    return true;
+  }
+  function trackSetupOpen() {
+    let ov = $("#tsOv");
+    if (!ov) {
+      ov = el("div", {
+        id: "tsOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Track setup",
+        onpointerdown: (e) => {
+          if (e.target.id === "tsOv") ov.remove();
+        }
+      });
+      document.body.append(ov);
+    }
+    render(ov);
+  }
+  function render(ov) {
+    ov.textContent = "";
+    const roles = S.tracks.map((x, t) => roleOf(t)), shown2 = DEVS[DEV].tracks, nD = shown2.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
+    const set = async (r) => {
+      if (await applyRoles(r)) {
+        toast("Track setup changed");
+        render(ov);
+      }
+    };
+    const rows = shown2.map((t) => {
+      const sel = el("select", {
+        "aria-label": "Track " + devNum(t) + " role",
+        onchange: (e) => set(roles.map((r, i) => i === t ? e.target.value : r))
+      });
+      for (const [lab, list] of [
+        ["Drum track", ROLES.filter((r) => r[2] === "drum")],
+        ["Tone track", ROLES.filter((r) => r[2] === "tone")]
+      ]) {
+        const g = el("optgroup", { label: lab });
+        list.forEach((r) => g.append(el("option", { value: r[0], selected: r[0] === roles[t] }, r[1])));
+        sel.append(g);
+      }
+      const isD = roleInfo(roles[t], t)[2] === "drum";
+      return el(
+        "div",
+        { class: "tsRow", style: "--c:" + TRACK_COLORS[t] },
+        el("b", {}, "Track " + devNum(t)),
+        el("span", { class: "tsType " + (isD ? "d" : "t") }, isD ? "DRUM" : "TONE"),
+        sel,
+        el("input", {
+          type: "text",
+          maxlength: 16,
+          value: S.tracks[t].name,
+          "aria-label": "Track " + devNum(t) + " name",
+          onchange: (e) => {
+            pushUndo();
+            S.tracks[t].name = e.target.value.trim().slice(0, 16) || nameFor(roles, t);
+            renderAll();
+            liveRender();
+            scheduleSave();
+          }
+        }),
+        el("small", { class: "hint" }, "MIDI ch " + S.tracks[t].ch)
+      );
+    });
+    ov.append(
+      el(
+        "div",
+        { class: "ptBox tsBox" },
+        el(
+          "div",
+          { class: "cmHead" },
+          el("h3", {}, "Track setup"),
+          el("button", { class: "btn sm on", onclick: () => ov.remove() }, "Done")
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown2.length - nD) + " tone tracks."
+        ),
+        el(
+          "div",
+          { class: "tsPresets" },
+          ...PRESETS.map(
+            ([lab, r]) => el(
+              "button",
+              { class: "btn sm" + (r.every((x, t) => x === roles[t]) ? " on" : ""), onclick: () => set(r.slice()) },
+              lab
+            )
+          )
+        ),
+        el("div", { class: "tsRows" }, ...rows),
+        el(
+          "p",
+          { class: "hint" },
+          "On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings."
+        )
+      )
+    );
+  }
+
   // src/ui/grabber.js
   var GRAB = {
     on: false,
@@ -34606,7 +34909,7 @@ input[type='number'] {
       l: def.l,
       r: def.r,
       skip: 0,
-      feed(L2, R2, n) {
+      feed(L2, R3, n) {
         let a = 0;
         if (sk.skip > 0) {
           const d = Math.min(sk.skip, n);
@@ -34616,7 +34919,7 @@ input[type='number'] {
         }
         const b = Math.min(n, a + need - got);
         if (b > a) {
-          enc.push(L2, R2, a, b);
+          enc.push(L2, R3, a, b);
           got += b - a;
         }
         if (got >= need && !sk.done) {
@@ -35106,6 +35409,7 @@ input[type='number'] {
         [
           ["Device: MC-707 (8 tracks)", () => setDevice("707"), "", () => DEV === "707"],
           ["Device: MC-101 (4 tracks)", () => setDevice("101"), "", () => DEV === "101"],
+          ["Track setup…", () => trackSetupOpen()],
           ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
           ["Your MC-707 clips…", () => clipMapOpen()],
           0,
@@ -35283,7 +35587,7 @@ input[type='number'] {
   function lvTrackMenu(t) {
     const tr = S.tracks[t], on = lvOn(), v = on ? lvTop(t) : null, sc = LV.scenes[LV.cur], cell = sc && sc.cells[t];
     const cur = v ? v.f.id : cell ? cell.id : null;
-    const ref = S.tracks[t].type === "tone" ? on ? lvTop(t === 4 ? 3 : 4) : null : null, prog = ref && lvProg(ref.f);
+    const ref = S.tracks[t].type === "tone" ? on && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0 ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4)) : null : null, prog = ref && lvProg(ref.f);
     let ids = liveSwapIds(t).filter((id) => id !== cur);
     if (prog)
       ids = [...ids.filter((id) => lvProg(facById(id)) === prog), ...ids.filter((id) => lvProg(facById(id)) !== prog)];
@@ -35305,7 +35609,7 @@ input[type='number'] {
       } else if (sc) {
         sc.cells[t] = {
           id,
-          pool: cell && cell.pool || TRACK_POOLS[t],
+          pool: cell && cell.pool || poolOf(t),
           ...cell && cell.play ? { play: cell.play } : {}
         };
         lvSaveScenes();
@@ -35504,7 +35808,7 @@ input[type='number'] {
           ids.forEach((id, t) => {
             if (id && devOn(t) && !lvEffMute(t)) {
               const f = facById(id);
-              cells[t] = { id, pool: f && f.pool || TRACK_POOLS[t] };
+              cells[t] = { id, pool: f && f.pool || poolOf(t) };
             }
           });
           LV.cur = keep;

@@ -12,7 +12,7 @@ import { MIDI, sendMidi } from '../services/midi.js';
 import { REC, TR } from '../services/transport.js';
 import { LV, NOTEN, mkEnv, noteLbl, saveLive } from './state.js';
 import { actLabel, lvNow } from './themes.js';
-import { LV_TONES, lvSendCC } from './moves.js';
+import { lvSendCC } from './moves.js';
 import { liveBreak } from './breaks.js';
 import { liveStart, liveStop, lvTarget } from './engine.js';
 import {
@@ -30,6 +30,7 @@ import { liveRender } from './panels.js';
 import { liveRenderSettings } from './settings-panel.js';
 import { vizNote } from './visualizer.js';
 import { hooks } from '../core/hooks.js';
+import { toneTracksAll } from '../core/tracks.js';
 
 /* ===== USB controller keyboard (FLkey, Launchkey, KeyLab, any MIDI keyboard) =====
    Raven-style zones: lowest octave mutes the 8 tracks, the next octave changes the key of every melodic part,
@@ -277,8 +278,8 @@ function ctlDo(tg, val, press, release) {
     i = +tg.slice(1) - 1;
   if (k === 'k') {
     if (i < 4) sendKnob(i, val);
-    else if (i === 4) LV_TONES.forEach(t => lvSendCC(t, 91, val, now));
-    else if (i === 5) LV_TONES.forEach(t => lvSendCC(t, 71, val, now));
+    else if (i === 4) toneTracksAll().forEach(t => lvSendCC(t, 91, val, now));
+    else if (i === 5) toneTracksAll().forEach(t => lvSendCC(t, 71, val, now));
     else if (i === 6) {
       LV.vary = Math.round((val / 127) * 25) * 5;
       const s = $('#lvVary');

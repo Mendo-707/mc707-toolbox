@@ -5,6 +5,7 @@ import { $, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
 import { LV, MUG } from './state.js';
+import { tracksFor } from '../core/tracks.js';
 import { lvIsFlash, lvSend, lvTracksFor } from './themes.js';
 import { liveBreak } from './breaks.js';
 import {
@@ -113,7 +114,7 @@ function liveAct(a) {
     return liveEnergy((base ? base.n : LV.energy) + (a === 'en:up' ? 1 : -1));
   }
   if (a.startsWith('sw:')) return liveSwap(a.slice(3));
-  if (a.startsWith('mu:')) return liveMute(MUG[a.slice(3)] || []);
+  if (a.startsWith('mu:')) return liveMute(tracksFor(MUG[a.slice(3)]));
   if (a.startsWith('mt:')) return liveMute([+a.slice(3)]);
   if (a.startsWith('key:')) return liveKeyCue(+a.slice(4));
 }

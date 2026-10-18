@@ -176,6 +176,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `core/song-model.js` | Reading and editing the song's clips: find the clip at a bar, cut a gap into a track, place a clip, the song's length, and clip arithmetic (loop length, 16th-step rounding). |  |
 | `core/state.js` | The song (S) and everything that saves it: a new song, autosave to localStorage, undo and redo, loading and checking saved songs (fixState), plus the shared screen state UI and the editor state ED. | S (the song), UI (song screen state), ED (editor state), PROJ (the open project) |
 | `core/theory.js` | Music theory tables: note names, the drum lanes, keys and scales. |  |
+| `core/tracks.js` | The track setup: what each of the 8 tracks is for. A track's role (kit, hats, perc, bass, chords, pad, lead, pluck or acid) decides whether it is a drum or tone track and which patterns it draws. The default is the classic layout: three drum tracks, then bass, chords, pad, lead and pluck. |  |
 | `core/types.js` | The shapes of the app's main data, as JSDoc types. Nothing imports this file at run time; editors and agents read it, and other files refer to these types in their JSDoc (e.g. @param {Clip} c). |  |
 
 ### library/ (layer: library)
@@ -318,6 +319,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |
 | `ui/setup-wizard.js` | The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio. | SU (the setup wizard) |
 | `ui/start-screen.js` | The start screen: when the app opens (in Song Mode) it offers to load the last session, start a blank song or an empty template with its sections marked, open the song wizard, or go to Live Mode. A tick box turns it off. | localStorage 'mc707-start' ('0' = do not show at start) |
+| `ui/track-setup.js` | Track setup: choose what each of the 8 tracks is for, anywhere from 8 drum tracks to 8 tone tracks. Each track gets a role (kit, hats, perc, bass, chords, pad, lead, pluck or acid); the role sets whether it is a drum or tone track, what the song wizard and Live Mode play on it, and its name. Clips that no longer fit a track's type are removed (with undo). |  |
 | `ui/transport-view.js` | The transport display: position, play state, and moving the playhead in Song Mode, the editor and the wizard. |  |
 
 ### main.js (layer: app)

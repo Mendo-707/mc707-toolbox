@@ -12,6 +12,7 @@ import { closePops } from './controls.js';
 import { SU, closeSetup, openSetup } from './setup-wizard.js';
 import { liveStopCue } from '../live/cues.js';
 import { startOpen } from './start-screen.js';
+import { trackSetupOpen } from './track-setup.js';
 import { liveGenrePick } from '../live/genre-picker.js';
 import { grabOpen } from './grabber.js';
 import { liveCapture } from './live-capture.js';
@@ -128,6 +129,7 @@ function initMenubar() {
       [
         ['Device: MC-707 (8 tracks)', () => setDevice('707'), '', () => DEV === '707'],
         ['Device: MC-101 (4 tracks)', () => setDevice('101'), '', () => DEV === '101'],
+        ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
         ['Your MC-707 clips…', () => clipMapOpen()],
         0,

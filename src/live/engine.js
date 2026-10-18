@@ -7,7 +7,8 @@ import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
-import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
+import { facById, shiftFor } from '../library/index.js';
+import { kitTrack, poolOf, slotOf, toneTracksAll, trackOf, tracksFor, tracksOf } from '../core/tracks.js';
 import { patIndex, subTick } from '../core/song-model.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI, sendMidi } from '../services/midi.js';
@@ -48,7 +49,7 @@ export const lvIds = () =>
     return v ? v.f.id : null;
   });
 /* muted by the energy level, or a tone part while New patterns blends in on the drums */
-export const lvEmute = t => LV_PRI.indexOf(t) >= LV.energy || (!!LV.blend && S.tracks[t].type === 'tone');
+export const lvEmute = t => LV_PRI.indexOf(slotOf(t)) >= LV.energy || (!!LV.blend && S.tracks[t].type === 'tone');
 export const lvTarget = t => (LV.mute[t] || lvEmute(t) ? 0 : 1);
 function lvApplyGain(tick) {
   for (let t = 0; t < 8; t++) {
@@ -78,7 +79,7 @@ export function liveReplace(t, id, tick, fade, entry) {
   const f = facById(id);
   if (!f) return;
   LV.voices[t] = [];
-  const ent = t === 5 ? entry : Math.min(entry, 8);
+  const ent = slotOf(t) === 5 ? entry : Math.min(entry, 8);
   LV.voices[t].push({
     f,
     start: lvAnchorStart(t, f, tick),
@@ -102,10 +103,10 @@ function lvBarSnap(tick) {
     snap = [];
   for (let t = 0; t < 8; t++) {
     let c = null;
-    const rollT = fl && (fl.kind === 'roll' || fl.kind === 'drop') ? (fl.kind === 'roll' ? 0 : lvBT()) : -1;
+    const rollT = fl && (fl.kind === 'roll' || fl.kind === 'drop') ? (fl.kind === 'roll' ? kitTrack() : lvBT()) : -1;
     if (t === rollT) c = { id: null, k: 'roll' };
     else if (fl && !fl.loop && fl.v && fl.v[t]) c = { id: fl.v[t].f.id, k: 'brk' };
-    else if (t === 0 && LV.fill && tick >= LV.fill.start) c = { id: LV.fill.f.id, k: 'fill' };
+    else if (t === trackOf(0) && LV.fill && tick >= LV.fill.start) c = { id: LV.fill.f.id, k: 'fill' };
     else if (t === lvBT() && LV.bov && tick >= LV.bov.start) c = { id: LV.bov.f.id, k: 'bov' };
     else if (t === lvBT() && LV.impact && LV.impact.tick < tick + 32) c = { id: LV.impact.f.id, k: 'imp' };
     else {
@@ -172,7 +173,7 @@ export function liveScene(idx, tick, hard) {
       lvMove({
         id: 'dropthrow',
         tag: 'drop',
-        tracks: [2],
+        tracks: tracksFor([2]),
         cc: 91,
         kind: 'ramp',
         from: 110,
@@ -193,7 +194,11 @@ export function liveScene(idx, tick, hard) {
   LV.cur = idx;
   LV.sceneStart = tick;
   /* the new scene's progression: a part of another progression that is leaving stops at once instead of fading over it */
-  const newProg = [4, 3, 5, 7, 6].map(t => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
+  const newProg =
+    [4, 3, 5, 7, 6]
+      .flatMap(tracksOf)
+      .map(t => sc.cells[t] && lvProg(facById(sc.cells[t].id)))
+      .find(Boolean) || null;
   for (let t = 0; t < 8; t++) {
     const cell = sc.cells[t],
       tone = S.tracks[t].type === 'tone',
@@ -205,7 +210,7 @@ export function liveScene(idx, tick, hard) {
         LV.voices[t].forEach(v => {
           /* pads may linger over the change; a melody that is leaving gets out of the way within a beat or two */
           if (v.env.v1 > 0)
-            v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : t === 5 ? toneFade : Math.min(toneFade, 12));
+            v.env = mkEnv(envAt(v.env, tick), 0, tick, clash ? 4 : slotOf(t) === 5 ? toneFade : Math.min(toneFade, 12));
         });
       else LV.voices[t] = [];
       continue;
@@ -229,7 +234,7 @@ export function liveScene(idx, tick, hard) {
     lvMove({
       id: 'landthrow',
       tag: 'scene',
-      tracks: [3, 4, 5, 6, 7].filter(t => sc.cells[t]),
+      tracks: toneTracksAll().filter(t => sc.cells[t]),
       cc: 91,
       kind: 'ramp',
       from: 96,
@@ -346,13 +351,14 @@ function lvAutoNext() {
 }
 export function lvSwapCue(group, tick) {
   const ids = {};
-  (SWG[group] || []).forEach(t => {
+  tracksFor(SWG[group]).forEach(t => {
     const v = lvTop(t);
     if (!v) return;
     /* only patterns that fit the progression playing on the other tracks (wider pool if the flavour has none) */
     const free = !lvProg(v.f);
     let fit = lvFitIds(t, liveSwapIds(t), v.f.id, free);
-    if (!fit.length) fit = lvFitIds(t, lvPool(lvStyle(), t === 0 && oneKit() ? 'full' : TRACK_POOLS[t]), v.f.id, free);
+    if (!fit.length)
+      fit = lvFitIds(t, lvPool(lvStyle(), t === trackOf(0) && oneKit() ? 'full' : poolOf(t)), v.f.id, free);
     if (!fit.length) return;
     ids[t] = lvRand(fit);
   });
@@ -376,7 +382,7 @@ function liveAutoStep(tick, rel) {
       nx = LV.scenes[idx];
     const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
     LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined });
-    if (!hard && LV.fills && sc.cells[0] && nx.cells[0] && nx.e >= sc.e && LV.fillIds.length) {
+    if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
       const f = facById(lvRand(LV.fillIds));
       if (f) LV.cues.push({ type: 'fill', tick: fire - 32, f, auto: true });
     }
@@ -384,7 +390,7 @@ function liveAutoStep(tick, rel) {
     LV.ver++;
   } else if (rel > 0 && rel % loop === 0 && rel < total - 64 && Math.random() < (LV.chaos / 100) * 0.6) {
     if (Math.random() < 0.3 && lvAutoFlash(tick + loop)) LV.ver++;
-    else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[0]) {
+    else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
       const f = facById(lvRand(LV.fillIds));
       if (f) {
         LV.cues.push({ type: 'fill', tick: tick + 32, f });
@@ -402,9 +408,11 @@ export function lvModeNote(n) {
 }
 /* Repeat variation: when a pattern comes round again it changes a little, more often the higher Variation is. */
 function lvVarOf(v, t, k, L) {
-  const X = lvExtreme(),
-    rolls = (t === 1 || (t === 0 && !LV.voices[1].some(x => x.env.v1 > 0))) && lvTrapRolls();
-  if (LV.lock || k < 1 || t === 5 || t === 2) return null;
+  const s = slotOf(t),
+    th = trackOf(1),
+    X = lvExtreme(),
+    rolls = (s === 1 || (s === 0 && !(th >= 0 && LV.voices[th].some(x => x.env.v1 > 0)))) && lvTrapRolls();
+  if (LV.lock || k < 1 || s === 5 || s === 2) return null;
   const off = LV.vary <= 0 || (!X && L < 64 && k % 2 === 0);
   if (off && !rolls) return null;
   if (v._vk === k) return v._vt;
@@ -415,11 +423,11 @@ function lvVarOf(v, t, k, L) {
   else if (X) ty = (hs % 1000) / 1000 < 0.6 + (LV.vary - 100) / 62 ? lvXType(v, t, hs) : null;
   else if ((hs % 1000) / 1000 < (LV.vary / 100) * 0.8) {
     const o =
-      t === 0
+      s === 0
         ? ['ghost', 'kickx', 'open']
-        : t === 1
+        : s === 1
           ? ['open', 'thin']
-          : t === 3
+          : s === 3
             ? ['oct', 'run', 'thin', 'echo']
             : ['oct', 'run', 'echo', 'thin', 'up'];
     ty = o[(hs >>> 11) % o.length];
@@ -440,10 +448,10 @@ function lvVarExtra(t, v, vt, local, L, nt, td, g) {
       run = [];
     for (let n = tgt - 1; run.length < 4 && n > tgt - 15; n--) if (ins(n)) run.unshift(n);
     run.forEach((nn, i) => emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt + i * 2 * td, 1.6 * td));
-  } else if (vt === 'ghost' && t === 0 && local >= L - 32 && [6, 14, 22, 30].includes(local - (L - 32)))
-    emitNote(0, 2, clamp(44 * g, 1, 127), nt, td);
+  } else if (vt === 'ghost' && slotOf(t) === 0 && local >= L - 32 && [6, 14, 22, 30].includes(local - (L - 32)))
+    emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
   else if (vt === 'open' && local === L - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
-  else if (vt === 'kickx' && t === 0 && local === L - 6) emitNote(0, 0, clamp(104 * g, 1, 127), nt, td);
+  else if (vt === 'kickx' && slotOf(t) === 0 && local === L - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
 }
 export function liveTick(tick, nt, td) {
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
@@ -466,7 +474,8 @@ export function liveTick(tick, nt, td) {
   }
   if (LV.crash) {
     LV.crash = false;
-    if (!S.tracks[0].mute) emitNote(0, 9, 110, nt, 0.5);
+    const tk = trackOf(0);
+    if (tk >= 0 && !S.tracks[tk].mute) emitNote(tk, 9, 110, nt, 0.5);
   }
   const rel = tick - LV.sceneStart;
   if (rel % 32 === 0) {
@@ -503,7 +512,7 @@ export function liveTick(tick, nt, td) {
   if (LV.impact && tick >= LV.impact.tick) {
     const im = LV.impact;
     LV.impact = null;
-    if (tick === im.tick && !S.tracks[lvBT()].mute) {
+    if (tick === im.tick && lvBT() >= 0 && !S.tracks[lvBT()].mute) {
       const evs = patIndex(im.f).get(0);
       if (evs) for (const n of evs) emitNote(lvBT(), n.n, n.v, nt, 0.4);
       LV.pulse[lvBT()] = { time: nt, v: 1 };
@@ -527,7 +536,7 @@ export function liveTick(tick, nt, td) {
     const tg = envAt(LV.tg[t], tick);
     if (tg <= 0.01) continue;
     const tone = trk.type === 'tone';
-    if (LV.thin && tick >= LV.thin && (t === 0 || t === 3)) continue;
+    if (LV.thin && tick >= LV.thin && (slotOf(t) === 0 || slotOf(t) === 3)) continue;
     if (!fl && t === lvBT() && LV.bov && tick >= LV.bov.start) {
       const f = LV.bov.f,
         L = f.bars * 32,
@@ -538,7 +547,7 @@ export function liveTick(tick, nt, td) {
       }
       continue;
     }
-    if (!fl && t === 0 && LV.fill && tick >= LV.fill.start) {
+    if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
       const f = LV.fill.f,
         evs = patIndex(f).get((ft - LV.fill.start + f.bars * 32 * 8) % (f.bars * 32));
       if (evs) {
@@ -580,10 +589,10 @@ export function liveTick(tick, nt, td) {
         if (vt === 'thin' && local % 8 !== 0 && (local >> 1) % 3 === 1) continue;
         if (vt && lvXSkip(v, vt, local, L, n)) continue;
         let nn = tone ? (conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0)) : n.n;
-        if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && t >= 6)))
-          nn = t === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
+        if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && slotOf(t) >= 6)))
+          nn = slotOf(t) === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
         emitNote(t, tone ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
-        if (t === 3) v._last = nn;
+        if (slotOf(t) === 3) v._last = nn;
         if (vt === 'echo' && last && tone)
           emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
       }

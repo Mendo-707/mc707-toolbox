@@ -15,17 +15,19 @@ import { STYLES, trackLabel } from '../library/styles.js';
 import { WIZ } from './wizard-ui.js';
 import { defaultWiz, wizPlan } from './wizard-styles.js';
 import { hooks } from '../core/hooks.js';
+import { buildTrack, kitTrack } from '../core/tracks.js';
 
 /* What plays on a track at a bar of a wizard section: fills on Drums 1, builds and impacts on Drums 3. */
 export function wizCellAt(sec, t, rel) {
-  const c = sec.cells[t];
-  if (t === 2) {
+  const c = sec.cells[t],
+    kT = kitTrack();
+  if (t === buildTrack() && DEV !== '101') {
     if (sec.impact && rel === 0) return { id: sec.impact, off: 0 };
     if (sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
   }
   if (!c || !c.id) return null;
-  if (t === 0 && DEV === '101' && sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
-  if (t === 0 && sec.fills.length) {
+  if (t === kT && DEV === '101' && sec.build && rel >= sec.build.bar) return { id: sec.build.id, off: sec.build.bar };
+  if (t === kT && sec.fills.length) {
     const fl = sec.fills.find(x => x.bar === rel);
     if (fl) return { id: fl.id, off: rel };
   }
@@ -88,43 +90,45 @@ export function wizApply() {
     const pid = instShift(f, shiftFor(f, w.key), w.key, st.scale);
     S.clips.push({ id: 'c' + S.nextId++, t, start: base + start, len, off: 0, pat: pid });
   };
+  const kT = kitTrack(),
+    bT = buildTrack();
   plan.sections.forEach(sec => {
     S.markers.push({ bar: base + sec.start, name: sec.name.slice(0, 20) });
     if (DEV === '101' && (sec.build || sec.impact)) {
       /* MC-101: one drum track, so the build takes over the kit for its last bars */
-      const c = sec.cells[0],
+      const c = sec.cells[kT],
         end = sec.build ? sec.build.bar : sec.bars;
       if (c && c.id) {
         let pos = 0;
         for (const fl of sec.fills.filter(x => x.bar < end)) {
-          if (fl.bar > pos) add(0, sec.start + pos, fl.bar - pos, c.id);
-          add(0, sec.start + fl.bar, 1, fl.id);
+          if (fl.bar > pos) add(kT, sec.start + pos, fl.bar - pos, c.id);
+          add(kT, sec.start + fl.bar, 1, fl.id);
           pos = fl.bar + 1;
         }
-        if (pos < end) add(0, sec.start + pos, end - pos, c.id);
+        if (pos < end) add(kT, sec.start + pos, end - pos, c.id);
       }
-      if (sec.build) add(0, sec.start + sec.build.bar, sec.build.len, sec.build.id);
-    } else if (sec.build || sec.impact) {
-      const c = sec.cells[2],
+      if (sec.build) add(kT, sec.start + sec.build.bar, sec.build.len, sec.build.id);
+    } else if (bT >= 0 && (sec.build || sec.impact)) {
+      const c = sec.cells[bT],
         a = sec.impact ? 1 : 0,
         b = sec.build ? sec.build.bar : sec.bars;
-      if (sec.impact) add(2, sec.start, 1, sec.impact);
-      if (c && c.id && b > a) add(2, sec.start + a, b - a, c.id);
-      if (sec.build) add(2, sec.start + sec.build.bar, sec.build.len, sec.build.id);
+      if (sec.impact) add(bT, sec.start, 1, sec.impact);
+      if (c && c.id && b > a) add(bT, sec.start + a, b - a, c.id);
+      if (sec.build) add(bT, sec.start + sec.build.bar, sec.build.len, sec.build.id);
     }
     for (const t in sec.cells) {
       const c = sec.cells[t];
       if (!c.id) continue;
-      if (+t === 2 && (sec.build || sec.impact)) continue;
-      if (+t === 0 && DEV === '101' && (sec.build || sec.impact)) continue;
-      if (+t === 0 && sec.fills.length) {
+      if (+t === bT && DEV !== '101' && (sec.build || sec.impact)) continue;
+      if (+t === kT && DEV === '101' && (sec.build || sec.impact)) continue;
+      if (+t === kT && sec.fills.length) {
         let pos = 0;
         for (const fl of sec.fills) {
-          if (fl.bar > pos) add(0, sec.start + pos, fl.bar - pos, c.id);
-          add(0, sec.start + fl.bar, 1, fl.id);
+          if (fl.bar > pos) add(kT, sec.start + pos, fl.bar - pos, c.id);
+          add(kT, sec.start + fl.bar, 1, fl.id);
           pos = fl.bar + 1;
         }
-        if (pos < sec.bars) add(0, sec.start + pos, sec.bars - pos, c.id);
+        if (pos < sec.bars) add(kT, sec.start + pos, sec.bars - pos, c.id);
       } else add(+t, sec.start, sec.bars, c.id);
     }
   });

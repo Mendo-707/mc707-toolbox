@@ -3,7 +3,8 @@
 // Reads: TR, WIZ.
 import { el } from '../core/dom.js';
 import { TRACK_COLORS, devOn, oneKit } from '../core/device.js';
-import { TRACK_POOLS, facById, shiftFor } from '../library/index.js';
+import { facById, shiftFor } from '../library/index.js';
+import { poolOf, slotOf, trackOf } from '../core/tracks.js';
 import { TR, stopPlay } from '../services/transport.js';
 import { GEN_TIPS, KIND_TIPS, trackLabel } from '../library/styles.js';
 import { WIZ, renderWiz } from './wizard-ui.js';
@@ -108,8 +109,8 @@ export function wizStep4(b) {
     g.append(el('div', { class: 'tlc en' }, el('i', { style: 'height:' + Math.round((n / 8) * 100) + '%' })));
   });
   for (let t = 0; t < 8; t++) {
-    if (!devOn(t) || (oneKit() && (t === 1 || t === 2))) continue;
-    const pool = t === 0 && oneKit() ? 'full' : TRACK_POOLS[t];
+    if (!devOn(t) || (oneKit() && (slotOf(t) === 1 || slotOf(t) === 2))) continue;
+    const pool = t === trackOf(0) && oneKit() ? 'full' : poolOf(t);
     g.append(
       el(
         'div',
@@ -122,7 +123,7 @@ export function wizStep4(b) {
             title: 'Pick different patterns for this whole row',
             onclick: () => {
               w.bump[pool] = (w.bump[pool] || 0) + 1;
-              if (t === 0) w.bump.fill = (w.bump.fill || 0) + 1;
+              if (t === trackOf(0)) w.bump.fill = (w.bump.fill || 0) + 1;
               for (const k in w.ov) if (k.endsWith(':' + t)) delete w.ov[k];
               re();
             }

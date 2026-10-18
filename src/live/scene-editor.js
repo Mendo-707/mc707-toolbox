@@ -4,7 +4,8 @@
 import { $, clamp, el } from '../core/dom.js';
 import { TRACK_COLORS, devNm, devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
-import { TRACK_POOLS, facById } from '../library/index.js';
+import { facById } from '../library/index.js';
+import { poolOf, slotOf, trackOf } from '../core/tracks.js';
 import { AU } from '../services/synth.js';
 import { TR } from '../services/transport.js';
 import { CT_POOL, clipFor, cmFix, ctInfo, patType } from '../services/clip-switch.js';
@@ -153,7 +154,7 @@ export function liveRenderSceneEd() {
   const parts = el('div', { class: 'lvScParts' });
   S.tracks.forEach((t, ti) => {
     const c = sc.cells[ti],
-      pool = isF ? FLPOOL[ti] : ti === 0 && oneKit() ? 'full' : TRACK_POOLS[ti];
+      pool = isF ? FLPOOL[slotOf(ti)] : ti === trackOf(0) && oneKit() ? 'full' : poolOf(ti);
     const s = el('select', {
       'aria-label': t.name + ' in ' + sc.name,
       style: '--c:' + TRACK_COLORS[ti],

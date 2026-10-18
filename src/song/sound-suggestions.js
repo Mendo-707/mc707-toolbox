@@ -4,6 +4,7 @@
 import { $, el } from '../core/dom.js';
 import { DEV, TRACK_COLORS, oneKit } from '../core/device.js';
 import { trackLabel } from '../library/styles.js';
+import { DEF_ROLES, poolOf, roleInfo, roleOf, slotOf } from '../core/tracks.js';
 import { openWiz } from './wizard-ui.js';
 import { closeWiz } from './wizard-plan.js';
 import { lvGenreOf } from '../library/pools.js';
@@ -258,6 +259,27 @@ function soundRecs(st) {
   ['drums', 'bass', 'chords', 'pad', 'lead', 'pluck'].forEach(k => (o[k] = s[k] || g[k]));
   return o;
 }
+/* rows for a custom track setup: one for the drum tracks, then one per tone track by its job */
+function customRows(st, r, row) {
+  const drums = [0, 1, 2, 3, 4, 5, 6, 7].filter(t => roleInfo(roleOf(t), t)[2] === 'drum'),
+    KEY = ['drums', 'drums', 'drums', 'bass', 'chords', 'pad', 'lead', 'pluck'];
+  const out = drums.length
+    ? [
+        row(
+          'Drum kits (track' + (drums.length > 1 ? 's ' : ' ') + drums.map(t => t + 1).join(', ') + ')',
+          r.drums,
+          TRACK_COLORS[drums[0]]
+        )
+      ]
+    : [];
+  [0, 1, 2, 3, 4, 5, 6, 7]
+    .filter(t => !drums.includes(t))
+    .forEach(t => {
+      const k = poolOf(t) === 'acid' ? 'bass' : KEY[slotOf(t)];
+      out.push(row(trackLabel(st, t) + ' (track ' + (t + 1) + ')', r[k].join(' · '), TRACK_COLORS[t]));
+    });
+  return out;
+}
 export function soundCard(st) {
   const r = soundRecs(st),
     is101 = DEV === '101';
@@ -282,20 +304,22 @@ export function soundCard(st) {
           row(trackLabel(st, 4) + ' (track 3)', r.chords.join(' · '), TRACK_COLORS[4]),
           row(trackLabel(st, 6) + ' (track 4)', r.lead.join(' · '), TRACK_COLORS[6])
         )
-      : el(
-          'ul',
-          {},
-          row(
-            oneKit() ? 'Drum kit (track 1, full kit) and Drums 3 (builds)' : 'Drum kits (tracks 1–3)',
-            r.drums,
-            TRACK_COLORS[0]
-          ),
-          row(trackLabel(st, 3), r.bass.join(' · '), TRACK_COLORS[3]),
-          row(trackLabel(st, 4), r.chords.join(' · '), TRACK_COLORS[4]),
-          row(trackLabel(st, 5), r.pad.join(' · '), TRACK_COLORS[5]),
-          row(trackLabel(st, 6), r.lead.join(' · '), TRACK_COLORS[6]),
-          row(trackLabel(st, 7), r.pluck.join(' · '), TRACK_COLORS[7])
-        )
+      : DEF_ROLES.some((r, t) => roleOf(t) !== r)
+        ? el('ul', {}, ...customRows(st, r, row))
+        : el(
+            'ul',
+            {},
+            row(
+              oneKit() ? 'Drum kit (track 1, full kit) and Drums 3 (builds)' : 'Drum kits (tracks 1–3)',
+              r.drums,
+              TRACK_COLORS[0]
+            ),
+            row(trackLabel(st, 3), r.bass.join(' · '), TRACK_COLORS[3]),
+            row(trackLabel(st, 4), r.chords.join(' · '), TRACK_COLORS[4]),
+            row(trackLabel(st, 5), r.pad.join(' · '), TRACK_COLORS[5]),
+            row(trackLabel(st, 6), r.lead.join(' · '), TRACK_COLORS[6]),
+            row(trackLabel(st, 7), r.pluck.join(' · '), TRACK_COLORS[7])
+          )
   );
 }
 export function initWizard() {

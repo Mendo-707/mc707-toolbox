@@ -16,6 +16,7 @@ import { lvTrapRolls } from './extreme.js';
 import { lvFilterAway, lvMove } from './moves.js';
 import { liveReplace, liveScene, liveStart, liveStop, lvHistMark, lvLog, lvTop } from './engine.js';
 import { lvBoundary, lvOn, lvSortCues } from './cues.js';
+import { bySlot, slotOf, toneTracksAll, tracksOf } from '../core/tracks.js';
 
 const HATS = [1, 4, 5, 10, 11],
   SNARE = [2, 3];
@@ -114,10 +115,12 @@ function made(srcId, kind) {
 }
 
 /* ---- recipes: which parts play in each 2-bar loop ---- */
-const has = (cells, t) => !!cells[t];
-/** A loop: {track: [what, kind]} → {track: id}. */
-function loop(cells, spec) {
-  const ids = {};
+/* recipes name the default layout's tracks (slots); has() and loop() find the tracks doing those jobs */
+const has = (cells, slot) => tracksOf(slot).some(t => !!cells[t]);
+/** A loop: {slot: kind} → {track: id}. */
+function loop(cells, spec0) {
+  const ids = {},
+    spec = bySlot(spec0);
   for (const t in spec) {
     const c = cells[t];
     if (!c) continue;
@@ -199,7 +202,7 @@ export function liveJamStart(now) {
   lvMove({
     id: 'jamin',
     tag: 'jam',
-    tracks: [3, 4, 5, 6, 7],
+    tracks: toneTracksAll(),
     cc: 80,
     kind: 'ramp',
     from: lvFilterAway(0.75),
@@ -265,14 +268,14 @@ export function lvJamStep(tick) {
       continue;
     }
     if (top && top.f.id === id) continue;
-    liveReplace(t, id, tick, 0, S.tracks[t].type === 'tone' && t === 5 ? 16 : 0);
+    liveReplace(t, id, tick, 0, S.tracks[t].type === 'tone' && slotOf(t) === 5 ? 16 : 0);
   }
   if (j.kind === 'out' && j.i === j.loops.length - 1 && !l.last) {
     /* the last outro loop washes out */
     lvMove({
       id: 'jamwash',
       tag: 'jam',
-      tracks: [3, 4, 5, 6, 7],
+      tracks: toneTracksAll(),
       cc: 91,
       kind: 'ramp',
       from: 'rest',

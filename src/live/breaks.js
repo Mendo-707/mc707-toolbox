@@ -8,10 +8,11 @@ import { facById } from '../library/index.js';
 import { TR, emitNote } from '../services/transport.js';
 import { FLASH_RH } from '../library/flash.js';
 import { LV, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
-import { LV_TONES, lvMove } from './moves.js';
+import { lvMove } from './moves.js';
 import { lvModeFam, lvPool } from '../library/pools.js';
 import { lvLog } from './engine.js';
 import { lvOn, lvSortCues } from './cues.js';
+import { kitTrack, toneTracksAll, trackOf, tracksFor } from '../core/tracks.js';
 
 /* ---- Flash: a quick 1-2 bar break. Every part hits the same rhythm with silence in between,
    a roll or run pulls you back, and the loop that was playing slams back in on the downbeat with an impact. ---- */
@@ -24,7 +25,9 @@ export function lvFlashIds(st, rid, mode) {
     [3, 'fbass'],
     [4, 'fchords'],
     [6, 'flead']
-  ].forEach(([t, p]) => {
+  ].forEach(([sl, p]) => {
+    const t = trackOf(sl);
+    if (t < 0) return;
     const ids = lvPool(st, p).filter(id => {
       const f = facById(id);
       return f && f.flash === rid && (f.type === 'drum' || f.name.endsWith(want));
@@ -111,7 +114,7 @@ export function lvBreakStart(b, tick) {
   b.start = tick;
   b.end = tick + b.len;
   b.loop = b.kind !== 'hits';
-  b.keep = b.kind === 'stutter' ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === 'drop' ? [4, 5, 6, 7] : [];
+  b.keep = b.kind === 'stutter' ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === 'drop' ? tracksFor([4, 5, 6, 7]) : [];
   if (b.kind === 'hits')
     for (const t in b.v) {
       const P = b.v[t].f.bars * 32;
@@ -126,7 +129,7 @@ export function lvBreakStart(b, tick) {
       lvMove({
         id: 'brkfx',
         tag: 'flash',
-        tracks: [4, 5, 6, 7],
+        tracks: tracksFor([4, 5, 6, 7]),
         cc: 91,
         kind: 'ramp',
         from: 'rest',
@@ -139,7 +142,7 @@ export function lvBreakStart(b, tick) {
       lvMove({
         id: 'brkfx',
         tag: 'flash',
-        tracks: LV_TONES,
+        tracks: toneTracksAll(),
         cc: 91,
         kind: 'ramp',
         from: 118,
@@ -165,7 +168,7 @@ export function lvBreakStart(b, tick) {
       lvMove({
         id: 'brkfx',
         tag: 'flash',
-        tracks: [4, 5, 6, 7],
+        tracks: tracksFor([4, 5, 6, 7]),
         cc: 91,
         kind: 'ramp',
         from: 'rest',
@@ -179,14 +182,15 @@ export function lvBreakStart(b, tick) {
 }
 /* Snare roll for the Roll and Drop-out breaks: 8ths, then 16ths, then 32nds, getting louder, with a breath of silence before the loop slams back. */
 export function lvRollTick(b, tick, nt, td) {
-  const t = b.kind === 'roll' ? 0 : lvBT();
-  if (S.tracks[t].mute || tick >= b.end - 2) return;
+  const t = b.kind === 'roll' ? kitTrack() : lvBT(),
+    k = kitTrack();
+  if (t < 0 || S.tracks[t].mute || tick >= b.end - 2) return;
   const rel = tick - b.start,
     u = rel / b.len,
     step = b.len >= 32 ? (u < 0.5 ? 4 : u < 0.75 ? 2 : 1) : u < 0.5 ? 2 : 1;
   if (b.kind === 'roll' && rel === 0) {
-    emitNote(0, 0, 120, nt, td);
-    emitNote(0, 9, 110, nt, td * 4);
+    emitNote(k, 0, 120, nt, td);
+    emitNote(k, 9, 110, nt, td * 4);
   }
   if (rel % step === 0) {
     emitNote(t, 2, clamp(Math.round(62 + 60 * u), 1, 127), nt, td);

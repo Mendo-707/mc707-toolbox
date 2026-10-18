@@ -5,6 +5,8 @@
 import { clamp } from '../core/dom.js';
 import { DEV } from '../core/device.js';
 import { STYLES } from '../library/styles.js';
+import { S } from '../core/state.js';
+import { trackOf } from '../core/tracks.js';
 
 /* ---------- Live Mode ---------- */
 const LVK = 'mc707-live';
@@ -255,7 +257,14 @@ export function saveLive() {
     localStorage.setItem(LVK, JSON.stringify(o));
   } catch (e) {}
 }
-export const lvBT = () => (DEV === '101' ? 0 : 2);
+/* the build track: Drums 3 (perc) with the default setup, else the kit track, else any drum track */
+export const lvBT = () => {
+  if (DEV === '101') return 0;
+  const p = trackOf(2);
+  if (p >= 0) return p;
+  const k = trackOf(0);
+  return k >= 0 ? k : S.tracks.findIndex(x => x.type === 'drum');
+};
 export const SWG = { drums: [0, 1], perc: [2], bass: [3], chords: [4, 5], pad: [5], lead: [6, 7] };
 export const MUG = { drums: [0, 1, 2], bass: [3], chords: [4, 5], lead: [6, 7] };
 export const LV_LABEL = {

@@ -8,6 +8,7 @@ import { $, toast } from './dom.js';
 import { LANES, SCALES } from './theory.js';
 import { MC_PARAMS } from './mc707-params.js';
 import { hooks } from './hooks.js';
+import { DEF_ROLES, ROLES, roleInfo } from './tracks.js';
 
 const DEFAULT_TRACKS = [
   { name: 'Drums 1', type: 'drum' },
@@ -251,9 +252,12 @@ export function fixState(s) {
       : d.drumMap;
   s.tracks = d.tracks.map((dt, i) => {
     const t = (s.tracks && s.tracks[i]) || {};
+    /* the track setup: a role other than the default is kept, and sets the track's type */
+    const role = ROLES.some(r => r[0] === t.role) && t.role !== DEF_ROLES[i] ? t.role : null;
     return {
       name: String(t.name || dt.name).slice(0, 16),
-      type: dt.type,
+      type: role ? roleInfo(role)[2] : dt.type,
+      ...(role ? { role } : {}),
       ch: Math.round(num(t.ch, 1, 16, i + 1)),
       mute: !!t.mute,
       solo: !!t.solo,

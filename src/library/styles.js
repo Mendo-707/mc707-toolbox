@@ -6,6 +6,7 @@ import './index.js';
 import { NOTE_NAMES } from '../core/theory.js';
 import { FAC } from './factory.js';
 import { oneKit } from '../core/device.js';
+import { poolOf, slotOf } from '../core/tracks.js';
 
 export const DNB_KINDS = {
   intro: { name: 'Intro', e: 2, rows: ['intro', 'hats', null, null, null, 'pad', null, null] },
@@ -511,8 +512,16 @@ for (const f of FAC) {
     if (st) (st.more[f.pool] = st.more[f.pool] || []).push(f.id);
   }
 }
-export const trackLabel = (st, t) =>
-  [oneKit() ? 'Drums' : 'Kit', 'Hats', 'Perc', st.bassName || 'Bass', 'Chords', 'Pad', 'Lead', 'Pluck'][t];
+const baseLabel = (st, t) =>
+  poolOf(t) === 'acid'
+    ? 'Acid'
+    : [oneKit() ? 'Drums' : 'Kit', 'Hats', 'Perc', st.bassName || 'Bass', 'Chords', 'Pad', 'Lead', 'Pluck'][slotOf(t)];
+/** A track's name for a style; numbered when the track setup gives several tracks the same job. */
+export const trackLabel = (st, t) => {
+  const b = baseLabel(st, t),
+    same = [0, 1, 2, 3, 4, 5, 6, 7].filter(i => baseLabel(st, i) === b);
+  return b + (same.length > 1 ? ' ' + (same.indexOf(t) + 1) : '');
+};
 
 export const FAMLABEL = { dnb: 'Drum and bass', hh: 'Hip hop', edm: 'Dance and club', song: 'Grooves and songs' };
 export const NK = (n, sc) => NOTE_NAMES[n] + ((sc || 'minor') === 'minor' ? 'm' : '');

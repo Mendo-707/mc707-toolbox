@@ -4,7 +4,8 @@
 import { $, toast } from '../core/dom.js';
 import { DEV, DEVS, devNm, devOn } from '../core/device.js';
 import { S } from '../core/state.js';
-import { TRACK_POOLS, facById } from '../library/index.js';
+import { facById } from '../library/index.js';
+import { poolOf, slotOf, trackOf } from '../core/tracks.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { CLIPPIN, PCLAST, sendClip } from '../services/clip-switch.js';
 import { cmPickItems } from '../clips/clip-map.js';
@@ -29,7 +30,12 @@ export function lvTrackMenu(t) {
     sc = LV.scenes[LV.cur],
     cell = sc && sc.cells[t];
   const cur = v ? v.f.id : cell ? cell.id : null;
-  const ref = S.tracks[t].type === 'tone' ? (on ? lvTop(t === 4 ? 3 : 4) : null) : null,
+  const ref =
+      S.tracks[t].type === 'tone'
+        ? on && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0
+          ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4))
+          : null
+        : null,
     prog = ref && lvProg(ref.f);
   let ids = liveSwapIds(t).filter(id => id !== cur);
   if (prog)
@@ -52,7 +58,7 @@ export function lvTrackMenu(t) {
     } else if (sc) {
       sc.cells[t] = {
         id,
-        pool: (cell && cell.pool) || TRACK_POOLS[t],
+        pool: (cell && cell.pool) || poolOf(t),
         ...(cell && cell.play ? { play: cell.play } : {})
       };
       lvSaveScenes();
@@ -257,7 +263,7 @@ export function lvSceneMenu(i) {
         ids.forEach((id, t) => {
           if (id && devOn(t) && !lvEffMute(t)) {
             const f = facById(id);
-            cells[t] = { id, pool: (f && f.pool) || TRACK_POOLS[t] };
+            cells[t] = { id, pool: (f && f.pool) || poolOf(t) };
           }
         });
         LV.cur = keep;

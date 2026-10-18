@@ -10,6 +10,7 @@ import { hashStr, mulberry } from '../core/random.js';
 import { DNB_KINDS, HH_KINDS, KIND_TIPS, STRUCT, STYLES } from '../library/styles.js';
 import { WIZ } from './wizard-ui.js';
 import { lvFlavor, lvPool, lvProg } from '../library/pools.js';
+import { kitTrack, poolOf, slotOf, trackOf, tracksFor, tracksOf } from '../core/tracks.js';
 
 export const kindsOf = fam => (fam === 'dnb' || fam === 'edm' ? DNB_KINDS : HH_KINDS);
 STRUCT.edm = STRUCT.dnb;
@@ -618,7 +619,14 @@ export function wizPlan(w) {
     secs = out;
   }
   const picks = {};
-  for (const pool of new Set([...Object.keys(st.pools), 'fill', 'build', 'impact', ...(oneKit() ? ['full'] : [])])) {
+  for (const pool of new Set([
+    ...Object.keys(st.pools),
+    'fill',
+    'build',
+    'impact',
+    'acid',
+    ...(oneKit() ? ['full'] : [])
+  ])) {
     const arr = lvFlavor(lvPool(st, pool), w.flavor || 'mixed').slice();
     const r = mulberry(hashStr(st.id + pool) ^ w.seed ^ ((w.bump[pool] || 0) * 7919));
     for (let i = arr.length - 1; i > 0; i--) {
@@ -644,12 +652,15 @@ export function wizPlan(w) {
     const K = kinds[sec.kind];
     const cells = {};
     for (let t = 0; t < 8; t++) {
-      const spec = K.rows[t];
+      /* rows name the default layout's tracks: each track takes its job's row (an acid track plays acid lines) */
+      const sl = slotOf(t),
+        row = K.rows[sl],
+        spec = row && poolOf(t) === 'acid' ? row.replace(/^[a-z]+/, 'acid') : row;
       if (!spec || !w.layers[t]) continue;
-      if (w.complexity === 1 && (t === 2 || t === 7)) continue;
+      if (w.complexity === 1 && (sl === 2 || sl === 7)) continue;
       const pk = pickFrom(spec, occ[sec.kind]);
       if (!pk.id) continue;
-      if (t === 4 && K.rows[3] && picks.bass) {
+      if (sl === 4 && K.rows[3] && picks.bass) {
         const bk = new Set(
           picks.bass
             .map(facById)
@@ -671,23 +682,21 @@ export function wizPlan(w) {
     }
     if (oneKit()) {
       const fk = picks.full && picks.full.length ? picks.full[(occ[sec.kind] - 1 + si) % picks.full.length] : null,
-        ov0 = w.ov[si + ':0'];
-      if (cells[0] && fk) {
-        cells[0].pool = 'full';
-        cells[0].auto = fk;
-        if (ov0 === undefined) cells[0].id = fk;
+        k0 = trackOf(0),
+        ov0 = w.ov[si + ':' + k0];
+      if (cells[k0] && fk) {
+        cells[k0].pool = 'full';
+        cells[k0].auto = fk;
+        if (ov0 === undefined) cells[k0].id = fk;
       }
-      delete cells[1];
-      delete cells[2];
+      tracksFor([1, 2]).forEach(t => delete cells[t]);
     }
-    if (DEV === '101') {
-      delete cells[5];
-      delete cells[7];
-    }
-    const fch = cells[4] && cells[4].id && facById(cells[4].id),
+    if (DEV === '101') tracksFor([5, 7]).forEach(t => delete cells[t]);
+    const c4 = cells[trackOf(4)],
+      fch = c4 && c4.id && facById(c4.id),
       prog = lvProg(fch);
     if (prog)
-      [3, 5, 7].forEach(t => {
+      [3, 5, 7].flatMap(tracksOf).forEach(t => {
         const c = cells[t];
         if (!c || !c.id || w.ov[si + ':' + t] !== undefined) return;
         const f = facById(c.id);
@@ -717,7 +726,7 @@ export function wizPlan(w) {
   const fe = w.complexity >= 3 ? Math.min(w.fillEvery || 8, 4) : w.fillEvery || 8;
   sections.forEach((sec, i) => {
     const next = sections[i + 1];
-    const c0 = sec.cells[0];
+    const c0 = sec.cells[kitTrack()];
     if (!w.fills || !c0 || !c0.id || (c0.pool !== 'kit' && c0.pool !== 'full') || !picks.fill || !picks.fill.length)
       return;
     const set = new Set();

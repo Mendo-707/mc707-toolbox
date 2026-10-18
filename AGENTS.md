@@ -91,6 +91,11 @@ To find code, read the module map in `docs/ARCHITECTURE.md`, or search the heade
   generator, so a new random call changes the Live MIDI baseline even if nothing else changed.
 - **Tracks.** There are always 8 in `S.tracks`. The MC-101 uses 4 of them; check `devOn(t)`
   before sending to a track.
+- **Track setup.** Don't assume tracks 0-2 are drums and 3-7 are bass…pluck. A track's job comes
+  from its role (`core/tracks.js`): use `slotOf(t)` for its job, `trackOf(slot)`/`tracksOf(slot)`
+  for the track(s) doing a job (they can be -1 or empty), `poolOf(t)` for its pattern pool and
+  `S.tracks[t].type` for drum or tone. The role is saved as an optional `role` field on a track,
+  left out for the default layout, so old saves and the baselines are unchanged.
 - **Drum tracks send drum lanes, not notes.** A drum note's `n` is a lane 0-11, mapped to MIDI
   through `S.drumMap`.
 - **The built file must work from `file://`.** It runs double-clicked from a folder and inside the

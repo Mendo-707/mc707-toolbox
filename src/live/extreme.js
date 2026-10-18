@@ -7,6 +7,7 @@ import { clamp } from '../core/dom.js';
 import { ROLL, rollNotes } from '../core/rolls.js';
 import { emitNote } from '../services/transport.js';
 import { LV, lvStyle } from './state.js';
+import { slotOf } from '../core/tracks.js';
 
 /** True when Variation is in its Extreme range. */
 export const lvExtreme = () => LV.vary > 100;
@@ -39,14 +40,15 @@ export function lvTrapRoll(v, t, hs) {
  * @returns {string|null}
  */
 export function lvXType(v, t, hs) {
-  const o =
-    t === 0
-      ? ['sroll', 'kdrop', 'ghost', 'kickx', 'open', 'sroll']
-      : t === 1
-        ? ['open', 'thin']
-        : t === 3
-          ? ['slide', 'slide', 'oct', 'run']
-          : ['oct', 'run', 'echo', 'up', 'thin'];
+  const s = slotOf(t),
+    o =
+      s === 0
+        ? ['sroll', 'kdrop', 'ghost', 'kickx', 'open', 'sroll']
+        : s === 1
+          ? ['open', 'thin']
+          : s === 3
+            ? ['slide', 'slide', 'oct', 'run']
+            : ['oct', 'run', 'echo', 'up', 'thin'];
   const ty = o[(hs >>> 11) % o.length];
   if (ty === 'sroll') plan(v, hs, lvTrapRolls() ? ['t16', 't16', '32', '64', 's24'] : ['16', '32', '32', 'h32']);
   return ty;

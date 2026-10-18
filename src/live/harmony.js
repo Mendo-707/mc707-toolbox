@@ -7,6 +7,7 @@ import { S } from '../core/state.js';
 import { facById } from '../library/index.js';
 import { lvProg } from '../library/pools.js';
 import { LV } from './state.js';
+import { tracksFor } from '../core/tracks.js';
 
 /* which tone tracks to ask first: chords, then bass, pad, pluck, lead */
 const ORDER = [4, 3, 5, 7, 6];
@@ -66,4 +67,4 @@ export function lvAnchorStart(t, f, tick) {
   return tick;
 }
 /** How many melodic parts (chords, pad, lead, pluck) are playing now. */
-export const lvMelodicCount = () => [4, 5, 6, 7].filter(t => live(t)).length;
+export const lvMelodicCount = () => tracksFor([4, 5, 6, 7]).filter(t => live(t)).length;

@@ -4,7 +4,8 @@
 // Reads: S, LV, DEV.
 import { DEV, devOn, oneKit } from '../core/device.js';
 import { S } from '../core/state.js';
-import { TRACK_POOLS, facById } from '../library/index.js';
+import { facById } from '../library/index.js';
+import { DEF_ROLES, poolOf, roleInfo, slotOf, trackOf } from '../core/tracks.js';
 import { CT_POOL, clipFor, cmFix, patType } from '../services/clip-switch.js';
 import { mulberry } from '../core/random.js';
 import { LV, lvStyle } from './state.js';
@@ -101,39 +102,56 @@ export function liveBuild() {
       o[1] = o[2] = null;
     }
     if (DEV === '101') o[5] = o[7] = null;
-    return o;
+    /* o is by slot (the default layout's jobs); give each track its part. A second track doing the
+       same job, or a track with its own pool (acid), gets a pattern of its own that fits too. */
+    const tr = { chords: o[4] },
+      seen = new Set();
+    for (let t = 0; t < 8; t++) {
+      const s = slotOf(t),
+        pool = poolOf(t),
+        own = !seen.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
+      seen.add(s);
+      if (own || (s === 0 && oneKit())) tr[t] = o[s];
+      else tr[t] = S.tracks[t].type === 'drum' ? take(pool) : fit(pool);
+    }
+    return tr;
   };
   const sets = { A: mkSet(), B: mkSet() },
     scenes = [];
   const MOVE = ['h2', 'alt', 'rest', 'odd'];
   for (const [name, kind, bars, e, fx, parts] of DEV === '101' ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
     const cells = {};
-    for (const t in parts) {
-      const [set, play0] = parts[t].split(':');
+    for (let t = 0; t < 8; t++) {
+      const spec = parts[slotOf(t)];
+      if (!spec) continue;
+      const [set, play0] = spec.split(':');
       let id,
-        pool = TRACK_POOLS[t];
+        pool = poolOf(t);
       if (set === 'R') {
         id = take('build', f => f.bars === bars) || take('build');
         pool = 'build';
       }
-      if (+t === 0 && oneKit() && set !== 'R') pool = 'full';
+      if (t === trackOf(0) && oneKit() && set !== 'R') pool = 'full';
       if (!id) id = sets[set === 'R' ? 'A' : set][t];
       if (!id || !facById(id)) continue;
       let play = play0;
-      if (+t >= 3 && r() < 0.25) play = play ? (r() < 0.5 ? null : play) : MOVE[Math.floor(r() * MOVE.length)];
+      if (S.tracks[t].type === 'tone' && r() < 0.25)
+        play = play ? (r() < 0.5 ? null : play) : MOVE[Math.floor(r() * MOVE.length)];
       cells[t] = { id, pool };
       if (play) cells[t].play = play;
     }
     if (!Object.keys(cells).length)
-      [0, 1, 3].forEach(t => {
-        if (sets.A[t]) cells[t] = { id: sets.A[t], pool: TRACK_POOLS[t] };
+      [0, 1, 3].map(trackOf).forEach(t => {
+        if (t >= 0 && sets.A[t]) cells[t] = { id: sets.A[t], pool: poolOf(t) };
       });
     /* a lead and a pluck that would crowd each other take turns: the lead asks in the first half, the pluck answers */
-    const ld = cells[6] && facById(cells[6].id),
-      pk = cells[7] && facById(cells[7].id);
+    const tL = trackOf(6),
+      tP = trackOf(7),
+      ld = cells[tL] && facById(cells[tL].id),
+      pk = cells[tP] && facById(cells[tP].id);
     if (ld && pk && bars >= 4 && !roomFor(ld, pk)) {
-      cells[6].play = 'h1';
-      cells[7].play = 'h2';
+      cells[tL].play = 'h1';
+      cells[tP].play = 'h2';
     }
     const sc = { kind, name, bars, e, cells };
     if (fx) sc.fx = fx;
@@ -142,15 +160,15 @@ export function liveBuild() {
   {
     /* a track with clips of another kind (e.g. a lead sound on the Chords track) switches to it in the B scenes, then back.
        Live Mode picks the clip itself, whatever Song Mode's automatic switching is set to. */
-    for (const t of [3, 4, 5, 6, 7]) {
-      if (!devOn(t)) continue;
+    for (let t = 0; t < 8; t++) {
+      if (!devOn(t) || S.tracks[t].type !== 'tone') continue;
       const mm = cmFix()[t],
-        own = patType({ pool: TRACK_POOLS[t] });
+        own = patType({ pool: poolOf(t) });
       const alt = mm.types.slice(0, mm.n).find(ty => CT_POOL[ty] && ty !== own);
       if (!alt) continue;
       scenes.forEach(sc => {
         if (/ B$/.test(sc.name) && sc.cells[t]) {
-          const cb = facById(sets.B[4]),
+          const cb = facById(sets.B.chords),
             pB = cb && lvProg(cb);
           const id = take(CT_POOL[alt], f => !pB || !lvProg(f) || (lvProg(f) === pB && f.bars === cb.bars));
           if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
@@ -165,9 +183,9 @@ export function liveBuild() {
 }
 export function liveSwapIds(t) {
   const st = lvStyle(),
-    pool = t === 0 && oneKit() ? 'full' : TRACK_POOLS[t];
+    pool = t === trackOf(0) && oneKit() ? 'full' : poolOf(t);
   return lvFlavor(lvPool(st, pool), LV.flavor).filter(id => {
     const f = facById(id);
-    return f && (t < 3 ? f.type === 'drum' : f.type === 'tone');
+    return f && f.type === S.tracks[t].type;
   });
 }

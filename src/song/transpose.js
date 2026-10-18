@@ -13,6 +13,7 @@ import { renderEditor } from './editor.js';
 import { applyShape, playFrom, posBarNow, setLoop, shapeSlice } from './clip-ops.js';
 import { sectionEnd } from './markers.js';
 import { hooks } from '../core/hooks.js';
+import { toneTracksAll } from '../core/tracks.js';
 
 /* ---------- transpose dialog (whole song or parts) ---------- */
 const XP = {
@@ -114,7 +115,7 @@ function xpApply(reset) {
   const [a, b] = xpRange();
   const semi = reset ? 0 : XP.semi;
   const mode = reset ? 'set' : XP.mode;
-  const allTone = [3, 4, 5, 6, 7].every(t => XP.tracks.has(t));
+  const allTone = toneTracksAll().every(t => XP.tracks.has(t));
   pushUndo();
   if (XP.scope === 'song' && allTone) {
     S.transpose = clamp(mode === 'add' ? (S.transpose || 0) + semi : semi, -24, 24);
@@ -154,7 +155,7 @@ export function openXpose(pre) {
       mode: 'add',
       fromBar: null,
       section: 0,
-      tracks: new Set([3, 4, 5, 6, 7]),
+      tracks: new Set(toneTracksAll()),
       from: songKeyRoot(),
       to: songKeyRoot(),
       a: S.loop.start + 1,
@@ -319,7 +320,7 @@ function renderXpose() {
   }
   /* tracks */
   const tw = el('div', { class: 'xrow' });
-  [3, 4, 5, 6, 7].forEach(t =>
+  toneTracksAll().forEach(t =>
     tw.append(
       el(
         'label',
@@ -439,7 +440,7 @@ function renderXpose() {
   );
   /* result */
   const cnt = xpCounts();
-  const allTone = [3, 4, 5, 6, 7].every(t => XP.tracks.has(t));
+  const allTone = toneTracksAll().every(t => XP.tracks.has(t));
   let txt;
   if (!XP.tracks.size) txt = 'Choose at least one track.';
   else if (XP.scope === 'song' && allTone) {

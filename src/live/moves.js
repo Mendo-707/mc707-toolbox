@@ -13,10 +13,9 @@ import { LV } from './state.js';
 import { lvOn } from './cues.js';
 import { liveSync } from './panels.js';
 import { knobUI } from './pads.js';
+import { toneTracksAll, tracksFor } from '../core/tracks.js';
 
 /* ---- automation moves: MC-707 CCs shaped over time (filter, resonance, reverb wash, pump, autopan) ---- */
-export const LV_TONES = [3, 4, 5, 6, 7],
-  LV_PUMP = [3, 4, 5, 6];
 export const LV_SCFX = [
   ['none', 'None'],
   ['build', 'Build-up (filter, resonance, wash, pump)'],
@@ -106,7 +105,7 @@ export function lvSlam(nt, filter) {
 /* The epic build: filter and resonance climb, reverb washes up, the tone parts pump harder and faster. */
 export function lvBuildMoves(t1, t2, tag) {
   if (!LV.buildFx) return;
-  const T = LV_TONES;
+  const T = toneTracksAll();
   lvMove({
     id: tag + 'res',
     tracks: T,
@@ -121,7 +120,7 @@ export function lvBuildMoves(t1, t2, tag) {
   });
   lvMove({
     id: tag + 'rev',
-    tracks: [4, 5, 6, 7],
+    tracks: tracksFor([4, 5, 6, 7]),
     cc: 91,
     kind: 'ramp',
     from: 'rest',
@@ -133,7 +132,7 @@ export function lvBuildMoves(t1, t2, tag) {
   });
   lvMove({
     id: tag + 'pump',
-    tracks: LV_PUMP,
+    tracks: tracksFor([3, 4, 5, 6]),
     cc: 11,
     kind: 'pump',
     d0: 0.15,
@@ -155,7 +154,7 @@ export function lvSceneFx(sc, tick) {
     lvMove({
       id: 'scpump',
       tag: 'scene',
-      tracks: LV_PUMP,
+      tracks: tracksFor([3, 4, 5, 6]),
       cc: 11,
       kind: 'pump',
       d0: 0.55,
@@ -168,7 +167,7 @@ export function lvSceneFx(sc, tick) {
     lvMove({
       id: 'scwash',
       tag: 'scene',
-      tracks: [4, 5, 6, 7],
+      tracks: tracksFor([4, 5, 6, 7]),
       cc: 91,
       kind: 'ramp',
       from: 'rest',
@@ -195,7 +194,7 @@ export function lvSceneFx(sc, tick) {
     lvMove({
       id: 'scpan',
       tag: 'scene',
-      tracks: [6, 7],
+      tracks: tracksFor([6, 7]),
       cc: 10,
       kind: 'lfo',
       depth: 0.7,
@@ -217,7 +216,7 @@ export function liveMoveNow(kind) {
     lvMove({
       id: 'qwash',
       tag: 'q',
-      tracks: [4, 5, 6, 7],
+      tracks: tracksFor([4, 5, 6, 7]),
       cc: 91,
       kind: 'ramp',
       from: 'rest',
@@ -231,7 +230,7 @@ export function liveMoveNow(kind) {
     lvMove({
       id: 'qthrow',
       tag: 'q',
-      tracks: LV_TONES,
+      tracks: toneTracksAll(),
       cc: 91,
       kind: 'ramp',
       from: 120,
@@ -263,7 +262,7 @@ export function liveMoveNow(kind) {
       lvMove({
         id: 'qpump',
         tag: 'q',
-        tracks: LV_PUMP,
+        tracks: tracksFor([3, 4, 5, 6]),
         cc: 11,
         kind: 'pump',
         d0: 0.6,
@@ -282,7 +281,7 @@ export function liveMoveNow(kind) {
       lvMove({
         id: 'qpan',
         tag: 'q',
-        tracks: [6, 7],
+        tracks: tracksFor([6, 7]),
         cc: 10,
         kind: 'lfo',
         depth: 0.8,

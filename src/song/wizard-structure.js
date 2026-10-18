@@ -6,6 +6,7 @@ import { TRACK_COLORS, devNum, devOn, oneKit } from '../core/device.js';
 import { NK, STRUCT, trackLabel } from '../library/styles.js';
 import { WIZ, curStyle, renderWiz } from './wizard-ui.js';
 import { defaultSecs, kindsOf } from './wizard-styles.js';
+import { poolOf, slotOf, trackOf } from '../core/tracks.js';
 
 export function wizStep3(b) {
   const w = WIZ,
@@ -313,7 +314,7 @@ export function wizStep3(b) {
     'Counter-melody'
   ];
   for (let t = 0; t < 8; t++)
-    if (devOn(t) && !(oneKit() && (t === 1 || t === 2)))
+    if (devOn(t) && !(oneKit() && (slotOf(t) === 1 || slotOf(t) === 2)))
       lay.append(
         el(
           'label',
@@ -330,7 +331,15 @@ export function wizStep3(b) {
             'span',
             {},
             el('b', {}, 'Track ' + devNum(t) + ': ' + trackLabel(st, t)),
-            el('small', {}, t === 0 && oneKit() ? 'Full kit: kick, snare, hats and percussion' : what[t])
+            el(
+              'small',
+              {},
+              t === trackOf(0) && oneKit()
+                ? 'Full kit: kick, snare, hats and percussion'
+                : poolOf(t) === 'acid'
+                  ? 'Acid line'
+                  : what[slotOf(t)]
+            )
           )
         )
       );
