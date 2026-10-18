@@ -180,7 +180,12 @@ export async function zeRead() {
   if (ZE.t !== t || ZE.k !== k) return;
   ZE.busy = '';
   ZE.srcNote = r.ok
-    ? 'Read ' + r.ok + ' values' + (r.bad ? ' (' + r.bad + ' could not be read; they show faded)' : '')
+    ? 'Read ' +
+      r.ok +
+      ' of ' +
+      r.total +
+      ' values' +
+      (r.bad ? ' (' + r.bad + ' could not be read; they show faded)' : '')
     : 'The ' + DEVS[DEV].name + ' did not answer the read. Edits are still sent.';
   remember();
   zeRender();

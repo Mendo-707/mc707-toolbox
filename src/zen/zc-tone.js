@@ -96,18 +96,21 @@ export function setVal(snd, key, val, base) {
   if (base != null) zxWrite(base + off, encode(p, val));
 }
 
-/* Runs: parameters that sit next to each other, read or written in one message (at most 64 bytes). */
-function runs(kind, keys) {
+/* Runs: parameters that sit next to each other, read or written in one message (at most 64 bytes).
+   A run never crosses from one block into the next (one partial into the next, say): the MC-707 answers
+   such a request in two packets. It only ever returns whole parameters, so runs start and end on them. */
+const blockOf = k => k.slice(0, k.indexOf('.'));
+export function runs(kind, keys) {
   const ps = allParams(kind)
     .filter(([k]) => !keys || keys.has(k))
     .sort((a, b) => a[2] - b[2]);
   const out = [];
   for (const it of ps) {
     const r = out[out.length - 1];
-    if (r && r.end === it[2] && it[2] + it[1][2] - r.start <= 64) {
+    if (r && r.end === it[2] && r.blk === blockOf(it[0]) && it[2] + it[1][2] - r.start <= 64) {
       r.items.push(it);
       r.end = it[2] + it[1][2];
-    } else out.push({ start: it[2], end: it[2] + it[1][2], items: [it] });
+    } else out.push({ start: it[2], end: it[2] + it[1][2], blk: blockOf(it[0]), items: [it] });
   }
   return out;
 }
@@ -167,7 +170,7 @@ export async function readSound(snd, base, keys, progress) {
       }
     if (progress) progress(++done, rs.length);
   }
-  return { ok, bad };
+  return { ok, bad, total: ok + bad };
 }
 
 /* ---- saving sounds: plain JSON with the values by key ---- */

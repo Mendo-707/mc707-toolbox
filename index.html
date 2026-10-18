@@ -31866,11 +31866,11 @@ input[type='number'] {
     } catch (e) {
     }
   }
-  async function capListDevices(ask2) {
+  async function capListDevices(ask) {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices)
         throw new Error("This browser cannot list audio devices.");
-      if (ask2) {
+      if (ask) {
         let st;
         try {
           st = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -36961,27 +36961,36 @@ input[type='number'] {
     if (d[1] !== 65 || d[7] !== 18 || w.kind !== "rq") return;
     if (!MODELS.includes(d[6])) return;
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
+    const want = replyBytes(w.l + w.buf.length);
+    if (!a.every((b, i) => b === want[i])) {
+      w.stray++;
+      return;
+    }
     ZX.model = d[6];
     ZX.modelFor = DEV + ":" + (ZX.out && ZX.out.name);
-    w.done({ a, data });
+    w.buf.push(...data);
+    if (w.buf.length >= w.n) w.done();
   }
-  function ask(msg, kind, ms) {
+  function askRq(msg, l, n, ms) {
     return new Promise((res) => {
-      const t = setTimeout(() => {
-        ZX.wait = null;
-        res(null);
-      }, ms);
-      ZX.wait = {
-        kind,
-        done: (v) => {
+      const w = {
+        kind: "rq",
+        l,
+        n,
+        buf: [],
+        stray: 0,
+        done: () => {
           clearTimeout(t);
           ZX.wait = null;
-          res(v);
+          res({ buf: w.buf, stray: w.stray });
         }
       };
-      if (!rawSend(msg)) ZX.wait.done(null);
+      const t = setTimeout(w.done, ms);
+      ZX.wait = w;
+      if (!rawSend(msg)) w.done();
     });
   }
+  var pause = (ms) => new Promise((r) => setTimeout(r, ms));
   var chain = Promise.resolve();
   var serial = (fn) => chain = chain.then(() => zxFlush()).then(fn, fn);
   function zxRead(l, n, ms = 450) {
@@ -36992,15 +37001,15 @@ input[type='number'] {
         if (tries === 2 && !guess) break;
         const msg = rq1(l, n);
         if (guess) msg[6] = guess;
-        const r = await ask(msg, "rq", ms);
-        if (!r) continue;
-        const want = replyBytes(l);
-        if (r.data.length === n && r.a.every((b, i) => b === want[i])) return r.data;
-        return null;
+        const r = await askRq(msg, l, n, ms);
+        if (!r.buf.length && !r.stray) continue;
+        await pause(SETTLE);
+        return r.buf.length === n ? r.buf : null;
       }
       return void 0;
     });
   }
+  var SETTLE = 30;
 
   // src/zen/zc-data.js
   var ZC_BLOCKS = {
@@ -40021,15 +40030,16 @@ input[type='number'] {
     snd.known.add(key);
     if (base != null) zxWrite(base + off, encode(p, val));
   }
+  var blockOf = (k) => k.slice(0, k.indexOf("."));
   function runs(kind, keys2) {
     const ps = allParams(kind).filter(([k]) => !keys2 || keys2.has(k)).sort((a, b) => a[2] - b[2]);
     const out = [];
     for (const it of ps) {
       const r = out[out.length - 1];
-      if (r && r.end === it[2] && it[2] + it[1][2] - r.start <= 64) {
+      if (r && r.end === it[2] && r.blk === blockOf(it[0]) && it[2] + it[1][2] - r.start <= 64) {
         r.items.push(it);
         r.end = it[2] + it[1][2];
-      } else out.push({ start: it[2], end: it[2] + it[1][2], items: [it] });
+      } else out.push({ start: it[2], end: it[2] + it[1][2], blk: blockOf(it[0]), items: [it] });
     }
     return out;
   }
@@ -40078,7 +40088,7 @@ input[type='number'] {
         }
       if (progress) progress(++done, rs.length);
     }
-    return { ok, bad };
+    return { ok, bad, total: ok + bad };
   }
   var soundJSON = (snd, name) => ({
     app: "mc707-toolbox",
@@ -43842,7 +43852,7 @@ input[type='number'] {
     });
     if (ZE.t !== t || ZE.k !== k) return;
     ZE.busy = "";
-    ZE.srcNote = r.ok ? "Read " + r.ok + " values" + (r.bad ? " (" + r.bad + " could not be read; they show faded)" : "") : "The " + DEVS[DEV].name + " did not answer the read. Edits are still sent.";
+    ZE.srcNote = r.ok ? "Read " + r.ok + " of " + r.total + " values" + (r.bad ? " (" + r.bad + " could not be read; they show faded)" : "") : "The " + DEVS[DEV].name + " did not answer the read. Edits are still sent.";
     remember();
     zeRender();
     if (r.ok) readSource();
