@@ -282,6 +282,19 @@ input[type='range'] {
 .dmap input {
   width: 100%;
 }
+/* the "My MC-707 clips & ZenCore" button at the right of Song Mode's top row */
+.clipsTop {
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--hot) 55%, var(--line));
+}
+.clipsTop:hover {
+  border-color: var(--hot);
+}
+@media (max-width: 1250px) {
+  .clipsLong {
+    display: none;
+  }
+}
 </style>
     <style>
 /* Page layout: the library sidebar, arrangement and editor panes. */
@@ -5296,6 +5309,15 @@ input[type='number'] {
           ></output
         ></label>
       </div>
+      <div class="grp" style="margin-left: auto">
+        <button
+          class="btn clipsTop"
+          id="bClips"
+          title="Your MC-707 clips: what each clip holds, and the ZenCore editor for the sound in each one"
+        >
+          ▦ My <span class="clipsLong">MC-707 </span>clips &amp; ZenCore
+        </button>
+      </div>
       <div class="grp">
         <button
           class="btn"
@@ -5363,9 +5385,6 @@ input[type='number'] {
         <button class="btn sm" id="bUndo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
         <button class="btn sm" id="bRedo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
         <button class="btn on mbh" id="bWiz" title="Build a full arrangement from a style">Song wizard</button>
-        <button class="btn mbh" id="bClips" title="Your MC-707 clips, and the ZenCore editor for the sound in each clip">
-          Clips &amp; ZenCore
-        </button>
         <button class="btn mbh" id="bXpose" title="Transpose the whole song or just part of it">Transpose</button>
         <button class="btn mbh" id="bStruct" title="Copy, paste, repeat, insert and delete whole sections of the song">
           Structure

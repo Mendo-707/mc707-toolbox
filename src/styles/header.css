@@ -126,3 +126,16 @@
 .dmap input {
   width: 100%;
 }
+/* the "My MC-707 clips & ZenCore" button at the right of Song Mode's top row */
+.clipsTop {
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--hot) 55%, var(--line));
+}
+.clipsTop:hover {
+  border-color: var(--hot);
+}
+@media (max-width: 1250px) {
+  .clipsLong {
+    display: none;
+  }
+}

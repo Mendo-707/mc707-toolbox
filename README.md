@@ -143,7 +143,7 @@ The app opens in Song Mode with a start screen: **Load last session**, **Blank s
 
 ## ZenCore editor
 
-Edit the sounds inside your MC-707 from the app: every parameter of a ZEN-Core tone, on big screens instead of menu diving. Press **Clips & ZenCore** in Song Mode's toolbar (or **Settings › Your MC-707 clips**), pick a clip and press **Edit ZenCore** (or right-click a clip, or press ZENCORE on the clip screen). Drum tracks open their drum kit.
+Edit the sounds inside your MC-707 from the app: every parameter of a ZEN-Core tone, on big screens instead of menu diving. Press **My MC-707 clips & ZenCore** at the top right of Song Mode (or **Settings › Your MC-707 clips**), pick a clip and press **Edit ZenCore** (or right-click a clip, or press ZENCORE on the clip screen). Drum tracks open their drum kit.
 
 ![ZenCore editor](docs/zencore-editor.png)
 
