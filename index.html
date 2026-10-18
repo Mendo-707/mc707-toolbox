@@ -43825,10 +43825,7 @@ input[type='number'] {
   function mfxType(type) {
     apply("MFX.mfxType", type);
     const d = mfxDefaults(type);
-    for (let i = 0; i < 32; i++) {
-      ZE.snd.v["MFX.param_" + (i + 1)] = d[i];
-      ZE.snd.known.delete("MFX.param_" + (i + 1));
-    }
+    for (let i = 0; i < 32; i++) apply("MFX.param_" + (i + 1), d[i]);
     commit();
     zeRender();
     if (sending())

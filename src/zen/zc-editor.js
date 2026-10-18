@@ -148,12 +148,11 @@ export function zeLoad(snd, why) {
 }
 function mfxType(type) {
   apply('MFX.mfxType', type);
-  /* the MC-707 resets the parameters for the new type: show sensible values until they are read back */
+  /* Changing the type over MIDI does not reset the effect's settings on the MC-707 (its own screen does):
+     the 32 slots keep the old effect's numbers, so a Level slot can be left near 0 and the effect goes
+     quiet. So the editor sets the new type's starting values itself, like the MC-707's screen. */
   const d = mfxDefaults(type);
-  for (let i = 0; i < 32; i++) {
-    ZE.snd.v['MFX.param_' + (i + 1)] = d[i];
-    ZE.snd.known.delete('MFX.param_' + (i + 1));
-  }
+  for (let i = 0; i < 32; i++) apply('MFX.param_' + (i + 1), d[i]);
   commit();
   zeRender();
   if (sending())
