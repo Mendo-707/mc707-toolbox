@@ -523,7 +523,7 @@ test('Humanize: off changes nothing; on, each player sits in its own spot, chord
     played = {};
   for (const feel of ['natural', 'laidback', 'pushed', 'drunk']) {
     const h = (played[feel] = await run(55, feel));
-    assert.equal(h.length, off.length, feel + ': the same notes (no flams below 60)');
+    assert.equal(h.length, off.length, feel + ': the same notes (no flams below 75)');
     const d = h.map((x, i) => (x.t - off[i].t) * 1000);
     assert.ok(
       d.every(ms => Math.abs(ms) < 40),

@@ -7,7 +7,7 @@
 //            and every four bars the players lean into the turnaround
 //   chords   strummed or rolled instead of struck as one block, alternating up and down strokes
 //   length   notes held a little longer or shorter, like a real hand on the keys
-//   flams    at higher amounts the snare sometimes gets a grace note
+//   flams    near the top of the slider the snare sometimes gets a grace note
 // Four feels shape it: Natural, Laid back, Pushed and Drunk (loose and lazy, after J Dilla).
 // Its own seeded random numbers, so the patterns Live Mode picks never change.
 //
@@ -123,8 +123,10 @@ function accent(role, step, bar, a) {
  * @param {number} earliest the earliest time a note may be sent
  */
 export function humanize(ti, nn, v, t, d, isDrum, tick, earliest) {
-  const a = HUM.amount / 100;
-  if (a <= 0) return { v, t, d, flam: null };
+  /* the slider's top is a firm human feel, not chaos: a gentle curve up to 60% of the full model */
+  const x = HUM.amount / 100;
+  if (x <= 0) return { v, t, d, flam: null };
+  const a = 0.6 * Math.pow(x, 1.2);
   const F = FEELS[HUM.feel] || FEELS.natural,
     role = roleOf(ti, isDrum, nn),
     step = tick >> 1,
@@ -152,6 +154,6 @@ export function humanize(ti, nn, v, t, d, isDrum, tick, earliest) {
     nd = isDrum ? d : Math.max(0.02, d * (1 + bi() * 0.12 * a));
   /* now and then a flam on the snare: a quiet grace note just before */
   const flam =
-    role === 'snare' && a >= 0.6 && v > 70 && rnd() < 0.06 * a ? Math.max(earliest, nt - 0.012 - 0.01 * a) : null;
+    role === 'snare' && x >= 0.75 && v > 70 && rnd() < 0.05 * x ? Math.max(earliest, nt - 0.012 - 0.01 * a) : null;
   return { v: nv, t: nt, d: nd, flam };
 }

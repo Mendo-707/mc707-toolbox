@@ -15069,8 +15069,9 @@ input[type='number'] {
     return m + bi() * 0.09 * a;
   }
   function humanize(ti, nn, v, t, d, isDrum, tick, earliest) {
-    const a = HUM.amount / 100;
-    if (a <= 0) return { v, t, d, flam: null };
+    const x = HUM.amount / 100;
+    if (x <= 0) return { v, t, d, flam: null };
+    const a = 0.6 * Math.pow(x, 1.2);
     const F = FEELS[HUM.feel] || FEELS.natural, role = roleOf2(ti, isDrum, nn), step = tick >> 1, bar2 = tick >> 5, beat = tick >> 3;
     let ms = F[role] * a + drift(ti, beat, F, a) + bi() * F.loose * a;
     if (role === "kick") {
@@ -15087,7 +15088,7 @@ input[type='number'] {
       ms += k2 * (F.spread / 4) * a * (dir > 0 ? 1 : 0.7) + (dir < 0 ? (3 - Math.min(k2, 3)) * (F.spread / 6) * a : 0);
     }
     const nt = Math.max(earliest, t + ms / 1e3), nv = Math.max(1, Math.min(127, Math.round(v * accent(role, step, bar2, a)))), nd = isDrum ? d : Math.max(0.02, d * (1 + bi() * 0.12 * a));
-    const flam = role === "snare" && a >= 0.6 && v > 70 && rnd3() < 0.06 * a ? Math.max(earliest, nt - 0.012 - 0.01 * a) : null;
+    const flam = role === "snare" && x >= 0.75 && v > 70 && rnd3() < 0.05 * x ? Math.max(earliest, nt - 0.012 - 0.01 * a) : null;
     return { v: nv, t: nt, d: nd, flam };
   }
 
