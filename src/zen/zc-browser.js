@@ -161,6 +161,37 @@ function form(e, done) {
   );
 }
 
+/* a sound's right-click menu */
+function rowMenu(e, x, y) {
+  const fav = ZS.favs.has(e.id),
+    mine = e.src !== 'starter';
+  showMenu(x, y, [
+    { label: 'Load into this clip', action: () => load(e) },
+    { label: fav ? 'Unstar' : 'Star', action: () => (toggleFav(e.id), render()) },
+    '-',
+    mine ? { label: 'Name, type and tags…', action: () => ((B.edit = e.id), render()) } : null,
+    !mine
+      ? {
+          label: 'Save a copy to my sounds',
+          action: async () => {
+            const n = await soundAdd(e.make(), { name: e.name, type: e.type, src: 'mine' });
+            toast(n ? 'Saved ' + e.name : 'That sound is already in the library');
+            render();
+          }
+        }
+      : null,
+    { label: 'Only ' + (TYPE_LABEL[e.type] || 'this type').toLowerCase(), action: () => ((B.type = e.type), render()) },
+    mine
+      ? {
+          label: 'Delete…',
+          danger: true,
+          action: async () => {
+            if (await askDlg({ title: 'Delete ' + e.name + '?', ok: 'Delete' })) (await soundDelete(e.id), render());
+          }
+        }
+      : null
+  ]);
+}
 function row(e) {
   const fav = ZS.favs.has(e.id);
   const editing = B.edit === e.id;
@@ -170,9 +201,14 @@ function row(e) {
       class: 'zbItem' + (B.cur === e.id ? ' cur' : ''),
       role: 'button',
       tabindex: 0,
-      title: 'Load into this clip',
+      title: 'Load into this clip · right-click for more',
       onclick: () => load(e),
-      onkeydown: k => k.key === 'Enter' && load(e)
+      onkeydown: k => k.key === 'Enter' && load(e),
+      oncontextmenu: x => {
+        x.preventDefault();
+        x.stopPropagation();
+        rowMenu(e, x.clientX, x.clientY);
+      }
     },
     el(
       'button',

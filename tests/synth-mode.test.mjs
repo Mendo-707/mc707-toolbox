@@ -35,7 +35,7 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
   );
   /* which sound track 4 plays: the track's own sound sets Sound Source TRACK; a clip sets CLIP and selects it */
   await page.evaluate('window.__out.length = 0');
-  await page.locator('#synth .syStrip').nth(3).locator('select').selectOption('16');
+  await page.locator('#synth .syStrip').nth(3).locator('select.sySlot').selectOption('16');
   await page.waitForTimeout(300);
   const lin = a => (a[0] << 21) | (a[1] << 14) | (a[2] << 7) | a[3];
   const srcAddr = lin([0x10, 0, 8, 0]) + 3 * lin([0, 0, 2, 0]) + 4;
@@ -43,7 +43,7 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
     out.filter(b => b[0] === 0xf0 && b[7] === 0x12 && lin(b.slice(8, 12)) === l).map(b => b[12]);
   assert.deepEqual(dt1To(await page.evaluate('window.__out'), srcAddr), [0], 'Sound Source TRACK');
   await page.evaluate('window.__out.length = 0');
-  await page.locator('#synth .syStrip').nth(3).locator('select').selectOption('2');
+  await page.locator('#synth .syStrip').nth(3).locator('select.sySlot').selectOption('2');
   await page.waitForTimeout(300);
   let out = await page.evaluate('window.__out');
   assert.deepEqual(dt1To(out, srcAddr), [1], 'Sound Source CLIP');
@@ -51,7 +51,7 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
     out.some(b => b[0] === 0xc3 && b[1] === 2),
     'clip 3 selected on track 4'
   );
-  await page.locator('#synth .syStrip').nth(3).locator('select').selectOption('0');
+  await page.locator('#synth .syStrip').nth(3).locator('select.sySlot').selectOption('0');
   /* level and pan */
   await page.evaluate('window.__out.length = 0');
   await page.locator('#synth .syStrip').nth(3).locator('input[type=range]').first().fill('90');
@@ -95,9 +95,7 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
     'notes pass through; clock does not'
   );
   /* or all to one track (a keyboard playing track 2), lighting its strip */
-  await page
-    .locator('#synth select[aria-label="Where passed-through notes go"]')
-    .selectOption({ label: 'Track 2' });
+  await page.locator('#synth select[aria-label="Where passed-through notes go"]').selectOption({ label: 'Track 2' });
   await page.evaluate('window.__out.length = 0; window.__key([0x90, 64, 90]); window.__key([0x80, 64, 0])');
   assert.deepEqual(await page.evaluate('window.__out'), [
     [0x91, 64, 90],
@@ -210,5 +208,47 @@ test('Synth mode: a setup kept in the browser comes back after a reload', async 
   await page.waitForFunction(() => window.__out.some(b => b[0] === 0xb3 && b[1] === 11 && b[2] === 127), null, {
     timeout: 20000
   });
+  assert.deepEqual(errors, []);
+});
+
+test('Synth mode: quick settings read a page from the MC-707 and move every playing partial together', async () => {
+  const { page, errors } = await openApp();
+  const z = 'window.__app.zen';
+  /* a starter with more than one partial on track 4, clip 1 */
+  await page.evaluate(`${z}.open(3, 0)`);
+  await page.waitForTimeout(400);
+  await page.evaluate(`${z}.browse()`);
+  await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
+  await page.fill('#zbQ', 'Supersaw');
+  await page.locator('#zbOv .zbItem', { hasText: 'Supersaw' }).first().click();
+  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.evaluate(`${z}.sendAll()`);
+  await page.waitForTimeout(1500);
+  const before = await page.evaluate(
+    `(() => { const v = ${z}.ZE.snd.v; return [0,1,2,3].map(i => [v['PMT.PMT' + (i + 1) + '_PTL_SW'], v['PTL' + i + '.CUTOFF']]); })()`
+  );
+  await page.locator('#zcOv button', { hasText: 'Done' }).click();
+  /* Synth Mode: the Filter page on track 4 */
+  await page.click('#menubar .mtab[data-mode=synth]');
+  const strip = page.locator('#synth .syStrip').nth(3);
+  await strip.locator('select.syQMenu').selectOption('filter');
+  const cut = strip.locator('.syQ', { hasText: 'Cutoff' }).locator('input[type=range]');
+  await page.waitForFunction(el => !el.disabled, await cut.elementHandle(), { timeout: 20000 });
+  const ref = before.find(([sw]) => sw === 1)[1];
+  assert.equal(+(await cut.inputValue()), ref, 'the slider shows the first playing partial');
+  const target = Math.max(0, ref - 200);
+  await cut.fill(String(target));
+  await page.waitForTimeout(400);
+  /* the editor reads the clip back: every playing partial moved by the same amount */
+  await page.click('#menubar .mtab[data-mode=song]');
+  await page.evaluate(`${z}.open(3, 0)`);
+  await page.waitForFunction(() => !window.__app.zen.ZE.busy, null, { timeout: 20000 });
+  await page.waitForTimeout(800);
+  const after = await page.evaluate(`[0,1,2,3].map(i => ${z}.ZE.snd.v['PTL' + i + '.CUTOFF'])`);
+  before.forEach(([sw, v], i) =>
+    assert.equal(after[i], sw === 1 ? Math.max(0, v + (target - ref)) : v, 'partial ' + (i + 1))
+  );
+  /* the page stays open next time */
+  assert.equal(await page.evaluate("JSON.parse(localStorage.getItem('mc707-synth')).page[3]"), 'filter');
   assert.deepEqual(errors, []);
 });

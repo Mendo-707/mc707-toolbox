@@ -1,5 +1,5 @@
-// The top menu bar (File, Edit, Song, Audio, Settings, View, Help), and wiring the setup wizard's
-// buttons.
+// The top menu bar (File, Edit, Song, Live, Synth, Settings, View, Help, each shown in the modes it
+// belongs to), and wiring the setup wizard's buttons.
 //
 // Reads: S, SU, STAGE, DEV.
 import { $, el, toast } from '../core/dom.js';
@@ -17,6 +17,10 @@ import { liveGenrePick } from '../live/genre-picker.js';
 import { grabOpen } from './grabber.js';
 import { liveCapture } from './live-capture.js';
 import { setMode } from './mode.js';
+import { showMenu } from './menu.js';
+import { aboutOpen } from './about.js';
+import { LINKS, openLink } from '../core/version.js';
+import { synthAct } from '../zen/zc-synth.js';
 import {
   exitApp,
   projChooseFolder,
@@ -52,6 +56,8 @@ function initMenubar() {
     const e = $(id);
     return !!(e && e.classList.contains('on'));
   };
+  /* [label, action, shortcut, checked()] items; [label, null, '', null, sub] opens a submenu (right-click
+     menu items); 0 is a divider; 'recent' is the recent projects list */
   const M = [
     [
       'File',
@@ -63,17 +69,24 @@ function initMenubar() {
         ['Save', projSave, 'Ctrl+S'],
         ['Save as…', projSaveAs, 'Ctrl+Shift+S'],
         0,
-        ['Saved songs (quick slots)…', go('#bFile')],
         ['Start screen…', () => startOpen('menu')],
+        ['Saved songs (quick slots)…', go('#bFile')],
         ['Load demo song', go('#fDemo')],
         ['Export MIDI (.zip)', go('#fMidi')],
         0,
-        ['Open project folder', () => projFolder('projects')],
-        ['Open recording folder', () => projFolder('recordings')],
-        ['Choose project folder…', () => projChooseFolder('projects')],
-        ['Choose recording folder…', () => projChooseFolder('recordings')],
-        0,
-        ['Reset autosave and reload', go('#fReset')],
+        [
+          'Folders',
+          null,
+          '',
+          null,
+          () => [
+            { label: 'Open project folder', action: () => projFolder('projects') },
+            { label: 'Open recording folder', action: () => projFolder('recordings') },
+            '-',
+            { label: 'Choose project folder…', action: () => projChooseFolder('projects') },
+            { label: 'Choose recording folder…', action: () => projChooseFolder('recordings') }
+          ]
+        ],
         0,
         ['Exit', exitApp]
       ]
@@ -82,14 +95,10 @@ function initMenubar() {
       'Edit',
       'song',
       [
-        ['New pattern or load MIDI…', go('#bNewPat')],
-        0,
         ['Undo', go('#bUndo'), 'Ctrl+Z'],
         ['Redo', go('#bRedo'), 'Ctrl+Shift+Z'],
         0,
-        ['Transpose…', go('#bXpose')],
-        ['Structure tools…', go('#bStruct')],
-        0,
+        ['New pattern or load MIDI…', go('#bNewPat')],
         ['Add 8 bars to the end', go('#bAddBars')]
       ]
     ],
@@ -103,13 +112,8 @@ function initMenubar() {
         0,
         ['Loop the whole song', go('#bLoopAll')],
         ['Loop the selected clip', go('#bLoopClip'), '\\'],
-        ['Tap tempo', go('#bTap')]
-      ]
-    ],
-    [
-      'Audio',
-      'song',
-      [
+        ['Tap tempo', go('#bTap')],
+        0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]
       ]
@@ -121,27 +125,45 @@ function initMenubar() {
         ['Start / stop', go('#lvStart'), 'Space'],
         ['Stop at end of phrase', () => liveStopCue()],
         0,
-        ['Fullscreen', toggleFull, 'F11', isFull],
-        ['Keep the screen awake while playing', () => setAwake(!STAGE.awake), '', () => STAGE.awake],
-        0,
-        ['Connect MC-707', go('#lvMidi')],
         ['New patterns', go('#lvNew')],
         ['Pick a genre…', () => liveGenrePick()],
         0,
         ['Grab a sample…', () => grabOpen($('.mb.open') || $('#lvStart'))],
         ['Capture to Song', () => liveCapture()],
         ['Your MC-707 clips…', () => clipMapOpen()],
+        0,
+        ['Connect MC-707', go('#lvMidi')],
         ['Settings and mapping…', go('#lvPadSet')]
+      ]
+    ],
+    [
+      'Synth',
+      'synth',
+      [
+        ['Read sounds', () => synthAct('read')],
+        0,
+        ['Save setup to a file…', () => synthAct('save')],
+        ['Open a setup file…', () => synthAct('open')],
+        ['Keep setup in this browser…', () => synthAct('keep')],
+        0,
+        ['Panic (all notes off)', () => synthAct('panic')],
+        ['Setting up your DAW', () => synthAct('help')]
       ]
     ],
     [
       'Settings',
       '',
       [
-        ['App sounds (hear the app in this browser)', toggleAppSound, '', () => !!S.preview],
-        0,
-        ['Device: MC-707 (8 tracks)', () => setDevice('707'), '', () => DEV === '707'],
-        ['Device: MC-101 (4 tracks)', () => setDevice('101'), '', () => DEV === '101'],
+        [
+          'Device',
+          null,
+          '',
+          null,
+          () => [
+            { label: 'MC-707 (8 tracks)', checked: DEV === '707', action: () => setDevice('707') },
+            { label: 'MC-101 (4 tracks)', checked: DEV === '101', action: () => setDevice('101') }
+          ]
+        ],
         ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
         ['Your MC-707 clips…', () => clipMapOpen()],
@@ -150,24 +172,58 @@ function initMenubar() {
         ['MIDI and sound…', go('#bMidi')],
         ['Track MIDI controls…', go('#bTrackCtl')],
         ['Audio inputs…', go('#bAudSet')],
-        0,
-        ['Send test note', go('#bTest')],
-        ['All notes off', go('#bPanic')]
+        ['App sounds (hear the app in this browser)', toggleAppSound, '', () => !!S.preview]
       ]
     ],
     [
       'View',
-      'song',
+      '',
       [
         ['Fullscreen', toggleFull, 'F11', isFull],
         ['Keep the screen awake while playing', () => setAwake(!STAGE.awake), '', () => STAGE.awake],
         0,
-        ['Pattern library', go('#bLibT')],
-        ['Follow the playhead', go('#bFollow'), '', on('#bFollow')],
-        ['Metronome click', go('#bMetro'), '', on('#bMetro')]
+        ['Pattern library', go('#bLibT'), '', null, null, 'song'],
+        ['Follow the playhead', go('#bFollow'), '', on('#bFollow'), null, 'song'],
+        ['Metronome click', go('#bMetro'), '', on('#bMetro'), null, 'song']
       ]
     ],
-    ['Help', '', [['Shortcuts and tips', go('#bHelp')]]]
+    [
+      'Help',
+      '',
+      [
+        ['Shortcuts and tips', go('#bHelp'), '', null, null, 'song'],
+        ['Guide', () => openLink(LINKS.guide)],
+        ['Set up your MC-707…', go('#bSetup')],
+        0,
+        [
+          'For developers',
+          null,
+          '',
+          null,
+          () => [
+            { label: 'MC-707 SysEx guide', action: () => openLink(LINKS.sysex) },
+            { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
+            { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) }
+          ]
+        ],
+        [
+          'Troubleshooting',
+          null,
+          '',
+          null,
+          () => [
+            { label: 'Send test note', action: go('#bTest') },
+            { label: 'All notes off', action: go('#bPanic') },
+            '-',
+            { label: 'Reset autosave and reload…', danger: true, action: go('#fReset') }
+          ]
+        ],
+        0,
+        ['Check for updates', () => openLink(LINKS.releases)],
+        ['Report a problem', () => openLink(LINKS.issues)],
+        ['About MC-707 Toolbox', () => aboutOpen()]
+      ]
+    ]
   ];
   let openB = null;
   const closeAll = () => {
@@ -238,14 +294,21 @@ function initMenubar() {
         d.append(d._recent);
         return;
       }
-      const [label, fn, key, chk] = it;
+      const [label, fn, key, chk, sub, onlyMode] = it;
       const mi = el(
         'button',
         {
-          class: 'mi',
+          class: 'mi' + (sub ? ' msub' : ''),
           role: 'menuitem',
+          'aria-haspopup': sub ? 'true' : null,
           onclick: ev => {
             ev.stopPropagation();
+            if (sub) {
+              /* a submenu opens beside the item, as a right-click menu */
+              const r = mi.getBoundingClientRect();
+              showMenu(r.right - 4, r.top - 4, sub());
+              return;
+            }
             closeAll();
             try {
               fn();
@@ -253,8 +316,9 @@ function initMenubar() {
           }
         },
         el('span', {}, label),
-        el('small', {}, key || '')
+        el('small', {}, sub ? '▸' : key || '')
       );
+      if (onlyMode) mi.dataset.m = onlyMode;
       if (chk) {
         mi.dataset.chk = '1';
         mi.dataset.label = label;

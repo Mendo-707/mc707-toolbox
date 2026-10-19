@@ -147,6 +147,7 @@ import { ZS } from './zen/zc-sounds.js';
 import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
+import { hoverHelpStart } from './ui/hover-help.js';
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
@@ -285,6 +286,7 @@ PROJ.t = projTitle;
   initWizard();
   initExtra();
   initSetup();
+  hoverHelpStart();
   initMore();
   initAudio();
   initPro();

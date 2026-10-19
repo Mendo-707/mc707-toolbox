@@ -8,12 +8,19 @@ import { el, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
+import { showMenu } from '../ui/menu.js';
+import { soundAdd, soundsLoad } from './zc-sounds.js';
+import { quickForget, quickPanel } from './zc-synth-quick.js';
 import {
   SY,
   chOf,
   heardLevel,
   kbdSet,
   kindOf,
+  readTrackSound,
+  resetMix,
+  sendTrackSound,
+  tracks,
   setLevel,
   setMute,
   setPan,
@@ -90,6 +97,51 @@ function fader(label, v, set, title, t, centre) {
   return el('label', { class: 'syRange', title: title + ' · double-click to reset' }, el('span', {}, label), inp, out);
 }
 
+/* the strip's right-click menu */
+function stripMenu(t, act, x, y) {
+  const others = tracks().filter(u => u !== t && kindOf(u) === kindOf(t));
+  const withSound = async (why, fn) => {
+    toast(why);
+    const snd = await readTrackSound(t);
+    if (!snd) return toast('The ' + DEVS[DEV].name + ' did not answer');
+    await fn(snd);
+  };
+  showMenu(x, y, [
+    { label: 'Browse sounds…', action: () => act.open(t, true) },
+    { label: 'Edit in the ZenCore editor…', action: () => act.open(t, false) },
+    '-',
+    { label: 'Mute', checked: SY.mute[t], action: () => (setMute(t, !SY.mute[t]), act.render()) },
+    { label: 'Solo', checked: SY.solo[t], action: () => (setSolo(t, !SY.solo[t]), act.render()) },
+    { label: 'Reset level, pan and reverb', action: () => (resetMix(t), act.render()) },
+    { label: 'Play it from the keyboard (Notes in)', checked: SY.kbd === t, action: () => (kbdSet(t), act.render()) },
+    '-',
+    {
+      label: 'Save this sound to the Sound library',
+      action: () =>
+        withSound('Reading the sound…', async snd => {
+          await soundsLoad();
+          const e = await soundAdd(snd, { src: 'mine' });
+          toast(e ? 'Saved ' + e.name + ' to the Sound library' : 'That sound is already in the library');
+        })
+    },
+    others.length
+      ? {
+          label: 'Copy this sound to',
+          sub: others.map(u => ({
+            label: 'Track ' + devNum(u) + (SY.names[u] ? ' (' + SY.names[u] + ')' : ''),
+            action: () =>
+              withSound('Copying…', async snd => {
+                quickForget(u);
+                if (await sendTrackSound(u, snd)) toast('Copied to track ' + devNum(u));
+                act.render();
+              })
+          }))
+        }
+      : null,
+    { label: 'Read its name again', action: () => act.refresh() }
+  ]);
+}
+
 /**
  * A strip. act: {open(t, browse), refresh(), render()} from the screen.
  */
@@ -106,6 +158,7 @@ export function strip(t, act) {
         'The sound the DAW plays on this track: one of its clips (selected on the ' + dn + ') or the track’s own sound',
       onchange: async e => {
         const k = +e.target.value;
+        quickForget(t);
         if (await setSlot(t, k)) toast('Track ' + devNum(t) + ' plays ' + slotName(k).toLowerCase());
         act.refresh();
       }
@@ -131,7 +184,13 @@ export function strip(t, act) {
     {
       class: 'syStrip' + (quiet ? ' quiet' : '') + (target ? ' target' : '') + (SY.solo[t] ? ' solo' : ''),
       style: '--tc:' + (TRACK_COLORS[t] || '#39ff7a'),
-      'aria-label': 'Track ' + devNum(t)
+      'aria-label': 'Track ' + devNum(t),
+      title: 'Right-click for more: copy the sound to another track, save it to the library, reset the mix',
+      oncontextmenu: e => {
+        if (e.target.matches('input, select')) return;
+        e.preventDefault();
+        stripMenu(t, act, e.clientX, e.clientY);
+      }
     },
     el(
       'div',
@@ -149,7 +208,7 @@ export function strip(t, act) {
         'button',
         {
           type: 'button',
-          class: 'syName',
+          class: 'syName' + (SY.names[t] ? '' : ' none'),
           title: SY.kbd === 'own' ? SY.names[t] || 'No sound read yet' : 'Play this track from the keyboard',
           onclick: () => {
             if (SY.kbd !== 'own') (kbdSet(t), act.render());
@@ -189,6 +248,7 @@ export function strip(t, act) {
       ),
       playBtn(t)
     ),
+    quickPanel(t),
     el(
       'div',
       { class: 'syMix' },

@@ -179,6 +179,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `core/theory.js` | Music theory tables: note names, the drum lanes, keys and scales. |  |
 | `core/tracks.js` | The track setup: what each of the 8 tracks is for. A track's role (kit, hats, perc, bass, chords, pad, lead, pluck or acid) decides whether it is a drum or tone track and which patterns it draws. The default is the classic layout: three drum tracks, then bass, chords, pad, lead and pluck. |  |
 | `core/types.js` | The shapes of the app's main data, as JSDoc types. Nothing imports this file at run time; editors and agents read it, and other files refer to these types in their JSDoc (e.g. @param {Clip} c). |  |
+| `core/version.js` | The app's version, shown in Help › About. Kept in step with package.json (a test checks it). |  |
 
 ### library/ (layer: library)
 
@@ -317,6 +318,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `zen/zc-starters.js` | Starter tones for the ZenCore editor: a clean init, then classic shapes built on the VA oscillators (leads, basses, pads, keys, stabs, a kick). More starters (step sequences, FM-style and extra basses) are in zc-starters-more.js; STARTER_GROUPS puts them all in the Starters menu's submenus. |  |
 | `zen/zc-stepseq.js` | The step sequencer inside a tone: each partial's STEP LFO 1 plays a 16-step note pattern (pitch depth 63, so 4 step units are one semitone) and STEP LFO 2 shapes each step on the amp (-72 rests a step). Tempo-synced, so one held key plays a riff; four partials give four voices. The idea and the numbers come from Benedetto Schiavone's ZEN-Core editor manual. |  |
 | `zen/zc-synth-io.js` | Synth mode's state and what it does on the MC-707: which sound each track plays (a clip or the track's own sound), the mix (level, pan, reverb send, mute and solo), reading the sounds' names, setups (all eight sounds with the mix, in a file or kept in this browser) and passing a DAW's or keyboard's notes through to the MC-707, on their own channels or all to one track. | SY (Synth mode's settings, localStorage 'mc707-synth'), the saved setups ('mc707-synth-setups') |
+| `zen/zc-synth-quick.js` | Quick sound controls on a Synth Mode strip: pick a page (Tone, Filter, Envelope, Movement, Effect) and change the most used ZenCore settings right there, without opening the editor. Only that page's values are read from the MC-707, and each change goes straight back. Settings that live in each of the four partials (filter, envelope, LFO) move together: the slider shows the first playing partial and every playing partial shifts by the same amount, so a layered sound keeps its shape. | QS (each track's quick values, read from the MC-707) |
 | `zen/zc-synth-strip.js` | One Synth mode strip: a track's sound (name, which clip or the track's own sound, the Sound browser and the ZenCore editor), a note to try it, an activity light for notes passed through, mute, solo, and level, pan and reverb send. Clicking the strip's name sends the keyboard there (when one track plays everything). |  |
 | `zen/zc-synth.js` | Synth mode: the MC-707 as an 8-track hardware synth for a DAW. The DAW plays each track on its MIDI channel and records each track's audio over USB (the MC-707 sends the eight tracks separately), while this screen picks, edits and mixes the eight sounds: the Sound browser and ZenCore editor for each track, which sound it plays (a clip or the track's own), level and pan, a setup file with all eight sounds, and notes passed through from a DAW's virtual port or a keyboard. The app's own sequencer stays quiet here. |  |
 | `zen/zc-sysex.js` | Talking to the MC-707 (or MC-101) with Roland SysEx, for the ZenCore editor: where each clip's tone and drum kit lives, writing parameters (DT1) and reading them back (RQ1). |  |
@@ -327,6 +329,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 
 | Module | What it does | Owns |
 | --- | --- | --- |
+| `ui/about.js` | Help › About: the app's name and version, what it is, the licence and the people whose work it builds on, which device it is set for and whether it can reach it, and links to the guide, releases and problem reports. |  |
 | `ui/context-menus.js` | Right-click menus for the transport, Play pattern, the sample grabber and the clips screen, and the one listener that opens them. |  |
 | `ui/controls.js` | The Song Mode toolbar and keyboard shortcuts, and redrawing everything after big changes (renderAll). |  |
 | `ui/device.js` | Switching between MC-707 and MC-101 and the one-kit drums option, which rebuild Song and Live. |  |
@@ -334,11 +337,12 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/fullscreen.js` | Fullscreen (the Windows app or the browser) and keeping the screen awake while playing. | STAGE (fullscreen and wake lock) |
 | `ui/grab-pattern.js` | Record sample from the pattern editor: play one pattern on its own, through the track you choose, and record it to a WAV with the sample grabber (that track's own USB channel when Audio has per-track channels set up, otherwise the mix). |  |
 | `ui/grabber.js` | The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from Song or Live Mode. | GRAB (the sample grabber) |
+| `ui/hover-help.js` | Hover help for controls that don't explain themselves: a tooltip (title) for each, by selector, and optionally only when the control's text matches. Applied as the screens are drawn (a watcher on the page, at most once a second), and never over a tooltip a control already has. |  |
 | `ui/link-watch.js` | The connection watch: a banner when the MC-707 (or MC-101) drops off MIDI mid-set, and a clean return when it comes back: notes released, then the playing set or song sent again, in time. |  |
 | `ui/live-capture.js` | Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip changes. |  |
 | `ui/live-menus.js` | Right-click menus in Live Mode: scene cards, pads, tracks and keys. |  |
 | `ui/menu.js` | The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items. | CM (the open menu) |
-| `ui/menubar.js` | The top menu bar (File, Edit, Song, Audio, Settings, View, Help), and wiring the setup wizard's buttons. |  |
+| `ui/menubar.js` | The top menu bar (File, Edit, Song, Live, Synth, Settings, View, Help, each shown in the modes it belongs to), and wiring the setup wizard's buttons. |  |
 | `ui/mode.js` | Switching between Song Mode, Live Mode and Synth mode. |  |
 | `ui/projects.js` | Project files: new, open, save, recent projects and the project title, through the Windows app or the browser. |  |
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |

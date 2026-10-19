@@ -247,6 +247,8 @@
   background: var(--hot);
   color: #fff;
 }
+body[data-mode='song'] #menubar [data-m='synth'],
+body[data-mode='live'] #menubar [data-m='synth'],
 body[data-mode='song'] #menubar [data-m='live'],
 body[data-mode='live'] #menubar [data-m='song'] {
   display: none !important;

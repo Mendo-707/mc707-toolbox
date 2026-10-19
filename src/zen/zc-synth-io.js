@@ -25,6 +25,8 @@ export const SY = {
   mute: Array(8).fill(false),
   solo: Array(8).fill(false),
   names: Array(8).fill(''),
+  /* the quick settings page open on each strip (null: closed) */
+  page: Array(8).fill(null),
   thru: '',
   /* where passed-through notes go: 'own' (each on its own channel) or a track number */
   kbd: 'own'
@@ -36,6 +38,7 @@ try {
       SY[k] = o[k].map((v, i) =>
         k === 'names' ? String(v || '') : k === 'mute' || k === 'solo' ? !!v : Number.isFinite(+v) ? +v : SY[k][i]
       );
+  if (Array.isArray(o.page) && o.page.length === 8) SY.page = o.page.map(x => (typeof x === 'string' ? x : null));
   if (typeof o.thru === 'string') SY.thru = o.thru;
   if (o.kbd === 'own' || (Number.isInteger(o.kbd) && o.kbd >= 0 && o.kbd < 8)) SY.kbd = o.kbd;
 } catch (e) {}
@@ -132,6 +135,30 @@ export async function readNames(progress) {
   }
   synthSave();
   return any;
+}
+
+/** Read one track's whole sound (null when the MC-707 does not answer). */
+export async function readTrackSound(t) {
+  if (!(await zxConnect()) || !ZX.inp) return null;
+  const snd = newSound(kindOf(t)),
+    r = await readSound(snd, slotOf(t));
+  return r.silent || !r.ok ? null : snd;
+}
+/** Put a sound on track t's current slot (quietly). */
+export async function sendTrackSound(t, snd) {
+  if (!(await zxConnect()) || snd.kind !== kindOf(t)) return false;
+  await zeQuietly(() => sendSound(snd, slotOf(t)), t);
+  rememberClip(snd, t, SY.slot[t]);
+  SY.names[t] = (snd.v[snd.kind === 'kit' ? 'KCMN.NAME' : 'CMN.NAME'] || '').trim();
+  synthSave();
+  return true;
+}
+/** Level, pan and reverb back to the start (100, centre, 0), mute and solo off. */
+export function resetMix(t) {
+  SY.mute[t] = SY.solo[t] = false;
+  setLevel(t, 100);
+  setPan(t, 64);
+  setRev(t, 0);
 }
 
 /* ---- setups: every track's sound, where it plays from, and the mix ---- */

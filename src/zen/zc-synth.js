@@ -16,6 +16,7 @@ import { zenOpen } from './zc-editor.js';
 import { ZX } from './zc-sysex.js';
 import { browserOpen } from './zc-browser.js';
 import { flash, strip } from './zc-synth-strip.js';
+import { QS, quickForget } from './zc-synth-quick.js';
 import {
   SY,
   SYHOOK,
@@ -66,6 +67,7 @@ function openEditor(t, browse) {
   const wait = setInterval(() => {
     if ($('#zcOv')) return;
     clearInterval(wait);
+    quickForget(t);
     refresh(true);
   }, 400);
 }
@@ -102,6 +104,7 @@ async function sendSetup(o) {
   busy = 'Sending the setup…';
   synthRender();
   try {
+    for (const k in QS) delete QS[k];
     const n = await setupSend(o, t => {
       const s = $('#syBusy');
       if (s) s.textContent = 'Sent track ' + devNum(t);
@@ -147,6 +150,21 @@ function openSetup() {
   i.click();
 }
 
+/** The Synth menu's actions: read, save, open, keep, panic, help. */
+export function synthAct(what) {
+  if (what === 'read') refresh(false);
+  else if (what === 'save') saveSetup();
+  else if (what === 'open') openSetup();
+  else if (what === 'keep') keepSetup();
+  else if (what === 'panic') (panic(), toast('All notes off'));
+  else if (what === 'help') {
+    const d = $('#synth .syHelp');
+    if (d) {
+      d.open = true;
+      d.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
 /* what the strips call back */
 const ACT = { open: (t, b) => openEditor(t, b), refresh: () => refresh(true), render: () => synthRender() };
 
