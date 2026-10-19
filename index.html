@@ -1711,6 +1711,23 @@ input[type='range'] {
 .suSteps small {
   opacity: 0.75;
 }
+/* the connection watch: shown when the MC-707 drops off MIDI */
+#linkWarn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9800;
+  padding: 10px 16px;
+  background: #c62828;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 12px #0008;
+}
+#linkWarn[hidden] {
+  display: none;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -14739,7 +14756,8 @@ input[type='number'] {
   }
   function refreshOuts() {
     const sel = $("#midiOut");
-    const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [];
+    const outs = MIDI.access ? [...MIDI.access.outputs.values()].filter((o) => o.state !== "disconnected") : [];
+    const had = MIDI.out;
     sel.textContent = "";
     sel.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
     outs.forEach((o) => sel.append(el("option", { value: o.id }, o.name)));
@@ -14748,6 +14766,13 @@ input[type='number'] {
     MIDI.out = pick2 || null;
     if (pick2) S.midiOut = pick2.id;
     if (pick2) hooks.matchDevice(pick2.name);
+    if (had && !pick2) {
+      MIDI.lost = had.name;
+      hooks.midiLost(had.name);
+    } else if (pick2 && MIDI.lost) {
+      MIDI.lost = null;
+      hooks.midiBack(pick2.name);
+    }
     $("#midiStat").textContent = pick2 ? "Sending to " + pick2.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
     hooks.refreshIns();
   }
@@ -15098,16 +15123,45 @@ input[type='number'] {
     } else if (TR.mode === "live") {
     } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
   }
+  var LATE = 0.05;
+  var errToast = 0;
+  function tickError(e, tick) {
+    TR.errs = (TR.errs || 0) + 1;
+    TR.lastErr = { tick, msg: String(e && e.message || e) };
+    if (TR.errs <= 5) console.error("Tick " + tick + " failed; playback carried on.", e);
+    const now = Date.now();
+    if (now - errToast > 3e4) {
+      errToast = now;
+      toast("Something went wrong at bar " + (Math.floor(tick / 32) + 1) + ". Playback carried on.");
+    }
+  }
   function sched() {
     const ctx2 = AU.ctx;
     if (TR.ending) {
       if (ctx2.currentTime >= TR.endTime) stopPlay();
       return;
     }
+    if (ctx2.currentTime - TR.nextTime > LATE) {
+      TR.nextTime = ctx2.currentTime + 0.01;
+      TR.late = (TR.late || 0) + 1;
+    }
     const horizon = ctx2.currentTime + 0.12;
     while (TR.nextTime < horizon && !TR.ending) {
-      processTick(TR.tick, TR.nextTime);
-      advance();
+      const tick = TR.tick;
+      try {
+        processTick(tick, TR.nextTime);
+      } catch (e) {
+        tickError(e, tick);
+      }
+      try {
+        advance();
+      } catch (e) {
+        tickError(e, tick);
+        if (TR.tick === tick) {
+          TR.tick++;
+          TR.nextTime += tickDur();
+        }
+      }
     }
   }
   var TICKER = (() => {
@@ -26182,6 +26236,9 @@ input[type='number'] {
     const a = LV.acts[i];
     const b = $("#lvPad" + i);
     if (b) b.classList.add("flash");
+    liveActDown(a);
+  }
+  function liveActDown(a) {
     if (a.startsWith("stut:")) {
       liveStutter(a === "stut:4" ? 8 : a === "stut:8" ? 4 : 2, true);
       return;
@@ -26196,6 +26253,9 @@ input[type='number'] {
     const a = LV.acts[i];
     const b = $("#lvPad" + i);
     if (b) b.classList.remove("flash");
+    liveActUp(a);
+  }
+  function liveActUp(a) {
     if (a.startsWith("stut:")) liveStutter(0, false);
     else if (a.startsWith("sc:")) scatter(+a.slice(3), false);
   }
@@ -45610,6 +45670,41 @@ input[type='number'] {
     }
   });
 
+  // src/live/resync.js
+  function lvResync() {
+    const now = AU.ctx ? AU.ctx.currentTime : 0, sc = LV.scenes[LV.cur];
+    for (const k2 in PCLAST) delete PCLAST[k2];
+    LV.ccLast = {};
+    for (let t = 0; t < 8; t++) {
+      if (sc) lvCellClip(t, sc.cells[t], now + 0.05);
+      if (LV.low) delete LV.low[t];
+      lvLevelBack(t, now);
+      lvSendCC(t, 11, lvRestCC(t, 11), now);
+    }
+    knobsRest();
+    return S.tracks.length;
+  }
+
+  // src/ui/link-watch.js
+  function midiLost(name) {
+    let b = $("#linkWarn");
+    if (!b) {
+      b = el("div", { id: "linkWarn", role: "alert" });
+      document.body.append(b);
+    }
+    b.textContent = (name || devNm()) + " is disconnected. " + (TR.playing ? "The set keeps time; plug the USB cable back in and it picks up where it is." : "Plug the USB cable back in.");
+    b.hidden = false;
+  }
+  function midiBack(name) {
+    const b = $("#linkWarn");
+    if (b) b.hidden = true;
+    panic(true);
+    for (const k2 in PCLAST) delete PCLAST[k2];
+    for (const k2 in AUTOLAST) delete AUTOLAST[k2];
+    if (TR.playing && TR.mode === "live") lvResync();
+    toast((name || devNm()) + " is back" + (TR.playing ? ", in time with the set" : "") + ".");
+  }
+
   // src/ui/grab-pattern.js
   async function grabPattern(p, t, loops = 1, anchor) {
     if (GRAB.on) {
@@ -45671,6 +45766,8 @@ input[type='number'] {
     liveTempo,
     liveTick,
     matchDevice,
+    midiBack,
+    midiLost,
     recMidi,
     recStop,
     refreshIns,
@@ -45745,6 +45842,7 @@ input[type='number'] {
       },
       hooks,
       processTick,
+      sched,
       advance,
       TICKER,
       liveTick,
@@ -45753,6 +45851,16 @@ input[type='number'] {
       liveScene,
       lvFadeKind,
       lvUserOwns,
+      /* Live Mode as the pads drive it, for the soak test */
+      live: {
+        down: liveActDown,
+        up: liveActUp,
+        jamStart: liveJamStart,
+        jamEnd: liveJamEnd,
+        blend: lvBlendIn,
+        move: liveMoveNow,
+        restCC: lvRestCC
+      },
       liveBuildDrop,
       stopAll,
       startSong,

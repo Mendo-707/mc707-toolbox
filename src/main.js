@@ -80,8 +80,10 @@ import './live/scene-templates.js';
 import './library/pools.js';
 import './live/set-builder.js';
 import './live/engine.js';
-import { liveBuildDrop } from './live/cues.js';
-import { lvUserOwns } from './live/moves.js';
+import { liveBuildDrop, lvBlendIn } from './live/cues.js';
+import { liveMoveNow, lvRestCC, lvUserOwns } from './live/moves.js';
+import { liveActDown, liveActUp } from './live/pads.js';
+import { liveJamEnd, liveJamStart } from './live/jam.js';
 import './live/pads.js';
 import './live/controller.js';
 import './live/raven.js';
@@ -104,9 +106,10 @@ import { makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
 import { AU, ensureAudio } from './services/synth.js';
 import { MIDI, connectMidi, panic } from './services/midi.js';
-import { TICKER, TR, advance, processTick, startSong, stopAll } from './services/transport.js';
+import { TICKER, TR, advance, processTick, sched, startSong, stopAll } from './services/transport.js';
 import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
+import { midiBack, midiLost } from './ui/link-watch.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
 import { closePops, initControls, renderAll, syncControls } from './ui/controls.js';
@@ -156,6 +159,8 @@ Object.assign(hooks, {
   liveTempo,
   liveTick,
   matchDevice,
+  midiBack,
+  midiLost,
   recMidi,
   recStop,
   refreshIns,
@@ -231,6 +236,7 @@ PROJ.t = projTitle;
     },
     hooks,
     processTick,
+    sched,
     advance,
     TICKER,
     liveTick,
@@ -239,6 +245,16 @@ PROJ.t = projTitle;
     liveScene,
     lvFadeKind,
     lvUserOwns,
+    /* Live Mode as the pads drive it, for the soak test */
+    live: {
+      down: liveActDown,
+      up: liveActUp,
+      jamStart: liveJamStart,
+      jamEnd: liveJamEnd,
+      blend: lvBlendIn,
+      move: liveMoveNow,
+      restCC: lvRestCC
+    },
     liveBuildDrop,
     stopAll,
     startSong,

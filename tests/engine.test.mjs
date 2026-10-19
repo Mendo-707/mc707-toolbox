@@ -400,3 +400,69 @@ test('Raven mode: a track you play is left alone (no pattern, no effects) until 
   assert.ok(r.after.notes > 0, 'and plays its pattern again');
   assert.deepEqual(errors, []);
 });
+
+test('on stage: a freeze does not burst, a broken tick does not stop the music, a pulled cable comes back in time', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV,
+      TR = a.TR;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.assign(LV, { style: 'deephouse', seed: 3, custom: false, auto: false });
+    a.liveBuild();
+    a.liveStart(0);
+    a.TICKER.stop();
+    /* a 2-second freeze: the clock is 2 s behind; one scheduler run must not fire 2 s of ticks */
+    const tick0 = TR.tick;
+    TR.nextTime -= 2;
+    a.sched();
+    const freeze = { ticks: TR.tick - tick0, late: TR.late || 0 };
+    /* a broken pattern on one track: the tick fails, the clock moves on, the others keep playing */
+    const t0 = TR.tick;
+    LV.voices[3] = [{ f: null, start: 0, env: { v0: 1, v1: 1, t0: 0, t1: 0 } }];
+    for (let i = 0; i < 40; i++) {
+      try {
+        a.sched();
+      } catch (e) {
+        return { thrown: String(e) };
+      }
+      TR.nextTime -= 0.1;
+    }
+    const broken = { moved: TR.tick > t0, errs: TR.errs || 0 };
+    LV.voices[3] = [];
+    /* the cable: unplugged, then back */
+    const acc = await navigator.requestMIDIAccess();
+    const port = acc.outputs.get('o1');
+    port.state = 'disconnected';
+    await a.connectMidi();
+    const warn = document.querySelector('#linkWarn');
+    const lost = !!warn && !warn.hidden && /disconnected/.test(warn.textContent);
+    port.state = 'connected';
+    window.__out.length = 0;
+    await a.connectMidi();
+    const back = {
+      hidden: warn.hidden,
+      notesOff: window.__out.some(b => (b[0] & 0xf0) === 0xb0 && b[1] === 123),
+      levels: window.__out.filter(b => (b[0] & 0xf0) === 0xb0 && b[1] === 11 && b[2] === 127).length,
+      playing: TR.playing
+    };
+    a.stopAll();
+    return { freeze, broken, lost, back };
+  });
+  assert.ok(!r.thrown, 'the scheduler never throws: ' + r.thrown);
+  assert.ok(
+    r.freeze.ticks < 20,
+    'after a freeze it carries on instead of firing every missed tick (' + r.freeze.ticks + ')'
+  );
+  assert.ok(r.freeze.late >= 1);
+  assert.ok(r.broken.moved && r.broken.errs > 0, 'a broken tick is logged and the clock moves on');
+  assert.ok(r.lost, 'unplugging shows the warning');
+  assert.ok(
+    r.back.hidden && r.back.notesOff && r.back.playing,
+    'plugging back in hides it, releases notes, carries on'
+  );
+  assert.ok(r.back.levels >= 3, 'track levels are sent again (' + r.back.levels + ')');
+  assert.ok(errors.length <= 1, 'only the deliberate broken tick reports an error: ' + errors.join(' | '));
+});

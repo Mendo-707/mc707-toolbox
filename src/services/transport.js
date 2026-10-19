@@ -5,7 +5,7 @@
 // Owns: TR (the transport), REC (MIDI recording).
 // Reads: S, MIDI, AU, PCLAST, CMK, AUTOLAST.
 // Calls up the layers through hooks (core/hooks.js).
-import { clamp } from '../core/dom.js';
+import { clamp, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
@@ -216,6 +216,20 @@ export function advance() {
     /* runs until stopped */
   } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
 }
+/* How the clock copes on stage: TR.late counts the stalls it rode out, TR.errs the ticks that failed. */
+const LATE = 0.05; /* seconds behind the audio clock before the timeline moves on instead of catching up */
+let errToast = 0;
+/** A tick that went wrong: logged, shown at most every 30 s, and the clock carries on. */
+function tickError(e, tick) {
+  TR.errs = (TR.errs || 0) + 1;
+  TR.lastErr = { tick, msg: String((e && e.message) || e) };
+  if (TR.errs <= 5) console.error('Tick ' + tick + ' failed; playback carried on.', e);
+  const now = Date.now();
+  if (now - errToast > 30000) {
+    errToast = now;
+    toast('Something went wrong at bar ' + (Math.floor(tick / 32) + 1) + '. Playback carried on.');
+  }
+}
 /** Schedule all ticks that fall within the look-ahead window. Run by TICKER. */
 export function sched() {
   const ctx = AU.ctx;
@@ -223,10 +237,30 @@ export function sched() {
     if (ctx.currentTime >= TR.endTime) stopPlay();
     return;
   }
+  /* after a stall (the computer froze for a moment) the music carries on from where it was, a little
+     late, instead of firing every missed tick at once */
+  if (ctx.currentTime - TR.nextTime > LATE) {
+    TR.nextTime = ctx.currentTime + 0.01;
+    TR.late = (TR.late || 0) + 1;
+  }
   const horizon = ctx.currentTime + 0.12;
   while (TR.nextTime < horizon && !TR.ending) {
-    processTick(TR.tick, TR.nextTime);
-    advance();
+    const tick = TR.tick;
+    /* one bad tick never stops the music: it is logged and the clock moves on */
+    try {
+      processTick(tick, TR.nextTime);
+    } catch (e) {
+      tickError(e, tick);
+    }
+    try {
+      advance();
+    } catch (e) {
+      tickError(e, tick);
+      if (TR.tick === tick) {
+        TR.tick++;
+        TR.nextTime += tickDur();
+      }
+    }
   }
 }
 /* Transport timer. Runs in a Worker so it keeps time when the window is in the background. */

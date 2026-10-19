@@ -276,6 +276,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `live/pads.js` | The 16 Live pads: press and release, knobs and scatter sent to the MC-707. |  |
 | `live/panels.js` | The Live page panels: scene cards, pads, keys and mutes, knobs, and keeping the toolbar in step. |  |
 | `live/raven.js` | Raven mode: the mute and key keys on the MC-707 and a controller keyboard, the presets and their settings area. |  |
+| `live/resync.js` | Bringing a Live set back in line after the MIDI connection drops and returns (a USB hiccup): the MC-707 may have missed clip changes, effect moves and level fades, so everything is sent again. |  |
 | `live/scene-editor.js` | Editing Live scenes: parts, when each plays, its MC-707 clip, and saving custom scenes. |  |
 | `live/scene-templates.js` | The Live scene templates (Groove, Lift, Peak …) and the play patterns that let parts come and go. |  |
 | `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part on the chords' progression and the lead and pluck kept out of each other's way. |  |
@@ -319,6 +320,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/fullscreen.js` | Fullscreen (the Windows app or the browser) and keeping the screen awake while playing. | STAGE (fullscreen and wake lock) |
 | `ui/grab-pattern.js` | Record sample from the pattern editor: play one pattern on its own, through the track you choose, and record it to a WAV with the sample grabber (that track's own USB channel when Audio has per-track channels set up, otherwise the mix). |  |
 | `ui/grabber.js` | The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from Song or Live Mode. | GRAB (the sample grabber) |
+| `ui/link-watch.js` | The connection watch: a banner when the MC-707 (or MC-101) drops off MIDI mid-set, and a clean return when it comes back: notes released, then the playing set or song sent again, in time. |  |
 | `ui/live-capture.js` | Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip changes. |  |
 | `ui/live-menus.js` | Right-click menus in Live Mode: scene cards, pads, tracks and keys. |  |
 | `ui/menu.js` | The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items. | CM (the open menu) |

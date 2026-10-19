@@ -56,7 +56,9 @@ export async function connectMidi() {
 /** Refill the MIDI output list and pick the saved output, or the first MC-707. Also refreshes the input list. */
 export function refreshOuts() {
   const sel = $('#midiOut');
-  const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [];
+  /* a port that was unplugged can stay in the list as 'disconnected': leave it out */
+  const outs = MIDI.access ? [...MIDI.access.outputs.values()].filter(o => o.state !== 'disconnected') : [];
+  const had = MIDI.out;
   sel.textContent = '';
   sel.append(el('option', { value: '' }, outs.length ? 'No output' : 'No devices found'));
   outs.forEach(o => sel.append(el('option', { value: o.id }, o.name)));
@@ -66,6 +68,14 @@ export function refreshOuts() {
   if (pick) S.midiOut = pick.id;
   /* an MC-101 on the port while the app is set to the MC-707 (or the reverse): follow the device */
   if (pick) hooks.matchDevice(pick.name);
+  /* the device went away (USB unplugged, powered off) or came back: tell the user, and resync on return */
+  if (had && !pick) {
+    MIDI.lost = had.name;
+    hooks.midiLost(had.name);
+  } else if (pick && MIDI.lost) {
+    MIDI.lost = null;
+    hooks.midiBack(pick.name);
+  }
   $('#midiStat').textContent = pick
     ? 'Sending to ' + pick.name + '.'
     : outs.length
