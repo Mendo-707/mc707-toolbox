@@ -127,3 +127,67 @@ test('Sound browser: the older My sounds list moves into the library once', asyn
   assert.equal(e.d['CMN.LEVEL'], 99);
   assert.deepEqual(errors, []);
 });
+
+test('loading a sound sends only what changed, and leaves the effect type alone when it is the same', async () => {
+  const { page, errors } = await openApp();
+  const z = 'window.__app.zen';
+  await page.evaluate(`${z}.open(3, 0)`);
+  for (let t = 0; t < 100 && (await page.evaluate(`!!${z}.ZE.busy`)); t++) await page.waitForTimeout(100);
+  await page.evaluate(`${z}.browse()`);
+  await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
+  const load = async name => {
+    await page.evaluate('window.__dt1 = 0; window.__onDT1 = (a, d) => (window.__dt1 += d.length)');
+    await page.fill('#zbQ', name);
+    await page.locator('#zbOv .zbItem', { hasText: name }).first().click();
+    /* the effect settings follow the effect type a moment later */
+    await page.waitForTimeout(1500);
+    return page.evaluate('window.__dt1');
+  };
+  const first = await load('Warm pad');
+  const again = await load('Warm pad');
+  const other = await load('Juno pad');
+  console.log({ first, again, other });
+  assert.ok(first > 0, 'the first load is sent');
+  assert.equal(again, 0, 'loading the same sound again sends nothing');
+  assert.ok(other > 0 && other < first + 200, 'another pad sends only its differences');
+  assert.deepEqual(errors, []);
+});
+
+test('loading a sound mutes the track until it is written (no half-written sound or effect is heard), and empty clips are not grabbed', async () => {
+  const { page, errors } = await openApp();
+  const z = 'window.__app.zen';
+  await page.evaluate(`${z}.open(3, 0)`);
+  await page.waitForTimeout(500);
+  await page.evaluate(`${z}.browse()`);
+  await page.evaluate('window.__out.length = 0');
+  /* a starter with its own effect type: the effect settings go in after the MC-707's reset */
+  await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
+  await page.fill('#zbQ', 'Hoover');
+  await page.locator('#zbOv .zbItem', { hasText: 'Hoover' }).first().click();
+  await page.waitForFunction(() => window.__out.some(b => b[0] === 0xb3 && b[1] === 11 && b[2] > 0), null, {
+    timeout: 15000
+  });
+  const out = await page.evaluate('window.__out');
+  const ch = 3,
+    mute = out.findIndex(b => b[0] === (0xb0 | ch) && b[1] === 11 && b[2] === 0),
+    back = out.findIndex(b => b[0] === (0xb0 | ch) && b[1] === 11 && b[2] === 127),
+    writes = out.map((b, i) => (b[0] === 0xf0 && b[7] === 0x12 ? i : -1)).filter(i => i >= 0);
+  assert.ok(mute >= 0 && writes.length, 'muted, and the sound written');
+  assert.ok(mute < writes[0], 'muted before the first write');
+  assert.ok(back > writes[writes.length - 1], 'back only after the last write');
+  assert.ok(
+    out.slice(mute, back).some(b => b[0] === (0xb0 | ch) && b[1] === 120),
+    'and any tail cut first'
+  );
+  /* an empty clip (the initial tone) is not grabbed */
+  await page.fill('#zbQ', 'Init tone');
+  await page.locator('#zbOv .zbItem', { hasText: 'Init tone' }).first().click();
+  await page.waitForTimeout(800);
+  await page.locator('#zbOv button', { hasText: 'Grab from' }).click();
+  await page.locator('.cmenu >> text=This clip').click();
+  await page.waitForFunction(() => !document.querySelector('#zbOv button.on')?.textContent.includes('Stop'), null, {
+    timeout: 30000
+  });
+  assert.equal(await page.evaluate(`${z}.ZS.list.length`), 0, 'nothing grabbed from an empty clip');
+  assert.deepEqual(errors, []);
+});

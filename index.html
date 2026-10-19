@@ -47124,8 +47124,9 @@ input[type='number'] {
   }
   function load3(e) {
     B.cur = e.id;
-    zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
+    const done = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
     render2();
+    return done;
   }
   var chip = (label2, on2, fn, title) => el("button", { type: "button", class: "zbChip" + (on2 ? " on" : ""), title: title || "", onclick: fn }, label2);
   function form(e, done) {
@@ -47204,10 +47205,14 @@ input[type='number'] {
           type: "button",
           class: "zbPlay",
           title: "Load it and hold to play a note",
-          onpointerdown: (x) => {
+          onpointerdown: async (x) => {
             x.stopPropagation();
-            if (B.cur !== e.id) load3(e);
-            audition2(e.type === "bass" ? 36 : 60);
+            let up = false;
+            const u = () => up = true;
+            addEventListener("pointerup", u);
+            if (B.cur !== e.id) await load3(e);
+            removeEventListener("pointerup", u);
+            if (!up) audition2(e.type === "bass" ? 36 : 60);
           },
           onclick: (x) => x.stopPropagation()
         },
@@ -47249,6 +47254,7 @@ input[type='number'] {
       })
     );
   }
+  var isBlank = (snd) => /^(|init ?(tone|kit|sound))$/i.test((snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim());
   async function grab(scope) {
     if (B.grab) return;
     const dn = DEVS[DEV].name;
@@ -47272,7 +47278,7 @@ input[type='number'] {
         break;
       }
       if (r.ok < r.total * 0.9) g.bad++;
-      else if (!Object.keys(diffOf(snd)).length) g.empty++;
+      else if (!Object.keys(diffOf(snd)).length || isBlank(snd)) g.empty++;
       else if (await soundAdd(snd, { src: "mc707" })) g.added++;
       else g.same++;
       status();
@@ -47771,14 +47777,36 @@ input[type='number'] {
     clearTimeout(memT);
     memT = setTimeout(() => ZE.snd && rememberClip(ZE.snd, ZE.t, ZE.k), 800);
   }
+  var quietN = 0;
+  async function quietly(send) {
+    const t = ZE.t, ch = (S.tracks[t] && S.tracks[t].ch || t + 1) - 1, back = (S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11]) ?? 127, out = () => ZX.out || MIDI.out;
+    if (quietN++ === 0 && out()) out().send([176 | ch, 11, 0]);
+    try {
+      await send();
+      await zxFlush();
+      await new Promise((r) => setTimeout(r, 40));
+    } finally {
+      if (--quietN === 0 && out()) {
+        out().send([176 | ch, 120, 0]);
+        out().send([176 | ch, 11, back]);
+      }
+    }
+  }
   function zeLoad(snd, why) {
-    ZE.undo.push(Object.fromEntries(Object.keys(ZE.snd.v).map((k2) => [k2, ZE.snd.v[k2]])));
+    const prev = ZE.snd;
+    ZE.undo.push(Object.fromEntries(Object.keys(prev.v).map((k2) => [k2, prev.v[k2]])));
     ZE.redo = [];
     ZE.snd = snd;
-    if (sending()) sendSound(snd, zeBase());
+    const live2 = sending();
+    let done = Promise.resolve();
+    if (live2) {
+      const keys2 = new Set(Object.keys(snd.v).filter((k2) => !prev.known.has(k2) || prev.v[k2] !== snd.v[k2])), base = zeBase();
+      if (keys2.size) done = quietly(() => sendSound(snd, base, keys2));
+    }
     remember();
     zeRender();
-    if (why) toast(why + (sending() ? " and sent to the " + DEVS[DEV].name : ""));
+    if (why) toast(why + (live2 ? " and sent to the " + DEVS[DEV].name : ""));
+    return done;
   }
   function mfxType(type, vals) {
     const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = vals || mfxDefaults(type);
@@ -47821,7 +47849,8 @@ input[type='number'] {
   }
   async function zeSendAll() {
     if (!await zxConnect()) return status2();
-    sendSound(ZE.snd, zeBase());
+    const snd = ZE.snd, base = zeBase();
+    quietly(() => sendSound(snd, base));
     toast("Sent the whole " + (ZE.kind === "kit" ? "kit" : "tone") + " to track " + devNum(ZE.t) + ", " + targetName());
   }
   var targetName = (k2 = ZE.k) => k2 === 16 ? "track sound" : "clip " + (k2 + 1);

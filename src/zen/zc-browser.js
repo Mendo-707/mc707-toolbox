@@ -109,8 +109,9 @@ export function browserClose() {
 
 function load(e) {
   B.cur = e.id;
-  zeLoad(e.src === 'starter' ? e.make() : soundOf(e), 'Loaded ' + e.name);
+  const done = zeLoad(e.src === 'starter' ? e.make() : soundOf(e), 'Loaded ' + e.name);
   render();
+  return done;
 }
 const chip = (label, on, fn, title) =>
   el('button', { type: 'button', class: 'zbChip' + (on ? ' on' : ''), title: title || '', onclick: fn }, label);
@@ -193,10 +194,15 @@ function row(e) {
         type: 'button',
         class: 'zbPlay',
         title: 'Load it and hold to play a note',
-        onpointerdown: x => {
+        onpointerdown: async x => {
           x.stopPropagation();
-          if (B.cur !== e.id) load(e);
-          audition(e.type === 'bass' ? 36 : 60);
+          /* load first (the track is quiet while the sound goes in), then play while still held */
+          let up = false;
+          const u = () => (up = true);
+          addEventListener('pointerup', u);
+          if (B.cur !== e.id) await load(e);
+          removeEventListener('pointerup', u);
+          if (!up) audition(e.type === 'bass' ? 36 : 60);
         },
         onclick: x => x.stopPropagation()
       },
@@ -242,6 +248,9 @@ function row(e) {
 }
 
 /* ---- grabbing sounds from the MC-707's clips ---- */
+/* an empty clip: no name, or Roland's initial one (an empty clip on the MC-707 is not quite the initial sound) */
+const isBlank = snd =>
+  /^(|init ?(tone|kit|sound))$/i.test((snd.v[snd.kind === 'kit' ? 'KCMN.NAME' : 'CMN.NAME'] || '').trim());
 async function grab(scope) {
   if (B.grab) return;
   const dn = DEVS[DEV].name;
@@ -266,7 +275,7 @@ async function grab(scope) {
       break;
     }
     if (r.ok < r.total * 0.9) g.bad++;
-    else if (!Object.keys(diffOf(snd)).length) g.empty++;
+    else if (!Object.keys(diffOf(snd)).length || isBlank(snd)) g.empty++;
     else if (await soundAdd(snd, { src: 'mc707' })) g.added++;
     else g.same++;
     status();
