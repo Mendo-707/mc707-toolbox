@@ -225,6 +225,8 @@ Read [AGENTS.md](AGENTS.md) first, then [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 
 Open an [issue](../../issues) and say what you pressed, what you expected and what happened. Your Windows version and MC-707 firmware version help. Some features (8-channel recording, controller keyboards, MC-101 mode and parts of the ZenCore editor) have only been tested against a simulated MC-707, so reports from real hardware are very welcome.
 
+**ZenCore diagnostics:** if the ZenCore editor doesn't work with your MC-707 or MC-101, open the [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html) in Chrome or Edge. It only reads from the device and never changes anything. Press **Identity request** and **Read sound**, then **Save everything to a file** and attach the file to your issue.
+
 ## Licence
 
 MC-707 Toolbox is free to use, share and change for any **noncommercial** purpose under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You may not sell it, charge for it or use it commercially. If you share a copy or a changed version, include the licence and its Required Notice line.
