@@ -23003,15 +23003,15 @@ input[type='number'] {
         }
       return best;
     }
-    function segsOf(P, R3, center) {
-      const [, , list, opt] = P;
+    function segsOf(P, R3, center, push = P[3].push) {
+      const [, , list] = P;
       let at2 = 0;
       const segs = list.map(([off, q, beats, bass]) => {
         const s = { s: at2 * 4, e: (at2 + beats) * 4, off, q, bass: bass == null ? off : bass };
         at2 += beats;
         return s;
       });
-      if (opt.push) {
+      if (push) {
         for (let i = 1; i < segs.length; i++) {
           segs[i].s -= 2;
           segs[i - 1].e -= 2;
@@ -23045,12 +23045,19 @@ input[type='number'] {
           if (s >= total) continue;
           let l = Math.min(h[1], total - s);
           const look = bass ? 0 : h[3] || 0;
+          let first = true;
           while (l > 0) {
             const g = segAt2(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
-            emit(s, Math.max(1, end), h, g);
-            if (look) break;
+            if (look) {
+              emit(s, Math.max(1, end), h, g);
+              break;
+            }
+            const rest = l - end;
+            if (end >= 2 || first && rest < 2) emit(s, Math.max(1, end), h, g);
+            if (rest < 2) break;
             s += end;
-            l -= end;
+            l = rest;
+            first = false;
           }
         }
     }
@@ -23154,9 +23161,10 @@ input[type='number'] {
       const cr = shuf(CR), bg = shuf(BG);
       let ci = 0, bi = 0, ki = 0, mi = 0;
       const push = (o) => FAC.push(Object.assign({ id: "hx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
+      const BUSY = ["pushed", "3+3+2", "speeds up", "long-short", "3 bars + 1", "sus resolves late"];
       for (const [P, keys2, scale] of plan2) {
-        const [title, pn, list, opt] = P, beats = list.reduce((a, c) => a + c[2], 0), bars = beats / 4, total = bars * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")";
-        const segs = segsOf(P, R3, 62);
+        const [title, pn, list, opt] = P, beats = list.reduce((a, c) => a + c[2], 0), bars = beats / 4, total = bars * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")", busy = BUSY.includes(opt.timing) || void 0;
+        const segs = segsOf(P, R3, 62), beat = segsOf(P, R3, 62, false);
         const rhythms = [CR[0], cr[ci++ % cr.length], cr[ci++ % cr.length]].filter((c, i, a) => a.indexOf(c) === i);
         if (rhythms.length < 3) rhythms.push(cr[ci++ % cr.length]);
         for (const c of rhythms) {
@@ -23169,6 +23177,7 @@ input[type='number'] {
             bars,
             notes,
             ...K,
+            busy,
             role: "Chords",
             pool: "chords",
             lively: c[0] !== "Hold"
@@ -23194,12 +23203,13 @@ input[type='number'] {
             }
             return low2;
           };
-          tile(total, b[1], segs, (s, l, h, sg) => notes.push({ s, l, n: note(h[2], sg), v: h[3] }), 1);
+          tile(total, b[1], beat, (s, l, h, sg) => notes.push({ s, l, n: note(h[2], sg), v: h[3] }), 1);
           push({
             name: "Bass: " + tag + " " + b[0] + how,
             bars,
             notes,
             ...K,
+            busy,
             role: "Bass",
             pool: "bass",
             lively: b[0] !== "Sustain"
@@ -23210,7 +23220,7 @@ input[type='number'] {
           pv.forEach(
             (sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 82 }))
           );
-          push({ name: "Pad: " + tag + how, bars, notes, ...K, role: "Pad", pool: "pad" });
+          push({ name: "Pad: " + tag + how, bars, notes, ...K, busy, role: "Pad", pool: "pad" });
         }
         {
           const A = [
@@ -23219,7 +23229,7 @@ input[type='number'] {
             ["Spiral", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3, 4, 3, 2, 1]],
             ["Skip", "x..x..x.x..x..x.", [0, 3, 1, 4, 2, 0]]
           ];
-          const [an, mask, seq2] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70), notes = [];
+          const [an, mask, seq2] = A[(ki + uid) % A.length], pv = segsOf(P, R3, 70, false), notes = [];
           let k2 = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
@@ -23231,15 +23241,25 @@ input[type='number'] {
               v: s % 4 === 0 ? 102 : s % 2 ? 76 : 88
             });
           }
-          push({ name: "Arp: " + an + " " + tag + how, bars, notes, ...K, role: "Lead", pool: "pluck", lively: true });
+          push({
+            name: "Arp: " + an + " " + tag + how,
+            bars,
+            notes,
+            ...K,
+            busy,
+            role: "Lead",
+            pool: "pluck",
+            lively: true
+          });
         }
         {
           const m = MOT[mi++ % MOT.length];
           push({
             name: "Lead: " + m[0] + " " + tag + how,
             bars,
-            notes: lead(segs, total, R3, scale, m[1]),
+            notes: lead(beat, total, R3, scale, m[1]),
             ...K,
+            busy,
             role: "Lead",
             pool: "lead",
             lively: true
@@ -23327,7 +23347,8 @@ input[type='number'] {
     if (pool === "bass" && st.id === "acidtechno") hand.push(...lvPool(st, "acid"));
     const tone2 = TONE_POOLS.includes(pool);
     const lib = FAC.filter(
-      (f) => f.genre === g && f.pool === pool && (!f.styles || f.styles.includes(st.id) || tone2 && !(f.notFor && f.notFor.includes(st.id))) && (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone2 ? 30 : 24))
+      (f) => f.genre === g && f.pool === pool && (!f.styles || f.styles.includes(st.id) || tone2 && !(f.notFor && f.notFor.includes(st.id))) && (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone2 ? 30 : 24)) && /* harmony-pack patterns with the busier chord timings are for picking by hand, not for auto-picks */
+      !f.busy
     ).map((f) => f.id);
     return LV_POOLCACHE[key] = [.../* @__PURE__ */ new Set([...hand, ...lib])].filter((id) => facById(id));
   }

@@ -119,7 +119,9 @@ export function lvPool(st, pool) {
       f.genre === g &&
       f.pool === pool &&
       (!f.styles || f.styles.includes(st.id) || (tone && !(f.notFor && f.notFor.includes(st.id)))) &&
-      (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone ? 30 : 24))
+      (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone ? 30 : 24)) &&
+      /* harmony-pack patterns with the busier chord timings are for picking by hand, not for auto-picks */
+      !f.busy
   ).map(f => f.id);
   return (LV_POOLCACHE[key] = [...new Set([...hand, ...lib])].filter(id => facById(id)));
 }

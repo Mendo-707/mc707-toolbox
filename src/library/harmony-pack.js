@@ -456,15 +456,15 @@ export function addHarmonyPack() {
   }
   /* the chord segments in steps; with push every change moves an eighth (2 steps) earlier, and the first
      chord also arrives early at the end of the loop */
-  function segsOf(P, R, center) {
-    const [, , list, opt] = P;
+  function segsOf(P, R, center, push = P[3].push) {
+    const [, , list] = P;
     let at = 0;
     const segs = list.map(([off, q, beats, bass]) => {
       const s = { s: at * 4, e: (at + beats) * 4, off, q, bass: bass == null ? off : bass };
       at += beats;
       return s;
     });
-    if (opt.push) {
+    if (push) {
       for (let i = 1; i < segs.length; i++) {
         segs[i].s -= 2;
         segs[i - 1].e -= 2;
@@ -492,7 +492,8 @@ export function addHarmonyPack() {
     const real = segs.filter(x => !x.wrap);
     return real[(real.indexOf(g.wrap ? real[0] : g) + 1) % real.length];
   };
-  /* lay a one-bar cell across the phrase, splitting any note that crosses a chord change so the new chord sounds */
+  /* lay a one-bar cell across the phrase, splitting any note that crosses a chord change so the new chord sounds
+     (pieces shorter than an eighth are dropped, so nothing comes out as a stray sliver) */
   function tile(total, hits, segs, emit, bass) {
     for (let base = 0; base < total; base += 16)
       for (const h of hits) {
@@ -500,13 +501,21 @@ export function addHarmonyPack() {
         if (s >= total) continue;
         let l = Math.min(h[1], total - s);
         const look = bass ? 0 : h[3] || 0;
+        let first = true;
         while (l > 0) {
           const g = segAt(segs, total, s + look),
             end = look ? l : Math.min(l, g.e - (s % total));
-          emit(s, Math.max(1, end), h, g);
-          if (look) break;
+          if (look) {
+            emit(s, Math.max(1, end), h, g);
+            break;
+          }
+          /* no slivers: a piece shorter than an eighth only sounds when it is the whole hit */
+          const rest = l - end;
+          if (end >= 2 || (first && rest < 2)) emit(s, Math.max(1, end), h, g);
+          if (rest < 2) break;
           s += end;
-          l -= end;
+          l = rest;
+          first = false;
         }
       }
   }
@@ -621,6 +630,8 @@ export function addHarmonyPack() {
       mi = 0;
     const push = o =>
       FAC.push(Object.assign({ id: 'hx' + g + uid++, genre: g, styles: null, bpm: null, type: 'tone' }, o));
+    /* the busier timings stay in the library to pick by hand; the wizard and Live Mode leave them out */
+    const BUSY = ['pushed', '3+3+2', 'speeds up', 'long-short', '3 bars + 1', 'sus resolves late'];
     for (const [P, keys, scale] of plan) {
       const [title, pn, list, opt] = P,
         beats = list.reduce((a, c) => a + c[2], 0),
@@ -629,8 +640,11 @@ export function addHarmonyPack() {
         K = keys[ki++ % keys.length],
         R = K.key.root,
         tag = title + ' ' + pn,
-        how = ' (' + opt.timing + ')';
-      const segs = segsOf(P, R, 62);
+        how = ' (' + opt.timing + ')',
+        busy = BUSY.includes(opt.timing) || undefined;
+      const segs = segsOf(P, R, 62),
+        /* basslines, arps and leads stay on the beat even when the chords are pushed */
+        beat = segsOf(P, R, 62, false);
       /* chords: three rhythms, always including the plain hold so the timing of the changes is clear */
       const rhythms = [CR[0], cr[ci++ % cr.length], cr[ci++ % cr.length]].filter((c, i, a) => a.indexOf(c) === i);
       if (rhythms.length < 3) rhythms.push(cr[ci++ % cr.length]);
@@ -644,6 +658,7 @@ export function addHarmonyPack() {
           bars,
           notes,
           ...K,
+          busy,
           role: 'Chords',
           pool: 'chords',
           lively: c[0] !== 'Hold'
@@ -675,12 +690,13 @@ export function addHarmonyPack() {
           }
           return low;
         };
-        tile(total, b[1], segs, (s, l, h, sg) => notes.push({ s, l, n: note(h[2], sg), v: h[3] }), 1);
+        tile(total, b[1], beat, (s, l, h, sg) => notes.push({ s, l, n: note(h[2], sg), v: h[3] }), 1);
         push({
           name: 'Bass: ' + tag + ' ' + b[0] + how,
           bars,
           notes,
           ...K,
+          busy,
           role: 'Bass',
           pool: 'bass',
           lively: b[0] !== 'Sustain'
@@ -693,7 +709,7 @@ export function addHarmonyPack() {
         pv.forEach(sg =>
           sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 82 }))
         );
-        push({ name: 'Pad: ' + tag + how, bars, notes, ...K, role: 'Pad', pool: 'pad' });
+        push({ name: 'Pad: ' + tag + how, bars, notes, ...K, busy, role: 'Pad', pool: 'pad' });
       }
       /* arp: chord tones, following every change */
       {
@@ -704,7 +720,7 @@ export function addHarmonyPack() {
           ['Skip', 'x..x..x.x..x..x.', [0, 3, 1, 4, 2, 0]]
         ];
         const [an, mask, seq] = A[(ki + uid) % A.length],
-          pv = segsOf(P, R, 70),
+          pv = segsOf(P, R, 70, false),
           notes = [];
         let k = 0;
         for (let s = 0; s < total; s++) {
@@ -719,7 +735,16 @@ export function addHarmonyPack() {
             v: s % 4 === 0 ? 102 : s % 2 ? 76 : 88
           });
         }
-        push({ name: 'Arp: ' + an + ' ' + tag + how, bars, notes, ...K, role: 'Lead', pool: 'pluck', lively: true });
+        push({
+          name: 'Arp: ' + an + ' ' + tag + how,
+          bars,
+          notes,
+          ...K,
+          busy,
+          role: 'Lead',
+          pool: 'pluck',
+          lively: true
+        });
       }
       /* lead: a two-bar call and its answer, landing on the chord's own notes */
       {
@@ -727,8 +752,9 @@ export function addHarmonyPack() {
         push({
           name: 'Lead: ' + m[0] + ' ' + tag + how,
           bars,
-          notes: lead(segs, total, R, scale, m[1]),
+          notes: lead(beat, total, R, scale, m[1]),
           ...K,
+          busy,
           role: 'Lead',
           pool: 'lead',
           lively: true
