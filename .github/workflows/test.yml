@@ -26,6 +26,8 @@ jobs:
         run: node scripts/check-imports.mjs --strict
       - name: Check the module map in docs/ARCHITECTURE.md is current
         run: node scripts/module-map.mjs --check
+      - name: Check the ZenCore parameter reference in docs/ is current
+        run: node scripts/param-docs.mjs --check
       - name: Check index.html was rebuilt from src/
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
