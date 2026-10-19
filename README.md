@@ -14,7 +14,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Song Mode](docs/song-mode.png)
 
 <details>
-<summary><b>More screenshots and a tour in 10 cards</b></summary>
+<summary><b>More screenshots and a tour in 12 cards</b></summary>
 
 ![Your MC-707 clips](docs/mc707-clips.png)
 ![ZenCore editor](docs/zencore-editor.png)
@@ -22,13 +22,15 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Start screen](docs/features/1-start-screen.png)
 ![Song Mode](docs/features/2-song-mode.png)
 ![Song wizard](docs/features/3-song-wizard.png)
-![Harmony pack](docs/features/4-harmony-pack.png)
+![Pattern packs](docs/features/4-harmony-pack.png)
 ![Live Mode](docs/features/5-live-mode.png)
 ![Breaks, builds and smooth blends](docs/features/6-performance.png)
 ![Your MC-707 clips](docs/features/7-mc707-clips.png)
 ![ZenCore editor](docs/features/8-zencore-editor.png)
 ![Track setup](docs/features/9-track-setup.png)
 ![Raven mode and keyboards](docs/features/10-raven-and-keyboards.png)
+![Synth Mode](docs/features/11-synth-mode.png)
+![Sound browser](docs/features/12-sound-browser.png)
 
 </details>
 
