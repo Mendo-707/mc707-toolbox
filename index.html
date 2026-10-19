@@ -15266,7 +15266,8 @@ input[type='number'] {
     } else if (TR.mode === "live") {
     } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
   }
-  var LATE = 0.05;
+  var LATE = 0.25;
+  var AHEAD = 0.2;
   var errToast = 0;
   function tickError(e, tick) {
     TR.errs = (TR.errs || 0) + 1;
@@ -15292,7 +15293,7 @@ input[type='number'] {
       TR.nextTime = ctx2.currentTime + 0.01;
       TR.late = (TR.late || 0) + 1;
     }
-    const horizon = ctx2.currentTime + 0.12;
+    const horizon = ctx2.currentTime + AHEAD;
     while (TR.nextTime < horizon && !TR.ending) {
       const tick = TR.tick;
       try {

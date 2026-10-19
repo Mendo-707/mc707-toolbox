@@ -232,7 +232,10 @@ export function advance() {
   } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
 }
 /* How the clock copes on stage: TR.late counts the stalls it rode out, TR.errs the ticks that failed. */
-const LATE = 0.05; /* seconds behind the audio clock before the timeline moves on instead of catching up */
+/* seconds behind the audio clock before the timeline moves on instead of catching up: only a real freeze.
+   Shorter stalls (a browser tab's ordinary hiccups) are covered by planning ahead, with nothing audible. */
+const LATE = 0.25,
+  AHEAD = 0.2; /* how far ahead notes are scheduled (s) */
 let errToast = 0;
 /** A tick that went wrong: logged, shown at most every 30 s, and the clock carries on. */
 function tickError(e, tick) {
@@ -263,7 +266,7 @@ export function sched() {
     TR.nextTime = ctx.currentTime + 0.01;
     TR.late = (TR.late || 0) + 1;
   }
-  const horizon = ctx.currentTime + 0.12;
+  const horizon = ctx.currentTime + AHEAD;
   while (TR.nextTime < horizon && !TR.ending) {
     const tick = TR.tick;
     /* one bad tick never stops the music: it is logged and the clock moves on */
