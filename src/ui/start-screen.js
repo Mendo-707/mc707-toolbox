@@ -97,6 +97,12 @@ export function startOpen(last = true) {
         card('✦', 'Song wizard', 'Pick a style and get a full arrangement to start from.', () => openWiz()),
         card('◉', 'Live Mode', 'Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.', () =>
           setMode('live')
+        ),
+        card(
+          '≋',
+          'Synth Mode',
+          'The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.',
+          () => setMode('synth')
         )
       ),
       el(

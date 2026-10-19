@@ -276,7 +276,8 @@ function initMenubar() {
   const tabs = el('div', { class: 'mtabs', role: 'tablist', 'aria-label': 'Mode' });
   [
     ['song', 'Song Mode'],
-    ['live', 'Live Mode']
+    ['live', 'Live Mode'],
+    ['synth', 'Synth Mode']
   ].forEach(([m, l]) =>
     tabs.append(
       el(

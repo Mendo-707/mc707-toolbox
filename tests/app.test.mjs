@@ -549,7 +549,14 @@ test('the start screen opens the last session or Live Mode, which asks for a gen
   });
   await page.waitForSelector('#startOv');
   const cards = await page.$$eval('.stCard b', b => b.map(x => x.textContent));
-  assert.deepEqual(cards, ['Load last session', 'Blank song', 'Empty template', 'Song wizard', 'Live Mode']);
+  assert.deepEqual(cards, [
+    'Load last session',
+    'Blank song',
+    'Empty template',
+    'Song wizard',
+    'Live Mode',
+    'Synth Mode'
+  ]);
   const clips = await page.evaluate(() => window.__app.S.clips.length);
   assert.ok(clips > 0, 'the saved song is loaded behind the screen');
   await page.locator('.stCard', { hasText: 'Empty template' }).click();

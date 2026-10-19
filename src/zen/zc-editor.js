@@ -162,9 +162,9 @@ export function zeUnmute(t) {
   QUIET.delete(ch);
   if (out) out.send([0xb0 | ch, 11, exprBack(t)]);
 }
-async function quietly(send) {
-  const t = ZE.t,
-    ch = chOf(t),
+/** Send a whole sound to track t with the track muted while it goes in (Synth mode uses it too). */
+export async function zeQuietly(send, t = ZE.t) {
+  const ch = chOf(t),
     out = ZX.out || MIDI.out,
     q = QUIET.get(ch) || { n: 0, t };
   if (!q.n++ && out) out.send([0xb0 | ch, 11, 0]);
@@ -194,7 +194,7 @@ export function zeLoad(snd, why) {
   if (live) {
     const keys = new Set(Object.keys(snd.v).filter(k => !prev.known.has(k) || prev.v[k] !== snd.v[k])),
       base = zeBase();
-    if (keys.size) done = quietly(() => sendSound(snd, base, keys));
+    if (keys.size) done = zeQuietly(() => sendSound(snd, base, keys));
   }
   remember();
   zeRender();
@@ -260,7 +260,7 @@ export async function zeSendAll() {
   if (!(await zxConnect())) return status();
   const snd = ZE.snd,
     base = zeBase();
-  quietly(() => sendSound(snd, base));
+  zeQuietly(() => sendSound(snd, base));
   toast('Sent the whole ' + (ZE.kind === 'kit' ? 'kit' : 'tone') + ' to track ' + devNum(ZE.t) + ', ' + targetName());
 }
 export const targetName = (k = ZE.k) => (k === 16 ? 'track sound' : 'clip ' + (k + 1));

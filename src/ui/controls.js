@@ -186,11 +186,11 @@ export function initControls() {
   const libBtn = () => $('#bLibT').classList.toggle('on', !$('#main').classList.contains('nolib'));
   $('#bNewPat').addEventListener('click', openNewPat);
   addEventListener('dragover', e => {
-    if (document.body.dataset.mode === 'live') return;
+    if (document.body.dataset.mode !== 'song') return;
     if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();
   });
   addEventListener('drop', e => {
-    if (document.body.dataset.mode === 'live') return;
+    if (document.body.dataset.mode !== 'song') return;
     const fs = e.dataTransfer && e.dataTransfer.files;
     if (fs && fs.length) {
       e.preventDefault();
@@ -410,6 +410,8 @@ function onKey(e) {
     liveKeyDown(e);
     return;
   }
+  /* Synth mode: the DAW plays; the song's shortcuts (Space, record) stay out of the way */
+  if (document.body.dataset.mode === 'synth') return;
   if (recKey(e, true)) return;
   const mod = e.ctrlKey || e.metaKey;
   if (!mod && !e.altKey && (e.key === 'r' || e.key === 'R')) {
