@@ -8,6 +8,7 @@
 //   chords   strummed or rolled instead of struck as one block, alternating up and down strokes
 //   length   notes held a little longer or shorter, like a real hand on the keys
 //   flams    near the top of the slider the snare sometimes gets a grace note
+// All drum tracks are one drummer: they drift together, each instrument keeping its own spot.
 // Four feels shape it: Natural, Laid back, Pushed and Drunk (loose and lazy, after J Dilla).
 // Its own seeded random numbers, so the patterns Live Mode picks never change.
 //
@@ -59,8 +60,10 @@ let seed = 0x9e3779b9;
 const rnd = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 const bi = () => rnd() * 2 - 1;
 /* per player: a slow random walk (where they sit right now), redrawn a little each beat */
-const walk = new Float64Array(8),
-  walkAt = new Int32Array(8).fill(-1);
+/* slots 0-7 are the tracks; slot 8 is the drummer, shared by every drum track (one player, not three) */
+const DRUMMER = 8,
+  walk = new Float64Array(9),
+  walkAt = new Int32Array(9).fill(-1);
 let bandWalk = 0,
   bandAt = -1;
 /* chords: notes struck at the same moment on one track are counted, to spread them */
@@ -132,7 +135,7 @@ export function humanize(ti, nn, v, t, d, isDrum, tick, earliest) {
     step = tick >> 1,
     bar = tick >> 5,
     beat = tick >> 3;
-  let ms = F[role] * a + drift(ti, beat, F, a) + bi() * F.loose * a;
+  let ms = F[role] * a + drift(isDrum ? DRUMMER : ti, beat, F, a) + bi() * F.loose * a;
   /* the bass locks to wherever the kick landed on this tick */
   if (role === 'kick') {
     kickTick = tick;

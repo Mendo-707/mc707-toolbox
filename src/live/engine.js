@@ -595,7 +595,7 @@ export function liveTick(tick, nt, td) {
         L = f.bars * 32,
         evs = patIndex(f).get((tick - LV.bov.start + LV.bov.off) % L);
       if (evs) {
-        for (const n of evs) emitNote(lvBT(), n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
+        for (const n of evs) emitNote(lvBT(), n.n, n.v, nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
         LV.pulse[lvBT()] = { time: nt, v: 1 };
       }
       continue;
@@ -605,7 +605,8 @@ export function liveTick(tick, nt, td) {
         L = f.bars * 32,
         evs = patIndex(f).get((((ft - LV.fill.org) % L) + L) % L);
       if (evs) {
-        for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
+        for (const n of evs)
+          emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
         LV.pulse[0] = { time: nt, v: 1 };
       }
       continue;
@@ -645,7 +646,13 @@ export function liveTick(tick, nt, td) {
         let nn = tone ? (conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0)) : n.n;
         if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && slotOf(t) >= 6)))
           nn = slotOf(t) === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
-        emitNote(t, tone ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
+        emitNote(
+          t,
+          tone ? clamp(nn, 0, 127) : nn,
+          clamp(n.v * g, 1, 127),
+          nt + subTick(n) * (TR.subTd || td),
+          n.l * 2 * td
+        );
         if (slotOf(t) === 3) v._last = nn;
         if (vt === 'echo' && last && tone)
           emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);

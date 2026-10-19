@@ -15024,8 +15024,9 @@ input[type='number'] {
   var seed3 = 2654435769;
   var rnd3 = () => (seed3 = Math.imul(seed3, 1664525) + 1013904223 >>> 0) / 4294967296;
   var bi = () => rnd3() * 2 - 1;
-  var walk = new Float64Array(8);
-  var walkAt = new Int32Array(8).fill(-1);
+  var DRUMMER = 8;
+  var walk = new Float64Array(9);
+  var walkAt = new Int32Array(9).fill(-1);
   var bandWalk = 0;
   var bandAt = -1;
   var chordAt = new Float64Array(8).fill(-1);
@@ -15073,7 +15074,7 @@ input[type='number'] {
     if (x <= 0) return { v, t, d, flam: null };
     const a = 0.6 * Math.pow(x, 1.2);
     const F = FEELS[HUM.feel] || FEELS.natural, role = roleOf2(ti, isDrum, nn), step = tick >> 1, bar2 = tick >> 5, beat = tick >> 3;
-    let ms = F[role] * a + drift(ti, beat, F, a) + bi() * F.loose * a;
+    let ms = F[role] * a + drift(isDrum ? DRUMMER : ti, beat, F, a) + bi() * F.loose * a;
     if (role === "kick") {
       kickTick = tick;
       kickOff = ms;
@@ -15107,6 +15108,12 @@ input[type='number'] {
   };
   var playBpm = () => TR.mode === "live" ? hooks.liveTempo() : TR.mode === "wiz" && TR.wz && TR.wz.bpm ? TR.wz.bpm : TR.mode === "pat" && TR.patBpm ? TR.patBpm : S.bpm;
   var playSwing = () => TR.mode === "live" ? hooks.liveSwingAmt() : TR.mode === "wiz" && TR.wz && TR.wz.swing != null ? TR.wz.swing : TR.mode === "pat" && TR.patSwing != null ? TR.patSwing : S.swing;
+  function swingWarp(tick, td) {
+    const d = (playSwing() / 100 - 0.5) * 4;
+    if (!d) return { off: 0, subTd: td };
+    const p = (tick % 4 + 4) % 4, w = p < 2 ? p * (2 + d) / 2 : 2 + d + (p - 2) * (2 - d) / 2;
+    return { off: (w - p) * td, subTd: td * (p < 2 ? (2 + d) / 2 : (2 - d) / 2) };
+  }
   var tickDur = () => 60 / playBpm() / 8;
   function emitNote(ti, nn, v, time, dur, noMidi) {
     if (!devOn(ti)) return;
@@ -15152,8 +15159,9 @@ input[type='number'] {
       sendMidi([248], time + td * 2 / 3);
     }
     if (S.metro && tick % 8 === 0) click(time, tick % 32 === 0);
-    const swing = tick % 2 === 0 && tick / 2 % 2 === 1 ? (playSwing() / 100 - 0.5) * 2 * (td * 2) : 0;
-    const nt = time + swing;
+    const sw = swingWarp(tick, td);
+    TR.subTd = sw.subTd;
+    const nt = time + sw.off;
     if (TR.mode === "song") {
       if (tick % 32 === 0 && MIDI.out) {
         const mb = tick / 32;
@@ -15221,7 +15229,13 @@ input[type='number'] {
           if (!evs) continue;
           const sh = f.type === "tone" ? shiftFor(f, wz.key) : 0;
           for (const n of evs)
-            emitNote(t, f.type === "tone" ? clamp(n.n + sh, 0, 127) : n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
+            emitNote(
+              t,
+              f.type === "tone" ? clamp(n.n + sh, 0, 127) : n.n,
+              n.v,
+              nt + subTick(n) * (TR.subTd || td),
+              n.l * 2 * td
+            );
         }
       }
     } else if (TR.mode === "live") {
@@ -15235,7 +15249,7 @@ input[type='number'] {
             TR.patTrack,
             TR.patShift ? clamp(n.n + TR.patShift, 0, 127) : n.n,
             n.v,
-            nt + subTick(n) * td,
+            nt + subTick(n) * (TR.subTd || td),
             n.l * 2 * td
           );
     }
@@ -29502,7 +29516,7 @@ input[type='number'] {
       if (!fl && t === lvBT() && LV.bov && tick >= LV.bov.start) {
         const f = LV.bov.f, L2 = f.bars * 32, evs = patIndex(f).get((tick - LV.bov.start + LV.bov.off) % L2);
         if (evs) {
-          for (const n of evs) emitNote(lvBT(), n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
+          for (const n of evs) emitNote(lvBT(), n.n, n.v, nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
           LV.pulse[lvBT()] = { time: nt, v: 1 };
         }
         continue;
@@ -29510,7 +29524,8 @@ input[type='number'] {
       if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
         const f = LV.fill.f, L2 = f.bars * 32, evs = patIndex(f).get(((ft - LV.fill.org) % L2 + L2) % L2);
         if (evs) {
-          for (const n of evs) emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
+          for (const n of evs)
+            emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
           LV.pulse[0] = { time: nt, v: 1 };
         }
         continue;
@@ -29540,7 +29555,13 @@ input[type='number'] {
           let nn = tone2 ? conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0) : n.n;
           if (tone2 && (vt === "oct" && last && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
             nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
-          emitNote(t, tone2 ? clamp(nn, 0, 127) : nn, clamp(n.v * g, 1, 127), nt + subTick(n) * td, n.l * 2 * td);
+          emitNote(
+            t,
+            tone2 ? clamp(nn, 0, 127) : nn,
+            clamp(n.v * g, 1, 127),
+            nt + subTick(n) * (TR.subTd || td),
+            n.l * 2 * td
+          );
           if (slotOf(t) === 3) v._last = nn;
           if (vt === "echo" && last && tone2)
             emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);

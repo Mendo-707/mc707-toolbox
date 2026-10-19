@@ -46,6 +46,18 @@ const playSwing = () =>
       : TR.mode === 'pat' && TR.patSwing != null
         ? TR.patSwing
         : S.swing;
+/**
+ * Swing as a stretch of each eighth note: its first 16th is lengthened and its second shortened, and
+ * everything inside moves in proportion (32nds, rolls, triplets), so no note is pushed onto the next.
+ * off = how much later this tick plays; subTd = the length of one tick's worth of in-between time here.
+ */
+export function swingWarp(tick, td) {
+  const d = (playSwing() / 100 - 0.5) * 4; /* the off-beat 16th's delay, in ticks (1 at 75%) */
+  if (!d) return { off: 0, subTd: td };
+  const p = ((tick % 4) + 4) % 4,
+    w = p < 2 ? (p * (2 + d)) / 2 : 2 + d + ((p - 2) * (2 - d)) / 2;
+  return { off: (w - p) * td, subTd: td * (p < 2 ? (2 + d) / 2 : (2 - d) / 2) };
+}
 /** Length of one tick (1/32 bar) in seconds at the current playing tempo. */
 export const tickDur = () => 60 / playBpm() / 8;
 /**
@@ -107,8 +119,9 @@ export function processTick(tick, time) {
     sendMidi([0xf8], time + (td * 2) / 3);
   }
   if (S.metro && tick % 8 === 0) click(time, tick % 32 === 0);
-  const swing = tick % 2 === 0 && (tick / 2) % 2 === 1 ? (playSwing() / 100 - 0.5) * 2 * (td * 2) : 0;
-  const nt = time + swing;
+  const sw = swingWarp(tick, td);
+  TR.subTd = sw.subTd;
+  const nt = time + sw.off;
   if (TR.mode === 'song') {
     if (tick % 32 === 0 && MIDI.out) {
       const mb = tick / 32;
@@ -184,7 +197,13 @@ export function processTick(tick, time) {
         if (!evs) continue;
         const sh = f.type === 'tone' ? shiftFor(f, wz.key) : 0;
         for (const n of evs)
-          emitNote(t, f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
+          emitNote(
+            t,
+            f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n,
+            n.v,
+            nt + subTick(n) * (TR.subTd || td),
+            n.l * 2 * td
+          );
       }
     }
   } else if (TR.mode === 'live') {
@@ -198,7 +217,7 @@ export function processTick(tick, time) {
           TR.patTrack,
           TR.patShift ? clamp(n.n + TR.patShift, 0, 127) : n.n,
           n.v,
-          nt + subTick(n) * td,
+          nt + subTick(n) * (TR.subTd || td),
           n.l * 2 * td
         );
   }

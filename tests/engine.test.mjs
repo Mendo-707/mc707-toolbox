@@ -557,3 +557,56 @@ test('Humanize: off changes nothing; on, each player sits in its own spot, chord
   assert.ok(full.length >= off.length, 'flams only add notes');
   assert.deepEqual(errors, []);
 });
+
+test('swing stretches each eighth: 32nds and rolls move in proportion and never land on the next note', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      S = a.S;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
+    performance.now = () => 0;
+    const play = swing => {
+      S.swing = swing;
+      S.clips = [];
+      /* one bar of 32nd notes on a drum track */
+      S.patterns.p32 = {
+        id: 'p32',
+        type: 'drum',
+        name: 'x',
+        bars: 1,
+        notes: Array.from({ length: 32 }, (_, i) => ({ s: i / 2, l: 0.5, n: 4, v: 100 }))
+      };
+      S.clips.push({ id: 'c32', t: 0, start: 0, len: 1, off: 0, pat: 'p32' });
+      S.cursor = 0;
+      S.loop.on = false;
+      window.__out.length = 0;
+      window.__times = [];
+      a.startSong();
+      a.TICKER.stop();
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < 32) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+      a.stopAll();
+      return window.__out
+        .map((b, i) => [b, window.__times[i]])
+        .filter(([b]) => (b[0] & 0xf0) === 0x90 && b[2] > 0)
+        .map(x => x[1]);
+    };
+    return { straight: play(50), swung: play(75) };
+  });
+  const { straight, swung } = r;
+  assert.equal(swung.length, 32);
+  for (let i = 1; i < 32; i++) assert.ok(swung[i] > swung[i - 1] + 0.5, 'note ' + i + ' after note ' + (i - 1));
+  const tick = straight[1] - straight[0];
+  /* the off-beat 16th (the third 32nd of each eighth) is a full tick late at 75%; the 32nds around it half a tick */
+  assert.ok(Math.abs(swung[2] - straight[2] - tick) < 0.5, 'off-beat 16th one tick late');
+  assert.ok(
+    Math.abs(swung[1] - straight[1] - tick / 2) < 0.5 && Math.abs(swung[3] - straight[3] - tick / 2) < 0.5,
+    '32nds in proportion'
+  );
+  assert.ok(Math.abs(swung[4] - straight[4]) < 0.5, 'the next beat is back on the grid');
+  assert.deepEqual(errors, []);
+});
