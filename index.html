@@ -9226,7 +9226,7 @@ input[type='number'] {
       let kk = 0;
       const nk = () => KS[kk++ % KS.length];
       const tag = F.tag + " ";
-      const pick2 = (n) => shuffle(sids).slice(0, n);
+      const pick3 = (n) => shuffle(sids).slice(0, n);
       shuffle(PG.flatMap((p, pi) => CR.map((r, ri) => [pi, ri]))).slice(0, C.chords).forEach(([pi, ri]) => {
         const [pn, prog] = PG[pi], [rn, rhy] = CR[ri];
         const bars = ri % 2 === 0 ? 4 : 2;
@@ -9246,7 +9246,7 @@ input[type='number'] {
           notes,
           keyName: kn,
           role: "Chords",
-          styles: pick2(3),
+          styles: pick3(3),
           pool: "chords"
         });
       });
@@ -9268,7 +9268,7 @@ input[type='number'] {
           notes,
           keyName: kn,
           role: "Bass",
-          styles: pick2(2),
+          styles: pick3(2),
           pool: "bass"
         });
       });
@@ -9306,7 +9306,7 @@ input[type='number'] {
           notes,
           keyName: kn,
           role: "Lead",
-          styles: pick2(3),
+          styles: pick3(3),
           pool: "pluck"
         });
       });
@@ -9334,7 +9334,7 @@ input[type='number'] {
           notes,
           keyName: kn,
           role: "Lead",
-          styles: pick2(3),
+          styles: pick3(3),
           pool: "lead"
         });
       });
@@ -9359,7 +9359,7 @@ input[type='number'] {
           notes,
           keyName: kn,
           role: "Pad",
-          styles: pick2(3),
+          styles: pick3(3),
           pool: "pad"
         });
       });
@@ -11433,7 +11433,7 @@ input[type='number'] {
         });
       return segs;
     }
-    const segAt2 = (segs, total, s) => {
+    const segAt3 = (segs, total, s) => {
       s = (s % total + total) % total;
       return segs.find((g) => s >= g.s && s < g.e) || segs[0];
     };
@@ -11447,7 +11447,7 @@ input[type='number'] {
           let l = Math.min(h[1], total - s);
           const look = bass ? 0 : h[3] || 0;
           while (l > 0) {
-            const g = segAt2(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
+            const g = segAt3(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
             emit(s, Math.max(1, end), h, g);
             if (look) break;
             s += end;
@@ -11507,8 +11507,8 @@ input[type='number'] {
               let v = sg.v;
               const t3 = Q2[sg.q][1];
               if (h[4] === "sus" && (t3 === 3 || t3 === 4)) {
-                const pc = (R3 + sg.off + t3) % 12;
-                v = sg.v.map((n2) => (n2 % 12 + 12) % 12 === pc ? n2 + (t3 === 3 ? 2 : 1) : n2);
+                const pc2 = (R3 + sg.off + t3) % 12;
+                v = sg.v.map((n2) => (n2 % 12 + 12) % 12 === pc2 ? n2 + (t3 === 3 ? 2 : 1) : n2);
               }
               v.forEach((n2) => notes.push({ s, l, n: n2, v: h[2] }));
             });
@@ -11600,7 +11600,7 @@ input[type='number'] {
           let k2 = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
-            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
+            const sg = segAt3(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
             notes.push({
               s,
               l: 1,
@@ -11766,7 +11766,7 @@ input[type='number'] {
     const genres = [...new Set(FAC.map((f) => f.genre))].filter((g) => G[g]);
     for (const g of genres) {
       const q = G[g], nm = NAME[g] || g;
-      for (const [rid, rl, bars, hits, pick2] of FLASH_RH) {
+      for (const [rid, rl, bars, hits, pick3] of FLASH_RH) {
         const total = bars * 16, base = { genre: g, bars, flash: rid };
         const dn = [];
         hits.forEach(([s, a], i) => {
@@ -11776,11 +11776,11 @@ input[type='number'] {
           if (i > 0 && q.sn !== 3 && a > 0.9) dn.push({ s, l: 1, n: 3, v: v - 10 });
         });
         if (rid === "half") [8, 24].forEach((s) => dn.push({ s, l: 1, n: 2, v: 120 }));
-        if (pick2 != null) {
-          const st = q.roll ? 0.5 : 1, n = Math.round((total - pick2) / st);
+        if (pick3 != null) {
+          const st = q.roll ? 0.5 : 1, n = Math.round((total - pick3) / st);
           for (let i = 0; i < n; i++)
             dn.push({
-              s: pick2 + i * st,
+              s: pick3 + i * st,
               l: st,
               n: rid === "answer" && i < n / 2 ? [6, 6, 7, 7, 8, 8, 8, 8][Math.floor(i * 8 / n)] : 2,
               v: ramp2(i, n, 64, 124)
@@ -11833,11 +11833,11 @@ input[type='number'] {
             while (top < 74) top += 12;
             ln.push({ s, l: Math.min(l, 2), n: rid === "rush" ? deg(i + 7) : top, v: Math.round(92 + 33 * a) });
           });
-          if (pick2 != null) {
-            const n = total - pick2;
+          if (pick3 != null) {
+            const n = total - pick3;
             for (let i = 0; i < n; i++)
               ln.push({
-                s: pick2 + i,
+                s: pick3 + i,
                 l: 1,
                 n: deg(Math.round(i * 7 / Math.max(1, n - 1))),
                 v: ramp2(i, n, 84, 120)
@@ -12481,11 +12481,11 @@ input[type='number'] {
     return seed / 2147483647;
   };
   var hum = (v) => Math.max(1, Math.min(127, Math.round(v + (rnd() - 0.5) * 10)));
-  function voice(pc, q, prev) {
+  function voice(pc2, q, prev) {
     const iv = Q[q];
     let best = null, bd = 1e9;
     for (let inv = 0; inv < iv.length; inv++) {
-      const pcs = iv.map((x, i) => (pc + iv[(i + inv) % iv.length]) % 12);
+      const pcs = iv.map((x, i) => (pc2 + iv[(i + inv) % iv.length]) % 12);
       let n = 55 + (pcs[0] - 55 + 1200) % 12;
       const notes = pcs.map((p, i) => {
         if (i) while (n % 12 !== p) n++;
@@ -12499,9 +12499,9 @@ input[type='number'] {
     }
     return best;
   }
-  var ladder = (pc, q, oct) => (idx) => {
+  var ladder = (pc2, q, oct) => (idx) => {
     const t = Q[q].slice(0, 3), o = Math.floor(idx / 3), i = (idx % 3 + 3) % 3;
-    return 12 * (oct + 1) + pc + t[i] + 12 * o;
+    return 12 * (oct + 1) + pc2 + t[i] + 12 * o;
   };
   function run(root, from, n, dir, q, deg) {
     const sc = deg === 7 && q !== "m" ? MINOR.map((x) => x === 10 ? 11 : x) : MINOR, ins = (x) => sc.includes(((x - root) % 12 + 12) % 12), out = [];
@@ -14137,9 +14137,9 @@ input[type='number'] {
       const up = q.slice(1).map((x) => x % 12);
       const v = voice2({ pc: (g.pc + up[0]) % 12, q: "M" }, null);
       const tones = [...new Set(up.map((x) => clampN(60 + (g.pc + x) % 12, 60, 76)))].sort((a, b) => a - b);
-      const pick2 = prev ? tones.map((n) => Math.abs(n + 12 - prev[0]) < Math.abs(n - prev[0]) && n + 12 <= 79 ? n + 12 : n) : tones;
-      prev = pick2.length ? pick2 : v;
-      [low2, ...pick2].forEach((n) => out.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
+      const pick3 = prev ? tones.map((n) => Math.abs(n + 12 - prev[0]) < Math.abs(n - prev[0]) && n + 12 <= 79 ? n + 12 : n) : tones;
+      prev = pick3.length ? pick3 : v;
+      [low2, ...pick3].forEach((n) => out.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
     }
     return out;
   }
@@ -14585,9 +14585,9 @@ input[type='number'] {
       AU.ctx = new C();
       AU.out = AU.ctx.createGain();
       AU.out.gain.value = 0.8;
-      const comp = AU.ctx.createDynamicsCompressor();
-      AU.out.connect(comp);
-      comp.connect(AU.ctx.destination);
+      const comp2 = AU.ctx.createDynamicsCompressor();
+      AU.out.connect(comp2);
+      comp2.connect(AU.ctx.destination);
       const b = AU.ctx.createBuffer(1, AU.ctx.sampleRate, AU.ctx.sampleRate);
       const d = b.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -14784,19 +14784,19 @@ input[type='number'] {
     sel.textContent = "";
     sel.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
     outs.forEach((o) => sel.append(el("option", { value: o.id }, o.name)));
-    let pick2 = outs.find((o) => o.id === S.midiOut) || mcFind(outs);
-    sel.value = pick2 ? pick2.id : "";
-    MIDI.out = pick2 || null;
-    if (pick2) S.midiOut = pick2.id;
-    if (pick2) hooks.matchDevice(pick2.name);
-    if (had && !pick2) {
+    let pick3 = outs.find((o) => o.id === S.midiOut) || mcFind(outs);
+    sel.value = pick3 ? pick3.id : "";
+    MIDI.out = pick3 || null;
+    if (pick3) S.midiOut = pick3.id;
+    if (pick3) hooks.matchDevice(pick3.name);
+    if (had && !pick3) {
       MIDI.lost = had.name;
       hooks.midiLost(had.name);
-    } else if (pick2 && MIDI.lost) {
+    } else if (pick3 && MIDI.lost) {
       MIDI.lost = null;
-      hooks.midiBack(pick2.name);
+      hooks.midiBack(pick3.name);
     }
-    $("#midiStat").textContent = pick2 ? "Sending to " + pick2.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
+    $("#midiStat").textContent = pick3 ? "Sending to " + pick3.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
     hooks.refreshIns();
   }
   var NOTEHIST = /* @__PURE__ */ new Set();
@@ -17375,15 +17375,15 @@ input[type='number'] {
         {
           class: "btn on",
           onclick: () => {
-            const pick2 = all.filter((p) => p.on);
-            if (!pick2.length) return;
+            const pick3 = all.filter((p) => p.on);
+            if (!pick3.length) return;
             pushUndo();
             if (tempoCk && tempoCk.checked && tempo.tempo) S.bpm = clamp(tempo.tempo, 40, 240);
             const place = dest.value === "place";
             const bar2 = Math.max(0, Math.floor(posBarNow()));
             const rot = { drum: 0, tone: 0 };
             let last = null, placed = 0;
-            pick2.forEach((p) => {
+            pick3.forEach((p) => {
               const r = p.res;
               const pid = addPattern(p.type, p.name || "Imported", r.bars, r.notes, {
                 key: null,
@@ -17392,7 +17392,7 @@ input[type='number'] {
               if (!place) return;
               const pool = S.tracks.map((t2, i) => i).filter((i) => S.tracks[i].type === p.type);
               let t = null;
-              if (trk.value !== "auto" && S.tracks[+trk.value].type === p.type && !p.usedSel && !pick2.some((q) => q !== p && q.usedSel && q.type === p.type)) {
+              if (trk.value !== "auto" && S.tracks[+trk.value].type === p.type && !p.usedSel && !pick3.some((q) => q !== p && q.usedSel && q.type === p.type)) {
                 t = +trk.value;
                 p.usedSel = true;
               }
@@ -17421,7 +17421,7 @@ input[type='number'] {
             hooks.syncControls();
             scheduleSave();
             toast(
-              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar2 + 1) : "Added " + pick2.length + " to the Project library. Drag them onto a track."
+              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar2 + 1) : "Added " + pick3.length + " to the Project library. Drag them onto a track."
             );
           }
         },
@@ -19013,14 +19013,14 @@ input[type='number'] {
     for (const c of S.clips) {
       const s0 = Math.max(c.start, a), e0 = Math.min(c.start + c.len, b);
       if (e0 - s0 < 1e-9) continue;
-      const pc = {
+      const pc2 = {
         ...c,
         id: void 0,
         start: qBar(s0 - a),
         len: qBar(e0 - s0),
         off: wrapOff(c.off + (s0 - c.start), loopLen(c))
       };
-      out.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc, shapeSlice(c, s0, e0)) : pc);
+      out.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc2, shapeSlice(c, s0, e0)) : pc2);
     }
     return out;
   }
@@ -23248,7 +23248,7 @@ input[type='number'] {
       if (w) w.v = segs[0].v;
       return segs;
     }
-    const segAt2 = (segs, total, s) => {
+    const segAt3 = (segs, total, s) => {
       s = (s % total + total) % total;
       return segs.find((g) => s >= g.s && s < g.e) || segs[0];
     };
@@ -23265,7 +23265,7 @@ input[type='number'] {
           const look = bass ? 0 : h[3] || 0;
           let first = true;
           while (l > 0) {
-            const g = segAt2(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
+            const g = segAt3(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
             if (look) {
               emit(s, Math.max(1, end), h, g);
               break;
@@ -23334,7 +23334,7 @@ input[type='number'] {
       ]
     ];
     const SC = { minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11] };
-    function lead(segs, total, R3, scale, mot) {
+    function lead2(segs, total, R3, scale, mot) {
       const sc = [];
       for (let n = 55; n <= 91; n++) if (SC[scale].includes(((n - R3) % 12 + 12) % 12)) sc.push(n);
       const notes = [];
@@ -23344,7 +23344,7 @@ input[type='number'] {
         for (const [o, l, mv] of mot) {
           const s = base + o;
           if (s >= total) continue;
-          const g = segAt2(segs, total, s);
+          const g = segAt3(segs, total, s);
           if (mv === "C") {
             const tones = [];
             g.v.forEach((n) => [-12, 0, 12].forEach((k2) => tones.push(n + k2 + 12)));
@@ -23451,7 +23451,7 @@ input[type='number'] {
           let k2 = 0;
           for (let s = 0; s < total; s++) {
             if (mask[s % 16] !== "x") continue;
-            const sg = segAt2(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
+            const sg = segAt3(pv, total, s), ts = sg.v, idx = seq2[k2++ % seq2.length];
             notes.push({
               s,
               l: 1,
@@ -23475,7 +23475,7 @@ input[type='number'] {
           push({
             name: "Lead: " + m[0] + " " + tag + how,
             bars,
-            notes: lead(beat, total, R3, scale, m[1]),
+            notes: lead2(beat, total, R3, scale, m[1]),
             ...K,
             busy,
             role: "Lead",
@@ -23485,6 +23485,608 @@ input[type='number'] {
         }
       }
     }
+  }
+
+  // src/library/melodic-rhythms.js
+  var GATES = [
+    ["Trance gate", "xx.xx.x.xx.xx.x."],
+    ["Stutter gate", "x.x.xx.xx.x.xx.x"],
+    ["Offbeat gate", "..x...x...x...x."],
+    ["Triplet-ish gate", "x..x..x..x..x.x."],
+    ["Chop gate", "x.xx..x.x.xx..x."],
+    ["Long-short gate", "xxx.x.xxx.x.xx.x"]
+  ];
+  var PADS = [
+    ["Pulse", "pulse", 2],
+    ["Slow pulse", "pulse", 4],
+    ["Breath", "hits", [0, 6]],
+    ["Sigh", "hits", [2, 6, 10, 14]],
+    ["Dotted", "hits", [0, 3, 6, 9, 12, 14]],
+    ["Half-bar push", "hits", [0, 7]],
+    ["Top line", "topline", 8],
+    ["Top line fast", "topline", 4],
+    ["Wide", "wide", 0],
+    ["Shimmer", "shimmer", 8],
+    ["Swell", "swell", 4],
+    ["Suspended", "sus", 0],
+    ...GATES.map(([n, m]) => [n, "gate", m])
+  ];
+  var ORDERS = [
+    ["Up", "up"],
+    ["Down", "down"],
+    ["Up-down", "updown"],
+    ["Down-up", "downup"],
+    ["Converge", "converge"],
+    ["Spread", "outside"],
+    ["Broken thirds", "thirds"],
+    ["Pedal", "pedal"],
+    ["Wander", "walk"],
+    ["Leap", "leap"]
+  ];
+  var RATES = [
+    ["16ths", 1, 1],
+    ["8ths", 2, 1.5],
+    ["8th triplets", 4 / 3, 1.2],
+    ["Dotted 8ths", 3, 2],
+    ["16th triplets", 2 / 3, 0.6]
+  ];
+  var ARP_MASKS = [null, "xxx.xxx.xxx.xx.x", "xx.xx.xx.xx.xx.x", "x.xxx.xxx.xxx.xx", "xxxx.xxxxxx.xxx."];
+  var LEAD_RHYTHMS = [
+    [
+      "Call",
+      [
+        [0, 3],
+        [3, 1],
+        [4, 2],
+        [6, 2],
+        [8, 6],
+        [16, 2],
+        [18, 2],
+        [20, 4],
+        [26, 6]
+      ]
+    ],
+    [
+      "Hook",
+      [
+        [0, 2],
+        [2, 2],
+        [4, 1],
+        [6, 2],
+        [10, 2],
+        [12, 4],
+        [16, 2],
+        [18, 2],
+        [20, 1],
+        [22, 2],
+        [26, 6]
+      ]
+    ],
+    [
+      "Syncopated",
+      [
+        [0, 1.5],
+        [3, 1.5],
+        [6, 2],
+        [10, 1],
+        [11, 3],
+        [16, 1.5],
+        [19, 1.5],
+        [22, 3],
+        [27, 5]
+      ]
+    ],
+    [
+      "Long notes",
+      [
+        [0, 6],
+        [6, 2],
+        [8, 8],
+        [16, 4],
+        [20, 4],
+        [24, 8]
+      ]
+    ],
+    [
+      "Answer",
+      [
+        [4, 2],
+        [6, 2],
+        [8, 4],
+        [12, 2],
+        [14, 2],
+        [20, 2],
+        [22, 2],
+        [24, 8]
+      ]
+    ],
+    [
+      "Run",
+      [
+        [0, 1],
+        [1, 1],
+        [2, 1],
+        [3, 1],
+        [4, 4],
+        [8, 2],
+        [10, 6],
+        [16, 1],
+        [17, 1],
+        [18, 1],
+        [19, 1],
+        [20, 4],
+        [24, 8]
+      ]
+    ],
+    [
+      "Riff",
+      [
+        [0, 1],
+        [2, 1],
+        [3, 1],
+        [6, 1],
+        [8, 1],
+        [10, 1],
+        [11, 2],
+        [14, 2],
+        [16, 1],
+        [18, 1],
+        [19, 1],
+        [22, 1],
+        [24, 4],
+        [30, 2]
+      ]
+    ],
+    [
+      "Lazy",
+      [
+        [1, 3],
+        [5, 3],
+        [9, 6],
+        [17, 3],
+        [21, 2],
+        [24, 7]
+      ]
+    ],
+    [
+      "Triplet phrase",
+      [
+        [0, 4 / 3],
+        [4 / 3, 4 / 3],
+        [8 / 3, 4 / 3],
+        [4, 4],
+        [8, 8],
+        [16, 4 / 3],
+        [52 / 3, 4 / 3],
+        [56 / 3, 4 / 3],
+        [20, 4],
+        [24, 8]
+      ]
+    ],
+    [
+      "Stabs",
+      [
+        [0, 1],
+        [3, 1],
+        [6, 1],
+        [8, 2],
+        [12, 1],
+        [14, 1],
+        [16, 1],
+        [19, 1],
+        [22, 1],
+        [24, 6]
+      ]
+    ],
+    [
+      "Rise and hold",
+      [
+        [0, 2],
+        [2, 2],
+        [4, 2],
+        [6, 2],
+        [8, 8],
+        [16, 2],
+        [18, 2],
+        [20, 2],
+        [22, 10]
+      ]
+    ],
+    [
+      "Pickup",
+      [
+        [12, 1],
+        [13, 1],
+        [14, 2],
+        [16, 6],
+        [22, 2],
+        [24, 4],
+        [28, 1],
+        [29, 1],
+        [30, 2]
+      ]
+    ]
+  ];
+  var CONTOURS = [
+    ["Arch", [0, 1, 2, 3, 2, 1]],
+    ["Fall", [3, 2, 1, 0, -1]],
+    ["Rise", [-1, 0, 1, 2, 3]],
+    ["Zigzag", [0, 2, 1, 3, 2, 4]],
+    ["Repeat", [0, 0, 1, 0, 0, -1]],
+    ["Leap", [0, 4, 3, 1, 2, 0]]
+  ];
+  var COMPS = [
+    [
+      "House stab",
+      [
+        [2, 1],
+        [6, 1],
+        [10, 1],
+        [14, 1]
+      ]
+    ],
+    [
+      "Skank",
+      [
+        [4, 2],
+        [12, 2]
+      ]
+    ],
+    [
+      "Charleston",
+      [
+        [0, 3],
+        [6, 2]
+      ]
+    ],
+    [
+      "Tresillo",
+      [
+        [0, 2],
+        [6, 2],
+        [12, 2]
+      ]
+    ],
+    [
+      "Push",
+      [
+        [0, 4],
+        [7, 2],
+        [14, 2, 1]
+      ]
+    ],
+    [
+      "Two-step",
+      [
+        [0, 2],
+        [3, 1],
+        [6, 2],
+        [10, 2],
+        [13, 1]
+      ]
+    ],
+    [
+      "Gospel",
+      [
+        [0, 6],
+        [6, 2],
+        [10, 4],
+        [14, 2, 1]
+      ]
+    ],
+    [
+      "Upstrokes",
+      [
+        [2, 1],
+        [6, 1],
+        [10, 1],
+        [14, 1, 1]
+      ]
+    ],
+    [
+      "Chop",
+      [
+        [0, 1],
+        [2, 1],
+        [3, 1],
+        [6, 1],
+        [8, 1],
+        [10, 1],
+        [11, 1],
+        [14, 1]
+      ]
+    ],
+    [
+      "Half-time hits",
+      [
+        [0, 4],
+        [8, 6]
+      ]
+    ],
+    [
+      "Offbeat pairs",
+      [
+        [2, 1],
+        [3, 1],
+        [10, 1],
+        [11, 1]
+      ]
+    ],
+    [
+      "3-3-2",
+      [
+        [0, 3],
+        [3, 3],
+        [6, 2],
+        [8, 3],
+        [11, 3],
+        [14, 2]
+      ]
+    ],
+    [
+      "Anticipation",
+      [
+        [0, 6],
+        [6, 1],
+        [7, 7, 1]
+      ]
+    ],
+    [
+      "Rolled hits",
+      [
+        [0, 2, 0, "roll"],
+        [8, 2, 0, "roll"],
+        [12, 2, 0, "roll"]
+      ]
+    ],
+    [
+      "Broken",
+      [
+        [0, 2, 0, "low"],
+        [2, 2, 0, "high"],
+        [6, 2, 0, "low"],
+        [8, 2, 0, "high"],
+        [12, 2, 0, "low"],
+        [14, 2, 0, "high"]
+      ]
+    ]
+  ];
+
+  // src/library/melodic-pack.js
+  var PROG = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/;
+  var PER = { pad: 3, arp: 4, lead: 3, comp: 3 };
+  function addMelodicPack() {
+    let seed4 = 20261019;
+    const rnd5 = () => (seed4 = Math.imul(seed4, 1103515245) + 12345 >>> 0) / 4294967296;
+    const groups = sourcesByProgression();
+    const uid = {};
+    for (const [, src] of groups) {
+      const segs = harmony(src);
+      if (!segs || segs.length < 2) continue;
+      const g = src.genre, prog = PROG.exec(src.name)[1], base = {
+        type: "tone",
+        genre: g,
+        bpm: src.bpm ?? null,
+        bars: src.bars,
+        key: src.key,
+        keyName: src.keyName,
+        styles: src.styles || null,
+        mx: true
+      };
+      const add = (role, pool, name, notes, lively) => {
+        if (!notes.length) return;
+        uid[g] = (uid[g] || 0) + 1;
+        FAC.push({ ...base, id: "mx" + g + uid[g], name: role + ": " + name + " " + prog, notes, role, pool, lively });
+      };
+      const ctx2 = { segs, total: src.bars * 16, key: src.key, rnd: rnd5 };
+      for (const p of pick(PADS, PER.pad, rnd5)) add("Pad", "pad", p[0], pad(ctx2, p), false);
+      for (const a of arpPicks(rnd5)) add("Lead", "pluck", "Arp " + a.name, arp(ctx2, a), true);
+      for (const l of leadPicks(rnd5)) add("Lead", "lead", l.name, lead(ctx2, l), true);
+      for (const c of pick(COMPS, PER.comp, rnd5)) add("Chords", "chords", c[0], comp(ctx2, c[1]), true);
+    }
+  }
+  function sourcesByProgression() {
+    const best = /* @__PURE__ */ new Map();
+    for (const f of FAC) {
+      if (f.pool !== "chords" || f.busy || f.mx || !f.key || !PROG.test(f.name)) continue;
+      const k2 = f.genre + "|" + PROG.exec(f.name)[1] + "|" + f.bars + "|" + f.keyName;
+      const onsets = new Set(f.notes.map((n) => n.s)).size, score = f.notes.length / Math.max(1, onsets);
+      if (!best.has(k2) || score > best.get(k2).score) best.set(k2, { f, score });
+    }
+    return [...best].map(([k2, v]) => [k2, v.f]);
+  }
+  function harmony(f) {
+    const total = f.bars * 16, segs = [];
+    let last = null;
+    for (let s = 0; s < total; s++) {
+      const on2 = f.notes.filter((n) => n.s <= s + 0.01 && n.s + n.l > s + 0.01).map((n) => n.n);
+      const v = on2.length >= 3 ? [...new Set(on2)].sort((a, b) => a - b) : last;
+      if (!v) continue;
+      const sig = v.join(",");
+      if (segs.length && segs[segs.length - 1].sig === sig) segs[segs.length - 1].e = s + 1;
+      else segs.push({ s, e: s + 1, v, sig });
+      last = v;
+    }
+    if (!segs.length) return null;
+    segs[0].s = 0;
+    segs[segs.length - 1].e = total;
+    return segs;
+  }
+  var pc = (n) => (n % 12 + 12) % 12;
+  var segAt2 = (segs, s) => segs.find((g) => s >= g.s && s < g.e) || segs[segs.length - 1];
+  function around(v, center) {
+    const m = v.reduce((a, b) => a + b, 0) / v.length, k2 = Math.round((center - m) / 12) * 12;
+    return v.map((n) => n + k2);
+  }
+  function pick(list, n, rnd5) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rnd5() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, n);
+  }
+  var chord = (notes, s, l, v, vel) => v.forEach((n, i) => notes.push({ s, l, n, v: i ? vel - 6 : vel }));
+  function pad(ctx2, [, kind, opt]) {
+    const { segs, total } = ctx2, out = [];
+    for (const g of segs) {
+      const v = around(g.v, 58), len = g.e - g.s;
+      if (kind === "pulse" || kind === "swell")
+        for (let s = g.s, i = 0; s < g.e; s += opt, i++) {
+          const vel = kind === "swell" ? Math.round(44 + 56 * (s - g.s) / Math.max(1, len)) : i % 2 ? 62 : 76;
+          chord(out, s, Math.min(opt * 0.9, g.e - s), v, vel);
+        }
+      else if (kind === "topline") {
+        chord(out, g.s, len, v.slice(0, -1), 74);
+        const top = v[v.length - 1], up = v[1] + 12;
+        for (let s = g.s, i = 0; s < g.e; s += opt, i++)
+          out.push({ s, l: Math.min(opt, g.e - s), n: i % 2 ? up : top, v: 72 });
+      } else if (kind === "wide") {
+        out.push({ s: g.s, l: len, n: v[0] - 12, v: 78 });
+        chord(
+          out,
+          g.s,
+          len,
+          v.slice(1).map((n) => n + 12),
+          70
+        );
+      } else if (kind === "shimmer") {
+        chord(out, g.s, len, v, 74);
+        for (let s = g.s; s < g.e; s += opt) out.push({ s, l: Math.min(2, g.e - s), n: v[v.length - 1] + 12, v: 50 });
+      } else if (kind === "sus") {
+        const third = v.findIndex((n) => [3, 4].includes(((n - v[0]) % 12 + 12) % 12)), half = Math.max(1, Math.floor(len / 2));
+        const sus = v.map((n, i) => i === third ? v[0] + 5 + 12 * Math.floor((n - v[0]) / 12) : n);
+        chord(out, g.s, half, sus, 74);
+        chord(out, g.s + half, len - half, v, 72);
+      }
+    }
+    if (kind === "hits" || kind === "gate") {
+      const hits = [];
+      for (let bar2 = 0; bar2 < total; bar2 += 16)
+        if (kind === "hits") opt.forEach((p) => hits.push(bar2 + p));
+        else [...opt].forEach((c, p) => c === "x" && (p === 0 || opt[p - 1] !== "x") && hits.push(bar2 + p));
+      hits.forEach((s, i) => {
+        let l = (hits[i + 1] ?? total) - s;
+        if (kind === "gate") {
+          const p = s % 16;
+          l = 0;
+          while (p + l < 16 && opt[p + l] === "x") l++;
+        }
+        chord(out, s, Math.max(1, l), around(segAt2(segs, s).v, 58), kind === "gate" ? 70 : 76);
+      });
+    }
+    return out.filter((n) => n.s < total).map((n) => ({ ...n, l: Math.max(0.5, Math.min(n.l, total - n.s)) }));
+  }
+  function arpPicks(rnd5) {
+    const out = [];
+    for (const o of pick(ORDERS, PER.arp, rnd5)) {
+      const r = RATES[Math.floor(rnd5() * RATES.length)], m = ARP_MASKS[Math.floor(rnd5() * ARP_MASKS.length)], oct = 1 + Math.floor(rnd5() * 3);
+      out.push({
+        name: o[0] + " " + r[0] + (oct > 1 ? " " + oct + " oct" : "") + (m ? " gated" : ""),
+        order: o[1],
+        rate: r,
+        mask: m,
+        oct
+      });
+    }
+    return out;
+  }
+  function seqIndex(order, i, N, state, rnd5) {
+    const P = Math.max(1, 2 * N - 2);
+    switch (order) {
+      case "down":
+        return N - 1 - i % N;
+      case "updown":
+        return i % P < N ? i % P : P - i % P;
+      case "downup":
+        return N - 1 - (i % P < N ? i % P : P - i % P);
+      case "converge":
+        return i % 2 ? N - 1 - (i >> 1) % N : (i >> 1) % N;
+      case "outside":
+        return i % 2 ? (i >> 1) % N : N - 1 - (i >> 1) % N;
+      case "thirds":
+        return ((i >> 1) + i % 2 * 2) % N;
+      case "pedal":
+        return i % 2 ? 1 + (i >> 1) % Math.max(1, N - 1) : 0;
+      case "leap":
+        return [0, 3, 1, 4, 2, 5][i % 6] % N;
+      case "walk":
+        state.w = Math.max(0, Math.min(N - 1, (state.w ?? 0) + (rnd5() < 0.5 ? -1 : 1)));
+        return state.w;
+    }
+    return i % N;
+  }
+  function arp(ctx2, a) {
+    const { segs, total, rnd: rnd5 } = ctx2, out = [], state = {};
+    let i = 0;
+    for (let s = 0; s < total - 0.01; s += a.rate[1]) {
+      const pos = Math.floor(s + 1e-6) % 16;
+      if (a.mask && a.mask[pos] !== "x") {
+        i++;
+        continue;
+      }
+      const v = around(segAt2(segs, s).v, 66), pool = [];
+      for (let k2 = 0; k2 < a.oct; k2++) v.forEach((n2) => pool.push(n2 + 12 * k2));
+      const n = pool[seqIndex(a.order, i++, pool.length, state, rnd5)];
+      out.push({
+        s: Math.round(s * 1e3) / 1e3,
+        l: Math.min(a.rate[2], total - s),
+        n,
+        v: pos % 4 === 0 ? 98 : pos % 2 ? 72 : 84
+      });
+    }
+    return out;
+  }
+  function leadPicks(rnd5) {
+    return pick(LEAD_RHYTHMS, PER.lead, rnd5).map((r) => {
+      const c = CONTOURS[Math.floor(rnd5() * CONTOURS.length)];
+      return { name: r[0] + " " + c[0].toLowerCase(), rhythm: r[1], contour: c[1] };
+    });
+  }
+  function lead(ctx2, L2) {
+    const { segs, total, key } = ctx2, sc = SCALES[key.scale] || SCALES.minor, R3 = key.root, out = [];
+    const tones = [];
+    for (let n = 55; n <= 84; n++) if (sc.includes(((n - R3) % 12 + 12) % 12)) tones.push(n);
+    const home = tones.reduce((b, n) => Math.abs(n - (67 + R3)) < Math.abs(b - (67 + R3)) ? n : b, tones[0]);
+    const hi = tones.indexOf(home);
+    let k2 = 0;
+    for (let block = 0; block < total; block += 32) {
+      const lift = [0, 1, 0, -1][block / 32 % 4];
+      for (const [p, l] of L2.rhythm) {
+        const s = block + p;
+        if (s >= total) continue;
+        let n = tones[Math.max(0, Math.min(tones.length - 1, hi + L2.contour[k2++ % L2.contour.length] + lift))];
+        const ct = segAt2(segs, s).v.map(pc), isCt = (x) => ct.includes(pc(x));
+        if (p % 4 === 0 && !isCt(n)) {
+          let best = null;
+          for (let d = 1; d <= 6 && best == null; d++) best = isCt(n - d) ? n - d : isCt(n + d) ? n + d : null;
+          if (best != null) n = best;
+        }
+        for (const d of [-1, 1]) if (!isCt(n) && isCt(n + d) && !sc.includes(pc(n + d - R3))) n += d;
+        out.push({ s, l: Math.min(l, total - s), n, v: p % 8 === 0 ? 100 : 86 });
+      }
+    }
+    if (out.length) {
+      const last = out[out.length - 1];
+      last.n = tones.reduce((b, n) => (n - R3) % 12 === 0 && Math.abs(n - last.n) < Math.abs(b - last.n) ? n : b, home);
+    }
+    return out;
+  }
+  function comp(ctx2, cells) {
+    const { segs, total } = ctx2, out = [];
+    for (let bar2 = 0; bar2 < total; bar2 += 16)
+      for (const [p, l, push, mode] of cells) {
+        const s = bar2 + p;
+        if (s >= total) continue;
+        let v = around(segAt2(segs, push ? Math.min(total - 1, s + 2) : s).v, 62);
+        if (mode === "low") v = v.slice(0, 2);
+        if (mode === "high") v = v.slice(-3);
+        const len = Math.min(l, total - s);
+        if (mode === "roll")
+          v.forEach((n, i) => out.push({ s: s + i * 0.25, l: Math.max(0.5, len - i * 0.25), n, v: 90 - i * 4 }));
+        else chord(out, s, len, v, p % 4 === 0 ? 96 : 86);
+      }
+    return out;
   }
 
   // src/library/pools.js
@@ -23508,6 +24110,7 @@ input[type='number'] {
     }
     const n = FAC.length;
     addHarmonyPack();
+    addMelodicPack();
     for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
     for (const k2 in LV_POOLCACHE) delete LV_POOLCACHE[k2];
   }
@@ -26255,8 +26858,8 @@ input[type='number'] {
       o[3] = o[3] || fit("bass");
       o[5] = fit("pad");
       o[6] = fit("lead");
-      const lead = facById(o[6]);
-      o[7] = fit("pluck", (f) => !lead || roomFor(f, lead));
+      const lead2 = facById(o[6]);
+      o[7] = fit("pluck", (f) => !lead2 || roomFor(f, lead2));
       o[0] = take("kit");
       o[1] = take("hats");
       o[2] = take("perc");
@@ -27639,8 +28242,8 @@ input[type='number'] {
     if (t >= 0) lvUserNote(t, on2);
   }
   function lvFollowOctave(n) {
-    const pc = (n % 12 + 12) % 12;
-    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc);
+    const pc2 = (n % 12 + 12) % 12;
+    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc2);
     if (!offs.length) return false;
     let base = n - offs[0];
     if (offs.length > 1 && n - 12 === LV.padBase) base = LV.padBase;
@@ -27772,11 +28375,11 @@ input[type='number'] {
     const st = lvStyle();
     b.textContent = "";
     b.append(el("small", {}, "Try"));
-    st.keys.forEach(([pc, why]) => {
+    st.keys.forEach(([pc2, why]) => {
       const m = lvModeFam(st.scale);
-      const on2 = LV.key === pc && LV.mode === m;
+      const on2 = LV.key === pc2 && LV.mode === m;
       b.append(
-        el("button", { class: "lvkr" + (on2 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc, m) }, NK(pc, m))
+        el("button", { class: "lvkr" + (on2 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
       );
     });
   }
@@ -28408,15 +29011,15 @@ input[type='number'] {
     LV.ver++;
   }
   function ctlTranspose(k2) {
-    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc = k2 == null ? home : c.trMode === "rel" ? (home + k2) % 12 : k2;
+    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc2 = k2 == null ? home : c.trMode === "rel" ? (home + k2) % 12 : k2;
     if (!lvOn()) {
-      LV.key = pc;
+      LV.key = pc2;
       LV.ver++;
       liveRender();
       return;
     }
     LV.cues = LV.cues.filter((x) => x.type !== "key");
-    if (pc !== LV.key) LV.cues.push({ type: "key", key: pc, mode: LV.mode, tick: ctlWhen(c.trWhen) });
+    if (pc2 !== LV.key) LV.cues.push({ type: "key", key: pc2, mode: LV.mode, tick: ctlWhen(c.trWhen) });
     lvSortCues();
     LV.ver++;
   }
@@ -28668,11 +29271,11 @@ input[type='number'] {
     let wx = 0;
     const W = 16;
     for (let n = lo; n <= hi; n++) {
-      const pc = n % 12, isB = blk.includes(pc), [zn, i] = ctlZoneOf(n);
+      const pc2 = n % 12, isB = blk.includes(pc2), [zn, i] = ctlZoneOf(n);
       let lab = "";
       if (zn === "mute") lab = i < 8 ? String(i + 1) : ["All", "Fill", "Drop", "Brk"][i - 8];
       else if (zn === "key") lab = c.trMode === "rel" ? i === 0 ? "0" : "+" + i : NOTEN[i];
-      else if (pc === 0) lab = noteLbl(n);
+      else if (pc2 === 0) lab = noteLbl(n);
       const k2 = el(
         "i",
         {
@@ -28776,7 +29379,7 @@ input[type='number'] {
   // src/live/jam.js
   var HATS = [1, 4, 5, 10, 11];
   var SNARE = [2, 3];
-  var pick = (a) => a[Math.floor(Math.random() * a.length)];
+  var pick2 = (a) => a[Math.floor(Math.random() * a.length)];
   var LABEL = {
     hats: "hats only",
     kick: "kick and hats",
@@ -28811,7 +29414,7 @@ input[type='number'] {
       return [
         ...keep,
         ...rollNotes(trap ? "t16" : "16", 24, 2, 84),
-        ...rollNotes(trap ? pick(["32", "64"]) : pick(["32", "h32"]), 28, 2, 118)
+        ...rollNotes(trap ? pick2(["32", "64"]) : pick2(["32", "h32"]), 28, 2, 118)
       ];
     }
     return n2;
@@ -28895,7 +29498,7 @@ input[type='number'] {
     const names = Object.keys(recipes).filter(
       (n) => (n !== "bass first" || has(cells, 3)) && (n !== "keys first" || has(cells, 4) || has(cells, 5))
     );
-    const name = pick(names);
+    const name = pick2(names);
     let r = recipes[name];
     if (Math.random() < 0.4) r = [r[0], r[1], r[3]];
     return { name, loops: r.map((spec) => ({ bars: 2, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length) };
@@ -28910,7 +29513,7 @@ input[type='number'] {
       "fade away": [{ ...keys2, 1: "full", 3: "roots" }]
     };
     const names = Object.keys(recipes).filter((n) => n !== "cut to the hit" || Object.keys(hit.ids).length);
-    const name = pick(names);
+    const name = pick2(names);
     const fade = name === "fade away";
     const loops = recipes[name].map((spec) => ({ bars: fade ? 2 : 1, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length);
     if (!fade && Object.keys(hit.ids).length) loops.push(hit);
@@ -30402,11 +31005,11 @@ input[type='number'] {
     lvSortCues();
     LV.ver++;
   }
-  function liveKeyCue(pc, mode) {
+  function liveKeyCue(pc2, mode) {
     mode = mode || (LV.cues.find((c) => c.type === "key") || {}).mode || LV.mode;
-    LV.homeKey = pc;
+    LV.homeKey = pc2;
     if (!lvOn()) {
-      LV.key = pc;
+      LV.key = pc2;
       LV.mode = mode;
       saveLive();
       LV.ver++;
@@ -30414,11 +31017,11 @@ input[type='number'] {
       return;
     }
     LV.cues = LV.cues.filter((c) => c.type !== "key");
-    if (pc === LV.key && mode === LV.mode) {
+    if (pc2 === LV.key && mode === LV.mode) {
       LV.ver++;
       return;
     }
-    LV.cues.push({ type: "key", key: pc, mode, tick: lvBoundary(1) });
+    LV.cues.push({ type: "key", key: pc2, mode, tick: lvBoundary(1) });
     lvSortCues();
     LV.ver++;
     saveLive();
@@ -31723,7 +32326,7 @@ input[type='number'] {
     inner.style.width = (W + 2) * bw2 + "px";
     const hdr = el("div", { class: "lvHdr", style: "width:" + (W + 2) * bw2 + "px" });
     inner.append(hdr);
-    const segAt2 = (tk2) => {
+    const segAt3 = (tk2) => {
       let s = segs[0];
       for (const x of segs) if (x.tick <= tk2) s = x;
       return s;
@@ -31731,7 +32334,7 @@ input[type='number'] {
     const sStart = (s) => s.start != null ? s.start : s.tick;
     let prevSeg = null;
     for (let k2 = 0; k2 < W + 2; k2++) {
-      const tk2 = (b0 + k2) * 32, s = segAt2(tk2), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
+      const tk2 = (b0 + k2) * 32, s = segAt3(tk2), newSc = !prevSeg || prevSeg.idx !== s.idx || sStart(prevSeg) !== sStart(s);
       const rel = Math.max(0, Math.floor((tk2 - sStart(s)) / 32)) % (LV.scenes[s.idx] ? LV.scenes[s.idx].bars : 8);
       hdr.append(
         el(
@@ -31750,7 +32353,7 @@ input[type='number'] {
       });
       let prevId = null;
       for (let k2 = 0; k2 < W + 2; k2++) {
-        const tk2 = (b0 + k2) * 32, s = segAt2(tk2);
+        const tk2 = (b0 + k2) * 32, s = segAt3(tk2);
         const snap = k2 === 0 && lvOn() && LV.bars && LV.bars.get(b0);
         if (snap) {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
@@ -33318,7 +33921,7 @@ input[type='number'] {
     b.textContent = "";
     const rec = AUDREC.on || AUDREC.busy, m = audMode();
     const how = el("div", { class: "wcard" }, el("h3", {}, "1. What do you want to record?"));
-    const pick2 = (v) => {
+    const pick3 = (v) => {
       capCloseAll();
       AUDREC.metering = false;
       AUDREC.check = null;
@@ -33327,7 +33930,7 @@ input[type='number'] {
     };
     const tile = (v, tag, t, d) => el(
       "button",
-      { class: "rectile" + (m === v ? " on" : ""), disabled: rec, onclick: () => pick2(v) },
+      { class: "rectile" + (m === v ? " on" : ""), disabled: rec, onclick: () => pick3(v) },
       el("span", { class: "rtag" + (v === "interface" ? " b" : "") }, tag),
       el("b", {}, t),
       el("small", {}, d)
@@ -33357,7 +33960,7 @@ input[type='number'] {
           name: "audmode",
           checked: m === "preview",
           disabled: rec,
-          onchange: () => pick2("preview")
+          onchange: () => pick3("preview")
         }),
         el("span", {}, "No hardware? Record the app’s preview sound instead")
       )
@@ -34586,10 +35189,10 @@ input[type='number'] {
     sel.textContent = "";
     sel.append(el("option", { value: "" }, "No input"));
     ins.forEach((i) => sel.append(el("option", { value: i.id }, i.name)));
-    const pick2 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
-    if (pick2) {
-      sel.value = pick2.id;
-      if (!MIDI.inp || MIDI.inp.id !== pick2.id) setMidiIn(pick2.id);
+    const pick3 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
+    if (pick3) {
+      sel.value = pick3.id;
+      if (!MIDI.inp || MIDI.inp.id !== pick3.id) setMidiIn(pick3.id);
     } else sel.value = "";
     if (LV.ctl && LV.ctl.map && typeof ctlAttach === "function") ctlAttach();
   }
@@ -35792,7 +36395,7 @@ input[type='number'] {
     if ($("#lvPickOv")) return;
     const cur = lvStyle();
     const close = () => ov.remove();
-    const pick2 = (id) => {
+    const pick3 = (id) => {
       close();
       if (id !== LV.style || !LV.scenes.length) liveNewSet(id);
       liveRender();
@@ -35813,7 +36416,7 @@ input[type='number'] {
                 type: "button",
                 class: "lpStyle" + (s.id === cur.id ? " on" : ""),
                 title: s.vibe || s.name,
-                onclick: () => pick2(s.id)
+                onclick: () => pick3(s.id)
               },
               el("b", {}, s.name),
               el("small", {}, Math.round(s.bpm[2]) + " BPM")
@@ -35832,7 +36435,7 @@ input[type='number'] {
           "div",
           { class: "lpHead" },
           el("h3", {}, "What are we jamming?"),
-          el("button", { type: "button", class: "btn on", onclick: () => pick2(cur.id) }, "Keep " + cur.name + " →")
+          el("button", { type: "button", class: "btn on", onclick: () => pick3(cur.id) }, "Keep " + cur.name + " →")
         ),
         el("p", { class: "hint" }, "Pick a style for a fresh set of scenes, or keep the one you had."),
         ...fams,
@@ -43407,7 +44010,7 @@ input[type='number'] {
   // src/zen/zc-stepseq.js
   var UNIT = 4;
   var REST = -72;
-  var RATES = ["1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"];
+  var RATES2 = ["1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"];
   var RATE_IX = { "1/32": 3, "1/16T": 4, "1/16": 6, "1/8T": 7, "1/8": 9, "1/4": 12 };
   var SHAPES = [
     ["Smooth", 1],
@@ -43488,7 +44091,7 @@ input[type='number'] {
     );
   }
   function seqTools(ctx2) {
-    const pick2 = (label2, opts, cur, on2) => el(
+    const pick3 = (label2, opts, cur, on2) => el(
       "label",
       { class: "zcC" },
       el("span", { class: "zcL" }, label2),
@@ -43500,23 +44103,23 @@ input[type='number'] {
     );
     const rate = ctx2.get(k(ctx2, 1, "RATE_NOTE")), len = ctx2.get(k(ctx2, 1, "STEP_MAX")), shape = ctx2.get(k(ctx2, 2, "STEP_CURVE_1"));
     return [
-      pick2(
+      pick3(
         "Step length",
-        RATES.map((r) => [r, RATE_IX[r]]),
+        RATES2.map((r) => [r, RATE_IX[r]]),
         rate,
         (v) => both(ctx2, "RATE_NOTE", +v)
       ),
-      pick2(
+      pick3(
         "Steps",
         [...Array(16)].map((_, i) => [String(i + 1), i]),
         len,
         (v) => both(ctx2, "STEP_MAX", +v)
       ),
-      pick2("Step shape", SHAPES, shape, (v) => {
+      pick3("Step shape", SHAPES, shape, (v) => {
         for (let i = 1; i <= 16; i++) ctx2.set(k(ctx2, 2, "STEP_CURVE_" + i), +v, false);
         ctx2.commit();
       }),
-      pick2("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
+      pick3("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
         if (+v >= 0) seqPattern(ctx2, SEQ_PATTERNS[+v][1]);
       })
     ];
@@ -44459,18 +45062,18 @@ input[type='number'] {
     const cur = ctx2.key;
     const keys2 = el("div", { class: "zcKeys" });
     for (let i = 0; i < 88; i++) {
-      const n = KIT_LOW + i, pad = pads.get(n);
+      const n = KIT_LOW + i, pad3 = pads.get(n);
       keys2.append(
         el(
           "button",
           {
             type: "button",
-            class: "zcKey" + (i === cur ? " on" : "") + (pad ? " pad" : "") + (/#/.test(noteName2(n)) ? " blk" : ""),
-            title: noteName2(n) + (pad ? " · " + pad : ""),
+            class: "zcKey" + (i === cur ? " on" : "") + (pad3 ? " pad" : "") + (/#/.test(noteName2(n)) ? " blk" : ""),
+            title: noteName2(n) + (pad3 ? " · " + pad3 : ""),
             onclick: () => ctx2.pickKey(i),
             onpointerdown: () => ctx2.audition(n)
           },
-          pad ? pad.split(" ")[0] : noteName2(n)
+          pad3 ? pad3.split(" ")[0] : noteName2(n)
         )
       );
     }

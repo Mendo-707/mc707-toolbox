@@ -6,6 +6,7 @@ import { FAC } from './factory.js';
 import { FACMAP, facById } from './index.js';
 import { hashStr, mulberry } from '../core/random.js';
 import { addHarmonyPack } from './harmony-pack.js';
+import { addMelodicPack } from './melodic-pack.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
@@ -23,7 +24,8 @@ export function lvGenreOf(st) {
   return (st._genre = Object.keys(c).sort((a, b) => c[b] - c[a])[0] || 'dnb');
 }
 /**
- * Finish the library at start-up: build every style's full kits, then add the harmony pack after them,
+ * Finish the library at start-up: build every style's full kits, then add the harmony pack and the melodic
+ * pack after them,
  * so the library keeps its order (new patterns always go at the end). Runs once.
  * @param {object[]} styles  STYLES
  */
@@ -35,6 +37,7 @@ export function finishLibrary(styles) {
   } catch (e) {}
   const n = FAC.length;
   addHarmonyPack();
+  addMelodicPack();
   for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
   for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
 }
