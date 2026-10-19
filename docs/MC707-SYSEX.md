@@ -92,6 +92,14 @@ reading the MC-707 with the read-only scan pages and changing one setting at a t
 
 The track faders are not stored in the project; use MIDI volume (CC 7) for track level.
 
+**No factory tone number.** A clip keeps its own full copy of a tone, not a reference to the preset it
+came from. Choosing A-005, A-006 and B-120 on one clip changed only the tone's own parameters (its name,
+category stays a category, and so on); nothing in the tone's 32 KB slot or in the project area
+`10 00 00 00`-`10 00 3A 7F` moved in step with the preset number, the reserved tone common bytes stayed
+`00`, and `10 01 xx xx` does not answer. Together with the MIDI implementation chart (program change
+selects scenes and clips, bank select is not listed), there is no known way to load a factory tone by
+number from outside; read the tone from a clip instead.
+
 ## Checking a device
 
 The [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html)
