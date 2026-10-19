@@ -47777,18 +47777,31 @@ input[type='number'] {
     clearTimeout(memT);
     memT = setTimeout(() => ZE.snd && rememberClip(ZE.snd, ZE.t, ZE.k), 800);
   }
-  var quietN = 0;
+  var exprBack = (t) => {
+    const c = S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11];
+    return Number.isFinite(c) && c > 0 ? c : 127;
+  };
+  var chOf = (t) => (S.tracks[t] && S.tracks[t].ch || t + 1) - 1;
+  var QUIET = /* @__PURE__ */ new Map();
+  var pause3 = (ms) => new Promise((r) => setTimeout(r, ms));
+  function zeUnmute(t) {
+    const out = ZX.out || MIDI.out, ch = chOf(t);
+    QUIET.delete(ch);
+    if (out) out.send([176 | ch, 11, exprBack(t)]);
+  }
   async function quietly(send) {
-    const t = ZE.t, ch = (S.tracks[t] && S.tracks[t].ch || t + 1) - 1, back = (S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11]) ?? 127, out = () => ZX.out || MIDI.out;
-    if (quietN++ === 0 && out()) out().send([176 | ch, 11, 0]);
+    const t = ZE.t, ch = chOf(t), out = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
+    if (!q.n++ && out) out.send([176 | ch, 11, 0]);
+    QUIET.set(ch, q);
     try {
-      await send();
-      await zxFlush();
-      await new Promise((r) => setTimeout(r, 40));
+      await Promise.race([send(), pause3(1500)]);
+      await Promise.race([zxFlush(), pause3(1500)]);
+      await pause3(40);
+    } catch (e) {
     } finally {
-      if (--quietN === 0 && out()) {
-        out().send([176 | ch, 120, 0]);
-        out().send([176 | ch, 11, back]);
+      if (QUIET.get(ch) === q && --q.n <= 0) {
+        if (out) out.send([176 | ch, 120, 0]);
+        zeUnmute(t);
       }
     }
   }
@@ -47875,8 +47888,11 @@ input[type='number'] {
     ZX.onState = status2;
     ZX.onIdle = screenNudge;
     zeRender();
-    if (await zxConnect()) zeRead();
-    else status2();
+    zeUnmute(t);
+    if (await zxConnect()) {
+      zeUnmute(t);
+      zeRead();
+    } else status2();
   }
   function zenClose() {
     const o = $("#zcOv");
@@ -47894,6 +47910,7 @@ input[type='number'] {
       }
     } catch (e) {
     }
+    zeUnmute(ZE.t);
     if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
     ZX.onState = null;
     ZX.onIdle = null;

@@ -147,21 +147,39 @@ function remember() {
    effect type first runs with the old effect's settings, then with all zeros, until its own arrive. So the
    track is muted (expression, CC 11) until the new sound is in and checked, any tail is cut (CC 120), and
    the track comes back. Overlapping loads share one mute. */
-let quietN = 0;
+/* the track's expression to come back to, and the mute in progress on each channel */
+const exprBack = t => {
+  const c = S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11];
+  return Number.isFinite(c) && c > 0 ? c : 127;
+};
+const chOf = t => ((S.tracks[t] && S.tracks[t].ch) || t + 1) - 1;
+const QUIET = new Map(); /* channel -> {n: loads in progress, t: track} */
+const pause = ms => new Promise(r => setTimeout(r, ms));
+/** Expression back to normal on a track (after a load, and whenever the editor opens or closes). */
+export function zeUnmute(t) {
+  const out = ZX.out || MIDI.out,
+    ch = chOf(t);
+  QUIET.delete(ch);
+  if (out) out.send([0xb0 | ch, 11, exprBack(t)]);
+}
 async function quietly(send) {
   const t = ZE.t,
-    ch = ((S.tracks[t] && S.tracks[t].ch) || t + 1) - 1,
-    back = (S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11]) ?? 127,
-    out = () => ZX.out || MIDI.out;
-  if (quietN++ === 0 && out()) out().send([0xb0 | ch, 11, 0]);
+    ch = chOf(t),
+    out = ZX.out || MIDI.out,
+    q = QUIET.get(ch) || { n: 0, t };
+  if (!q.n++ && out) out.send([0xb0 | ch, 11, 0]);
+  QUIET.set(ch, q);
   try {
-    await send();
-    await zxFlush();
-    await new Promise(r => setTimeout(r, 40));
+    /* the writes, the effect's reset and its settings: never more than a moment, whatever the checks do */
+    await Promise.race([send(), pause(1500)]);
+    await Promise.race([zxFlush(), pause(1500)]);
+    await pause(40);
+  } catch (e) {
+    /* the track always comes back */
   } finally {
-    if (--quietN === 0 && out()) {
-      out().send([0xb0 | ch, 120, 0]);
-      out().send([0xb0 | ch, 11, back]);
+    if (QUIET.get(ch) === q && --q.n <= 0) {
+      if (out) out.send([0xb0 | ch, 120, 0]);
+      zeUnmute(t);
     }
   }
 }
@@ -270,8 +288,11 @@ export async function zenOpen(t, k) {
   ZX.onState = status;
   ZX.onIdle = screenNudge;
   zeRender();
-  if (await zxConnect()) zeRead();
-  else status();
+  zeUnmute(t);
+  if (await zxConnect()) {
+    zeUnmute(t);
+    zeRead();
+  } else status();
 }
 export function zenClose() {
   const o = $('#zcOv');
@@ -290,6 +311,7 @@ export function zenClose() {
       if (!TR.playing) out.send([0xb0 | (ch - 1), 120, 0]);
     }
   } catch (e) {}
+  zeUnmute(ZE.t);
   if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
   ZX.onState = null;
   ZX.onIdle = null;

@@ -191,3 +191,27 @@ test('loading a sound mutes the track until it is written (no half-written sound
   assert.equal(await page.evaluate(`${z}.ZS.list.length`), 0, 'nothing grabbed from an empty clip');
   assert.deepEqual(errors, []);
 });
+
+test('the track always comes back after a load, even when the MC-707 does not answer the checks', async () => {
+  const { page, errors } = await openApp();
+  const z = 'window.__app.zen';
+  await page.evaluate(`${z}.open(3, 0)`);
+  await page.waitForTimeout(500);
+  await page.evaluate(`${z}.browse()`);
+  await page.evaluate('window.__out.length = 0; window.__times = []; window.__zcMute = true');
+  const t0 = Date.now();
+  await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
+  await page.fill('#zbQ', 'Hoover');
+  await page.locator('#zbOv .zbItem', { hasText: 'Hoover' }).first().click();
+  await page.waitForFunction(() => window.__out.some(b => b[0] === 0xb3 && b[1] === 11 && b[2] === 127), null, {
+    timeout: 5000
+  });
+  assert.ok(Date.now() - t0 < 4000, 'back within a few seconds');
+  /* and closing the editor puts the expression back too */
+  await page.evaluate('window.__out.length = 0');
+  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.locator('#zcOv button', { hasText: 'Done' }).click();
+  const last = await page.evaluate('window.__out.filter(b => b[0] === 0xb3 && b[1] === 11).pop()');
+  assert.deepEqual(last, [0xb3, 11, 127]);
+  assert.deepEqual(errors, []);
+});
