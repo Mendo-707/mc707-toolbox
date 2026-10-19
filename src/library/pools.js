@@ -7,6 +7,7 @@ import { FACMAP, facById } from './index.js';
 import { hashStr, mulberry } from '../core/random.js';
 import { addHarmonyPack } from './harmony-pack.js';
 import { addMelodicPack } from './melodic-pack.js';
+import { BB_GENRE, addBigBeatPack } from './bigbeat-pack.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
@@ -24,8 +25,8 @@ export function lvGenreOf(st) {
   return (st._genre = Object.keys(c).sort((a, b) => c[b] - c[a])[0] || 'dnb');
 }
 /**
- * Finish the library at start-up: build every style's full kits, then add the harmony pack and the melodic
- * pack after them,
+ * Finish the library at start-up: build every style's full kits, then add the harmony pack, the melodic
+ * pack and the Big Beat pack after them,
  * so the library keeps its order (new patterns always go at the end). Runs once.
  * @param {object[]} styles  STYLES
  */
@@ -38,8 +39,12 @@ export function finishLibrary(styles) {
   const n = FAC.length;
   addHarmonyPack();
   addMelodicPack();
+  addBigBeatPack();
+  addMelodicPack(BB_GENRE);
   for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
   for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
+  /* styles whose patterns only arrive with the packs (Big Beat) build their full kits now */
+  for (const k in FULLKITS) if (!FULLKITS[k].length) delete FULLKITS[k];
 }
 /* ---- Full kits: kick, snare, hats and percussion on ONE drum track (MC-101, or to free Drums 2 and 3 on the MC-707) ---- */
 const FULLKITS = {};

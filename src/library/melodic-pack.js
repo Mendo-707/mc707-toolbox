@@ -13,11 +13,15 @@ import { ARP_MASKS, COMPS, CONTOURS, LEAD_RHYTHMS, ORDERS, PADS, RATES } from '.
 const PROG = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/;
 const PER = { pad: 3, arp: 4, lead: 3, comp: 3 };
 
-/** Add the pack to the library. Called once by finishLibrary() (pools.js), after the harmony pack. */
-export function addMelodicPack() {
+/**
+ * Add the pack to the library. Called by finishLibrary() (pools.js): once after the harmony pack for every
+ * genre, then again for a genre added later (Big Beat), with only that genre.
+ * @param {string} [only]  just this genre's progressions
+ */
+export function addMelodicPack(only) {
   let seed = 20261019;
   const rnd = () => (seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 4294967296;
-  const groups = sourcesByProgression();
+  const groups = sourcesByProgression(only);
   const uid = {};
   for (const [, src] of groups) {
     const segs = harmony(src);
@@ -48,10 +52,10 @@ export function addMelodicPack() {
 }
 
 /* one chord pattern per progression, length and key: the one that sounds most like block chords */
-function sourcesByProgression() {
+function sourcesByProgression(only) {
   const best = new Map();
   for (const f of FAC) {
-    if (f.pool !== 'chords' || f.busy || f.mx || !f.key || !PROG.test(f.name)) continue;
+    if (f.pool !== 'chords' || f.busy || f.mx || !f.key || !PROG.test(f.name) || (only && f.genre !== only)) continue;
     const k = f.genre + '|' + PROG.exec(f.name)[1] + '|' + f.bars + '|' + f.keyName;
     const onsets = new Set(f.notes.map(n => n.s)).size,
       score = f.notes.length / Math.max(1, onsets);

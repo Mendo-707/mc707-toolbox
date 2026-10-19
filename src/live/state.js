@@ -102,7 +102,8 @@ const LV_SAVE = [
   'homeKey',
   'theme',
   'human',
-  'feel'
+  'feel',
+  'mood'
 ];
 export const LV = Object.assign(
   {
@@ -113,6 +114,7 @@ export const LV = Object.assign(
     swing: 50,
     human: 0,
     feel: 'natural',
+    mood: null,
     quant: 4,
     entry: 'smooth',
     fills: true,
@@ -234,6 +236,8 @@ export const liveSwingAmt = () => LV.swing;
   LV.scBase = clamp(Math.round(+LV.scBase || 60), 0, 112);
   if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
   if (!['lively', 'mixed', 'classic'].includes(LV.flavor)) LV.flavor = 'lively';
+  if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
+  else LV.mood = { i: clamp(Math.round(+LV.mood.i), 0, 100), c: clamp(Math.round(+LV.mood.c), 0, 100) };
   LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);
   if (LV.mode !== 'major' && LV.mode !== 'minor') LV.mode = null;
   LV.riseBars = [2, 4, 8].includes(+LV.riseBars) ? +LV.riseBars : 4;

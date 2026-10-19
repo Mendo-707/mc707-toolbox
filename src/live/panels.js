@@ -2,6 +2,7 @@
 //
 // Reads: S, LV, MIDI, DEV.
 import { humanizeSync, lvHumApply } from './humanize-ui.js';
+import { lvMoodApply, moodSync } from './mood-ui.js';
 import { $, el } from '../core/dom.js';
 import { DEV, DEVS, TRACK_COLORS, devOn } from '../core/device.js';
 import { S } from '../core/state.js';
@@ -32,6 +33,8 @@ export function liveRender() {
   }
   humanizeSync();
   lvHumApply();
+  moodSync();
+  lvMoodApply();
   $('#lvQ').value = LV.quant;
   $('#lvEntry').value = LV.entry;
   $('#lvFills').checked = LV.fills;

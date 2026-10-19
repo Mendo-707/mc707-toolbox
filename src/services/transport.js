@@ -15,7 +15,7 @@ import { MIDI, panic, sendMidi } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
 import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from './mc-controls.js';
 import { hooks } from '../core/hooks.js';
-import { HUM, humanize } from './humanize.js';
+import { HUM, humanize, moodShape } from './humanize.js';
 
 /* ---------- transport ---------- */
 export const TR = {
@@ -79,6 +79,8 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
   const pitch = isD ? S.drumMap[nn] : clamp(nn + (TR.mode === 'live' ? 0 : S.transpose || 0), 0, 127);
   let tm = time + (t.nudge || 0) / 1000 + (t.hum ? ((Math.random() * 2 - 1) * t.hum) / 1000 : 0),
     flam = null;
+  /* Live Mode's mood: intense plays harder and shorter, calm softer and longer */
+  if (TR.mode === 'live' && HUM.push) [vel, dur] = moodShape(vel, dur, isD);
   /* Live Mode's Humanize: where each player sits, dynamics, rolled chords, flams */
   if (TR.mode === 'live' && HUM.amount > 0) {
     const h = humanize(ti, nn, vel, tm, dur, isD, TR.tick, AU.ctx ? AU.ctx.currentTime + 0.003 : tm);

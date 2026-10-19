@@ -53,6 +53,14 @@ const SND_G = {
     lead: ['D-243 Syn Vox 1', 'A-12 Syn VoiceLead 1'],
     pluck: ['D-1089 EP Belle', 'B-242 Syn Atk Pluck']
   },
+  bigbeat: {
+    drums: 'Big breakbeat kit: distorted kick, fat funk snare, tambourine and crash',
+    bass: ['B-133 Dist Bass', 'D-686 TB Bass 1', 'D-741 Acid Bs 1'],
+    chords: ['A-20 Rave Stab', 'B-266 Brass Sect', 'D-1103 Philly Hit 1'],
+    pad: ['B-312 Rotary Org 1', 'B-309 Lord Organ 1'],
+    lead: ['B-88 Hoover Lead', 'E-132 Phripphuzz', 'D-1007 Tekno Ld 1'],
+    pluck: ['E-135 Velo-Wah Gtr', 'E-131 R&R Chunk']
+  },
   dubstep: {
     drums: 'Huge half-time kit: deep kick and a big layered snare',
     bass: ['A-76 SC1Ctrl WobbleBS', 'A-6 Wub Bass', 'A-66 SC1 Growl Bass1'],

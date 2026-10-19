@@ -1,25 +1,25 @@
 {
- "count": 21983,
+ "count": 24976,
  "pools": {
   "-": 434,
-  "kit": 605,
-  "hats": 81,
-  "perc": 49,
-  "fill": 150,
-  "chords": 4996,
-  "bass": 2187,
-  "pluck": 4634,
-  "lead": 3282,
-  "pad": 3376,
-  "intro": 51,
-  "build": 140,
-  "impact": 42,
-  "fkit": 112,
-  "fbass": 224,
-  "fchords": 224,
-  "flead": 224,
+  "kit": 653,
+  "hats": 89,
+  "perc": 57,
+  "fill": 158,
+  "chords": 5662,
+  "bass": 2779,
+  "pluck": 5152,
+  "lead": 3948,
+  "pad": 3746,
+  "intro": 63,
+  "build": 150,
+  "impact": 45,
+  "fkit": 120,
+  "fbass": 240,
+  "fchords": 240,
+  "flead": 240,
   "acid": 60,
-  "full": 1112
+  "full": 1140
  },
  "chunks": [
   "69a3a5a8",
@@ -65,6 +65,12 @@
   "e879c47b",
   "9bb8f4c5",
   "a82a47a0",
-  "d622c73e"
+  "905635bf",
+  "2c80b893",
+  "8b1054d9",
+  "4baedf3a",
+  "bf4524a8",
+  "f7787782",
+  "6ba3b4db"
  ]
 }

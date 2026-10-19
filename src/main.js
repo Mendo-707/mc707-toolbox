@@ -66,7 +66,7 @@ import './song/track-midi.js';
 import './services/mc-controls.js';
 import './song/shape-editor.js';
 import './song/structure.js';
-import './song/wizard-styles.js';
+import { defaultWiz, wizPlan } from './song/wizard-styles.js';
 import './song/wizard-plan.js';
 import './song/wizard-structure.js';
 import './song/wizard-review.js';
@@ -85,6 +85,8 @@ import { liveMoveNow, lvRestCC, lvUserOwns } from './live/moves.js';
 import { liveActDown, liveActUp } from './live/pads.js';
 import { liveJamEnd, liveJamStart } from './live/jam.js';
 import { lvHumApply } from './live/humanize-ui.js';
+import { lvMoodSet } from './live/mood-ui.js';
+import { moodOf } from './library/mood.js';
 import './live/pads.js';
 import './live/controller.js';
 import './live/raven.js';
@@ -211,6 +213,8 @@ PROJ.t = projTitle;
     });
   /* Test hook: the automated tests in tests/ reach the app's internals through this. The app itself never uses it. */
   window.__app = {
+    wiz: { plan: wizPlan, def: defaultWiz },
+    STYLES,
     zen: {
       open: zenOpen,
       get ZE() {
@@ -255,7 +259,9 @@ PROJ.t = projTitle;
       blend: lvBlendIn,
       move: liveMoveNow,
       restCC: lvRestCC,
-      humApply: lvHumApply
+      humApply: lvHumApply,
+      moodSet: lvMoodSet,
+      moodOf
     },
     liveBuildDrop,
     stopAll,

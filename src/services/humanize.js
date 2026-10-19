@@ -12,11 +12,19 @@
 // Four feels shape it: Natural, Laid back, Pushed and Drunk (loose and lazy, after J Dilla).
 // Its own seeded random numbers, so the patterns Live Mode picks never change.
 //
-// Owns: HUM (amount 0-100 and feel, set by Live Mode).
+// Owns: HUM (amount 0-100, feel and the mood's push, set by Live Mode).
 // Reads: S.
 import { slotOf } from '../core/tracks.js';
 
-export const HUM = { amount: 0, feel: 'natural' };
+/* push: Live Mode's mood, -1 (calm: softer, a little longer) to 1 (intense: harder, flatter, shorter) */
+export const HUM = { amount: 0, feel: 'natural', push: 0 };
+/** Velocity and length for Live Mode's mood. With the mood off (push 0) the note comes back unchanged. */
+export function moodShape(v, d, isDrum) {
+  const p = HUM.push;
+  if (!p) return [v, d];
+  if (p > 0) return [Math.min(127, Math.round(v + (127 - v) * 0.3 * p)), isDrum ? d : d * (1 - 0.12 * p)];
+  return [Math.max(1, Math.round(v * (1 + 0.22 * p))), isDrum ? d : d * (1 - 0.15 * p)];
+}
 /** The feels, in milliseconds at full amount: where each player sits (negative = ahead of the beat),
     how far they drift, how loose each hit is, and how wide a chord spreads. */
 export const FEELS = {

@@ -4,6 +4,7 @@
 // Reads: S, LV, TR, REC, MIDI, AU, PCLAST, CLIPPIN, AUTOLAST, CTL.
 // Calls up the layers through hooks (core/hooks.js).
 import { lvHumApply } from './humanize-ui.js';
+import { lvMoodApply } from './mood-ui.js';
 import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn, oneKit } from '../core/device.js';
@@ -674,6 +675,7 @@ export function liveStart(idx) {
   }
   const sc = LV.scenes[i];
   lvHumApply(true);
+  lvMoodApply();
   Object.assign(TR, { late: 0, lateMax: 0, gapMax: 0, lastRun: 0 });
   Object.assign(TR, {
     playing: true,

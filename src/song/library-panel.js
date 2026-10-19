@@ -56,7 +56,8 @@ const GENRE_LABELS = {
   latin: 'Latin and afro',
   synth: 'Synthwave',
   pop: 'Pop and indie',
-  ambient: 'Ambient and cinematic'
+  ambient: 'Ambient and cinematic',
+  bigbeat: 'Big beat'
 };
 const GENRE_ORDER = Object.keys(GENRE_LABELS);
 Object.keys(GENRE_LABELS).forEach(g => {

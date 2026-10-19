@@ -13,6 +13,7 @@ import { lvIsFlash } from './themes.js';
 import { lvLoadScenes } from './scene-editor.js';
 import { LV_TPL, LV_TPL101, LV_TPL1K } from './scene-templates.js';
 import { lvFlavor, lvLively, lvModeFam, lvPool, lvProg } from '../library/pools.js';
+import { moodFilter } from '../library/mood.js';
 
 const avgPitch = f => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
 /** Two melodic parts that can play together: not both busy, and at least a fifth apart on average. */
@@ -44,7 +45,7 @@ export function liveBuild() {
   const take = (pool, pred) => {
     if (!P[pool]) {
       A[pool] = shuf(lvPool(st, pool));
-      P[pool] = shuf(lvFlavor(A[pool], LV.flavor));
+      P[pool] = shuf(moodFilter(lvFlavor(A[pool], LV.flavor), LV.mood, facById));
     }
     for (const arr of pred ? [P[pool], A[pool]] : [P[pool]]) {
       if (!arr.length) continue;
@@ -184,7 +185,7 @@ export function liveBuild() {
 export function liveSwapIds(t) {
   const st = lvStyle(),
     pool = t === trackOf(0) && oneKit() ? 'full' : poolOf(t);
-  return lvFlavor(lvPool(st, pool), LV.flavor).filter(id => {
+  return moodFilter(lvFlavor(lvPool(st, pool), LV.flavor), LV.mood, facById).filter(id => {
     const f = facById(id);
     return f && f.type === S.tracks[t].type;
   });

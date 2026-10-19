@@ -1,5 +1,5 @@
 // Live Mode soak test: long simulated sets with random pad presses (scenes, breaks, builds, swaps, mutes,
-// key and energy changes, stutter, moves, End Jam and New patterns), checking what a gig depends on:
+// key and energy changes, stutter, moves, moods, End Jam and New patterns), checking what a gig depends on:
 // nothing throws, the clock always moves, every note is released, every effect goes back to rest, and
 // nothing grows without limit. SOAK_MINUTES sets the length of each set (default 8 minutes of music).
 import { test, after } from 'node:test';
@@ -42,7 +42,7 @@ const SOAK = `async ({ style, seed, minutes }) => {
       else if (x < 0.88) { LV.dropStyle = pick(['smooth', 'hard', 'gap']); LV.brkLen = pick([16, 32, 64]); LV.brkStyle = pick(['mix', 'hits', 'stutter', 'roll', 'drop']); }
       else if (x < 0.92) safe('blend', () => L.blend());
       else if (x < 0.95) safe('jamEnd', () => L.jamEnd());
-      else if (x < 0.97) { LV.chaos = pick([0, 40, 80]); LV.buildFx = rnd() < 0.8; LV.human = pick([0, 30, 70, 100]); LV.feel = pick(['natural', 'laidback', 'pushed', 'drunk']); L.humApply(); }
+      else if (x < 0.97) { LV.chaos = pick([0, 40, 80]); LV.buildFx = rnd() < 0.8; LV.human = pick([0, 30, 70, 100]); LV.feel = pick(['natural', 'laidback', 'pushed', 'drunk']); L.humApply(); L.moodSet(pick([null, { i: 95, c: 8 }, { i: 18, c: 68 }, { i: 88, c: 92 }, { i: 50, c: 20 }]), true); }
       else safe('stopCue', () => L.down('stop'));
     }
     const before = TR.tick;
@@ -100,7 +100,8 @@ for (const [style, seed] of [
   ['trap', 23],
   ['liquid', 37],
   ['acidtechno', 41],
-  ['pop', 53]
+  ['pop', 53],
+  ['bigbeat', 67]
 ]) {
   test('Live soak: ' + MINUTES + ' minutes of ' + style + ' with random pad presses', async () => {
     const { page, errors } = await openApp();
