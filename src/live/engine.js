@@ -3,6 +3,7 @@
 //
 // Reads: S, LV, TR, REC, MIDI, AU, PCLAST, CLIPPIN, AUTOLAST, CTL.
 // Calls up the layers through hooks (core/hooks.js).
+import { lvHumApply } from './humanize-ui.js';
 import { clamp } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn, oneKit } from '../core/device.js';
@@ -665,6 +666,7 @@ export function liveStart(idx) {
     if (j >= 0) i = j;
   }
   const sc = LV.scenes[i];
+  lvHumApply(true);
   Object.assign(TR, {
     playing: true,
     mode: 'live',

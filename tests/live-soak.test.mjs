@@ -42,7 +42,7 @@ const SOAK = `async ({ style, seed, minutes }) => {
       else if (x < 0.88) { LV.dropStyle = pick(['smooth', 'hard', 'gap']); LV.brkLen = pick([16, 32, 64]); LV.brkStyle = pick(['mix', 'hits', 'stutter', 'roll', 'drop']); }
       else if (x < 0.92) safe('blend', () => L.blend());
       else if (x < 0.95) safe('jamEnd', () => L.jamEnd());
-      else if (x < 0.97) { LV.chaos = pick([0, 40, 80]); LV.buildFx = rnd() < 0.8; }
+      else if (x < 0.97) { LV.chaos = pick([0, 40, 80]); LV.buildFx = rnd() < 0.8; LV.human = pick([0, 30, 70, 100]); LV.feel = pick(['natural', 'laidback', 'pushed', 'drunk']); L.humApply(); }
       else safe('stopCue', () => L.down('stop'));
     }
     const before = TR.tick;

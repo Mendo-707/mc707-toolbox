@@ -466,3 +466,94 @@ test('on stage: a freeze does not burst, a broken tick does not stop the music, 
   assert.ok(r.back.levels >= 3, 'track levels are sent again (' + r.back.levels + ')');
   assert.ok(errors.length <= 1, 'only the deliberate broken tick reports an error: ' + errors.join(' | '));
 });
+
+test('Humanize: off changes nothing; on, each player sits in its own spot, chords roll, dynamics breathe', async () => {
+  const errors = [];
+  /* a fresh page for every run, so Live Mode's own random choices start the same each time */
+  const run = async (human, feel) => {
+    const o = await openApp();
+    errors.push(...o.errors);
+    return o.page.evaluate(
+      async ({ human, feel }) => {
+        const a = window.__app,
+          LV = a.LV,
+          S = a.S;
+        a.ensureAudio();
+        await a.connectMidi();
+        /* freeze both clocks, so MIDI times come straight from the player's schedule */
+        Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
+        performance.now = () => 0;
+        Object.assign(LV, { style: 'deephouse', seed: 4, custom: false, auto: true, vary: 60, human, feel });
+        a.liveBuild();
+        window.__out.length = 0;
+        window.__times = [];
+        a.liveStart(0);
+        a.TICKER.stop();
+        const t0 = a.TR.nextTime,
+          end = a.TR.tick + 32 * 16;
+        while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+          a.processTick(a.TR.tick, a.TR.nextTime);
+          a.advance();
+        }
+        a.stopAll();
+        const snare = S.drumMap[2],
+          kitCh = S.tracks[0].ch - 1;
+        return window.__out
+          .map((b, i) => [b[0], b[1], b[2], window.__times[i]])
+          .filter(m => (m[0] & 0xf0) === 0x90 && m[2] > 0)
+          .map(m => ({
+            ch: m[0] & 15,
+            n: m[1],
+            v: m[2],
+            t: m[3] / 1000 - t0,
+            snare: (m[0] & 15) === kitCh && m[1] === snare
+          }));
+      },
+      { human, feel }
+    );
+  };
+  const off = await run(0, 'natural');
+  const base = await run(0, 'natural');
+  assert.deepEqual(
+    off.map(x => [x.ch, x.n, x.v]),
+    base.map(x => [x.ch, x.n, x.v]),
+    'with Humanize off, the set plays exactly as before'
+  );
+  const stats = {},
+    played = {};
+  for (const feel of ['natural', 'laidback', 'pushed', 'drunk']) {
+    const h = (played[feel] = await run(55, feel));
+    assert.equal(h.length, off.length, feel + ': the same notes (no flams below 60)');
+    const d = h.map((x, i) => (x.t - off[i].t) * 1000);
+    assert.ok(
+      d.every(ms => Math.abs(ms) < 40),
+      feel + ': every note within 40 ms of the beat (max ' + Math.max(...d.map(Math.abs)).toFixed(1) + ')'
+    );
+    const sn = h.map((x, i) => (x.snare ? d[i] : null)).filter(x => x != null);
+    stats[feel] = {
+      snare: sn.reduce((s, x) => s + x, 0) / Math.max(1, sn.length),
+      moved: d.filter(ms => Math.abs(ms) > 0.5).length / d.length,
+      vel: h.filter((x, i) => x.v !== off[i].v).length / h.length
+    };
+  }
+  console.log('humanize', JSON.stringify(stats));
+  assert.ok(
+    stats.laidback.snare > stats.natural.snare && stats.natural.snare > stats.pushed.snare,
+    JSON.stringify(stats)
+  );
+  assert.ok(stats.natural.moved > 0.5 && stats.natural.vel > 0.5, 'most notes move a little and change dynamics');
+  /* chords roll: notes that were struck together on a chord track now spread out */
+  const ch = played.natural;
+  const groups = new Map();
+  ch.forEach((x, i) => {
+    const k = off[i].ch + ':' + off[i].t.toFixed(4);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(x.t);
+  });
+  const rolled = [...groups.values()].filter(g => g.length >= 3 && new Set(g.map(t => t.toFixed(4))).size > 1).length;
+  assert.ok(rolled > 0, 'some chords are rolled');
+  /* at full amount the snare sometimes flams: a few extra quiet notes */
+  const full = await run(100, 'drunk');
+  assert.ok(full.length >= off.length, 'flams only add notes');
+  assert.deepEqual(errors, []);
+});

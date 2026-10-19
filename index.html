@@ -6797,9 +6797,9 @@ input[type='number'] {
 
   // src/library/generate.js
   (function genLibrary() {
-    const rng = /* @__PURE__ */ ((seed3) => () => {
-      seed3 = seed3 + 1831565813 | 0;
-      let t = Math.imul(seed3 ^ seed3 >>> 15, 1 | seed3);
+    const rng = /* @__PURE__ */ ((seed4) => () => {
+      seed4 = seed4 + 1831565813 | 0;
+      let t = Math.imul(seed4 ^ seed4 >>> 15, 1 | seed4);
       t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     })(20261011);
@@ -10134,15 +10134,15 @@ input[type='number'] {
       const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(n);
       return m ? m[1] : null;
     };
-    let seed3 = 987654;
-    const rnd4 = () => {
-      seed3 = seed3 * 1103515245 + 12345 & 2147483647;
-      return seed3 / 2147483647;
+    let seed4 = 987654;
+    const rnd5 = () => {
+      seed4 = seed4 * 1103515245 + 12345 & 2147483647;
+      return seed4 / 2147483647;
     };
     const pickN = (a, n) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd4() * (i + 1));
+        const j = Math.floor(rnd5() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a.slice(0, n);
@@ -10355,7 +10355,7 @@ input[type='number'] {
           });
         });
       });
-      const minorG = !["pop", "funk", "synth", "house"].includes(g) || rnd4() < 0.5;
+      const minorG = !["pop", "funk", "synth", "house"].includes(g) || rnd5() < 0.5;
       const SC = minorG ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11], kn = minorG ? "Am" : "C", R3 = KEYS[kn].root;
       const MOT = [
         [
@@ -10471,15 +10471,15 @@ input[type='number'] {
 
   // src/library/variety.js
   (function() {
-    let seed3 = 20261014;
-    const rnd4 = () => {
-      seed3 = seed3 * 1103515245 + 12345 & 2147483647;
-      return seed3 / 2147483647;
+    let seed4 = 20261014;
+    const rnd5 = () => {
+      seed4 = seed4 * 1103515245 + 12345 & 2147483647;
+      return seed4 / 2147483647;
     };
     const shuf = (a) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd4() * (i + 1));
+        const j = Math.floor(rnd5() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a;
@@ -11450,7 +11450,7 @@ input[type='number'] {
         ...shuf(MAJ).slice(0, kM.length ? nMaj : 0).map((p) => [p, kM])
       ];
       const grooves = BG.filter((b) => b[1].split(" ").includes(cls));
-      let ci = 0, bi = 0, ki = 0;
+      let ci = 0, bi2 = 0, ki = 0;
       const cr = shuf(CRX), bg = shuf(grooves);
       const push = (o) => FAC.push(Object.assign({ id: "vx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
       for (const [P, keys2] of plan2) {
@@ -11502,7 +11502,7 @@ input[type='number'] {
         }
         const tonic = 36 + R3 % 12;
         for (let n = 0; n < 3; n++) {
-          const b = bg[bi++ % bg.length], notes = [], turn = bars >= 4 && n === 2;
+          const b = bg[bi2++ % bg.length], notes = [], turn = bars >= 4 && n === 2;
           const note = (tok, sg, s, l) => {
             const root = 36 + ((R3 + sg.off) % 12 + 12) % 12, iv = Q2[sg.q], nx = segNext2(segs, sg), nr = 36 + ((R3 + nx.off) % 12 + 12) % 12;
             switch (tok) {
@@ -14715,9 +14715,9 @@ input[type='number'] {
       o.stop(stop);
     });
   }
-  function click(t, accent) {
+  function click(t, accent2) {
     const g = genv(t, 0.25, 0.03);
-    osc("square", accent ? 1600 : 1050, t, 0.05).connect(g);
+    osc("square", accent2 ? 1600 : 1050, t, 0.05).connect(g);
   }
 
   // src/services/midi.js
@@ -14960,6 +14960,114 @@ input[type='number'] {
     });
   }
 
+  // src/services/humanize.js
+  var HUM = { amount: 0, feel: "natural" };
+  var FEELS = {
+    natural: { kick: 0, snare: 4, hat: 1, perc: 2, bass: 1, keys: 5, pad: 7, lead: 3, drift: 4, loose: 3, spread: 7 },
+    laidback: {
+      kick: 2,
+      snare: 14,
+      hat: 6,
+      perc: 7,
+      bass: 5,
+      keys: 12,
+      pad: 12,
+      lead: 9,
+      drift: 5,
+      loose: 3,
+      spread: 10
+    },
+    pushed: {
+      kick: -2,
+      snare: -4,
+      hat: -6,
+      perc: -4,
+      bass: -4,
+      keys: -2,
+      pad: 2,
+      lead: -3,
+      drift: 3,
+      loose: 2,
+      spread: 5
+    },
+    drunk: { kick: -3, snare: 20, hat: 4, perc: 9, bass: 9, keys: 14, pad: 15, lead: 12, drift: 10, loose: 9, spread: 16 }
+  };
+  var FEEL_NAMES = [
+    ["natural", "Natural"],
+    ["laidback", "Laid back"],
+    ["pushed", "Pushed"],
+    ["drunk", "Drunk"]
+  ];
+  var seed3 = 2654435769;
+  var rnd3 = () => (seed3 = Math.imul(seed3, 1664525) + 1013904223 >>> 0) / 4294967296;
+  var bi = () => rnd3() * 2 - 1;
+  var walk = new Float64Array(8);
+  var walkAt = new Int32Array(8).fill(-1);
+  var bandWalk = 0;
+  var bandAt = -1;
+  var chordAt = new Float64Array(8).fill(-1);
+  var chordN = new Int32Array(8);
+  var strokeUp = new Uint8Array(8);
+  var kickTick = -1;
+  var kickOff = 0;
+  function humReset(s = 1) {
+    seed3 = (2654435769 ^ s * 2654435761) >>> 0;
+    walk.fill(0);
+    walkAt.fill(-1);
+    bandWalk = 0;
+    bandAt = -1;
+    chordAt.fill(-1);
+    kickTick = -1;
+  }
+  var LANE_ROLE = ["kick", "snare", "snare", "snare", "hat", "hat", "perc", "perc", "perc", "hat", "hat", "perc"];
+  function roleOf2(ti, isDrum, nn) {
+    if (isDrum) return LANE_ROLE[nn] || "perc";
+    const s = slotOf(ti);
+    return s === 3 ? "bass" : s === 4 ? "keys" : s === 5 ? "pad" : s === 6 || s === 7 ? "lead" : "keys";
+  }
+  function drift(ti, beat, F, a) {
+    if (walkAt[ti] !== beat) {
+      walkAt[ti] = beat;
+      walk[ti] = walk[ti] * 0.85 + bi() * 0.45;
+    }
+    if (bandAt !== beat) {
+      bandAt = beat;
+      bandWalk = bandWalk * 0.9 + bi() * 0.3;
+    }
+    return (walk[ti] * F.drift + bandWalk * F.drift * 0.6) * a;
+  }
+  function accent(role, step, bar2, a) {
+    const pos = step % 16;
+    let m = 1;
+    if (pos % 4 === 0) m += 0.1 * a;
+    else if (pos % 2 === 1) m -= (role === "hat" ? 0.2 : 0.08) * a;
+    if (role === "snare" && (pos === 4 || pos === 12)) m += 0.08 * a;
+    if (bar2 % 4 === 3) m += (0.04 + 0.04 * (pos / 16)) * a;
+    return m + bi() * 0.09 * a;
+  }
+  function humanize(ti, nn, v, t, d, isDrum, tick, earliest) {
+    const a = HUM.amount / 100;
+    if (a <= 0) return { v, t, d, flam: null };
+    const F = FEELS[HUM.feel] || FEELS.natural, role = roleOf2(ti, isDrum, nn), step = tick >> 1, bar2 = tick >> 5, beat = tick >> 3;
+    let ms = F[role] * a + drift(ti, beat, F, a) + bi() * F.loose * a;
+    if (role === "kick") {
+      kickTick = tick;
+      kickOff = ms;
+    } else if (role === "bass" && kickTick === tick) ms = kickOff + F.bass * 0.3 * a;
+    if (!isDrum && (role === "keys" || role === "pad")) {
+      if (Math.abs(chordAt[ti] - t) > 5e-4) {
+        chordAt[ti] = t;
+        chordN[ti] = 0;
+        strokeUp[ti] ^= 1;
+      }
+      const k2 = chordN[ti]++, dir = strokeUp[ti] || role === "pad" ? 1 : -1;
+      ms += k2 * (F.spread / 4) * a * (dir > 0 ? 1 : 0.7) + (dir < 0 ? (3 - Math.min(k2, 3)) * (F.spread / 6) * a : 0);
+    }
+    const nt = Math.max(earliest, t + ms / 1e3), nv = Math.max(1, Math.min(127, Math.round(v * accent(role, step, bar2, a)))), nd = isDrum ? d : Math.max(0.02, d * (1 + bi() * 0.12 * a));
+    const flam = role === "snare" && a >= 0.6 && v > 70 && rnd3() < 0.06 * a ? Math.max(earliest, nt - 0.012 - 0.01 * a) : null;
+    return { v: nv, t: nt, d: nd, flam };
+  }
+
   // src/services/transport.js
   var TR = {
     playing: false,
@@ -14980,12 +15088,23 @@ input[type='number'] {
     if (!devOn(ti)) return;
     const t = S.tracks[ti];
     if (t.vol <= 0) return;
-    const vel = clamp(Math.round(v * t.vol / 100), 1, 127);
+    let vel = clamp(Math.round(v * t.vol / 100), 1, 127);
     const isD = t.type === "drum";
     const pitch = isD ? S.drumMap[nn] : clamp(nn + (TR.mode === "live" ? 0 : S.transpose || 0), 0, 127);
-    const tm = time + (t.nudge || 0) / 1e3 + (t.hum ? (Math.random() * 2 - 1) * t.hum / 1e3 : 0);
+    let tm = time + (t.nudge || 0) / 1e3 + (t.hum ? (Math.random() * 2 - 1) * t.hum / 1e3 : 0), flam = null;
+    if (TR.mode === "live" && HUM.amount > 0) {
+      const h = humanize(ti, nn, vel, tm, dur, isD, TR.tick, AU.ctx ? AU.ctx.currentTime + 3e-3 : tm);
+      vel = h.v;
+      tm = h.t;
+      dur = h.d;
+      flam = h.flam;
+    }
     if (MIDI.out && !noMidi) {
-      const mt = tm + (S.midiOffset || 0) / 1e3;
+      const mt = tm + (S.midiOffset || 0) / 1e3, off = (S.midiOffset || 0) / 1e3;
+      if (flam != null) {
+        sendMidi([144 | t.ch - 1, pitch, Math.max(1, Math.round(vel * 0.45))], flam + off);
+        sendMidi([128 | t.ch - 1, pitch, 0], Math.min(mt, flam + off + 8e-3));
+      }
       sendMidi([144 | t.ch - 1, pitch, vel], mt);
       sendMidi([128 | t.ch - 1, pitch, 0], mt + Math.max(dur, 0.03));
     }
@@ -18293,7 +18412,7 @@ input[type='number'] {
       x.fillText("No automation yet. Click to add points, or pick a preset above.", g.L + g.pw / 2, g.T + g.ph / 2);
     }
     if (SH.target === "vel") {
-      const handle = (u, label) => {
+      const handle = (u, label2) => {
         x.fillStyle = hot;
         x.beginPath();
         x.moveTo(px(u), g.T - 2);
@@ -19650,17 +19769,17 @@ input[type='number'] {
     } catch (e) {
     }
   };
-  function libSelect(label, key, opts) {
+  function libSelect(label2, key, opts) {
     if (!opts.some((o) => o[0] === UI[key])) UI[key] = "all";
     const sel = el("select", {
-      "aria-label": label,
+      "aria-label": label2,
       onchange: (e) => {
         UI[key] = e.target.value;
         renderLibrary();
       }
     });
     opts.forEach(([v, l]) => sel.append(el("option", { value: v, selected: UI[key] === v }, l)));
-    return el("label", {}, label, sel);
+    return el("label", {}, label2, sel);
   }
   function libReset() {
     Object.assign(UI, {
@@ -20511,7 +20630,7 @@ input[type='number'] {
   function clipOptionsEl(c, p, isDrum) {
     const clipOpt = el("details", { class: "clipopt" }, el("summary", { class: "btn sm" }, "Clip options"));
     const panel = el("div", { class: "clippanel" });
-    const row = (label, ctl2) => el("label", { class: "cprow" }, el("span", {}, label), ctl2);
+    const row = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
     const muteBtn = el(
       "button",
       {
@@ -20527,8 +20646,8 @@ input[type='number'] {
       c.mute ? "Muted" : "Mute clip"
     );
     panel.append(row("Mute", muteBtn));
-    const stepIn = (label, val, min, fn, title) => row(
-      label,
+    const stepIn = (label2, val, min, fn, title) => row(
+      label2,
       el("input", {
         type: "number",
         min,
@@ -20536,7 +20655,7 @@ input[type='number'] {
         value: +(val * 16).toFixed(4),
         style: "width:84px",
         title: title || "In steps (16 steps = 1 bar). Fractions work: 2.5 is half a step later",
-        "aria-label": label,
+        "aria-label": label2,
         onchange: (e) => {
           const v = Math.round(+e.target.value * 16) / 16;
           fn(Number.isFinite(v) ? Math.max(min, v) : min);
@@ -20941,7 +21060,7 @@ input[type='number'] {
       );
       return d;
     };
-    const act = (label, fn, title) => el("button", { class: "btn sm", title: title || label, onclick: fn }, label);
+    const act = (label2, fn, title) => el("button", { class: "btn sm", title: title || label2, onclick: fn }, label2);
     h.append(
       el(
         "div",
@@ -21357,7 +21476,7 @@ input[type='number'] {
     return [b, sel];
   }
   function viewGroup(c) {
-    const b = (label, fn, title, on2) => el("button", { class: "btn sm" + (on2 ? " on" : ""), title: title || label, onclick: fn }, label);
+    const b = (label2, fn, title, on2) => el("button", { class: "btn sm" + (on2 ? " on" : ""), title: title || label2, onclick: fn }, label2);
     return el(
       "div",
       { class: "grp edView" },
@@ -22233,8 +22352,8 @@ input[type='number'] {
     );
     inner.append(rows);
     hooks.updPlayhead(TR.playing && TR.mode === "song" ? TR.vis[0] ? TR.vis[0].tick / 32 : S.cursor : S.cursor);
-    const bi = $("#barsIn");
-    if (bi) bi.value = S.bars;
+    const bi2 = $("#barsIn");
+    if (bi2) bi2.value = S.bars;
     hooks.grabUI();
   }
   function trackRow(t, i, W) {
@@ -22625,15 +22744,15 @@ input[type='number'] {
 
   // src/library/harmony-pack.js
   function addHarmonyPack() {
-    let seed3 = 20261018;
-    const rnd4 = () => {
-      seed3 = seed3 * 1103515245 + 12345 & 2147483647;
-      return seed3 / 2147483647;
+    let seed4 = 20261018;
+    const rnd5 = () => {
+      seed4 = seed4 * 1103515245 + 12345 & 2147483647;
+      return seed4 / 2147483647;
     };
     const shuf = (a) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd4() * (i + 1));
+        const j = Math.floor(rnd5() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
       return a;
@@ -23215,7 +23334,7 @@ input[type='number'] {
         ...kM.length ? MAJ.map((p) => [p, kM, "major"]) : []
       ];
       const cr = shuf(CR), bg = shuf(BG);
-      let ci = 0, bi = 0, ki = 0, mi = 0;
+      let ci = 0, bi2 = 0, ki = 0, mi = 0;
       const push = (o) => FAC.push(Object.assign({ id: "hx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
       const BUSY = ["pushed", "3+3+2", "speeds up", "long-short", "3 bars + 1", "sus resolves late"];
       for (const [P, keys2, scale] of plan2) {
@@ -23240,7 +23359,7 @@ input[type='number'] {
           });
         }
         for (let n = 0; n < 2; n++) {
-          const b = bg[bi++ % bg.length], notes = [];
+          const b = bg[bi2++ % bg.length], notes = [];
           const note = (tok, sg) => {
             const root = 36 + ((R3 + sg.off) % 12 + 12) % 12, low2 = 36 + ((R3 + sg.bass) % 12 + 12) % 12, iv = Q2[sg.q], nx = segNext2(segs, sg), nr = 36 + ((R3 + nx.bass) % 12 + 12) % 12;
             switch (tok) {
@@ -25710,7 +25829,9 @@ input[type='number'] {
     "brkLen",
     "ctl",
     "homeKey",
-    "theme"
+    "theme",
+    "human",
+    "feel"
   ];
   var LV = Object.assign(
     {
@@ -25719,6 +25840,8 @@ input[type='number'] {
       key: 2,
       bpm: 174,
       swing: 50,
+      human: 0,
+      feel: "natural",
       quant: 4,
       entry: "smooth",
       fills: true,
@@ -25906,6 +26029,55 @@ input[type='number'] {
     return { v0, v1, t0, t1: t0 + Math.max(0, dur) };
   }
   var lvHue = (e) => Math.round(215 - e * 19);
+
+  // src/live/humanize-ui.js
+  function lvHumApply(reset) {
+    HUM.amount = Math.max(0, Math.min(100, +LV.human || 0));
+    HUM.feel = LV.feel || "natural";
+    if (reset) humReset(LV.seed || 1);
+  }
+  var label = (n) => n <= 0 ? "Off" : n < 25 ? "Subtle" : n < 55 ? "Human" : n < 80 ? "Loose" : "Very loose";
+  function humanizeControl() {
+    const out = el("b", { id: "lvHumV", class: "lvSwV" }, label(LV.human || 0));
+    const slider = el("input", {
+      type: "range",
+      id: "lvHum",
+      min: 0,
+      max: 100,
+      value: LV.human || 0,
+      style: "width:90px",
+      "aria-label": "Humanize",
+      title: "Humanize: makes the band sound played. Each instrument sits in its own spot against the beat and drifts a little, downbeats and the backbeat lean in, hats alternate hands, chords are strummed, and the snare sometimes flams. Off is machine-tight. Changes straight away.",
+      oninput: (e) => {
+        LV.human = +e.target.value;
+        out.textContent = label(LV.human);
+        lvHumApply();
+        saveLive();
+      }
+    });
+    const feel = el(
+      "select",
+      {
+        id: "lvFeel",
+        "aria-label": "Feel",
+        title: "Natural: snare a touch behind, hats on top. Laid back: everyone sits behind the beat. Pushed: urgent, ahead of the beat. Drunk: loose and lazy, after J Dilla.",
+        onchange: (e) => {
+          LV.feel = e.target.value;
+          lvHumApply();
+          saveLive();
+        }
+      },
+      ...FEEL_NAMES.map(([v, n]) => el("option", { value: v, selected: v === (LV.feel || "natural") }, n))
+    );
+    return el("span", { class: "lvf" }, "Humanize", slider, out, feel);
+  }
+  function humanizeSync() {
+    const s = $("#lvHum"), f = $("#lvFeel");
+    if (s) s.value = LV.human || 0;
+    if (f) f.value = LV.feel || "natural";
+    const o = $("#lvHumV");
+    if (o) o.textContent = label(LV.human || 0);
+  }
 
   // src/live/fades.js
   var EXPR = 11;
@@ -26482,10 +26654,10 @@ input[type='number'] {
   }
   function ravenSection(chSel, noteIn) {
     const c = LV.ctl, act = rvActive(), wrap = el("div", { class: "rvWrap" + (LV.perfOn ? "" : " off") });
-    const seg = (label, val, opts, on2) => el(
+    const seg = (label2, val, opts, on2) => el(
       "div",
       { class: "rvSeg" },
-      el("small", {}, label),
+      el("small", {}, label2),
       el(
         "div",
         { class: "segb" },
@@ -26675,10 +26847,10 @@ input[type='number'] {
   // src/live/controller-settings.js
   function ctlRenderSettings(b, chSel) {
     const c = LV.ctl, ins = MIDI.access ? [...MIDI.access.inputs.values()].filter((i) => i !== MIDI.inp) : [], p = ctlPreset();
-    const sel = (id, label, val, opts, on2) => el(
+    const sel = (id, label2, val, opts, on2) => el(
       "label",
       { class: "lvf" },
-      label,
+      label2,
       el(
         "select",
         {
@@ -27480,6 +27652,8 @@ input[type='number'] {
       $("#lvSwing").value = LV.swing;
       $("#lvSwV").textContent = LV.swing + "%";
     }
+    humanizeSync();
+    lvHumApply();
     $("#lvQ").value = LV.quant;
     $("#lvEntry").value = LV.entry;
     $("#lvFills").checked = LV.fills;
@@ -28884,8 +29058,8 @@ input[type='number'] {
     if (tone2 && !was && ent > 0) lvFadeIn(t, tick, ent, now);
     else lvLevelBack(t, now);
   }
-  function lvHistMark(tick, label) {
-    LV.hist.push({ tick, idx: LV.cur, start: label ? tick : LV.sceneStart, ids: lvIds(), label });
+  function lvHistMark(tick, label2) {
+    LV.hist.push({ tick, idx: LV.cur, start: label2 ? tick : LV.sceneStart, ids: lvIds(), label: label2 });
     if (LV.hist.length > 16) LV.hist.shift();
   }
   function lvBarSnap(tick) {
@@ -29358,6 +29532,7 @@ input[type='number'] {
       if (j >= 0) i = j;
     }
     const sc = LV.scenes[i];
+    lvHumApply(true);
     Object.assign(TR, {
       playing: true,
       mode: "live",
@@ -30666,7 +30841,7 @@ input[type='number'] {
     if (!root) return;
     root.dataset.theme = LV.theme;
     root.dataset.light = LV_THEMES[LV.theme].light ? "1" : "";
-    const sel = (label, node) => el("label", { class: "lvf" }, label, node);
+    const sel = (label2, node) => el("label", { class: "lvf" }, label2, node);
     const styleSel = el("select", {
       id: "lvStyle",
       "aria-label": "Style",
@@ -30812,6 +30987,7 @@ input[type='number'] {
         el("button", { class: "btn sm", onclick: liveTap, title: "Tap the tempo" }, "Tap")
       ),
       el("span", { class: "lvf" }, "Swing", sw, el("b", { id: "lvSwV", class: "lvSwV" }, LV.swing + "%")),
+      humanizeControl(),
       el(
         "button",
         {
@@ -31567,7 +31743,7 @@ input[type='number'] {
         const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars);
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
-        const label = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
+        const label2 = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
         row.append(
           el(
             "div",
@@ -31576,7 +31752,7 @@ input[type='number'] {
               style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
               title: f.name + (resting ? " (resting this bar)" : lvEmute(ti) ? " (held back by the energy level)" : "")
             },
-            label
+            label2
           )
         );
         prevId = id;
@@ -31650,8 +31826,8 @@ input[type='number'] {
     }
     $("#lvKeyNext").textContent = kc ? "→ " + NK(kc.key, kc.mode || LV.mode) + " next bar" : "";
     $("#lvBpmShow").textContent = String(Math.round(LV.bpm * LV.rate));
-    const bi = $("#lvBpm");
-    if (bi && document.activeElement !== bi && +bi.value !== LV.bpm) bi.value = LV.bpm;
+    const bi2 = $("#lvBpm");
+    if (bi2 && document.activeElement !== bi2 && +bi2.value !== LV.bpm) bi2.value = LV.bpm;
     $("#lvRateShow").textContent = LV.rate === 1 ? "" : LV.rate === 0.5 ? "half speed" : "double speed";
     const ec = LV.cues.filter((c) => c.type === "energy").pop(), en = $("#lvEnergy");
     if (en && document.activeElement !== en) {
@@ -36660,7 +36836,7 @@ input[type='number'] {
           d.append(d._recent);
           return;
         }
-        const [label, fn, key, chk] = it;
+        const [label2, fn, key, chk] = it;
         const mi = el(
           "button",
           {
@@ -36675,12 +36851,12 @@ input[type='number'] {
               }
             }
           },
-          el("span", {}, label),
+          el("span", {}, label2),
           el("small", {}, key || "")
         );
         if (chk) {
           mi.dataset.chk = "1";
-          mi.dataset.label = label;
+          mi.dataset.label = label2;
           mi._chk = chk;
         }
         d.append(mi);
@@ -37000,8 +37176,8 @@ input[type='number'] {
       saveLive();
       liveRenderPads();
     };
-    const grp = (label, list) => ({
-      label,
+    const grp = (label2, list) => ({
+      label: label2,
       sub: list.map((v) => ({ label: actLabel(v), checked: a === v, action: () => set(v) }))
     });
     const items = [
@@ -43093,12 +43269,12 @@ input[type='number'] {
     return (v > 0 && p[3] < 0 ? "+" : "") + v + u;
   }
   function ctl(ctx2, key, opts = {}) {
-    const [p] = paramOf(ctx2.kind, key), list = listOf(ctx2.kind, key), v = ctx2.get(key), known2 = ctx2.snd.known.has(key), label = opts.label || nameOf(ctx2.kind, key);
+    const [p] = paramOf(ctx2.kind, key), list = listOf(ctx2.kind, key), v = ctx2.get(key), known2 = ctx2.snd.known.has(key), label2 = opts.label || nameOf(ctx2.kind, key);
     const box = el("label", {
       class: "zcC" + (known2 ? "" : " unk") + (opts.wide ? " wide" : ""),
       title: (known2 ? "" : "Not read from the MC-707 yet. ") + p[7]
     });
-    box.append(el("span", { class: "zcL" }, label));
+    box.append(el("span", { class: "zcL" }, label2));
     if (p[8] && p[8].ascii) {
       box.append(
         el("input", {
@@ -43243,10 +43419,10 @@ input[type='number'] {
     );
   }
   function seqTools(ctx2) {
-    const pick2 = (label, opts, cur, on2) => el(
+    const pick2 = (label2, opts, cur, on2) => el(
       "label",
       { class: "zcC" },
-      el("span", { class: "zcL" }, label),
+      el("span", { class: "zcL" }, label2),
       el(
         "select",
         { onchange: (e) => on2(e.target.value) },
@@ -43423,18 +43599,18 @@ input[type='number'] {
       addEventListener("pointermove", move);
       addEventListener("pointerup", up);
     }
-    const num = (id, label) => {
+    const num = (id, label2) => {
       const [p] = paramOf(ctx2.kind, K(id));
       const inp = el("input", {
         type: "number",
         min: p[3],
         max: p[4],
         step: 1,
-        "aria-label": label,
+        "aria-label": label2,
         onchange: (e) => ctx2.set(K(id), Math.round(Math.max(p[3], Math.min(p[4], +e.target.value || 0))), true)
       });
       nums.push([inp, id]);
-      return el("label", { class: "zcEnvN" }, el("span", {}, label), inp);
+      return el("label", { class: "zcEnvN" }, el("span", {}, label2), inp);
     };
     const row = el(
       "div",
@@ -43558,7 +43734,7 @@ input[type='number'] {
     return e;
   };
   var path = (pts) => "M" + pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L");
-  var rnd3 = (seed3) => () => ((seed3 = seed3 * 16807 % 2147483647) - 1) / 2147483646;
+  var rnd4 = (seed4) => () => ((seed4 = seed4 * 16807 % 2147483647) - 1) / 2147483646;
   var VA = {
     SAW: (ph) => 1 - 2 * ph,
     RAMP: (ph) => 2 * ph - 1,
@@ -43600,7 +43776,7 @@ input[type='number'] {
         line((ph) => 1 - 2 * ph);
         cap.textContent = "SuperSAW · detune " + S2("SSAW_DETUNE");
       } else if (ty === 4) {
-        const r = rnd3(7);
+        const r = rnd4(7);
         const pts = [];
         for (let x = 0; x <= W; x += 2) pts.push([x, M - A * (r() * 2 - 1) * 0.9]);
         svg.append(sv2("path", { d: path(pts), class: "line" }));
@@ -43677,7 +43853,7 @@ input[type='number'] {
     const draw = () => {
       svg.textContent = "";
       svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
-      const form = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd3(11), steps = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
+      const form = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
       const rand = Array.from({ length: cycles * 4 + 2 }, () => r() * 2 - 1);
       const val = (ph) => {
         const c = Math.floor(ph), f = ph - c;
@@ -44081,15 +44257,15 @@ input[type='number'] {
     ["Pitch shifter: octave down", "Pitch Shifter", { Coarse: -12, Balance: 50 }]
   ];
   function mfxPreset(i) {
-    const [label, typeName, set] = MFX_PRESETS[i];
+    const [label2, typeName, set] = MFX_PRESETS[i];
     const type = mfxNames().indexOf(typeName);
-    if (type < 0) throw new Error(label + ": no MFX type " + typeName);
+    if (type < 0) throw new Error(label2 + ": no MFX type " + typeName);
     const sps = mfxParams(type), vals = mfxDefaults(type);
     for (const [name, val] of Object.entries(set)) {
       const j = sps.findIndex((sp2) => sp2.name === name), sp = sps[j];
-      if (!sp) throw new Error(label + ": " + typeName + " has no " + name);
+      if (!sp) throw new Error(label2 + ": " + typeName + " has no " + name);
       const v = sp.kind === "L" ? (sp.list === NOTES ? NOTES : sp.list).indexOf(String(val)) : val;
-      if (sp.kind === "L" ? v < 0 : v < sp.lo || v > sp.hi) throw new Error(label + ": " + name + " = " + val);
+      if (sp.kind === "L" ? v < 0 : v < sp.lo || v > sp.hi) throw new Error(label2 + ": " + name + " = " + val);
       vals[j] = stored(sp, v);
     }
     return { type, vals };
@@ -45741,8 +45917,8 @@ input[type='number'] {
     const was = { preview: S.preview, bars: GRAB.bars };
     if (AUD.source === "preview") S.preview = true;
     startPat(p, t);
-    const bars = p.bars * loops, need = Math.round(bars * 32 * tickDur() * AU.ctx.sampleRate), label = p.name + " on " + S.tracks[t].name + (k2 === "mix" || def.cap === "pv" ? "" : " (own channel)");
-    grabArm(def, k2, TR.nextTime, need, { bars, fromBar: 0, label, anchor }, () => {
+    const bars = p.bars * loops, need = Math.round(bars * 32 * tickDur() * AU.ctx.sampleRate), label2 = p.name + " on " + S.tracks[t].name + (k2 === "mix" || def.cap === "pv" ? "" : " (own channel)");
+    grabArm(def, k2, TR.nextTime, need, { bars, fromBar: 0, label: label2, anchor }, () => {
       if (TR.playing && TR.mode === "pat") stopPlay();
       S.preview = was.preview;
       GRAB.bars = was.bars;
@@ -45859,7 +46035,8 @@ input[type='number'] {
         jamEnd: liveJamEnd,
         blend: lvBlendIn,
         move: liveMoveNow,
-        restCC: lvRestCC
+        restCC: lvRestCC,
+        humApply: lvHumApply
       },
       liveBuildDrop,
       stopAll,

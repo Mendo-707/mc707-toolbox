@@ -100,7 +100,9 @@ const LV_SAVE = [
   'brkLen',
   'ctl',
   'homeKey',
-  'theme'
+  'theme',
+  'human',
+  'feel'
 ];
 export const LV = Object.assign(
   {
@@ -109,6 +111,8 @@ export const LV = Object.assign(
     key: 2,
     bpm: 174,
     swing: 50,
+    human: 0,
+    feel: 'natural',
     quant: 4,
     entry: 'smooth',
     fills: true,

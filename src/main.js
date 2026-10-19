@@ -84,6 +84,7 @@ import { liveBuildDrop, lvBlendIn } from './live/cues.js';
 import { liveMoveNow, lvRestCC, lvUserOwns } from './live/moves.js';
 import { liveActDown, liveActUp } from './live/pads.js';
 import { liveJamEnd, liveJamStart } from './live/jam.js';
+import { lvHumApply } from './live/humanize-ui.js';
 import './live/pads.js';
 import './live/controller.js';
 import './live/raven.js';
@@ -253,7 +254,8 @@ PROJ.t = projTitle;
       jamEnd: liveJamEnd,
       blend: lvBlendIn,
       move: liveMoveNow,
-      restCC: lvRestCC
+      restCC: lvRestCC,
+      humApply: lvHumApply
     },
     liveBuildDrop,
     stopAll,

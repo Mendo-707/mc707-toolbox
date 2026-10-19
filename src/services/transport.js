@@ -15,6 +15,7 @@ import { MIDI, panic, sendMidi } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
 import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from './mc-controls.js';
 import { hooks } from '../core/hooks.js';
+import { HUM, humanize } from './humanize.js';
 
 /* ---------- transport ---------- */
 export const TR = {
@@ -61,12 +62,26 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
   if (!devOn(ti)) return;
   const t = S.tracks[ti];
   if (t.vol <= 0) return;
-  const vel = clamp(Math.round((v * t.vol) / 100), 1, 127);
+  let vel = clamp(Math.round((v * t.vol) / 100), 1, 127);
   const isD = t.type === 'drum';
   const pitch = isD ? S.drumMap[nn] : clamp(nn + (TR.mode === 'live' ? 0 : S.transpose || 0), 0, 127);
-  const tm = time + (t.nudge || 0) / 1000 + (t.hum ? ((Math.random() * 2 - 1) * t.hum) / 1000 : 0);
+  let tm = time + (t.nudge || 0) / 1000 + (t.hum ? ((Math.random() * 2 - 1) * t.hum) / 1000 : 0),
+    flam = null;
+  /* Live Mode's Humanize: where each player sits, dynamics, rolled chords, flams */
+  if (TR.mode === 'live' && HUM.amount > 0) {
+    const h = humanize(ti, nn, vel, tm, dur, isD, TR.tick, AU.ctx ? AU.ctx.currentTime + 0.003 : tm);
+    vel = h.v;
+    tm = h.t;
+    dur = h.d;
+    flam = h.flam;
+  }
   if (MIDI.out && !noMidi) {
-    const mt = tm + (S.midiOffset || 0) / 1000;
+    const mt = tm + (S.midiOffset || 0) / 1000,
+      off = (S.midiOffset || 0) / 1000;
+    if (flam != null) {
+      sendMidi([0x90 | (t.ch - 1), pitch, Math.max(1, Math.round(vel * 0.45))], flam + off);
+      sendMidi([0x80 | (t.ch - 1), pitch, 0], Math.min(mt, flam + off + 0.008));
+    }
     sendMidi([0x90 | (t.ch - 1), pitch, vel], mt);
     sendMidi([0x80 | (t.ch - 1), pitch, 0], mt + Math.max(dur, 0.03));
   }
