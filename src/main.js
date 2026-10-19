@@ -106,7 +106,7 @@ import { AU, ensureAudio } from './services/synth.js';
 import { MIDI, connectMidi, panic } from './services/midi.js';
 import { TICKER, TR, advance, processTick, startSong, stopAll } from './services/transport.js';
 import { cmChipSet, setClipMark } from './clips/clip-map.js';
-import { applyDevice } from './ui/device.js';
+import { applyDevice, matchDevice } from './ui/device.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
 import { closePops, initControls, renderAll, syncControls } from './ui/controls.js';
@@ -155,6 +155,7 @@ Object.assign(hooks, {
   liveSwingAmt,
   liveTempo,
   liveTick,
+  matchDevice,
   recMidi,
   recStop,
   refreshIns,

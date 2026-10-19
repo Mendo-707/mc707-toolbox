@@ -678,3 +678,20 @@ test('ZenCore ideas: linked partials, effect presets and the step sequencer', as
   assert.equal(await v('LFO0.LFO1_STEP_2'), 0);
   assert.deepEqual(errors, []);
 });
+
+test('an MC-101 on the MIDI port switches the app to MC-101 mode by itself', async () => {
+  const { page, errors } = await openApp();
+  /* the usual fake MC-707 leaves MC-707 mode alone */
+  await page.evaluate(() => window.__app.connectMidi());
+  assert.notEqual(await page.evaluate(() => document.body.dataset.dev), '101');
+  /* the same port named like an MC-101 */
+  const r = await page.evaluate(async () => {
+    const acc = await navigator.requestMIDIAccess();
+    acc.outputs.get('o1').name = 'MC-101';
+    await window.__app.connectMidi();
+    return { dev: document.body.dataset.dev, chans: window.__app.S.tracks.map(t => t.ch) };
+  });
+  assert.equal(r.dev, '101');
+  assert.deepEqual(r.chans.slice(0, 1), [1]);
+  assert.deepEqual(errors, []);
+});

@@ -166,7 +166,7 @@ Roland hasn't published SysEx details for the MC-707, so the editor builds on co
 
 - **App sounds** (top of the **Settings** menu): turn the app's own sound in the browser on or off. With it off, only the MC-707 plays.
 - **Drums on one track (full kits)**: the whole groove plays on Drums 1, freeing Drums 2 for another sound. Over 1,100 full kits are built from the library.
-- **MC-101 mode (beta)**: **Settings › Device: MC-101** switches to its four tracks (Drums, Bass, Chords and Lead on channels 1–4), with full kits on the one drum track. The song wizard, Live Mode and the ZenCore editor all work with the four tracks. It hasn't been tested on hardware yet; if you try it, run **Live › Settings and mapping › Pad test** and send the result in an issue.
+- **MC-101 mode (beta)**: **Settings › Device: MC-101** switches to its four tracks (Drums, Bass, Chords and Lead on channels 1–4), with full kits on the one drum track. The song wizard, Live Mode and the ZenCore editor all work with the four tracks. When the app finds an MC-101 on the MIDI port it switches to MC-101 mode by itself. The ZenCore editor is confirmed working on a real MC-101; the rest has been tested on a simulated one, so if you try it, run **Live › Settings and mapping › Pad test** and send the result in an issue.
 
 ## Files and folders (Windows app)
 

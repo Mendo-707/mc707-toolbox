@@ -2,6 +2,7 @@
 // (renderAll).
 //
 // Reads: S, UI, ED, TR, MIDI, AUDREC, STAGE, CM, bw.
+import { hooks } from '../core/hooks.js';
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES } from '../core/theory.js';
 import {
@@ -229,6 +230,7 @@ export function initControls() {
     S.midiOut = o ? o.id : '';
     scheduleSave();
     $('#midiStat').textContent = o ? 'Sending to ' + o.name + '.' : 'No output selected.';
+    if (o) hooks.matchDevice(o.name);
   });
   $('#cClock').addEventListener('change', e => {
     S.clock = e.target.checked;

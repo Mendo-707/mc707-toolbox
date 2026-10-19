@@ -64,6 +64,8 @@ export function refreshOuts() {
   sel.value = pick ? pick.id : '';
   MIDI.out = pick || null;
   if (pick) S.midiOut = pick.id;
+  /* an MC-101 on the port while the app is set to the MC-707 (or the reverse): follow the device */
+  if (pick) hooks.matchDevice(pick.name);
   $('#midiStat').textContent = pick
     ? 'Sending to ' + pick.name + '.'
     : outs.length

@@ -20,6 +20,7 @@
 //   liveSwingAmt       src/live/state.js
 //   liveTempo          src/live/state.js
 //   liveTick           src/live/engine.js
+//   matchDevice        src/ui/device.js
 //   recMidi            src/song/recording-midi.js
 //   recStop            src/song/recording-midi.js
 //   refreshIns         src/ui/saved-songs.js

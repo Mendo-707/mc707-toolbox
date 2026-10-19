@@ -9719,6 +9719,7 @@ input[type='number'] {
     }
   };
   var devNm = () => DEV === "101" ? "MC-101" : "MC-707";
+  var modelOfName = (n) => /MC-?101/i.test(n || "") ? "101" : /MC-?707/i.test(n || "") ? "707" : null;
   var isMcName = (n) => /MC-?(707|101)/i.test(n || "");
   function mcFind(list, key = "name") {
     const mine = DEV === "101" ? /MC-?101/i : /MC-?707/i;
@@ -14746,6 +14747,7 @@ input[type='number'] {
     sel.value = pick2 ? pick2.id : "";
     MIDI.out = pick2 || null;
     if (pick2) S.midiOut = pick2.id;
+    if (pick2) hooks.matchDevice(pick2.name);
     $("#midiStat").textContent = pick2 ? "Sending to " + pick2.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
     hooks.refreshIns();
   }
@@ -34694,6 +34696,7 @@ input[type='number'] {
       S.midiOut = o ? o.id : "";
       scheduleSave();
       $("#midiStat").textContent = o ? "Sending to " + o.name + "." : "No output selected.";
+      if (o) hooks.matchDevice(o.name);
     });
     $("#cClock").addEventListener("change", (e) => {
       S.clock = e.target.checked;
@@ -35009,6 +35012,14 @@ input[type='number'] {
     if (typeof liveRender === "function") liveRender();
     toast(
       d === "101" ? "MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits." : "MC-707 mode: 8 tracks on channels 1–8."
+    );
+  }
+  function matchDevice(portName) {
+    const m = modelOfName(portName);
+    if (!m || m === DEV) return;
+    setDevice(m);
+    toast(
+      "Found " + (m === "101" ? "an MC-101" : "an MC-707") + " on MIDI, so the app switched to " + (m === "101" ? "MC-101 mode (4 tracks)" : "MC-707 mode (8 tracks)") + ". Settings › Device changes it back."
     );
   }
   function setOneKit(on2) {
@@ -45638,6 +45649,7 @@ input[type='number'] {
     liveSwingAmt,
     liveTempo,
     liveTick,
+    matchDevice,
     recMidi,
     recStop,
     refreshIns,

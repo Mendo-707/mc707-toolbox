@@ -2,7 +2,7 @@
 //
 // Reads: S, LV, DEV.
 import { $, toast } from '../core/dom.js';
-import { DEV, DEVS, assignDevice } from '../core/device.js';
+import { DEV, DEVS, assignDevice, modelOfName } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { stopAll } from '../services/transport.js';
 import { renderAll } from './controls.js';
@@ -41,6 +41,23 @@ export function setDevice(d) {
     d === '101'
       ? 'MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits.'
       : 'MC-707 mode: 8 tracks on channels 1–8.'
+  );
+}
+/**
+ * The MIDI output is an MC-101 (or an MC-707) but the app is set to the other one: switch to match it,
+ * so the tracks, channels and the ZenCore editor's addresses are right without a trip to Settings.
+ * One undo step; Settings › Device changes it back.
+ */
+export function matchDevice(portName) {
+  const m = modelOfName(portName);
+  if (!m || m === DEV) return;
+  setDevice(m);
+  toast(
+    'Found ' +
+      (m === '101' ? 'an MC-101' : 'an MC-707') +
+      ' on MIDI, so the app switched to ' +
+      (m === '101' ? 'MC-101 mode (4 tracks)' : 'MC-707 mode (8 tracks)') +
+      '. Settings › Device changes it back.'
   );
 }
 export function setOneKit(on) {

@@ -43,6 +43,8 @@ export const oneKit = () => {
 };
 /** 'MC-707' or 'MC-101'. */
 export const devNm = () => (DEV === '101' ? 'MC-101' : 'MC-707');
+/** '101' or '707' for an MC-101 or MC-707 port or device name, otherwise null. */
+export const modelOfName = n => (/MC-?101/i.test(n || '') ? '101' : /MC-?707/i.test(n || '') ? '707' : null);
 /** True for a MIDI port or audio device name of an MC-707 or MC-101. */
 export const isMcName = n => /MC-?(707|101)/i.test(n || '');
 /** The MC port or device in a list: the chosen device's model first, then the other one.
