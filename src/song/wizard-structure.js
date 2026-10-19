@@ -1,6 +1,7 @@
 // The song wizard's structure step: sections, lengths, complexity and key changes.
 //
 // Reads: WIZ.
+import { MOODS, moodName } from '../library/mood.js';
 import { clamp, el, fmtDur } from '../core/dom.js';
 import { TRACK_COLORS, devNum, devOn, oneKit } from '../core/device.js';
 import { NK, STRUCT, trackLabel } from '../library/styles.js';
@@ -234,6 +235,48 @@ export function wizStep3(b) {
     )
   );
   feel.append(fl);
+  /* mood: leans the picks inside the style, and sets the tempo and fill spacing to match */
+  const mood = el(
+    'select',
+    {
+      'aria-label': 'Mood',
+      style: 'max-width:260px;display:block;margin:4px 0',
+      onchange: e => {
+        const p = MOODS.find(x => x[0] === e.target.value);
+        w.mood = p ? { i: p[2], c: p[3] } : null;
+        if (p && Math.abs(p[2] - 50) >= 15) {
+          const [lo, hi] = curStyle().bpm;
+          w.bpm = Math.round(lo + ((hi - lo) * p[2]) / 100);
+          w.fillEvery = p[2] >= 70 ? 4 : p[2] <= 35 ? 16 : w.fillEvery;
+        }
+        w.ov = {};
+        rerender();
+      }
+    },
+    el('option', { value: 'off' }, 'Off: anything in the style'),
+    ...MOODS.map(([v, n]) => el('option', { value: v, selected: !!w.mood && moodName(w.mood) === n }, n))
+  );
+  feel.append(
+    el(
+      'div',
+      { class: 'row' },
+      el(
+        'label',
+        { class: 'lay', style: 'flex:1;min-width:180px' },
+        el(
+          'span',
+          {},
+          el('b', {}, 'Mood '),
+          mood,
+          el(
+            'small',
+            {},
+            'Angry and Driving pick harder, busier, darker parts and a faster tempo; Chill and Dreamy softer, sparser, brighter ones and a slower tempo. It stays inside the style.'
+          )
+        )
+      )
+    )
+  );
   const fe = el('select', {
     'aria-label': 'Fill spacing',
     onchange: e => {

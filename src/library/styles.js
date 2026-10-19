@@ -1,4 +1,4 @@
-// The song styles (41 of them): tempo, key, structure, parts and tips, used by the song wizard and
+// The song styles (42 of them): tempo, key, structure, parts and tips, used by the song wizard and
 // Live Mode.
 //
 // Reads: FAC.

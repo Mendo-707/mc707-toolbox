@@ -71,6 +71,10 @@ export function livePadDown(i) {
   const a = LV.acts[i];
   const b = $('#lvPad' + i);
   if (b) b.classList.add('flash');
+  liveActDown(a);
+}
+/** Press an action: held ones (stutter, scatter) start, the rest run. */
+export function liveActDown(a) {
   if (a.startsWith('stut:')) {
     liveStutter(a === 'stut:4' ? 8 : a === 'stut:8' ? 4 : 2, true);
     return;
@@ -85,10 +89,15 @@ export function livePadUp(i) {
   const a = LV.acts[i];
   const b = $('#lvPad' + i);
   if (b) b.classList.remove('flash');
+  liveActUp(a);
+}
+/** Let go of a held action (stutter, scatter). */
+export function liveActUp(a) {
   if (a.startsWith('stut:')) liveStutter(0, false);
   else if (a.startsWith('sc:')) scatter(+a.slice(3), false);
 }
-function liveAct(a) {
+/** Run a pad action by name ('s0'-'s6', 'brk', 'fill', 'bd', 'next', 'sw:bass', 'key:5', …). */
+export function liveAct(a) {
   if (/^s\d$/.test(a)) return liveCue(+a.slice(1));
   if (a === 'next' || a === 'prev') {
     const n = LV.scenes.length;

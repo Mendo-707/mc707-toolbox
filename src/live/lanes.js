@@ -8,6 +8,7 @@ import { S } from '../core/state.js';
 import { facById } from '../library/index.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
+import { TR } from '../services/transport.js';
 import { CLIPPIN, CMNOW, PCLAST, clipFor, patType, sendClip } from '../services/clip-switch.js';
 import { cmChipFill, cmPickItems } from '../clips/clip-map.js';
 import { NK } from '../library/styles.js';
@@ -226,7 +227,32 @@ export function liveRenderLanes(b0, force) {
   }
   lvUI = { b0, bw, ver: LV.ver };
 }
+/* The timing readout next to the MIDI status: whether the computer kept up with the set. */
+let timingAt = 0;
+function liveTiming() {
+  const now = performance.now();
+  if (now - timingAt < 500) return;
+  timingAt = now;
+  const ms = $('#lvMidiSt');
+  if (!ms) return;
+  let t = $('#lvTiming');
+  if (!t) {
+    t = el('span', { id: 'lvTiming', class: 'lvTiming' });
+    ms.after(t);
+  }
+  const n = TR.late || 0,
+    gap = Math.round(TR.gapMax || 0);
+  t.textContent = !TR.playing
+    ? ''
+    : n
+      ? '· Timing: ' + n + (n === 1 ? ' hiccup' : ' hiccups') + ', worst about ' + Math.round(TR.lateMax || 0) + ' ms'
+      : '· Timing: steady' + (gap > 60 ? ' (busiest moment ' + gap + ' ms)' : '');
+  t.className = 'lvTiming' + (n ? ' bad' : gap > 90 ? ' warn' : '');
+  t.title =
+    'Whether this computer kept up with the set. A hiccup means it was too busy for a moment and the music paused slightly. Closing other programs, browser tabs or the visualiser helps.';
+}
 export function liveStatus(tickf) {
+  liveTiming();
   const on = lvOn(),
     sg = on ? lvSegs(tickf) : null;
   let sc = LV.scenes[LV.cur],

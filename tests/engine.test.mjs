@@ -400,3 +400,213 @@ test('Raven mode: a track you play is left alone (no pattern, no effects) until 
   assert.ok(r.after.notes > 0, 'and plays its pattern again');
   assert.deepEqual(errors, []);
 });
+
+test('on stage: a freeze does not burst, a broken tick does not stop the music, a pulled cable comes back in time', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV,
+      TR = a.TR;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.assign(LV, { style: 'deephouse', seed: 3, custom: false, auto: false });
+    a.liveBuild();
+    a.liveStart(0);
+    a.TICKER.stop();
+    /* a 2-second freeze: the clock is 2 s behind; one scheduler run must not fire 2 s of ticks */
+    const tick0 = TR.tick;
+    TR.nextTime -= 2;
+    a.sched();
+    const freeze = { ticks: TR.tick - tick0, late: TR.late || 0 };
+    /* a broken pattern on one track: the tick fails, the clock moves on, the others keep playing */
+    const t0 = TR.tick;
+    LV.voices[3] = [{ f: null, start: 0, env: { v0: 1, v1: 1, t0: 0, t1: 0 } }];
+    for (let i = 0; i < 40; i++) {
+      try {
+        a.sched();
+      } catch (e) {
+        return { thrown: String(e) };
+      }
+      TR.nextTime -= 0.1;
+    }
+    const broken = { moved: TR.tick > t0, errs: TR.errs || 0 };
+    LV.voices[3] = [];
+    /* the cable: unplugged, then back */
+    const acc = await navigator.requestMIDIAccess();
+    const port = acc.outputs.get('o1');
+    port.state = 'disconnected';
+    await a.connectMidi();
+    const warn = document.querySelector('#linkWarn');
+    const lost = !!warn && !warn.hidden && /disconnected/.test(warn.textContent);
+    port.state = 'connected';
+    window.__out.length = 0;
+    await a.connectMidi();
+    const back = {
+      hidden: warn.hidden,
+      notesOff: window.__out.some(b => (b[0] & 0xf0) === 0xb0 && b[1] === 123),
+      levels: window.__out.filter(b => (b[0] & 0xf0) === 0xb0 && b[1] === 11 && b[2] === 127).length,
+      playing: TR.playing
+    };
+    a.stopAll();
+    return { freeze, broken, lost, back };
+  });
+  assert.ok(!r.thrown, 'the scheduler never throws: ' + r.thrown);
+  assert.ok(
+    r.freeze.ticks < 20,
+    'after a freeze it carries on instead of firing every missed tick (' + r.freeze.ticks + ')'
+  );
+  assert.ok(r.freeze.late >= 1);
+  assert.ok(r.broken.moved && r.broken.errs > 0, 'a broken tick is logged and the clock moves on');
+  assert.ok(r.lost, 'unplugging shows the warning');
+  assert.ok(
+    r.back.hidden && r.back.notesOff && r.back.playing,
+    'plugging back in hides it, releases notes, carries on'
+  );
+  assert.ok(r.back.levels >= 3, 'track levels are sent again (' + r.back.levels + ')');
+  assert.ok(errors.length <= 1, 'only the deliberate broken tick reports an error: ' + errors.join(' | '));
+});
+
+test('Humanize: off changes nothing; on, each player sits in its own spot, chords roll, dynamics breathe', async () => {
+  const errors = [];
+  /* a fresh page for every run, so Live Mode's own random choices start the same each time */
+  const run = async (human, feel) => {
+    const o = await openApp();
+    errors.push(...o.errors);
+    return o.page.evaluate(
+      async ({ human, feel }) => {
+        const a = window.__app,
+          LV = a.LV,
+          S = a.S;
+        a.ensureAudio();
+        await a.connectMidi();
+        /* freeze both clocks, so MIDI times come straight from the player's schedule */
+        Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
+        performance.now = () => 0;
+        Object.assign(LV, { style: 'deephouse', seed: 4, custom: false, auto: true, vary: 60, human, feel });
+        a.liveBuild();
+        window.__out.length = 0;
+        window.__times = [];
+        a.liveStart(0);
+        a.TICKER.stop();
+        const t0 = a.TR.nextTime,
+          end = a.TR.tick + 32 * 16;
+        while (a.TR.playing && !a.TR.ending && a.TR.tick < end) {
+          a.processTick(a.TR.tick, a.TR.nextTime);
+          a.advance();
+        }
+        a.stopAll();
+        const snare = S.drumMap[2],
+          kitCh = S.tracks[0].ch - 1;
+        return window.__out
+          .map((b, i) => [b[0], b[1], b[2], window.__times[i]])
+          .filter(m => (m[0] & 0xf0) === 0x90 && m[2] > 0)
+          .map(m => ({
+            ch: m[0] & 15,
+            n: m[1],
+            v: m[2],
+            t: m[3] / 1000 - t0,
+            snare: (m[0] & 15) === kitCh && m[1] === snare
+          }));
+      },
+      { human, feel }
+    );
+  };
+  const off = await run(0, 'natural');
+  const base = await run(0, 'natural');
+  assert.deepEqual(
+    off.map(x => [x.ch, x.n, x.v]),
+    base.map(x => [x.ch, x.n, x.v]),
+    'with Humanize off, the set plays exactly as before'
+  );
+  const stats = {},
+    played = {};
+  for (const feel of ['natural', 'laidback', 'pushed', 'drunk']) {
+    const h = (played[feel] = await run(55, feel));
+    assert.equal(h.length, off.length, feel + ': the same notes (no flams below 75)');
+    const d = h.map((x, i) => (x.t - off[i].t) * 1000);
+    assert.ok(
+      d.every(ms => Math.abs(ms) < 40),
+      feel + ': every note within 40 ms of the beat (max ' + Math.max(...d.map(Math.abs)).toFixed(1) + ')'
+    );
+    const sn = h.map((x, i) => (x.snare ? d[i] : null)).filter(x => x != null);
+    stats[feel] = {
+      snare: sn.reduce((s, x) => s + x, 0) / Math.max(1, sn.length),
+      moved: d.filter(ms => Math.abs(ms) > 0.5).length / d.length,
+      vel: h.filter((x, i) => x.v !== off[i].v).length / h.length
+    };
+  }
+  console.log('humanize', JSON.stringify(stats));
+  assert.ok(
+    stats.laidback.snare > stats.natural.snare && stats.natural.snare > stats.pushed.snare,
+    JSON.stringify(stats)
+  );
+  assert.ok(stats.natural.moved > 0.5 && stats.natural.vel > 0.5, 'most notes move a little and change dynamics');
+  /* chords roll: notes that were struck together on a chord track now spread out */
+  const ch = played.natural;
+  const groups = new Map();
+  ch.forEach((x, i) => {
+    const k = off[i].ch + ':' + off[i].t.toFixed(4);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(x.t);
+  });
+  const rolled = [...groups.values()].filter(g => g.length >= 3 && new Set(g.map(t => t.toFixed(4))).size > 1).length;
+  assert.ok(rolled > 0, 'some chords are rolled');
+  /* at full amount the snare sometimes flams: a few extra quiet notes */
+  const full = await run(100, 'drunk');
+  assert.ok(full.length >= off.length, 'flams only add notes');
+  assert.deepEqual(errors, []);
+});
+
+test('swing stretches each eighth: 32nds and rolls move in proportion and never land on the next note', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      S = a.S;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
+    performance.now = () => 0;
+    const play = swing => {
+      S.swing = swing;
+      S.clips = [];
+      /* one bar of 32nd notes on a drum track */
+      S.patterns.p32 = {
+        id: 'p32',
+        type: 'drum',
+        name: 'x',
+        bars: 1,
+        notes: Array.from({ length: 32 }, (_, i) => ({ s: i / 2, l: 0.5, n: 4, v: 100 }))
+      };
+      S.clips.push({ id: 'c32', t: 0, start: 0, len: 1, off: 0, pat: 'p32' });
+      S.cursor = 0;
+      S.loop.on = false;
+      window.__out.length = 0;
+      window.__times = [];
+      a.startSong();
+      a.TICKER.stop();
+      while (a.TR.playing && !a.TR.ending && a.TR.tick < 32) {
+        a.processTick(a.TR.tick, a.TR.nextTime);
+        a.advance();
+      }
+      a.stopAll();
+      return window.__out
+        .map((b, i) => [b, window.__times[i]])
+        .filter(([b]) => (b[0] & 0xf0) === 0x90 && b[2] > 0)
+        .map(x => x[1]);
+    };
+    return { straight: play(50), swung: play(75) };
+  });
+  const { straight, swung } = r;
+  assert.equal(swung.length, 32);
+  for (let i = 1; i < 32; i++) assert.ok(swung[i] > swung[i - 1] + 0.5, 'note ' + i + ' after note ' + (i - 1));
+  const tick = straight[1] - straight[0];
+  /* the off-beat 16th (the third 32nd of each eighth) is a full tick late at 75%; the 32nds around it half a tick */
+  assert.ok(Math.abs(swung[2] - straight[2] - tick) < 0.5, 'off-beat 16th one tick late');
+  assert.ok(
+    Math.abs(swung[1] - straight[1] - tick / 2) < 0.5 && Math.abs(swung[3] - straight[3] - tick / 2) < 0.5,
+    '32nds in proportion'
+  );
+  assert.ok(Math.abs(swung[4] - straight[4]) < 0.5, 'the next beat is back on the grid');
+  assert.deepEqual(errors, []);
+});

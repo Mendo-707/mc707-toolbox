@@ -2,6 +2,8 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
+import { humanizeControl } from './humanize-ui.js';
+import { moodControl } from './mood-ui.js';
 import { $, clamp, el, toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { TR, stopPlay } from '../services/transport.js';
@@ -237,6 +239,8 @@ export function liveInit() {
       el('button', { class: 'btn sm', onclick: liveTap, title: 'Tap the tempo' }, 'Tap')
     ),
     el('span', { class: 'lvf' }, 'Swing', sw, el('b', { id: 'lvSwV', class: 'lvSwV' }, LV.swing + '%')),
+    humanizeControl(),
+    moodControl(),
     el(
       'button',
       {

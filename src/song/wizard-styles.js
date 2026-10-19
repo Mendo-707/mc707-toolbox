@@ -10,6 +10,7 @@ import { hashStr, mulberry } from '../core/random.js';
 import { DNB_KINDS, HH_KINDS, KIND_TIPS, STRUCT, STYLES } from '../library/styles.js';
 import { WIZ } from './wizard-ui.js';
 import { lvFlavor, lvPool, lvProg } from '../library/pools.js';
+import { moodFilter } from '../library/mood.js';
 import { kitTrack, poolOf, slotOf, trackOf, tracksFor, tracksOf } from '../core/tracks.js';
 
 export const kindsOf = fam => (fam === 'dnb' || fam === 'edm' ? DNB_KINDS : HH_KINDS);
@@ -554,11 +555,36 @@ STYLES.forEach(s => {
       ],
       ['The cowbell pattern and a heavy 808 define the sound.', 'Keep the melody dark and repetitive.'],
       '808'
-    )
+    ),
+    /* Big Beat's patterns are their own genre, added with the packs at start-up (library/bigbeat-pack.js) */
+    {
+      ...T(
+        'bigbeat',
+        'edm',
+        'Big Beat',
+        'Chopped funk breaks, distorted riffs, stabs and sirens: late-90s breakbeat rock-dance.',
+        [110, 140, 128],
+        54,
+        'minor',
+        [
+          [4, 'Em: the classic riff key, big and open.'],
+          [9, 'Am: gritty and driving.'],
+          [2, 'Dm: dark and heavy.'],
+          [7, 'Gm: punchy low end.']
+        ],
+        [
+          'The break is the star: keep the kit loud and the tambourine going.',
+          'A distorted riff on the bass and one stab or siren on top is enough. Drop everything but the drums, then slam it back in.',
+          'Builds are snare rolls that speed up into a crash. Big Beat loves a hard drop.'
+        ],
+        'Bass'
+      ),
+      genre: 'bigbeat'
+    }
   ];
   list.forEach(m => {
     const gf = FAC.find(f => f.gen && f.styles && f.styles.includes(m.id));
-    const genre = gf ? gf.genre : 'house';
+    const genre = m.genre || (gf ? gf.genre : 'house');
     const pools = {},
       more = {};
     ['kit', 'hats', 'perc', 'fill', 'intro', 'bass', 'chords', 'pad', 'lead', 'pluck'].forEach(pool => {
@@ -566,7 +592,7 @@ STYLES.forEach(s => {
       pools[pool] = all.slice(0, 10);
       more[pool] = all;
     });
-    STYLES.push({ ...m, genre, pools, more });
+    STYLES.push({ ...m, genre, pools, more, ...(m.genre ? { _genre: m.genre } : {}) });
     SHORT[m.id] = m.name;
   });
 })();
@@ -627,7 +653,7 @@ export function wizPlan(w) {
     'acid',
     ...(oneKit() ? ['full'] : [])
   ])) {
-    const arr = lvFlavor(lvPool(st, pool), w.flavor || 'mixed').slice();
+    const arr = moodFilter(lvFlavor(lvPool(st, pool), w.flavor || 'mixed'), w.mood || null, facById).slice();
     const r = mulberry(hashStr(st.id + pool) ^ w.seed ^ ((w.bump[pool] || 0) * 7919));
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(r() * (i + 1));

@@ -610,3 +610,20 @@
 .suSteps small {
   opacity: 0.75;
 }
+/* the connection watch: shown when the MC-707 drops off MIDI */
+#linkWarn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9800;
+  padding: 10px 16px;
+  background: #c62828;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 12px #0008;
+}
+#linkWarn[hidden] {
+  display: none;
+}

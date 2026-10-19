@@ -5,7 +5,7 @@
 // Owns: TR (the transport), REC (MIDI recording).
 // Reads: S, MIDI, AU, PCLAST, CMK, AUTOLAST.
 // Calls up the layers through hooks (core/hooks.js).
-import { clamp } from '../core/dom.js';
+import { clamp, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
 import { S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
@@ -15,6 +15,7 @@ import { MIDI, panic, sendMidi } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
 import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from './mc-controls.js';
 import { hooks } from '../core/hooks.js';
+import { HUM, humanize, moodShape } from './humanize.js';
 
 /* ---------- transport ---------- */
 export const TR = {
@@ -45,6 +46,18 @@ const playSwing = () =>
       : TR.mode === 'pat' && TR.patSwing != null
         ? TR.patSwing
         : S.swing;
+/**
+ * Swing as a stretch of each eighth note: its first 16th is lengthened and its second shortened, and
+ * everything inside moves in proportion (32nds, rolls, triplets), so no note is pushed onto the next.
+ * off = how much later this tick plays; subTd = the length of one tick's worth of in-between time here.
+ */
+export function swingWarp(tick, td) {
+  const d = (playSwing() / 100 - 0.5) * 4; /* the off-beat 16th's delay, in ticks (1 at 75%) */
+  if (!d) return { off: 0, subTd: td };
+  const p = ((tick % 4) + 4) % 4,
+    w = p < 2 ? (p * (2 + d)) / 2 : 2 + d + ((p - 2) * (2 - d)) / 2;
+  return { off: (w - p) * td, subTd: td * (p < 2 ? (2 + d) / 2 : (2 - d) / 2) };
+}
 /** Length of one tick (1/32 bar) in seconds at the current playing tempo. */
 export const tickDur = () => 60 / playBpm() / 8;
 /**
@@ -61,12 +74,28 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
   if (!devOn(ti)) return;
   const t = S.tracks[ti];
   if (t.vol <= 0) return;
-  const vel = clamp(Math.round((v * t.vol) / 100), 1, 127);
+  let vel = clamp(Math.round((v * t.vol) / 100), 1, 127);
   const isD = t.type === 'drum';
   const pitch = isD ? S.drumMap[nn] : clamp(nn + (TR.mode === 'live' ? 0 : S.transpose || 0), 0, 127);
-  const tm = time + (t.nudge || 0) / 1000 + (t.hum ? ((Math.random() * 2 - 1) * t.hum) / 1000 : 0);
+  let tm = time + (t.nudge || 0) / 1000 + (t.hum ? ((Math.random() * 2 - 1) * t.hum) / 1000 : 0),
+    flam = null;
+  /* Live Mode's mood: intense plays harder and shorter, calm softer and longer */
+  if (TR.mode === 'live' && HUM.push) [vel, dur] = moodShape(vel, dur, isD);
+  /* Live Mode's Humanize: where each player sits, dynamics, rolled chords, flams */
+  if (TR.mode === 'live' && HUM.amount > 0) {
+    const h = humanize(ti, nn, vel, tm, dur, isD, TR.tick, AU.ctx ? AU.ctx.currentTime + 0.003 : tm);
+    vel = h.v;
+    tm = h.t;
+    dur = h.d;
+    flam = h.flam;
+  }
   if (MIDI.out && !noMidi) {
-    const mt = tm + (S.midiOffset || 0) / 1000;
+    const mt = tm + (S.midiOffset || 0) / 1000,
+      off = (S.midiOffset || 0) / 1000;
+    if (flam != null) {
+      sendMidi([0x90 | (t.ch - 1), pitch, Math.max(1, Math.round(vel * 0.45))], flam + off);
+      sendMidi([0x80 | (t.ch - 1), pitch, 0], Math.min(mt, flam + off + 0.008));
+    }
     sendMidi([0x90 | (t.ch - 1), pitch, vel], mt);
     sendMidi([0x80 | (t.ch - 1), pitch, 0], mt + Math.max(dur, 0.03));
   }
@@ -92,8 +121,9 @@ export function processTick(tick, time) {
     sendMidi([0xf8], time + (td * 2) / 3);
   }
   if (S.metro && tick % 8 === 0) click(time, tick % 32 === 0);
-  const swing = tick % 2 === 0 && (tick / 2) % 2 === 1 ? (playSwing() / 100 - 0.5) * 2 * (td * 2) : 0;
-  const nt = time + swing;
+  const sw = swingWarp(tick, td);
+  TR.subTd = sw.subTd;
+  const nt = time + sw.off;
   if (TR.mode === 'song') {
     if (tick % 32 === 0 && MIDI.out) {
       const mb = tick / 32;
@@ -169,7 +199,13 @@ export function processTick(tick, time) {
         if (!evs) continue;
         const sh = f.type === 'tone' ? shiftFor(f, wz.key) : 0;
         for (const n of evs)
-          emitNote(t, f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n, n.v, nt + subTick(n) * td, n.l * 2 * td);
+          emitNote(
+            t,
+            f.type === 'tone' ? clamp(n.n + sh, 0, 127) : n.n,
+            n.v,
+            nt + subTick(n) * (TR.subTd || td),
+            n.l * 2 * td
+          );
       }
     }
   } else if (TR.mode === 'live') {
@@ -183,7 +219,7 @@ export function processTick(tick, time) {
           TR.patTrack,
           TR.patShift ? clamp(n.n + TR.patShift, 0, 127) : n.n,
           n.v,
-          nt + subTick(n) * td,
+          nt + subTick(n) * (TR.subTd || td),
           n.l * 2 * td
         );
   }
@@ -216,6 +252,23 @@ export function advance() {
     /* runs until stopped */
   } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
 }
+/* How the clock copes on stage: TR.late counts the stalls it rode out, TR.errs the ticks that failed. */
+/* seconds behind the audio clock before the timeline moves on instead of catching up: only a real freeze.
+   Shorter stalls (a browser tab's ordinary hiccups) are covered by planning ahead, with nothing audible. */
+const LATE = 0.25,
+  AHEAD = 0.2; /* how far ahead notes are scheduled (s) */
+let errToast = 0;
+/** A tick that went wrong: logged, shown at most every 30 s, and the clock carries on. */
+function tickError(e, tick) {
+  TR.errs = (TR.errs || 0) + 1;
+  TR.lastErr = { tick, msg: String((e && e.message) || e) };
+  if (TR.errs <= 5) console.error('Tick ' + tick + ' failed; playback carried on.', e);
+  const now = Date.now();
+  if (now - errToast > 30000) {
+    errToast = now;
+    toast('Something went wrong at bar ' + (Math.floor(tick / 32) + 1) + '. Playback carried on.');
+  }
+}
 /** Schedule all ticks that fall within the look-ahead window. Run by TICKER. */
 export function sched() {
   const ctx = AU.ctx;
@@ -223,10 +276,35 @@ export function sched() {
     if (ctx.currentTime >= TR.endTime) stopPlay();
     return;
   }
-  const horizon = ctx.currentTime + 0.12;
+  /* after a stall (the computer froze for a moment) the music carries on from where it was, a little
+     late, instead of firing every missed tick at once */
+  /* how long since the last run: a gap well over the 25 ms timer means the computer was busy */
+  const wall = performance.now();
+  if (TR.lastRun) TR.gapMax = Math.max(TR.gapMax || 0, wall - TR.lastRun);
+  TR.lastRun = wall;
+  if (ctx.currentTime - TR.nextTime > LATE) {
+    TR.lateMax = Math.max(TR.lateMax || 0, (ctx.currentTime - TR.nextTime) * 1000 + 120);
+    TR.nextTime = ctx.currentTime + 0.01;
+    TR.late = (TR.late || 0) + 1;
+  }
+  const horizon = ctx.currentTime + AHEAD;
   while (TR.nextTime < horizon && !TR.ending) {
-    processTick(TR.tick, TR.nextTime);
-    advance();
+    const tick = TR.tick;
+    /* one bad tick never stops the music: it is logged and the clock moves on */
+    try {
+      processTick(tick, TR.nextTime);
+    } catch (e) {
+      tickError(e, tick);
+    }
+    try {
+      advance();
+    } catch (e) {
+      tickError(e, tick);
+      if (TR.tick === tick) {
+        TR.tick++;
+        TR.nextTime += tickDur();
+      }
+    }
   }
 }
 /* Transport timer. Runs in a Worker so it keeps time when the window is in the background. */

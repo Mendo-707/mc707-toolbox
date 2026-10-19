@@ -1648,3 +1648,64 @@ input[type='number'] {
   gap: 8px 16px;
   margin: 4px 0 14px;
 }
+/* Humanize's feel menu: a little wider, and whole-pixel option heights so Windows doesn't add a scrollbar */
+#lvFeel {
+  min-width: 108px;
+  font-size: 13px;
+  line-height: 18px;
+}
+#lvFeel option {
+  font-size: 13px;
+  line-height: 20px;
+  min-height: 20px;
+  padding: 2px 8px;
+}
+.lvTiming {
+  margin-left: 6px;
+  color: var(--mute);
+  font-size: 12px;
+}
+.lvTiming.warn {
+  color: #f0b429;
+}
+.lvTiming.bad {
+  color: #ff6b6b;
+}
+/* Mood: the menu and a small pad, calm to intense across and dark to bright up */
+#lvMood {
+  min-width: 104px;
+  font-size: 13px;
+  line-height: 18px;
+}
+#lvMood option {
+  font-size: 13px;
+  line-height: 20px;
+  min-height: 20px;
+  padding: 2px 8px;
+}
+.lvMoodPad {
+  position: relative;
+  width: 64px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: crosshair;
+  touch-action: none;
+  /* dark at the bottom, bright at the top; calm on the left, intense on the right */
+  background:
+    linear-gradient(to right, rgba(60, 140, 220, 0.28), rgba(0, 0, 0, 0) 50%, rgba(232, 69, 42, 0.42)),
+    linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.2));
+}
+.lvMoodDot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--hot);
+  border: 1.5px solid #fff;
+  pointer-events: none;
+}
+.lvMoodDot[hidden] {
+  display: none;
+}
