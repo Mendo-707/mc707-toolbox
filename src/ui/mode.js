@@ -1,4 +1,4 @@
-// Switching between Song Mode and Live Mode.
+// Switching between Song Mode, Live Mode and Synth mode.
 import { $$ } from '../core/dom.js';
 import { renderArr } from '../song/arrangement.js';
 import { panic } from '../services/midi.js';
@@ -8,6 +8,7 @@ import { closePops } from './controls.js';
 import { liveRender } from '../live/panels.js';
 import { vizStart } from '../live/visualizer.js';
 import { liveGenrePick, livePickOnOpen } from '../live/genre-picker.js';
+import { synthEnter } from '../zen/zc-synth.js';
 
 /* ---- mode switch ---- */
 export function setMode(m) {
@@ -23,6 +24,8 @@ export function setMode(m) {
     b.classList.toggle('on', b.dataset.mode === m);
     b.setAttribute('aria-selected', String(b.dataset.mode === m));
   });
+  synthEnter(m === 'synth');
+  if (m === 'synth') return;
   if (m === 'live') {
     liveRender();
     vizStart();

@@ -627,3 +627,78 @@
 #linkWarn[hidden] {
   display: none;
 }
+/* Help › About (ui/about.js) */
+.abOv {
+  position: fixed;
+  inset: 0;
+  z-index: 9700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.abBox {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.abHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.abIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+}
+.abHead h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.abVer {
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.abBox p {
+  margin: 0;
+  line-height: 1.45;
+}
+.abFacts {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 6px 12px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.abFacts dt {
+  color: var(--mute);
+}
+.abFacts dd {
+  margin: 0;
+}
+.abLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.abBox a {
+  color: var(--hot);
+}
+.abFoot {
+  display: flex;
+  justify-content: flex-end;
+}

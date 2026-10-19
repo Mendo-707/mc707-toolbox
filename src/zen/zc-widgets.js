@@ -3,6 +3,7 @@
 //
 // Reads: ZE (through the editor's callbacks), ZC_CATEGORIES.
 import { el } from '../core/dom.js';
+import { showMenu } from '../ui/menu.js';
 import { ZC_CATEGORIES } from './zc-data.js';
 import { paramOf } from './zc-tone.js';
 
@@ -124,6 +125,38 @@ export function valText(kind, key, v) {
   return (v > 0 && p[3] < 0 ? '+' : '') + v + u;
 }
 
+/* one value copied from a control, to paste into another of the same kind */
+let COPIED = null;
+const partialOf = key => /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)(\d)\.(.+)$/.exec(key);
+function ctlMenu(ctx, key, p) {
+  const v = ctx.get(key),
+    m = ctx.kind === 'tone' && partialOf(key),
+    id = key.replace(/^\D+\d*\./, '');
+  return [
+    {
+      label: 'Back to the start value (' + valText(ctx.kind, key, p[5]) + ')',
+      disabled: v === p[5],
+      action: () => ctx.set(key, p[5], true)
+    },
+    '-',
+    { label: 'Copy value (' + valText(ctx.kind, key, v) + ')', action: () => (COPIED = { id, v }) },
+    {
+      label: COPIED && COPIED.id === id ? 'Paste value (' + valText(ctx.kind, key, COPIED.v) + ')' : 'Paste value',
+      disabled: !(COPIED && COPIED.id === id && COPIED.v >= p[3] && COPIED.v <= p[4]),
+      action: () => ctx.set(key, COPIED.v, true)
+    },
+    m
+      ? {
+          label: 'Same on all four partials',
+          action: () => {
+            const keys = [0, 1, 2, 3].map(i => m[1] + i + '.' + m[3]).filter(k => k !== key);
+            keys.forEach((k, i) => ctx.set(k, v, i === keys.length - 1));
+          }
+        }
+      : null
+  ];
+}
+
 /**
  * One control. ctx: {snd, get(key), set(key, v, final), kind}. Lists become menus, 0/1 lists
  * become switches, everything else a slider with its value; double-click a slider for its start value.
@@ -136,7 +169,12 @@ export function ctl(ctx, key, opts = {}) {
     label = opts.label || nameOf(ctx.kind, key);
   const box = el('label', {
     class: 'zcC' + (known ? '' : ' unk') + (opts.wide ? ' wide' : ''),
-    title: (known ? '' : 'Not read from the MC-707 yet. ') + p[7]
+    title: (known ? '' : 'Not read from the MC-707 yet. ') + p[7] + ' · right-click for more',
+    oncontextmenu: e => {
+      if (e.target.matches('input[type=text], input[type=number]')) return;
+      e.preventDefault();
+      showMenu(e.clientX, e.clientY, ctlMenu(ctx, key, p));
+    }
   });
   box.append(el('span', { class: 'zcL' }, label));
   if (p[8] && p[8].ascii) {

@@ -10,7 +10,7 @@ import { DEVS, DEV, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR } from '../services/transport.js';
-import { ZX, slotAddr, trackSetAddr, zxConnect, zxNote, zxRead } from './zc-sysex.js';
+import { ZX, slotAddr, trackSetAddr, zxConnect, zxFlush, zxNote, zxRead } from './zc-sysex.js';
 import { MFX_PARAMS, newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
 import { mfxDefaults } from './zc-mfx.js';
@@ -138,14 +138,68 @@ function remember() {
   memT = setTimeout(() => ZE.snd && rememberClip(ZE.snd, ZE.t, ZE.k), 800);
 }
 /** Replace the whole sound (a starter, a saved sound, a file) and send it all. */
+/**
+ * Load a whole sound (a starter, a library sound, a file) into the clip. Only the values that differ
+ * from what the MC-707 has are sent, and the effect type only when it changes: rewriting it resets the
+ * effect, which can make a small noise.
+ */
+/* Sending a whole sound: while it is half written the MC-707 plays a mix of the old and new sound, and a new
+   effect type first runs with the old effect's settings, then with all zeros, until its own arrive. So the
+   track is muted (expression, CC 11) until the new sound is in and checked, any tail is cut (CC 120), and
+   the track comes back. Overlapping loads share one mute. */
+/* the track's expression to come back to, and the mute in progress on each channel */
+const exprBack = t => {
+  const c = S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11];
+  return Number.isFinite(c) && c > 0 ? c : 127;
+};
+const chOf = t => ((S.tracks[t] && S.tracks[t].ch) || t + 1) - 1;
+const QUIET = new Map(); /* channel -> {n: loads in progress, t: track} */
+const pause = ms => new Promise(r => setTimeout(r, ms));
+/** Expression back to normal on a track (after a load, and whenever the editor opens or closes). */
+export function zeUnmute(t) {
+  const out = ZX.out || MIDI.out,
+    ch = chOf(t);
+  QUIET.delete(ch);
+  if (out) out.send([0xb0 | ch, 11, exprBack(t)]);
+}
+/** Send a whole sound to track t with the track muted while it goes in (Synth mode uses it too). */
+export async function zeQuietly(send, t = ZE.t) {
+  const ch = chOf(t),
+    out = ZX.out || MIDI.out,
+    q = QUIET.get(ch) || { n: 0, t };
+  if (!q.n++ && out) out.send([0xb0 | ch, 11, 0]);
+  QUIET.set(ch, q);
+  try {
+    /* the writes, the effect's reset and its settings: never more than a moment, whatever the checks do */
+    await Promise.race([send(), pause(1500)]);
+    await Promise.race([zxFlush(), pause(1500)]);
+    await pause(40);
+  } catch (e) {
+    /* the track always comes back */
+  } finally {
+    if (QUIET.get(ch) === q && --q.n <= 0) {
+      if (out) out.send([0xb0 | ch, 120, 0]);
+      zeUnmute(t);
+    }
+  }
+}
+/** Put a whole sound in the editor (and on the MC-707, with Live on). Resolves once it is on the MC-707. */
 export function zeLoad(snd, why) {
-  ZE.undo.push(Object.fromEntries(Object.keys(ZE.snd.v).map(k => [k, ZE.snd.v[k]])));
+  const prev = ZE.snd;
+  ZE.undo.push(Object.fromEntries(Object.keys(prev.v).map(k => [k, prev.v[k]])));
   ZE.redo = [];
   ZE.snd = snd;
-  if (sending()) sendSound(snd, zeBase());
+  const live = sending();
+  let done = Promise.resolve();
+  if (live) {
+    const keys = new Set(Object.keys(snd.v).filter(k => !prev.known.has(k) || prev.v[k] !== snd.v[k])),
+      base = zeBase();
+    if (keys.size) done = zeQuietly(() => sendSound(snd, base, keys));
+  }
   remember();
   zeRender();
-  if (why) toast(why + (sending() ? ' and sent to the ' + DEVS[DEV].name : ''));
+  if (why) toast(why + (live ? ' and sent to the ' + DEVS[DEV].name : ''));
+  return done;
 }
 function mfxType(type, vals) {
   /* the type and the new effect's starting values (or a preset's), as one undo step; sendSound sends the
@@ -204,7 +258,9 @@ async function readSource() {
 /** Send the whole sound to the MC-707. */
 export async function zeSendAll() {
   if (!(await zxConnect())) return status();
-  sendSound(ZE.snd, zeBase());
+  const snd = ZE.snd,
+    base = zeBase();
+  zeQuietly(() => sendSound(snd, base));
   toast('Sent the whole ' + (ZE.kind === 'kit' ? 'kit' : 'tone') + ' to track ' + devNum(ZE.t) + ', ' + targetName());
 }
 export const targetName = (k = ZE.k) => (k === 16 ? 'track sound' : 'clip ' + (k + 1));
@@ -232,8 +288,11 @@ export async function zenOpen(t, k) {
   ZX.onState = status;
   ZX.onIdle = screenNudge;
   zeRender();
-  if (await zxConnect()) zeRead();
-  else status();
+  zeUnmute(t);
+  if (await zxConnect()) {
+    zeUnmute(t);
+    zeRead();
+  } else status();
 }
 export function zenClose() {
   const o = $('#zcOv');
@@ -252,6 +311,7 @@ export function zenClose() {
       if (!TR.playing) out.send([0xb0 | (ch - 1), 120, 0]);
     }
   } catch (e) {}
+  zeUnmute(ZE.t);
   if (ZE.snd) rememberClip(ZE.snd, ZE.t, ZE.k);
   ZX.onState = null;
   ZX.onIdle = null;
@@ -309,7 +369,8 @@ const noteOut = (ch, b, on) => {
   if (ZX.out) zxNote(ch, b, on);
   else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
 };
-function audition(n) {
+/** Play note n on the edited track while the pointer is held (the keyboard and the Sound browser). */
+export function audition(n) {
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
   const send = (b, on) => {
     noteOut(ch, b, on);

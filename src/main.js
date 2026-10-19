@@ -141,10 +141,13 @@ import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
-import { ZE, zenOpen } from './zen/zc-editor.js';
+import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
+import { browserOpen } from './zen/zc-browser.js';
+import { ZS } from './zen/zc-sounds.js';
 import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
+import { hoverHelpStart } from './ui/hover-help.js';
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
@@ -217,6 +220,9 @@ PROJ.t = projTitle;
     STYLES,
     zen: {
       open: zenOpen,
+      sendAll: zeSendAll,
+      browse: browserOpen,
+      ZS,
       get ZE() {
         return ZE;
       }
@@ -280,6 +286,7 @@ PROJ.t = projTitle;
   initWizard();
   initExtra();
   initSetup();
+  hoverHelpStart();
   initMore();
   initAudio();
   initPro();

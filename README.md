@@ -34,7 +34,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 
 ## New in 1.3
 
-- **Start screen** with Load last session, Blank song, Empty template, Song wizard and Live Mode. Live Mode opens with a genre picker.
+- **Start screen** with Load last session, Blank song, Empty template, Song wizard, Live Mode and Synth Mode. Live Mode opens with a genre picker.
 - **Track setup**: split the 8 tracks any way you like, from 8 drum tracks to 8 tone tracks.
 - **Harmony pack**: 2,000 new patterns on 20 unusual progressions, with chords that change off the bar line, in 8- and 16-bar loops.
 - **Finer clip edges** in Song Mode, down to 1/256 bar.
@@ -109,7 +109,8 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Record audio** | **2 channels:** one stereo file from the MC-707's mix or any audio interface, with optional stems played track by track. **8 channels:** the mix plus every MC-707 track as its own file, recorded together over USB (Windows shows the MC-707 as one 20-channel input or as separate inputs; **Match by name** sets them up). Saves WAV or MP3. |
 | **Sample grabber** | The **◉** on the playhead records 1–16 bars of the mix, one track or Ext In to a WAV, from the next bar line, ready to load into the MC-707 as a sample. **● Record sample** in the editor grabs one pattern on its own. |
 | **Export MIDI** | A `.zip` with the whole song and one `.mid` per track. |
-| **Right-click** | Quick options on the Play button, clips, tracks, lanes, markers and library patterns. |
+| **Menus** | Each mode shows only its own menus. **Help** has the guide, MC-707 setup, links for developers (SysEx guide, parameter reference, diagnostics), troubleshooting, update checks, problem reports and **About**. |
+| **Right-click** | Quick options on the Play button, clips, tracks, lanes, markers and library patterns; in Live Mode on scene cards, pads, tracks, keys and the mood pad; on Synth Mode strips (copy a sound to another track, save it to the Sound library, reset the mix); on Sound browser rows; and on every ZenCore control (back to the start value, copy and paste a value, the same value on all four partials). Hover over a control for a short note on what it does. |
 
 ## Live Mode
 
@@ -133,6 +134,21 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Controller keyboard** | Plug in a USB keyboard as well (FLkey, Launchkey, KeyLab, MPK, Oxygen Pro, Komplete Kontrol, Roland A-49 and others). Its keys mute, change key and play a live solo on any track. Knobs, faders and pads control the set, and **Learn all controls in order** matches your model. |
 | **Capture to Song** | Turns what you just played into a Song Mode arrangement, with a marker for each scene. |
 | **Stage ready** | Seven colour themes, a reactive visualizer, **F11** fullscreen, and the screen stays awake while playing. |
+
+## Synth Mode
+
+The MC-707 as an 8-track hardware synth for your DAW, with no plugin needed. The MC-707 sends each track's audio to the DAW over USB as its own input, the DAW plays each track on its MIDI channel, and this screen picks, edits and mixes the eight sounds. Your computer does no sound work at all.
+
+| | |
+|---|---|
+| **Strips** | One per track: the sound's name read from the MC-707, which sound the track plays (one of its 16 clips, or the track's own sound), **Browse** (the Sound browser) and **Edit** (the ZenCore editor) for that sound, ▶ to hear a note, **M**ute and **S**olo, and **Level** (CC 7), **Pan** (CC 10) and **Reverb** send (CC 91). A light on each strip flashes when notes arrive; double-click a fader to reset it. |
+| **Sound settings** | Each strip's **Sound settings** menu opens a page of the most used ZenCore settings right on the strip, read from the MC-707 and sent straight back as you move them: **Tone** (level, octave, mono, glide and its time, analog feel), **Filter** (cutoff, resonance, envelope depth, key follow), **Envelope** (attack, decay, sustain, release), **Movement** (LFO rate, vibrato, wah, tremolo) and **Effect** (which effect, on or off, chorus and reverb sends). Settings that each partial has move every playing partial by the same amount, so a layered sound keeps its shape. Drum tracks get the kit level and effect. **Edit** opens the full ZenCore editor for everything else. Right-click a strip to copy its sound to another track, save it to the Sound library or reset the mix. |
+| **Setups** | **Save to a file** reads all eight sounds and keeps them, with the mix, in one file next to your DAW project; **Open a file** sends them back (each track muted while its sound goes in). **Keep in this browser** keeps named setups to send back from the same menu. |
+| **Notes in** | Plays notes from another MIDI input on the MC-707: a keyboard, or your DAW through a virtual port (loopMIDI on Windows) when the DAW can't share the MC-707's port. The **→** menu sends each note on its own channel (for a DAW) or all of them to one track (for a keyboard; click a strip's sound name to move it there). |
+| **Panic** | Stops every note on every track. |
+| **Setting up your DAW** | On the MC-707, set USB audio to send the tracks separately (see the MC-707 manual) and, on Windows, install Roland's driver. In the DAW, make one MIDI track per MC-707 track on the channel shown on its strip, and one audio track recording each input. Windows lets only one program use the MC-707's MIDI port at a time: either let the DAW send to a virtual port and pass it through here, or use Windows 11's MIDI Services, which lets them share it. Macs share it anyway. |
+
+The app's own sequencer stays quiet in Synth Mode, and Space and the recording keys do nothing, so they can't clash with the DAW. It isn't a plugin: sounds are saved in a setup file (or an MC-707 project) rather than inside the DAW song, and the DAW automates the MC-707 with ordinary MIDI controllers.
 
 ## Your MC-707 clips
 
@@ -160,7 +176,8 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 - **Effects:** picking an effect sets sensible starting values (levels full, balance in the middle, gains at 0 dB). The MC-707 resets an effect's settings just after its type changes, so the editor sends them a moment later and checks they stuck.
 - **Closing the editor** releases every note it played, so nothing keeps ringing.
 - **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
-- **Starters** (32 sounds in groups: saw lead, acid, Reese and wobble basses, Juno and PWM pads, strings, brass, Hoover, sync lead, bell, organ, house chord stab, kick, five step sequences, four FM-style sounds and more), **My sounds**, **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
+- **Starters** (32 sounds in groups: saw lead, acid, Reese and wobble basses, Juno and PWM pads, strings, brass, Hoover, sync lead, bell, organ, house chord stab, kick, five step sequences, four FM-style sounds and more), **Sounds** (the Sound browser, below), **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
+- **Sound browser** (**Sounds**, or *Browse all sounds…* at the top of Starters): every starter and every sound you've saved, in one list with search, an instrument filter (bass, pads, leads, keys, plucks and more, worked out from each sound's ZenCore category or name), genre tags and ★ favourites. Click a sound to load it into the clip (with Live on you hear it at once); hold ▶ to play a note. **Save this tone** keeps the sound you're editing with a name, type and tags. **Grab from MC-707** reads one clip, a track's 16 clips or every clip on every track and keeps each sound it finds, so factory sounds you pick on the MC-707 end up in your library (empty clips and sounds you already have are skipped). **Backup** exports the library to a file and imports one, to move it to another computer or share it. The library lives in this browser (or the Windows app) and holds thousands of sounds. Your older My sounds move in by themselves.
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
 
 **For developers:** everything the editor learned about the MC-707's SysEx is written up in [docs/MC707-SYSEX.md](docs/MC707-SYSEX.md) (message format, where each clip's sound lives, the device's quirks, the project settings mapped so far), with every tone, drum kit and MFX parameter in [docs/ZENCORE-PARAMETERS.md](docs/ZENCORE-PARAMETERS.md).

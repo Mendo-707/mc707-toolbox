@@ -179,6 +179,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `core/theory.js` | Music theory tables: note names, the drum lanes, keys and scales. |  |
 | `core/tracks.js` | The track setup: what each of the 8 tracks is for. A track's role (kit, hats, perc, bass, chords, pad, lead, pluck or acid) decides whether it is a drum or tone track and which patterns it draws. The default is the classic layout: three drum tracks, then bass, chords, pad, lead and pluck. |  |
 | `core/types.js` | The shapes of the app's main data, as JSDoc types. Nothing imports this file at run time; editors and agents read it, and other files refer to these types in their JSDoc (e.g. @param {Clip} c). |  |
+| `core/version.js` | The app's version, shown in Help › About. Kept in step with package.json (a test checks it). |  |
 
 ### library/ (layer: library)
 
@@ -299,11 +300,12 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 
 | Module | What it does | Owns |
 | --- | --- | --- |
-| `zen/zc-actions.js` | The ZenCore editor's header: which track and clip it edits, and the actions (read from the MC-707, send all, starters, My sounds, save and open files, copy a partial, copy the sound to another clip). |  |
+| `zen/zc-actions.js` | The ZenCore editor's header: which track and clip it edits, and the actions (read from the MC-707, send all, starters, the Sound browser, save and open files, copy a partial, copy the sound to another clip). |  |
+| `zen/zc-browser.js` | The ZenCore editor's Sound browser: every starter and every sound you saved or grabbed from the MC-707, in one list with search, an instrument-type filter, genre tags and favourites. Click a sound to load it into the clip being edited (and hear it, with Live on); hold ▶ to play a note. Grab reads the clips on the MC-707 (one, a track's 16 or every track's) and keeps each sound found, so factory sounds you have picked on the MC-707 end up here. Backup exports and imports the whole library. |  |
 | `zen/zc-data.js` | ZEN-Core parameter tables for the MC-707 and MC-101: every tone and drum kit parameter with its offset in the SysEx block (linear bytes), size on the wire, range, initial value and value names. |  |
 | `zen/zc-editor.js` | The ZenCore editor: opens on one MC-707 clip's tone (or a drum track's kit), reads it from the MC-707, sends every change as you make it, and keeps undo, partial linking and the last state of each clip. The pages are in zc-panels.js and zc-pages-fx.js, the header actions in zc-actions.js. | ZE (the open editor) |
 | `zen/zc-env.js` | Envelope and LFO step graphs for the ZenCore editor: drag a point to change its time (sideways) and level (up and down), drag a bar to change an LFO step. |  |
-| `zen/zc-library.js` | My sounds for the ZenCore editor: tones and kits you save, and the last edit of each MC-707 clip. Kept in this browser (or the Windows app) under its own key. Starter tones are in zc-starters.js. | ZLIB (my sounds and the clip memory) |
+| `zen/zc-library.js` | The last edit of each MC-707 clip, so the ZenCore editor reopens where you left it. Kept in this browser (or the Windows app) under its own key. Saved sounds moved to the Sound library (zc-sounds.js), which takes the older My sounds list ('lib' here) in on first use. | ZLIB (the clip memory) |
 | `zen/zc-mfx-data.js` | The 91 MFX types of the MC-707 (firmware 1.80+) and each type's parameters, in the order they fill the 32 MFX parameter slots. Taken from the MC-707 Reference Manual's MFX Parameters chapter. |  |
 | `zen/zc-mfx-presets.js` | Ready-made settings for the most-used MFX types (dotted delay, dub echo, Juno chorus, Leslie, gates, filter wobbles, lo-fi and drive). Each preset names its type and the parameters it changes, by the names in zc-mfx-data.js and in shown units (list entries by their text); the rest keep the type's starting values. |  |
 | `zen/zc-mfx.js` | MFX types for the editor: the parameters a type puts in the 32 MFX slots, and how a slot's stored value (-20000 to +20000) turns into what you see (list entries from 0, whole numbers as they are, decimals scaled: 0.05-10.00 Hz is stored as 5-1000). |  |
@@ -311,9 +313,14 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `zen/zc-panels.js` | The pages of the tone editor: Common, Oscillator, Filter, Amp, Pitch, LFO, Matrix, Partials and EQ. Each page shows the partial chosen in the editor (ctx.part, 0-3). |  |
 | `zen/zc-partbar.js` | The partial bar above the partial pages: pick the partial you see (1-4), and link any of them so a change to one linked partial goes to every linked partial (link 1 and 3 to edit both, all four to edit the whole tone). |  |
 | `zen/zc-preview.js` | Live previews for the ZenCore editor: the oscillator's wave, the filter's response curve and an LFO's shape over a few cycles. They are drawn from the settings (the MC-707 does not send audio back), redraw as a slider moves, and are approximate: they show the shape, not exact levels. |  |
+| `zen/zc-sounds.js` | The sound library behind the ZenCore editor's Sound browser: tones and kits you save or grab from the MC-707, each with a name, an instrument type, genre tags and a favourite star. Kept in this browser's IndexedDB (room for thousands; only the values that differ from Roland's initial sound are stored), with a backup file to export and import. The older My sounds list moves in on first use. | ZS (the library in memory), the 'mc707-sounds' IndexedDB, localStorage 'mc707-zen-favs' |
 | `zen/zc-starters-more.js` | More starter tones: step sequences (a riff from one held key, after Benedetto Schiavone's STEP LFO template), FM-style sounds from cross modulation, and extra basses. STARTER_MENU sorts every starter into the Starters menu's groups. |  |
 | `zen/zc-starters.js` | Starter tones for the ZenCore editor: a clean init, then classic shapes built on the VA oscillators (leads, basses, pads, keys, stabs, a kick). More starters (step sequences, FM-style and extra basses) are in zc-starters-more.js; STARTER_GROUPS puts them all in the Starters menu's submenus. |  |
 | `zen/zc-stepseq.js` | The step sequencer inside a tone: each partial's STEP LFO 1 plays a 16-step note pattern (pitch depth 63, so 4 step units are one semitone) and STEP LFO 2 shapes each step on the amp (-72 rests a step). Tempo-synced, so one held key plays a riff; four partials give four voices. The idea and the numbers come from Benedetto Schiavone's ZEN-Core editor manual. |  |
+| `zen/zc-synth-io.js` | Synth mode's state and what it does on the MC-707: which sound each track plays (a clip or the track's own sound), the mix (level, pan, reverb send, mute and solo), reading the sounds' names, setups (all eight sounds with the mix, in a file or kept in this browser) and passing a DAW's or keyboard's notes through to the MC-707, on their own channels or all to one track. | SY (Synth mode's settings, localStorage 'mc707-synth'), the saved setups ('mc707-synth-setups') |
+| `zen/zc-synth-quick.js` | Quick sound controls on a Synth Mode strip: pick a page (Tone, Filter, Envelope, Movement, Effect) and change the most used ZenCore settings right there, without opening the editor. Only that page's values are read from the MC-707, and each change goes straight back. Settings that live in each of the four partials (filter, envelope, LFO) move together: the slider shows the first playing partial and every playing partial shifts by the same amount, so a layered sound keeps its shape. | QS (each track's quick values, read from the MC-707) |
+| `zen/zc-synth-strip.js` | One Synth mode strip: a track's sound (name, which clip or the track's own sound, the Sound browser and the ZenCore editor), a note to try it, an activity light for notes passed through, mute, solo, and level, pan and reverb send. Clicking the strip's name sends the keyboard there (when one track plays everything). |  |
+| `zen/zc-synth.js` | Synth mode: the MC-707 as an 8-track hardware synth for a DAW. The DAW plays each track on its MIDI channel and records each track's audio over USB (the MC-707 sends the eight tracks separately), while this screen picks, edits and mixes the eight sounds: the Sound browser and ZenCore editor for each track, which sound it plays (a clip or the track's own), level and pan, a setup file with all eight sounds, and notes passed through from a DAW's virtual port or a keyboard. The app's own sequencer stays quiet here. |  |
 | `zen/zc-sysex.js` | Talking to the MC-707 (or MC-101) with Roland SysEx, for the ZenCore editor: where each clip's tone and drum kit lives, writing parameters (DT1) and reading them back (RQ1). |  |
 | `zen/zc-tone.js` | The ZenCore sound being edited: a tone (4 partials) or a drum kit (88 keys), as a flat map of parameter values, and how each value goes to and from the MC-707 (addresses, bytes, whole-sound reads and writes). |  |
 | `zen/zc-widgets.js` | Controls for the ZenCore editor: a slider, menu or switch for one parameter, with friendly names, value text (pan, dB, notes, value names) and the "not read from the MC-707" state. |  |
@@ -322,6 +329,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 
 | Module | What it does | Owns |
 | --- | --- | --- |
+| `ui/about.js` | Help › About: the app's name and version, what it is, the licence and the people whose work it builds on, which device it is set for and whether it can reach it, and links to the guide, releases and problem reports. |  |
 | `ui/context-menus.js` | Right-click menus for the transport, Play pattern, the sample grabber and the clips screen, and the one listener that opens them. |  |
 | `ui/controls.js` | The Song Mode toolbar and keyboard shortcuts, and redrawing everything after big changes (renderAll). |  |
 | `ui/device.js` | Switching between MC-707 and MC-101 and the one-kit drums option, which rebuild Song and Live. |  |
@@ -329,12 +337,13 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/fullscreen.js` | Fullscreen (the Windows app or the browser) and keeping the screen awake while playing. | STAGE (fullscreen and wake lock) |
 | `ui/grab-pattern.js` | Record sample from the pattern editor: play one pattern on its own, through the track you choose, and record it to a WAV with the sample grabber (that track's own USB channel when Audio has per-track channels set up, otherwise the mix). |  |
 | `ui/grabber.js` | The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from Song or Live Mode. | GRAB (the sample grabber) |
+| `ui/hover-help.js` | Hover help for controls that don't explain themselves: a tooltip (title) for each, by selector, and optionally only when the control's text matches. Applied as the screens are drawn (a watcher on the page, at most once a second), and never over a tooltip a control already has. |  |
 | `ui/link-watch.js` | The connection watch: a banner when the MC-707 (or MC-101) drops off MIDI mid-set, and a clean return when it comes back: notes released, then the playing set or song sent again, in time. |  |
 | `ui/live-capture.js` | Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip changes. |  |
 | `ui/live-menus.js` | Right-click menus in Live Mode: scene cards, pads, tracks and keys. |  |
 | `ui/menu.js` | The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items. | CM (the open menu) |
-| `ui/menubar.js` | The top menu bar (File, Edit, Song, Audio, Settings, View, Help), and wiring the setup wizard's buttons. |  |
-| `ui/mode.js` | Switching between Song Mode and Live Mode. |  |
+| `ui/menubar.js` | The top menu bar (File, Edit, Song, Live, Synth, Settings, View, Help, each shown in the modes it belongs to), and wiring the setup wizard's buttons. |  |
+| `ui/mode.js` | Switching between Song Mode, Live Mode and Synth mode. |  |
 | `ui/projects.js` | Project files: new, open, save, recent projects and the project title, through the Windows app or the browser. |  |
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |
 | `ui/setup-wizard.js` | The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio. | SU (the setup wizard) |

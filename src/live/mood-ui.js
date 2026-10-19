@@ -7,6 +7,7 @@
 //
 // Reads: LV.
 import { $, el, toast } from '../core/dom.js';
+import { showMenu } from '../ui/menu.js';
 import { MOODS, moodName } from '../library/mood.js';
 import { HUM } from '../services/humanize.js';
 import { LV, lvStyle, saveLive } from './state.js';
@@ -97,8 +98,21 @@ export function moodControl() {
       id: 'lvMoodPad',
       role: 'slider',
       'aria-label': 'Mood pad: calm to intense across, dark to bright up',
-      title: 'Drag: calm ← → intense, dark ↓ ↑ bright. Release to rebuild the set. Double-click for Off.',
-      ondblclick: () => lvMoodSet(null)
+      title:
+        'Drag: calm ← → intense, dark ↓ ↑ bright. Release to rebuild the set. Double-click for Off, right-click for the list.',
+      ondblclick: () => lvMoodSet(null),
+      oncontextmenu: e => {
+        e.preventDefault();
+        showMenu(e.clientX, e.clientY, [
+          { label: 'Off', checked: !LV.mood, action: () => lvMoodSet(null) },
+          '-',
+          ...MOODS.map(([, n, i, c]) => ({
+            label: n,
+            checked: !!LV.mood && LV.mood.i === i && LV.mood.c === c,
+            action: () => lvMoodSet({ i, c })
+          }))
+        ]);
+      }
     },
     dot
   );

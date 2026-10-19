@@ -199,7 +199,8 @@
   padding: 8px 10px 10px;
   margin: 0 0 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* four across on a wide screen (two rows of four), fewer on a narrow one */
+  grid-template-columns: repeat(auto-fill, minmax(max(190px, calc((100% - 30px) / 4)), 1fr));
   gap: 6px 14px;
   background: #030604;
 }
@@ -317,7 +318,8 @@
 .zcWide {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* four across on a wide screen (two rows of four), fewer on a narrow one */
+  grid-template-columns: repeat(auto-fill, minmax(max(190px, calc((100% - 30px) / 4)), 1fr));
   gap: 6px 14px;
 }
 .zcCols2 {
@@ -537,5 +539,622 @@
 @media (max-width: 1100px) {
   .zcSeq {
     grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+/* The Sound browser (zc-browser.js): a panel over the editor in the same black-and-green look */
+.zbOv {
+  z-index: 9500;
+}
+.zbBox {
+  max-width: 980px;
+  height: min(86vh, 860px);
+}
+.zbHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+.zbHead b {
+  font-size: 18px;
+  color: var(--zc-acc);
+}
+.zbBox .zbQ,
+.zbBox .zbName {
+  flex: 1 1 180px;
+  min-width: 140px;
+  background: var(--zc-well);
+  color: #d9ffe3;
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+.zbBox select {
+  background: var(--zc-well);
+  color: #d9ffe3;
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+.zbActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+.zbFilt,
+.zbTags,
+.zbRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.zbSep {
+  width: 1px;
+  height: 18px;
+  background: var(--zc-line);
+  margin: 0 4px;
+}
+.zbChip {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--zc-line);
+  background: #070d09;
+  color: #c9f7d5;
+  cursor: pointer;
+}
+.zbChip.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+}
+.zbForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--zc-acc);
+  border-radius: 6px;
+  background: var(--zc-well);
+}
+.zbList {
+  flex: 1;
+  overflow-y: auto;
+  border-top: 1px solid var(--zc-line);
+}
+.zbItem {
+  display: grid;
+  grid-template-columns: 28px minmax(120px, 2fr) minmax(90px, 1.2fr) minmax(0, 1.5fr) 70px 34px 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px;
+  border-bottom: 1px solid #0d1a11;
+  cursor: pointer;
+}
+.zbItem:hover {
+  background: #08140c;
+}
+.zbItem.cur {
+  background: #0c2414;
+  box-shadow: inset 3px 0 0 var(--zc-acc);
+}
+.zbNm {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbTy,
+.zbTg,
+.zbSrc {
+  font-size: 12px;
+  color: var(--zc-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbStar,
+.zbPlay,
+.zbAct {
+  font: inherit;
+  background: none;
+  border: 0;
+  color: var(--zc-dim);
+  cursor: pointer;
+  padding: 2px;
+}
+.zbStar.on {
+  color: #ffd84a;
+}
+.zbPlay {
+  color: var(--zc-acc);
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+}
+.zbEmpty {
+  padding: 16px 4px;
+}
+@media (max-width: 640px) {
+  .zbItem {
+    grid-template-columns: 28px minmax(0, 1fr) 34px 30px;
+  }
+  .zbTy,
+  .zbTg,
+  .zbSrc {
+    display: none;
+  }
+}
+
+#zbStat:empty {
+  display: none;
+}
+/* Synth Mode (zc-synth.js, zc-synth-strip.js): eight hardware-style channel strips in the ZenCore
+   editor's black-and-green look. Each strip carries its track colour on a lit top edge and number badge;
+   the sound name sits in an LCD window like the MC-707's own screen. */
+body[data-mode='synth'] #menubar [data-m='song'],
+body[data-mode='synth'] #menubar [data-m='live'] {
+  display: none !important;
+}
+body[data-mode='synth'] #top > *:not(.pop) {
+  display: none;
+}
+body[data-mode='synth'] #top {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+  height: 0;
+  gap: 0;
+}
+body[data-mode='synth'] #main {
+  display: none;
+}
+#synth {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 22px 28px;
+  flex-direction: column;
+  gap: 14px;
+  background: radial-gradient(1200px 400px at 20% -10%, #0b2414 0%, transparent 70%), #000;
+  color: #d9ffe3;
+  --zc-acc: #39ff7a;
+  --zc-dim: #6f9c7c;
+  --zc-line: #1f3a27;
+  --zc-well: #050906;
+  --sy-lcd: #021308;
+  --sy-mute: #ff6a3d;
+  --sy-solo: #ffd23f;
+}
+body[data-mode='synth'] #synth {
+  display: flex;
+}
+#synth .btn {
+  background: #07100a;
+  color: #c9f7d5;
+  border: 1px solid #23462f;
+  border-radius: 6px;
+}
+#synth .btn:hover {
+  border-color: var(--zc-acc);
+  color: #fff;
+}
+#synth .btn:focus-visible,
+#synth select:focus-visible,
+#synth .syTg:focus-visible,
+#synth .syName:focus-visible,
+#synth input:focus-visible {
+  outline: 2px solid var(--zc-acc);
+  outline-offset: 2px;
+}
+#synth select {
+  background: var(--zc-well);
+  color: #d9ffe3;
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+/* header: title and the link to the MC-707 */
+.syTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.syTitle h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #eafff0;
+}
+.syTitle p {
+  margin: 2px 0 0;
+  max-width: 62ch;
+  color: var(--zc-dim);
+}
+.syLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--zc-line);
+  border-radius: 999px;
+  color: var(--zc-dim);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.syLink i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b1a12;
+  box-shadow: 0 0 0 2px #1a0b07;
+}
+.syLink.on {
+  color: #c9f7d5;
+  border-color: #23462f;
+}
+.syLink.on i {
+  background: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-acc);
+}
+
+/* toolbar: actions, then where notes come in */
+.syBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 8px 0 4px;
+  border-bottom: 1px solid #0f2116;
+}
+.syActs {
+  display: flex;
+  gap: 6px;
+}
+.syPanic:hover {
+  border-color: var(--sy-mute) !important;
+  color: var(--sy-mute) !important;
+}
+.syIn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--zc-dim);
+  white-space: nowrap;
+}
+.syArrow {
+  color: var(--zc-acc);
+}
+.syBusy {
+  color: var(--zc-acc);
+  font-size: 13px;
+}
+.syBusy:empty {
+  display: none;
+}
+
+/* the eight strips: four across on a wide screen */
+.syGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - 42px) / 4)), 1fr));
+  gap: 14px;
+}
+.syStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 12px 10px;
+  border: 1px solid #142a1b;
+  border-radius: 10px;
+  background: linear-gradient(#08120b, #040805);
+  box-shadow: inset 0 3px 0 var(--tc);
+}
+.syStrip.target {
+  border-color: var(--zc-acc);
+}
+.syStrip.solo {
+  border-color: var(--sy-solo);
+}
+.syHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.syNum {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--tc);
+  color: #000;
+  font-weight: 800;
+  font-size: 15px;
+}
+.syType {
+  flex: 1;
+  font-size: 12px;
+  color: var(--zc-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* the activity light */
+.syAct {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #12301c;
+  transition: background 0.25s;
+}
+.syAct.on {
+  background: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-acc);
+  transition: none;
+}
+/* mute and solo: square hardware buttons that light up */
+.syTg {
+  width: 26px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid #23462f;
+  background: #07100a;
+  color: #7fae8c;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.syTg.mute.on {
+  background: var(--sy-mute);
+  border-color: var(--sy-mute);
+  color: #000;
+  box-shadow: 0 0 10px #ff6a3d66;
+}
+.syTg.solo.on {
+  background: var(--sy-solo);
+  border-color: var(--sy-solo);
+  color: #000;
+  box-shadow: 0 0 10px #ffd23f66;
+}
+
+/* the LCD window: sound name and which sound plays */
+.syLcd {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-radius: 6px;
+  background: var(--sy-lcd);
+  box-shadow:
+    inset 0 0 0 1px #0f3a1c,
+    inset 0 6px 14px #000;
+}
+.syName {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: default;
+  font:
+    600 19px/1.15 ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--zc-acc);
+  text-shadow: 0 0 8px #39ff7a66;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.syName.none {
+  color: #2f6b43;
+  text-shadow: none;
+  font-size: 15px;
+}
+.syStrip.quiet .syName {
+  color: #2f6b43;
+  text-shadow: none;
+}
+.syLcdRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#synth .sySlot {
+  background: transparent;
+  border: 1px solid #0f3a1c;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: #9fe6b5;
+}
+.syKbd {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--zc-acc);
+}
+
+.syBtns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+#synth .syBrowse {
+  flex: 1;
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+  font-weight: 600;
+}
+#synth .syBrowse:hover {
+  color: #000;
+  box-shadow: 0 0 10px #39ff7a55;
+}
+.syPlay {
+  width: 34px;
+  color: var(--zc-acc) !important;
+}
+
+/* the mix: painted faders */
+.syMix {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #0f2116;
+}
+.syRange {
+  display: grid;
+  grid-template-columns: 46px 1fr 32px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--zc-dim);
+}
+.syRange b {
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #b9efc9;
+}
+.syFader {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.syFader::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #12301c 0 var(--lo), var(--tc) var(--lo) var(--hi), #12301c var(--hi) 100%);
+}
+.syFader::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #12301c 0 var(--lo), var(--tc) var(--lo) var(--hi), #12301c var(--hi) 100%);
+}
+.syFader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #eafff0;
+  border: 2px solid var(--tc);
+}
+.syFader::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #eafff0;
+  border: 2px solid var(--tc);
+}
+.syStrip.quiet .syFader::-webkit-slider-runnable-track {
+  filter: saturate(0.2) brightness(0.6);
+}
+
+/* quick sound settings: a page menu, then that page's controls */
+.syQuick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#synth .syQMenu {
+  width: 100%;
+  font-size: 12px;
+  padding: 4px 6px;
+  color: #9fe6b5;
+}
+.syQBody {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.syQBody:empty {
+  display: none;
+}
+.syQNote {
+  font-size: 12px;
+  color: var(--zc-dim);
+}
+.syRange.syQ {
+  grid-template-columns: 74px 1fr 46px;
+}
+.syQ.sw,
+.syQ:not(.syRange) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--zc-dim);
+}
+.syQ:not(.syRange) b {
+  font-weight: 500;
+  color: #b9efc9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.syQ input[type='checkbox'] {
+  accent-color: var(--zc-acc);
+}
+.syFader:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* the setup steps */
+.syHelp {
+  color: var(--zc-dim);
+}
+.syHelp summary {
+  cursor: pointer;
+  color: #c9f7d5;
+  width: max-content;
+}
+.syHelp ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: sy;
+}
+.syHelp li {
+  counter-increment: sy;
+  padding: 10px 12px;
+  border: 1px solid #142a1b;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.syHelp li b {
+  display: block;
+  margin-bottom: 4px;
+  color: #c9f7d5;
+}
+.syHelp li b::before {
+  content: counter(sy) '  ';
+  color: var(--zc-acc);
+}
+@media (prefers-reduced-motion: reduce) {
+  .syAct {
+    transition: none;
   }
 }

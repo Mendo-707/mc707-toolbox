@@ -35,7 +35,11 @@ function createWindow() {
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
   win.on('leave-full-screen', () => win.webContents.send('fullscreen', false));
   // Keep the window on the app: never navigate away or open pop-up windows.
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // Help links (the guide, releases, problem reports, Roland's driver page) open in the system browser.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\/([a-z0-9-]+\.)*(github\.com|github\.io|roland\.com)\//i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   // Let the app send "all notes off" to the MC-707 before the window closes.
   win.on('close', (e) => {
