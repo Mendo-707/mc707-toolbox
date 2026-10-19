@@ -2,7 +2,8 @@
 // Uplifting, Chill, Dreamy, Melancholy) and a small pad to drag between them, calm to intense across
 // and dark to bright up. A mood leans the set towards patterns that feel that way inside the genre
 // (library/mood.js), makes the band play harder and shorter or softer and longer (services/humanize.js),
-// and sets the tempo, feel, chaos and how parts come in and drops land. Off leaves everything as it was.
+// and sets the tempo, feel, chaos and how parts come in and drops land. While playing, the new set comes
+// in over one bar (live/mood-move.js). Off leaves everything as it was.
 //
 // Reads: LV.
 import { $, el, toast } from '../core/dom.js';
@@ -13,6 +14,7 @@ import { liveBuild } from './set-builder.js';
 import { liveBpm, lvOn } from './cues.js';
 import { humanizeSync, lvHumApply } from './humanize-ui.js';
 import { liveRender } from './panels.js';
+import { lvMoodMove } from './mood-move.js';
 
 /** Put the mood into the player (on start and on every change). */
 export function lvMoodApply() {
@@ -55,6 +57,8 @@ export function lvMoodSet(m, quiet) {
   lvMoodApply();
   saveLive();
   liveBuild();
+  const live = lvOn();
+  if (live) lvMoodMove(LV.mood);
   moodSync();
   liveRender();
   if (!quiet)
@@ -62,7 +66,7 @@ export function lvMoodSet(m, quiet) {
       'Mood: ' +
         moodName(LV.mood) +
         (said.length ? ' (' + said.join(', ') + ')' : '') +
-        (lvOn() ? '. New patterns arrive with the next scene' : '')
+        (live ? (LV.mood && LV.mood.i <= 40 ? '. Easing into it on the next bar' : '. Into it on the next bar') : '')
     );
 }
 

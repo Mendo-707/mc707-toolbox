@@ -32342,6 +32342,53 @@ input[type='number'] {
     });
   }
 
+  // src/live/mood-move.js
+  function lvMoodMove(m) {
+    const intense = !!m && m.i >= 60, calm = !!m && m.i <= 40;
+    let t1 = lvBoundary(1);
+    if (t1 - TR.tick < 8) t1 += 32;
+    const t2 = t1 + 32;
+    LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend"].includes(c.type) && c.type !== "fill");
+    LV.blend = null;
+    const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick3 = fills.filter((f) => want.test(f.name));
+    const fill2 = pick3.length ? lvRand(pick3) : fills.length ? lvRand(fills) : null;
+    if (fill2 && LV.scenes[LV.cur] && LV.scenes[LV.cur].cells[trackOf(0)])
+      LV.cues.push({ type: "fill", tick: t1, end: t2, f: fill2 });
+    const T2 = toneTracksAll();
+    if (T2.length)
+      lvMove({
+        id: "moodsweep",
+        tag: "q",
+        tracks: T2,
+        cc: 80,
+        kind: "ramp",
+        from: "rest",
+        to: calm ? lvFilterAway(0.55) : 127,
+        curve: calm ? "log" : "exp",
+        start: t1,
+        end: t2
+      });
+    if (calm && T2.length)
+      lvMove({
+        id: "moodwash",
+        tag: "q",
+        tracks: T2,
+        cc: 91,
+        kind: "ramp",
+        from: "rest",
+        to: 100,
+        curve: "exp",
+        start: t1,
+        end: t2
+      });
+    if (intense) LV.cues.push({ type: "gap", tick: t2 - 4 });
+    const idx = Math.min(LV.cur, LV.scenes.length - 1);
+    LV.cues.push({ type: "scene", idx: Math.max(0, idx), tick: t2, hard: intense || void 0 });
+    lvSortCues();
+    LV.ver++;
+    return t2;
+  }
+
   // src/live/mood-ui.js
   function lvMoodApply() {
     const m = LV.mood;
@@ -32376,11 +32423,13 @@ input[type='number'] {
     lvMoodApply();
     saveLive();
     liveBuild();
+    const live2 = lvOn();
+    if (live2) lvMoodMove(LV.mood);
     moodSync();
     liveRender();
     if (!quiet)
       toast(
-        "Mood: " + moodName(LV.mood) + (said.length ? " (" + said.join(", ") + ")" : "") + (lvOn() ? ". New patterns arrive with the next scene" : "")
+        "Mood: " + moodName(LV.mood) + (said.length ? " (" + said.join(", ") + ")" : "") + (live2 ? LV.mood && LV.mood.i <= 40 ? ". Easing into it on the next bar" : ". Into it on the next bar" : "")
       );
   }
   function moodControl() {

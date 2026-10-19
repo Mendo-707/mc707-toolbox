@@ -125,3 +125,63 @@ test('Big Beat: its own breaks, riffs and fills fill a Live set and a wizard son
   assert.ok(r.wizIds > 20, 'the song wizard fills a song from them');
   assert.deepEqual(errors, []);
 });
+
+test('a mood change while playing: one bar from the next bar line, then the new set; the filter comes back to rest', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV,
+      TR = a.TR;
+    a.ensureAudio();
+    await a.connectMidi();
+    const runs = {};
+    for (const [name, m] of [
+      ['angry', { i: 95, c: 8 }],
+      ['chill', { i: 18, c: 68 }]
+    ]) {
+      Object.assign(LV, { style: 'deephouse', seed: 5, custom: false, auto: false, bpm: 122 });
+      a.live.moodSet(null, true);
+      a.liveStart(0);
+      a.TICKER.stop();
+      const step = () => (a.processTick(TR.tick, TR.nextTime), a.advance());
+      for (let n = 0; n < 75; n++) step();
+      const before = JSON.stringify(LV.scenes[LV.cur].cells);
+      window.__out.length = 0;
+      const at = TR.tick;
+      a.live.moodSet(m, true);
+      const cue = LV.cues.find(c => c.type === 'scene'),
+        fill = LV.cues.find(c => c.type === 'fill');
+      const cc80 = [];
+      while (TR.tick < cue.tick + 40) {
+        const k = window.__out.length;
+        step();
+        window.__out.slice(k).forEach(b => (b[0] & 0xf0) === 0xb0 && b[1] === 80 && cc80.push([TR.tick, b[2]]));
+      }
+      const after = JSON.stringify(LV.scenes[LV.cur].cells);
+      a.stopAll();
+      runs[name] = {
+        wait: cue.tick - at,
+        onBar: cue.tick % 32,
+        fill: !!fill,
+        peak: Math.max(...cc80.filter(x => x[0] < cue.tick).map(x => x[1])),
+        low: Math.min(...cc80.filter(x => x[0] < cue.tick).map(x => x[1])),
+        last: cc80.length ? cc80[cc80.length - 1][1] : null,
+        rest: a.live.restCC(4, 80),
+        changed: before !== after
+      };
+    }
+    return runs;
+  });
+  console.log(JSON.stringify(r));
+  for (const [name, x] of Object.entries(r)) {
+    assert.ok(x.wait > 32 && x.wait <= 72, name + ': the new set arrives within about two bars (' + x.wait + ' ticks)');
+    assert.equal(x.onBar, 0, name + ': on a bar line');
+    assert.ok(x.fill, name + ': with a drum fill into it');
+    assert.ok(x.changed, name + ': the new set is playing');
+    assert.ok(Math.abs(x.last - x.rest) <= 1, name + ': the filter is back at rest');
+  }
+  assert.ok(r.angry.peak > 110, 'intense opens the filter');
+  assert.ok(r.chill.low < r.chill.rest - 20, 'calm closes it');
+  assert.deepEqual(errors, []);
+});
