@@ -6,7 +6,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 
-> **Version 1.3.5.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.3.6.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
 
@@ -45,6 +45,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **1.3.3, ZenCore you can see:** a wave preview for each oscillator, a live filter response curve and a picture of each LFO. Envelopes take typed numbers as well as dragging, have shape presets (plucks, swells, stabs, gates and more) and copy to other partials or envelopes. 21 starter sounds.
 - **1.3.3, Live timing:** fills end exactly on the downbeat they lead into, auto-pilot's changes land on phrase lines, and 2-bar breaks come back on the phrase. Only pads and chords fade now: bass and melodies come in on the beat and stop cleanly.
 - **1.3.5:** calmer harmony (the song wizard and Live Mode pick only the plainer chord timings; basslines, arps and leads stay on the beat), the app switches to MC-101 mode by itself when it finds one (the ZenCore editor is now confirmed on a real MC-101), and a [SysEx guide](docs/MC707-SYSEX.md) and [parameter reference](docs/ZENCORE-PARAMETERS.md) for developers.
+- **1.3.6:** Live Mode built for the stage (a broken tick, a freeze or a pulled USB cable no longer stops the set; a red banner and an automatic resync bring it back), **Humanize** with four feels, drums that swing and drift together as one drummer, a timing readout, the **melodic pack** (11,000 new pads, arps, leads and chord rhythms over every progression), **Mood** (Angry to Dreamy, in Live Mode and the song wizard, with a one-bar transition while playing) and a new **Big Beat** style.
 - **1.3.4, ZenCore ideas:** link any partials together, 28 effect presets, a step sequencer that turns one held key into a riff (up to four voices), and 32 starter sounds in groups, including step sequences and FM-style sounds.
 - **1.3.3, Raven takeover:** play a track yourself and the app leaves it alone until 4 bars after your last note.
 
