@@ -1660,3 +1660,14 @@ input[type='number'] {
   min-height: 20px;
   padding: 2px 8px;
 }
+.lvTiming {
+  margin-left: 6px;
+  color: var(--mute);
+  font-size: 12px;
+}
+.lvTiming.warn {
+  color: #f0b429;
+}
+.lvTiming.bad {
+  color: #ff6b6b;
+}

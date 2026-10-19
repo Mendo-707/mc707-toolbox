@@ -667,6 +667,7 @@ export function liveStart(idx) {
   }
   const sc = LV.scenes[i];
   lvHumApply(true);
+  Object.assign(TR, { late: 0, lateMax: 0, gapMax: 0, lastRun: 0 });
   Object.assign(TR, {
     playing: true,
     mode: 'live',

@@ -3666,6 +3666,17 @@ input[type='number'] {
   min-height: 20px;
   padding: 2px 8px;
 }
+.lvTiming {
+  margin-left: 6px;
+  color: var(--mute);
+  font-size: 12px;
+}
+.lvTiming.warn {
+  color: #f0b429;
+}
+.lvTiming.bad {
+  color: #ff6b6b;
+}
 </style>
     <style>
 /* Live Mode colour themes: each #live[data-theme] sets the colour tokens; data-light marks the light themes. Loaded after live.css. */
@@ -15272,7 +15283,11 @@ input[type='number'] {
       if (ctx2.currentTime >= TR.endTime) stopPlay();
       return;
     }
+    const wall = performance.now();
+    if (TR.lastRun) TR.gapMax = Math.max(TR.gapMax || 0, wall - TR.lastRun);
+    TR.lastRun = wall;
     if (ctx2.currentTime - TR.nextTime > LATE) {
+      TR.lateMax = Math.max(TR.lateMax || 0, (ctx2.currentTime - TR.nextTime) * 1e3 + 120);
       TR.nextTime = ctx2.currentTime + 0.01;
       TR.late = (TR.late || 0) + 1;
     }
@@ -29545,6 +29560,7 @@ input[type='number'] {
     }
     const sc = LV.scenes[i];
     lvHumApply(true);
+    Object.assign(TR, { late: 0, lateMax: 0, gapMax: 0, lastRun: 0 });
     Object.assign(TR, {
       playing: true,
       mode: "live",
@@ -31797,7 +31813,25 @@ input[type='number'] {
     }
     lvUI = { b0, bw: bw2, ver: LV.ver };
   }
+  var timingAt = 0;
+  function liveTiming() {
+    const now = performance.now();
+    if (now - timingAt < 500) return;
+    timingAt = now;
+    const ms = $("#lvMidiSt");
+    if (!ms) return;
+    let t = $("#lvTiming");
+    if (!t) {
+      t = el("span", { id: "lvTiming", class: "lvTiming" });
+      ms.after(t);
+    }
+    const n = TR.late || 0, gap = Math.round(TR.gapMax || 0);
+    t.textContent = !TR.playing ? "" : n ? "· Timing: " + n + (n === 1 ? " hiccup" : " hiccups") + ", worst about " + Math.round(TR.lateMax || 0) + " ms" : "· Timing: steady" + (gap > 60 ? " (busiest moment " + gap + " ms)" : "");
+    t.className = "lvTiming" + (n ? " bad" : gap > 90 ? " warn" : "");
+    t.title = "Whether this computer kept up with the set. A hiccup means it was too busy for a moment and the music paused slightly. Closing other programs, browser tabs or the visualiser helps.";
+  }
   function liveStatus(tickf) {
+    liveTiming();
     const on2 = lvOn(), sg = on2 ? lvSegs(tickf) : null;
     let sc = LV.scenes[LV.cur], s0 = null;
     if (on2 && sg) {

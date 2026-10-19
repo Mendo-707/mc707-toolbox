@@ -254,7 +254,12 @@ export function sched() {
   }
   /* after a stall (the computer froze for a moment) the music carries on from where it was, a little
      late, instead of firing every missed tick at once */
+  /* how long since the last run: a gap well over the 25 ms timer means the computer was busy */
+  const wall = performance.now();
+  if (TR.lastRun) TR.gapMax = Math.max(TR.gapMax || 0, wall - TR.lastRun);
+  TR.lastRun = wall;
   if (ctx.currentTime - TR.nextTime > LATE) {
+    TR.lateMax = Math.max(TR.lateMax || 0, (ctx.currentTime - TR.nextTime) * 1000 + 120);
     TR.nextTime = ctx.currentTime + 0.01;
     TR.late = (TR.late || 0) + 1;
   }
