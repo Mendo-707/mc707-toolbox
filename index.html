@@ -4960,6 +4960,156 @@ input[type='number'] {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
 }
+/* The Sound browser (zc-browser.js): a panel over the editor in the same black-and-green look */
+.zbOv {
+  z-index: 9500;
+}
+.zbBox {
+  max-width: 980px;
+  height: min(86vh, 860px);
+}
+.zbHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+.zbHead b {
+  font-size: 18px;
+  color: var(--zc-acc);
+}
+.zbBox .zbQ,
+.zbBox .zbName {
+  flex: 1 1 180px;
+  min-width: 140px;
+  background: var(--zc-well);
+  color: #d9ffe3;
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+.zbBox select {
+  background: var(--zc-well);
+  color: #d9ffe3;
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+.zbActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+.zbFilt,
+.zbTags,
+.zbRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.zbSep {
+  width: 1px;
+  height: 18px;
+  background: var(--zc-line);
+  margin: 0 4px;
+}
+.zbChip {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--zc-line);
+  background: #070d09;
+  color: #c9f7d5;
+  cursor: pointer;
+}
+.zbChip.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+}
+.zbForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--zc-acc);
+  border-radius: 6px;
+  background: var(--zc-well);
+}
+.zbList {
+  flex: 1;
+  overflow-y: auto;
+  border-top: 1px solid var(--zc-line);
+}
+.zbItem {
+  display: grid;
+  grid-template-columns: 28px minmax(120px, 2fr) minmax(90px, 1.2fr) minmax(0, 1.5fr) 70px 34px 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px;
+  border-bottom: 1px solid #0d1a11;
+  cursor: pointer;
+}
+.zbItem:hover {
+  background: #08140c;
+}
+.zbItem.cur {
+  background: #0c2414;
+  box-shadow: inset 3px 0 0 var(--zc-acc);
+}
+.zbNm {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbTy,
+.zbTg,
+.zbSrc {
+  font-size: 12px;
+  color: var(--zc-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbStar,
+.zbPlay,
+.zbAct {
+  font: inherit;
+  background: none;
+  border: 0;
+  color: var(--zc-dim);
+  cursor: pointer;
+  padding: 2px;
+}
+.zbStar.on {
+  color: #ffd84a;
+}
+.zbPlay {
+  color: var(--zc-acc);
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+}
+.zbEmpty {
+  padding: 16px 4px;
+}
+@media (max-width: 640px) {
+  .zbItem {
+    grid-template-columns: 28px minmax(0, 1fr) 34px 30px;
+  }
+  .zbTy,
+  .zbTg,
+  .zbSrc {
+    display: none;
+  }
+}
+
+#zbStat:empty {
+  display: none;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -12583,10 +12733,10 @@ input[type='number'] {
       });
       let prev = null;
       const V = chords.map((c) => prev = voice(pcOf(c), c[1], prev));
-      const chordPart = (part, name, A, B, pool, role, lively) => {
+      const chordPart = (part, name, A, B2, pool, role, lively) => {
         const notes = [];
         V.forEach(
-          (vc, b) => (b % 2 ? B : A).forEach(([s, l, vv]) => vc.forEach((n) => notes.push({ s: b * 16 + s, l, n, v: hum(vv) })))
+          (vc, b) => (b % 2 ? B2 : A).forEach(([s, l, vv]) => vc.forEach((n) => notes.push({ s: b * 16 + s, l, n, v: hum(vv) })))
         );
         push(part, name, pool, role, notes, lively);
       };
@@ -12665,11 +12815,11 @@ input[type='number'] {
           "Pad"
         );
       else chordPart("strings", "Dark Strings", [[0, 16, 82]], [[0, 16, 82]], "pad", "Pad");
-      const line = (part, name, pool, role, oct, A, B, lively, extra) => {
+      const line = (part, name, pool, role, oct, A, B2, lively, extra) => {
         const notes = [];
         chords.forEach((c, b) => {
           const L2 = ladder(pcOf(c), c[1], oct);
-          (b % 2 ? B : A).forEach(([s, l, i, vv = 100]) => notes.push({ s: b * 16 + s, l, n: L2(i), v: hum(vv) }));
+          (b % 2 ? B2 : A).forEach(([s, l, i, vv = 100]) => notes.push({ s: b * 16 + s, l, n: L2(i), v: hum(vv) }));
           if (extra) extra(notes, c, b, L2);
         });
         push(part, name, pool, role, notes, lively);
@@ -16041,13 +16191,13 @@ input[type='number'] {
             if (r2.top - dy < 6) dy = r2.top - 6;
             sm.style.top = -5 - dy + "px";
           });
-          const row = el(
+          const row2 = el(
             "div",
             {
               class: "cmi sub",
               onclick: (e) => {
                 e.stopPropagation();
-                row.classList.toggle("open");
+                row2.classList.toggle("open");
                 fit();
               },
               onmouseenter: () => fit()
@@ -16057,8 +16207,8 @@ input[type='number'] {
           );
           const sm = el("div", { class: "cmenu subm" });
           build(it.sub, sm);
-          row.append(sm);
-          host.append(row);
+          row2.append(sm);
+          host.append(row2);
           return;
         }
         host.append(
@@ -16139,9 +16289,9 @@ input[type='number'] {
   function cmScreen(map, kk) {
     const tracks = DEVS[DEV].tracks, N = tracks.length, page = kk >= 8 ? 1 : 0, m = map[CMAP.t], tr = S.tracks[CMAP.t], ty = m.types[kk];
     const g = el("div", { class: "cmLcd", style: "--cols:" + N });
-    const at2 = (node, col, row, cs, rs) => {
+    const at2 = (node, col, row2, cs, rs) => {
       node.style.gridColumn = col + (cs ? " / span " + cs : "");
-      node.style.gridRow = row + (rs ? " / span " + rs : "");
+      node.style.gridRow = row2 + (rs ? " / span " + rs : "");
       g.append(node);
       return node;
     };
@@ -18950,12 +19100,12 @@ input[type='number'] {
           t.cc = t.cc || {};
           t.cc[m.n] = v;
           out.textContent = String(v);
-          row.classList.add("set");
+          row2.classList.add("set");
           sendCC(MCT.t, m.n, v);
           scheduleSave();
         }
       });
-      const row = el(
+      const row2 = el(
         "div",
         { class: "mrow" + (set ? " set" : "") },
         el("span", { class: "mn" }, m.name, el("small", {}, "CC " + m.n)),
@@ -18978,7 +19128,7 @@ input[type='number'] {
           "↺"
         )
       );
-      g.append(row);
+      g.append(row2);
     });
     b.append(g);
     b.append(
@@ -20140,7 +20290,7 @@ input[type='number'] {
         ),
         star
       );
-      const row = el(
+      const row2 = el(
         "div",
         {
           class: "li" + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? " armed" : "") + (UI.view && UI.view.srcId === it.id && UI.view.kind === it.kind ? " viewing" : ""),
@@ -20177,7 +20327,7 @@ input[type='number'] {
         el("div", { class: "t" }, el("b", {}, m.name), el("small", {}, meta), tags),
         acts
       );
-      list.append(row);
+      list.append(row2);
     }
     if (items.length > UI.libLimit)
       list.append(
@@ -20512,8 +20662,8 @@ input[type='number'] {
       if (UI.arm && !CDRAG && e.target.closest(".lane")) {
         const meta = metaOf(UI.arm);
         if (!meta) return;
-        const row = rowFromY(e.clientY);
-        showGhost(row, Math.max(0, barFromX(e.clientX)), meta.bars, S.tracks[row].type === meta.type);
+        const row2 = rowFromY(e.clientY);
+        showGhost(row2, Math.max(0, barFromX(e.clientX)), meta.bars, S.tracks[row2].type === meta.type);
       }
     });
     inner.addEventListener("pointerleave", () => {
@@ -20524,9 +20674,9 @@ input[type='number'] {
       e.preventDefault();
       const meta = metaOf(DRAG);
       if (!meta) return;
-      const row = rowFromY(e.clientY);
-      const ok = S.tracks[row].type === meta.type;
-      showGhost(row, Math.max(0, barFromX(e.clientX)), meta.bars, ok);
+      const row2 = rowFromY(e.clientY);
+      const ok = S.tracks[row2].type === meta.type;
+      showGhost(row2, Math.max(0, barFromX(e.clientX)), meta.bars, ok);
       e.dataTransfer.dropEffect = ok ? "copy" : "none";
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
       if (e.clientX > ar.right - 60) ae.scrollLeft += 28;
@@ -20648,8 +20798,8 @@ input[type='number'] {
       } else {
         d.ns = Math.max(0, qBar(sb(d.start + dx / bw)));
         d.nl = d.len;
-        const row = rowFromY(ev.clientY);
-        d.nt = S.tracks[row].type === S.tracks[d.t].type ? row : d.t;
+        const row2 = rowFromY(ev.clientY);
+        d.nt = S.tracks[row2].type === S.tracks[d.t].type ? row2 : d.t;
       }
       showGhost(d.nt, d.ns, d.nl, true);
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
@@ -20719,7 +20869,7 @@ input[type='number'] {
   function clipOptionsEl(c, p, isDrum) {
     const clipOpt = el("details", { class: "clipopt" }, el("summary", { class: "btn sm" }, "Clip options"));
     const panel = el("div", { class: "clippanel" });
-    const row = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
+    const row2 = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
     const muteBtn = el(
       "button",
       {
@@ -20734,8 +20884,8 @@ input[type='number'] {
       },
       c.mute ? "Muted" : "Mute clip"
     );
-    panel.append(row("Mute", muteBtn));
-    const stepIn = (label2, val, min, fn, title) => row(
+    panel.append(row2("Mute", muteBtn));
+    const stepIn = (label2, val, min, fn, title) => row2(
       label2,
       el("input", {
         type: "number",
@@ -20787,7 +20937,7 @@ input[type='number'] {
       });
       for (let v = -12; v <= 12; v++)
         ts.append(el("option", { value: v, selected: (c.tr || 0) === v }, (v > 0 ? "+" : "") + v + " semitones"));
-      panel.append(row("Transpose (this clip only)", ts));
+      panel.append(row2("Transpose (this clip only)", ts));
     }
     {
       const mm = cmFix()[c.t], ps = el(
@@ -20814,10 +20964,10 @@ input[type='number'] {
               k2 < mm.n ? cmLabel(c.t, k2) : "Clip " + (k2 + 1) + " (not set up)"
             )
           );
-      panel.append(row("Launch " + devNm() + " clip", ps));
+      panel.append(row2("Launch " + devNm() + " clip", ps));
     }
     panel.append(
-      row(
+      row2(
         "Velocity %",
         el("input", {
           type: "number",
@@ -20868,7 +21018,7 @@ input[type='number'] {
               "Bars " + (i + 1) + "–" + (i + 2)
             )
           );
-      panel.append(row("Pattern preview loop", ar));
+      panel.append(row2("Pattern preview loop", ar));
     }
     panel.append(
       el(
@@ -22710,13 +22860,13 @@ input[type='number'] {
     const r = $("#rows").getBoundingClientRect();
     return clamp(Math.floor((clientY - r.top) / ROWH), 0, 7);
   }
-  function showGhost(row, bar2, len, ok) {
+  function showGhost(row2, bar2, len, ok) {
     const g = $("#ghost");
     if (!g) return;
     g.style.display = "block";
     g.style.left = HEAD + bar2 * bw + "px";
     g.style.width = len * bw - 2 + "px";
-    g.style.top = row * ROWH + 4 + (row >= 3 ? 3 : 0) + "px";
+    g.style.top = row2 * ROWH + 4 + (row2 >= 3 ? 3 : 0) + "px";
     g.style.height = ROWH - 8 + "px";
     g.classList.toggle("bad", !ok);
   }
@@ -25673,7 +25823,7 @@ input[type='number'] {
       const K = kinds[sec.kind];
       const cells = {};
       for (let t = 0; t < 8; t++) {
-        const sl = slotOf(t), row = K.rows[sl], spec = row && poolOf(t) === "acid" ? row.replace(/^[a-z]+/, "acid") : row;
+        const sl = slotOf(t), row2 = K.rows[sl], spec = row2 && poolOf(t) === "acid" ? row2.replace(/^[a-z]+/, "acid") : row2;
         if (!spec || !w.layers[t]) continue;
         if (w.complexity === 1 && (sl === 2 || sl === 7)) continue;
         const pk2 = pickFrom(spec, occ[sec.kind]);
@@ -26443,10 +26593,10 @@ input[type='number'] {
     ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k2) => o[k2] = s[k2] || g[k2]);
     return o;
   }
-  function customRows(st, r, row) {
+  function customRows(st, r, row2) {
     const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY5 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out = drums2.length ? [
-      row(
+      row2(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
         r.drums,
         TRACK_COLORS[drums2[0]]
@@ -26454,13 +26604,13 @@ input[type='number'] {
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
       const k2 = poolOf(t) === "acid" ? "bass" : KEY5[slotOf(t)];
-      out.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
+      out.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out;
   }
   function soundCard(st) {
     const r = soundRecs(st), is101 = DEV === "101";
-    const row = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
+    const row2 = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
     return el(
       "div",
       { class: "wcard" },
@@ -26473,23 +26623,23 @@ input[type='number'] {
       is101 ? el(
         "ul",
         {},
-        row("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
-        row(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
-        row(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
-        row(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
-      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row)) : el(
+        row2("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
+        row2(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
+        row2(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
+        row2(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
+      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row2)) : el(
         "ul",
         {},
-        row(
+        row2(
           oneKit() ? "Drum kit (track 1, full kit) and Drums 3 (builds)" : "Drum kits (tracks 1–3)",
           r.drums,
           TRACK_COLORS[0]
         ),
-        row(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
-        row(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
-        row(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
-        row(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
-        row(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
+        row2(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
+        row2(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
+        row2(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
+        row2(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
+        row2(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
       )
     );
   }
@@ -29004,7 +29154,7 @@ input[type='number'] {
     return true;
   }
   var LV_KEYROWS = ["qwertyui", "asdfghjk"];
-  var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
+  var lvPadIndex = (row2, col) => LV.padFlip ? (1 - row2) * 8 + col : row2 * 8 + col;
   function lvKeyPad(e) {
     const k2 = e.key.toLowerCase();
     for (let r = 0; r < 2; r++) {
@@ -33405,7 +33555,7 @@ input[type='number'] {
     }
     const pendFill = LV.cues.filter((c) => c.type === "fill"), pendSw = LV.cues.filter((c) => c.type === "swap");
     S.tracks.forEach((t, ti) => {
-      const row = el("div", {
+      const row2 = el("div", {
         class: "lvRow" + (devOn(ti) ? "" : " devoff"),
         style: "width:" + (W + 2) * bw2 + "px;--c:" + TRACK_COLORS[ti]
       });
@@ -33417,7 +33567,7 @@ input[type='number'] {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
           if (sf) {
             const lab = { fill: "Fill", bov: "Build", brk: "Break", imp: "Impact", roll: "Roll" }[c.k];
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -33435,7 +33585,7 @@ input[type='number'] {
         const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32), id = s.ids[ti];
         if (!id) {
           if (ovFill)
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -33456,7 +33606,7 @@ input[type='number'] {
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
         const label2 = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
-        row.append(
+        row2.append(
           el(
             "div",
             {
@@ -33474,7 +33624,7 @@ input[type='number'] {
           const k2 = Math.floor(c.tick / 32) - b0;
           if (k2 >= 0 && k2 < W + 2) {
             const nf = facById(c.ids[ti]);
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -33488,7 +33638,7 @@ input[type='number'] {
           }
         }
       });
-      inner.append(row);
+      inner.append(row2);
     });
     const cue = LV.cues.filter((c) => c.type === "scene")[0];
     if (cue) {
@@ -34351,7 +34501,7 @@ input[type='number'] {
       });
     return LAME_P;
   }
-  function makeZip2(entries) {
+  function makeZip2(entries2) {
     const enc = new TextEncoder();
     const parts2 = [], central = [];
     let offset = 0;
@@ -34359,7 +34509,7 @@ input[type='number'] {
     const dt = (d.getFullYear() - 1980 << 9 | d.getMonth() + 1 << 5 | d.getDate()) & 65535;
     const tm = (d.getHours() << 11 | d.getMinutes() << 5 | d.getSeconds() >> 1) & 65535;
     const w16 = (a, n) => a.push(n & 255, n >> 8 & 255), w32 = (a, n) => a.push(n & 255, n >> 8 & 255, n >> 16 & 255, n >>> 24 & 255);
-    for (const f of entries) {
+    for (const f of entries2) {
       const name = enc.encode(f.name);
       const lh = [];
       w32(lh, 67324752);
@@ -34400,8 +34550,8 @@ input[type='number'] {
     w32(end, 101010256);
     w16(end, 0);
     w16(end, 0);
-    w16(end, entries.length);
-    w16(end, entries.length);
+    w16(end, entries2.length);
+    w16(end, entries2.length);
     w32(end, csize);
     w32(end, offset);
     w16(end, 0);
@@ -34648,7 +34798,7 @@ input[type='number'] {
       }
       return;
     }
-    const entries = list.map((r) => ({
+    const entries2 = list.map((r) => ({
       name: (r.key === "mix" ? "" : "stems/") + audioFileName(r),
       blob: r.blob,
       size: r.size,
@@ -34657,10 +34807,10 @@ input[type='number'] {
     try {
       if (DL) {
         const zname = list.length === 1 ? audioFileName(list[0]).replace(/\.\w+$/, "") + ".zip" : AUDREC.base + "-recording.zip";
-        await DL.save({ filename: zname, data: makeZip2(entries) });
+        await DL.save({ filename: zname, data: makeZip2(entries2) });
         toast("Saved " + zname + ". This viewer saves audio inside a .zip.");
       } else if (list.length === 1) anchorSave(audioFileName(list[0]), list[0].blob);
-      else anchorSave(AUDREC.base + "-recording.zip", makeZip2(entries));
+      else anchorSave(AUDREC.base + "-recording.zip", makeZip2(entries2));
     } catch (err) {
       if (!err || err.code !== "declined") toast("Could not save: " + (err && (err.code || err.message) || "error"));
     }
@@ -34835,13 +34985,13 @@ input[type='number'] {
     const tb = el("div", { class: "sigt", id: "sigTable" });
     sigRows().forEach((r, idx) => {
       const ck2 = r.ti != null && AUDREC.check ? AUDREC.check[r.ti] : null;
-      let chip = el("span", { class: "sigchip", id: "sigS" + idx }, "—");
+      let chip2 = el("span", { class: "sigchip", id: "sigS" + idx }, "—");
       const fname = (f) => {
         const d = AUDREC.devices.find((x) => x.deviceId === f.dev);
         return (d && rtMulti() ? d.label.replace(/\s*\(.*\)\s*$/, "") + " " : "") + (f.pair * 2 + 1) + "–" + (f.pair * 2 + 2);
       };
       if (ck2)
-        chip = el(
+        chip2 = el(
           "span",
           {
             class: "sigchip " + (ck2.ok ? "ok" : "bad"),
@@ -34884,7 +35034,7 @@ input[type='number'] {
             el("i", { class: "R", id: "sigR" + idx })
           ),
           el("span", { class: "sigdb", id: "sigD" + idx }, "−∞"),
-          chip,
+          chip2,
           fix
         )
       );
@@ -34910,12 +35060,12 @@ input[type='number'] {
       const w = (p) => Math.max(0, Math.min(100, (dbOf(p) + 60) / 60 * 100)) + "%";
       L2.style.width = w(pl);
       R3.style.width = w(pr);
-      const pk2 = Math.max(pl, pr), db = dbOf(pk2);
-      D2.textContent = pk2 > 5e-4 ? db.toFixed(0) + " dB" : "−∞";
+      const pk2 = Math.max(pl, pr), db2 = dbOf(pk2);
+      D2.textContent = pk2 > 5e-4 ? db2.toFixed(0) + " dB" : "−∞";
       L2.classList.toggle("hot", pl > 0.97);
       R3.classList.toggle("hot", pr > 0.97);
       if (S2 && !(r.ti != null && AUDREC.check && AUDREC.check[r.ti])) {
-        const st = pk2 > 0.97 ? ["bad", "Too loud"] : db > -40 ? ["ok", "Signal"] : db > -70 ? ["low", "Quiet"] : ["", "No signal"];
+        const st = pk2 > 0.97 ? ["bad", "Too loud"] : db2 > -40 ? ["ok", "Signal"] : db2 > -70 ? ["low", "Quiet"] : ["", "No signal"];
         S2.className = "sigchip " + st[0];
         S2.textContent = st[1];
       }
@@ -35269,9 +35419,9 @@ input[type='number'] {
           el("option", { value: "mc707", selected: AUD.mixFrom !== "other" }, "the MC-707 (row above)"),
           el("option", { value: "other", selected: AUD.mixFrom === "other" }, "another audio interface")
         );
-        const row = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
+        const row2 = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
         if (AUD.mixFrom === "other") {
-          row.append(
+          row2.append(
             el(
               "label",
               {},
@@ -35287,7 +35437,7 @@ input[type='number'] {
           );
           const mc2 = AUDREC.caps.mix;
           if (mc2 && mc2.ch > 2)
-            row.append(
+            row2.append(
               el(
                 "label",
                 {},
@@ -35302,7 +35452,7 @@ input[type='number'] {
               )
             );
         }
-        cn.append(row);
+        cn.append(row2);
       } else {
         cn.append(
           el(
@@ -37739,14 +37889,14 @@ input[type='number'] {
   }
   function render(ov) {
     ov.textContent = "";
-    const roles = S.tracks.map((x, t) => roleOf(t)), shown2 = DEVS[DEV].tracks, nD = shown2.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
+    const roles = S.tracks.map((x, t) => roleOf(t)), shown3 = DEVS[DEV].tracks, nD = shown3.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
     const set = async (r) => {
       if (await applyRoles(r)) {
         toast("Track setup changed");
         render(ov);
       }
     };
-    const rows = shown2.map((t) => {
+    const rows = shown3.map((t) => {
       const sel = el("select", {
         "aria-label": "Track " + devNum(t) + " role",
         onchange: (e) => set(roles.map((r, i) => i === t ? e.target.value : r))
@@ -37795,7 +37945,7 @@ input[type='number'] {
         el(
           "p",
           { class: "hint" },
-          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown2.length - nD) + " tone tracks."
+          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown3.length - nD) + " tone tracks."
         ),
         el(
           "div",
@@ -42327,20 +42477,6 @@ input[type='number'] {
       return false;
     }
   }
-  function myList(kind) {
-    load2();
-    return ZLIB.lib.filter((e) => !kind || e.s.kind === kind);
-  }
-  function mySave(snd, name) {
-    load2();
-    ZLIB.lib.unshift({ id: "z" + Date.now().toString(36), at: Date.now(), s: soundJSON(snd, name) });
-    return save2();
-  }
-  function myDelete(id) {
-    load2();
-    ZLIB.lib = ZLIB.lib.filter((e) => e.id !== id);
-    save2();
-  }
   var ck = (kind, t, k2) => kind + ":" + t + ":" + k2;
   function clipMemory(kind, t, k2) {
     load2();
@@ -45342,7 +45478,7 @@ input[type='number'] {
       nums.push([inp, id]);
       return el("label", { class: "zcEnvN" }, el("span", {}, label2), inp);
     };
-    const row = el(
+    const row2 = el(
       "div",
       { class: "zcEnvNums" },
       ...[1, 2, 3, 4].map((i) => num("T" + i, "Time " + i)),
@@ -45406,7 +45542,7 @@ input[type='number'] {
       "div",
       { class: "zcEnvBox" },
       svg,
-      row,
+      row2,
       el("div", { class: "zcEnvTools" }, presets, copy),
       el(
         "small",
@@ -45490,16 +45626,16 @@ input[type='number'] {
         svg.append(sv2("path", { d: path(pts), class: cls }));
       };
       if (ty === 1) {
-        const form = FORMS[S2("VA_FORM")] || "SAW", duty = Math.max(0.05, Math.min(0.95, 0.5 + (S2("PW") - 64) / 127 * 0.9));
-        if (form === "SQR") {
+        const form2 = FORMS[S2("VA_FORM")] || "SAW", duty = Math.max(0.05, Math.min(0.95, 0.5 + (S2("PW") - 64) / 127 * 0.9));
+        if (form2 === "SQR") {
           const pwm = S2("PWM_DEPTH");
           if (pwm) {
             const d2 = Math.max(0.05, Math.min(0.95, duty + pwm / 63 * 0.4));
             line((ph) => inv * (ph < d2 ? 1 : -1), "line ghost");
           }
           line((ph) => inv * (ph < duty ? 1 : -1));
-        } else line((ph) => inv * VA[form](ph, duty));
-        cap.textContent = "VA " + form + (form === "SQR" ? " · width " + Math.round(duty * 100) + "%" : "");
+        } else line((ph) => inv * VA[form2](ph, duty));
+        cap.textContent = "VA " + form2 + (form2 === "SQR" ? " · width " + Math.round(duty * 100) + "%" : "");
       } else if (ty === 3) {
         const det = S2("SSAW_DETUNE") / 127;
         [-1, -0.5, 0.5, 1].forEach((k2) => line((ph) => 1 - 2 * ((ph + k2 * det * 0.08 + 1) % 1), "line ghost"));
@@ -45529,7 +45665,7 @@ input[type='number'] {
     const cap = el("small", { class: "hint" });
     const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P = (id) => ctx2.get(pk("PTL", ctx2.part, id));
     const fx = (x) => 20 * Math.pow(1e3, x / W);
-    const yOf = (db) => (TOP - Math.max(LO, Math.min(TOP, db))) / (TOP - LO) * (H - 8) + 4;
+    const yOf = (db2) => (TOP - Math.max(LO, Math.min(TOP, db2))) / (TOP - LO) * (H - 8) + 4;
     const draw = () => {
       svg.textContent = "";
       [100, 1e3, 1e4].forEach((f) => {
@@ -45583,17 +45719,17 @@ input[type='number'] {
     const draw = () => {
       svg.textContent = "";
       svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
-      const form = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
+      const form2 = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
       const rand = Array.from({ length: cycles * 4 + 2 }, () => r() * 2 - 1);
       const val = (ph) => {
         const c = Math.floor(ph), f = ph - c;
-        if (form === "STEP") return steps[Math.floor(f * nSteps) % 16];
-        if (form === "S&H") return rand[c * 2 + (f < 0.5 ? 0 : 1)];
-        if (form === "RND" || form === "CHS") {
+        if (form2 === "STEP") return steps[Math.floor(f * nSteps) % 16];
+        if (form2 === "S&H") return rand[c * 2 + (f < 0.5 ? 0 : 1)];
+        if (form2 === "RND" || form2 === "CHS") {
           const a = rand[c], b = rand[c + 1], t = (1 - Math.cos(Math.PI * f)) / 2;
-          return (a + (b - a) * t) * (form === "CHS" ? 0.6 + 0.4 * Math.sin(17 * ph) : 1);
+          return (a + (b - a) * t) * (form2 === "CHS" ? 0.6 + 0.4 * Math.sin(17 * ph) : 1);
         }
-        return LFO_F[form](f);
+        return LFO_F[form2](f);
       };
       const pts = [];
       for (let x = 0; x <= W; x++) {
@@ -46715,6 +46851,597 @@ input[type='number'] {
     return out.filter(([, list]) => list.length);
   }
 
+  // src/zen/zc-sounds.js
+  var ZS = { list: [], ready: false, favs: /* @__PURE__ */ new Set() };
+  var TYPES = [
+    [
+      "keys",
+      "Piano and keys",
+      [
+        "Ac.Piano",
+        "Pop-Piano",
+        "E.Grand Piano",
+        "E.Piano1",
+        "E.Piano2",
+        "Harpsichord",
+        "Clav",
+        "Celesta",
+        "Synth PolyKey"
+      ],
+      /piano|\bep\b|keys|rhodes|wurl|clav/i
+    ],
+    ["organ", "Organ", ["E.Organ", "Pipe Organ", "Reed Organ", "Accordion", "Harmonica"], /organ|accord/i],
+    ["bell", "Bells and mallets", ["Bell", "Mallet", "Synth BellPad"], /bell|mallet|marimba|vibe|kalimba|glock/i],
+    ["guitar", "Guitar and plucked", ["Ac.Guitar", "E.Guitar", "Dist.Guitar", "Plucked/Stroke"], /guitar|gtr|harp\b/i],
+    ["bass", "Bass", ["Ac.Bass", "E.Bass", "Synth Bass"], /bass|\bbs\b|sub\b|808|reese|wobble/i],
+    [
+      "strings",
+      "Strings and orchestra",
+      ["Solo Strings", "Ensemble Strs", "Orchestral"],
+      /string|\bstr\b|orch|cello|violin/i
+    ],
+    [
+      "brass",
+      "Brass, wind and stabs",
+      ["Solo Brass", "Ensemble Brass", "Wind", "Flute", "Sax", "Recorder", "Synth Brass", "Hit"],
+      /brass|horn|sax|flute|stab|hit\b/i
+    ],
+    ["vox", "Voices", ["Vox/Choir", "Scat"], /vox|choir|voice|vocal/i],
+    ["lead", "Synth lead", ["Synth Lead"], /lead|\bld\b|hoover|sync|saw/i],
+    ["pad", "Pads", ["Synth Pad/Str"], /pad|warm|atmos/i],
+    [
+      "pluck",
+      "Plucks, sequences and arps",
+      ["Synth Seq/Pop", "Pulsating", "Phrase", "Beat&Groove"],
+      /pluck|seq|arp|step/i
+    ],
+    ["fx", "Effects", ["Synth FX", "Sound FX"], /\bfx\b|noise|riser|zap|sweep/i],
+    ["drums", "Drums and kits", ["Drums", "Percussion"], /kick|snare|drum|perc|kit\b|hat\b/i],
+    ["other", "Other", [], null]
+  ];
+  var TYPE_LABEL = Object.fromEntries(TYPES.map(([id, l]) => [id, l]));
+  var GENRE_TAGS = [
+    "House",
+    "Techno",
+    "Trance",
+    "DnB",
+    "Dubstep",
+    "Hip hop",
+    "Trap",
+    "Lo-fi",
+    "Big beat",
+    "Electro",
+    "Garage",
+    "Synthwave",
+    "Pop",
+    "Funk",
+    "Ambient",
+    "Cinematic"
+  ];
+  function typeOf(snd, name) {
+    if (snd.kind === "kit") return "drums";
+    const cat = ZC_CATEGORIES[snd.v["CMN.CATEGORY"] | 0];
+    for (const [id, , cats] of TYPES) if (cats.includes(cat)) return id;
+    const n = name || snd.v["CMN.NAME"] || "";
+    for (const [id, , , re] of TYPES) if (re && re.test(n)) return id;
+    return "other";
+  }
+  var INIT = {};
+  var init = (kind) => INIT[kind] || (INIT[kind] = newSound(kind));
+  function diffOf(snd) {
+    const d = {}, i = init(snd.kind).v;
+    for (const k2 in snd.v) if (snd.v[k2] !== i[k2]) d[k2] = snd.v[k2];
+    return d;
+  }
+  function hashOf(kind, d) {
+    const s = kind + JSON.stringify(
+      Object.keys(d).sort().map((k2) => [k2, d[k2]])
+    );
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+    return h.toString(36);
+  }
+  var soundOf = (e) => soundFrom({ zencore: 1, kind: e.kind, v: e.d });
+  var dbP = null;
+  function db() {
+    if (!dbP)
+      dbP = new Promise((res) => {
+        try {
+          const r = indexedDB.open("mc707-sounds", 1);
+          r.onupgradeneeded = () => r.result.createObjectStore("sounds", { keyPath: "id" });
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => res(null);
+        } catch (e) {
+          res(null);
+        }
+      });
+    return dbP;
+  }
+  async function tx(mode, fn) {
+    const d = await db();
+    if (!d) return null;
+    return new Promise((res) => {
+      try {
+        const t = d.transaction("sounds", mode), out = fn(t.objectStore("sounds"));
+        t.oncomplete = () => res(out && "result" in out ? out.result : true);
+        t.onerror = t.onabort = () => res(null);
+      } catch (e) {
+        res(null);
+      }
+    });
+  }
+  var saveFavs2 = () => {
+    try {
+      localStorage.setItem("mc707-zen-favs", JSON.stringify([...ZS.favs]));
+    } catch (e) {
+    }
+  };
+  async function soundsLoad() {
+    if (ZS.ready) return ZS.list;
+    try {
+      ZS.favs = new Set(JSON.parse(localStorage.getItem("mc707-zen-favs") || "[]"));
+    } catch (e) {
+    }
+    const all = await tx("readonly", (s) => s.getAll()) || [];
+    ZS.list = all.filter((e) => e && e.id && e.d).sort((a, b) => b.at - a.at);
+    ZS.ready = true;
+    try {
+      const old = JSON.parse(localStorage.getItem("mc707-zen") || "{}");
+      if (Array.isArray(old.lib) && old.lib.length && !localStorage.getItem("mc707-zen-moved")) {
+        for (const o of old.lib.slice().reverse()) {
+          const s = soundFrom(o.s);
+          if (s) await soundAdd(s, { name: o.s.name, src: "mine", at: o.at });
+        }
+        localStorage.setItem("mc707-zen-moved", "1");
+      }
+    } catch (e) {
+    }
+    return ZS.list;
+  }
+  async function soundAdd(snd, meta = {}) {
+    const d = diffOf(snd), h = hashOf(snd.kind, d);
+    if (ZS.list.some((e2) => e2.h === h)) return null;
+    const name = (meta.name || snd.v["CMN.NAME"] || snd.v["KCMN.NAME"] || "Untitled").trim();
+    const e = {
+      id: "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      at: meta.at || Date.now(),
+      kind: snd.kind,
+      name,
+      type: meta.type || typeOf(snd, name),
+      tags: meta.tags || [],
+      src: meta.src || "mine",
+      h,
+      d
+    };
+    await tx("readwrite", (s) => s.put(e));
+    ZS.list.unshift(e);
+    return e;
+  }
+  async function soundUpdate(id, patch) {
+    const e = ZS.list.find((x) => x.id === id);
+    if (!e) return;
+    Object.assign(e, patch);
+    await tx("readwrite", (s) => s.put(e));
+  }
+  async function soundDelete(id) {
+    ZS.list = ZS.list.filter((x) => x.id !== id);
+    ZS.favs.delete(id);
+    saveFavs2();
+    await tx("readwrite", (s) => s.delete(id));
+  }
+  function toggleFav(id) {
+    if (ZS.favs.has(id)) ZS.favs.delete(id);
+    else ZS.favs.add(id);
+    saveFavs2();
+  }
+  var libraryJSON = () => JSON.stringify({ app: "mc707-toolbox", sounds: 1, favs: [...ZS.favs], list: ZS.list.map(({ h, ...e }) => e) });
+  async function libraryImport(text) {
+    const o = JSON.parse(text);
+    if (!o || o.sounds !== 1 || !Array.isArray(o.list)) throw new Error("not a sound library");
+    let added = 0, same = 0;
+    for (const e of o.list.slice().reverse()) {
+      const s = soundOf(e || {});
+      if (!s) continue;
+      const r = await soundAdd(s, {
+        name: e.name,
+        type: e.type,
+        tags: Array.isArray(e.tags) ? e.tags : [],
+        src: e.src,
+        at: e.at
+      });
+      if (r) {
+        added++;
+        if ((o.favs || []).includes(e.id)) ZS.favs.add(r.id);
+      } else same++;
+    }
+    saveFavs2();
+    return { added, same };
+  }
+
+  // src/zen/zc-browser.js
+  var B = { q: "", src: "all", type: "", tag: "", edit: null, grab: null, cur: null };
+  var SRC = [
+    ["all", "All"],
+    ["fav", "★ Favourites"],
+    ["mine", "Saved"],
+    ["mc707", "From the MC-707"],
+    ["starter", "Starters"]
+  ];
+  var SRC_LABEL = { mine: "Saved", mc707: "MC-707", starter: "Starter", file: "Imported" };
+  var STARTS = null;
+  function starters() {
+    if (STARTS) return STARTS;
+    STARTS = [];
+    for (const [group2, list] of starterMenu())
+      for (const [name, make] of list) {
+        const snd = make();
+        STARTS.push({
+          id: "st:" + name,
+          name,
+          kind: snd.kind,
+          type: typeOf(snd, name),
+          tags: [],
+          src: "starter",
+          group: group2,
+          make
+        });
+      }
+    return STARTS;
+  }
+  var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind);
+  function shown2() {
+    const q = B.q.trim().toLowerCase();
+    return entries().filter(
+      (e) => (B.src === "all" || (B.src === "fav" ? ZS.favs.has(e.id) : e.src === B.src)) && (!B.type || e.type === B.type) && (!B.tag || e.tags.includes(B.tag)) && (!q || (e.name + " " + e.tags.join(" ") + " " + TYPE_LABEL[e.type] + " " + (e.group || "")).toLowerCase().includes(q))
+    );
+  }
+  async function browserOpen() {
+    await soundsLoad();
+    let ov = $("#zbOv");
+    if (!ov) {
+      ov = el("div", {
+        id: "zbOv",
+        class: "ptOv zbOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Sound browser",
+        onkeydown: (e) => {
+          if (e.key === "Escape") browserClose();
+          e.stopPropagation();
+        },
+        onclick: (e) => e.target === ov && browserClose()
+      });
+      document.body.append(ov);
+    }
+    render2();
+    const q = $("#zbQ");
+    if (q) q.focus();
+  }
+  function browserClose() {
+    if (B.grab) B.grab.stop = true;
+    const ov = $("#zbOv");
+    if (ov) ov.remove();
+  }
+  function load3(e) {
+    B.cur = e.id;
+    zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
+    render2();
+  }
+  var chip = (label2, on2, fn, title) => el("button", { type: "button", class: "zbChip" + (on2 ? " on" : ""), title: title || "", onclick: fn }, label2);
+  function form(e, done) {
+    const name = el("input", { class: "zbName", value: e.name, "aria-label": "Name", maxlength: 40 });
+    const type = el(
+      "select",
+      { "aria-label": "Instrument type" },
+      ...TYPES.map(([id, l]) => el("option", { value: id, selected: id === e.type }, l))
+    );
+    const tags = new Set(e.tags);
+    const tagBox = el("div", { class: "zbTags" });
+    const drawTags = () => {
+      tagBox.textContent = "";
+      [.../* @__PURE__ */ new Set([...GENRE_TAGS, ...tags])].forEach(
+        (t) => tagBox.append(chip(t, tags.has(t), () => (tags.has(t) ? tags.delete(t) : tags.add(t), drawTags())))
+      );
+      tagBox.append(
+        chip("+ tag", false, async () => {
+          const t = await askDlg({ title: "New tag", input: true, def: "", ok: "Add" });
+          if (t && t.trim()) tags.add(t.trim().slice(0, 20)), drawTags();
+        })
+      );
+    };
+    drawTags();
+    return el(
+      "div",
+      { class: "zbForm" },
+      el("div", { class: "zbRow" }, name, type),
+      tagBox,
+      el(
+        "div",
+        { class: "zbRow" },
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm on",
+            onclick: () => done({ name: name.value.trim() || e.name, type: type.value, tags: [...tags] })
+          },
+          "Save"
+        ),
+        el("button", { type: "button", class: "btn sm", onclick: () => done(null) }, "Cancel")
+      )
+    );
+  }
+  function row(e) {
+    const fav = ZS.favs.has(e.id);
+    const editing = B.edit === e.id;
+    const r = el(
+      "div",
+      {
+        class: "zbItem" + (B.cur === e.id ? " cur" : ""),
+        role: "button",
+        tabindex: 0,
+        title: "Load into this clip",
+        onclick: () => load3(e),
+        onkeydown: (k2) => k2.key === "Enter" && load3(e)
+      },
+      el(
+        "button",
+        {
+          type: "button",
+          class: "zbStar" + (fav ? " on" : ""),
+          title: fav ? "Unstar" : "Star",
+          onclick: (x) => (x.stopPropagation(), toggleFav(e.id), render2())
+        },
+        fav ? "★" : "☆"
+      ),
+      el("span", { class: "zbNm" }, e.name),
+      el("span", { class: "zbTy" }, TYPE_LABEL[e.type] || ""),
+      el("span", { class: "zbTg" }, e.tags.join(" · ")),
+      el("span", { class: "zbSrc" }, SRC_LABEL[e.src] || ""),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "zbPlay",
+          title: "Load it and hold to play a note",
+          onpointerdown: (x) => {
+            x.stopPropagation();
+            if (B.cur !== e.id) load3(e);
+            audition2(e.type === "bass" ? 36 : 60);
+          },
+          onclick: (x) => x.stopPropagation()
+        },
+        "▶"
+      ),
+      e.src === "starter" ? el("span", { class: "zbAct" }) : el(
+        "button",
+        {
+          type: "button",
+          class: "zbAct",
+          title: "Rename, type, tags, delete",
+          onclick: (x) => {
+            x.stopPropagation();
+            const rr2 = x.currentTarget.getBoundingClientRect();
+            showMenu(rr2.left, rr2.bottom + 4, [
+              { label: "Name, type and tags…", action: () => (B.edit = e.id, render2()) },
+              {
+                label: "Delete",
+                action: async () => {
+                  if (await askDlg({ title: "Delete " + e.name + "?", ok: "Delete" }))
+                    await soundDelete(e.id), render2();
+                }
+              }
+            ]);
+          }
+        },
+        "⋯"
+      )
+    );
+    if (!editing) return r;
+    return el(
+      "div",
+      {},
+      r,
+      form(e, async (v) => {
+        B.edit = null;
+        if (v) await soundUpdate(e.id, v);
+        render2();
+      })
+    );
+  }
+  async function grab(scope) {
+    if (B.grab) return;
+    const dn = DEVS[DEV].name;
+    if (!await zxConnect()) return toast("Connect the " + dn + " first");
+    if (!ZX.inp) return toast("No MIDI input from the " + dn + ": it cannot be read");
+    const jobs = [];
+    for (const t of scope === "all" ? DEVS[DEV].tracks : [ZE.t]) {
+      const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
+      for (const k2 of scope === "clip" ? [ZE.k] : Array.from({ length: 16 }, (_, i) => i)) jobs.push([t, k2, kind]);
+    }
+    const g = B.grab = { stop: false, done: 0, n: jobs.length, added: 0, same: 0, empty: 0, bad: 0, msg: "" };
+    render2();
+    for (const [t, k2, kind] of jobs) {
+      if (g.stop) break;
+      g.msg = "Reading track " + devNum(t) + ", clip " + (k2 + 1);
+      status();
+      const snd = newSound(kind), r = await readSound(snd, slotAddr(kind, t, k2));
+      g.done++;
+      if (r.silent) {
+        g.msg = "The " + dn + " did not answer.";
+        break;
+      }
+      if (r.ok < r.total * 0.9) g.bad++;
+      else if (!Object.keys(diffOf(snd)).length) g.empty++;
+      else if (await soundAdd(snd, { src: "mc707" })) g.added++;
+      else g.same++;
+      status();
+    }
+    B.grab = null;
+    toast(
+      "Grabbed " + g.added + " new sound" + (g.added === 1 ? "" : "s") + (g.same ? ", " + g.same + " already here" : "") + (g.empty ? ", " + g.empty + " empty" : "") + (g.bad ? ", " + g.bad + " could not be read" : "") + (g.stop ? " (stopped)" : "")
+    );
+    if (g.added) B.src = "mc707";
+    render2();
+  }
+  function status() {
+    const s = $("#zbStat"), g = B.grab;
+    if (!s) return;
+    s.textContent = g ? g.msg + " · " + g.done + " of " + g.n + " · " + g.added + " new" : "";
+  }
+  function render2() {
+    const ov = $("#zbOv");
+    if (!ov) return;
+    const list = shown2(), all = entries();
+    const scroll = $(".zbList", ov) ? $(".zbList", ov).scrollTop : 0;
+    ov.textContent = "";
+    const kindName = ZE.kind === "kit" ? "kits" : "tones";
+    const q = el("input", {
+      id: "zbQ",
+      type: "search",
+      class: "zbQ",
+      placeholder: "Search " + all.length + " " + kindName,
+      value: B.q,
+      "aria-label": "Search",
+      oninput: (e) => {
+        B.q = e.target.value;
+        drawList();
+      }
+    });
+    const type = el(
+      "select",
+      { "aria-label": "Instrument type", onchange: (e) => (B.type = e.target.value, render2()) },
+      el("option", { value: "" }, "Any instrument"),
+      ...TYPES.filter(([id]) => all.some((e) => e.type === id)).map(
+        ([id, l]) => el("option", { value: id, selected: B.type === id }, l)
+      )
+    );
+    const usedTags = [...new Set(all.flatMap((e) => e.tags))].sort();
+    const box = el("div", { class: "zbList" });
+    const drawList = () => {
+      const l = shown2();
+      box.textContent = "";
+      if (!l.length)
+        box.append(
+          el(
+            "p",
+            { class: "hint zbEmpty" },
+            all.length > starters().length || B.src !== "mc707" ? "Nothing matches." : "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab."
+          )
+        );
+      l.forEach((e) => box.append(row(e)));
+    };
+    const saving = B.edit === "new";
+    ov.append(
+      el(
+        "div",
+        { class: "ptBox zcBox zbBox" },
+        el(
+          "div",
+          { class: "zbHead" },
+          el("b", {}, "Sounds"),
+          q,
+          type,
+          el("span", { class: "zbN hint" }, list.length + " shown"),
+          el(
+            "div",
+            { class: "zbActs" },
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                onclick: () => (B.edit = saving ? null : "new", render2()),
+                title: "Save the sound in the editor to the library"
+              },
+              "Save this " + (ZE.kind === "kit" ? "kit" : "tone")
+            ),
+            B.grab ? el("button", { type: "button", class: "btn sm on", onclick: () => B.grab.stop = true }, "Stop grabbing") : el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Read sounds from the " + DEVS[DEV].name + "'s clips into the library",
+                onclick: (x) => {
+                  const rr2 = x.currentTarget.getBoundingClientRect();
+                  showMenu(rr2.left, rr2.bottom + 4, [
+                    { label: "This clip", action: () => grab("clip") },
+                    { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
+                    { label: "Every clip of every track", action: () => grab("all") }
+                  ]);
+                }
+              },
+              "Grab from " + DEVS[DEV].name + " ▾"
+            ),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                onclick: (x) => {
+                  const rr2 = x.currentTarget.getBoundingClientRect();
+                  showMenu(rr2.left, rr2.bottom + 4, [
+                    {
+                      label: "Export the library to a file…",
+                      action: () => hooks.saveFile("mc707-sounds.json", libraryJSON())
+                    },
+                    {
+                      label: "Import a library file…",
+                      action: () => {
+                        const i = el("input", {
+                          type: "file",
+                          accept: ".json,application/json",
+                          onchange: async () => {
+                            try {
+                              const r = await libraryImport(await i.files[0].text());
+                              toast("Imported " + r.added + " sounds" + (r.same ? " (" + r.same + " already here)" : ""));
+                              render2();
+                            } catch (e) {
+                              toast("That is not a sound library file from this app");
+                            }
+                          }
+                        });
+                        i.click();
+                      }
+                    }
+                  ]);
+                }
+              },
+              "Backup ▾"
+            ),
+            el("button", { type: "button", class: "btn sm on", onclick: browserClose }, "Done")
+          )
+        ),
+        saving ? form(
+          { name: ZE.snd.v[ZE.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "", type: typeOf(ZE.snd), tags: [] },
+          async (v) => {
+            B.edit = null;
+            if (v) {
+              const e = await soundAdd(ZE.snd, { ...v, src: "mine" });
+              toast(e ? "Saved " + e.name : "That sound is already in the library");
+              if (e) B.cur = e.id;
+            }
+            render2();
+          }
+        ) : null,
+        el(
+          "div",
+          { class: "zbFilt" },
+          ...SRC.map(([id, l]) => chip(l, B.src === id, () => (B.src = id, render2()))),
+          usedTags.length ? el("span", { class: "zbSep" }) : null,
+          ...usedTags.map(
+            (t) => chip(t, B.tag === t, () => (B.tag = B.tag === t ? "" : t, render2()), "Only sounds tagged " + t)
+          )
+        ),
+        el("div", { id: "zbStat", class: "zcStat ok" }),
+        box
+      )
+    );
+    drawList();
+    box.scrollTop = scroll;
+    status();
+  }
+
   // src/zen/zc-actions.js
   var menuAt = (e, items) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -46729,27 +47456,6 @@ input[type='number'] {
   var CLIP = null;
   function soundName() {
     return ZE.snd.v[ZE.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "";
-  }
-  function myMenu() {
-    const list = myList(ZE.kind);
-    return [
-      {
-        label: "Save this " + (ZE.kind === "kit" ? "kit" : "tone") + " to My sounds…",
-        action: async () => {
-          const n = await askDlg({ title: "Save to My sounds", input: true, def: soundName(), ok: "Save" });
-          if (n != null) toast(mySave(ZE.snd, n) ? "Saved " + n : "The browser would not store it (storage full?)");
-        }
-      },
-      list.length ? "-" : null,
-      ...list.slice(0, 30).map((e) => ({
-        label: e.s.name || "Untitled",
-        sub: [
-          { label: "Load it here", action: () => zeLoad(soundFrom(e.s), "Loaded " + (e.s.name || "sound")) },
-          { label: "Delete", action: () => (myDelete(e.id), toast("Deleted")) }
-        ]
-      })),
-      list.length ? null : { label: "Nothing saved yet", disabled: true }
-    ];
   }
   function fileMenu() {
     return [
@@ -46805,8 +47511,8 @@ input[type='number'] {
       {
         label: "Reset partial " + (p + 1),
         action: () => {
-          const s = copySound(ZE.snd), init = newSound("tone");
-          for (const k2 of keysOf(p)) s.v[k2] = init.v[k2];
+          const s = copySound(ZE.snd), init2 = newSound("tone");
+          for (const k2 of keysOf(p)) s.v[k2] = init2.v[k2];
           zeLoad(s, "Reset partial " + (p + 1));
         }
       }
@@ -46880,15 +47586,18 @@ input[type='number'] {
         btn("↷", () => zeUndo(true), { off: !ZE.redo.length, title: "Redo (Ctrl+Shift+Z)" }),
         ZE.kind === "tone" ? btn(
           "Starters ▾",
-          (e) => menuAt(
-            e,
-            starterMenu().map(([g, list]) => ({
+          (e) => menuAt(e, [
+            { label: "Browse all sounds…", action: browserOpen },
+            "-",
+            ...starterMenu().map(([g, list]) => ({
               label: g,
               sub: list.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), "Loaded " + n) }))
             }))
-          )
+          ])
         ) : btn("Init kit", () => zeLoad(newSound("kit"), "Reset the kit")),
-        btn("My sounds ▾", (e) => menuAt(e, myMenu())),
+        btn("Sounds", () => browserOpen(), {
+          title: "The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites"
+        }),
         btn("File ▾", (e) => menuAt(e, fileMenu())),
         ZE.kind === "tone" ? btn("Partial ▾", (e) => menuAt(e, partMenu())) : null,
         btn("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
@@ -46905,7 +47614,7 @@ input[type='number'] {
     return [0, 1, 2, 3].filter((i) => linked[i]).map((i) => key.replace(/\d\./, i + "."));
   }
   function partialBar(ze, redraw) {
-    const linked = ze.linked || (ze.linked = [false, false, false, false]), all = linked.every(Boolean), chip = (i) => el(
+    const linked = ze.linked || (ze.linked = [false, false, false, false]), all = linked.every(Boolean), chip2 = (i) => el(
       "button",
       {
         type: "button",
@@ -46945,7 +47654,7 @@ input[type='number'] {
           title: "Linked partials change together: a change to any linked partial goes to all of them"
         },
         el("span", { class: "zcL" }, "Link"),
-        ...[0, 1, 2, 3].map(chip),
+        ...[0, 1, 2, 3].map(chip2),
         el(
           "button",
           {
@@ -47083,17 +47792,17 @@ input[type='number'] {
     if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys2)).then(() => $("#zcOv") && zeRender());
   }
   async function zeRead() {
-    if (!await zxConnect()) return status();
+    if (!await zxConnect()) return status2();
     if (!ZX.inp) {
       toast("No MIDI input from the " + DEVS[DEV].name + ": cannot read, but changes are still sent");
       return;
     }
     const t = ZE.t, k2 = ZE.k;
     ZE.busy = "Reading…";
-    status();
+    status2();
     const r = await readSound(ZE.snd, zeBase(), null, (d, n) => {
       ZE.busy = "Reading… " + Math.round(d / n * 100) + "%";
-      status();
+      status2();
     });
     if (ZE.t !== t || ZE.k !== k2) return;
     ZE.busy = "";
@@ -47107,11 +47816,11 @@ input[type='number'] {
     const d = await zxRead(trackSetAddr(ZE.t) + 4, 1);
     if (d && d[0] === 0) {
       ZE.srcNote += " · This track’s Sound Source is TRACK, so it plays the track sound, not the clip’s.";
-      status();
+      status2();
     }
   }
   async function zeSendAll() {
-    if (!await zxConnect()) return status();
+    if (!await zxConnect()) return status2();
     sendSound(ZE.snd, zeBase());
     toast("Sent the whole " + (ZE.kind === "kit" ? "kit" : "tone") + " to track " + devNum(ZE.t) + ", " + targetName());
   }
@@ -47134,11 +47843,11 @@ input[type='number'] {
       document.body.append(ov);
       addEventListener("keydown", keys, true);
     }
-    ZX.onState = status;
+    ZX.onState = status2;
     ZX.onIdle = screenNudge;
     zeRender();
     if (await zxConnect()) zeRead();
-    else status();
+    else status2();
   }
   function zenClose() {
     const o = $("#zcOv");
@@ -47243,7 +47952,7 @@ input[type='number'] {
     });
     return box;
   }
-  function status() {
+  function status2() {
     const s = $("#zcStat");
     if (!s) return;
     const dn = DEVS[DEV].name;
@@ -47289,7 +47998,7 @@ input[type='number'] {
       )
     );
     page.scrollTop = scroll;
-    status();
+    status2();
   }
 
   // src/ui/context-menus.js
@@ -47726,6 +48435,9 @@ input[type='number'] {
       STYLES,
       zen: {
         open: zenOpen,
+        sendAll: zeSendAll,
+        browse: browserOpen,
+        ZS,
         get ZE() {
           return ZE;
         }

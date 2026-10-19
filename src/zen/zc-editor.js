@@ -309,7 +309,8 @@ const noteOut = (ch, b, on) => {
   if (ZX.out) zxNote(ch, b, on);
   else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
 };
-function audition(n) {
+/** Play note n on the edited track while the pointer is held (the keyboard and the Sound browser). */
+export function audition(n) {
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
   const send = (b, on) => {
     noteOut(ch, b, on);

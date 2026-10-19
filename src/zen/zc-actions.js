@@ -1,5 +1,5 @@
 // The ZenCore editor's header: which track and clip it edits, and the actions (read from the MC-707,
-// send all, starters, My sounds, save and open files, copy a partial, copy the sound to another clip).
+// send all, starters, the Sound browser, save and open files, copy a partial, copy the sound to another clip).
 //
 // Reads: ZE, S, DEV.
 // Calls up the layers through hooks (core/hooks.js).
@@ -8,10 +8,10 @@ import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { hooks } from '../core/hooks.js';
 import { showMenu } from '../ui/menu.js';
-import { askDlg } from '../ui/dialogs.js';
 import { slotAddr, zxConnect } from './zc-sysex.js';
 import { copySound, newSound, sendSound, soundFrom, soundJSON } from './zc-tone.js';
-import { myDelete, myList, mySave, rememberClip } from './zc-library.js';
+import { rememberClip } from './zc-library.js';
+import { browserOpen } from './zc-browser.js';
 import { starterMenu } from './zc-starters-more.js';
 import {
   ZE,
@@ -42,27 +42,6 @@ let CLIP = null; /* a copied partial: {key suffix: value} */
 
 function soundName() {
   return ZE.snd.v[ZE.kind === 'kit' ? 'KCMN.NAME' : 'CMN.NAME'] || '';
-}
-function myMenu() {
-  const list = myList(ZE.kind);
-  return [
-    {
-      label: 'Save this ' + (ZE.kind === 'kit' ? 'kit' : 'tone') + ' to My sounds…',
-      action: async () => {
-        const n = await askDlg({ title: 'Save to My sounds', input: true, def: soundName(), ok: 'Save' });
-        if (n != null) toast(mySave(ZE.snd, n) ? 'Saved ' + n : 'The browser would not store it (storage full?)');
-      }
-    },
-    list.length ? '-' : null,
-    ...list.slice(0, 30).map(e => ({
-      label: e.s.name || 'Untitled',
-      sub: [
-        { label: 'Load it here', action: () => zeLoad(soundFrom(e.s), 'Loaded ' + (e.s.name || 'sound')) },
-        { label: 'Delete', action: () => (myDelete(e.id), toast('Deleted')) }
-      ]
-    })),
-    list.length ? null : { label: 'Nothing saved yet', disabled: true }
-  ];
 }
 function fileMenu() {
   return [
@@ -202,16 +181,20 @@ export function headerBar() {
       btn('↷', () => zeUndo(true), { off: !ZE.redo.length, title: 'Redo (Ctrl+Shift+Z)' }),
       ZE.kind === 'tone'
         ? btn('Starters ▾', e =>
-            menuAt(
-              e,
-              starterMenu().map(([g, list]) => ({
+            menuAt(e, [
+              { label: 'Browse all sounds…', action: browserOpen },
+              '-',
+              ...starterMenu().map(([g, list]) => ({
                 label: g,
                 sub: list.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), 'Loaded ' + n) }))
               }))
-            )
+            ])
           )
         : btn('Init kit', () => zeLoad(newSound('kit'), 'Reset the kit')),
-      btn('My sounds ▾', e => menuAt(e, myMenu())),
+      btn('Sounds', () => browserOpen(), {
+        title:
+          'The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites'
+      }),
       btn('File ▾', e => menuAt(e, fileMenu())),
       ZE.kind === 'tone' ? btn('Partial ▾', e => menuAt(e, partMenu())) : null,
       btn('Copy to ▾', e => menuAt(e, copyMenu()), { title: 'Send this sound to another clip' }),
