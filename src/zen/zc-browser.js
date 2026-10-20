@@ -309,7 +309,8 @@ function toolbar() {
             { label: 'This clip', action: () => grab('clip') },
             { label: 'All 16 clips of track ' + devNum(ZE.t), action: () => grab('track') },
             { label: 'Every clip of every track', action: () => grab('all') },
-            ...(ZE.kind === 'tone' ? ['-', ...factoryItems(n => (n && (B.bank = 'factory'), render()))] : [])
+            '-',
+            ...factoryItems(n => (n && (B.bank = 'factory'), render()))
           ]
         ),
     menuBtn('Backup ▾', 'Export or import your sound library', () => [
@@ -344,9 +345,7 @@ function banksPane(all) {
     item('all', 'All'),
     item('fav', '★ Favourites', '', 'Every sound you have rated'),
     ...banks.filter(b => !b.startsWith('f:') && b !== 'starter').map(b => item(b, bankName(b))),
-    ZE.kind === 'tone'
-      ? item('factory', 'Factory', 'zbGrp', fac.length ? 'Every factory bank' : 'Add them with Grab ▾ › Factory tones')
-      : null,
+    item('factory', 'Factory', 'zbGrp', fac.length ? 'Every factory bank' : 'Add them with Grab ▾ › Factory sounds'),
     ...fac.map(b => item(b, bankName(b), 'zbSub')),
     banks.includes('starter') ? item('starter', 'Starters') : null
   );
@@ -374,7 +373,7 @@ function catsPane(inBank) {
 
 function emptyText(all) {
   if (B.bank === 'factory' && !all.some(e => e.src === 'factory'))
-    return 'Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).';
+    return 'Add the factory tones and kits with Grab ▾ › Factory sounds from the MC-707 update file (MC707_UPA_up.bin from Roland).';
   if (B.bank === 'mc707' && !all.some(e => e.src === 'mc707'))
     return 'Nothing grabbed yet. Pick sounds into clips on the ' + DEVS[DEV].name + ', then use Grab.';
   return 'Nothing matches.';

@@ -119,4 +119,11 @@ envelopes, LFOs, EQ, and the analog-style blocks) at their own offsets, with byt
 16-bit words aligned C-style. `src/zen/zc-factory.js` has the field table; it was checked against
 tones read back from an MC-707 over SysEx (every value matched) and every record in the file decodes
 inside the parameter ranges. The app reads the file the user picks, on their computer; no Roland data
-is in this repo. Drum kits are not decoded yet.
+is in this repo.
+
+Drum kits are 3328-byte records (0xD00): the kit's common settings (name, phrase, level, phrase
+velocity), the MFX block at 28 (the same layout as a tone's), 6 compressors of 8 bytes at 112, then
+88 keys of 20 bytes at 160 (A0 up) and each key's EQ, 16 bytes, at 1920. `src/zen/zc-factory-kits.js`
+has the table. A key's output assign is stored 0-6 in the file (dry, the effect, or one of the
+compressors); the SysEx only takes dry or the effect, so anything above 0 is sent as the effect.
+Unused bytes are usually 0xCD (but not always, so they do not mark records).

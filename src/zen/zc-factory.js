@@ -144,30 +144,49 @@ const FW_MAP = [
       'AENV_LFO_TRIG_SW:21b PITCH_DOWN_DEPTH:22b VCF_GC:23b'
   ]
 ];
-const SIZE = { a: 16, b: 1, c: 1, w: 2, s: 2 };
-let FIELDS = null;
-/** Every field: [parameter key, offset in the record, type]. */
-export function fwFields() {
-  if (FIELDS) return FIELDS;
-  FIELDS = [];
-  for (const [blk, base, n, stride, list] of FW_MAP)
+/** A field table's fields: [parameter key, offset in the record, type]. */
+export function fieldsOf(map) {
+  const out = [];
+  for (const [blk, base, n, stride, list] of map)
     for (const f of list.split(' ')) {
       const [, id, off, t] = /^(\w+):(\d+)([a-z])$/.exec(f);
-      for (let i = 0; i < n; i++) FIELDS.push([blk + (n > 1 ? i : '') + '.' + id, base + i * stride + +off, t]);
+      for (let i = 0; i < n; i++) out.push([blk + (n > 1 ? i : '') + '.' + id, base + i * stride + +off, t]);
     }
-  return FIELDS;
+  return out;
 }
+let FIELDS = null;
+/** Every tone field: [parameter key, offset in the record, type]. */
+export const fwFields = () => FIELDS || (FIELDS = fieldsOf(FW_MAP));
+/* one value: b, c, w, s as above; o = an output assign stored 0-6 (dry, the effect, or one of a kit's
+   compressors), which the MC-707's SysEx only offers as dry or the effect */
 function read(b, o, t) {
   if (t === 'b') return b[o];
+  if (t === 'o') return b[o] ? 1 : 0;
   if (t === 'c') return (b[o] << 24) >> 24;
   const w = b[o] | (b[o + 1] << 8);
   return t === 's' ? (w << 16) >> 16 : w;
 }
-const nameAt = (b, o) => {
+/** The 16-character name at byte o. */
+export const nameAt = (b, o) => {
   let s = '';
   for (let i = 0; i < 16; i++) s += String.fromCharCode(b[o + i]);
   return s.trimEnd();
 };
+/** A sound of this kind from the record at byte o, or null when a value is out of range. */
+export function decodeAt(kind, fields, b, o) {
+  const snd = newSound(kind);
+  for (const [k, off, t] of fields) {
+    if (t === 'a') {
+      snd.v[k] = nameAt(b, o + off);
+      continue;
+    }
+    const [p] = paramOf(kind, k),
+      x = read(b, o + off, t);
+    if (x < p[3] || x > p[4]) return null;
+    snd.v[k] = x;
+  }
+  return snd;
+}
 /* a quick look: does a tone record start here? (a printable name, a category, then a level) */
 function looksLikeTone(b, o) {
   if (o + FW_REC > b.length) return false;
@@ -176,20 +195,7 @@ function looksLikeTone(b, o) {
 }
 
 /** The tone at byte o, or null when a value is out of range (not a tone record after all). */
-export function fwTone(b, o) {
-  const snd = newSound('tone');
-  for (const [k, off, t] of fwFields()) {
-    if (t === 'a') {
-      snd.v[k] = nameAt(b, o + off);
-      continue;
-    }
-    const [p] = paramOf('tone', k),
-      x = read(b, o + off, t);
-    if (x < p[3] || x > p[4]) return null;
-    snd.v[k] = x;
-  }
-  return snd;
-}
+export const fwTone = (b, o) => decodeAt('tone', fwFields(), b, o);
 
 /**
  * Find the tone records in an update file: runs of at least 8 records back to back. Returns
@@ -223,7 +229,9 @@ export const FW_BANK_NAMES = {
   B: 'AX Collection',
   C: 'Synth Legend',
   D: 'Basic Synth',
-  E: 'XV Collection'
+  E: 'XV Collection',
+  KA: 'ZEN-Core Kits',
+  KB: 'MC-707 Kits'
 };
 
 /**

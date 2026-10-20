@@ -46223,19 +46223,20 @@ body[data-mode='synth'] #synth {
       "OSC_TYPE:0b VA_FORM:1b SYNC_WAV_NUM:2w PW:4b PWM_DEPTH:5c SSAW_DETUNE:6b CLICK_TYPE:7b HPF_CUTOFF:8w FILTER_TYPE:10b FILTER_SLOPE:11b ADSR_ENV_SW:12b FAT:13b VCF_TYPE:14b OSC_ATT:15b CUTOFF_KF_BP:16b VA_INVERT_SW:17b FENV_FINE_DEPTH:18c PENV_LFO_TRIG_SW:19b FENV_LFO_TRIG_SW:20b AENV_LFO_TRIG_SW:21b PITCH_DOWN_DEPTH:22b VCF_GC:23b"
     ]
   ];
-  var FIELDS = null;
-  function fwFields() {
-    if (FIELDS) return FIELDS;
-    FIELDS = [];
-    for (const [blk, base, n, stride, list] of FW_MAP)
+  function fieldsOf(map) {
+    const out2 = [];
+    for (const [blk, base, n, stride, list] of map)
       for (const f of list.split(" ")) {
         const [, id, off, t] = /^(\w+):(\d+)([a-z])$/.exec(f);
-        for (let i = 0; i < n; i++) FIELDS.push([blk + (n > 1 ? i : "") + "." + id, base + i * stride + +off, t]);
+        for (let i = 0; i < n; i++) out2.push([blk + (n > 1 ? i : "") + "." + id, base + i * stride + +off, t]);
       }
-    return FIELDS;
+    return out2;
   }
+  var FIELDS = null;
+  var fwFields = () => FIELDS || (FIELDS = fieldsOf(FW_MAP));
   function read(b, o, t) {
     if (t === "b") return b[o];
+    if (t === "o") return b[o] ? 1 : 0;
     if (t === "c") return b[o] << 24 >> 24;
     const w = b[o] | b[o + 1] << 8;
     return t === "s" ? w << 16 >> 16 : w;
@@ -46245,24 +46246,25 @@ body[data-mode='synth'] #synth {
     for (let i = 0; i < 16; i++) s += String.fromCharCode(b[o + i]);
     return s.trimEnd();
   };
-  function looksLikeTone(b, o) {
-    if (o + FW_REC > b.length) return false;
-    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
-    return b[o + 16] <= 49 && !b[o + 17] && !b[o + 18] && !b[o + 19] && b[o + 20] <= 127 && b[o + 64] < 128;
-  }
-  function fwTone(b, o) {
-    const snd = newSound("tone");
-    for (const [k2, off, t] of fwFields()) {
+  function decodeAt(kind, fields, b, o) {
+    const snd = newSound(kind);
+    for (const [k2, off, t] of fields) {
       if (t === "a") {
         snd.v[k2] = nameAt(b, o + off);
         continue;
       }
-      const [p] = paramOf("tone", k2), x = read(b, o + off, t);
+      const [p] = paramOf(kind, k2), x = read(b, o + off, t);
       if (x < p[3] || x > p[4]) return null;
       snd.v[k2] = x;
     }
     return snd;
   }
+  function looksLikeTone(b, o) {
+    if (o + FW_REC > b.length) return false;
+    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+    return b[o + 16] <= 49 && !b[o + 17] && !b[o + 18] && !b[o + 19] && b[o + 20] <= 127 && b[o + 64] < 128;
+  }
+  var fwTone = (b, o) => decodeAt("tone", fwFields(), b, o);
   function fwScan(b) {
     const out2 = [];
     for (let o = 0; o + FW_REC * 8 <= b.length; o += 4) {
@@ -46287,7 +46289,9 @@ body[data-mode='synth'] #synth {
     B: "AX Collection",
     C: "Synth Legend",
     D: "Basic Synth",
-    E: "XV Collection"
+    E: "XV Collection",
+    KA: "ZEN-Core Kits",
+    KB: "MC-707 Kits"
   };
   function fwTones(b) {
     const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
@@ -46308,6 +46312,57 @@ body[data-mode='synth'] #synth {
         out2.push({ name, snd, bank, no: i + 1 });
       }
     });
+    return out2;
+  }
+
+  // src/zen/zc-factory-kits.js
+  var FW_KIT_REC = 3328;
+  var KIT_MAP = [
+    ["KCMN", 0, 1, 0, "NAME:0a PHRASE:18w LEVEL:20b PHRASE_VEL_RATE:23b PHRASE_VEL_SHIFT:24c"],
+    [
+      "MFX",
+      28,
+      1,
+      0,
+      "mfxType:0b mfxSwitch:1b choSend:2b revSend:3b ctrlSrc1:4b ctrlSens1:5c ctrlSrc2:6b ctrlSens2:7c ctrlSrc3:8b ctrlSens3:9c ctrlSrc4:10b ctrlSens4:11c ctrlAsgn_1:12b ctrlAsgn_2:13b ctrlAsgn_3:14b ctrlAsgn_4:15b param_1:16s param_2:18s param_3:20s param_4:22s param_5:24s param_6:26s param_7:28s param_8:30s param_9:32s param_10:34s param_11:36s param_12:38s param_13:40s param_14:42s param_15:44s param_16:46s param_17:48s param_18:50s param_19:52s param_20:54s param_21:56s param_22:58s param_23:60s param_24:62s param_25:64s param_26:66s param_27:68s param_28:70s param_29:72s param_30:74s param_31:76s param_32:78s"
+    ],
+    ["KCMP", 112, 6, 8, "SW:0b ATTCK:1b RELEASE:2b THRESHOLD:3c RATIO:4b KNEE:5b POSTGAIN:6c OUT_ASGN:7b"],
+    [
+      "KPTL",
+      160,
+      88,
+      20,
+      "INST_NUM:0w INST_GTYPE:2b INST_GID:4w LEVEL:6b PAN:8c CHO_SEND:9b REV_SEND:10b MUTE_GRP:11b OUT_ASGN:12o KEY_OFST:13c PIT_FINE_OFST:14c CUTOFF_OFST:15c RESO_OFST:16c TVA_ATK_OFST:17c TVA_DCY_OFST:18c TVA_REL_OFST:19c"
+    ],
+    ["KEQ", 1920, 88, 16, "LO_GAIN:0s MID_GAIN:2s HI_GAIN:4s LO_FREQ:6w MID_FREQ:8w HI_FREQ:10w MID_Q:12b SW:13b"]
+  ];
+  var FIELDS2 = null;
+  var fwKitFields = () => FIELDS2 || (FIELDS2 = fieldsOf(KIT_MAP));
+  function looksLikeKit(b, o) {
+    if (o + FW_KIT_REC > b.length) return false;
+    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+    if (b[o + 20] > 127 || !b[o + 23] || b[o + 23] > 200 || b[o + 21] || b[o + 22]) return false;
+    for (let k2 = 0; k2 < 88; k2 += 29) if (b[o + 160 + k2 * 20 + 2] > 2 || b[o + 160 + k2 * 20 + 12] > 6) return false;
+    return true;
+  }
+  var fwKit = (b, o) => decodeAt("kit", fwKitFields(), b, o);
+  var BANKS2 = { "Standard Kit": "KA", "TR-909 3": "KB" };
+  function fwKits(b) {
+    const out2 = [];
+    let next = "C";
+    for (let o = 0; o + FW_KIT_REC * 4 <= b.length; o += 4) {
+      if (!looksLikeKit(b, o)) continue;
+      const kits = [];
+      for (let p = o, s; looksLikeKit(b, p) && (s = fwKit(b, p)); p += FW_KIT_REC) kits.push(s);
+      if (kits.length < 4) continue;
+      const bank = BANKS2[nameAt(b, o)] || "K" + next;
+      if (!BANKS2[nameAt(b, o)]) next = String.fromCharCode(next.charCodeAt(0) + 1);
+      kits.forEach((snd, i) => {
+        const name = snd.v["KCMN.NAME"];
+        if (name && !/^init kit$/i.test(name)) out2.push({ name, snd, bank, no: i + 1 });
+      });
+      o += kits.length * FW_KIT_REC - 4;
+    }
     return out2;
   }
 
@@ -46576,11 +46631,11 @@ body[data-mode='synth'] #synth {
         toast("Reading " + f.name + "…");
         await frame2();
         try {
-          const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+          const bytes = new Uint8Array(await f.arrayBuffer()), tones = fwTones(bytes), kits = fwKits(bytes), all = [...tones, ...kits];
           if (!tones.length) return toast("No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).");
-          const n = await soundAddMany(tones.map((t) => ({ ...t, src: "factory" })));
+          const n = await soundAddMany(all.map((t) => ({ ...t, src: "factory" })));
           toast(
-            n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
+            n ? "Added " + tones.length + " factory tones and " + kits.length + " kits" + (n < all.length ? " (" + (all.length - n) + " already here)" : "") : "The factory sounds are already in the library"
           );
           done(n);
         } catch (e) {
@@ -46594,14 +46649,14 @@ body[data-mode='synth'] #synth {
     const have = ZS.list.some((e) => e.src === "factory");
     return [
       {
-        label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
+        label: (have ? "Add the factory sounds again" : "Factory sounds from the MC-707 update file") + "…",
         action: () => factoryImport(done)
       },
       have ? {
-        label: "Remove the factory tones",
+        label: "Remove the factory sounds",
         action: async () => {
           const n = await soundsRemoveSrc("factory");
-          toast("Removed " + n + " factory tones");
+          toast("Removed " + n + " factory sounds");
           done(0);
         }
       } : null
@@ -46646,7 +46701,8 @@ body[data-mode='synth'] #synth {
     if (id.startsWith("f:")) {
       const l = id.slice(2);
       if (l === "?") return "Factory";
-      return short2 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
+      const tag = l[0] === "K" ? "KIT_" + l.slice(1) : "PRST_" + l;
+      return short2 ? tag : tag + " " + (FW_BANK_NAMES[l] || "Factory");
     }
     return SRC_NAME[id] || id;
   }
@@ -47093,7 +47149,8 @@ body[data-mode='synth'] #synth {
           { label: "This clip", action: () => grab("clip") },
           { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
           { label: "Every clip of every track", action: () => grab("all") },
-          ...ZE.kind === "tone" ? ["-", ...factoryItems((n) => (n && (B.bank = "factory"), render()))] : []
+          "-",
+          ...factoryItems((n) => (n && (B.bank = "factory"), render()))
         ]
       ),
       menuBtn("Backup ▾", "Export or import your sound library", () => [
@@ -47124,7 +47181,7 @@ body[data-mode='synth'] #synth {
       item("all", "All"),
       item("fav", "★ Favourites", "", "Every sound you have rated"),
       ...banks.filter((b) => !b.startsWith("f:") && b !== "starter").map((b) => item(b, bankName(b))),
-      ZE.kind === "tone" ? item("factory", "Factory", "zbGrp", fac.length ? "Every factory bank" : "Add them with Grab ▾ › Factory tones") : null,
+      item("factory", "Factory", "zbGrp", fac.length ? "Every factory bank" : "Add them with Grab ▾ › Factory sounds"),
       ...fac.map((b) => item(b, bankName(b), "zbSub")),
       banks.includes("starter") ? item("starter", "Starters") : null
     );
@@ -47148,7 +47205,7 @@ body[data-mode='synth'] #synth {
   }
   function emptyText(all) {
     if (B.bank === "factory" && !all.some((e) => e.src === "factory"))
-      return "Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).";
+      return "Add the factory tones and kits with Grab ▾ › Factory sounds from the MC-707 update file (MC707_UPA_up.bin from Roland).";
     if (B.bank === "mc707" && !all.some((e) => e.src === "mc707"))
       return "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab.";
     return "Nothing matches.";
@@ -50893,7 +50950,7 @@ body[data-mode='synth'] #synth {
         browse: browserOpen,
         ZS,
         libraryJSON,
-        fw: { FW_REC, fwFields, newSound },
+        fw: { FW_REC, fwFields, FW_KIT_REC, fwKitFields, newSound },
         get ZE() {
           return ZE;
         }

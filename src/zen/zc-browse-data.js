@@ -51,7 +51,8 @@ export function bankName(id, short) {
   if (id.startsWith('f:')) {
     const l = id.slice(2);
     if (l === '?') return 'Factory';
-    return short ? 'PRST_' + l : 'PRST_' + l + ' ' + (FW_BANK_NAMES[l] || 'Factory');
+    const tag = l[0] === 'K' ? 'KIT_' + l.slice(1) : 'PRST_' + l;
+    return short ? tag : tag + ' ' + (FW_BANK_NAMES[l] || 'Factory');
   }
   return SRC_NAME[id] || id;
 }

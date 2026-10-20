@@ -145,6 +145,7 @@ import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
 import { browserOpen } from './zen/zc-browser.js';
 import { ZS, libraryJSON } from './zen/zc-sounds.js';
 import { FW_REC, fwFields } from './zen/zc-factory.js';
+import { FW_KIT_REC, fwKitFields } from './zen/zc-factory-kits.js';
 import { newSound } from './zen/zc-tone.js';
 import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
@@ -226,7 +227,7 @@ PROJ.t = projTitle;
       browse: browserOpen,
       ZS,
       libraryJSON,
-      fw: { FW_REC, fwFields, newSound },
+      fw: { FW_REC, fwFields, FW_KIT_REC, fwKitFields, newSound },
       get ZE() {
         return ZE;
       }
