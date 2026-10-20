@@ -117,6 +117,13 @@ The MC-707 system update (`MC707_UPA_up.bin`) holds every preset tone as a 1632-
 name, then the same blocks as the tone's SysEx layout (common, MFX, partial mix, 4 partials, the
 envelopes, LFOs, EQ, and the analog-style blocks) at their own offsets, with bytes, signed bytes and
 16-bit words aligned C-style. `src/zen/zc-factory.js` has the field table; it was checked against
-tones read back from an MC-707 over SysEx (every value matched) and every record in the file decodes
+tones read back from an MC-707 over SysEx (16 tones; every value matched) and every record in the file decodes
 inside the parameter ranges. The app reads the file the user picks, on their computer; no Roland data
-is in this repo. Drum kits are not decoded yet.
+is in this repo.
+
+The file holds the drum kits too (3328-byte records: kit common, MFX at 28, 6 compressors at 112,
+88 keys of 20 bytes at 160, each key's EQ at 1920; checked against 6 kits read from an MC-707), but
+the app does not load them: a kit key plays a copy of one of the file's 711 drum instruments, and the
+MC-707 ignores a new instrument number sent over SysEx (by hand in the editor too), while the key's
+other settings change. The copied instrument data is not in the kit's SysEx address space (a full
+read of a kit slot only answers where the parameter tables say).
