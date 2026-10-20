@@ -143,7 +143,9 @@ import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
 import { browserOpen } from './zen/zc-browser.js';
-import { ZS } from './zen/zc-sounds.js';
+import { ZS, libraryJSON } from './zen/zc-sounds.js';
+import { FW_REC, fwFields } from './zen/zc-factory.js';
+import { newSound } from './zen/zc-tone.js';
 import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
@@ -223,6 +225,8 @@ PROJ.t = projTitle;
       sendAll: zeSendAll,
       browse: browserOpen,
       ZS,
+      libraryJSON,
+      fw: { FW_REC, fwFields, newSound },
       get ZE() {
         return ZE;
       }

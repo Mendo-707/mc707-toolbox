@@ -195,6 +195,43 @@ export async function soundAdd(snd, meta = {}) {
   ZS.list.unshift(e);
   return e;
 }
+/**
+ * Add many sounds in one go (one store write): [{snd, name, src}]. Sounds already in the library are
+ * skipped. Returns how many were added.
+ */
+export async function soundAddMany(items) {
+  const seen = new Set(ZS.list.map(e => e.h)),
+    at = Date.now(),
+    add = [];
+  items.forEach(({ snd, name, src }, i) => {
+    const d = diffOf(snd),
+      h = hashOf(snd.kind, d);
+    if (seen.has(h)) return;
+    seen.add(h);
+    const nm = (name || snd.v['CMN.NAME'] || snd.v['KCMN.NAME'] || 'Untitled').trim();
+    add.push({
+      id: 's' + at.toString(36) + '_' + i.toString(36),
+      at: at - i,
+      kind: snd.kind,
+      name: nm,
+      type: typeOf(snd, nm),
+      tags: [],
+      src: src || 'mine',
+      h,
+      d
+    });
+  });
+  await tx('readwrite', s => add.forEach(e => s.put(e)));
+  ZS.list = [...ZS.list, ...add].sort((a, b) => b.at - a.at);
+  return add.length;
+}
+/** Remove every sound from one source ('factory', say). Returns how many went. */
+export async function soundsRemoveSrc(src) {
+  const gone = ZS.list.filter(e => e.src === src);
+  ZS.list = ZS.list.filter(e => e.src !== src);
+  await tx('readwrite', s => gone.forEach(e => s.delete(e.id)));
+  return gone.length;
+}
 export async function soundUpdate(id, patch) {
   const e = ZS.list.find(x => x.id === id);
   if (!e) return;
@@ -213,9 +250,14 @@ export function toggleFav(id) {
   else ZS.favs.add(id);
   saveFavs();
 }
-/** The whole library as a backup file's JSON. */
+/** The whole library as a backup file's JSON (without the factory tones: those come from your own update file). */
 export const libraryJSON = () =>
-  JSON.stringify({ app: 'mc707-toolbox', sounds: 1, favs: [...ZS.favs], list: ZS.list.map(({ h, ...e }) => e) });
+  JSON.stringify({
+    app: 'mc707-toolbox',
+    sounds: 1,
+    favs: [...ZS.favs],
+    list: ZS.list.filter(e => e.src !== 'factory').map(({ h, ...e }) => e)
+  });
 /** Add the sounds from a backup file. Returns {added, same}. */
 export async function libraryImport(text) {
   const o = JSON.parse(text);

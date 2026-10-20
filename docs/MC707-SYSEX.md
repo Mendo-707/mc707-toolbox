@@ -105,3 +105,14 @@ number from outside; read the tone from a clip instead.
 The [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html)
 reads a clip's whole tone or kit and shows what came back. It only sends read requests and the
 identity request, so it can't change anything on the device.
+
+## Factory tones in the system update file
+
+The MC-707 system update (`MC707_UPA_up.bin`) holds every preset tone as a 1632-byte record
+(0x660), back to back in a few runs. A record is a little-endian C struct, not SysEx: the 16-byte
+name, then the same blocks as the tone's SysEx layout (common, MFX, partial mix, 4 partials, the
+envelopes, LFOs, EQ, and the analog-style blocks) at their own offsets, with bytes, signed bytes and
+16-bit words aligned C-style. `src/zen/zc-factory.js` has the field table; it was checked against
+tones read back from an MC-707 over SysEx (every value matched) and every record in the file decodes
+inside the parameter ranges. The app reads the file the user picks, on their computer; no Roland data
+is in this repo. Drum kits are not decoded yet.

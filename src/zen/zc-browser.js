@@ -16,6 +16,7 @@ import { ZX, slotAddr, zxConnect } from './zc-sysex.js';
 import { newSound, readSound } from './zc-tone.js';
 import { starterMenu } from './zc-starters-more.js';
 import { ZE, audition, zeLoad } from './zc-editor.js';
+import { factoryItems } from './zc-factory-ui.js';
 import {
   GENRE_TAGS,
   TYPES,
@@ -40,9 +41,10 @@ const SRC = [
   ['fav', '★ Favourites'],
   ['mine', 'Saved'],
   ['mc707', 'From the MC-707'],
+  ['factory', 'Factory'],
   ['starter', 'Starters']
 ];
-const SRC_LABEL = { mine: 'Saved', mc707: 'MC-707', starter: 'Starter', file: 'Imported' };
+const SRC_LABEL = { mine: 'Saved', mc707: 'MC-707', starter: 'Starter', file: 'Imported', factory: 'Factory' };
 
 /* the starters as browser entries (made once) */
 let STARTS = null;
@@ -375,9 +377,11 @@ function render() {
         el(
           'p',
           { class: 'hint zbEmpty' },
-          all.length > starters().length || B.src !== 'mc707'
-            ? 'Nothing matches.'
-            : 'Nothing grabbed yet. Pick sounds into clips on the ' + DEVS[DEV].name + ', then use Grab.'
+          B.src === 'factory' && !all.some(e => e.src === 'factory')
+            ? 'Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).'
+            : all.length > starters().length || B.src !== 'mc707'
+              ? 'Nothing matches.'
+              : 'Nothing grabbed yet. Pick sounds into clips on the ' + DEVS[DEV].name + ', then use Grab.'
         )
       );
     l.forEach(e => box.append(row(e)));
@@ -420,7 +424,10 @@ function render() {
                     showMenu(rr.left, rr.bottom + 4, [
                       { label: 'This clip', action: () => grab('clip') },
                       { label: 'All 16 clips of track ' + devNum(ZE.t), action: () => grab('track') },
-                      { label: 'Every clip of every track', action: () => grab('all') }
+                      { label: 'Every clip of every track', action: () => grab('all') },
+                      ...(ZE.kind === 'tone'
+                        ? ['-', ...factoryItems(n => ((B.src = n ? 'factory' : B.src), render()))]
+                        : [])
                     ]);
                   }
                 },
