@@ -46155,7 +46155,7 @@ body[data-mode='synth'] #synth {
       0,
       1,
       0,
-      "NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:36b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b"
+      "NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:37b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b"
     ],
     [
       "MFX",
@@ -46290,8 +46290,8 @@ body[data-mode='synth'] #synth {
     C: "Synth Legend",
     D: "Basic Synth",
     E: "XV Collection",
-    KA: "ZEN-Core Kits",
-    KB: "MC-707 Kits"
+    KA: "MC-707 Kits",
+    KB: "ZEN-Core Kits"
   };
   function fwTones(b) {
     const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
@@ -46346,7 +46346,7 @@ body[data-mode='synth'] #synth {
     return true;
   }
   var fwKit = (b, o) => decodeAt("kit", fwKitFields(), b, o);
-  var BANKS2 = { "Standard Kit": "KA", "TR-909 3": "KB" };
+  var BANKS2 = { "TR-909 3": "KA", "Standard Kit": "KB" };
   function fwKits(b) {
     const out2 = [];
     let next = "C";

@@ -117,7 +117,7 @@ The MC-707 system update (`MC707_UPA_up.bin`) holds every preset tone as a 1632-
 name, then the same blocks as the tone's SysEx layout (common, MFX, partial mix, 4 partials, the
 envelopes, LFOs, EQ, and the analog-style blocks) at their own offsets, with bytes, signed bytes and
 16-bit words aligned C-style. `src/zen/zc-factory.js` has the field table; it was checked against
-tones read back from an MC-707 over SysEx (every value matched) and every record in the file decodes
+tones read back from an MC-707 over SysEx (16 tones and 6 kits, every value matched) and every record in the file decodes
 inside the parameter ranges. The app reads the file the user picks, on their computer; no Roland data
 is in this repo.
 

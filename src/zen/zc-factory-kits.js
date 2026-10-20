@@ -52,11 +52,11 @@ function looksLikeKit(b, o) {
 export const fwKit = (b, o) => decodeAt('kit', fwKitFields(), b, o);
 
 /* the kit lists, known by their first kit */
-const BANKS = { 'Standard Kit': 'KA', 'TR-909 3': 'KB' };
+const BANKS = { 'TR-909 3': 'KA', 'Standard Kit': 'KB' };
 
 /**
  * The factory kits in an update file: [{name, snd, bank, no}], in runs of at least 4 kits back to back.
- * bank: KA (the ZEN-Core kits), KB (the MC-707's own), then KC on for any others; no from 1.
+ * bank: KA (the MC-707's own kits), KB (the ZEN-Core kits: B-48 is TR-808), then KC on; no from 1.
  * @param {Uint8Array} b
  */
 export function fwKits(b) {
