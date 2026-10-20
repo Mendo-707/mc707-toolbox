@@ -100,6 +100,10 @@ parameters; nothing in the tone's 32 KB slot or in the project area
 selects scenes and clips, bank select is not listed), there is no known way to load a factory tone by
 number from outside; read the tone from a clip instead.
 
+The track's own sound (Sound Source TRACK) is the same: changing it between A-005, A-006 and B-120
+left every byte of the project area unchanged. Each track's settings start with `57 40 00` (bank select
+87, 64, as Roland numbers its preset bank), but those bytes stay put whatever the track plays.
+
 ## Checking a device
 
 The [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html)
