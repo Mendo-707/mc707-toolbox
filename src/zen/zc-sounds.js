@@ -3,12 +3,13 @@
 // IndexedDB (room for thousands; only the values that differ from Roland's initial sound are stored),
 // with a backup file to export and import. The older My sounds list moves in on first use.
 //
-// Owns: ZS (the library in memory), the 'mc707-sounds' IndexedDB, localStorage 'mc707-zen-favs'.
+// Owns: ZS (the library in memory), the 'mc707-sounds' IndexedDB, localStorage 'mc707-zen-favs' and
+// 'mc707-zen-ratings' (0-3 stars by id; a rated sound is a favourite).
 // Reads: localStorage 'mc707-zen' (My sounds, once).
 import { ZC_CATEGORIES } from './zc-data.js';
 import { newSound, soundFrom } from './zc-tone.js';
 
-export const ZS = { list: [], ready: false, favs: new Set() };
+export const ZS = { list: [], ready: false, favs: new Set(), rate: {} };
 /** Instrument types: [id, label, ZenCore categories, words in a name]. */
 export const TYPES = [
   [
@@ -145,14 +146,29 @@ async function tx(mode, fn) {
 const saveFavs = () => {
   try {
     localStorage.setItem('mc707-zen-favs', JSON.stringify([...ZS.favs]));
+    localStorage.setItem('mc707-zen-ratings', JSON.stringify(ZS.rate));
   } catch (e) {}
 };
+/** A sound's star rating, 0-3 (a favourite starred before ratings counts as 3). */
+export const ratingOf = id => ZS.rate[id] || (ZS.favs.has(id) ? 3 : 0);
+/** Rate a sound 0-3 stars; rated sounds are the favourites. */
+export function setRating(id, n) {
+  if (n > 0) {
+    ZS.rate[id] = n;
+    ZS.favs.add(id);
+  } else {
+    delete ZS.rate[id];
+    ZS.favs.delete(id);
+  }
+  saveFavs();
+}
 
 /** Load the library (once), moving the older My sounds in. */
 export async function soundsLoad() {
   if (ZS.ready) return ZS.list;
   try {
     ZS.favs = new Set(JSON.parse(localStorage.getItem('mc707-zen-favs') || '[]'));
+    ZS.rate = JSON.parse(localStorage.getItem('mc707-zen-ratings') || '{}') || {};
   } catch (e) {}
   const all = (await tx('readonly', s => s.getAll())) || [];
   ZS.list = all.filter(e => e && e.id && e.d).sort((a, b) => b.at - a.at);
@@ -195,6 +211,44 @@ export async function soundAdd(snd, meta = {}) {
   ZS.list.unshift(e);
   return e;
 }
+/**
+ * Add many sounds in one go (one store write): [{snd, name, src, bank?, no?}] (bank and no: a factory
+ * tone's bank letter and number). Sounds already in the library are skipped. Returns how many were added.
+ */
+export async function soundAddMany(items) {
+  const seen = new Set(ZS.list.map(e => e.h)),
+    at = Date.now(),
+    add = [];
+  items.forEach(({ snd, name, src, bank, no }, i) => {
+    const d = diffOf(snd),
+      h = hashOf(snd.kind, d);
+    if (seen.has(h)) return;
+    seen.add(h);
+    const nm = (name || snd.v['CMN.NAME'] || snd.v['KCMN.NAME'] || 'Untitled').trim();
+    add.push({
+      id: 's' + at.toString(36) + '_' + i.toString(36),
+      at: at - i,
+      kind: snd.kind,
+      name: nm,
+      type: typeOf(snd, nm),
+      tags: [],
+      src: src || 'mine',
+      ...(bank ? { bank, no } : {}),
+      h,
+      d
+    });
+  });
+  await tx('readwrite', s => add.forEach(e => s.put(e)));
+  ZS.list = [...ZS.list, ...add].sort((a, b) => b.at - a.at);
+  return add.length;
+}
+/** Remove every sound from one source ('factory', say). Returns how many went. */
+export async function soundsRemoveSrc(src) {
+  const gone = ZS.list.filter(e => e.src === src);
+  ZS.list = ZS.list.filter(e => e.src !== src);
+  await tx('readwrite', s => gone.forEach(e => s.delete(e.id)));
+  return gone.length;
+}
 export async function soundUpdate(id, patch) {
   const e = ZS.list.find(x => x.id === id);
   if (!e) return;
@@ -204,18 +258,23 @@ export async function soundUpdate(id, patch) {
 export async function soundDelete(id) {
   ZS.list = ZS.list.filter(x => x.id !== id);
   ZS.favs.delete(id);
+  delete ZS.rate[id];
   saveFavs();
   await tx('readwrite', s => s.delete(id));
 }
 /** Star or unstar (library entries and starters alike, by id). */
 export function toggleFav(id) {
-  if (ZS.favs.has(id)) ZS.favs.delete(id);
-  else ZS.favs.add(id);
-  saveFavs();
+  setRating(id, ZS.favs.has(id) ? 0 : 3);
 }
-/** The whole library as a backup file's JSON. */
+/** The whole library as a backup file's JSON (without the factory tones: those come from your own update file). */
 export const libraryJSON = () =>
-  JSON.stringify({ app: 'mc707-toolbox', sounds: 1, favs: [...ZS.favs], list: ZS.list.map(({ h, ...e }) => e) });
+  JSON.stringify({
+    app: 'mc707-toolbox',
+    sounds: 1,
+    favs: [...ZS.favs],
+    ratings: ZS.rate,
+    list: ZS.list.filter(e => e.src !== 'factory').map(({ h, ...e }) => e)
+  });
 /** Add the sounds from a backup file. Returns {added, same}. */
 export async function libraryImport(text) {
   const o = JSON.parse(text);
@@ -234,7 +293,8 @@ export async function libraryImport(text) {
     });
     if (r) {
       added++;
-      if ((o.favs || []).includes(e.id)) ZS.favs.add(r.id);
+      const n = (o.ratings && o.ratings[e.id]) || ((o.favs || []).includes(e.id) ? 3 : 0);
+      if (n) setRating(r.id, n);
     } else same++;
   }
   saveFavs();

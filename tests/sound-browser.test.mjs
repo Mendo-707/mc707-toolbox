@@ -120,7 +120,7 @@ test('Sound browser: the older My sounds list moves into the library once', asyn
   const { page, errors } = await openApp({ storage: { 'mc707-zen': JSON.stringify(old) } });
   await page.evaluate('window.__app.zen.open(3, 0)');
   await page.evaluate('window.__app.zen.browse()');
-  await page.locator('#zbOv .zbChip', { hasText: 'Saved' }).click();
+  await page.locator('#zbOv .zbChip', { hasText: 'My sounds' }).click();
   await page.locator('#zbOv .zbItem', { hasText: 'Old bass' }).waitFor();
   const e = await page.evaluate("window.__app.zen.ZS.list.find(x => x.name === 'Old bass')");
   assert.equal(e.type, 'bass', 'its type comes from its name');
@@ -128,7 +128,7 @@ test('Sound browser: the older My sounds list moves into the library once', asyn
   assert.deepEqual(errors, []);
 });
 
-test('loading a sound sends only what changed, and leaves the effect type alone when it is the same', async () => {
+test('loading a sound sends the whole sound, even the same one again (the clip may hold something else)', async () => {
   const { page, errors } = await openApp();
   const z = 'window.__app.zen';
   await page.evaluate(`${z}.open(3, 0)`);
@@ -148,8 +148,8 @@ test('loading a sound sends only what changed, and leaves the effect type alone 
   const other = await load('Juno pad');
   console.log({ first, again, other });
   assert.ok(first > 0, 'the first load is sent');
-  assert.equal(again, 0, 'loading the same sound again sends nothing');
-  assert.ok(other > 0 && other < first + 200, 'another pad sends only its differences');
+  assert.ok(again >= first - 50, 'loading the same sound again sends it all again');
+  assert.ok(other >= first - 200, 'another pad is sent whole too');
   assert.deepEqual(errors, []);
 });
 
@@ -179,6 +179,12 @@ test('loading a sound mutes the track until it is written (no half-written sound
     out.slice(mute, back).some(b => b[0] === (0xb0 | ch) && b[1] === 120),
     'and any tail cut first'
   );
+  /* the MC-707 only rebuilds the voice when the clip is selected again: hop to clip 2 and back to 1, muted */
+  const pcs = out
+    .map((b, i) => [b, i])
+    .filter(([b, i]) => b[0] === (0xc0 | ch) && i > writes[writes.length - 1] && i < back)
+    .map(([b]) => b[1]);
+  assert.deepEqual(pcs, [1, 0], 'the clip is re-selected before the track comes back');
   /* an empty clip (the initial tone) is not grabbed */
   await page.fill('#zbQ', 'Init tone');
   await page.locator('#zbOv .zbItem', { hasText: 'Init tone' }).first().click();

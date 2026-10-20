@@ -5044,8 +5044,9 @@ input[type='number'] {
   z-index: 9500;
 }
 .zbBox {
-  max-width: 980px;
-  height: min(86vh, 860px);
+  max-width: 1280px;
+  width: min(96vw, 1280px);
+  height: min(90vh, 900px);
 }
 .zbHead {
   display: flex;
@@ -5118,17 +5119,144 @@ input[type='number'] {
   border-radius: 6px;
   background: var(--zc-well);
 }
+/* ZENOLOGY-style: banks | categories | table */
+.zbPanes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 210px 200px minmax(0, 1fr);
+  gap: 8px;
+}
+.zbBanks,
+.zbCats {
+  overflow-y: auto;
+  background: var(--zc-well);
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.zbBanks h4,
+.zbCats h4 {
+  margin: 2px 4px 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--zc-dim);
+}
+.zbBanks .zbChip,
+.zbCt {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+  border: 0;
+  background: none;
+  padding: 4px 7px;
+  font: inherit;
+  font-size: 13px;
+  color: #c9f7d5;
+  cursor: pointer;
+}
+.zbBanks .zbChip span,
+.zbCt span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbBanks .zbChip i,
+.zbCt i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--zc-dim);
+}
+.zbBanks .zbChip:hover,
+.zbCt:hover {
+  background: #0c1a10;
+}
+.zbBanks .zbChip.on,
+.zbCt.on {
+  background: var(--zc-acc);
+  color: #000;
+}
+.zbBanks .zbChip.on i,
+.zbCt.on i {
+  color: #00320f;
+}
+.zbBk.zbGrp {
+  margin-top: 6px;
+  font-weight: 700;
+}
+.zbBk.zbSub {
+  padding-left: 18px;
+}
+.zbCt {
+  padding-left: 16px;
+}
+.zbCt.zbCg {
+  padding-left: 7px;
+  margin-top: 4px;
+  font-weight: 700;
+}
+.zbMain {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .zbList {
   flex: 1;
   overflow-y: auto;
-  border-top: 1px solid var(--zc-line);
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  outline: none;
 }
+.zbList:focus-visible {
+  border-color: var(--zc-acc);
+}
+.zbTh,
 .zbItem {
   display: grid;
-  grid-template-columns: 28px minmax(120px, 2fr) minmax(90px, 1.2fr) minmax(0, 1.5fr) 70px 34px 30px;
+  grid-template-columns: 66px 70px 44px minmax(120px, 2fr) minmax(90px, 1.1fr) minmax(0, 1fr) 30px 26px;
   align-items: center;
   gap: 6px;
-  padding: 4px 4px;
+  padding: 3px 6px;
+}
+.zbTh {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--zc-dim);
+  border-bottom: 1px solid var(--zc-line);
+}
+.zbTh button,
+.zbTh span {
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.zbTh button {
+  cursor: pointer;
+}
+.zbTh button.on,
+.zbTh button:hover {
+  color: var(--zc-acc);
+}
+.zbItem {
   border-bottom: 1px solid #0d1a11;
   cursor: pointer;
 }
@@ -5139,19 +5267,30 @@ input[type='number'] {
   background: #0c2414;
   box-shadow: inset 3px 0 0 var(--zc-acc);
 }
+.zbItem.cur .zbNm {
+  color: var(--zc-acc);
+}
 .zbNm {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.zbTy,
-.zbTg,
-.zbSrc {
+.zbBank,
+.zbNo,
+.zbCat,
+.zbTg {
   font-size: 12px;
   color: var(--zc-dim);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbNo {
+  font-variant-numeric: tabular-nums;
+}
+.zbRate {
+  display: flex;
   white-space: nowrap;
 }
 .zbStar,
@@ -5162,26 +5301,60 @@ input[type='number'] {
   border: 0;
   color: var(--zc-dim);
   cursor: pointer;
-  padding: 2px;
+  padding: 1px;
+}
+.zbStar {
+  font-size: 14px;
+  line-height: 1;
 }
 .zbStar.on {
   color: #ffd84a;
+}
+.zbStar:hover {
+  color: #ffe98c;
 }
 .zbPlay {
   color: var(--zc-acc);
   border: 1px solid var(--zc-line);
   border-radius: 4px;
 }
+.zbTh .zbPlay {
+  border: 0;
+}
 .zbEmpty {
-  padding: 16px 4px;
+  padding: 16px 8px;
+}
+@media (max-width: 980px) {
+  .zbPanes {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .zbCats {
+    display: none;
+  }
 }
 @media (max-width: 640px) {
-  .zbItem {
-    grid-template-columns: 28px minmax(0, 1fr) 34px 30px;
+  .zbPanes {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .zbTy,
-  .zbTg,
-  .zbSrc {
+  .zbBanks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: 90px;
+  }
+  .zbBanks .zbChip {
+    width: auto;
+  }
+  .zbBanks h4 {
+    display: none;
+  }
+  .zbTh,
+  .zbItem {
+    grid-template-columns: 50px minmax(0, 1fr) 30px 26px;
+  }
+  .zbBank,
+  .zbNo,
+  .zbCat,
+  .zbTg {
     display: none;
   }
 }
@@ -16738,13 +16911,13 @@ body[data-mode='synth'] #synth {
             if (r2.top - dy < 6) dy = r2.top - 6;
             sm.style.top = -5 - dy + "px";
           });
-          const row2 = el(
+          const row = el(
             "div",
             {
               class: "cmi sub",
               onclick: (e) => {
                 e.stopPropagation();
-                row2.classList.toggle("open");
+                row.classList.toggle("open");
                 fit();
               },
               onmouseenter: () => fit()
@@ -16754,8 +16927,8 @@ body[data-mode='synth'] #synth {
           );
           const sm = el("div", { class: "cmenu subm" });
           build(it.sub, sm);
-          row2.append(sm);
-          host.append(row2);
+          row.append(sm);
+          host.append(row);
           return;
         }
         host.append(
@@ -16836,9 +17009,9 @@ body[data-mode='synth'] #synth {
   function cmScreen(map, kk) {
     const tracks2 = DEVS[DEV].tracks, N = tracks2.length, page = kk >= 8 ? 1 : 0, m = map[CMAP.t], tr = S.tracks[CMAP.t], ty = m.types[kk];
     const g = el("div", { class: "cmLcd", style: "--cols:" + N });
-    const at2 = (node, col, row2, cs, rs) => {
+    const at2 = (node, col, row, cs, rs) => {
       node.style.gridColumn = col + (cs ? " / span " + cs : "");
-      node.style.gridRow = row2 + (rs ? " / span " + rs : "");
+      node.style.gridRow = row + (rs ? " / span " + rs : "");
       g.append(node);
       return node;
     };
@@ -19647,12 +19820,12 @@ body[data-mode='synth'] #synth {
           t.cc = t.cc || {};
           t.cc[m.n] = v;
           out2.textContent = String(v);
-          row2.classList.add("set");
+          row.classList.add("set");
           sendCC(MCT.t, m.n, v);
           scheduleSave();
         }
       });
-      const row2 = el(
+      const row = el(
         "div",
         { class: "mrow" + (set ? " set" : "") },
         el("span", { class: "mn" }, m.name, el("small", {}, "CC " + m.n)),
@@ -19675,7 +19848,7 @@ body[data-mode='synth'] #synth {
           "↺"
         )
       );
-      g.append(row2);
+      g.append(row);
     });
     b.append(g);
     b.append(
@@ -20837,7 +21010,7 @@ body[data-mode='synth'] #synth {
         ),
         star
       );
-      const row2 = el(
+      const row = el(
         "div",
         {
           class: "li" + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? " armed" : "") + (UI.view && UI.view.srcId === it.id && UI.view.kind === it.kind ? " viewing" : ""),
@@ -20874,7 +21047,7 @@ body[data-mode='synth'] #synth {
         el("div", { class: "t" }, el("b", {}, m.name), el("small", {}, meta), tags),
         acts
       );
-      list.append(row2);
+      list.append(row);
     }
     if (items.length > UI.libLimit)
       list.append(
@@ -21209,8 +21382,8 @@ body[data-mode='synth'] #synth {
       if (UI.arm && !CDRAG && e.target.closest(".lane")) {
         const meta = metaOf(UI.arm);
         if (!meta) return;
-        const row2 = rowFromY(e.clientY);
-        showGhost(row2, Math.max(0, barFromX(e.clientX)), meta.bars, S.tracks[row2].type === meta.type);
+        const row = rowFromY(e.clientY);
+        showGhost(row, Math.max(0, barFromX(e.clientX)), meta.bars, S.tracks[row].type === meta.type);
       }
     });
     inner.addEventListener("pointerleave", () => {
@@ -21221,9 +21394,9 @@ body[data-mode='synth'] #synth {
       e.preventDefault();
       const meta = metaOf(DRAG);
       if (!meta) return;
-      const row2 = rowFromY(e.clientY);
-      const ok = S.tracks[row2].type === meta.type;
-      showGhost(row2, Math.max(0, barFromX(e.clientX)), meta.bars, ok);
+      const row = rowFromY(e.clientY);
+      const ok = S.tracks[row].type === meta.type;
+      showGhost(row, Math.max(0, barFromX(e.clientX)), meta.bars, ok);
       e.dataTransfer.dropEffect = ok ? "copy" : "none";
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
       if (e.clientX > ar.right - 60) ae.scrollLeft += 28;
@@ -21345,8 +21518,8 @@ body[data-mode='synth'] #synth {
       } else {
         d.ns = Math.max(0, qBar(sb(d.start + dx / bw)));
         d.nl = d.len;
-        const row2 = rowFromY(ev.clientY);
-        d.nt = S.tracks[row2].type === S.tracks[d.t].type ? row2 : d.t;
+        const row = rowFromY(ev.clientY);
+        d.nt = S.tracks[row].type === S.tracks[d.t].type ? row : d.t;
       }
       showGhost(d.nt, d.ns, d.nl, true);
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
@@ -21416,7 +21589,7 @@ body[data-mode='synth'] #synth {
   function clipOptionsEl(c, p, isDrum) {
     const clipOpt = el("details", { class: "clipopt" }, el("summary", { class: "btn sm" }, "Clip options"));
     const panel = el("div", { class: "clippanel" });
-    const row2 = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
+    const row = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
     const muteBtn = el(
       "button",
       {
@@ -21431,8 +21604,8 @@ body[data-mode='synth'] #synth {
       },
       c.mute ? "Muted" : "Mute clip"
     );
-    panel.append(row2("Mute", muteBtn));
-    const stepIn = (label2, val, min, fn, title) => row2(
+    panel.append(row("Mute", muteBtn));
+    const stepIn = (label2, val, min, fn, title) => row(
       label2,
       el("input", {
         type: "number",
@@ -21484,7 +21657,7 @@ body[data-mode='synth'] #synth {
       });
       for (let v = -12; v <= 12; v++)
         ts.append(el("option", { value: v, selected: (c.tr || 0) === v }, (v > 0 ? "+" : "") + v + " semitones"));
-      panel.append(row2("Transpose (this clip only)", ts));
+      panel.append(row("Transpose (this clip only)", ts));
     }
     {
       const mm = cmFix()[c.t], ps = el(
@@ -21511,10 +21684,10 @@ body[data-mode='synth'] #synth {
               k2 < mm.n ? cmLabel(c.t, k2) : "Clip " + (k2 + 1) + " (not set up)"
             )
           );
-      panel.append(row2("Launch " + devNm() + " clip", ps));
+      panel.append(row("Launch " + devNm() + " clip", ps));
     }
     panel.append(
-      row2(
+      row(
         "Velocity %",
         el("input", {
           type: "number",
@@ -21565,7 +21738,7 @@ body[data-mode='synth'] #synth {
               "Bars " + (i + 1) + "–" + (i + 2)
             )
           );
-      panel.append(row2("Pattern preview loop", ar));
+      panel.append(row("Pattern preview loop", ar));
     }
     panel.append(
       el(
@@ -23407,13 +23580,13 @@ body[data-mode='synth'] #synth {
     const r = $("#rows").getBoundingClientRect();
     return clamp(Math.floor((clientY - r.top) / ROWH), 0, 7);
   }
-  function showGhost(row2, bar2, len, ok) {
+  function showGhost(row, bar2, len, ok) {
     const g = $("#ghost");
     if (!g) return;
     g.style.display = "block";
     g.style.left = HEAD + bar2 * bw + "px";
     g.style.width = len * bw - 2 + "px";
-    g.style.top = row2 * ROWH + 4 + (row2 >= 3 ? 3 : 0) + "px";
+    g.style.top = row * ROWH + 4 + (row >= 3 ? 3 : 0) + "px";
     g.style.height = ROWH - 8 + "px";
     g.classList.toggle("bad", !ok);
   }
@@ -26283,13 +26456,13 @@ body[data-mode='synth'] #synth {
     list.forEach((m) => {
       const gf = FAC.find((f) => f.gen && f.styles && f.styles.includes(m.id));
       const genre = m.genre || (gf ? gf.genre : "house");
-      const pools = {}, more = {};
+      const pools = {}, more2 = {};
       ["kit", "hats", "perc", "fill", "intro", "bass", "chords", "pad", "lead", "pluck"].forEach((pool) => {
         const all = FAC.filter((f) => f.gen && f.pool === pool && f.styles.includes(m.id)).map((f) => f.id);
         pools[pool] = all.slice(0, 10);
-        more[pool] = all;
+        more2[pool] = all;
       });
-      STYLES.push({ ...m, genre, pools, more, ...m.genre ? { _genre: m.genre } : {} });
+      STYLES.push({ ...m, genre, pools, more: more2, ...m.genre ? { _genre: m.genre } : {} });
       SHORT[m.id] = m.name;
     });
   })();
@@ -26370,7 +26543,7 @@ body[data-mode='synth'] #synth {
       const K = kinds[sec.kind];
       const cells = {};
       for (let t = 0; t < 8; t++) {
-        const sl = slotOf(t), row2 = K.rows[sl], spec = row2 && poolOf(t) === "acid" ? row2.replace(/^[a-z]+/, "acid") : row2;
+        const sl = slotOf(t), row = K.rows[sl], spec = row && poolOf(t) === "acid" ? row.replace(/^[a-z]+/, "acid") : row;
         if (!spec || !w.layers[t]) continue;
         if (w.complexity === 1 && (sl === 2 || sl === 7)) continue;
         const pk2 = pickFrom(spec, occ[sec.kind]);
@@ -27140,10 +27313,10 @@ body[data-mode='synth'] #synth {
     ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k2) => o[k2] = s[k2] || g[k2]);
     return o;
   }
-  function customRows(st, r, row2) {
+  function customRows(st, r, row) {
     const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY6 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
-      row2(
+      row(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
         r.drums,
         TRACK_COLORS[drums2[0]]
@@ -27151,13 +27324,13 @@ body[data-mode='synth'] #synth {
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
       const k2 = poolOf(t) === "acid" ? "bass" : KEY6[slotOf(t)];
-      out2.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
+      out2.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
   }
   function soundCard(st) {
     const r = soundRecs(st), is101 = DEV === "101";
-    const row2 = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
+    const row = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
     return el(
       "div",
       { class: "wcard" },
@@ -27170,23 +27343,23 @@ body[data-mode='synth'] #synth {
       is101 ? el(
         "ul",
         {},
-        row2("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
-        row2(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
-        row2(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
-        row2(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
-      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row2)) : el(
+        row("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
+        row(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
+        row(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
+        row(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
+      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row)) : el(
         "ul",
         {},
-        row2(
+        row(
           oneKit() ? "Drum kit (track 1, full kit) and Drums 3 (builds)" : "Drum kits (tracks 1–3)",
           r.drums,
           TRACK_COLORS[0]
         ),
-        row2(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
-        row2(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
-        row2(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
-        row2(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
-        row2(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
+        row(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
+        row(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
+        row(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
+        row(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
+        row(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
       )
     );
   }
@@ -27326,15 +27499,15 @@ body[data-mode='synth'] #synth {
         });
         sel.append(el("option", { value: "", selected: !c.id }, "(empty)"));
         const ids = [...st.pools[c.pool] || []];
-        const more = lvPool(st, c.pool).filter((id) => !ids.includes(id));
-        if (c.id && !ids.includes(c.id) && !more.includes(c.id)) more.unshift(c.id);
+        const more2 = lvPool(st, c.pool).filter((id) => !ids.includes(id));
+        if (c.id && !ids.includes(c.id) && !more2.includes(c.id)) more2.unshift(c.id);
         ids.forEach((id) => {
           const f2 = facById(id);
           sel.append(el("option", { value: id, selected: id === c.id }, f2.name));
         });
-        if (more.length) {
-          const og = el("optgroup", { label: "More patterns (" + more.length + ")" });
-          more.forEach((id) => {
+        if (more2.length) {
+          const og = el("optgroup", { label: "More patterns (" + more2.length + ")" });
+          more2.forEach((id) => {
             const f2 = facById(id);
             og.append(el("option", { value: id, selected: id === c.id }, f2.name));
           });
@@ -29701,7 +29874,7 @@ body[data-mode='synth'] #synth {
     return true;
   }
   var LV_KEYROWS = ["qwertyui", "asdfghjk"];
-  var lvPadIndex = (row2, col) => LV.padFlip ? (1 - row2) * 8 + col : row2 * 8 + col;
+  var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
   function lvKeyPad(e) {
     const k2 = e.key.toLowerCase();
     for (let r = 0; r < 2; r++) {
@@ -32992,11 +33165,11 @@ body[data-mode='synth'] #synth {
         if (t === trackOf(0) && oneKit() && set !== "R") pool = "full";
         if (!id) id = sets[set === "R" ? "A" : set][t];
         if (!id || !facById(id)) continue;
-        let play = play0;
+        let play2 = play0;
         if (S.tracks[t].type === "tone" && r() < 0.25)
-          play = play ? r() < 0.5 ? null : play : MOVE[Math.floor(r() * MOVE.length)];
+          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE[Math.floor(r() * MOVE.length)];
         cells[t] = { id, pool };
-        if (play) cells[t].play = play;
+        if (play2) cells[t].play = play2;
       }
       if (!Object.keys(cells).length)
         [0, 1, 3].map(trackOf).forEach((t) => {
@@ -34114,7 +34287,7 @@ body[data-mode='synth'] #synth {
     }
     const pendFill = LV.cues.filter((c) => c.type === "fill"), pendSw = LV.cues.filter((c) => c.type === "swap");
     S.tracks.forEach((t, ti) => {
-      const row2 = el("div", {
+      const row = el("div", {
         class: "lvRow" + (devOn(ti) ? "" : " devoff"),
         style: "width:" + (W + 2) * bw2 + "px;--c:" + TRACK_COLORS[ti]
       });
@@ -34126,7 +34299,7 @@ body[data-mode='synth'] #synth {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
           if (sf) {
             const lab = { fill: "Fill", bov: "Build", brk: "Break", imp: "Impact", roll: "Roll" }[c.k];
-            row2.append(
+            row.append(
               el(
                 "div",
                 {
@@ -34144,7 +34317,7 @@ body[data-mode='synth'] #synth {
         const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32), id = s.ids[ti];
         if (!id) {
           if (ovFill)
-            row2.append(
+            row.append(
               el(
                 "div",
                 {
@@ -34165,7 +34338,7 @@ body[data-mode='synth'] #synth {
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
         const label2 = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
-        row2.append(
+        row.append(
           el(
             "div",
             {
@@ -34183,7 +34356,7 @@ body[data-mode='synth'] #synth {
           const k2 = Math.floor(c.tick / 32) - b0;
           if (k2 >= 0 && k2 < W + 2) {
             const nf = facById(c.ids[ti]);
-            row2.append(
+            row.append(
               el(
                 "div",
                 {
@@ -34197,7 +34370,7 @@ body[data-mode='synth'] #synth {
           }
         }
       });
-      inner.append(row2);
+      inner.append(row);
     });
     const cue = LV.cues.filter((c) => c.type === "scene")[0];
     if (cue) {
@@ -35978,9 +36151,9 @@ body[data-mode='synth'] #synth {
           el("option", { value: "mc707", selected: AUD.mixFrom !== "other" }, "the MC-707 (row above)"),
           el("option", { value: "other", selected: AUD.mixFrom === "other" }, "another audio interface")
         );
-        const row2 = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
+        const row = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
         if (AUD.mixFrom === "other") {
-          row2.append(
+          row.append(
             el(
               "label",
               {},
@@ -35996,7 +36169,7 @@ body[data-mode='synth'] #synth {
           );
           const mc2 = AUDREC.caps.mix;
           if (mc2 && mc2.ch > 2)
-            row2.append(
+            row.append(
               el(
                 "label",
                 {},
@@ -36011,7 +36184,7 @@ body[data-mode='synth'] #synth {
               )
             );
         }
-        cn.append(row2);
+        cn.append(row);
       } else {
         cn.append(
           el(
@@ -44601,7 +44774,7 @@ body[data-mode='synth'] #synth {
       nums.push([inp, id]);
       return el("label", { class: "zcEnvN" }, el("span", {}, label2), inp);
     };
-    const row2 = el(
+    const row = el(
       "div",
       { class: "zcEnvNums" },
       ...[1, 2, 3, 4].map((i) => num("T" + i, "Time " + i)),
@@ -44665,7 +44838,7 @@ body[data-mode='synth'] #synth {
       "div",
       { class: "zcEnvBox" },
       svg,
-      row2,
+      row,
       el("div", { class: "zcEnvTools" }, presets, copy),
       el(
         "small",
@@ -45974,8 +46147,172 @@ body[data-mode='synth'] #synth {
     return out2.filter(([, list]) => list.length);
   }
 
+  // src/zen/zc-factory.js
+  var FW_REC = 1632;
+  var FW_MAP = [
+    [
+      "CMN",
+      0,
+      1,
+      0,
+      "NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:36b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b"
+    ],
+    [
+      "MFX",
+      64,
+      1,
+      0,
+      "mfxType:0b mfxSwitch:1b choSend:2b revSend:3b ctrlSrc1:4b ctrlSens1:5c ctrlSrc2:6b ctrlSens2:7c ctrlSrc3:8b ctrlSens3:9c ctrlSrc4:10b ctrlSens4:11c ctrlAsgn_1:12b ctrlAsgn_2:13b ctrlAsgn_3:14b ctrlAsgn_4:15b param_1:16s param_2:18s param_3:20s param_4:22s param_5:24s param_6:26s param_7:28s param_8:30s param_9:32s param_10:34s param_11:36s param_12:38s param_13:40s param_14:42s param_15:44s param_16:46s param_17:48s param_18:50s param_19:52s param_20:54s param_21:56s param_22:58s param_23:60s param_24:62s param_25:64s param_26:66s param_27:68s param_28:70s param_29:72s param_30:74s param_31:76s param_32:78s"
+    ],
+    [
+      "PMT",
+      144,
+      1,
+      0,
+      "VEL_CTRL:4b PMT_LEVEL_CRV:5b PMT1_PTL_SW:8b PMT1_KRANGE_LO:12b PMT1_KRANGE_UP:13b PMT1_KFADE_LO:14b PMT1_KFADE_UP:15b PMT1_VRANGE_LO:16b PMT1_VRANGE_UP:17b PMT1_VFADE_LO:18b PMT1_VFADE_UP:19b PMT2_PTL_SW:20b PMT2_KRANGE_LO:24b PMT2_KRANGE_UP:25b PMT2_KFADE_LO:26b PMT2_KFADE_UP:27b PMT2_VRANGE_LO:28b PMT2_VRANGE_UP:29b PMT2_VFADE_LO:30b PMT2_VFADE_UP:31b PMT3_PTL_SW:32b PMT3_KRANGE_LO:36b PMT3_KRANGE_UP:37b PMT3_KFADE_LO:38b PMT3_KFADE_UP:39b PMT3_VRANGE_LO:40b PMT3_VRANGE_UP:41b PMT3_VFADE_LO:42b PMT3_VFADE_UP:43b PMT4_PTL_SW:44b PMT4_KRANGE_LO:48b PMT4_KRANGE_UP:49b PMT4_KFADE_LO:50b PMT4_KFADE_UP:51b PMT4_VRANGE_LO:52b PMT4_VRANGE_UP:53b PMT4_VFADE_LO:54b PMT4_VFADE_UP:55b"
+    ],
+    [
+      "PTL",
+      200,
+      4,
+      124,
+      "LEVEL:0b PIT_CRS:2c PIT_FINE:3c PIT_RND:4w PAN:6c PAN_KF:7c PAN_RND:8b PAN_ALT:9c ENV_MODE:10b DELAY_MODE:11b DLY_TIME_SYNC:12b DLY_TIME_NOTE:13b DLY_TIME:14w CHO_SEND:16b REV_SEND:17b RX_BEND:18b RX_EXPR:19b RX_HOLD:20b REDAMP_SW:21b OUT_ASGN:22b WAV_GTYPE:23b WAV_GID:24w WAV_NUM_L:26w WAV_NUM_R:28w WAV_GAIN:30b FXM_SW:31b FXM_COLOR:32b FXM_DEPTH:33b PIT_KF:34s SOFT_EQ_SENS:36b FILTER_TYPE:37b CUTOFF:40w CUTOFF_KF:42s CUTOFF_VCRV:44b CUTOFF_VSENS:45c RESO:46w RESO_VSENS:48c BIAS_LEVEL:49c BIAS_POS:50b BIAS_DIR:51b LEVEL_VCRV:52b LEVEL_VSENS:53c PENV_TKF:54c FENV_TKF:55c AENV_TKF:56c VIB_PIT_SENS:57c VIB_CUT_SENS:58c VIB_AMP_SENS:59c MCTL1_SRC:60b MCTL1_DST1:61b MCTL1_SENS1:62c MCTL1_DST2:63b MCTL1_SENS2:64c MCTL1_DST3:65b MCTL1_SENS3:66c MCTL1_DST4:67b MCTL1_SENS4:68c MCTL2_SRC:72b MCTL2_DST1:73b MCTL2_SENS1:74c MCTL2_DST2:75b MCTL2_SENS2:76c MCTL2_DST3:77b MCTL2_SENS3:78c MCTL2_DST4:79b MCTL2_SENS4:80c MCTL3_SRC:84b MCTL3_DST1:85b MCTL3_SENS1:86c MCTL3_DST2:87b MCTL3_SENS2:88c MCTL3_DST3:89b MCTL3_SENS3:90c MCTL3_DST4:91b MCTL3_SENS4:92c MCTL4_SRC:96b MCTL4_DST1:97b MCTL4_SENS1:98c MCTL4_DST2:99b MCTL4_SENS2:100c MCTL4_DST3:101b MCTL4_SENS3:102c MCTL4_DST4:103b MCTL4_SENS4:104c DAMP_FREE:108b STEREO_WIDTH:109b STEREO_DETN:110c DF_DCY_OFST:111c TEMPO_SYNC:112b"
+    ],
+    [
+      "PENV",
+      696,
+      4,
+      24,
+      "DEPTH:0c VSENS:1c T1_VSENS:2c T4_VSENS:3c T1:4w T2:6w T3:8w T4:10w L0:12s L1:14s L2:16s L3:18s L4:20s VCRV:22b"
+    ],
+    [
+      "FENV",
+      792,
+      4,
+      24,
+      "DEPTH:0c VCRV:1b VSENS:2c T1_VSENS:3c T4_VSENS:4c T1:6w T2:8w T3:10w T4:12w L0:14w L1:16w L2:18w L3:20w L4:22w"
+    ],
+    ["AENV", 888, 4, 16, "T1_VSENS:0c T4_VSENS:1c T1:2w T2:4w T3:6w T4:8w L1:10w L2:12w L3:14w"],
+    [
+      "LFO",
+      952,
+      4,
+      104,
+      "LFO1_FORM:0b LFO1_RATE_SYNC:1b LFO1_RATE_NOTE:2b LFO1_STEP_MAX:3b LFO1_RATE:4w LFO1_OFST:6c LFO1_RATE_DETN:7b LFO1_DELAY:8w LFO1_DELAY_KF:10c LFO1_FADE_MODE:11b LFO1_FADE:12w LFO1_KEY_TRIG:14b LFO1_PIT_DEPTH:15c LFO1_TVF_DEPTH:16c LFO1_TVA_DEPTH:17c LFO1_PAN_DEPTH:18c LFO1_PHASE_POS:19b LFO1_STEP_1:20c LFO1_STEP_2:21c LFO1_STEP_3:22c LFO1_STEP_4:23c LFO1_STEP_5:24c LFO1_STEP_6:25c LFO1_STEP_7:26c LFO1_STEP_8:27c LFO1_STEP_9:28c LFO1_STEP_10:29c LFO1_STEP_11:30c LFO1_STEP_12:31c LFO1_STEP_13:32c LFO1_STEP_14:33c LFO1_STEP_15:34c LFO1_STEP_16:35c LFO1_STEP_CURVE_1:36b LFO1_STEP_CURVE_2:37b LFO1_STEP_CURVE_3:38b LFO1_STEP_CURVE_4:39b LFO1_STEP_CURVE_5:40b LFO1_STEP_CURVE_6:41b LFO1_STEP_CURVE_7:42b LFO1_STEP_CURVE_8:43b LFO1_STEP_CURVE_9:44b LFO1_STEP_CURVE_10:45b LFO1_STEP_CURVE_11:46b LFO1_STEP_CURVE_12:47b LFO1_STEP_CURVE_13:48b LFO1_STEP_CURVE_14:49b LFO1_STEP_CURVE_15:50b LFO1_STEP_CURVE_16:51b LFO2_FORM:52b LFO2_RATE_SYNC:53b LFO2_RATE_NOTE:54b LFO2_STEP_MAX:55b LFO2_RATE:56w LFO2_OFST:58c LFO2_RATE_DETN:59b LFO2_DELAY:60w LFO2_DELAY_KF:62c LFO2_FADE_MODE:63b LFO2_FADE:64w LFO2_KEY_TRIG:66b LFO2_PIT_DEPTH:67c LFO2_TVF_DEPTH:68c LFO2_TVA_DEPTH:69c LFO2_PAN_DEPTH:70c LFO2_PHASE_POS:71b LFO2_STEP_1:72c LFO2_STEP_2:73c LFO2_STEP_3:74c LFO2_STEP_4:75c LFO2_STEP_5:76c LFO2_STEP_6:77c LFO2_STEP_7:78c LFO2_STEP_8:79c LFO2_STEP_9:80c LFO2_STEP_10:81c LFO2_STEP_11:82c LFO2_STEP_12:83c LFO2_STEP_13:84c LFO2_STEP_14:85c LFO2_STEP_15:86c LFO2_STEP_16:87c LFO2_STEP_CURVE_1:88b LFO2_STEP_CURVE_2:89b LFO2_STEP_CURVE_3:90b LFO2_STEP_CURVE_4:91b LFO2_STEP_CURVE_5:92b LFO2_STEP_CURVE_6:93b LFO2_STEP_CURVE_7:94b LFO2_STEP_CURVE_8:95b LFO2_STEP_CURVE_9:96b LFO2_STEP_CURVE_10:97b LFO2_STEP_CURVE_11:98b LFO2_STEP_CURVE_12:99b LFO2_STEP_CURVE_13:100b LFO2_STEP_CURVE_14:101b LFO2_STEP_CURVE_15:102b LFO2_STEP_CURVE_16:103b"
+    ],
+    ["EQ", 1368, 4, 16, "LO_GAIN:0s MID_GAIN:2s HI_GAIN:4s LO_FREQ:6w MID_FREQ:8w HI_FREQ:10w MID_Q:12b SW:13b"],
+    [
+      "SCMN",
+      1432,
+      1,
+      0,
+      "UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b RND_PIT_VAL:5b RND_PIT_NUM:6b CONDITION:7b"
+    ],
+    [
+      "SPMT",
+      1440,
+      1,
+      0,
+      "STRUCT12:12b STRUCT34:13b RING12_LEVEL:16b RING34_LEVEL:17b RING_OSC1_LEVEL:18b RING_OSC2_LEVEL:19b RING_OSC3_LEVEL:20b RING_OSC4_LEVEL:21b XMOD12_DEPTH:24w XMOD34_DEPTH:26w XMOD_OSC1_LEVEL:28b XMOD_OSC2_LEVEL:29b XMOD_OSC3_LEVEL:30b XMOD_OSC4_LEVEL:31b PTL_PHS_LOCK:32b XMOD2_12_DEPTH:33b XMOD2_34_DEPTH:34b"
+    ],
+    [
+      "SPTL",
+      1488,
+      4,
+      36,
+      "OSC_TYPE:0b VA_FORM:1b SYNC_WAV_NUM:2w PW:4b PWM_DEPTH:5c SSAW_DETUNE:6b CLICK_TYPE:7b HPF_CUTOFF:8w FILTER_TYPE:10b FILTER_SLOPE:11b ADSR_ENV_SW:12b FAT:13b VCF_TYPE:14b OSC_ATT:15b CUTOFF_KF_BP:16b VA_INVERT_SW:17b FENV_FINE_DEPTH:18c PENV_LFO_TRIG_SW:19b FENV_LFO_TRIG_SW:20b AENV_LFO_TRIG_SW:21b PITCH_DOWN_DEPTH:22b VCF_GC:23b"
+    ]
+  ];
+  var FIELDS = null;
+  function fwFields() {
+    if (FIELDS) return FIELDS;
+    FIELDS = [];
+    for (const [blk, base, n, stride, list] of FW_MAP)
+      for (const f of list.split(" ")) {
+        const [, id, off, t] = /^(\w+):(\d+)([a-z])$/.exec(f);
+        for (let i = 0; i < n; i++) FIELDS.push([blk + (n > 1 ? i : "") + "." + id, base + i * stride + +off, t]);
+      }
+    return FIELDS;
+  }
+  function read(b, o, t) {
+    if (t === "b") return b[o];
+    if (t === "c") return b[o] << 24 >> 24;
+    const w = b[o] | b[o + 1] << 8;
+    return t === "s" ? w << 16 >> 16 : w;
+  }
+  var nameAt = (b, o) => {
+    let s = "";
+    for (let i = 0; i < 16; i++) s += String.fromCharCode(b[o + i]);
+    return s.trimEnd();
+  };
+  function looksLikeTone(b, o) {
+    if (o + FW_REC > b.length) return false;
+    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+    return b[o + 16] <= 49 && !b[o + 17] && !b[o + 18] && !b[o + 19] && b[o + 20] <= 127 && b[o + 64] < 128;
+  }
+  function fwTone(b, o) {
+    const snd = newSound("tone");
+    for (const [k2, off, t] of fwFields()) {
+      if (t === "a") {
+        snd.v[k2] = nameAt(b, o + off);
+        continue;
+      }
+      const [p] = paramOf("tone", k2), x = read(b, o + off, t);
+      if (x < p[3] || x > p[4]) return null;
+      snd.v[k2] = x;
+    }
+    return snd;
+  }
+  function fwScan(b) {
+    const out2 = [];
+    for (let o = 0; o + FW_REC * 8 <= b.length; o += 4) {
+      if (!looksLikeTone(b, o)) continue;
+      let n = 0;
+      while (looksLikeTone(b, o + n * FW_REC)) n++;
+      if (n < 8) continue;
+      out2.push([o, n]);
+      o += n * FW_REC - 4;
+    }
+    return out2;
+  }
+  var BANKS = {
+    SysCtrlDeepEcho2: "A",
+    "AX Classic Lead": "B",
+    "SL-JP8 1": "C",
+    "JP8 Strings1": "D",
+    "128voicePno": "E"
+  };
+  var FW_BANK_NAMES = {
+    A: "Factory Presets",
+    B: "AX Collection",
+    C: "Synth Legend",
+    D: "Basic Synth",
+    E: "XV Collection"
+  };
+  function fwTones(b) {
+    const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
+    const banks = runs2.map(([o]) => BANKS[nameAt(b, o)] || null);
+    banks.forEach((x) => x && used.add(x));
+    let next = "F";
+    runs2.forEach(([o, n], r) => {
+      let bank = banks[r];
+      if (!bank || banks.indexOf(bank) !== r) {
+        while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
+        used.add(bank = next);
+      }
+      for (let i = 0; i < n; i++) {
+        const snd = fwTone(b, o + i * FW_REC);
+        if (!snd) continue;
+        const name = snd.v["CMN.NAME"];
+        if (!name || /^init tone$/i.test(name)) continue;
+        out2.push({ name, snd, bank, no: i + 1 });
+      }
+    });
+    return out2;
+  }
+
   // src/zen/zc-sounds.js
-  var ZS = { list: [], ready: false, favs: /* @__PURE__ */ new Set() };
+  var ZS = { list: [], ready: false, favs: /* @__PURE__ */ new Set(), rate: {} };
   var TYPES = [
     [
       "keys",
@@ -46096,13 +46433,26 @@ body[data-mode='synth'] #synth {
   var saveFavs2 = () => {
     try {
       localStorage.setItem("mc707-zen-favs", JSON.stringify([...ZS.favs]));
+      localStorage.setItem("mc707-zen-ratings", JSON.stringify(ZS.rate));
     } catch (e) {
     }
   };
+  var ratingOf = (id) => ZS.rate[id] || (ZS.favs.has(id) ? 3 : 0);
+  function setRating(id, n) {
+    if (n > 0) {
+      ZS.rate[id] = n;
+      ZS.favs.add(id);
+    } else {
+      delete ZS.rate[id];
+      ZS.favs.delete(id);
+    }
+    saveFavs2();
+  }
   async function soundsLoad() {
     if (ZS.ready) return ZS.list;
     try {
       ZS.favs = new Set(JSON.parse(localStorage.getItem("mc707-zen-favs") || "[]"));
+      ZS.rate = JSON.parse(localStorage.getItem("mc707-zen-ratings") || "{}") || {};
     } catch (e) {
     }
     const all = await tx("readonly", (s) => s.getAll()) || [];
@@ -46140,6 +46490,36 @@ body[data-mode='synth'] #synth {
     ZS.list.unshift(e);
     return e;
   }
+  async function soundAddMany(items) {
+    const seen = new Set(ZS.list.map((e) => e.h)), at2 = Date.now(), add = [];
+    items.forEach(({ snd, name, src, bank, no }, i) => {
+      const d = diffOf(snd), h = hashOf(snd.kind, d);
+      if (seen.has(h)) return;
+      seen.add(h);
+      const nm = (name || snd.v["CMN.NAME"] || snd.v["KCMN.NAME"] || "Untitled").trim();
+      add.push({
+        id: "s" + at2.toString(36) + "_" + i.toString(36),
+        at: at2 - i,
+        kind: snd.kind,
+        name: nm,
+        type: typeOf(snd, nm),
+        tags: [],
+        src: src || "mine",
+        ...bank ? { bank, no } : {},
+        h,
+        d
+      });
+    });
+    await tx("readwrite", (s) => add.forEach((e) => s.put(e)));
+    ZS.list = [...ZS.list, ...add].sort((a, b) => b.at - a.at);
+    return add.length;
+  }
+  async function soundsRemoveSrc(src) {
+    const gone = ZS.list.filter((e) => e.src === src);
+    ZS.list = ZS.list.filter((e) => e.src !== src);
+    await tx("readwrite", (s) => gone.forEach((e) => s.delete(e.id)));
+    return gone.length;
+  }
   async function soundUpdate(id, patch) {
     const e = ZS.list.find((x) => x.id === id);
     if (!e) return;
@@ -46149,15 +46529,17 @@ body[data-mode='synth'] #synth {
   async function soundDelete(id) {
     ZS.list = ZS.list.filter((x) => x.id !== id);
     ZS.favs.delete(id);
+    delete ZS.rate[id];
     saveFavs2();
     await tx("readwrite", (s) => s.delete(id));
   }
-  function toggleFav(id) {
-    if (ZS.favs.has(id)) ZS.favs.delete(id);
-    else ZS.favs.add(id);
-    saveFavs2();
-  }
-  var libraryJSON = () => JSON.stringify({ app: "mc707-toolbox", sounds: 1, favs: [...ZS.favs], list: ZS.list.map(({ h, ...e }) => e) });
+  var libraryJSON = () => JSON.stringify({
+    app: "mc707-toolbox",
+    sounds: 1,
+    favs: [...ZS.favs],
+    ratings: ZS.rate,
+    list: ZS.list.filter((e) => e.src !== "factory").map(({ h, ...e }) => e)
+  });
   async function libraryImport(text) {
     const o = JSON.parse(text);
     if (!o || o.sounds !== 1 || !Array.isArray(o.list)) throw new Error("not a sound library");
@@ -46174,23 +46556,319 @@ body[data-mode='synth'] #synth {
       });
       if (r) {
         added++;
-        if ((o.favs || []).includes(e.id)) ZS.favs.add(r.id);
+        const n = o.ratings && o.ratings[e.id] || ((o.favs || []).includes(e.id) ? 3 : 0);
+        if (n) setRating(r.id, n);
       } else same++;
     }
     saveFavs2();
     return { added, same };
   }
 
-  // src/zen/zc-browser.js
-  var B = { q: "", src: "all", type: "", tag: "", edit: null, grab: null, cur: null };
-  var SRC = [
-    ["all", "All"],
-    ["fav", "★ Favourites"],
-    ["mine", "Saved"],
-    ["mc707", "From the MC-707"],
-    ["starter", "Starters"]
+  // src/zen/zc-factory-ui.js
+  var frame2 = () => new Promise((r) => setTimeout(r, 30));
+  function factoryImport(done) {
+    const i = el("input", {
+      type: "file",
+      accept: ".bin",
+      onchange: async () => {
+        const f = i.files[0];
+        if (!f) return;
+        toast("Reading " + f.name + "…");
+        await frame2();
+        try {
+          const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+          if (!tones.length) return toast("No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).");
+          const n = await soundAddMany(tones.map((t) => ({ ...t, src: "factory" })));
+          toast(
+            n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
+          );
+          done(n);
+        } catch (e) {
+          toast("That file could not be read");
+        }
+      }
+    });
+    i.click();
+  }
+  function factoryItems(done) {
+    const have = ZS.list.some((e) => e.src === "factory");
+    return [
+      {
+        label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
+        action: () => factoryImport(done)
+      },
+      have ? {
+        label: "Remove the factory tones",
+        action: async () => {
+          const n = await soundsRemoveSrc("factory");
+          toast("Removed " + n + " factory tones");
+          done(0);
+        }
+      } : null
+    ].filter(Boolean);
+  }
+
+  // src/zen/zc-browse-data.js
+  var CAT_GROUPS = [
+    ["Piano", ["Ac.Piano", "Pop-Piano", "E.Grand Piano"]],
+    ["E.Piano", ["E.Piano1", "E.Piano2"]],
+    ["Organ", ["E.Organ", "Pipe Organ", "Reed Organ"]],
+    ["Keyboard", ["Harpsichord", "Clav", "Celesta", "Accordion", "Harmonica", "Bell", "Mallet"]],
+    ["Guitar", ["Ac.Guitar", "E.Guitar", "Dist.Guitar", "Plucked/Stroke"]],
+    ["Bass", ["Ac.Bass", "E.Bass", "Synth Bass"]],
+    ["Strings", ["Solo Strings", "Ensemble Strs", "Orchestral"]],
+    ["Brass", ["Solo Brass", "Ensemble Brass"]],
+    ["Wind", ["Wind", "Flute", "Sax", "Recorder"]],
+    ["Vocal", ["Vox/Choir", "Scat"]],
+    ["Synth", ["Synth Lead", "Synth Brass", "Synth Pad/Str", "Synth BellPad", "Synth PolyKey", "Synth Seq/Pop"]],
+    ["Motion", ["Phrase", "Pulsating", "Beat&Groove"]],
+    ["FX", ["Synth FX", "Hit", "Sound FX"]],
+    ["Drums", ["Drums", "Percussion"]],
+    ["Other", ["None", "Stack", "Zone"]]
   ];
-  var SRC_LABEL = { mine: "Saved", mc707: "MC-707", starter: "Starter", file: "Imported" };
+  var GROUP_OF = Object.fromEntries(CAT_GROUPS.flatMap(([g, l]) => l.map((c) => [c, g])));
+  var catLabel = (c) => c === "None" ? "No assign" : c;
+  function catOf(e) {
+    if (e.cat) return e.cat;
+    let n = 0;
+    if (e.kind === "kit") n = ZC_CATEGORIES.indexOf("Drums");
+    else if (e.make) n = e.make().v["CMN.CATEGORY"] | 0;
+    else if (e.d) n = e.d["CMN.CATEGORY"] | 0;
+    return e.cat = ZC_CATEGORIES[n] || "None";
+  }
+  var groupOf = (e) => GROUP_OF[catOf(e)] || "Other";
+  function bankOf(e) {
+    if (e.src === "factory") return "f:" + (e.bank || "?");
+    return e.src === "file" ? "mine" : e.src;
+  }
+  var SRC_NAME = { mine: "My sounds", mc707: "From the MC-707", starter: "Starters" };
+  function bankName(id, short2) {
+    if (id.startsWith("f:")) {
+      const l = id.slice(2);
+      if (l === "?") return "Factory";
+      return short2 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
+    }
+    return SRC_NAME[id] || id;
+  }
+  function banksIn(list) {
+    const have = new Set(list.map(bankOf));
+    const fac = [...have].filter((b) => b.startsWith("f:")).sort();
+    return [...["mine", "mc707"].filter((b) => have.has(b)), ...fac, ...have.has("starter") ? ["starter"] : []];
+  }
+  function filterList(list, f) {
+    const q = f.q.trim().toLowerCase();
+    return list.filter((e) => {
+      const b = bankOf(e);
+      if (f.bank === "fav" ? !ratingOf(e.id) : f.bank === "factory" ? e.src !== "factory" : f.bank !== "all" && b !== f.bank)
+        return false;
+      if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
+      if (f.tag && !(e.tags || []).includes(f.tag)) return false;
+      if (!q) return true;
+      const hay = [
+        e.name,
+        catLabel(catOf(e)),
+        ...e.tags || [],
+        e.group || "",
+        e.no ? String(e.no).padStart(4, "0") : ""
+      ];
+      return hay.join(" ").toLowerCase().includes(q);
+    });
+  }
+  function catCounts(list) {
+    const c = {};
+    for (const e of list) {
+      const k2 = catOf(e);
+      c[k2] = (c[k2] || 0) + 1;
+      c["g:" + groupOf(e)] = (c["g:" + groupOf(e)] || 0) + 1;
+    }
+    return c;
+  }
+  var BANK_ORDER = (b) => b === "mine" ? "0" : b === "mc707" ? "1" : b.startsWith("f:") ? "2" + b : "3";
+  function sortList(list, by, dir) {
+    const key = {
+      bank: (e) => BANK_ORDER(bankOf(e)),
+      name: (e) => e.name.toLowerCase(),
+      cat: (e) => catLabel(catOf(e)).toLowerCase(),
+      rating: (e) => -ratingOf(e.id)
+    }[by];
+    const tie = (a, b) => (a.no || 0) - (b.no || 0) || (b.at || 0) - (a.at || 0) || a.name.localeCompare(b.name);
+    return list.sort((a, b) => {
+      const x = key(a), y = key(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * dir || tie(a, b);
+    });
+  }
+
+  // src/zen/zc-browser-table.js
+  var BATCH = 200;
+  var COLS = [
+    ["rating", "Rating", "zbRate"],
+    ["bank", "Bank", "zbBank"],
+    [null, "No.", "zbNo"],
+    ["name", "Name", "zbNm"],
+    ["cat", "Category", "zbCat"],
+    [null, "Tags", "zbTg"]
+  ];
+  function stars(e, redraw) {
+    const r = ratingOf(e.id);
+    return el(
+      "span",
+      { class: "zbRate", role: "group", "aria-label": "Rating: " + r + " of 3" },
+      ...[1, 2, 3].map(
+        (n) => el(
+          "button",
+          {
+            type: "button",
+            class: "zbStar" + (n <= r ? " on" : ""),
+            title: n === r ? "Clear the rating" : "Rate " + n + " star" + (n > 1 ? "s" : ""),
+            onclick: (x) => {
+              x.stopPropagation();
+              setRating(e.id, n === r ? 0 : n);
+              redraw();
+            }
+          },
+          n <= r ? "★" : "☆"
+        )
+      )
+    );
+  }
+  function tableHead(sort, onSort) {
+    return el(
+      "div",
+      { class: "zbTh", role: "row" },
+      ...COLS.map(
+        ([k2, label2, cls]) => k2 ? el(
+          "button",
+          {
+            type: "button",
+            class: cls + (sort.by === k2 ? " on" : ""),
+            title: "Sort by " + label2.toLowerCase(),
+            onclick: () => onSort(k2)
+          },
+          label2 + (sort.by === k2 ? sort.dir > 0 ? " ▲" : " ▼" : "")
+        ) : el("span", { class: cls }, label2)
+      ),
+      el("span", { class: "zbPlay" }),
+      el("span", { class: "zbAct" })
+    );
+  }
+  function tableRow(e, act) {
+    const b = bankOf(e);
+    return el(
+      "div",
+      {
+        class: "zbItem" + (act.cur === e.id ? " cur" : ""),
+        role: "row",
+        tabindex: -1,
+        "data-id": e.id,
+        title: "Load into this clip · ↑ ↓ for the next · right-click for more",
+        onclick: () => act.load(e),
+        oncontextmenu: (x) => {
+          x.preventDefault();
+          x.stopPropagation();
+          act.menu(e, x.clientX, x.clientY);
+        }
+      },
+      stars(e, act.redraw),
+      el("span", { class: "zbBank", title: bankName(b) }, bankName(b, true)),
+      el("span", { class: "zbNo" }, e.no ? String(e.no).padStart(4, "0") : ""),
+      el("span", { class: "zbNm" }, e.name),
+      el("span", { class: "zbCat" }, catLabel(catOf(e))),
+      el("span", { class: "zbTg" }, (e.tags || []).join(" · ")),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "zbPlay",
+          title: "Load it and hold to play a note",
+          onpointerdown: (x) => act.play(e, x),
+          onclick: (x) => x.stopPropagation()
+        },
+        "▶"
+      ),
+      e.src === "starter" ? el("span", { class: "zbAct" }) : el(
+        "button",
+        {
+          type: "button",
+          class: "zbAct",
+          title: "Rename, type, tags, delete",
+          onclick: (x) => (x.stopPropagation(), act.more(e, x))
+        },
+        "⋯"
+      )
+    );
+  }
+  function fillTable(box, list, act, extra) {
+    let n = 0;
+    const more2 = () => {
+      const end = Math.min(list.length, n + BATCH);
+      for (; n < end; n++) {
+        box.append(tableRow(list[n], act));
+        const x = extra && extra(list[n]);
+        if (x) box.append(x);
+      }
+    };
+    more2();
+    const at2 = list.findIndex((e) => e.id === act.cur);
+    while (at2 >= n && n < list.length) more2();
+    box.onscroll = () => {
+      if (n < list.length && box.scrollTop + box.clientHeight > box.scrollHeight - 400) more2();
+    };
+    box.onkeydown = (k2) => {
+      if (k2.key !== "ArrowDown" && k2.key !== "ArrowUp") return;
+      k2.preventDefault();
+      const cur2 = box.querySelector(".zbItem.cur"), i = Math.max(0, list.findIndex((e) => cur2 && e.id === cur2.dataset.id) + (k2.key === "ArrowDown" ? 1 : -1));
+      if (!list[i]) return;
+      while (i >= n && n < list.length) more2();
+      act.load(list[i]);
+    };
+  }
+
+  // src/zen/zc-grab.js
+  var isBlank = (snd) => /^(|init ?(tone|kit|sound))$/i.test((snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim());
+  async function grabClips(scope, g, status3) {
+    const dn2 = DEVS[DEV].name;
+    if (!await zxConnect()) return toast("Connect the " + dn2 + " first"), null;
+    if (!ZX.inp) return toast("No MIDI input from the " + dn2 + ": it cannot be read"), null;
+    const jobs = [];
+    for (const t of scope === "all" ? DEVS[DEV].tracks : [ZE.t]) {
+      const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
+      for (const k2 of scope === "clip" ? [ZE.k] : Array.from({ length: 16 }, (_, i) => i)) jobs.push([t, k2, kind]);
+    }
+    Object.assign(g, { n: jobs.length, same: 0, empty: 0, bad: 0 });
+    for (const [t, k2, kind] of jobs) {
+      if (g.stop) break;
+      g.msg = "Reading track " + devNum(t) + ", clip " + (k2 + 1);
+      status3();
+      const snd = newSound(kind), r = await readSound(snd, slotAddr(kind, t, k2));
+      g.done++;
+      if (r.silent) {
+        g.msg = "The " + dn2 + " did not answer.";
+        break;
+      }
+      if (r.ok < r.total * 0.9) g.bad++;
+      else if (!Object.keys(diffOf(snd)).length || isBlank(snd)) g.empty++;
+      else if (await soundAdd(snd, { src: "mc707" })) g.added++;
+      else g.same++;
+      status3();
+    }
+    toast(
+      "Grabbed " + g.added + " new sound" + (g.added === 1 ? "" : "s") + (g.same ? ", " + g.same + " already here" : "") + (g.empty ? ", " + g.empty + " empty" : "") + (g.bad ? ", " + g.bad + " could not be read" : "") + (g.stop ? " (stopped)" : "")
+    );
+    return g;
+  }
+
+  // src/zen/zc-browser.js
+  var B = {
+    q: "",
+    bank: "all",
+    group: "",
+    cat: "",
+    tag: "",
+    sort: { by: "bank", dir: 1 },
+    edit: null,
+    grab: null,
+    cur: null
+  };
   var STARTS = null;
   function starters() {
     if (STARTS) return STARTS;
@@ -46212,12 +46890,7 @@ body[data-mode='synth'] #synth {
     return STARTS;
   }
   var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind);
-  function shown2() {
-    const q = B.q.trim().toLowerCase();
-    return entries().filter(
-      (e) => (B.src === "all" || (B.src === "fav" ? ZS.favs.has(e.id) : e.src === B.src)) && (!B.type || e.type === B.type) && (!B.tag || e.tags.includes(B.tag)) && (!q || (e.name + " " + e.tags.join(" ") + " " + TYPE_LABEL[e.type] + " " + (e.group || "")).toLowerCase().includes(q))
-    );
-  }
+  var shown2 = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
   async function browserOpen() {
     await soundsLoad();
     let ov = $("#zbOv");
@@ -46248,8 +46921,23 @@ body[data-mode='synth'] #synth {
   function load3(e) {
     B.cur = e.id;
     const done = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
-    render();
+    const box = $("#zbOv .zbList");
+    if (box) {
+      box.querySelectorAll(".zbItem.cur").forEach((r2) => r2.classList.remove("cur"));
+      const r = [...box.querySelectorAll(".zbItem")].find((x) => x.dataset.id === e.id);
+      if (r) r.classList.add("cur"), r.scrollIntoView({ block: "nearest" });
+      box.focus({ preventScroll: true });
+    }
     return done;
+  }
+  async function play(e, x) {
+    x.stopPropagation();
+    let up = false;
+    const u = () => up = true;
+    addEventListener("pointerup", u);
+    if (B.cur !== e.id) await load3(e);
+    removeEventListener("pointerup", u);
+    if (!up) audition2(e.type === "bass" || /bass/i.test(catOf(e)) ? 36 : 60);
   }
   var chip = (label2, on2, fn, title) => el("button", { type: "button", class: "zbChip" + (on2 ? " on" : ""), title: title || "", onclick: fn }, label2);
   function form(e, done) {
@@ -46296,22 +46984,33 @@ body[data-mode='synth'] #synth {
     );
   }
   function rowMenu(e, x, y) {
-    const fav = ZS.favs.has(e.id), mine = e.src !== "starter";
+    const r = ratingOf(e.id), mine = e.src !== "starter";
     showMenu(x, y, [
       { label: "Load into this clip", action: () => load3(e) },
-      { label: fav ? "Unstar" : "Star", action: () => (toggleFav(e.id), render()) },
+      {
+        label: "Rating",
+        sub: [3, 2, 1, 0].map((n) => ({
+          label: n ? "★".repeat(n) + "☆".repeat(3 - n) : "No rating",
+          checked: r === n,
+          action: () => (setRating(e.id, n), render())
+        }))
+      },
       "-",
-      mine ? { label: "Name, type and tags…", action: () => (B.edit = e.id, render()) } : null,
-      !mine ? {
+      mine && e.src !== "factory" ? { label: "Name, type and tags…", action: () => (B.edit = e.id, render()) } : null,
+      !mine || e.src === "factory" ? {
         label: "Save a copy to my sounds",
         action: async () => {
-          const n = await soundAdd(e.make(), { name: e.name, type: e.type, src: "mine" });
+          const n = await soundAdd(e.make ? e.make() : soundOf(e), { name: e.name, type: e.type, src: "mine" });
           toast(n ? "Saved " + e.name : "That sound is already in the library");
           render();
         }
       } : null,
-      { label: "Only " + (TYPE_LABEL[e.type] || "this type").toLowerCase(), action: () => (B.type = e.type, render()) },
-      mine ? {
+      {
+        label: "Only " + catLabel(catOf(e)),
+        action: () => (B.cat = catOf(e), B.group = "", render())
+      },
+      { label: "Show its bank", action: () => (B.bank = bankOf(e), render()) },
+      mine && e.src !== "factory" ? {
         label: "Delete…",
         danger: true,
         action: async () => {
@@ -46320,127 +47019,22 @@ body[data-mode='synth'] #synth {
       } : null
     ]);
   }
-  function row(e) {
-    const fav = ZS.favs.has(e.id);
-    const editing = B.edit === e.id;
-    const r = el(
-      "div",
-      {
-        class: "zbItem" + (B.cur === e.id ? " cur" : ""),
-        role: "button",
-        tabindex: 0,
-        title: "Load into this clip · right-click for more",
-        onclick: () => load3(e),
-        onkeydown: (k2) => k2.key === "Enter" && load3(e),
-        oncontextmenu: (x) => {
-          x.preventDefault();
-          x.stopPropagation();
-          rowMenu(e, x.clientX, x.clientY);
-        }
-      },
-      el(
-        "button",
-        {
-          type: "button",
-          class: "zbStar" + (fav ? " on" : ""),
-          title: fav ? "Unstar" : "Star",
-          onclick: (x) => (x.stopPropagation(), toggleFav(e.id), render())
-        },
-        fav ? "★" : "☆"
-      ),
-      el("span", { class: "zbNm" }, e.name),
-      el("span", { class: "zbTy" }, TYPE_LABEL[e.type] || ""),
-      el("span", { class: "zbTg" }, e.tags.join(" · ")),
-      el("span", { class: "zbSrc" }, SRC_LABEL[e.src] || ""),
-      el(
-        "button",
-        {
-          type: "button",
-          class: "zbPlay",
-          title: "Load it and hold to play a note",
-          onpointerdown: async (x) => {
-            x.stopPropagation();
-            let up = false;
-            const u = () => up = true;
-            addEventListener("pointerup", u);
-            if (B.cur !== e.id) await load3(e);
-            removeEventListener("pointerup", u);
-            if (!up) audition2(e.type === "bass" ? 36 : 60);
-          },
-          onclick: (x) => x.stopPropagation()
-        },
-        "▶"
-      ),
-      e.src === "starter" ? el("span", { class: "zbAct" }) : el(
-        "button",
-        {
-          type: "button",
-          class: "zbAct",
-          title: "Rename, type, tags, delete",
-          onclick: (x) => {
-            x.stopPropagation();
-            const rr2 = x.currentTarget.getBoundingClientRect();
-            showMenu(rr2.left, rr2.bottom + 4, [
-              { label: "Name, type and tags…", action: () => (B.edit = e.id, render()) },
-              {
-                label: "Delete",
-                action: async () => {
-                  if (await askDlg({ title: "Delete " + e.name + "?", ok: "Delete" }))
-                    await soundDelete(e.id), render();
-                }
-              }
-            ]);
-          }
-        },
-        "⋯"
-      )
-    );
-    if (!editing) return r;
-    return el(
-      "div",
-      {},
-      r,
-      form(e, async (v) => {
-        B.edit = null;
-        if (v) await soundUpdate(e.id, v);
-        render();
-      })
-    );
+  function more(e, x) {
+    const rr2 = x.currentTarget.getBoundingClientRect();
+    rowMenu(e, rr2.left, rr2.bottom + 4);
   }
-  var isBlank = (snd) => /^(|init ?(tone|kit|sound))$/i.test((snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim());
+  var editRow = (e) => B.edit === e.id ? form(e, async (v) => {
+    B.edit = null;
+    if (v) await soundUpdate(e.id, v);
+    render();
+  }) : null;
   async function grab(scope) {
     if (B.grab) return;
-    const dn2 = DEVS[DEV].name;
-    if (!await zxConnect()) return toast("Connect the " + dn2 + " first");
-    if (!ZX.inp) return toast("No MIDI input from the " + dn2 + ": it cannot be read");
-    const jobs = [];
-    for (const t of scope === "all" ? DEVS[DEV].tracks : [ZE.t]) {
-      const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
-      for (const k2 of scope === "clip" ? [ZE.k] : Array.from({ length: 16 }, (_, i) => i)) jobs.push([t, k2, kind]);
-    }
-    const g = B.grab = { stop: false, done: 0, n: jobs.length, added: 0, same: 0, empty: 0, bad: 0, msg: "" };
+    B.grab = { stop: false, done: 0, n: 0, added: 0, msg: "" };
     render();
-    for (const [t, k2, kind] of jobs) {
-      if (g.stop) break;
-      g.msg = "Reading track " + devNum(t) + ", clip " + (k2 + 1);
-      status();
-      const snd = newSound(kind), r = await readSound(snd, slotAddr(kind, t, k2));
-      g.done++;
-      if (r.silent) {
-        g.msg = "The " + dn2 + " did not answer.";
-        break;
-      }
-      if (r.ok < r.total * 0.9) g.bad++;
-      else if (!Object.keys(diffOf(snd)).length || isBlank(snd)) g.empty++;
-      else if (await soundAdd(snd, { src: "mc707" })) g.added++;
-      else g.same++;
-      status();
-    }
+    const g = await grabClips(scope, B.grab, status);
     B.grab = null;
-    toast(
-      "Grabbed " + g.added + " new sound" + (g.added === 1 ? "" : "s") + (g.same ? ", " + g.same + " already here" : "") + (g.empty ? ", " + g.empty + " empty" : "") + (g.bad ? ", " + g.bad + " could not be read" : "") + (g.stop ? " (stopped)" : "")
-    );
-    if (g.added) B.src = "mc707";
+    if (g && g.added) B.bank = "mc707";
     render();
   }
   function status() {
@@ -46448,18 +47042,138 @@ body[data-mode='synth'] #synth {
     if (!s) return;
     s.textContent = g ? g.msg + " · " + g.done + " of " + g.n + " · " + g.added + " new" : "";
   }
+  function toolbar() {
+    const saving = B.edit === "new";
+    const menuBtn = (label2, title, items, cls) => el(
+      "button",
+      {
+        type: "button",
+        class: "btn sm" + (cls || ""),
+        title,
+        onclick: (x) => {
+          const rr2 = x.currentTarget.getBoundingClientRect();
+          showMenu(rr2.left, rr2.bottom + 4, items());
+        }
+      },
+      label2
+    );
+    const importLib = () => {
+      const i = el("input", {
+        type: "file",
+        accept: ".json,application/json",
+        onchange: async () => {
+          try {
+            const r = await libraryImport(await i.files[0].text());
+            toast("Imported " + r.added + " sounds" + (r.same ? " (" + r.same + " already here)" : ""));
+            render();
+          } catch (e) {
+            toast("That is not a sound library file from this app");
+          }
+        }
+      });
+      i.click();
+    };
+    return el(
+      "div",
+      { class: "zbActs" },
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          onclick: () => (B.edit = saving ? null : "new", render()),
+          title: "Save the sound in the editor to the library"
+        },
+        "Save this " + (ZE.kind === "kit" ? "kit" : "tone")
+      ),
+      B.grab ? el("button", { type: "button", class: "btn sm on", onclick: () => B.grab.stop = true }, "Stop grabbing") : menuBtn(
+        "Grab from " + DEVS[DEV].name + " ▾",
+        "Read sounds from the " + DEVS[DEV].name + "'s clips into the library",
+        () => [
+          { label: "This clip", action: () => grab("clip") },
+          { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
+          { label: "Every clip of every track", action: () => grab("all") },
+          ...ZE.kind === "tone" ? ["-", ...factoryItems((n) => (n && (B.bank = "factory"), render()))] : []
+        ]
+      ),
+      menuBtn("Backup ▾", "Export or import your sound library", () => [
+        { label: "Export the library to a file…", action: () => hooks.saveFile("mc707-sounds.json", libraryJSON()) },
+        { label: "Import a library file…", action: importLib }
+      ]),
+      el("button", { type: "button", class: "btn sm on", onclick: browserClose }, "Done")
+    );
+  }
+  function banksPane(all) {
+    const n = (id) => filterList(all, { ...B, bank: id, group: "", cat: "", tag: "", q: "" }).length;
+    const item = (id, label2, cls, title) => el(
+      "button",
+      {
+        type: "button",
+        class: "zbChip zbBk" + (cls ? " " + cls : "") + (B.bank === id ? " on" : ""),
+        title: title || "",
+        onclick: () => (B.bank = id, B.group = B.cat = "", render())
+      },
+      el("span", {}, label2),
+      el("i", {}, String(n(id)))
+    );
+    const banks = banksIn(all), fac = banks.filter((b) => b.startsWith("f:"));
+    return el(
+      "nav",
+      { class: "zbBanks", "aria-label": "Banks" },
+      el("h4", {}, "Bank"),
+      item("all", "All"),
+      item("fav", "★ Favourites", "", "Every sound you have rated"),
+      ...banks.filter((b) => !b.startsWith("f:") && b !== "starter").map((b) => item(b, bankName(b))),
+      ZE.kind === "tone" ? item("factory", "Factory", "zbGrp", fac.length ? "Every factory bank" : "Add them with Grab ▾ › Factory tones") : null,
+      ...fac.map((b) => item(b, bankName(b), "zbSub")),
+      banks.includes("starter") ? item("starter", "Starters") : null
+    );
+  }
+  function catsPane(inBank) {
+    const c = catCounts(inBank);
+    const item = (label2, count, on2, fn, cls) => el(
+      "button",
+      { type: "button", class: "zbCt" + (cls ? " " + cls : "") + (on2 ? " on" : ""), onclick: fn },
+      el("span", {}, label2),
+      el("i", {}, String(count))
+    );
+    const out2 = [item("All", inBank.length, !B.group && !B.cat, () => (B.group = B.cat = "", render()), "zbCg")];
+    for (const [g, cats] of CAT_GROUPS) {
+      if (!c["g:" + g]) continue;
+      out2.push(item(g, c["g:" + g], B.group === g && !B.cat, () => (B.group = g, B.cat = "", render()), "zbCg"));
+      for (const k2 of cats)
+        if (c[k2]) out2.push(item(catLabel(k2), c[k2], B.cat === k2, () => (B.cat = k2, B.group = "", render())));
+    }
+    return el("nav", { class: "zbCats", "aria-label": "Categories" }, el("h4", {}, "Category"), ...out2);
+  }
+  function emptyText(all) {
+    if (B.bank === "factory" && !all.some((e) => e.src === "factory"))
+      return "Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).";
+    if (B.bank === "mc707" && !all.some((e) => e.src === "mc707"))
+      return "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab.";
+    return "Nothing matches.";
+  }
   function render() {
     const ov = $("#zbOv");
     if (!ov) return;
-    const list = shown2(), all = entries();
-    const scroll = $(".zbList", ov) ? $(".zbList", ov).scrollTop : 0;
+    const all = entries(), list = shown2();
+    const old = $(".zbList", ov), scroll = old ? old.scrollTop : 0;
     ov.textContent = "";
-    const kindName = ZE.kind === "kit" ? "kits" : "tones";
+    const box = el("div", { class: "zbList", role: "rowgroup", tabindex: 0, "aria-label": "Sounds" });
+    const count = el("span", { class: "zbN hint" });
+    const drawList = () => {
+      const l = shown2();
+      count.textContent = l.length + " shown";
+      box.textContent = "";
+      box.scrollTop = 0;
+      if (!l.length) box.append(el("p", { class: "hint zbEmpty" }, emptyText(all)));
+      fillTable(box, l, { cur: B.cur, load: load3, play, menu: rowMenu, more, redraw: render }, editRow);
+    };
     const q = el("input", {
       id: "zbQ",
       type: "search",
       class: "zbQ",
-      placeholder: "Search " + all.length + " " + kindName,
+      placeholder: "Search " + all.length + " " + (ZE.kind === "kit" ? "kits" : "tones") + " by name, category, tag or number",
       value: B.q,
       "aria-label": "Search",
       oninput: (e) => {
@@ -46467,111 +47181,14 @@ body[data-mode='synth'] #synth {
         drawList();
       }
     });
-    const type = el(
-      "select",
-      { "aria-label": "Instrument type", onchange: (e) => (B.type = e.target.value, render()) },
-      el("option", { value: "" }, "Any instrument"),
-      ...TYPES.filter(([id]) => all.some((e) => e.type === id)).map(
-        ([id, l]) => el("option", { value: id, selected: B.type === id }, l)
-      )
-    );
-    const usedTags = [...new Set(all.flatMap((e) => e.tags))].sort();
-    const box = el("div", { class: "zbList" });
-    const drawList = () => {
-      const l = shown2();
-      box.textContent = "";
-      if (!l.length)
-        box.append(
-          el(
-            "p",
-            { class: "hint zbEmpty" },
-            all.length > starters().length || B.src !== "mc707" ? "Nothing matches." : "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab."
-          )
-        );
-      l.forEach((e) => box.append(row(e)));
-    };
-    const saving = B.edit === "new";
+    const usedTags = [...new Set(all.flatMap((e) => e.tags || []))].sort();
+    const inBank = filterList(all, { ...B, group: "", cat: "" });
     ov.append(
       el(
         "div",
         { class: "ptBox zcBox zbBox" },
-        el(
-          "div",
-          { class: "zbHead" },
-          el("b", {}, "Sounds"),
-          q,
-          type,
-          el("span", { class: "zbN hint" }, list.length + " shown"),
-          el(
-            "div",
-            { class: "zbActs" },
-            el(
-              "button",
-              {
-                type: "button",
-                class: "btn sm",
-                onclick: () => (B.edit = saving ? null : "new", render()),
-                title: "Save the sound in the editor to the library"
-              },
-              "Save this " + (ZE.kind === "kit" ? "kit" : "tone")
-            ),
-            B.grab ? el("button", { type: "button", class: "btn sm on", onclick: () => B.grab.stop = true }, "Stop grabbing") : el(
-              "button",
-              {
-                type: "button",
-                class: "btn sm",
-                title: "Read sounds from the " + DEVS[DEV].name + "'s clips into the library",
-                onclick: (x) => {
-                  const rr2 = x.currentTarget.getBoundingClientRect();
-                  showMenu(rr2.left, rr2.bottom + 4, [
-                    { label: "This clip", action: () => grab("clip") },
-                    { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
-                    { label: "Every clip of every track", action: () => grab("all") }
-                  ]);
-                }
-              },
-              "Grab from " + DEVS[DEV].name + " ▾"
-            ),
-            el(
-              "button",
-              {
-                type: "button",
-                class: "btn sm",
-                onclick: (x) => {
-                  const rr2 = x.currentTarget.getBoundingClientRect();
-                  showMenu(rr2.left, rr2.bottom + 4, [
-                    {
-                      label: "Export the library to a file…",
-                      action: () => hooks.saveFile("mc707-sounds.json", libraryJSON())
-                    },
-                    {
-                      label: "Import a library file…",
-                      action: () => {
-                        const i = el("input", {
-                          type: "file",
-                          accept: ".json,application/json",
-                          onchange: async () => {
-                            try {
-                              const r = await libraryImport(await i.files[0].text());
-                              toast("Imported " + r.added + " sounds" + (r.same ? " (" + r.same + " already here)" : ""));
-                              render();
-                            } catch (e) {
-                              toast("That is not a sound library file from this app");
-                            }
-                          }
-                        });
-                        i.click();
-                      }
-                    }
-                  ]);
-                }
-              },
-              "Backup ▾"
-            ),
-            el("button", { type: "button", class: "btn sm on", onclick: browserClose }, "Done")
-          )
-        ),
-        saving ? form(
+        el("div", { class: "zbHead" }, el("b", {}, "Sounds"), q, count, toolbar()),
+        B.edit === "new" ? form(
           { name: ZE.snd.v[ZE.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "", type: typeOf(ZE.snd), tags: [] },
           async (v) => {
             B.edit = null;
@@ -46583,17 +47200,29 @@ body[data-mode='synth'] #synth {
             render();
           }
         ) : null,
+        el("div", { id: "zbStat", class: "zcStat ok" }),
         el(
           "div",
-          { class: "zbFilt" },
-          ...SRC.map(([id, l]) => chip(l, B.src === id, () => (B.src = id, render()))),
-          usedTags.length ? el("span", { class: "zbSep" }) : null,
-          ...usedTags.map(
-            (t) => chip(t, B.tag === t, () => (B.tag = B.tag === t ? "" : t, render()), "Only sounds tagged " + t)
+          { class: "zbPanes" },
+          banksPane(all),
+          catsPane(inBank),
+          el(
+            "div",
+            { class: "zbMain" },
+            usedTags.length ? el(
+              "div",
+              { class: "zbFilt" },
+              ...usedTags.map(
+                (t) => chip(t, B.tag === t, () => (B.tag = B.tag === t ? "" : t, render()), "Only sounds tagged " + t)
+              )
+            ) : null,
+            tableHead(B.sort, (by) => {
+              B.sort = { by, dir: B.sort.by === by ? -B.sort.dir : 1 };
+              render();
+            }),
+            box
           )
-        ),
-        el("div", { id: "zbStat", class: "zcStat ok" }),
-        box
+        )
       )
     );
     drawList();
@@ -46942,7 +47571,7 @@ body[data-mode='synth'] #synth {
     QUIET.delete(ch);
     if (out2) out2.send([176 | ch, 11, exprBack(t)]);
   }
-  async function zeQuietly(send2, t = ZE.t) {
+  async function zeQuietly(send2, t = ZE.t, after = null) {
     const ch = chOf(t), out2 = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
     if (!q.n++ && out2) out2.send([176 | ch, 11, 0]);
     QUIET.set(ch, q);
@@ -46950,12 +47579,26 @@ body[data-mode='synth'] #synth {
       await Promise.race([send2(), pause3(1500)]);
       await Promise.race([zxFlush(), pause3(1500)]);
       await pause3(40);
+      if (after) await after();
     } catch (e) {
     } finally {
       if (QUIET.get(ch) === q && --q.n <= 0) {
         if (out2) out2.send([176 | ch, 120, 0]);
         zeUnmute(t);
       }
+    }
+  }
+  async function reselect(t, k2) {
+    const out2 = ZX.out || MIDI.out;
+    if (!out2 || k2 > 15) return;
+    const ch = chOf(t);
+    try {
+      out2.send([192 | ch, k2 === 15 ? 14 : k2 + 1]);
+      await pause3(60);
+      out2.send([192 | ch, k2]);
+      PCLAST[t] = k2;
+      await pause3(60);
+    } catch (e) {
     }
   }
   function zeLoad(snd, why) {
@@ -46966,8 +47609,12 @@ body[data-mode='synth'] #synth {
     const live2 = sending();
     let done = Promise.resolve();
     if (live2) {
-      const keys2 = new Set(Object.keys(snd.v).filter((k2) => !prev.known.has(k2) || prev.v[k2] !== snd.v[k2])), base = zeBase();
-      if (keys2.size) done = zeQuietly(() => sendSound(snd, base, keys2));
+      const base = zeBase(), t = ZE.t, k2 = ZE.k;
+      done = zeQuietly(
+        () => sendSound(snd, base, new Set(Object.keys(snd.v))),
+        t,
+        () => reselect(t, k2)
+      );
     }
     remember();
     zeRender();
@@ -50245,6 +50892,8 @@ body[data-mode='synth'] #synth {
         sendAll: zeSendAll,
         browse: browserOpen,
         ZS,
+        libraryJSON,
+        fw: { FW_REC, fwFields, newSound },
         get ZE() {
           return ZE;
         }
