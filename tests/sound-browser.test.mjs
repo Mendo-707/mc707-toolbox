@@ -120,7 +120,7 @@ test('Sound browser: the older My sounds list moves into the library once', asyn
   const { page, errors } = await openApp({ storage: { 'mc707-zen': JSON.stringify(old) } });
   await page.evaluate('window.__app.zen.open(3, 0)');
   await page.evaluate('window.__app.zen.browse()');
-  await page.locator('#zbOv .zbChip', { hasText: 'Saved' }).click();
+  await page.locator('#zbOv .zbChip', { hasText: 'My sounds' }).click();
   await page.locator('#zbOv .zbItem', { hasText: 'Old bass' }).waitFor();
   const e = await page.evaluate("window.__app.zen.ZS.list.find(x => x.name === 'Old bass')");
   assert.equal(e.type, 'bass', 'its type comes from its name');

@@ -546,8 +546,9 @@
   z-index: 9500;
 }
 .zbBox {
-  max-width: 980px;
-  height: min(86vh, 860px);
+  max-width: 1280px;
+  width: min(96vw, 1280px);
+  height: min(90vh, 900px);
 }
 .zbHead {
   display: flex;
@@ -620,17 +621,144 @@
   border-radius: 6px;
   background: var(--zc-well);
 }
+/* ZENOLOGY-style: banks | categories | table */
+.zbPanes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 210px 200px minmax(0, 1fr);
+  gap: 8px;
+}
+.zbBanks,
+.zbCats {
+  overflow-y: auto;
+  background: var(--zc-well);
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.zbBanks h4,
+.zbCats h4 {
+  margin: 2px 4px 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--zc-dim);
+}
+.zbBanks .zbChip,
+.zbCt {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+  border: 0;
+  background: none;
+  padding: 4px 7px;
+  font: inherit;
+  font-size: 13px;
+  color: #c9f7d5;
+  cursor: pointer;
+}
+.zbBanks .zbChip span,
+.zbCt span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbBanks .zbChip i,
+.zbCt i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--zc-dim);
+}
+.zbBanks .zbChip:hover,
+.zbCt:hover {
+  background: #0c1a10;
+}
+.zbBanks .zbChip.on,
+.zbCt.on {
+  background: var(--zc-acc);
+  color: #000;
+}
+.zbBanks .zbChip.on i,
+.zbCt.on i {
+  color: #00320f;
+}
+.zbBk.zbGrp {
+  margin-top: 6px;
+  font-weight: 700;
+}
+.zbBk.zbSub {
+  padding-left: 18px;
+}
+.zbCt {
+  padding-left: 16px;
+}
+.zbCt.zbCg {
+  padding-left: 7px;
+  margin-top: 4px;
+  font-weight: 700;
+}
+.zbMain {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .zbList {
   flex: 1;
   overflow-y: auto;
-  border-top: 1px solid var(--zc-line);
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  outline: none;
 }
+.zbList:focus-visible {
+  border-color: var(--zc-acc);
+}
+.zbTh,
 .zbItem {
   display: grid;
-  grid-template-columns: 28px minmax(120px, 2fr) minmax(90px, 1.2fr) minmax(0, 1.5fr) 70px 34px 30px;
+  grid-template-columns: 66px 70px 44px minmax(120px, 2fr) minmax(90px, 1.1fr) minmax(0, 1fr) 30px 26px;
   align-items: center;
   gap: 6px;
-  padding: 4px 4px;
+  padding: 3px 6px;
+}
+.zbTh {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--zc-dim);
+  border-bottom: 1px solid var(--zc-line);
+}
+.zbTh button,
+.zbTh span {
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.zbTh button {
+  cursor: pointer;
+}
+.zbTh button.on,
+.zbTh button:hover {
+  color: var(--zc-acc);
+}
+.zbItem {
   border-bottom: 1px solid #0d1a11;
   cursor: pointer;
 }
@@ -641,19 +769,30 @@
   background: #0c2414;
   box-shadow: inset 3px 0 0 var(--zc-acc);
 }
+.zbItem.cur .zbNm {
+  color: var(--zc-acc);
+}
 .zbNm {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.zbTy,
-.zbTg,
-.zbSrc {
+.zbBank,
+.zbNo,
+.zbCat,
+.zbTg {
   font-size: 12px;
   color: var(--zc-dim);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zbNo {
+  font-variant-numeric: tabular-nums;
+}
+.zbRate {
+  display: flex;
   white-space: nowrap;
 }
 .zbStar,
@@ -664,26 +803,60 @@
   border: 0;
   color: var(--zc-dim);
   cursor: pointer;
-  padding: 2px;
+  padding: 1px;
+}
+.zbStar {
+  font-size: 14px;
+  line-height: 1;
 }
 .zbStar.on {
   color: #ffd84a;
+}
+.zbStar:hover {
+  color: #ffe98c;
 }
 .zbPlay {
   color: var(--zc-acc);
   border: 1px solid var(--zc-line);
   border-radius: 4px;
 }
+.zbTh .zbPlay {
+  border: 0;
+}
 .zbEmpty {
-  padding: 16px 4px;
+  padding: 16px 8px;
+}
+@media (max-width: 980px) {
+  .zbPanes {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .zbCats {
+    display: none;
+  }
 }
 @media (max-width: 640px) {
-  .zbItem {
-    grid-template-columns: 28px minmax(0, 1fr) 34px 30px;
+  .zbPanes {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .zbTy,
-  .zbTg,
-  .zbSrc {
+  .zbBanks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: 90px;
+  }
+  .zbBanks .zbChip {
+    width: auto;
+  }
+  .zbBanks h4 {
+    display: none;
+  }
+  .zbTh,
+  .zbItem {
+    grid-template-columns: 50px minmax(0, 1fr) 30px 26px;
+  }
+  .zbBank,
+  .zbNo,
+  .zbCat,
+  .zbTg {
     display: none;
   }
 }

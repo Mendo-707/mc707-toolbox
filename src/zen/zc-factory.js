@@ -192,8 +192,8 @@ export function fwTone(b, o) {
 }
 
 /**
- * Find the tone records in an update file: runs of at least 8 records back to back. Returns the
- * byte offsets, in file order.
+ * Find the tone records in an update file: runs of at least 8 records back to back. Returns
+ * [start, count] for each run, in file order.
  * @param {Uint8Array} b
  */
 export function fwScan(b) {
@@ -203,21 +203,53 @@ export function fwScan(b) {
     let n = 0;
     while (looksLikeTone(b, o + n * FW_REC)) n++;
     if (n < 8) continue;
-    for (let i = 0; i < n; i++) out.push(o + i * FW_REC);
+    out.push([o, n]);
     o += n * FW_REC - 4;
   }
   return out;
 }
 
-/** The factory tones in an update file: [{name, snd}], skipping blank ones and records that do not decode. */
+/* ZEN-Core's preset tone banks, known by their first tone (the MC-707 numbers each bank from 1) */
+const BANKS = {
+  SysCtrlDeepEcho2: 'A',
+  'AX Classic Lead': 'B',
+  'SL-JP8 1': 'C',
+  'JP8 Strings1': 'D',
+  '128voicePno': 'E'
+};
+/** Bank names, by letter. */
+export const FW_BANK_NAMES = {
+  A: 'Factory Presets',
+  B: 'AX Collection',
+  C: 'Synth Legend',
+  D: 'Basic Synth',
+  E: 'XV Collection'
+};
+
+/**
+ * The factory tones in an update file: [{name, snd, bank, no}], skipping blank ones and records that
+ * do not decode. bank is a letter (A-E for the known banks, then F on for any others), no from 1.
+ */
 export function fwTones(b) {
-  const out = [];
-  for (const o of fwScan(b)) {
-    const snd = fwTone(b, o);
-    if (!snd) continue;
-    const name = snd.v['CMN.NAME'];
-    if (!name || /^init tone$/i.test(name)) continue;
-    out.push({ name, snd });
-  }
+  const out = [],
+    runs = fwScan(b),
+    used = new Set();
+  const banks = runs.map(([o]) => BANKS[nameAt(b, o)] || null);
+  banks.forEach(x => x && used.add(x));
+  let next = 'F';
+  runs.forEach(([o, n], r) => {
+    let bank = banks[r];
+    if (!bank || banks.indexOf(bank) !== r) {
+      while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
+      used.add((bank = next));
+    }
+    for (let i = 0; i < n; i++) {
+      const snd = fwTone(b, o + i * FW_REC);
+      if (!snd) continue;
+      const name = snd.v['CMN.NAME'];
+      if (!name || /^init tone$/i.test(name)) continue;
+      out.push({ name, snd, bank, no: i + 1 });
+    }
+  });
   return out;
 }
