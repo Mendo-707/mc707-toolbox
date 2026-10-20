@@ -128,7 +128,7 @@ test('Sound browser: the older My sounds list moves into the library once', asyn
   assert.deepEqual(errors, []);
 });
 
-test('loading a sound sends only what changed, and leaves the effect type alone when it is the same', async () => {
+test('loading a sound sends the whole sound, even the same one again (the clip may hold something else)', async () => {
   const { page, errors } = await openApp();
   const z = 'window.__app.zen';
   await page.evaluate(`${z}.open(3, 0)`);
@@ -148,8 +148,8 @@ test('loading a sound sends only what changed, and leaves the effect type alone 
   const other = await load('Juno pad');
   console.log({ first, again, other });
   assert.ok(first > 0, 'the first load is sent');
-  assert.equal(again, 0, 'loading the same sound again sends nothing');
-  assert.ok(other > 0 && other < first + 200, 'another pad sends only its differences');
+  assert.ok(again >= first - 50, 'loading the same sound again sends it all again');
+  assert.ok(other >= first - 200, 'another pad is sent whole too');
   assert.deepEqual(errors, []);
 });
 

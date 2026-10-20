@@ -47186,8 +47186,8 @@ body[data-mode='synth'] #synth {
     const live2 = sending();
     let done = Promise.resolve();
     if (live2) {
-      const keys2 = new Set(Object.keys(snd.v).filter((k2) => !prev.known.has(k2) || prev.v[k2] !== snd.v[k2])), base = zeBase();
-      if (keys2.size) done = zeQuietly(() => sendSound(snd, base, keys2));
+      const base = zeBase();
+      done = zeQuietly(() => sendSound(snd, base, new Set(Object.keys(snd.v))));
     }
     remember();
     zeRender();

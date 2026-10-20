@@ -192,9 +192,10 @@ export function zeLoad(snd, why) {
   const live = sending();
   let done = Promise.resolve();
   if (live) {
-    const keys = new Set(Object.keys(snd.v).filter(k => !prev.known.has(k) || prev.v[k] !== snd.v[k])),
-      base = zeBase();
-    if (keys.size) done = zeQuietly(() => sendSound(snd, base, keys));
+    /* the whole sound, not only what differs from the editor's last one: the clip may hold something the
+       editor never read (a sound picked on the MC-707, say), and anything left unsent would stay */
+    const base = zeBase();
+    done = zeQuietly(() => sendSound(snd, base, new Set(Object.keys(snd.v))));
   }
   remember();
   zeRender();
