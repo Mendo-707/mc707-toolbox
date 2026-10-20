@@ -47571,7 +47571,7 @@ body[data-mode='synth'] #synth {
     QUIET.delete(ch);
     if (out2) out2.send([176 | ch, 11, exprBack(t)]);
   }
-  async function zeQuietly(send2, t = ZE.t) {
+  async function zeQuietly(send2, t = ZE.t, after = null) {
     const ch = chOf(t), out2 = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
     if (!q.n++ && out2) out2.send([176 | ch, 11, 0]);
     QUIET.set(ch, q);
@@ -47579,12 +47579,26 @@ body[data-mode='synth'] #synth {
       await Promise.race([send2(), pause3(1500)]);
       await Promise.race([zxFlush(), pause3(1500)]);
       await pause3(40);
+      if (after) await after();
     } catch (e) {
     } finally {
       if (QUIET.get(ch) === q && --q.n <= 0) {
         if (out2) out2.send([176 | ch, 120, 0]);
         zeUnmute(t);
       }
+    }
+  }
+  async function reselect(t, k2) {
+    const out2 = ZX.out || MIDI.out;
+    if (!out2 || k2 > 15) return;
+    const ch = chOf(t);
+    try {
+      out2.send([192 | ch, k2 === 15 ? 14 : k2 + 1]);
+      await pause3(60);
+      out2.send([192 | ch, k2]);
+      PCLAST[t] = k2;
+      await pause3(60);
+    } catch (e) {
     }
   }
   function zeLoad(snd, why) {
@@ -47595,8 +47609,12 @@ body[data-mode='synth'] #synth {
     const live2 = sending();
     let done = Promise.resolve();
     if (live2) {
-      const base = zeBase();
-      done = zeQuietly(() => sendSound(snd, base, new Set(Object.keys(snd.v))));
+      const base = zeBase(), t = ZE.t, k2 = ZE.k;
+      done = zeQuietly(
+        () => sendSound(snd, base, new Set(Object.keys(snd.v))),
+        t,
+        () => reselect(t, k2)
+      );
     }
     remember();
     zeRender();

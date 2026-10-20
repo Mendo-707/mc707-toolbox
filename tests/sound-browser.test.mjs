@@ -179,6 +179,12 @@ test('loading a sound mutes the track until it is written (no half-written sound
     out.slice(mute, back).some(b => b[0] === (0xb0 | ch) && b[1] === 120),
     'and any tail cut first'
   );
+  /* the MC-707 only rebuilds the voice when the clip is selected again: hop to clip 2 and back to 1, muted */
+  const pcs = out
+    .map((b, i) => [b, i])
+    .filter(([b, i]) => b[0] === (0xc0 | ch) && i > writes[writes.length - 1] && i < back)
+    .map(([b]) => b[1]);
+  assert.deepEqual(pcs, [1, 0], 'the clip is re-selected before the track comes back');
   /* an empty clip (the initial tone) is not grabbed */
   await page.fill('#zbQ', 'Init tone');
   await page.locator('#zbOv .zbItem', { hasText: 'Init tone' }).first().click();

@@ -163,7 +163,7 @@ export function zeUnmute(t) {
   if (out) out.send([0xb0 | ch, 11, exprBack(t)]);
 }
 /** Send a whole sound to track t with the track muted while it goes in (Synth mode uses it too). */
-export async function zeQuietly(send, t = ZE.t) {
+export async function zeQuietly(send, t = ZE.t, after = null) {
   const ch = chOf(t),
     out = ZX.out || MIDI.out,
     q = QUIET.get(ch) || { n: 0, t };
@@ -174,6 +174,7 @@ export async function zeQuietly(send, t = ZE.t) {
     await Promise.race([send(), pause(1500)]);
     await Promise.race([zxFlush(), pause(1500)]);
     await pause(40);
+    if (after) await after();
   } catch (e) {
     /* the track always comes back */
   } finally {
@@ -182,6 +183,21 @@ export async function zeQuietly(send, t = ZE.t) {
       zeUnmute(t);
     }
   }
+}
+/* The MC-707 takes every value at once but keeps playing the voice it built until the clip is selected
+   again, and selecting the clip it is already on does not count. So after a whole sound goes in (still
+   muted), hop to the next clip and straight back. Clips only: the track's own sound has no program. */
+async function reselect(t, k) {
+  const out = ZX.out || MIDI.out;
+  if (!out || k > 15) return;
+  const ch = chOf(t);
+  try {
+    out.send([0xc0 | ch, k === 15 ? 14 : k + 1]);
+    await pause(60);
+    out.send([0xc0 | ch, k]);
+    PCLAST[t] = k;
+    await pause(60);
+  } catch (e) {}
 }
 /** Put a whole sound in the editor (and on the MC-707, with Live on). Resolves once it is on the MC-707. */
 export function zeLoad(snd, why) {
@@ -194,8 +210,14 @@ export function zeLoad(snd, why) {
   if (live) {
     /* the whole sound, not only what differs from the editor's last one: the clip may hold something the
        editor never read (a sound picked on the MC-707, say), and anything left unsent would stay */
-    const base = zeBase();
-    done = zeQuietly(() => sendSound(snd, base, new Set(Object.keys(snd.v))));
+    const base = zeBase(),
+      t = ZE.t,
+      k = ZE.k;
+    done = zeQuietly(
+      () => sendSound(snd, base, new Set(Object.keys(snd.v))),
+      t,
+      () => reselect(t, k)
+    );
   }
   remember();
   zeRender();
