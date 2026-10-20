@@ -41619,12 +41619,19 @@ body[data-mode='synth'] #synth {
     }
     return out2;
   }
+  var INST = /^KPTL\d+\.INST_NUM$/;
   function writeRuns(snd, base, keys2) {
-    for (const r of runs(snd.kind, keys2)) {
-      const data = [];
-      for (const [k2, p] of r.items) data.push(...encode(p, snd.v[k2]));
-      zxWrite(base + r.start, data);
-    }
+    const all = keys2 ? [...keys2] : allParams(snd.kind).map((x) => x[0]), inst = snd.kind === "kit" ? all.filter((k2) => INST.test(k2)) : [];
+    const pass2 = (set) => {
+      for (const r of runs(snd.kind, set)) {
+        const data = [];
+        for (const [k2, p] of r.items) data.push(...encode(p, snd.v[k2]));
+        zxWrite(base + r.start, data);
+      }
+    };
+    if (!inst.length) return pass2(keys2);
+    pass2(new Set(all.filter((k2) => !INST.test(k2))));
+    pass2(new Set(inst));
   }
   var MFX_TYPE = "MFX.mfxType";
   var MFX_PARAMS = Array.from({ length: 32 }, (_, i) => "MFX.param_" + (i + 1));

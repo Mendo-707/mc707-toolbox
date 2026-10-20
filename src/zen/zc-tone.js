@@ -114,12 +114,24 @@ export function runs(kind, keys) {
   }
   return out;
 }
+/* A kit key's instrument is its number within a group, and the number comes first in the key's
+   block: written together, the MC-707 checks the new number against the old group and keeps the old
+   instrument (seen on a real unit: the kit's name changed, its drums did not). So the instrument
+   numbers go in a second pass, after the groups. */
+const INST = /^KPTL\d+\.INST_NUM$/;
 function writeRuns(snd, base, keys) {
-  for (const r of runs(snd.kind, keys)) {
-    const data = [];
-    for (const [k, p] of r.items) data.push(...encode(p, snd.v[k]));
-    zxWrite(base + r.start, data);
-  }
+  const all = keys ? [...keys] : allParams(snd.kind).map(x => x[0]),
+    inst = snd.kind === 'kit' ? all.filter(k => INST.test(k)) : [];
+  const pass = set => {
+    for (const r of runs(snd.kind, set)) {
+      const data = [];
+      for (const [k, p] of r.items) data.push(...encode(p, snd.v[k]));
+      zxWrite(base + r.start, data);
+    }
+  };
+  if (!inst.length) return pass(keys);
+  pass(new Set(all.filter(k => !INST.test(k))));
+  pass(new Set(inst));
 }
 /* The MC-707 resets an effect's 32 settings to 0 shortly AFTER its type changes over MIDI (seen on a real
    unit), wiping settings sent with the type. So when the type is sent, the settings follow once the

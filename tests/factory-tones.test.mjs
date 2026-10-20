@@ -117,6 +117,26 @@ test('Factory tones: read tones from an update file into the Sound browser, and 
       `JSON.parse(${z}.libraryJSON ? ${z}.libraryJSON() : '{"list":[]}').list.some(e => e.src === 'factory')`
     ))
   );
+  /* a kit: each key's instrument number goes after its group, in a second pass (the MC-707 checks the
+     number against the group already set) */
+  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.evaluate(`${z}.open(0, 0)`);
+  await page.waitForTimeout(500);
+  await page.evaluate(`${z}.browse()`);
+  await page.evaluate('window.__out.length = 0');
+  await page.locator('#zbOv .zbItem', { hasText: 'Test Kit 3' }).click();
+  await page.waitForFunction(() => window.__out.some(b => b[0] === 0xb0 && b[1] === 11 && b[2] > 0), null, {
+    timeout: 15000
+  });
+  const dt1 = await page.evaluate(`window.__out.filter(b => b[0] === 0xf0 && b[7] === 0x12).map(b => b.length - 14)`);
+  const last = dt1.slice(-88);
+  assert.ok(dt1.length > 176, 'the whole kit is sent');
+  assert.ok(
+    last.every(n => n === 4),
+    'the last 88 writes are the instrument numbers alone (4 bytes each): ' + last.slice(0, 6)
+  );
+  assert.equal(await page.evaluate(`${z}.ZE.snd.v['KPTL15.INST_NUM']`), 103);
+  await page.evaluate(`${z}.browse()`);
   /* remove them */
   await page.locator('#zbOv button', { hasText: 'Grab from' }).click();
   await page.locator('.cmenu >> text=Remove the factory sounds').click();
