@@ -7292,7 +7292,23 @@ body.popFrameless .mxTop input {
     }
   };
   function copyStyles(doc) {
-    for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) doc.head.append(n.cloneNode(true));
+    for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) {
+      let css2 = null;
+      try {
+        css2 = n.tagName === "LINK" ? [...n.sheet.cssRules].map((r) => r.cssText).join("\n") : n.textContent;
+      } catch (e) {
+      }
+      if (css2 != null) {
+        const s = doc.createElement("style");
+        s.textContent = css2;
+        doc.head.append(s);
+      } else if (n.href) {
+        const l = doc.createElement("link");
+        l.rel = "stylesheet";
+        l.href = n.href;
+        doc.head.append(l);
+      }
+    }
     doc.documentElement.className = document.documentElement.className;
     for (const a of document.documentElement.attributes)
       if (a.name.startsWith("data-")) doc.documentElement.setAttribute(a.name, a.value);
