@@ -1,0 +1,66 @@
+# Builds the Mac and Linux apps on GitHub's own machines (a Mac app can only be built on a Mac):
+#   MC-707-Toolbox-mac-arm64.dmg   Apple Silicon Macs (M1 and later)
+#   MC-707-Toolbox-mac-x64.dmg     Intel Macs
+#   MC-707-Toolbox-linux-x86_64.AppImage   any Linux (make it executable and run it)
+#   MC-707-Toolbox-linux-amd64.deb         Ubuntu, Debian, Mint and the like
+# Runs when you publish a Release, like the Windows build, and attaches them to it. You can also run it
+# by hand from the Actions tab; the files are then under the run's Artifacts. Give it a release tag
+# (e.g. v1.4.0) and it builds that tag and attaches them to that release too.
+# The Mac app is signed "ad-hoc" (no paid Apple certificate), so the first open needs one click in
+# System Settings › Privacy & Security › Open Anyway.
+name: Build Mac and Linux apps
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [mac-linux]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build and attach the apps to (optional, e.g. v1.4.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            dist: dist:mac
+            files: dist/*.dmg
+          - os: ubuntu-24.04
+            dist: dist:linux
+            files: |
+              dist/*.AppImage
+              dist/*.deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.dist }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MC-707-Toolbox-${{ runner.os }}
+          path: ${{ matrix.files }}
+      - name: Attach them to the release
+        if: github.event_name == 'release' || github.event.inputs.tag != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag }}" dist/*.dmg dist/*.AppImage dist/*.deb --clobber

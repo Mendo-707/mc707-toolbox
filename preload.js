@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('toolbox', {
   isApp: true,
+  // 'win32', 'darwin' (Mac) or 'linux', for the app's own wording
+  platform: process.platform,
   saveDialog: (name) => ipcRenderer.invoke('save-dialog', name),
   openDialog: () => ipcRenderer.invoke('open-dialog'),
   readFile: (p) => ipcRenderer.invoke('read-file', p),

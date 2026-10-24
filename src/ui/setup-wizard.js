@@ -216,7 +216,13 @@ function renderSetup(keep) {
   /* 1 connect */
   const c1 = el('div', { class: 'wcard' }, el('h3', {}, '1. Connect'));
   if (!sup)
-    c1.append(ckLine('bad', 'This browser has no Web MIDI', 'Use Chrome or Edge on a computer, or the Windows app.'));
+    c1.append(
+      ckLine(
+        'bad',
+        'This browser has no Web MIDI',
+        'Use Chrome or Edge on a computer, or the desktop app (Windows, Mac or Linux).'
+      )
+    );
   c1.append(
     el(
       'div',

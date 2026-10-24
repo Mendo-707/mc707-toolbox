@@ -135,7 +135,15 @@ ipcMain.handle('save-recording', async (_e, files, sub) => {
 });
 
 app.whenReady().then(() => {
-  Menu.setApplicationMenu(null);
+  // The app draws its own menus. A Mac still needs its menu bar for the app name, Quit (⌘Q), and copy
+  // and paste (⌘C, ⌘V) in text boxes; Windows and Linux need none.
+  if (process.platform === 'darwin')
+    Menu.setApplicationMenu(Menu.buildFromTemplate([
+      { role: 'appMenu' },
+      { label: 'Edit', submenu: [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+      { role: 'windowMenu' }
+    ]));
+  else Menu.setApplicationMenu(null);
   // Web MIDI (MC-707 over USB) and audio capture (recording from your interfaces).
   const ok = new Set(['midi', 'midiSysex', 'media', 'audioCapture']);
   session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => cb(ok.has(permission)));

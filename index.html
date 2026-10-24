@@ -11256,6 +11256,7 @@ body.popFrameless .mxTop input {
     scheduleSave();
   }
   var HOST = window.toolbox || null;
+  var APP_NAME = HOST ? { darwin: "Mac app", linux: "Linux app" }[HOST.platform] || "Windows app" : null;
   var PROJ = { name: "", path: "", dirty: false, t: null };
   var saveT = 0;
   function scheduleSave() {
@@ -24447,7 +24448,7 @@ body.popFrameless .mxTop input {
     }
     if (!canFull()) {
       toast(
-        "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the Windows app."
+        "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the desktop app."
       );
       return;
     }
@@ -38089,7 +38090,13 @@ body.popFrameless .mxTop input {
     );
     const c1 = el("div", { class: "wcard" }, el("h3", {}, "1. Connect"));
     if (!sup)
-      c1.append(ckLine("bad", "This browser has no Web MIDI", "Use Chrome or Edge on a computer, or the Windows app."));
+      c1.append(
+        ckLine(
+          "bad",
+          "This browser has no Web MIDI",
+          "Use Chrome or Edge on a computer, or the desktop app (Windows, Mac or Linux)."
+        )
+      );
     c1.append(
       el(
         "div",
@@ -38672,7 +38679,7 @@ body.popFrameless .mxTop input {
   }
   async function projFolder(kind) {
     if (!HOST) {
-      toast("Folders can be opened in the Windows app. In the browser, files go to your Downloads folder.");
+      toast("Folders can be opened in the desktop app. In the browser, files go to your Downloads folder.");
       return;
     }
     try {
@@ -38684,7 +38691,7 @@ body.popFrameless .mxTop input {
   }
   async function projChooseFolder(kind) {
     if (!HOST) {
-      toast("Folder choice is available in the Windows app.");
+      toast("Folder choice is available in the desktop app.");
       return;
     }
     try {
@@ -51421,7 +51428,7 @@ body.popFrameless .mxTop input {
             "div",
             {},
             el("h2", { id: "abTitle" }, "MC-707 Toolbox"),
-            el("div", { class: "abVer" }, "Version " + VERSION + (HOST ? " · Windows app" : " · web"))
+            el("div", { class: "abVer" }, "Version " + VERSION + " · " + (APP_NAME || "web"))
           )
         ),
         el(

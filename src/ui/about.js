@@ -5,7 +5,7 @@
 // Reads: DEV, MIDI.
 import { el } from '../core/dom.js';
 import { DEVS, DEV } from '../core/device.js';
-import { HOST } from '../core/state.js';
+import { APP_NAME } from '../core/state.js';
 import { LINKS, VERSION, openLink } from '../core/version.js';
 import { MIDI } from '../services/midi.js';
 
@@ -40,7 +40,7 @@ export function aboutOpen() {
           'div',
           {},
           el('h2', { id: 'abTitle' }, 'MC-707 Toolbox'),
-          el('div', { class: 'abVer' }, 'Version ' + VERSION + (HOST ? ' · Windows app' : ' · web'))
+          el('div', { class: 'abVer' }, 'Version ' + VERSION + ' · ' + (APP_NAME || 'web'))
         )
       ),
       el(
