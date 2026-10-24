@@ -4669,6 +4669,33 @@ input[type='number'] {
   gap: 3px;
   margin-left: 10px;
 }
+/* each partial's on/off switch, one click */
+.zcOns {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 10px;
+}
+.zcOnSw {
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 12px;
+  border: 1px solid var(--zc-line);
+  background: var(--zc-well);
+  color: var(--zc-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zcOnSw.on {
+  border-color: var(--zc-acc);
+  background: color-mix(in srgb, var(--zc-acc) 22%, var(--zc-well));
+  color: var(--zc-acc);
+}
+.zcOnSw:hover {
+  border-color: var(--zc-acc);
+}
 .zcLinkChip {
   min-width: 22px;
   height: 22px;
@@ -49109,7 +49136,8 @@ body.popFrameless .mxTop input {
     if (!m || !linked || !linked[+m[2]]) return [key];
     return [0, 1, 2, 3].filter((i) => linked[i]).map((i) => key.replace(/\d\./, i + "."));
   }
-  function partialBar(ze, redraw) {
+  function partialBar(ze, redraw, set2) {
+    const swKey = (i) => pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW");
     const linked = ze.linked || (ze.linked = [false, false, false, false]), all = linked.every(Boolean), chip2 = (i) => el(
       "button",
       {
@@ -49128,7 +49156,7 @@ body.popFrameless .mxTop input {
       { class: "zcParts" },
       el("span", { class: "zcL" }, "Partial"),
       ...[0, 1, 2, 3].map((i) => {
-        const on2 = ze.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
+        const on2 = ze.snd.v[swKey(i)];
         return el(
           "button",
           {
@@ -49143,6 +49171,25 @@ body.popFrameless .mxTop input {
           String(i + 1)
         );
       }),
+      set2 ? el(
+        "span",
+        { class: "zcOns", title: "Switch a partial on or off (the Partials page has the same switch)" },
+        el("span", { class: "zcL" }, "On"),
+        ...[0, 1, 2, 3].map((i) => {
+          const on2 = !!ze.snd.v[swKey(i)];
+          return el(
+            "button",
+            {
+              type: "button",
+              class: "zcOnSw" + (on2 ? " on" : ""),
+              "aria-pressed": String(on2),
+              title: "Partial " + (i + 1) + (on2 ? " is on: click to switch it off" : " is off: click to switch it on"),
+              onclick: () => set2(swKey(i), on2 ? 0 : 1)
+            },
+            "⏻ " + (i + 1)
+          );
+        })
+      ) : null,
       el(
         "span",
         {
@@ -49543,7 +49590,7 @@ body.popFrameless .mxTop input {
         )
       )
     );
-    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender) : null;
+    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender, (k2, v) => c.set(k2, v, true)) : null;
     const page = el("div", { class: "zcPage" }, cur2[2](c));
     ov.append(
       el(
@@ -51396,7 +51443,7 @@ body.popFrameless .mxTop input {
   }
 
   // src/core/version.js
-  var VERSION = "1.4.0";
+  var VERSION = "1.4.1";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",

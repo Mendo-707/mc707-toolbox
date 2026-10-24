@@ -8,7 +8,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 - **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen.
 
-> **Version 1.4.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.4.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -16,23 +16,19 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Song Mode](docs/song-mode.png)
 
 <details>
-<summary><b>More screenshots and a tour in 12 cards</b></summary>
+<summary><b>More screenshots and a tour in 8 cards</b></summary>
 
 ![Your MC-707 clips](docs/mc707-clips.png)
 ![ZenCore editor](docs/zencore-editor.png)
 
-![Start screen](docs/features/1-start-screen.png)
-![Song Mode](docs/features/2-song-mode.png)
-![Song wizard](docs/features/3-song-wizard.png)
-![Pattern packs](docs/features/4-harmony-pack.png)
-![Live Mode](docs/features/5-live-mode.png)
-![Breaks, builds and smooth blends](docs/features/6-performance.png)
+![Song Mode](docs/features/1-song-mode.png)
+![Live Mode](docs/features/2-live-mode.png)
+![Synth Mode](docs/features/3-synth-mode.png)
+![ZenCore editor](docs/features/4-zencore-editor.png)
+![Sound browser](docs/features/5-sound-browser.png)
+![Mixers](docs/features/6-mixers.png)
 ![Your MC-707 clips](docs/features/7-mc707-clips.png)
-![ZenCore editor](docs/features/8-zencore-editor.png)
-![Track setup](docs/features/9-track-setup.png)
-![Raven mode and keyboards](docs/features/10-raven-and-keyboards.png)
-![Synth Mode](docs/features/11-synth-mode.png)
-![Sound browser](docs/features/12-sound-browser.png)
+![Windows, Mac, Linux and the web](docs/features/8-everywhere.png)
 
 </details>
 
@@ -45,7 +41,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Factory tones**: random pitch number and condition are read from the right place (thanks to kraftf for the report).
 - **Live Mode**: the half and double speed buttons are gone.
 - **Start screen**: a **ZenCore editor** card opens the editor straight away.
-- **1.4.1: Mac and Linux apps**, alongside the Windows one: a .dmg for Apple Silicon and Intel Macs, and an AppImage and a .deb for Linux (see [Getting started](#getting-started)).
+- **1.4.1: Mac and Linux apps**, alongside the Windows one: a .dmg for Apple Silicon and Intel Macs, and an AppImage and a .deb for Linux (see [Getting started](#getting-started)). The ZenCore editor's partial bar switches each partial **on or off** in one click (⏻ 1–4).
 
 ## New in 1.3
 
@@ -203,7 +199,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 | **Oscillator** | Each of the 4 partials: PCM wave, VA (saw, square, triangle, sine, Juno …), PCM-Sync, SuperSAW or noise, with pulse width, PWM, detune, FXM and stereo width. A preview draws the wave, including pulse width, PWM and SuperSAW detune. |
 | **Filter** | TVF or the VCF models (JP, M, P) at -12, -18 or -24 dB, cutoff, resonance, key follow, HPF, Fat, and a filter envelope. A response curve shows the cutoff, resonance and slope as you change them. |
 | **Amp, Pitch, LFO** | Amp and pitch envelopes, velocity, pan and sends; two LFOs per partial with tempo sync and the 16-step STEP wave, each with a picture of its shape, delay and fade. The **Step sequencer** turns a partial into a 16-step riff that plays in time while you hold one key. |
-| **Matrix, EQ, Partials** | Four matrix controls, each partial's EQ, key and velocity ranges, and ring and cross modulation. |
+| **Matrix, EQ, Partials** | Four matrix controls, each partial's EQ, key and velocity ranges, and ring and cross modulation. The bar above the partial pages picks a partial, switches any partial on or off (⏻ 1–4), and links partials so a change goes to all of them. |
 | **MFX** | All 91 effect types with their own settings (◀ ▶ beside the type step through them), and 28 **presets** (dotted delay, dub tape echo, Juno chorus I and II, slow and fast Leslie, trance gate, filter wobble, 8-bit, cassette lo-fi and more). |
 | **Drum kits** | Kit level and effect; each key's instrument, level, pan, tuning, filter, envelope and EQ; the six drum compressors. |
 

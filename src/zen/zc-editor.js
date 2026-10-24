@@ -477,7 +477,8 @@ export function zeRender() {
       )
     )
   );
-  const parts = ZE.kind === 'tone' && PART_TABS.includes(cur[0]) ? partialBar(ZE, zeRender) : null;
+  const parts =
+    ZE.kind === 'tone' && PART_TABS.includes(cur[0]) ? partialBar(ZE, zeRender, (k, v) => c.set(k, v, true)) : null;
   const page = el('div', { class: 'zcPage' }, cur[2](c));
   ov.append(
     el(

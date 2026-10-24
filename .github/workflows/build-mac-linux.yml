@@ -13,8 +13,6 @@ name: Build Mac and Linux apps
 on:
   release:
     types: [published]
-  push:
-    branches: [mac-linux]
   workflow_dispatch:
     inputs:
       tag:
