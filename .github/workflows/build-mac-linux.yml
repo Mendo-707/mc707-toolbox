@@ -49,7 +49,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run ${{ matrix.dist }}
+      # making a Mac disk image on GitHub's machines now and then fails ("resource busy"): try once more
+      - run: npm run ${{ matrix.dist }} || (sleep 15 && npm run ${{ matrix.dist }})
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
