@@ -2,6 +2,7 @@
 // (renderAll).
 //
 // Reads: S, UI, ED, TR, MIDI, AUDREC, STAGE, CM, bw.
+import { songMixerOpen } from '../song/song-mixer.js';
 import { hooks } from '../core/hooks.js';
 import { $, clamp, el, toast } from '../core/dom.js';
 import { LANES } from '../core/theory.js';
@@ -148,6 +149,7 @@ export function initControls() {
     syncControls();
     scheduleSave();
   });
+  $('#bMixer').addEventListener('click', () => songMixerOpen());
   $('#bMetro').addEventListener('click', () => {
     S.metro = !S.metro;
     syncControls();

@@ -5831,6 +5831,303 @@ body[data-mode='synth'] #synth {
 }
 </style>
     <style>
+/* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
+   they open in (services/popout.js): a window of its own, or a panel over the app. The colours are the
+   tokens of the mode the mixer belongs to, copied onto the window by popTheme(): Song Mode's own (light or
+   dark as the app is) and Live Mode's (the Live theme picked). Each track's colour is on its strip. */
+body.popWin {
+  margin: 0;
+  background: var(--bg, #f6f4ef);
+  color: var(--ink, #1d1d1b);
+  overflow: auto;
+}
+.popPanel {
+  position: fixed;
+  z-index: 9400;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #f6f4ef);
+  color: var(--ink, #1d1d1b);
+  border: 1px solid var(--line, #d6d1c4);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #0006;
+  overflow: hidden;
+}
+.popBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--panel, #fff);
+  border-bottom: 1px solid var(--line, #d6d1c4);
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+.popBar b {
+  flex: 1;
+  color: var(--ink, #1d1d1b);
+}
+.popPanel .popRoot {
+  overflow: auto;
+}
+.mxWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.mxTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.mxTitle {
+  font-size: 17px;
+  color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
+}
+.mxTop .hint {
+  font-size: 12px;
+  color: var(--mute, #6b6759);
+}
+.mxActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+.mxStrips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+.mxStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px 6px 8px;
+  background: linear-gradient(var(--panel, #fff), var(--panel2, #efece4));
+  border: 1px solid var(--line, #d6d1c4);
+  border-top: 3px solid var(--tc);
+  border-radius: 6px;
+}
+.mxStrip.muted {
+  opacity: 0.62;
+}
+.mxStrip.dim .mxName {
+  color: var(--mute, #6b6759);
+}
+.mxHead {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 2px 5px;
+}
+.mxNum {
+  font-weight: 700;
+  font-size: 12px;
+  color: #000;
+  background: var(--tc);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.mxLight {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 6px var(--tc);
+  opacity: 0.15;
+}
+.mxName {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink, #1d1d1b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mxSub {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--mute, #6b6759);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mxRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0 4px;
+  font-size: 11px;
+  color: var(--mute, #6b6759);
+}
+.mxRow span {
+  grid-column: 1 / -1;
+}
+.mxRow b {
+  font-weight: 600;
+  color: var(--ink, #1d1d1b);
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mxKnob,
+.mxFader {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mxKnob {
+  width: 100%;
+  height: 14px;
+}
+.mxKnob::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--raise, #e2ddd0) 0 var(--lo, 0%),
+    var(--tc) var(--lo, 0%) var(--hi),
+    var(--raise, #e2ddd0) var(--hi) 100%
+  );
+}
+.mxKnob::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--panel, #fff);
+  border: 2px solid var(--tc);
+}
+.mxFaderBox {
+  flex: 1;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.mxMeter {
+  position: relative;
+  width: 6px;
+  border-radius: 3px;
+  background: var(--raise, #e2ddd0);
+  overflow: hidden;
+}
+.mxMeterFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: linear-gradient(to top, var(--acc, #3a9a5b), var(--hot, #e0603f) 85%);
+}
+.mxFader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 22px;
+  height: auto;
+  min-height: 140px;
+}
+.mxFader::-webkit-slider-runnable-track {
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to top, var(--tc) 0 var(--hi), var(--raise, #e2ddd0) var(--hi) 100%);
+}
+.mxFader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 12px;
+  margin-left: -8px;
+  border-radius: 3px;
+  background: var(--panel, #fff);
+  border: 1px solid var(--line, #888);
+  box-shadow: 0 1px 4px #0005;
+}
+.mxVal {
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.mxBtns {
+  display: flex;
+  gap: 4px;
+}
+.mxTg {
+  flex: 1;
+  font: inherit;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 0;
+  border-radius: 4px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel2, #efece4);
+  color: var(--ink, #1d1d1b);
+  cursor: pointer;
+}
+.mxTg.mute.on {
+  background: var(--hot, #e0603f);
+  border-color: var(--hot, #e0603f);
+  color: #fff;
+}
+.mxTg.solo.on {
+  background: #e9c93a;
+  border-color: #e9c93a;
+  color: #000;
+}
+.mxTg.pend {
+  animation: mxBlink 0.5s steps(2) infinite;
+}
+@keyframes mxBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (max-width: 560px) {
+  .mxStrips {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Live Mode's window: its own glow from the Live theme, on the strips and the title */
+.popLive .mxStrip {
+  box-shadow: 0 0 14px -6px var(--glow1, transparent);
+}
+.popLive .mxTitle {
+  text-shadow: 0 0 10px var(--glow1, transparent);
+}
+
+/* the mixers' own buttons (they follow the colours of the mode they are in) */
+.mxWrap .btn,
+.popBar .btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel2, #efece4);
+  color: var(--ink, #1d1d1b);
+  cursor: pointer;
+}
+.mxWrap .btn:hover,
+.popBar .btn:hover {
+  border-color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
+  color: var(--ink, #1d1d1b);
+}
+</style>
+    <style>
 /* Song wizard and MC-707 setup wizard. */
 /* wizard */
 #setup {
@@ -6391,6 +6688,7 @@ body[data-mode='synth'] #synth {
         ><button class="btn sm" id="bLoopAll" title="Loop the whole song">All</button>
         <button class="btn" id="bMetro" title="Metronome click (preview only)">Click</button>
         <button class="btn" id="bFollow" title="Scroll with the playhead">Follow</button>
+        <button class="btn" id="bMixer" title="The song's mixer: levels, pans, sends, mutes and solos, in a window you can move to another screen">Mixer</button>
         <label>Zoom <input type="range" id="zoom" min="26" max="150" style="width: 80px" /></label>
         <label
           >Snap
@@ -6696,6 +6994,204 @@ body[data-mode='synth'] #synth {
     const sec = bars2 * 4 * 60 / bpm;
     return Math.floor(sec / 60) + ":" + String(Math.round(sec % 60)).padStart(2, "0");
   };
+
+  // src/services/popout.js
+  var OPEN = /* @__PURE__ */ new Map();
+  var placeOf = (id) => {
+    try {
+      return JSON.parse(localStorage.getItem("mc707-popout-" + id) || "null");
+    } catch (e) {
+      return null;
+    }
+  };
+  var keepPlace = (id, p) => {
+    try {
+      localStorage.setItem("mc707-popout-" + id, JSON.stringify(p));
+    } catch (e) {
+    }
+  };
+  function copyStyles(doc) {
+    for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) doc.head.append(n.cloneNode(true));
+    doc.documentElement.className = document.documentElement.className;
+    for (const a of document.documentElement.attributes)
+      if (a.name.startsWith("data-")) doc.documentElement.setAttribute(a.name, a.value);
+  }
+  function forwardKeys(win) {
+    for (const type of ["keydown", "keyup"])
+      win.document.addEventListener(type, (e) => {
+        if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== "range") return;
+        const copy = new KeyboardEvent(type, {
+          key: e.key,
+          code: e.code,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey,
+          repeat: e.repeat,
+          bubbles: true,
+          cancelable: true
+        });
+        if (!document.dispatchEvent(copy)) e.preventDefault();
+      });
+  }
+  function openWindow(o, h) {
+    const p = placeOf(o.id) || {};
+    const w = p.w || o.w, ht = p.h || o.h;
+    const feat = "popup=yes,width=" + w + ",height=" + ht + (p.x != null ? ",left=" + p.x + ",top=" + p.y : "") + ",resizable=yes";
+    let win = null;
+    try {
+      win = window.open("", "mc707-" + o.id, feat);
+    } catch (e) {
+      win = null;
+    }
+    if (!win || win.closed || !win.document) return false;
+    const doc = win.document;
+    doc.open();
+    doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body></body></html>');
+    doc.close();
+    doc.title = o.title + " · MC-707 Toolbox";
+    copyStyles(doc);
+    doc.body.className = "popWin";
+    const root = el("div", { class: "popRoot" });
+    doc.body.append(root);
+    forwardKeys(win);
+    const save3 = () => {
+      try {
+        if (!win.closed)
+          keepPlace(o.id, { x: win.screenX, y: win.screenY, w: win.innerWidth, h: win.innerHeight, win: 1 });
+      } catch (e) {
+      }
+    };
+    const watch = setInterval(() => {
+      if (win.closed) h.close(true);
+      else save3();
+    }, 1e3);
+    win.addEventListener("beforeunload", save3);
+    Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch) });
+    return true;
+  }
+  function openPanel(o, h) {
+    const p = placeOf(o.id) || {};
+    const box = el("div", { class: "popPanel", role: "dialog", "aria-label": o.title });
+    const root = el("div", { class: "popRoot" });
+    const place = (x, y) => {
+      x = Math.max(0, Math.min(innerWidth - 120, x));
+      y = Math.max(0, Math.min(innerHeight - 40, y));
+      box.style.left = x + "px";
+      box.style.top = y + "px";
+    };
+    const bar2 = el(
+      "div",
+      {
+        class: "popBar",
+        title: "Drag to move",
+        onpointerdown: (e) => {
+          if (e.target.closest("button")) return;
+          const r = box.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+          const move = (m) => place(m.clientX - dx, m.clientY - dy);
+          const up = () => {
+            removeEventListener("pointermove", move);
+            removeEventListener("pointerup", up);
+            const q = box.getBoundingClientRect();
+            keepPlace(o.id, { ...placeOf(o.id) || {}, px: q.left, py: q.top, win: 0 });
+          };
+          addEventListener("pointermove", move);
+          addEventListener("pointerup", up);
+        }
+      },
+      el("b", {}, o.title),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          title: "Open it in a window of its own, to drag onto another screen",
+          onclick: () => {
+            const build3 = h.build;
+            h.close(true);
+            popout({ ...o, build: build3, panel: false });
+          }
+        },
+        "Pop out ⧉"
+      ),
+      el("button", { type: "button", class: "btn sm", title: "Close", onclick: () => h.close() }, "✕")
+    );
+    box.append(bar2, root);
+    document.body.append(box);
+    box.style.width = (p.pw || o.w) + "px";
+    place(p.px != null ? p.px : innerWidth - (p.pw || o.w) - 24, p.py != null ? p.py : 70);
+    Object.assign(h, {
+      win: null,
+      doc: document,
+      root,
+      panel: box,
+      raf: (f) => requestAnimationFrame(f),
+      stop: () => box.remove()
+    });
+  }
+  function popout(o) {
+    const old = OPEN.get(o.id);
+    if (old && old.win && old.win.closed) old.close(true);
+    else if (old) {
+      if (old.win) old.win.focus();
+      return old;
+    }
+    const h = { id: o.id, build: o.build, open: true };
+    h.refresh = () => {
+      if (!h.open) return;
+      h.root.textContent = "";
+      o.build(h.root, h);
+    };
+    h.close = (quiet) => {
+      if (!h.open) return;
+      h.open = false;
+      OPEN.delete(o.id);
+      h.stop();
+      try {
+        if (h.win && !h.win.closed) h.win.close();
+      } catch (e) {
+      }
+      if (o.onClose) o.onClose(quiet);
+    };
+    const want = o.panel != null ? o.panel : (placeOf(o.id) || {}).win === 0;
+    if (want || !openWindow(o, h)) openPanel(o, h);
+    OPEN.set(o.id, h);
+    h.refresh();
+    return h;
+  }
+  var TOKENS = [
+    "--bg",
+    "--panel",
+    "--panel2",
+    "--raise",
+    "--line",
+    "--ink",
+    "--mute",
+    "--hot",
+    "--acc",
+    "--font",
+    "--glow1",
+    "--glow2"
+  ];
+  var themeSig = (src) => {
+    const cs = getComputedStyle(src);
+    return TOKENS.map((k2) => cs.getPropertyValue(k2).trim()).join(";");
+  };
+  function popTheme(h, src, cls) {
+    const cs = getComputedStyle(src), host = h.panel || h.doc.body;
+    for (const k2 of TOKENS) {
+      const v = cs.getPropertyValue(k2).trim();
+      if (v) host.style.setProperty(k2, v);
+      else host.style.removeProperty(k2);
+    }
+    host.classList.remove("popSong", "popLive");
+    host.classList.add(cls);
+    return themeSig(src);
+  }
+  var popoutOf = (id) => OPEN.get(id) || null;
+  function popoutCloseAll() {
+    for (const h of [...OPEN.values()]) h.close(true);
+  }
 
   // src/core/icons.js
   var ICON = {
@@ -7763,9 +8259,9 @@ body[data-mode='synth'] #synth {
     const seen = new Set(FAC.map((f) => f.type + JSON.stringify(f.notes.map((n) => [n.s, n.l, n.n, n.v]))));
     let uid = 1;
     const add = (o) => {
-      const sig = o.type + JSON.stringify(o.notes.map((n) => [n.s, n.l, n.n, n.v]));
-      if (!o.notes.length || seen.has(sig)) return false;
-      seen.add(sig);
+      const sig3 = o.type + JSON.stringify(o.notes.map((n) => [n.s, n.l, n.n, n.v]));
+      if (!o.notes.length || seen.has(sig3)) return false;
+      seen.add(sig3);
       FAC.push({
         id: "g" + uid++,
         name: o.name,
@@ -12353,11 +12849,11 @@ body[data-mode='synth'] #synth {
           let s = base + h[0];
           if (s >= total) continue;
           let l = Math.min(h[1], total - s);
-          const look = bass ? 0 : h[3] || 0;
+          const look3 = bass ? 0 : h[3] || 0;
           while (l > 0) {
-            const g = segAt3(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
+            const g = segAt3(segs, total, s + look3), end = look3 ? l : Math.min(l, g.e - s % total);
             emit(s, Math.max(1, end), h, g);
-            if (look) break;
+            if (look3) break;
             s += end;
             l -= end;
           }
@@ -15058,13 +15554,13 @@ body[data-mode='synth'] #synth {
   };
   function leadPart(sg, bars2, R3, mode, rh) {
     const notes = scaleIn(R3, mode, 64, 86), color = (R3 + MODE[mode].color) % 12;
-    const near = (n, set) => set.reduce((a, b) => Math.abs(b - n) < Math.abs(a - n) ? b : a, set[0]);
+    const near = (n, set2) => set2.reduce((a, b) => Math.abs(b - n) < Math.abs(a - n) ? b : a, set2[0]);
     const chordTones = (g) => notes.filter((n) => QUAL[g.q].some((x) => (g.pc + x) % 12 === n % 12));
     let cur2 = near(74, chordTones(sg[0]));
     const motif = [];
     const out2 = [];
     for (let b = 0; b < bars2; b++) {
-      const call = b % 2 === 0, last = b === bars2 - 1, hits = (call ? rh[0] : rh[1]).filter((h) => !last || h[0] < 12);
+      const call = b % 2 === 0, last3 = b === bars2 - 1, hits = (call ? rh[0] : rh[1]).filter((h) => !last3 || h[0] < 12);
       hits.forEach(([s, l], i) => {
         const at2 = b * 16 + s, g = segAt(sg, at2), ct = chordTones(g);
         if (call && b > 0 && motif[i] != null) {
@@ -15080,7 +15576,7 @@ body[data-mode='synth'] #synth {
         if (b === 0 && motif[i] == null) motif[i] = 0;
         out2.push({ s: at2, l: Math.min(l, bars2 * 16 - at2), n: cur2, v: hum2(s % 4 === 0 ? 98 : 86) });
       });
-      if (last) {
+      if (last3) {
         const g = segAt(sg, b * 16 + 12);
         out2.push({ s: b * 16 + 12, l: 4, n: near(cur2, chordTones(g)), v: hum2(92) });
       }
@@ -15105,7 +15601,7 @@ body[data-mode='synth'] #synth {
   }
   var SCALE_OF = (m) => m === "blues" ? "minor pent" : m;
   for (const g of Object.keys(GSET)) {
-    const set = GSET[g], sty = GSTYLES[g], notFor = g === "hiphop" ? ["trap", "drill"] : null, styles = notFor ? sty.filter((s) => !notFor.includes(s)) : sty.slice();
+    const set2 = GSET[g], sty = GSTYLES[g], notFor = g === "hiphop" ? ["trap", "drill"] : null, styles = notFor ? sty.filter((s) => !notFor.includes(s)) : sty.slice();
     let uid = 0;
     const push = (o) => FAC.push({
       id: "gp-" + g + "-" + uid++,
@@ -15118,13 +15614,13 @@ body[data-mode='synth'] #synth {
       ...o
     });
     GPROGS.filter((p) => p[4].split(" ").includes(g)).forEach((p, pi) => {
-      const [name, bars2, , mode] = p, R3 = set.keys[pi % set.keys.length][0], sg = lay(p, R3), keyName = NOTE_NAMES[R3] + " " + SCALE_OF(mode), K = { key: { root: R3, scale: SCALE_OF(mode) }, keyName }, tag = set.tag + " ", suf = bars2 === 2 ? " 2-bar" : "", notes = (list) => list.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
-      const rh = CH_RH[set.ch];
+      const [name, bars2, , mode] = p, R3 = set2.keys[pi % set2.keys.length][0], sg = lay(p, R3), keyName = NOTE_NAMES[R3] + " " + SCALE_OF(mode), K = { key: { root: R3, scale: SCALE_OF(mode) }, keyName }, tag = set2.tag + " ", suf = bars2 === 2 ? " 2-bar" : "", notes = (list) => list.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
+      const rh = CH_RH[set2.ch];
       ["Groove", "Push"].forEach(
         (lab, v) => push({
           name: tag + "Chords: " + name + suf + " (" + lab + ")",
           bars: bars2,
-          notes: notes(chordsPart(sg, bars2, rh[v], set.ch === "power8")),
+          notes: notes(chordsPart(sg, bars2, rh[v], set2.ch === "power8")),
           ...K,
           role: "Chords",
           pool: "chords",
@@ -15135,7 +15631,7 @@ body[data-mode='synth'] #synth {
         (lab, v) => push({
           name: tag + "Bass: " + name + suf + " (" + lab + ")",
           bars: bars2,
-          notes: notes(bassPart(sg, bars2, BS_RH[set.bs][v], R3)),
+          notes: notes(bassPart(sg, bars2, BS_RH[set2.bs][v], R3)),
           ...K,
           role: "Bass",
           pool: "bass",
@@ -15153,16 +15649,16 @@ body[data-mode='synth'] #synth {
       push({
         name: tag + "Lead: " + name + suf + " (" + mode + " hook)",
         bars: bars2,
-        notes: notes(leadPart(sg, bars2, R3, mode, LD_RH[set.ld])),
+        notes: notes(leadPart(sg, bars2, R3, mode, LD_RH[set2.ld])),
         ...K,
         role: "Lead",
         pool: "lead",
         lively: true
       });
       push({
-        name: tag + "Arp: " + name + suf + " (" + (set.ar === "t8" ? "triplets" : set.ar === 8 ? "8ths" : "16ths") + ")",
+        name: tag + "Arp: " + name + suf + " (" + (set2.ar === "t8" ? "triplets" : set2.ar === 8 ? "8ths" : "16ths") + ")",
         bars: bars2,
-        notes: notes(arpPart(sg, bars2, set.ar)),
+        notes: notes(arpPart(sg, bars2, set2.ar)),
         ...K,
         role: "Lead",
         pool: "pluck",
@@ -15172,10 +15668,10 @@ body[data-mode='synth'] #synth {
     for (const [nm, bars2, lanes, st] of GDRUMS[g])
       FAC.push({
         id: "gp-" + g + "-k" + uid++,
-        name: set.tag + " Groove: " + nm,
+        name: set2.tag + " Groove: " + nm,
         type: "drum",
         genre: g,
-        bpm: set.bpm,
+        bpm: set2.bpm,
         bars: bars2,
         notes: D(bars2, lanes).notes,
         key: null,
@@ -15658,6 +16154,11 @@ body[data-mode='synth'] #synth {
     const at2 = SENTAT.get(ch - 1 << 7 | note);
     return at2 != null && Math.abs(performance.now() - at2) < ms;
   }
+  var MIDI_ACT = Array.from({ length: 16 }, () => ({ at: -1e9, v: 0 }));
+  function midiAct(ch) {
+    const a = MIDI_ACT[ch], dt = performance.now() - a.at;
+    return dt < 0 || dt > 300 ? 0 : a.v / 127 * (1 - dt / 300);
+  }
   function sendMidi(bytes, at2) {
     const o = MIDI.out;
     if (!o) return;
@@ -15666,6 +16167,8 @@ body[data-mode='synth'] #synth {
       if (bytes.length > 2 && (bytes[0] & 240) === 144 && bytes[2] > 0) {
         NOTEHIST.add((bytes[0] & 15) << 7 | bytes[1]);
         SENTAT.set((bytes[0] & 15) << 7 | bytes[1], Math.max(ms, performance.now()));
+        const a = MIDI_ACT[bytes[0] & 15], t = Math.max(ms, performance.now());
+        if (t >= a.at + 40 || bytes[2] > a.v) a.at = t, a.v = bytes[2];
       }
       o.send(bytes, Math.max(ms, 0));
     } catch (e) {
@@ -16084,10 +16587,10 @@ body[data-mode='synth'] #synth {
           if (m.scene != null && m.bar === mb) sendMidi([192 | (S.ctrlCh || 16) - 1, m.scene], time);
       }
       songClipTick(tick, time);
-      const solo = S.tracks.some((t) => t.solo);
+      const solo2 = S.tracks.some((t) => t.solo);
       for (let ti = 0; ti < 8; ti++) {
         const t = S.tracks[ti];
-        if (t.mute || solo && !t.solo) continue;
+        if (t.mute || solo2 && !t.solo) continue;
         for (const c of S.clips) {
           if (c.t !== ti || c.mute) continue;
           const c0 = c.start * 32, c1 = (c.start + c.len) * 32;
@@ -16895,7 +17398,7 @@ body[data-mode='synth'] #synth {
   function showMenu(x, y, items) {
     closeMenu();
     const m = el("div", { class: "cmenu", role: "menu" });
-    const build = (list, host) => {
+    const build3 = (list, host) => {
       list.forEach((it) => {
         if (!it) return;
         if (it === "-") {
@@ -16926,7 +17429,7 @@ body[data-mode='synth'] #synth {
             el("span", { class: "arr" }, "▸")
           );
           const sm = el("div", { class: "cmenu subm" });
-          build(it.sub, sm);
+          build3(it.sub, sm);
           row.append(sm);
           host.append(row);
           return;
@@ -16949,7 +17452,7 @@ body[data-mode='synth'] #synth {
         );
       });
     };
-    build(items, m);
+    build3(items, m);
     document.body.append(m);
     CM = m;
     const r = m.getBoundingClientRect();
@@ -17169,10 +17672,10 @@ body[data-mode='synth'] #synth {
     if (!ov) return;
     ov.textContent = "";
     const map = cmFix(), m = map[CMAP.t], tr = S.tracks[CMAP.t], dn2 = DEVS[DEV].name;
-    const strips = el("div", { class: "cmStrips" });
+    const strips3 = el("div", { class: "cmStrips" });
     DEVS[DEV].tracks.forEach((t) => {
       const mm = map[t];
-      strips.append(
+      strips3.append(
         el(
           "button",
           {
@@ -17263,7 +17766,7 @@ body[data-mode='synth'] #synth {
       el(
         "div",
         { class: "cmUnit" },
-        strips,
+        strips3,
         el(
           "div",
           { class: "cmMid" },
@@ -17386,17 +17889,17 @@ body[data-mode='synth'] #synth {
         style: "position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9600;padding:16px"
       });
       let inp = null;
-      const done = (v) => {
+      const done2 = (v) => {
         back.remove();
         removeEventListener("keydown", kd, true);
         res(v);
       };
       const ok = el(
         "button",
-        { class: "btn on", onclick: () => done(o.input ? inp.value.trim() || null : true) },
+        { class: "btn on", onclick: () => done2(o.input ? inp.value.trim() || null : true) },
         o.ok || "OK"
       );
-      const no = el("button", { class: "btn", onclick: () => done(o.input ? null : false) }, o.cancel || "Cancel");
+      const no = el("button", { class: "btn", onclick: () => done2(o.input ? null : false) }, o.cancel || "Cancel");
       const box = el(
         "div",
         {
@@ -17417,7 +17920,7 @@ body[data-mode='synth'] #synth {
       const kd = (e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
-          done(o.input ? null : false);
+          done2(o.input ? null : false);
         } else if (e.key === "Enter") {
           e.stopPropagation();
           e.preventDefault();
@@ -17570,11 +18073,11 @@ body[data-mode='synth'] #synth {
   function cmAtBar(t, bar2) {
     const mk = clipMarkAt(t, bar2);
     if (mk && mk.k >= 0) return mk.k;
-    let last = null;
-    for (const c of S.clips) if (c.t === t && c.start <= bar2 + 1e-9 && (!last || c.start > last.start)) last = c;
-    if (last && last.pc != null) return last.pc;
-    if (S.clipAuto && last) {
-      const k2 = clipFor(t, patType(S.patterns[last.pat]));
+    let last3 = null;
+    for (const c of S.clips) if (c.t === t && c.start <= bar2 + 1e-9 && (!last3 || c.start > last3.start)) last3 = c;
+    if (last3 && last3.pc != null) return last3.pc;
+    if (S.clipAuto && last3) {
+      const k2 = clipFor(t, patType(S.patterns[last3.pat]));
       if (k2 >= 0) return k2;
     }
     return null;
@@ -17799,8 +18302,8 @@ body[data-mode='synth'] #synth {
         break;
       }
     }
-    const p0 = patOf(run2[0]), sig = glueSig(body);
-    const match = [...new Set(run2.map((c) => c.pat))].map((id) => S.patterns[id]).find((p) => p && p.bars === bars2 && glueSig(p.notes) === sig);
+    const p0 = patOf(run2[0]), sig3 = glueSig(body);
+    const match = [...new Set(run2.map((c) => c.pat))].map((id) => S.patterns[id]).find((p) => p && p.bars === bars2 && glueSig(p.notes) === sig3);
     const names = [...new Set(run2.map((c) => glueBase(patOf(c).name)))];
     const pid = match ? match.id : addPattern(
       p0.type,
@@ -18132,7 +18635,7 @@ body[data-mode='synth'] #synth {
     }
     return { items, bad, skipped: files.length - list.length };
   }
-  function modalBox(title, build) {
+  function modalBox(title, build3) {
     return new Promise((res) => {
       const back = el("div", {
         style: "position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px"
@@ -18163,7 +18666,7 @@ body[data-mode='synth'] #synth {
           el("button", { class: "btn sm", onclick: () => close(null), "aria-label": "Close" }, "✕")
         )
       );
-      build(box, close);
+      build3(box, close);
       back.append(box);
       back.addEventListener("mousedown", (e) => {
         if (e.target === back) close(null);
@@ -18297,7 +18800,7 @@ body[data-mode='synth'] #synth {
             const place = dest.value === "place";
             const bar2 = Math.max(0, Math.floor(posBarNow()));
             const rot = { drum: 0, tone: 0 };
-            let last = null, placed = 0;
+            let last3 = null, placed = 0;
             pick3.forEach((p) => {
               const r = p.res;
               const pid = addPattern(p.type, p.name || "Imported", r.bars, r.notes, {
@@ -18317,13 +18820,13 @@ body[data-mode='synth'] #synth {
                 );
                 t = (free.length ? free : pool)[rot[p.type]++ % (free.length ? free.length : pool.length)];
               }
-              last = placeClip(t, bar2, pid, r.bars);
+              last3 = placeClip(t, bar2, pid, r.bars);
               placed++;
             });
             close(true);
-            if (place && last) {
-              selectClip(last.id);
-              showClipBar(last);
+            if (place && last3) {
+              selectClip(last3.id);
+              showClipBar(last3);
             }
             UI.libTab = "proj";
             if (!place) {
@@ -18389,7 +18892,7 @@ body[data-mode='synth'] #synth {
         el("option", { value: "end" }, "After the last clip")
       );
       const cc2 = curClip();
-      const refresh2 = () => {
+      const refresh4 = () => {
         kb.textContent = "";
         [
           ["drum", "Drums"],
@@ -18402,7 +18905,7 @@ body[data-mode='synth'] #synth {
                 class: "btn" + (v === kind ? " on" : ""),
                 onclick: () => {
                   kind = v;
-                  refresh2();
+                  refresh4();
                 }
               },
               l
@@ -18411,7 +18914,7 @@ body[data-mode='synth'] #synth {
         );
         trackOptsFor(trk, kind, cc2 && S.tracks[cc2.t].type === kind ? cc2.t : S.tracks.findIndex((t) => t.type === kind));
       };
-      refresh2();
+      refresh4();
       box.append(
         el(
           "div",
@@ -18590,9 +19093,9 @@ body[data-mode='synth'] #synth {
       splits: cl.filter((c) => c.start < a || Number.isFinite(b) && c.start + c.len > b).length
     };
   }
-  function splitAtBar(bar2, set) {
+  function splitAtBar(bar2, set2) {
     for (const c of S.clips.slice()) {
-      if (!set.has(c.t) || !(bar2 > c.start && bar2 < c.start + c.len)) continue;
+      if (!set2.has(c.t) || !(bar2 > c.start && bar2 < c.start + c.len)) continue;
       const orig = { ...c }, end = c.start + c.len;
       S.clips.push(
         applyShape(
@@ -18637,10 +19140,10 @@ body[data-mode='synth'] #synth {
           delete c.tr;
         });
     } else {
-      const set = XP.tracks;
-      if (Number.isFinite(a)) splitAtBar(a, set);
-      if (Number.isFinite(b)) splitAtBar(b, set);
-      S.clips.filter((c) => set.has(c.t) && S.tracks[c.t].type === "tone" && c.start >= a && c.start + c.len <= b).forEach((c) => {
+      const set2 = XP.tracks;
+      if (Number.isFinite(a)) splitAtBar(a, set2);
+      if (Number.isFinite(b)) splitAtBar(b, set2);
+      S.clips.filter((c) => set2.has(c.t) && S.tracks[c.t].type === "tone" && c.start >= a && c.start + c.len <= b).forEach((c) => {
         const v = mode === "add" ? (c.tr || 0) + semi : semi;
         c.tr = clamp(v, -48, 48);
         if (!c.tr) delete c.tr;
@@ -19807,7 +20310,7 @@ body[data-mode='synth'] #synth {
     const g = el("div", { class: "mgrid" });
     MC_PARAMS.forEach((m) => {
       const cur2 = t.cc && t.cc[m.n] != null ? t.cc[m.n] : m.def;
-      const set = t.cc && t.cc[m.n] != null;
+      const set2 = t.cc && t.cc[m.n] != null;
       const out2 = el("output", {}, String(cur2));
       const rng = el("input", {
         type: "range",
@@ -19827,7 +20330,7 @@ body[data-mode='synth'] #synth {
       });
       const row = el(
         "div",
-        { class: "mrow" + (set ? " set" : "") },
+        { class: "mrow" + (set2 ? " set" : "") },
         el("span", { class: "mn" }, m.name, el("small", {}, "CC " + m.n)),
         rng,
         out2,
@@ -20896,7 +21399,7 @@ body[data-mode='synth'] #synth {
       );
       return;
     }
-    const sig = JSON.stringify([
+    const sig3 = JSON.stringify([
       UI.libTab,
       UI.libType,
       UI.libGenre,
@@ -20909,8 +21412,8 @@ body[data-mode='synth'] #synth {
       UI.libFav,
       UI.q
     ]);
-    if (UI._sig !== sig) {
-      UI._sig = sig;
+    if (UI._sig !== sig3) {
+      UI._sig = sig3;
       UI.libLimit = 60;
     }
     for (const it of items.slice(0, UI.libLimit)) {
@@ -23701,6 +24204,312 @@ body[data-mode='synth'] #synth {
   });
   document.addEventListener("fullscreenchange", syncFullBtn);
 
+  // src/services/mixer-strip.js
+  var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
+  var DEF = { lvl: 100, pan: 64, rev: 0, cho: 0 };
+  function knob(label2, key, v, s, o) {
+    const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
+    const paint = (inp2, x) => {
+      const p = x / 127 * 100;
+      inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
+      inp2.style.setProperty("--hi", (centre ? Math.max(p, 50) : p) + "%");
+    };
+    const inp = el("input", {
+      type: "range",
+      min: 0,
+      max: 127,
+      value: v,
+      class: "mxKnob" + (centre ? " centre" : ""),
+      "aria-label": label2 + ", " + s.name,
+      onpointerdown: () => o.grab && o.grab(),
+      oninput: (e) => {
+        const x = +e.target.value;
+        paint(e.target, x);
+        out2.textContent = centre ? panText(x) : String(x);
+        o.set(key, x);
+      },
+      onchange: () => o.done && o.done(key),
+      onpointerup: () => o.done && o.done(key),
+      onpointercancel: () => o.done && o.done(key),
+      ondblclick: (e) => {
+        e.target.value = DEF[key];
+        e.target.dispatchEvent(new Event("input"));
+        e.target.dispatchEvent(new Event("change"));
+      }
+    });
+    paint(inp, v);
+    return el("label", { class: "mxRow", title: label2 + " · double-click to reset" }, el("span", {}, label2), inp, out2);
+  }
+  function mixStrip(s, o) {
+    const lvlOut = el("b", { class: "mxVal" }, String(s.lvl));
+    const fader2 = el("input", {
+      type: "range",
+      min: 0,
+      max: 127,
+      value: s.lvl,
+      class: "mxFader",
+      "aria-label": "Level, " + s.name,
+      title: "Level (MIDI volume, CC 7) · double-click for 100",
+      onpointerdown: () => o.grab && o.grab(),
+      oninput: (e) => {
+        const x = +e.target.value;
+        lvlOut.textContent = String(x);
+        e.target.style.setProperty("--hi", x / 127 * 100 + "%");
+        o.set("lvl", x);
+      },
+      onchange: () => o.done && o.done("lvl"),
+      onpointerup: () => o.done && o.done("lvl"),
+      onpointercancel: () => o.done && o.done("lvl"),
+      ondblclick: (e) => {
+        e.target.value = DEF.lvl;
+        e.target.dispatchEvent(new Event("input"));
+        e.target.dispatchEvent(new Event("change"));
+      }
+    });
+    fader2.style.setProperty("--hi", s.lvl / 127 * 100 + "%");
+    const meter = el("i", { class: "mxMeterFill" });
+    const light = el("i", { class: "mxLight", title: "Lights with the notes going out" });
+    const tg = (lab, cls, on2, fn, title, pend) => el(
+      "button",
+      {
+        type: "button",
+        class: "mxTg " + cls + (on2 ? " on" : "") + (pend ? " pend" : ""),
+        "aria-pressed": String(on2),
+        title,
+        onclick: fn
+      },
+      lab
+    );
+    const node = el(
+      "section",
+      {
+        class: "mxStrip" + (s.mute ? " muted" : "") + (s.solo ? " solo" : "") + (s.dim ? " dim" : ""),
+        style: "--tc:" + (s.color || "#39ff7a"),
+        "aria-label": "Track " + s.num + ", " + s.name,
+        title: o.title || "",
+        oncontextmenu: (e) => {
+          if (!o.menu || e.target.matches("input")) return;
+          e.preventDefault();
+          o.menu(e);
+        }
+      },
+      el(
+        "div",
+        { class: "mxHead" },
+        el("span", { class: "mxNum" }, String(s.num)),
+        light,
+        el("span", { class: "mxName", title: s.name }, s.name),
+        s.sub ? el("span", { class: "mxSub", title: s.dim || s.sub }, s.dim ? s.dim : s.sub) : null
+      ),
+      knob("Pan", "pan", s.pan, s, o),
+      knob("Reverb", "rev", s.rev, s, o),
+      knob("Chorus", "cho", s.cho, s, o),
+      ...s.extra || [],
+      el("div", { class: "mxFaderBox" }, el("span", { class: "mxMeter" }, meter), fader2),
+      lvlOut,
+      el(
+        "div",
+        { class: "mxBtns" },
+        tg(
+          "M",
+          "mute",
+          s.mute,
+          o.mute,
+          s.pending === "mute" ? "Mutes on the next beat" : s.pending === "unmute" ? "Comes back on the next beat" : "Mute",
+          !!s.pending
+        ),
+        tg("S", "solo", s.solo, o.solo, "Solo: hear only the soloed tracks")
+      )
+    );
+    node.light = light;
+    node.meter = meter;
+    return node;
+  }
+  function mixLight(node, a) {
+    node.light.style.opacity = String(0.15 + 0.85 * a);
+    node.meter.style.height = Math.round(a * 100) + "%";
+  }
+
+  // src/song/song-mixer.js
+  var CC = { lvl: 7, pan: 10, rev: 91, cho: 92 };
+  var DEF2 = { lvl: 100, pan: 64, rev: 0, cho: 0 };
+  var ID = "song-mixer";
+  var held = false;
+  var valOf = (t, key) => {
+    const c = S.tracks[t].cc;
+    return c && c[CC[key]] != null ? c[CC[key]] : DEF2[key];
+  };
+  var live = () => MIDI.out && S.sendCC !== false;
+  function set(t, key, v) {
+    const tr = S.tracks[t];
+    tr.cc = tr.cc || {};
+    tr.cc[CC[key]] = v;
+    if (live()) sendCC(t, CC[key], v);
+  }
+  function change(fn) {
+    pushUndo();
+    fn();
+    renderArr();
+    scheduleSave();
+    refresh();
+  }
+  function resetTrack(t) {
+    const tr = S.tracks[t];
+    if (tr.cc) for (const k2 in CC) delete tr.cc[CC[k2]];
+    if (tr.cc && !Object.keys(tr.cc).length) delete tr.cc;
+    tr.vol = 100;
+    if (live()) for (const k2 in CC) sendCC(t, CC[k2], DEF2[k2]);
+  }
+  function songMixSend() {
+    if (!live()) return;
+    for (const t of DEVS[DEV].tracks) for (const k2 in CC) sendCC(t, CC[k2], valOf(t, k2));
+  }
+  function stripFor(t) {
+    const tr = S.tracks[t];
+    const vel = el("input", {
+      type: "range",
+      min: 0,
+      max: 127,
+      value: tr.vol,
+      class: "mxKnob",
+      "aria-label": "Velocity, " + tr.name,
+      onpointerdown: () => grab(),
+      oninput: (e) => {
+        const x = S.tracks[t].vol = +e.target.value;
+        e.target.nextSibling.textContent = String(x);
+        e.target.style.setProperty("--hi", x / 127 * 100 + "%");
+      },
+      onchange: () => done(),
+      onpointerup: () => done(),
+      ondblclick: (e) => {
+        e.target.value = 100;
+        e.target.dispatchEvent(new Event("input"));
+        e.target.dispatchEvent(new Event("change"));
+      }
+    });
+    vel.style.setProperty("--lo", "0%");
+    vel.style.setProperty("--hi", tr.vol / 127 * 100 + "%");
+    return mixStrip(
+      {
+        num: devNum(t),
+        name: tr.name,
+        color: TRACK_COLORS[t],
+        sub: (tr.type === "drum" ? "Drums" : "Tone") + " · ch " + tr.ch,
+        lvl: valOf(t, "lvl"),
+        pan: valOf(t, "pan"),
+        rev: valOf(t, "rev"),
+        cho: valOf(t, "cho"),
+        mute: tr.mute,
+        solo: tr.solo,
+        extra: [
+          el(
+            "label",
+            { class: "mxRow", title: "Note velocity, played by the app (100 = as written) · double-click for 100" },
+            el("span", {}, "Velocity"),
+            vel,
+            el("b", {}, String(tr.vol))
+          )
+        ]
+      },
+      {
+        grab,
+        done,
+        set: (key, v) => set(t, key, v),
+        /* the track looked up when clicked: undo or a loaded song replaces the track objects */
+        mute: () => change(() => S.tracks[t].mute = !S.tracks[t].mute),
+        solo: () => change(() => S.tracks[t].solo = !S.tracks[t].solo),
+        menu: (e) => showMenu(e.clientX, e.clientY, [
+          { label: "Solo only this track", action: () => change(() => S.tracks.forEach((x, i) => x.solo = i === t)) },
+          { label: "Reset this track’s mix", action: () => change(() => resetTrack(t)) }
+        ])
+      }
+    );
+  }
+  function grab() {
+    if (!held) pushUndo();
+    held = true;
+  }
+  function done() {
+    held = false;
+    scheduleSave();
+  }
+  var sig = () => JSON.stringify(
+    DEVS[DEV].tracks.map((t) => {
+      const x = S.tracks[t];
+      return [x.name, x.type, x.ch, x.mute, x.solo, x.vol, x.cc];
+    })
+  );
+  var strips = [];
+  var last = "";
+  var look = "";
+  var gen = 0;
+  var lastSig = 0;
+  var lookSrc = () => document.documentElement;
+  function build(root, h) {
+    last = sig();
+    look = popTheme(h, lookSrc(), "popSong");
+    const my = ++gen;
+    strips = DEVS[DEV].tracks.map((t) => [t, stripFor(t)]);
+    root.append(
+      el(
+        "div",
+        { class: "mxWrap" },
+        el(
+          "div",
+          { class: "mxTop" },
+          el("b", { class: "mxTitle" }, "Song mixer"),
+          el("span", { class: "hint" }, "Saved with the song and sent to the MC-707 when it starts."),
+          el(
+            "div",
+            { class: "mxActs" },
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Send every level, pan and send to the MC-707 now",
+                onclick: songMixSend
+              },
+              "Send to MC-707"
+            ),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                onclick: () => change(() => S.tracks.forEach((x) => (x.mute = false, x.solo = false)))
+              },
+              "Clear mutes and solos"
+            ),
+            el(
+              "button",
+              { type: "button", class: "btn sm", onclick: () => change(() => DEVS[DEV].tracks.forEach(resetTrack)) },
+              "Reset all"
+            )
+          )
+        ),
+        el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]))
+      )
+    );
+    const tick = (now) => {
+      if (!h.open || my !== gen) return;
+      for (const [t, node] of strips) mixLight(node, midiAct(S.tracks[t].ch - 1));
+      if (!held && now - lastSig > 150) {
+        lastSig = now;
+        if (sig() !== last || themeSig(lookSrc()) !== look) return refresh();
+      }
+      h.raf(tick);
+    };
+    h.raf(tick);
+  }
+  function refresh() {
+    const h = popoutOf(ID);
+    if (h) h.refresh();
+  }
+  function songMixerOpen() {
+    popout({ id: ID, title: "Song mixer", w: 760, h: 560, build });
+  }
+
   // src/library/harmony-pack.js
   function addHarmonyPack() {
     let seed4 = 20261018;
@@ -24150,9 +24959,9 @@ body[data-mode='synth'] #synth {
           segs[i].s -= 2;
           segs[i - 1].e -= 2;
         }
-        const last = segs[segs.length - 1], f = segs[0];
-        last.e -= 2;
-        segs.push({ ...f, s: last.e, e: last.e + 2, wrap: true });
+        const last3 = segs[segs.length - 1], f = segs[0];
+        last3.e -= 2;
+        segs.push({ ...f, s: last3.e, e: last3.e + 2, wrap: true });
       }
       let prev = null;
       for (let pass2 = 0; pass2 < 2; pass2++)
@@ -24178,11 +24987,11 @@ body[data-mode='synth'] #synth {
           let s = base + h[0];
           if (s >= total) continue;
           let l = Math.min(h[1], total - s);
-          const look = bass ? 0 : h[3] || 0;
+          const look3 = bass ? 0 : h[3] || 0;
           let first = true;
           while (l > 0) {
-            const g = segAt3(segs, total, s + look), end = look ? l : Math.min(l, g.e - s % total);
-            if (look) {
+            const g = segAt3(segs, total, s + look3), end = look3 ? l : Math.min(l, g.e - s % total);
+            if (look3) {
               emit(s, Math.max(1, end), h, g);
               break;
             }
@@ -24813,15 +25622,15 @@ body[data-mode='synth'] #synth {
   }
   function harmony(f) {
     const total = f.bars * 16, segs = [];
-    let last = null;
+    let last3 = null;
     for (let s = 0; s < total; s++) {
       const on2 = f.notes.filter((n) => n.s <= s + 0.01 && n.s + n.l > s + 0.01).map((n) => n.n);
-      const v = on2.length >= 3 ? [...new Set(on2)].sort((a, b) => a - b) : last;
+      const v = on2.length >= 3 ? [...new Set(on2)].sort((a, b) => a - b) : last3;
       if (!v) continue;
-      const sig = v.join(",");
-      if (segs.length && segs[segs.length - 1].sig === sig) segs[segs.length - 1].e = s + 1;
-      else segs.push({ s, e: s + 1, v, sig });
-      last = v;
+      const sig3 = v.join(",");
+      if (segs.length && segs[segs.length - 1].sig === sig3) segs[segs.length - 1].e = s + 1;
+      else segs.push({ s, e: s + 1, v, sig: sig3 });
+      last3 = v;
     }
     if (!segs.length) return null;
     segs[0].s = 0;
@@ -24983,8 +25792,8 @@ body[data-mode='synth'] #synth {
       }
     }
     if (out2.length) {
-      const last = out2[out2.length - 1];
-      last.n = tones.reduce((b, n) => (n - R3) % 12 === 0 && Math.abs(n - last.n) < Math.abs(b - last.n) ? n : b, home);
+      const last3 = out2[out2.length - 1];
+      last3.n = tones.reduce((b, n) => (n - R3) % 12 === 0 && Math.abs(n - last3.n) < Math.abs(b - last3.n) ? n : b, home);
     }
     return out2;
   }
@@ -26610,14 +27419,14 @@ body[data-mode='synth'] #synth {
       const c0 = sec.cells[kitTrack()];
       if (!w.fills || !c0 || !c0.id || c0.pool !== "kit" && c0.pool !== "full" || !picks.fill || !picks.fill.length)
         return;
-      const set = /* @__PURE__ */ new Set();
+      const set2 = /* @__PURE__ */ new Set();
       if (w.complexity === 1) {
-        if (next && next.e > sec.e && sec.bars >= 2) set.add(sec.bars - 1);
+        if (next && next.e > sec.e && sec.bars >= 2) set2.add(sec.bars - 1);
       } else {
-        for (let b = fe; b <= sec.bars; b += fe) if (b < sec.bars || next) set.add(b - 1);
-        if (sec.bars % fe !== 0 && sec.bars >= 4 && next) set.add(sec.bars - 1);
+        for (let b = fe; b <= sec.bars; b += fe) if (b < sec.bars || next) set2.add(b - 1);
+        if (sec.bars % fe !== 0 && sec.bars >= 4 && next) set2.add(sec.bars - 1);
       }
-      [...set].filter((x) => x > 0).sort((a, b) => a - b).forEach((bar2) => sec.fills.push({ bar: bar2, id: picks.fill[fillN++ % picks.fill.length] }));
+      [...set2].filter((x) => x > 0).sort((a, b) => a - b).forEach((bar2) => sec.fills.push({ bar: bar2, id: picks.fill[fillN++ % picks.fill.length] }));
     });
     if (w.fills && w.complexity >= 2 && (DEV === "101" || w.layers[2] !== false) && picks.build && picks.build.length) {
       let bn = 0;
@@ -28020,9 +28829,9 @@ body[data-mode='synth'] #synth {
       }
     });
     if (w.modulate && w.modulate.on) {
-      const last = [...plan2.sections].reverse().find((s) => /drop|hook|chorus/.test(s.kind));
-      if (last) {
-        const from = base + last.start;
+      const last3 = [...plan2.sections].reverse().find((s) => /drop|hook|chorus/.test(s.kind));
+      if (last3) {
+        const from = base + last3.start;
         S.clips.forEach((c) => {
           if (c.start >= from - 1e-9 && S.tracks[c.t].type === "tone")
             c.tr = clamp((c.tr || 0) + w.modulate.semi, -48, 48);
@@ -28193,6 +29002,7 @@ body[data-mode='synth'] #synth {
   var lvKbdNotes = (base) => LV_KBD_OFF.map((o) => o == null ? null : base + o);
   var LV_TOPFN = ["Oct −", null, null, "Step", null, null, null, "Oct +"];
   var LV_SAVE = [
+    "mix",
     "style",
     "seed",
     "key",
@@ -28375,6 +29185,12 @@ body[data-mode='synth'] #synth {
     LV.knobs = LV.rest.slice();
     if (!(["all", "drums", "tone"].includes(LV.ktarget) || Number.isInteger(+LV.ktarget) && +LV.ktarget >= 0 && +LV.ktarget < 8))
       LV.ktarget = "all";
+    const arr = (a, d, nul) => Array.from({ length: 8 }, (_, i) => {
+      const v = Array.isArray(a) ? a[i] : void 0;
+      return nul && v === null ? null : Number.isFinite(+v) && v !== null ? clamp(Math.round(+v), 0, 127) : d;
+    });
+    const m = LV.mix && typeof LV.mix === "object" ? LV.mix : {};
+    LV.mix = { lvl: arr(m.lvl, 100), pan: arr(m.pan, 64), rev: arr(m.rev, null, true), cho: arr(m.cho, 0) };
     LV.tg = Array.from({ length: 8 }, () => mkEnv(1, 1, 0, 0));
     LV.pulse = Array.from({ length: 8 }, () => ({ time: -9, v: 0 }));
   })();
@@ -28484,79 +29300,6 @@ body[data-mode='synth'] #synth {
     if (o) o.textContent = label(LV.human || 0);
   }
 
-  // src/live/fades.js
-  var EXPR = 11;
-  var ends = () => LV.fadeEnds || (LV.fadeEnds = []);
-  var low = () => LV.low || (LV.low = {});
-  var on = () => S.sendCC !== false;
-  function lvFadeOut(t, tick, dur) {
-    if (!on() || dur <= 0) return;
-    lvMove({
-      id: "fade" + t,
-      tag: "fade",
-      tracks: [t],
-      cc: EXPR,
-      kind: "ramp",
-      from: LV.ccLast && LV.ccLast[t + ":" + EXPR] != null ? LV.ccLast[t + ":" + EXPR] : low()[t] ? 0 : "rest",
-      to: 0,
-      curve: "lin",
-      start: tick,
-      end: tick + dur,
-      restore: false
-    });
-    low()[t] = true;
-    LV.fadeEnds = ends().filter((e) => e.t !== t);
-    ends().push({ t, at: tick + dur, back: tick + dur + 8 });
-  }
-  function lvFadeIn(t, tick, dur, nt) {
-    if (!on()) return;
-    LV.fadeEnds = ends().filter((e) => e.t !== t);
-    if (dur <= 0) return lvLevelBack(t, nt);
-    lvSendCC(t, EXPR, 0, nt);
-    lvMove({
-      id: "fade" + t,
-      tag: "fade",
-      tracks: [t],
-      cc: EXPR,
-      kind: "ramp",
-      from: 0,
-      to: "rest",
-      curve: "lin",
-      start: tick,
-      end: tick + dur
-    });
-    delete low()[t];
-  }
-  function lvLevelBack(t, nt) {
-    LV.fadeEnds = ends().filter((e) => e.t !== t);
-    if (!low()[t] && !(LV.autos || []).some((a) => a.id === "fade" + t)) return;
-    LV.autos = LV.autos.filter((a) => a.id !== "fade" + t);
-    delete low()[t];
-    lvSendCC(t, EXPR, lvRestCC(t, EXPR), nt);
-  }
-  function lvFadeTick(tick, nt) {
-    if (!LV.fadeEnds || !LV.fadeEnds.length) return;
-    LV.fadeEnds = LV.fadeEnds.filter((e) => {
-      if (!e.off && tick >= e.at) {
-        e.off = true;
-        if (on() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
-      }
-      if (tick >= e.back) {
-        lvLevelBack(e.t, nt);
-        return false;
-      }
-      return true;
-    });
-  }
-  function lvFadesReset(nt) {
-    const l = LV.low || {};
-    LV.fadeEnds = [];
-    for (const t in l) {
-      if (on()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
-      delete l[t];
-    }
-  }
-
   // src/live/scene-templates.js
   var LV_PLAY = [
     ["all", "Every bar"],
@@ -28628,6 +29371,148 @@ body[data-mode='synth'] #synth {
     LV.seed = Math.floor(Math.random() * 1e6) + 1;
     liveBuild();
     saveLive();
+  }
+
+  // src/live/set-builder.js
+  var avgPitch = (f) => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
+  var roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(avgPitch(f) - avgPitch(g)) >= 7;
+  function liveBuild() {
+    const st = lvStyle();
+    LV.style = st.id;
+    if (!LV.mode) LV.mode = lvModeFam(st.scale);
+    LV.fillIds = lvPool(st, "fill");
+    if (LV.custom && lvLoadScenes()) {
+      if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
+      LV.ver++;
+      return;
+    }
+    LV.custom = false;
+    const r = mulberry(LV.seed ^ 1540483477), P = {}, A = {}, at2 = {};
+    const shuf = (a) => {
+      a = a.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(r() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    const take = (pool, pred) => {
+      if (!P[pool]) {
+        A[pool] = shuf(lvPool(st, pool));
+        P[pool] = shuf(moodFilter(lvFlavor(A[pool], LV.flavor), LV.mood, facById));
+      }
+      for (const arr of pred ? [P[pool], A[pool]] : [P[pool]]) {
+        if (!arr.length) continue;
+        at2[pool] = at2[pool] || 0;
+        for (let k2 = 0; k2 < arr.length; k2++) {
+          const id = arr[(at2[pool] + k2) % arr.length];
+          if (!pred || pred(facById(id))) {
+            at2[pool] = (at2[pool] + k2 + 1) % arr.length;
+            return id;
+          }
+        }
+      }
+      return null;
+    };
+    const bassKeys = new Set(
+      lvPool(st, "bass").map(facById).filter((f) => f && lvProg(f)).map((f) => lvProg(f) + "|" + f.bars)
+    );
+    const mkSet = () => {
+      const o = {};
+      o[4] = take("chords", (f) => lvProg(f) && bassKeys.has(lvProg(f) + "|" + f.bars)) || take("chords");
+      let cf = facById(o[4]);
+      if (!(cf && lvProg(cf))) {
+        const b = take("bass", (f) => lvProg(f));
+        if (b) {
+          o[3] = b;
+          cf = facById(b);
+        }
+      }
+      const prog = cf && lvProg(cf), pb = cf && cf.bars;
+      const fit = (p, ok = () => true) => prog && take(p, (f) => lvProg(f) === prog && f.bars === pb && ok(f)) || take(p, (f) => !lvProg(f) && ok(f)) || prog && take(p, (f) => lvProg(f) === prog && f.bars === pb) || take(p, (f) => !lvProg(f)) || (p === "bass" || !prog ? take(p) : null);
+      o[3] = o[3] || fit("bass");
+      o[5] = fit("pad");
+      o[6] = fit("lead");
+      const lead2 = facById(o[6]);
+      o[7] = fit("pluck", (f) => !lead2 || roomFor(f, lead2));
+      o[0] = take("kit");
+      o[1] = take("hats");
+      o[2] = take("perc");
+      if (oneKit()) {
+        o[0] = take("full") || o[0];
+        o[1] = o[2] = null;
+      }
+      if (DEV === "101") o[5] = o[7] = null;
+      const tr = { chords: o[4] }, seen = /* @__PURE__ */ new Set();
+      for (let t = 0; t < 8; t++) {
+        const s = slotOf(t), pool = poolOf(t), own = !seen.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
+        seen.add(s);
+        if (own || s === 0 && oneKit()) tr[t] = o[s];
+        else tr[t] = S.tracks[t].type === "drum" ? take(pool) : fit(pool);
+      }
+      return tr;
+    };
+    const sets = { A: mkSet(), B: mkSet() }, scenes = [];
+    const MOVE = ["h2", "alt", "rest", "odd"];
+    for (const [name, kind, bars2, e, fx, parts2] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
+      const cells = {};
+      for (let t = 0; t < 8; t++) {
+        const spec = parts2[slotOf(t)];
+        if (!spec) continue;
+        const [set2, play0] = spec.split(":");
+        let id, pool = poolOf(t);
+        if (set2 === "R") {
+          id = take("build", (f) => f.bars === bars2) || take("build");
+          pool = "build";
+        }
+        if (t === trackOf(0) && oneKit() && set2 !== "R") pool = "full";
+        if (!id) id = sets[set2 === "R" ? "A" : set2][t];
+        if (!id || !facById(id)) continue;
+        let play2 = play0;
+        if (S.tracks[t].type === "tone" && r() < 0.25)
+          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE[Math.floor(r() * MOVE.length)];
+        cells[t] = { id, pool };
+        if (play2) cells[t].play = play2;
+      }
+      if (!Object.keys(cells).length)
+        [0, 1, 3].map(trackOf).forEach((t) => {
+          if (t >= 0 && sets.A[t]) cells[t] = { id: sets.A[t], pool: poolOf(t) };
+        });
+      const tL = trackOf(6), tP = trackOf(7), ld = cells[tL] && facById(cells[tL].id), pk2 = cells[tP] && facById(cells[tP].id);
+      if (ld && pk2 && bars2 >= 4 && !roomFor(ld, pk2)) {
+        cells[tL].play = "h1";
+        cells[tP].play = "h2";
+      }
+      const sc = { kind, name, bars: bars2, e, cells };
+      if (fx) sc.fx = fx;
+      scenes.push(sc);
+    }
+    {
+      for (let t = 0; t < 8; t++) {
+        if (!devOn(t) || S.tracks[t].type !== "tone") continue;
+        const mm = cmFix()[t], own = patType({ pool: poolOf(t) });
+        const alt = mm.types.slice(0, mm.n).find((ty) => CT_POOL[ty] && ty !== own);
+        if (!alt) continue;
+        scenes.forEach((sc) => {
+          if (/ B$/.test(sc.name) && sc.cells[t]) {
+            const cb = facById(sets.B.chords), pB = cb && lvProg(cb);
+            const id = take(CT_POOL[alt], (f) => !pB || !lvProg(f) || lvProg(f) === pB && f.bars === cb.bars);
+            if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
+          }
+        });
+      }
+    }
+    LV.scenes = scenes;
+    LV.fillIds = lvPool(st, "fill");
+    if (LV.cur >= scenes.length) LV.cur = 0;
+    LV.ver++;
+  }
+  function liveSwapIds(t) {
+    const st = lvStyle(), pool = t === trackOf(0) && oneKit() ? "full" : poolOf(t);
+    return moodFilter(lvFlavor(lvPool(st, pool), LV.flavor), LV.mood, facById).filter((id) => {
+      const f = facById(id);
+      return f && f.type === S.tracks[t].type;
+    });
   }
 
   // src/live/pads.js
@@ -29377,6 +30262,278 @@ body[data-mode='synth'] #synth {
     );
   }
 
+  // src/live/midi-in.js
+  var PT = { on: false, i: 0, res: [] };
+  function padTestOpen() {
+    PT.on = true;
+    PT.i = 0;
+    PT.res = Array(16).fill(null);
+    let ov = $("#ptOv");
+    if (ov) ov.remove();
+    ov = el("div", { id: "ptOv", class: "ptOv", role: "dialog", "aria-label": "Pad test" });
+    document.body.append(ov);
+    padTestRender();
+  }
+  function padTestClose() {
+    PT.on = false;
+    const o = $("#ptOv");
+    if (o) o.remove();
+  }
+  function padTestText() {
+    return DEVS[DEV].name + " pad test: " + PT.res.map((x, i) => i + 1 + "=" + (x ? "ch" + x.ch + " n" + x.n : "none")).join(", ");
+  }
+  function padTestRender() {
+    const ov = $("#ptOv");
+    if (!ov) return;
+    ov.textContent = "";
+    const done2 = PT.i >= 16, grid = el("div", { class: "ptGrid" });
+    for (let i = 0; i < 16; i++) {
+      const x = PT.res[i];
+      grid.append(
+        el(
+          "div",
+          { class: "ptPad" + (i === PT.i && !done2 ? " now" : "") + (x ? " got" : "") },
+          el("b", {}, String(i + 1)),
+          el("span", {}, x ? noteLbl(x.n) + " (" + x.n + ")" : i === PT.i && !done2 ? "press" : ""),
+          x ? el("small", {}, "ch " + x.ch) : ""
+        )
+      );
+    }
+    const box = el(
+      "div",
+      { class: "ptBox" },
+      el("h3", {}, "Pad test"),
+      el(
+        "p",
+        {},
+        done2 ? "Done. Copy the result and paste it to Claude, or use it now." : "Select a drum track on the " + DEVS[DEV].name + ", then press pad " + (PT.i + 1) + " (" + (PT.i < 8 ? "top row, " : "bottom row, ") + (PT.i % 8 + 1) + (["st", "nd", "rd"][PT.i % 8] || "th") + " from the left)."
+      ),
+      MIDI.inp ? "" : el("p", { class: "ptWarn" }, "No MC-707 input is connected. Press Connect MC-707 first."),
+      el(
+        "p",
+        { class: "hint" },
+        "Nothing arriving? On the MC-707 hold SHIFT and press that track's TRACK SEL button, open the MIDI page, and turn TxMIDI Note ON with output set to USB."
+      ),
+      grid,
+      done2 ? el("textarea", { readonly: true, class: "ptOut", rows: 3 }, padTestText()) : "",
+      el(
+        "div",
+        { class: "lvBtns" },
+        done2 ? el(
+          "button",
+          {
+            class: "btn on",
+            onclick: () => {
+              const t = padTestText();
+              try {
+                navigator.clipboard.writeText(t);
+                toast("Copied. Paste it to Claude.");
+              } catch (e) {
+                toast("Select the text and copy it");
+              }
+            }
+          },
+          "Copy result"
+        ) : el(
+          "button",
+          {
+            class: "btn",
+            onclick: () => {
+              PT.res[PT.i] = null;
+              PT.i++;
+              padTestRender();
+            }
+          },
+          "Skip (pad sends nothing)"
+        ),
+        done2 ? el(
+          "button",
+          {
+            class: "btn",
+            onclick: () => {
+              const got = PT.res.filter(Boolean);
+              if (!got.length) return;
+              LV.padNotes = PT.res.map((x) => x ? x.n : null);
+              const chs = [...new Set(got.map((x) => x.ch))];
+              LV.padCh = chs.length === 1 ? chs[0] : 0;
+              LV.padLayout = "custom";
+              saveLive();
+              liveRenderPads();
+              liveRenderSettings();
+              toast("Pads set from the test");
+              padTestClose();
+            }
+          },
+          "Use these for my pads"
+        ) : "",
+        el(
+          "button",
+          {
+            class: "btn",
+            onclick: () => {
+              PT.i = Math.max(0, PT.i - 1);
+              PT.res[PT.i] = null;
+              padTestRender();
+            }
+          },
+          "Back one"
+        ),
+        el("button", { class: "btn", onclick: padTestClose }, "Close")
+      )
+    );
+    ov.append(box);
+  }
+  function padTestMidi(d) {
+    const typ = d[0] & 240;
+    if (!(typ === 144 && d[2] > 0) || PT.i >= 16) return true;
+    PT.res[PT.i] = { ch: (d[0] & 15) + 1, n: d[1], v: d[2] };
+    PT.i++;
+    padTestRender();
+    return true;
+  }
+  function liveMidi(ev) {
+    const d = ev.data;
+    if (!d || d.length < 3) return false;
+    const st = d[0];
+    if (st < 128 || st >= 240) return false;
+    if (PT.on) return padTestMidi(d);
+    const typ = st & 240, ch = (st & 15) + 1;
+    if (typ === 176 && d[1] >= 80 && d[1] <= 83) {
+      LV.knobsIn[d[1] - 80] = d[2];
+      const k2 = $("#lvKi" + (d[1] - 80));
+      if (k2) k2.style.setProperty("--v", d[2] / 127);
+      return false;
+    }
+    const isOn = typ === 144 && d[2] > 0, isOff = typ === 128 || typ === 144 && d[2] === 0;
+    const n = d[1];
+    if (isOff) {
+      if (LV.padCh === 0 || LV.padCh === ch) {
+        const i = LV.padNotes.indexOf(n);
+        if (i >= 0) {
+          livePadUp(i);
+          return true;
+        }
+      }
+      if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
+        const k2 = n - LV.keyBase;
+        if (k2 >= 0 && k2 < 12) {
+          ravenKeyKey(k2, false);
+          return true;
+        }
+        const m = n - LV.muteBase;
+        if (m >= 0 && m < 12) {
+          ravenMuteKey(m, false);
+          return true;
+        }
+      }
+      lvPlayedHere(ch, n, false);
+      return false;
+    }
+    if (!isOn) return false;
+    if (LV.learn === "p1") {
+      LV.padCh = 0;
+      LV.padBase = clamp(n, 0, 112);
+      LV.padNotes = LV.padLayout === "drum" ? LV_DRUM_NOTES.map((x) => clamp(x + n - 37, 0, 127)) : lvLayoutNotes();
+      LV.learn = -1;
+      saveLive();
+      liveRenderPads();
+      liveRenderSettings();
+      toast("Pads set: pad 1 sends note " + n);
+      return true;
+    }
+    if (LV.learn >= 0) {
+      if (LV.learn === 0) LV.padCh = ch;
+      LV.padNotes[LV.learn] = n;
+      LV.padLayout = "custom";
+      LV.learn = LV.learn >= 15 ? -1 : LV.learn + 1;
+      saveLive();
+      liveRenderPads();
+      liveRenderSettings();
+      return true;
+    }
+    if (LV.padCh === 0 || LV.padCh === ch) {
+      const i = LV.padNotes.indexOf(n);
+      if (i >= 0) {
+        livePadDown(i);
+        return true;
+      }
+    }
+    const ravenNote = LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch) && (n >= LV.keyBase && n < LV.keyBase + 12 || n >= LV.muteBase && n < LV.muteBase + 12);
+    if (LV.padLayout === "kbd" && !ravenNote && (LV.padCh === 0 || LV.padCh === ch) && lvFollowOctave(n)) {
+      const i = LV.padNotes.indexOf(n);
+      if (i >= 0) {
+        livePadDown(i);
+        return true;
+      }
+    }
+    if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
+      const k2 = n - LV.keyBase;
+      if (k2 >= 0 && k2 < 12) {
+        ravenKeyKey(k2, true);
+        return true;
+      }
+      const m = n - LV.muteBase;
+      if (m >= 0 && m < 12) {
+        ravenMuteKey(m, true);
+        return true;
+      }
+    }
+    lvPlayedHere(ch, n, true);
+    return false;
+  }
+  function lvPlayedHere(ch, n, on2) {
+    if (!LV.perfOn || !ch) return;
+    if (on2 && sentRecently(ch, n)) return;
+    const t = S.tracks.findIndex((tr) => tr.ch === ch);
+    if (t >= 0) lvUserNote(t, on2);
+  }
+  function lvFollowOctave(n) {
+    const pc2 = (n % 12 + 12) % 12;
+    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc2);
+    if (!offs.length) return false;
+    let base = n - offs[0];
+    if (offs.length > 1 && n - 12 === LV.padBase) base = LV.padBase;
+    if (base === LV.padBase || base < 0 || base > 115) return false;
+    LV.padBase = base;
+    LV.padNotes = lvKbdNotes(base);
+    saveLive();
+    liveRenderPads();
+    if (!$("#lvSetDet") || $("#lvSetDet").open) liveRenderSettings();
+    toast("Pads follow the MC-707: octave now starts at " + noteLbl(base));
+    return true;
+  }
+  var LV_KEYROWS = ["qwertyui", "asdfghjk"];
+  var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
+  function lvKeyPad(e) {
+    const k2 = e.key.toLowerCase();
+    for (let r = 0; r < 2; r++) {
+      const c = LV_KEYROWS[r].indexOf(k2);
+      if (c >= 0) return lvPadIndex(r, c);
+    }
+    return -1;
+  }
+  function liveKeyDown(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (e.target.tagName === "BUTTON") e.target.blur();
+      liveToggle();
+      return true;
+    }
+    const i = lvKeyPad(e);
+    if (i >= 0) {
+      e.preventDefault();
+      if (!e.repeat) livePadDown(i);
+      return true;
+    }
+    return false;
+  }
+  function liveKeyUp(e) {
+    if (document.body.dataset.mode !== "live") return;
+    const i = lvKeyPad(e);
+    if (i >= 0) livePadUp(i);
+  }
+
   // src/live/settings-panel.js
   function liveRenderSettings() {
     const b = $("#lvSetBody");
@@ -29631,619 +30788,6 @@ body[data-mode='synth'] #synth {
       )
     );
     ctlRenderSettings(b, chSel);
-  }
-
-  // src/live/midi-in.js
-  var PT = { on: false, i: 0, res: [] };
-  function padTestOpen() {
-    PT.on = true;
-    PT.i = 0;
-    PT.res = Array(16).fill(null);
-    let ov = $("#ptOv");
-    if (ov) ov.remove();
-    ov = el("div", { id: "ptOv", class: "ptOv", role: "dialog", "aria-label": "Pad test" });
-    document.body.append(ov);
-    padTestRender();
-  }
-  function padTestClose() {
-    PT.on = false;
-    const o = $("#ptOv");
-    if (o) o.remove();
-  }
-  function padTestText() {
-    return DEVS[DEV].name + " pad test: " + PT.res.map((x, i) => i + 1 + "=" + (x ? "ch" + x.ch + " n" + x.n : "none")).join(", ");
-  }
-  function padTestRender() {
-    const ov = $("#ptOv");
-    if (!ov) return;
-    ov.textContent = "";
-    const done = PT.i >= 16, grid = el("div", { class: "ptGrid" });
-    for (let i = 0; i < 16; i++) {
-      const x = PT.res[i];
-      grid.append(
-        el(
-          "div",
-          { class: "ptPad" + (i === PT.i && !done ? " now" : "") + (x ? " got" : "") },
-          el("b", {}, String(i + 1)),
-          el("span", {}, x ? noteLbl(x.n) + " (" + x.n + ")" : i === PT.i && !done ? "press" : ""),
-          x ? el("small", {}, "ch " + x.ch) : ""
-        )
-      );
-    }
-    const box = el(
-      "div",
-      { class: "ptBox" },
-      el("h3", {}, "Pad test"),
-      el(
-        "p",
-        {},
-        done ? "Done. Copy the result and paste it to Claude, or use it now." : "Select a drum track on the " + DEVS[DEV].name + ", then press pad " + (PT.i + 1) + " (" + (PT.i < 8 ? "top row, " : "bottom row, ") + (PT.i % 8 + 1) + (["st", "nd", "rd"][PT.i % 8] || "th") + " from the left)."
-      ),
-      MIDI.inp ? "" : el("p", { class: "ptWarn" }, "No MC-707 input is connected. Press Connect MC-707 first."),
-      el(
-        "p",
-        { class: "hint" },
-        "Nothing arriving? On the MC-707 hold SHIFT and press that track's TRACK SEL button, open the MIDI page, and turn TxMIDI Note ON with output set to USB."
-      ),
-      grid,
-      done ? el("textarea", { readonly: true, class: "ptOut", rows: 3 }, padTestText()) : "",
-      el(
-        "div",
-        { class: "lvBtns" },
-        done ? el(
-          "button",
-          {
-            class: "btn on",
-            onclick: () => {
-              const t = padTestText();
-              try {
-                navigator.clipboard.writeText(t);
-                toast("Copied. Paste it to Claude.");
-              } catch (e) {
-                toast("Select the text and copy it");
-              }
-            }
-          },
-          "Copy result"
-        ) : el(
-          "button",
-          {
-            class: "btn",
-            onclick: () => {
-              PT.res[PT.i] = null;
-              PT.i++;
-              padTestRender();
-            }
-          },
-          "Skip (pad sends nothing)"
-        ),
-        done ? el(
-          "button",
-          {
-            class: "btn",
-            onclick: () => {
-              const got = PT.res.filter(Boolean);
-              if (!got.length) return;
-              LV.padNotes = PT.res.map((x) => x ? x.n : null);
-              const chs = [...new Set(got.map((x) => x.ch))];
-              LV.padCh = chs.length === 1 ? chs[0] : 0;
-              LV.padLayout = "custom";
-              saveLive();
-              liveRenderPads();
-              liveRenderSettings();
-              toast("Pads set from the test");
-              padTestClose();
-            }
-          },
-          "Use these for my pads"
-        ) : "",
-        el(
-          "button",
-          {
-            class: "btn",
-            onclick: () => {
-              PT.i = Math.max(0, PT.i - 1);
-              PT.res[PT.i] = null;
-              padTestRender();
-            }
-          },
-          "Back one"
-        ),
-        el("button", { class: "btn", onclick: padTestClose }, "Close")
-      )
-    );
-    ov.append(box);
-  }
-  function padTestMidi(d) {
-    const typ = d[0] & 240;
-    if (!(typ === 144 && d[2] > 0) || PT.i >= 16) return true;
-    PT.res[PT.i] = { ch: (d[0] & 15) + 1, n: d[1], v: d[2] };
-    PT.i++;
-    padTestRender();
-    return true;
-  }
-  function liveMidi(ev) {
-    const d = ev.data;
-    if (!d || d.length < 3) return false;
-    const st = d[0];
-    if (st < 128 || st >= 240) return false;
-    if (PT.on) return padTestMidi(d);
-    const typ = st & 240, ch = (st & 15) + 1;
-    if (typ === 176 && d[1] >= 80 && d[1] <= 83) {
-      LV.knobsIn[d[1] - 80] = d[2];
-      const k2 = $("#lvKi" + (d[1] - 80));
-      if (k2) k2.style.setProperty("--v", d[2] / 127);
-      return false;
-    }
-    const isOn = typ === 144 && d[2] > 0, isOff = typ === 128 || typ === 144 && d[2] === 0;
-    const n = d[1];
-    if (isOff) {
-      if (LV.padCh === 0 || LV.padCh === ch) {
-        const i = LV.padNotes.indexOf(n);
-        if (i >= 0) {
-          livePadUp(i);
-          return true;
-        }
-      }
-      if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
-        const k2 = n - LV.keyBase;
-        if (k2 >= 0 && k2 < 12) {
-          ravenKeyKey(k2, false);
-          return true;
-        }
-        const m = n - LV.muteBase;
-        if (m >= 0 && m < 12) {
-          ravenMuteKey(m, false);
-          return true;
-        }
-      }
-      lvPlayedHere(ch, n, false);
-      return false;
-    }
-    if (!isOn) return false;
-    if (LV.learn === "p1") {
-      LV.padCh = 0;
-      LV.padBase = clamp(n, 0, 112);
-      LV.padNotes = LV.padLayout === "drum" ? LV_DRUM_NOTES.map((x) => clamp(x + n - 37, 0, 127)) : lvLayoutNotes();
-      LV.learn = -1;
-      saveLive();
-      liveRenderPads();
-      liveRenderSettings();
-      toast("Pads set: pad 1 sends note " + n);
-      return true;
-    }
-    if (LV.learn >= 0) {
-      if (LV.learn === 0) LV.padCh = ch;
-      LV.padNotes[LV.learn] = n;
-      LV.padLayout = "custom";
-      LV.learn = LV.learn >= 15 ? -1 : LV.learn + 1;
-      saveLive();
-      liveRenderPads();
-      liveRenderSettings();
-      return true;
-    }
-    if (LV.padCh === 0 || LV.padCh === ch) {
-      const i = LV.padNotes.indexOf(n);
-      if (i >= 0) {
-        livePadDown(i);
-        return true;
-      }
-    }
-    const ravenNote = LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch) && (n >= LV.keyBase && n < LV.keyBase + 12 || n >= LV.muteBase && n < LV.muteBase + 12);
-    if (LV.padLayout === "kbd" && !ravenNote && (LV.padCh === 0 || LV.padCh === ch) && lvFollowOctave(n)) {
-      const i = LV.padNotes.indexOf(n);
-      if (i >= 0) {
-        livePadDown(i);
-        return true;
-      }
-    }
-    if (LV.perfOn && (LV.keyCh === 0 || LV.keyCh === ch)) {
-      const k2 = n - LV.keyBase;
-      if (k2 >= 0 && k2 < 12) {
-        ravenKeyKey(k2, true);
-        return true;
-      }
-      const m = n - LV.muteBase;
-      if (m >= 0 && m < 12) {
-        ravenMuteKey(m, true);
-        return true;
-      }
-    }
-    lvPlayedHere(ch, n, true);
-    return false;
-  }
-  function lvPlayedHere(ch, n, on2) {
-    if (!LV.perfOn || !ch) return;
-    if (on2 && sentRecently(ch, n)) return;
-    const t = S.tracks.findIndex((tr) => tr.ch === ch);
-    if (t >= 0) lvUserNote(t, on2);
-  }
-  function lvFollowOctave(n) {
-    const pc2 = (n % 12 + 12) % 12;
-    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc2);
-    if (!offs.length) return false;
-    let base = n - offs[0];
-    if (offs.length > 1 && n - 12 === LV.padBase) base = LV.padBase;
-    if (base === LV.padBase || base < 0 || base > 115) return false;
-    LV.padBase = base;
-    LV.padNotes = lvKbdNotes(base);
-    saveLive();
-    liveRenderPads();
-    if (!$("#lvSetDet") || $("#lvSetDet").open) liveRenderSettings();
-    toast("Pads follow the MC-707: octave now starts at " + noteLbl(base));
-    return true;
-  }
-  var LV_KEYROWS = ["qwertyui", "asdfghjk"];
-  var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
-  function lvKeyPad(e) {
-    const k2 = e.key.toLowerCase();
-    for (let r = 0; r < 2; r++) {
-      const c = LV_KEYROWS[r].indexOf(k2);
-      if (c >= 0) return lvPadIndex(r, c);
-    }
-    return -1;
-  }
-  function liveKeyDown(e) {
-    if (e.ctrlKey || e.metaKey || e.altKey) return false;
-    if (e.code === "Space") {
-      e.preventDefault();
-      if (e.target.tagName === "BUTTON") e.target.blur();
-      liveToggle();
-      return true;
-    }
-    const i = lvKeyPad(e);
-    if (i >= 0) {
-      e.preventDefault();
-      if (!e.repeat) livePadDown(i);
-      return true;
-    }
-    return false;
-  }
-  function liveKeyUp(e) {
-    if (document.body.dataset.mode !== "live") return;
-    const i = lvKeyPad(e);
-    if (i >= 0) livePadUp(i);
-  }
-
-  // src/live/panels.js
-  function liveRender() {
-    if (!$("#lvStyle")) return;
-    $("#lvStyle").value = LV.style;
-    $("#lvKey").value = LV.key;
-    $("#lvBpm").value = LV.bpm;
-    if ($("#lvSwing")) {
-      $("#lvSwing").value = LV.swing;
-      $("#lvSwV").textContent = LV.swing + "%";
-    }
-    humanizeSync();
-    lvHumApply();
-    moodSync();
-    lvMoodApply();
-    $("#lvQ").value = LV.quant;
-    $("#lvEntry").value = LV.entry;
-    $("#lvFills").checked = LV.fills;
-    $("#lvPrev").checked = !!S.preview;
-    $("#lvReps").value = LV.autoReps;
-    $("#lvChaos").value = LV.chaos;
-    $("#lvRiseBars").value = LV.riseBars;
-    $("#lvBrkSt").value = LV.brkStyle;
-    $("#lvBrkLen").value = LV.brkLen;
-    $("#lvBuildFx").checked = LV.buildFx !== false;
-    $("#lvFlavor").value = LV.flavor;
-    $("#lvVary").value = LV.vary;
-    $("#lvVaryVal").textContent = lvVaryLabel();
-    $("#lvDropSt").value = LV.dropStyle;
-    $("#lvMode").value = LV.mode || "minor";
-    const ms = $("#lvMidiSt");
-    if (ms)
-      ms.textContent = (MIDI.out ? "Out: " + MIDI.out.name : "No MIDI out") + " · " + (MIDI.inp ? "In: " + MIDI.inp.name : "no MIDI in");
-    liveRenderKeyRec();
-    liveRenderCards();
-    liveRenderSceneEd();
-    liveRenderPads();
-    liveRenderPerf();
-    liveRenderKnobs();
-    liveRenderSettings();
-    liveRenderCtlBar();
-    liveRenderLanes(0, true);
-    liveStatus(0);
-    liveSync();
-  }
-  function liveSync() {
-    const b = $("#lvStart");
-    if (!b) return;
-    const on2 = lvOn();
-    b.textContent = !on2 ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
-    b.classList.toggle("stopb", on2);
-    {
-      const pb = $("#lvPumpB"), pn = $("#lvPanB");
-      if (pb)
-        pb.classList.toggle(
-          "on",
-          (LV.autos || []).some((a2) => a2.id === "qpump")
-        );
-      if (pn)
-        pn.classList.toggle(
-          "on",
-          (LV.autos || []).some((a2) => a2.id === "qpan")
-        );
-    }
-    const a = $("#lvAuto");
-    if (a) {
-      a.classList.toggle("on", LV.auto);
-      a.textContent = LV.auto ? "Auto-pilot ON" : "Auto-pilot";
-    }
-    const lk = $("#lvLock");
-    if (lk) {
-      lk.classList.toggle("on", !!LV.lock);
-      lk.textContent = LV.lock ? "🔒 Locked" : "🔓 Lock loop";
-      const ls = $("#lvLockSave");
-      if (ls) ls.hidden = !LV.lock;
-    }
-    const pv = $("#lvPrev");
-    if (pv) pv.checked = !!S.preview;
-    [0.5, 1, 2].forEach((r) => {
-      const x = $("#lvRate" + String(r).replace(".", "_"));
-      if (x) x.classList.toggle("on", LV.rate === r);
-    });
-    if (!on2) liveStatus(0);
-  }
-  function liveRenderKeyRec() {
-    const b = $("#lvKeyRec");
-    if (!b) return;
-    const st = lvStyle();
-    b.textContent = "";
-    b.append(el("small", {}, "Try"));
-    st.keys.forEach(([pc2, why]) => {
-      const m = lvModeFam(st.scale);
-      const on2 = LV.key === pc2 && LV.mode === m;
-      b.append(
-        el("button", { class: "lvkr" + (on2 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
-      );
-    });
-  }
-  function liveRenderCards() {
-    const c = $("#lvCards");
-    c.textContent = "";
-    LV.scenes.forEach(
-      (sc, i) => c.append(
-        el(
-          "div",
-          {
-            class: "lvTile" + (LV.edIdx === i ? " editing" : "") + (lvIsFlash(sc) ? " flash" : ""),
-            id: "lvCard" + i,
-            role: "button",
-            tabindex: 0,
-            style: "--c:" + (lvIsFlash(sc) ? LV_FLASHC : lvScCol(sc.e, 55)),
-            onclick: (e) => {
-              if (e.target.closest(".lvEdit")) return;
-              liveCue(i);
-            },
-            onkeydown: (e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                liveCue(i);
-              }
-            },
-            title: lvIsFlash(sc) ? "Flash: a quick break on the next bar, then straight back into the loop" : "Cue this scene"
-          },
-          el(
-            "button",
-            {
-              class: "lvEdit",
-              title: "Edit this scene: name, length, energy, parts and moves",
-              onclick: (e) => {
-                e.stopPropagation();
-                liveEditScene(i);
-              }
-            },
-            "✎"
-          ),
-          el("span", { class: "ln" }, i + 1 + ". " + sc.name),
-          el(
-            "span",
-            { class: "lvmap" },
-            ...Array.from({ length: 8 }, (_, t) => {
-              const c2 = sc.cells[t], C = TRACK_COLORS[t], part = c2 && c2.play && c2.play !== "all";
-              return el("i", {
-                class: devOn(t) ? "" : "devoff",
-                style: c2 ? "background:" + (part ? "repeating-linear-gradient(90deg," + C + " 0 3px,transparent 3px 6px)" : C) : "",
-                title: S.tracks[t].name + (c2 ? part ? " · " + (LV_PLAY.find((x) => x[0] === c2.play) || ["", ""])[1].toLowerCase() : "" : " · off")
-              });
-            })
-          ),
-          el("span", { class: "le" }, el("i", { style: "width:" + sc.e * 10 + "%" })),
-          lvIsFlash(sc) ? el(
-            "small",
-            {},
-            "⚡ " + (FLASH_RH.find((x) => x[0] === sc.rh) || [0, "Flash"])[1] + " · " + sc.bars + (sc.bars === 1 ? " bar" : " bars") + ", then back"
-          ) : el(
-            "small",
-            {},
-            sc.bars + (sc.bars === 1 ? " bar" : " bars") + " · " + Object.keys(sc.cells).length + " parts" + ((sc.fx || (sc.kind === "build" ? "build" : "none")) !== "none" ? " · " + (LV_SCFX.find((x) => x[0] === (sc.fx || "build")) || ["", ""])[1].split(" (")[0] : "")
-          ),
-          el("span", { class: "lq", id: "lvCardQ" + i })
-        )
-      )
-    );
-  }
-  function lvActKind(a) {
-    if (!a) return "";
-    const k2 = a.split(":")[0];
-    return {
-      sw: "Swap",
-      mu: "Mute",
-      mt: "Mute",
-      fill: "Fill",
-      brk: "Break",
-      stut: "Stutter",
-      rise: "Riser",
-      bd: "Drop",
-      key: "Key",
-      en: "Energy",
-      auto: "Auto",
-      sc: "Scatter",
-      next: "Scene",
-      prev: "Scene",
-      stop: "Stop"
-    }[k2] || (/^s\d$/.test(a) ? lvIsFlash(LV.scenes[+a.slice(1)]) ? "Flash" : "Scene " + (+a.slice(1) + 1) : "");
-  }
-  function liveRenderPads() {
-    const g = $("#lvPads");
-    if (!g) return;
-    g.textContent = "";
-    for (let r = 0; r < 2; r++)
-      for (let c = 0; c < 8; c++) {
-        const i = lvPadIndex(r, c), a = LV.acts[i], kk = LV_KEYROWS[Math.floor(i / 8)][i % 8].toUpperCase();
-        const nn = LV.padNotes[i], learnMe = LV.learn === i || LV.learn === "p1" && i === 0, fn = LV.padLayout === "kbd" && i >= 8 ? LV_TOPFN[i - 8] : null;
-        const where = nn == null ? fn ? "the MC-707 " + fn + " button does not send a note, so use the screen or key" : "no MIDI note" : "MIDI note " + nn + " (" + noteLbl(nn) + ")";
-        const b = el(
-          "button",
-          {
-            class: "lvPad" + (nn == null ? " nonote" : "") + (learnMe ? " learnme" : ""),
-            id: "lvPad" + i,
-            style: "--c:" + actColor(a),
-            title: "Pad " + (i + 1) + " · " + where + " · key " + kk
-          },
-          el("span", { class: "pk" }, lvActKind(a)),
-          el("b", {}, actLabel(a)),
-          el("span", { class: "pf" }, el("i", { class: "pn" }, fn || ""), el("kbd", {}, kk))
-        );
-        b.addEventListener("pointerdown", (ev) => {
-          if (ev.button === 2) return;
-          ev.preventDefault();
-          try {
-            b.setPointerCapture(ev.pointerId);
-          } catch (_) {
-          }
-          livePadDown(i);
-        });
-        b.addEventListener("pointerup", () => livePadUp(i));
-        b.addEventListener("pointercancel", () => livePadUp(i));
-        g.append(b);
-      }
-    $("#lvPadHint").textContent = (LV.learn === "p1" ? "Press pad 1 (top left) on the MC-707 now. " : LV.padLayout === "kbd" ? "Laid out like the MC-707 pads in keyboard mode. " : "Pads 1–8 on top, 9–16 below, like the " + DEVS[DEV].name + ". ") + "Click, press the key shown, or hit the pad on the " + DEVS[DEV].name + " (" + (LV.padCh ? "channel " + LV.padCh : "any channel") + "). Cues wait for the launch point.";
-  }
-  function liveRenderPerf() {
-    const k2 = $("#lvKeys"), m = $("#lvMutes");
-    if (!k2) return;
-    k2.textContent = "";
-    m.textContent = "";
-    NOTEN.forEach(
-      (n, i) => k2.append(
-        el(
-          "button",
-          {
-            class: "lvK" + (n.length > 1 ? " blk" : "") + (LV.key === i ? " on" : ""),
-            id: "lvK" + i,
-            onclick: () => liveKeyCue(i),
-            title: "Change key to " + n + " (MIDI note " + (LV.keyBase + i) + ")"
-          },
-          n
-        )
-      )
-    );
-    S.tracks.forEach(
-      (t, i) => m.append(
-        el(
-          "button",
-          {
-            class: "lvM" + (devOn(i) ? "" : " devoff"),
-            id: "lvM" + i,
-            style: "--c:" + TRACK_COLORS[i],
-            onclick: () => liveMute([i]),
-            title: "Mute or unmute " + t.name + " (MIDI note " + (LV.muteBase + i) + ")"
-          },
-          el("i", { class: "vu", id: "lvVu" + i }),
-          el("span", {}, t.name)
-        )
-      )
-    );
-    $("#lvPerfHint").textContent = LV.perfOn ? "First octave (" + noteLbl(LV.keyBase) + "–" + noteLbl(LV.keyBase + 11) + ") changes the key of every melodic part. Second octave (" + noteLbl(LV.muteBase) + "–" + noteLbl(LV.muteBase + 7) + ") mutes and unmutes parts." : "Key and mute keys are switched off in the mapping panel.";
-  }
-  function liveRenderKnobs() {
-    const kb = $("#lvKnobs");
-    if (!kb) return;
-    kb.textContent = "";
-    ["FILTER", "MOD", "FX", "SOUND"].forEach(
-      (n, i) => kb.append(
-        el(
-          "div",
-          { class: "lvKnob" },
-          el(
-            "span",
-            { class: "lvKh" },
-            n,
-            el("b", { id: "lvKv" + i }),
-            el(
-              "button",
-              {
-                class: "lvkz",
-                title: "Back to rest (" + LV.rest[i] + ")",
-                "aria-label": n + " back to rest",
-                onclick: () => sendKnob(i, LV.rest[i])
-              },
-              "↺"
-            )
-          ),
-          el("input", {
-            type: "range",
-            id: "lvKn" + i,
-            min: 0,
-            max: 127,
-            value: LV.knobs[i],
-            "aria-label": n,
-            oninput: (e) => sendKnob(i, +e.target.value),
-            ondblclick: () => sendKnob(i, LV.rest[i]),
-            title: "CC " + (80 + i) + ". Rests at " + LV.rest[i] + " (the white tick). The coloured bar shows how far it is from rest; the orange marker is the MC-707 knob. Double-click or ↺ to go back to rest."
-          }),
-          el("i", { class: "lvkf" }),
-          el("i", { class: "lvkRest" }),
-          el("i", { class: "lvki", id: "lvKi" + i })
-        )
-      )
-    );
-    for (let i = 0; i < 4; i++) knobUI(i, LV.knobs[i]);
-    const kt = $("#lvKT");
-    if (kt) {
-      kt.textContent = "";
-      [
-        ["all", "All tracks"],
-        ["drums", "Drums"],
-        ["tone", "Tone parts"]
-      ].forEach(([v, l]) => kt.append(el("option", { value: v }, l)));
-      S.tracks.forEach((t, i) => kt.append(el("option", { value: i }, t.name)));
-      kt.value = String(LV.ktarget);
-    }
-    const sg = $("#lvScG");
-    if (sg) {
-      sg.textContent = "";
-      for (let i = 0; i < 16; i++) {
-        const b = el(
-          "button",
-          {
-            class: "lvScB",
-            id: "lvSc" + i,
-            title: "Scatter pad " + (i + 1) + " (MIDI note " + (LV.scBase + i) + " on the control channel)"
-          },
-          String(i + 1)
-        );
-        b.addEventListener("pointerdown", (ev) => {
-          ev.preventDefault();
-          try {
-            b.setPointerCapture(ev.pointerId);
-          } catch (_) {
-          }
-          scatter(i, true);
-        });
-        b.addEventListener("pointerup", () => scatter(i, false));
-        b.addEventListener("pointercancel", () => scatter(i, false));
-        sg.append(b);
-      }
-    }
-    const sh = $("#lvScHint");
-    if (sh)
-      sh.textContent = "Sends notes " + LV.scBase + "–" + (LV.scBase + 15) + " on control channel " + (S.ctrlCh || 16) + ". Turn Scatter on in the MC-707.";
   }
 
   // src/live/visualizer.js
@@ -30873,16 +31417,16 @@ body[data-mode='synth'] #synth {
       return;
     }
     bar2.hidden = false;
-    const c = LV.ctl, b = c.base, z = c.zones, solo = c.soloT >= 0 ? S.tracks[c.soloT].name : "off";
+    const c = LV.ctl, b = c.base, z = c.zones, solo2 = c.soloT >= 0 ? S.tracks[c.soloT].name : "off";
     const parts2 = [ctlPreset()[1]];
     if (z === "raven")
       parts2.push(
         "mutes " + noteLbl(b) + "–" + noteLbl(b + 11),
         "key " + noteLbl(b + 12) + "–" + noteLbl(b + 23),
-        "solo on " + solo + " from " + noteLbl(b + 24)
+        "solo on " + solo2 + " from " + noteLbl(b + 24)
       );
-    else if (z === "keysolo") parts2.push("key " + noteLbl(b) + "–" + noteLbl(b + 11), "solo on " + solo + " elsewhere");
-    else parts2.push("solo on " + solo);
+    else if (z === "keysolo") parts2.push("key " + noteLbl(b) + "–" + noteLbl(b + 11), "solo on " + solo2 + " elsewhere");
+    else parts2.push("solo on " + solo2);
     bar2.append(el("b", {}, "🎹 "), parts2.join(" · "), el("span", { class: "ctlAct", id: "ctlAct" }, ""));
   }
   function ctlKeyboard() {
@@ -30910,6 +31454,597 @@ body[data-mode='synth'] #synth {
     }
     wrap.style.width = wx * W + "px";
     return el("div", { class: "ctlKbWrap" }, wrap);
+  }
+
+  // src/live/panels.js
+  function liveRender() {
+    if (!$("#lvStyle")) return;
+    $("#lvStyle").value = LV.style;
+    $("#lvKey").value = LV.key;
+    $("#lvBpm").value = LV.bpm;
+    if ($("#lvSwing")) {
+      $("#lvSwing").value = LV.swing;
+      $("#lvSwV").textContent = LV.swing + "%";
+    }
+    humanizeSync();
+    lvHumApply();
+    moodSync();
+    lvMoodApply();
+    $("#lvQ").value = LV.quant;
+    $("#lvEntry").value = LV.entry;
+    $("#lvFills").checked = LV.fills;
+    $("#lvPrev").checked = !!S.preview;
+    $("#lvReps").value = LV.autoReps;
+    $("#lvChaos").value = LV.chaos;
+    $("#lvRiseBars").value = LV.riseBars;
+    $("#lvBrkSt").value = LV.brkStyle;
+    $("#lvBrkLen").value = LV.brkLen;
+    $("#lvBuildFx").checked = LV.buildFx !== false;
+    $("#lvFlavor").value = LV.flavor;
+    $("#lvVary").value = LV.vary;
+    $("#lvVaryVal").textContent = lvVaryLabel();
+    $("#lvDropSt").value = LV.dropStyle;
+    $("#lvMode").value = LV.mode || "minor";
+    const ms = $("#lvMidiSt");
+    if (ms)
+      ms.textContent = (MIDI.out ? "Out: " + MIDI.out.name : "No MIDI out") + " · " + (MIDI.inp ? "In: " + MIDI.inp.name : "no MIDI in");
+    liveRenderKeyRec();
+    liveRenderCards();
+    liveRenderSceneEd();
+    liveRenderPads();
+    liveRenderPerf();
+    liveRenderKnobs();
+    liveRenderSettings();
+    liveRenderCtlBar();
+    liveRenderLanes(0, true);
+    liveStatus(0);
+    liveSync();
+  }
+  function liveSync() {
+    const b = $("#lvStart");
+    if (!b) return;
+    const on2 = lvOn();
+    b.textContent = !on2 ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
+    b.classList.toggle("stopb", on2);
+    {
+      const pb = $("#lvPumpB"), pn = $("#lvPanB");
+      if (pb)
+        pb.classList.toggle(
+          "on",
+          (LV.autos || []).some((a2) => a2.id === "qpump")
+        );
+      if (pn)
+        pn.classList.toggle(
+          "on",
+          (LV.autos || []).some((a2) => a2.id === "qpan")
+        );
+    }
+    const a = $("#lvAuto");
+    if (a) {
+      a.classList.toggle("on", LV.auto);
+      a.textContent = LV.auto ? "Auto-pilot ON" : "Auto-pilot";
+    }
+    const lk = $("#lvLock");
+    if (lk) {
+      lk.classList.toggle("on", !!LV.lock);
+      lk.textContent = LV.lock ? "🔒 Locked" : "🔓 Lock loop";
+      const ls = $("#lvLockSave");
+      if (ls) ls.hidden = !LV.lock;
+    }
+    const pv = $("#lvPrev");
+    if (pv) pv.checked = !!S.preview;
+    [0.5, 1, 2].forEach((r) => {
+      const x = $("#lvRate" + String(r).replace(".", "_"));
+      if (x) x.classList.toggle("on", LV.rate === r);
+    });
+    if (!on2) liveStatus(0);
+  }
+  function liveRenderKeyRec() {
+    const b = $("#lvKeyRec");
+    if (!b) return;
+    const st = lvStyle();
+    b.textContent = "";
+    b.append(el("small", {}, "Try"));
+    st.keys.forEach(([pc2, why]) => {
+      const m = lvModeFam(st.scale);
+      const on2 = LV.key === pc2 && LV.mode === m;
+      b.append(
+        el("button", { class: "lvkr" + (on2 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
+      );
+    });
+  }
+  function liveRenderCards() {
+    const c = $("#lvCards");
+    c.textContent = "";
+    LV.scenes.forEach(
+      (sc, i) => c.append(
+        el(
+          "div",
+          {
+            class: "lvTile" + (LV.edIdx === i ? " editing" : "") + (lvIsFlash(sc) ? " flash" : ""),
+            id: "lvCard" + i,
+            role: "button",
+            tabindex: 0,
+            style: "--c:" + (lvIsFlash(sc) ? LV_FLASHC : lvScCol(sc.e, 55)),
+            onclick: (e) => {
+              if (e.target.closest(".lvEdit")) return;
+              liveCue(i);
+            },
+            onkeydown: (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                liveCue(i);
+              }
+            },
+            title: lvIsFlash(sc) ? "Flash: a quick break on the next bar, then straight back into the loop" : "Cue this scene"
+          },
+          el(
+            "button",
+            {
+              class: "lvEdit",
+              title: "Edit this scene: name, length, energy, parts and moves",
+              onclick: (e) => {
+                e.stopPropagation();
+                liveEditScene(i);
+              }
+            },
+            "✎"
+          ),
+          el("span", { class: "ln" }, i + 1 + ". " + sc.name),
+          el(
+            "span",
+            { class: "lvmap" },
+            ...Array.from({ length: 8 }, (_, t) => {
+              const c2 = sc.cells[t], C = TRACK_COLORS[t], part = c2 && c2.play && c2.play !== "all";
+              return el("i", {
+                class: devOn(t) ? "" : "devoff",
+                style: c2 ? "background:" + (part ? "repeating-linear-gradient(90deg," + C + " 0 3px,transparent 3px 6px)" : C) : "",
+                title: S.tracks[t].name + (c2 ? part ? " · " + (LV_PLAY.find((x) => x[0] === c2.play) || ["", ""])[1].toLowerCase() : "" : " · off")
+              });
+            })
+          ),
+          el("span", { class: "le" }, el("i", { style: "width:" + sc.e * 10 + "%" })),
+          lvIsFlash(sc) ? el(
+            "small",
+            {},
+            "⚡ " + (FLASH_RH.find((x) => x[0] === sc.rh) || [0, "Flash"])[1] + " · " + sc.bars + (sc.bars === 1 ? " bar" : " bars") + ", then back"
+          ) : el(
+            "small",
+            {},
+            sc.bars + (sc.bars === 1 ? " bar" : " bars") + " · " + Object.keys(sc.cells).length + " parts" + ((sc.fx || (sc.kind === "build" ? "build" : "none")) !== "none" ? " · " + (LV_SCFX.find((x) => x[0] === (sc.fx || "build")) || ["", ""])[1].split(" (")[0] : "")
+          ),
+          el("span", { class: "lq", id: "lvCardQ" + i })
+        )
+      )
+    );
+  }
+  function lvActKind(a) {
+    if (!a) return "";
+    const k2 = a.split(":")[0];
+    return {
+      sw: "Swap",
+      mu: "Mute",
+      mt: "Mute",
+      fill: "Fill",
+      brk: "Break",
+      stut: "Stutter",
+      rise: "Riser",
+      bd: "Drop",
+      key: "Key",
+      en: "Energy",
+      auto: "Auto",
+      sc: "Scatter",
+      next: "Scene",
+      prev: "Scene",
+      stop: "Stop"
+    }[k2] || (/^s\d$/.test(a) ? lvIsFlash(LV.scenes[+a.slice(1)]) ? "Flash" : "Scene " + (+a.slice(1) + 1) : "");
+  }
+  function liveRenderPads() {
+    const g = $("#lvPads");
+    if (!g) return;
+    g.textContent = "";
+    for (let r = 0; r < 2; r++)
+      for (let c = 0; c < 8; c++) {
+        const i = lvPadIndex(r, c), a = LV.acts[i], kk = LV_KEYROWS[Math.floor(i / 8)][i % 8].toUpperCase();
+        const nn = LV.padNotes[i], learnMe = LV.learn === i || LV.learn === "p1" && i === 0, fn = LV.padLayout === "kbd" && i >= 8 ? LV_TOPFN[i - 8] : null;
+        const where = nn == null ? fn ? "the MC-707 " + fn + " button does not send a note, so use the screen or key" : "no MIDI note" : "MIDI note " + nn + " (" + noteLbl(nn) + ")";
+        const b = el(
+          "button",
+          {
+            class: "lvPad" + (nn == null ? " nonote" : "") + (learnMe ? " learnme" : ""),
+            id: "lvPad" + i,
+            style: "--c:" + actColor(a),
+            title: "Pad " + (i + 1) + " · " + where + " · key " + kk
+          },
+          el("span", { class: "pk" }, lvActKind(a)),
+          el("b", {}, actLabel(a)),
+          el("span", { class: "pf" }, el("i", { class: "pn" }, fn || ""), el("kbd", {}, kk))
+        );
+        b.addEventListener("pointerdown", (ev) => {
+          if (ev.button === 2) return;
+          ev.preventDefault();
+          try {
+            b.setPointerCapture(ev.pointerId);
+          } catch (_) {
+          }
+          livePadDown(i);
+        });
+        b.addEventListener("pointerup", () => livePadUp(i));
+        b.addEventListener("pointercancel", () => livePadUp(i));
+        g.append(b);
+      }
+    $("#lvPadHint").textContent = (LV.learn === "p1" ? "Press pad 1 (top left) on the MC-707 now. " : LV.padLayout === "kbd" ? "Laid out like the MC-707 pads in keyboard mode. " : "Pads 1–8 on top, 9–16 below, like the " + DEVS[DEV].name + ". ") + "Click, press the key shown, or hit the pad on the " + DEVS[DEV].name + " (" + (LV.padCh ? "channel " + LV.padCh : "any channel") + "). Cues wait for the launch point.";
+  }
+  function liveRenderPerf() {
+    const k2 = $("#lvKeys"), m = $("#lvMutes");
+    if (!k2) return;
+    k2.textContent = "";
+    m.textContent = "";
+    NOTEN.forEach(
+      (n, i) => k2.append(
+        el(
+          "button",
+          {
+            class: "lvK" + (n.length > 1 ? " blk" : "") + (LV.key === i ? " on" : ""),
+            id: "lvK" + i,
+            onclick: () => liveKeyCue(i),
+            title: "Change key to " + n + " (MIDI note " + (LV.keyBase + i) + ")"
+          },
+          n
+        )
+      )
+    );
+    S.tracks.forEach(
+      (t, i) => m.append(
+        el(
+          "button",
+          {
+            class: "lvM" + (devOn(i) ? "" : " devoff"),
+            id: "lvM" + i,
+            style: "--c:" + TRACK_COLORS[i],
+            onclick: () => liveMute([i]),
+            title: "Mute or unmute " + t.name + " (MIDI note " + (LV.muteBase + i) + ")"
+          },
+          el("i", { class: "vu", id: "lvVu" + i }),
+          el("span", {}, t.name)
+        )
+      )
+    );
+    $("#lvPerfHint").textContent = LV.perfOn ? "First octave (" + noteLbl(LV.keyBase) + "–" + noteLbl(LV.keyBase + 11) + ") changes the key of every melodic part. Second octave (" + noteLbl(LV.muteBase) + "–" + noteLbl(LV.muteBase + 7) + ") mutes and unmutes parts." : "Key and mute keys are switched off in the mapping panel.";
+  }
+  function liveRenderKnobs() {
+    const kb = $("#lvKnobs");
+    if (!kb) return;
+    kb.textContent = "";
+    ["FILTER", "MOD", "FX", "SOUND"].forEach(
+      (n, i) => kb.append(
+        el(
+          "div",
+          { class: "lvKnob" },
+          el(
+            "span",
+            { class: "lvKh" },
+            n,
+            el("b", { id: "lvKv" + i }),
+            el(
+              "button",
+              {
+                class: "lvkz",
+                title: "Back to rest (" + LV.rest[i] + ")",
+                "aria-label": n + " back to rest",
+                onclick: () => sendKnob(i, LV.rest[i])
+              },
+              "↺"
+            )
+          ),
+          el("input", {
+            type: "range",
+            id: "lvKn" + i,
+            min: 0,
+            max: 127,
+            value: LV.knobs[i],
+            "aria-label": n,
+            oninput: (e) => sendKnob(i, +e.target.value),
+            ondblclick: () => sendKnob(i, LV.rest[i]),
+            title: "CC " + (80 + i) + ". Rests at " + LV.rest[i] + " (the white tick). The coloured bar shows how far it is from rest; the orange marker is the MC-707 knob. Double-click or ↺ to go back to rest."
+          }),
+          el("i", { class: "lvkf" }),
+          el("i", { class: "lvkRest" }),
+          el("i", { class: "lvki", id: "lvKi" + i })
+        )
+      )
+    );
+    for (let i = 0; i < 4; i++) knobUI(i, LV.knobs[i]);
+    const kt = $("#lvKT");
+    if (kt) {
+      kt.textContent = "";
+      [
+        ["all", "All tracks"],
+        ["drums", "Drums"],
+        ["tone", "Tone parts"]
+      ].forEach(([v, l]) => kt.append(el("option", { value: v }, l)));
+      S.tracks.forEach((t, i) => kt.append(el("option", { value: i }, t.name)));
+      kt.value = String(LV.ktarget);
+    }
+    const sg = $("#lvScG");
+    if (sg) {
+      sg.textContent = "";
+      for (let i = 0; i < 16; i++) {
+        const b = el(
+          "button",
+          {
+            class: "lvScB",
+            id: "lvSc" + i,
+            title: "Scatter pad " + (i + 1) + " (MIDI note " + (LV.scBase + i) + " on the control channel)"
+          },
+          String(i + 1)
+        );
+        b.addEventListener("pointerdown", (ev) => {
+          ev.preventDefault();
+          try {
+            b.setPointerCapture(ev.pointerId);
+          } catch (_) {
+          }
+          scatter(i, true);
+        });
+        b.addEventListener("pointerup", () => scatter(i, false));
+        b.addEventListener("pointercancel", () => scatter(i, false));
+        sg.append(b);
+      }
+    }
+    const sh = $("#lvScHint");
+    if (sh)
+      sh.textContent = "Sends notes " + LV.scBase + "–" + (LV.scBase + 15) + " on control channel " + (S.ctrlCh || 16) + ". Turn Scatter on in the MC-707.";
+  }
+
+  // src/live/mood-move.js
+  function lvMoodMove(m) {
+    const intense = !!m && m.i >= 60, calm = !!m && m.i <= 40;
+    let t1 = lvBoundary(1);
+    if (t1 - TR.tick < 8) t1 += 32;
+    const t2 = t1 + 32;
+    LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend"].includes(c.type) && c.type !== "fill");
+    LV.blend = null;
+    const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick3 = fills.filter((f) => want.test(f.name));
+    const fill2 = pick3.length ? lvRand(pick3) : fills.length ? lvRand(fills) : null;
+    if (fill2 && LV.scenes[LV.cur] && LV.scenes[LV.cur].cells[trackOf(0)])
+      LV.cues.push({ type: "fill", tick: t1, end: t2, f: fill2 });
+    const T2 = toneTracksAll();
+    if (T2.length)
+      lvMove({
+        id: "moodsweep",
+        tag: "q",
+        tracks: T2,
+        cc: 80,
+        kind: "ramp",
+        from: "rest",
+        to: calm ? lvFilterAway(0.55) : 127,
+        curve: calm ? "log" : "exp",
+        start: t1,
+        end: t2
+      });
+    if (calm && T2.length)
+      lvMove({
+        id: "moodwash",
+        tag: "q",
+        tracks: T2,
+        cc: 91,
+        kind: "ramp",
+        from: "rest",
+        to: 100,
+        curve: "exp",
+        start: t1,
+        end: t2
+      });
+    if (intense) LV.cues.push({ type: "gap", tick: t2 - 4 });
+    const idx = Math.min(LV.cur, LV.scenes.length - 1);
+    LV.cues.push({ type: "scene", idx: Math.max(0, idx), tick: t2, hard: intense || void 0 });
+    lvSortCues();
+    LV.ver++;
+    return t2;
+  }
+
+  // src/live/mood-ui.js
+  function lvMoodApply() {
+    const m = LV.mood;
+    HUM.push = m && Math.abs(m.i - 50) >= 10 ? Math.max(-1, Math.min(1, (m.i - 50) / 50)) : 0;
+  }
+  function moodSettings(m) {
+    const st = lvStyle(), said = [];
+    const [lo, hi] = st.bpm;
+    if (Math.abs(m.i - 50) >= 15 && hi > lo) {
+      const bpm = Math.round(lo + (hi - lo) * m.i / 100);
+      if (bpm !== LV.bpm) liveBpm(bpm - LV.bpm);
+      said.push(LV.bpm + " BPM");
+    }
+    if (m.i >= 70) {
+      Object.assign(LV, { entry: "hard", dropStyle: "hard", brkStyle: "stutter" });
+      if ((LV.human || 0) > 0) LV.feel = "pushed", said.push("pushed feel");
+      LV.chaos = Math.max(LV.chaos, 55);
+      said.push("hard drops");
+    } else if (m.i <= 35) {
+      Object.assign(LV, { feel: "laidback", entry: "slow", dropStyle: "smooth" });
+      LV.chaos = Math.min(LV.chaos, 15);
+      if ((LV.human || 0) < 25) LV.human = 25;
+      said.push("laid back", "smooth entries");
+    }
+    humanizeSync();
+    lvHumApply();
+    return said;
+  }
+  function lvMoodSet(m, quiet) {
+    LV.mood = m ? { i: Math.round(m.i), c: Math.round(m.c) } : null;
+    const said = m ? moodSettings(LV.mood) : [];
+    lvMoodApply();
+    saveLive();
+    liveBuild();
+    const live3 = lvOn();
+    if (live3) lvMoodMove(LV.mood);
+    moodSync();
+    liveRender();
+    if (!quiet)
+      toast(
+        "Mood: " + moodName(LV.mood) + (said.length ? " (" + said.join(", ") + ")" : "") + (live3 ? LV.mood && LV.mood.i <= 40 ? ". Easing into it on the next bar" : ". Into it on the next bar" : "")
+      );
+  }
+  function moodControl() {
+    const menu = el(
+      "select",
+      {
+        id: "lvMood",
+        "aria-label": "Mood",
+        title: "Mood: leans the whole set one way inside the genre. Intense moods pick harder, busier, shorter parts, play them harder and faster, and drop hard; calm moods pick softer, longer, sparser parts and lay back. Dark moods pick minor, clashing, lower parts; bright moods major, open, higher ones. Off leaves the picks as they were.",
+        onchange: (e) => {
+          const v = e.target.value, p = MOODS.find((x) => x[0] === v);
+          lvMoodSet(p ? { i: p[2], c: p[3] } : null);
+        }
+      },
+      el("option", { value: "off" }, "Off"),
+      ...MOODS.map(([v, n]) => el("option", { value: v }, n)),
+      el("option", { value: "custom", disabled: true }, "Custom")
+    );
+    const dot = el("i", { class: "lvMoodDot", id: "lvMoodDot" });
+    const pad3 = el(
+      "div",
+      {
+        class: "lvMoodPad",
+        id: "lvMoodPad",
+        role: "slider",
+        "aria-label": "Mood pad: calm to intense across, dark to bright up",
+        title: "Drag: calm ← → intense, dark ↓ ↑ bright. Release to rebuild the set. Double-click for Off, right-click for the list.",
+        ondblclick: () => lvMoodSet(null),
+        oncontextmenu: (e) => {
+          e.preventDefault();
+          showMenu(e.clientX, e.clientY, [
+            { label: "Off", checked: !LV.mood, action: () => lvMoodSet(null) },
+            "-",
+            ...MOODS.map(([, n, i, c]) => ({
+              label: n,
+              checked: !!LV.mood && LV.mood.i === i && LV.mood.c === c,
+              action: () => lvMoodSet({ i, c })
+            }))
+          ]);
+        }
+      },
+      dot
+    );
+    let drag = null;
+    const at2 = (e) => {
+      const r = pad3.getBoundingClientRect();
+      return {
+        i: Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)),
+        c: Math.max(0, Math.min(100, (1 - (e.clientY - r.top) / r.height) * 100))
+      };
+    };
+    pad3.addEventListener("pointerdown", (e) => {
+      drag = at2(e);
+      pad3.setPointerCapture(e.pointerId);
+      showDot(drag);
+    });
+    pad3.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      drag = at2(e);
+      showDot(drag);
+    });
+    pad3.addEventListener("pointerup", () => {
+      if (!drag) return;
+      const near = MOODS.find((x) => Math.hypot(x[2] - drag.i, x[3] - drag.c) < 9);
+      lvMoodSet(near ? { i: near[2], c: near[3] } : drag);
+      drag = null;
+    });
+    return el("span", { class: "lvf" }, "Mood", menu, pad3);
+  }
+  function showDot(m) {
+    const d = $("#lvMoodDot");
+    if (!d) return;
+    d.hidden = !m;
+    if (m) {
+      d.style.left = m.i + "%";
+      d.style.top = 100 - m.c + "%";
+    }
+  }
+  function moodSync() {
+    const s = $("#lvMood"), m = LV.mood;
+    if (s) {
+      const p = m && MOODS.find((x) => x[2] === m.i && x[3] === m.c);
+      s.value = !m ? "off" : p ? p[0] : "custom";
+    }
+    showDot(m);
+    const pad3 = $("#lvMoodPad");
+    if (pad3) pad3.classList.toggle("on", !!m);
+  }
+
+  // src/live/fades.js
+  var EXPR = 11;
+  var ends = () => LV.fadeEnds || (LV.fadeEnds = []);
+  var low = () => LV.low || (LV.low = {});
+  var on = () => S.sendCC !== false;
+  function lvFadeOut(t, tick, dur) {
+    if (!on() || dur <= 0) return;
+    lvMove({
+      id: "fade" + t,
+      tag: "fade",
+      tracks: [t],
+      cc: EXPR,
+      kind: "ramp",
+      from: LV.ccLast && LV.ccLast[t + ":" + EXPR] != null ? LV.ccLast[t + ":" + EXPR] : low()[t] ? 0 : "rest",
+      to: 0,
+      curve: "lin",
+      start: tick,
+      end: tick + dur,
+      restore: false
+    });
+    low()[t] = true;
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    ends().push({ t, at: tick + dur, back: tick + dur + 8 });
+  }
+  function lvFadeIn(t, tick, dur, nt) {
+    if (!on()) return;
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    if (dur <= 0) return lvLevelBack(t, nt);
+    lvSendCC(t, EXPR, 0, nt);
+    lvMove({
+      id: "fade" + t,
+      tag: "fade",
+      tracks: [t],
+      cc: EXPR,
+      kind: "ramp",
+      from: 0,
+      to: "rest",
+      curve: "lin",
+      start: tick,
+      end: tick + dur
+    });
+    delete low()[t];
+  }
+  function lvLevelBack(t, nt) {
+    LV.fadeEnds = ends().filter((e) => e.t !== t);
+    if (!low()[t] && !(LV.autos || []).some((a) => a.id === "fade" + t)) return;
+    LV.autos = LV.autos.filter((a) => a.id !== "fade" + t);
+    delete low()[t];
+    lvSendCC(t, EXPR, lvRestCC(t, EXPR), nt);
+  }
+  function lvFadeTick(tick, nt) {
+    if (!LV.fadeEnds || !LV.fadeEnds.length) return;
+    LV.fadeEnds = LV.fadeEnds.filter((e) => {
+      if (!e.off && tick >= e.at) {
+        e.off = true;
+        if (on() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
+      }
+      if (tick >= e.back) {
+        lvLevelBack(e.t, nt);
+        return false;
+      }
+      return true;
+    });
+  }
+  function lvFadesReset(nt) {
+    const l = LV.low || {};
+    LV.fadeEnds = [];
+    for (const t in l) {
+      if (on()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
+      delete l[t];
+    }
   }
 
   // src/live/extreme.js
@@ -30957,11 +32092,11 @@ body[data-mode='synth'] #synth {
 
   // src/live/harmony.js
   var ORDER = [4, 3, 5, 7, 6];
-  var live = (t) => LV.voices[t].filter((v) => v.env.v1 > 0).pop() || null;
+  var live2 = (t) => LV.voices[t].filter((v) => v.env.v1 > 0).pop() || null;
   function lvCurProg(skip) {
     for (const t of ORDER) {
       if (t === skip) continue;
-      const v = live(t), p = v && lvProg(v.f);
+      const v = live2(t), p = v && lvProg(v.f);
       if (p) return { prog: p, bars: v.f.bars };
     }
     const sc = LV.scenes[LV.cur];
@@ -30988,12 +32123,12 @@ body[data-mode='synth'] #synth {
     if (!p || S.tracks[t].type !== "tone") return tick;
     for (let u = 3; u < 8; u++) {
       if (u === t || S.tracks[u].type !== "tone") continue;
-      const v = live(u);
+      const v = live2(u);
       if (v && v.start <= tick && lvProg(v.f) === p && v.f.bars === f.bars) return v.start;
     }
     return tick;
   }
-  var lvMelodicCount = () => tracksFor([4, 5, 6, 7]).filter((t) => live(t)).length;
+  var lvMelodicCount = () => tracksFor([4, 5, 6, 7]).filter((t) => live2(t)).length;
 
   // src/live/jam.js
   var HATS = [1, 4, 5, 10, 11];
@@ -31266,6 +32401,43 @@ body[data-mode='synth'] #synth {
         scene: true
       });
     return out2;
+  }
+
+  // src/live/mix.js
+  var MIX_CC = { lvl: 7, pan: 10, rev: 91, cho: 92 };
+  var KEY_OF = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho" };
+  function lvMixRest(t, cc2) {
+    return KEY_OF[cc2] ? lvRestCC(t, cc2) : void 0;
+  }
+  function lvMixNow(t, key) {
+    const last3 = LV.ccLast[t + ":" + MIX_CC[key]];
+    return last3 != null ? last3 : lvMixRest(t, MIX_CC[key]);
+  }
+  function lvMixSet(t, key, v, nt) {
+    LV.mix[key][t] = v;
+    saveLive();
+    lvSendCC(t, MIX_CC[key], v, nt);
+  }
+  function lvMixReset(t, nt) {
+    for (const [k2, d] of [
+      ["lvl", 100],
+      ["pan", 64],
+      ["rev", null],
+      ["cho", 0]
+    ]) {
+      LV.mix[k2][t] = d;
+      lvSendCC(t, MIX_CC[k2], lvMixRest(t, MIX_CC[k2]), nt);
+    }
+    saveLive();
+  }
+  function lvMixSendAll(nt) {
+    if (S.sendCC === false) return;
+    for (let t = 0; t < 8; t++)
+      for (const k2 in MIX_CC) {
+        const v = lvMixRest(t, MIX_CC[k2]);
+        LV.ccLast[t + ":" + MIX_CC[k2]] = v;
+        sendMidi([176 | S.tracks[t].ch - 1, MIX_CC[k2], v], nt);
+      }
   }
 
   // src/live/engine.js
@@ -31707,7 +32879,7 @@ body[data-mode='synth'] #synth {
       LV.lastTick = tick;
       return;
     }
-    const solo = S.tracks.some((t) => t.solo);
+    const solo2 = S.tracks.some((t) => t.solo);
     const fl = LV.flash && tick >= LV.flash.start ? LV.flash : null;
     const quiet = !!(fl || LV.bov || LV.thin || LV.stut || LV.cues.some((c) => (c.type === "gap" || c.type === "brk" || c.type === "scene" && c.hard) && c.tick - tick <= 40));
     if (LV.impact && tick >= LV.impact.tick) {
@@ -31730,7 +32902,7 @@ body[data-mode='synth'] #synth {
     if (fl && (fl.kind === "roll" || fl.kind === "drop")) lvRollTick(fl, tick, nt, td);
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
-      if (trk.mute || solo && !trk.solo || lvUserOwns(t)) continue;
+      if (trk.mute || solo2 && !trk.solo || lvUserOwns(t)) continue;
       const tg = envAt(LV.tg[t], tick);
       if (tg <= 0.01) continue;
       const tone2 = trk.type === "tone";
@@ -31759,7 +32931,7 @@ body[data-mode='synth'] #synth {
         const g = envAt(v.env, tick) * tg;
         if (g <= 0.02) continue;
         const L2 = v.f.bars * 32, local = ((vft - v.start) % L2 + L2) % L2;
-        const vt = quiet ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L2), L2), last = local >= L2 - 32;
+        const vt = quiet ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L2), L2), last3 = local >= L2 - 32;
         if (vt) {
           lvVarExtra(t, v, vt, local, L2, nt, td, g);
           lvXExtra(t, v, vt, local, L2, nt, td, g);
@@ -31775,7 +32947,7 @@ body[data-mode='synth'] #synth {
           if (vt === "thin" && local % 8 !== 0 && (local >> 1) % 3 === 1) continue;
           if (vt && lvXSkip(v, vt, local, L2, n)) continue;
           let nn = tone2 ? conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0) : n.n;
-          if (tone2 && (vt === "oct" && last && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
+          if (tone2 && (vt === "oct" && last3 && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
             nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
           emitNote(
             t,
@@ -31785,7 +32957,7 @@ body[data-mode='synth'] #synth {
             n.l * 2 * td
           );
           if (slotOf(t) === 3) v._last = nn;
-          if (vt === "echo" && last && tone2)
+          if (vt === "echo" && last3 && tone2)
             emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
         }
         LV.pulse[t] = { time: nt, v: Math.min(1, g) };
@@ -31860,6 +33032,7 @@ body[data-mode='synth'] #synth {
     if (S.clock && MIDI.out) sendMidi([250], TR.nextTime);
     Object.keys(AUTOLAST).forEach((k2) => delete AUTOLAST[k2]);
     sendTrackCCs();
+    if (MIDI.out) lvMixSendAll(AU.ctx.currentTime + 0.03);
     TICKER.start();
     sched();
     LV.ver++;
@@ -32081,6 +33254,345 @@ body[data-mode='synth'] #synth {
     const len = LV.brkLen || 32, t = phraseEnd - len;
     if (t <= TR.tick) return false;
     return lvQueueBreak(lvMakeBreak(LV.brkStyle, len), t);
+  }
+
+  // src/live/scene-editor.js
+  var LVSK = "mc707-live-scenes2";
+  function lvSaveScenes() {
+    LV.custom = true;
+    try {
+      localStorage.setItem(LVSK, JSON.stringify({ style: LV.style, seed: LV.seed, scenes: LV.scenes }));
+    } catch (e) {
+    }
+    saveLive();
+  }
+  function lvLoadScenes() {
+    try {
+      const o = JSON.parse(localStorage.getItem(LVSK) || "null");
+      if (!o || o.style !== LV.style || o.seed !== LV.seed || !Array.isArray(o.scenes) || !o.scenes.length) return false;
+      const sc = o.scenes.filter((s) => s && s.cells && s.bars > 0 && s.kind !== "flash").map((s) => ({
+        kind: s.kind || "drop",
+        name: String(s.name || "Scene").slice(0, 24),
+        bars: clamp(Math.round(s.bars), 1, 64),
+        e: clamp(+s.e || 5, 1, 10),
+        fx: s.fx || void 0,
+        rh: s.rh || void 0,
+        cells: Object.fromEntries(Object.entries(s.cells).filter(([t, c]) => c && facById(c.id)))
+      }));
+      if (!sc.length) return false;
+      LV.scenes = sc.slice(0, 7);
+      LV.custom = true;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function lvClearCustom() {
+    LV.custom = false;
+    try {
+      localStorage.removeItem(LVSK);
+    } catch (e) {
+    }
+  }
+  function liveEditScene(i) {
+    LV.edIdx = LV.edIdx === i ? -1 : i;
+    liveRenderSceneEd();
+  }
+  function liveRenderSceneEd() {
+    const host = $("#lvScEd");
+    if (!host) return;
+    host.textContent = "";
+    const i = LV.edIdx, sc = LV.scenes[i];
+    if (i == null || i < 0 || !sc) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    const st = lvStyle(), save3 = () => {
+      lvSaveScenes();
+      liveRenderCards();
+      LV.ver++;
+    };
+    const name = el("input", {
+      type: "text",
+      value: sc.name,
+      maxlength: 24,
+      "aria-label": "Scene name",
+      onchange: (e) => {
+        sc.name = e.target.value.trim() || sc.name;
+        save3();
+      }
+    });
+    const isF = lvIsFlash(sc);
+    const len = el(
+      "select",
+      {
+        "aria-label": "Scene length",
+        onchange: (e) => {
+          sc.bars = +e.target.value;
+          save3();
+        }
+      },
+      ...(isF ? [1, 2] : [1, 2, 4, 6, 8, 12, 16, 24, 32]).map(
+        (n) => el("option", { value: n, selected: sc.bars === n }, n + (n === 1 ? " bar" : " bars"))
+      )
+    );
+    const en = el("input", {
+      type: "range",
+      min: 1,
+      max: 10,
+      value: sc.e,
+      "aria-label": "Energy",
+      oninput: (e) => {
+        sc.e = +e.target.value;
+        $("#lvScEdE").textContent = sc.e;
+      },
+      onchange: () => save3()
+    });
+    const rh = isF ? el(
+      "select",
+      {
+        "aria-label": "Flash rhythm",
+        onchange: (e) => {
+          const R3 = FLASH_RH.find((x) => x[0] === e.target.value);
+          sc.rh = R3[0];
+          sc.bars = R3[2];
+          sc.cells = lvFlashIds(st, R3[0], LV.mode);
+          save3();
+          liveRenderSceneEd();
+        }
+      },
+      ...FLASH_RH.map(
+        ([id, l, b]) => el("option", { value: id, selected: sc.rh === id }, l + " (" + b + (b === 1 ? " bar" : " bars") + ")")
+      )
+    ) : null;
+    const fx = el(
+      "select",
+      {
+        "aria-label": "Scene move",
+        onchange: (e) => {
+          sc.fx = e.target.value;
+          save3();
+          if (lvOn() && LV.cur === i) lvSceneFx(sc, Math.ceil(TR.tick / 32) * 32);
+        }
+      },
+      ...LV_SCFX.map(
+        ([v, l]) => el("option", { value: v, selected: (sc.fx || (sc.kind === "build" ? "build" : "none")) === v }, l)
+      )
+    );
+    const parts2 = el("div", { class: "lvScParts" });
+    S.tracks.forEach((t, ti) => {
+      const c = sc.cells[ti], pool = isF ? FLPOOL[slotOf(ti)] : ti === trackOf(0) && oneKit() ? "full" : poolOf(ti);
+      const s = el("select", {
+        "aria-label": t.name + " in " + sc.name,
+        style: "--c:" + TRACK_COLORS[ti],
+        onchange: (e) => {
+          const v = e.target.value;
+          if (!v) delete sc.cells[ti];
+          else {
+            sc.cells[ti] = { id: v, pool: c && c.pool || pool };
+            if (c && c.play) sc.cells[ti].play = c.play;
+          }
+          save3();
+          liveRenderSceneEd();
+          if (lvOn() && LV.cur === i) {
+            if (v)
+              liveReplace(
+                ti,
+                v,
+                Math.ceil(TR.tick / 32) * 32,
+                S.tracks[ti].type === "tone" ? 16 : 0,
+                S.tracks[ti].type === "tone" ? 16 : 0
+              );
+            else
+              LV.voices[ti].forEach((vv) => {
+                vv.env = mkEnv(1, 0, Math.ceil(TR.tick / 32) * 32, 16);
+              });
+          }
+        }
+      });
+      s.append(el("option", { value: "" }, "— off —"));
+      const ids = isF ? [
+        .../* @__PURE__ */ new Set([
+          ...c ? [c.id] : [],
+          ...lvPool(st, pool).filter((id) => facById(id).flash === sc.rh),
+          ...lvPool(st, pool)
+        ])
+      ] : [.../* @__PURE__ */ new Set([...c ? [c.id] : [], ...lvFlavor(lvPool(st, pool), LV.flavor), ...lvPool(st, pool)])].slice(
+        0,
+        80
+      );
+      ids.forEach((id) => {
+        const f = facById(id);
+        if (f) s.append(el("option", { value: id, selected: c && c.id === id }, f.name));
+      });
+      if (!isF && S.tracks[ti].type === "tone") {
+        const mm2 = cmFix()[ti], own = patType({ pool });
+        [...new Set(mm2.types.slice(0, mm2.n))].filter((ty) => CT_POOL[ty] && ty !== own).forEach((ty) => {
+          const k2 = clipFor(ti, ty), og = el("optgroup", { label: ctInfo(ty)[1] + " parts (switches to clip " + (k2 + 1) + ")" });
+          [
+            .../* @__PURE__ */ new Set([
+              ...c && patType(facById(c.id)) === ty ? [c.id] : [],
+              ...lvFlavor(lvPool(st, CT_POOL[ty]), LV.flavor)
+            ])
+          ].slice(0, 40).forEach((id) => {
+            const f = facById(id);
+            if (f) og.append(el("option", { value: id, selected: c && c.id === id }, f.name));
+          });
+          s.append(og);
+        });
+      }
+      const pl = el(
+        "select",
+        {
+          "aria-label": t.name + " plays",
+          class: "lvPlay",
+          disabled: !c,
+          title: "Which bars of the scene this part plays",
+          onchange: (e) => {
+            const cc2 = sc.cells[ti];
+            if (!cc2) return;
+            if (e.target.value === "all") delete cc2.play;
+            else cc2.play = e.target.value;
+            save3();
+          }
+        },
+        ...LV_PLAY.map(([v, l]) => el("option", { value: v, selected: (c && c.play || "all") === v }, l))
+      );
+      const mm = cmFix()[ti], cl = el(
+        "select",
+        {
+          "aria-label": t.name + " MC-707 clip",
+          class: "lvClipSel",
+          disabled: !c,
+          title: "Which " + devNm() + " clip this track plays in this scene",
+          onchange: (e) => {
+            const cc2 = sc.cells[ti];
+            if (!cc2) return;
+            if (e.target.value === "") delete cc2.clip;
+            else cc2.clip = e.target.value === "random" ? "random" : +e.target.value;
+            save3();
+            if (lvOn() && LV.cur === i) lvCellClip(ti, cc2, AU.ctx.currentTime + 0.05);
+          }
+        },
+        el("option", { value: "" }, "Clip: as is"),
+        el("option", { value: "random", selected: !!c && c.clip === "random" }, "Clip: random")
+      );
+      for (let k2 = 0; k2 < mm.n; k2++) cl.append(el("option", { value: k2, selected: c && c.clip === k2 }, cmLabel(ti, k2)));
+      parts2.append(
+        el(
+          "label",
+          { class: "lvf" + (devOn(ti) ? "" : " devoff") },
+          el("span", { style: "color:" + TRACK_COLORS[ti] + ";font-weight:700" }, t.name),
+          s,
+          el("div", { class: "lvScPair" }, pl, cl)
+        )
+      );
+    });
+    const move = (d) => {
+      const j = i + d;
+      if (j < 0 || j >= LV.scenes.length) return;
+      [LV.scenes[i], LV.scenes[j]] = [LV.scenes[j], LV.scenes[i]];
+      if (LV.cur === i) LV.cur = j;
+      else if (LV.cur === j) LV.cur = i;
+      LV.edIdx = j;
+      save3();
+      liveRenderSceneEd();
+    };
+    host.append(
+      el(
+        "div",
+        { class: "lvh" },
+        el("h3", {}, "Edit scene " + (i + 1)),
+        el(
+          "button",
+          {
+            class: "btn sm",
+            onclick: () => {
+              LV.edIdx = -1;
+              liveRenderSceneEd();
+            }
+          },
+          "✕ Close"
+        )
+      ),
+      isF ? el(
+        "div",
+        { class: "lvrow" },
+        el("label", { class: "lvf" }, "Name", name),
+        el("label", { class: "lvf" }, "Rhythm", rh),
+        el("label", { class: "lvf" }, "Length", len)
+      ) : el(
+        "div",
+        { class: "lvrow" },
+        el("label", { class: "lvf" }, "Name", name),
+        el("label", { class: "lvf" }, "Length", len),
+        el("label", { class: "lvf" }, "Energy", en, el("b", { id: "lvScEdE" }, String(sc.e))),
+        el("label", { class: "lvf" }, "Move", fx)
+      ),
+      el(
+        "div",
+        { class: "hint" },
+        isF ? "A flash is a quick break: every part hits the same rhythm with silence in between, a roll or run pulls you back, and the loop that was playing slams back in on the downbeat. Pick a rhythm to set all the parts at once, or change any part below. Parts left off stay silent during the flash." : "Under each part, choose which bars it plays, so parts can come and go inside the loop. Energy decides how the next scene lands: a jump of 4 or more is treated as a drop. Changes to the playing scene take effect on the next bar."
+      ),
+      parts2,
+      el(
+        "div",
+        { class: "lvBtns" },
+        el("button", { class: "btn sm", disabled: i === 0, onclick: () => move(-1) }, "◀ Move left"),
+        el("button", { class: "btn sm", disabled: i === LV.scenes.length - 1, onclick: () => move(1) }, "Move right ▶"),
+        el(
+          "button",
+          {
+            class: "btn sm",
+            disabled: LV.scenes.length >= 7,
+            title: LV.scenes.length >= 7 ? "Up to 7 scenes, on pads 1–7 (pad 8 is Break). Delete one to make room." : "Copy this scene next to it",
+            onclick: () => {
+              LV.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify({ ...sc, name: (sc.name + " copy").slice(0, 24) })));
+              LV.edIdx = i + 1;
+              save3();
+              liveRenderSceneEd();
+            }
+          },
+          "Duplicate"
+        ),
+        el(
+          "button",
+          {
+            class: "btn sm",
+            disabled: LV.scenes.length <= 1,
+            onclick: () => {
+              LV.scenes.splice(i, 1);
+              if (LV.cur >= LV.scenes.length) LV.cur = LV.scenes.length - 1;
+              LV.edIdx = -1;
+              LV.cues = LV.cues.filter((c) => c.type !== "scene");
+              save3();
+              liveRenderSceneEd();
+            }
+          },
+          "Delete"
+        ),
+        el(
+          "button",
+          {
+            class: "btn sm",
+            onclick: async () => {
+              const ok = await askDlg({
+                title: "Go back to the generated scenes?",
+                text: "Your edits to these scenes will be replaced.",
+                ok: "Reset scenes"
+              });
+              if (!ok) return;
+              lvClearCustom();
+              LV.edIdx = -1;
+              liveBuild();
+              liveRender();
+            }
+          },
+          "Reset all scenes"
+        )
+      )
+    );
   }
 
   // src/live/cues.js
@@ -32433,7 +33945,13 @@ body[data-mode='synth'] #synth {
     const r = LV.rest[0];
     return Math.round(r < 32 ? r + (127 - r) * amt : r - r * amt);
   }
+  var MIX_KEY = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho" };
   function lvRestCC(t, cc2) {
+    const mk = MIX_KEY[cc2];
+    if (mk && LV.mix) {
+      const v = LV.mix[mk][t];
+      return v != null ? v : cc2 === 91 ? LV.revRest | 0 : MC_PARAMS.find((x) => x.n === cc2).def;
+    }
     const tr = S.tracks[t];
     if (tr.cc && tr.cc[cc2] != null) return tr.cc[cc2];
     if (cc2 >= 80 && cc2 <= 83) return LV.rest[cc2 - 80];
@@ -32509,15 +34027,15 @@ body[data-mode='synth'] #synth {
     const val = /* @__PURE__ */ new Map(), fade = /* @__PURE__ */ new Map();
     for (const a of LV.autos) {
       if (tick < a.start) continue;
-      const done = tick >= a.end;
-      if (done && a.restore === false) continue;
+      const done2 = tick >= a.end;
+      if (done2 && a.restore === false) continue;
       a.tracks.forEach((t) => {
-        const k2 = t + ":" + a.cc, v = done ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
+        const k2 = t + ":" + a.cc, v = done2 ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
         if (a.tag === "fade") fade.set(k2, { t, cc: a.cc, v });
-        else if (!done || !val.has(k2)) val.set(k2, { t, cc: a.cc, v });
+        else if (!done2 || !val.has(k2)) val.set(k2, { t, cc: a.cc, v });
       });
       if (a.cc >= 80 && a.cc <= 83) {
-        if (done) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
+        if (done2) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
         else if (a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
       }
     }
@@ -32731,662 +34249,171 @@ body[data-mode='synth'] #synth {
     liveSync();
   }
 
-  // src/live/scene-editor.js
-  var LVSK = "mc707-live-scenes2";
-  function lvSaveScenes() {
-    LV.custom = true;
-    try {
-      localStorage.setItem(LVSK, JSON.stringify({ style: LV.style, seed: LV.seed, scenes: LV.scenes }));
-    } catch (e) {
+  // src/live/live-mixer.js
+  var ID2 = "live-mixer";
+  var held2 = false;
+  var soloT = null;
+  var soloMuted = [];
+  function muteNow(tracks2, on2) {
+    if (!tracks2.length) return;
+    if (!lvOn()) {
+      tracks2.forEach((t) => LV.mute[t] = on2);
+      LV.tg = Array.from({ length: 8 }, (_, t) => mkEnv(lvTarget(t), lvTarget(t), 0, 0));
+    } else {
+      LV.cues = LV.cues.filter((c) => !(c.type === "mute" && c.tracks.some((t) => tracks2.includes(t))));
+      LV.cues.push({ type: "mute", tracks: tracks2, on: on2, tick: Math.ceil((TR.tick + 1) / 8) * 8 });
+      lvSortCues();
     }
-    saveLive();
+    LV.ver++;
   }
-  function lvLoadScenes() {
-    try {
-      const o = JSON.parse(localStorage.getItem(LVSK) || "null");
-      if (!o || o.style !== LV.style || o.seed !== LV.seed || !Array.isArray(o.scenes) || !o.scenes.length) return false;
-      const sc = o.scenes.filter((s) => s && s.cells && s.bars > 0 && s.kind !== "flash").map((s) => ({
-        kind: s.kind || "drop",
-        name: String(s.name || "Scene").slice(0, 24),
-        bars: clamp(Math.round(s.bars), 1, 64),
-        e: clamp(+s.e || 5, 1, 10),
-        fx: s.fx || void 0,
-        rh: s.rh || void 0,
-        cells: Object.fromEntries(Object.entries(s.cells).filter(([t, c]) => c && facById(c.id)))
-      }));
-      if (!sc.length) return false;
-      LV.scenes = sc.slice(0, 7);
-      LV.custom = true;
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function lvClearCustom() {
-    LV.custom = false;
-    try {
-      localStorage.removeItem(LVSK);
-    } catch (e) {
-    }
-  }
-  function liveEditScene(i) {
-    LV.edIdx = LV.edIdx === i ? -1 : i;
-    liveRenderSceneEd();
-  }
-  function liveRenderSceneEd() {
-    const host = $("#lvScEd");
-    if (!host) return;
-    host.textContent = "";
-    const i = LV.edIdx, sc = LV.scenes[i];
-    if (i == null || i < 0 || !sc) {
-      host.hidden = true;
+  function solo(t) {
+    const tracks2 = DEVS[DEV].tracks;
+    if (soloT === t) {
+      muteNow(soloMuted, false);
+      soloT = null;
+      soloMuted = [];
       return;
     }
-    host.hidden = false;
-    const st = lvStyle(), save3 = () => {
-      lvSaveScenes();
-      liveRenderCards();
-      LV.ver++;
-    };
-    const name = el("input", {
-      type: "text",
-      value: sc.name,
-      maxlength: 24,
-      "aria-label": "Scene name",
-      onchange: (e) => {
-        sc.name = e.target.value.trim() || sc.name;
-        save3();
-      }
-    });
-    const isF = lvIsFlash(sc);
-    const len = el(
-      "select",
+    if (soloT != null)
+      muteNow(
+        soloMuted.filter((u) => u === t),
+        false
+      );
+    const others = tracks2.filter((u) => u !== t && !lvEffMute(u));
+    soloMuted = [...soloMuted.filter((u) => u !== t), ...others];
+    if (lvEffMute(t)) muteNow([t], false);
+    muteNow(others, true);
+    soloT = t;
+  }
+  function stripFor2(t) {
+    const tr = S.tracks[t], eff = lvEffMute(t), pend = lvOn() && eff !== !!LV.mute[t] ? eff ? "mute" : "unmute" : "";
+    const dim = lvUserOwns(t) ? "You’re playing it" : lvEmute(t) ? "Out (energy)" : "";
+    return mixStrip(
       {
-        "aria-label": "Scene length",
-        onchange: (e) => {
-          sc.bars = +e.target.value;
-          save3();
-        }
+        num: devNum(t),
+        name: tr.name,
+        color: TRACK_COLORS[t],
+        sub: (tr.type === "drum" ? "Drums" : "Tone") + " · ch " + tr.ch,
+        lvl: lvMixNow(t, "lvl"),
+        pan: lvMixNow(t, "pan"),
+        rev: lvMixNow(t, "rev"),
+        cho: lvMixNow(t, "cho"),
+        mute: eff,
+        solo: soloT === t,
+        pending: pend,
+        dim
       },
-      ...(isF ? [1, 2] : [1, 2, 4, 6, 8, 12, 16, 24, 32]).map(
-        (n) => el("option", { value: n, selected: sc.bars === n }, n + (n === 1 ? " bar" : " bars"))
-      )
-    );
-    const en = el("input", {
-      type: "range",
-      min: 1,
-      max: 10,
-      value: sc.e,
-      "aria-label": "Energy",
-      oninput: (e) => {
-        sc.e = +e.target.value;
-        $("#lvScEdE").textContent = sc.e;
-      },
-      onchange: () => save3()
-    });
-    const rh = isF ? el(
-      "select",
       {
-        "aria-label": "Flash rhythm",
-        onchange: (e) => {
-          const R3 = FLASH_RH.find((x) => x[0] === e.target.value);
-          sc.rh = R3[0];
-          sc.bars = R3[2];
-          sc.cells = lvFlashIds(st, R3[0], LV.mode);
-          save3();
-          liveRenderSceneEd();
-        }
-      },
-      ...FLASH_RH.map(
-        ([id, l, b]) => el("option", { value: id, selected: sc.rh === id }, l + " (" + b + (b === 1 ? " bar" : " bars") + ")")
-      )
-    ) : null;
-    const fx = el(
-      "select",
-      {
-        "aria-label": "Scene move",
-        onchange: (e) => {
-          sc.fx = e.target.value;
-          save3();
-          if (lvOn() && LV.cur === i) lvSceneFx(sc, Math.ceil(TR.tick / 32) * 32);
-        }
-      },
-      ...LV_SCFX.map(
-        ([v, l]) => el("option", { value: v, selected: (sc.fx || (sc.kind === "build" ? "build" : "none")) === v }, l)
-      )
-    );
-    const parts2 = el("div", { class: "lvScParts" });
-    S.tracks.forEach((t, ti) => {
-      const c = sc.cells[ti], pool = isF ? FLPOOL[slotOf(ti)] : ti === trackOf(0) && oneKit() ? "full" : poolOf(ti);
-      const s = el("select", {
-        "aria-label": t.name + " in " + sc.name,
-        style: "--c:" + TRACK_COLORS[ti],
-        onchange: (e) => {
-          const v = e.target.value;
-          if (!v) delete sc.cells[ti];
-          else {
-            sc.cells[ti] = { id: v, pool: c && c.pool || pool };
-            if (c && c.play) sc.cells[ti].play = c.play;
-          }
-          save3();
-          liveRenderSceneEd();
-          if (lvOn() && LV.cur === i) {
-            if (v)
-              liveReplace(
-                ti,
-                v,
-                Math.ceil(TR.tick / 32) * 32,
-                S.tracks[ti].type === "tone" ? 16 : 0,
-                S.tracks[ti].type === "tone" ? 16 : 0
-              );
-            else
-              LV.voices[ti].forEach((vv) => {
-                vv.env = mkEnv(1, 0, Math.ceil(TR.tick / 32) * 32, 16);
-              });
-          }
-        }
-      });
-      s.append(el("option", { value: "" }, "— off —"));
-      const ids = isF ? [
-        .../* @__PURE__ */ new Set([
-          ...c ? [c.id] : [],
-          ...lvPool(st, pool).filter((id) => facById(id).flash === sc.rh),
-          ...lvPool(st, pool)
+        title: "Right-click for more",
+        grab: () => held2 = true,
+        done: () => held2 = false,
+        set: (key, v) => lvMixSet(t, key, v, lvNow()),
+        mute: () => {
+          muteNow([t], !lvEffMute(t));
+          refresh2();
+        },
+        solo: () => {
+          solo(t);
+          refresh2();
+        },
+        menu: (e) => showMenu(e.clientX, e.clientY, [
+          { label: "Reset this track’s mix", action: () => (lvMixReset(t, lvNow()), refresh2()) },
+          { label: "Unmute every track", action: () => (unmuteAll(), refresh2()) }
         ])
-      ] : [.../* @__PURE__ */ new Set([...c ? [c.id] : [], ...lvFlavor(lvPool(st, pool), LV.flavor), ...lvPool(st, pool)])].slice(
-        0,
-        80
-      );
-      ids.forEach((id) => {
-        const f = facById(id);
-        if (f) s.append(el("option", { value: id, selected: c && c.id === id }, f.name));
-      });
-      if (!isF && S.tracks[ti].type === "tone") {
-        const mm2 = cmFix()[ti], own = patType({ pool });
-        [...new Set(mm2.types.slice(0, mm2.n))].filter((ty) => CT_POOL[ty] && ty !== own).forEach((ty) => {
-          const k2 = clipFor(ti, ty), og = el("optgroup", { label: ctInfo(ty)[1] + " parts (switches to clip " + (k2 + 1) + ")" });
-          [
-            .../* @__PURE__ */ new Set([
-              ...c && patType(facById(c.id)) === ty ? [c.id] : [],
-              ...lvFlavor(lvPool(st, CT_POOL[ty]), LV.flavor)
-            ])
-          ].slice(0, 40).forEach((id) => {
-            const f = facById(id);
-            if (f) og.append(el("option", { value: id, selected: c && c.id === id }, f.name));
-          });
-          s.append(og);
-        });
       }
-      const pl = el(
-        "select",
-        {
-          "aria-label": t.name + " plays",
-          class: "lvPlay",
-          disabled: !c,
-          title: "Which bars of the scene this part plays",
-          onchange: (e) => {
-            const cc2 = sc.cells[ti];
-            if (!cc2) return;
-            if (e.target.value === "all") delete cc2.play;
-            else cc2.play = e.target.value;
-            save3();
-          }
-        },
-        ...LV_PLAY.map(([v, l]) => el("option", { value: v, selected: (c && c.play || "all") === v }, l))
-      );
-      const mm = cmFix()[ti], cl = el(
-        "select",
-        {
-          "aria-label": t.name + " MC-707 clip",
-          class: "lvClipSel",
-          disabled: !c,
-          title: "Which " + devNm() + " clip this track plays in this scene",
-          onchange: (e) => {
-            const cc2 = sc.cells[ti];
-            if (!cc2) return;
-            if (e.target.value === "") delete cc2.clip;
-            else cc2.clip = e.target.value === "random" ? "random" : +e.target.value;
-            save3();
-            if (lvOn() && LV.cur === i) lvCellClip(ti, cc2, AU.ctx.currentTime + 0.05);
-          }
-        },
-        el("option", { value: "" }, "Clip: as is"),
-        el("option", { value: "random", selected: !!c && c.clip === "random" }, "Clip: random")
-      );
-      for (let k2 = 0; k2 < mm.n; k2++) cl.append(el("option", { value: k2, selected: c && c.clip === k2 }, cmLabel(ti, k2)));
-      parts2.append(
-        el(
-          "label",
-          { class: "lvf" + (devOn(ti) ? "" : " devoff") },
-          el("span", { style: "color:" + TRACK_COLORS[ti] + ";font-weight:700" }, t.name),
-          s,
-          el("div", { class: "lvScPair" }, pl, cl)
-        )
-      );
-    });
-    const move = (d) => {
-      const j = i + d;
-      if (j < 0 || j >= LV.scenes.length) return;
-      [LV.scenes[i], LV.scenes[j]] = [LV.scenes[j], LV.scenes[i]];
-      if (LV.cur === i) LV.cur = j;
-      else if (LV.cur === j) LV.cur = i;
-      LV.edIdx = j;
-      save3();
-      liveRenderSceneEd();
-    };
-    host.append(
+    );
+  }
+  function unmuteAll() {
+    soloT = null;
+    soloMuted = [];
+    muteNow(
+      DEVS[DEV].tracks.filter((u) => lvEffMute(u)),
+      false
+    );
+  }
+  var sig2 = () => JSON.stringify([
+    DEVS[DEV].tracks.map((t) => [
+      S.tracks[t].name,
+      S.tracks[t].ch,
+      lvEffMute(t),
+      !!LV.mute[t],
+      lvEmute(t),
+      lvUserOwns(t),
+      ...Object.values(MIX_CC).map((n) => LV.ccLast[t + ":" + n])
+    ]),
+    LV.mix,
+    soloT,
+    lvOn()
+  ]);
+  var strips2 = [];
+  var last2 = "";
+  var look2 = "";
+  var gen2 = 0;
+  var lastSig2 = 0;
+  var lookSrc2 = () => document.querySelector("#live") || document.documentElement;
+  function build2(root, h) {
+    last2 = sig2();
+    look2 = popTheme(h, lookSrc2(), "popLive");
+    const my = ++gen2;
+    strips2 = DEVS[DEV].tracks.map((t) => [t, stripFor2(t)]);
+    root.append(
       el(
         "div",
-        { class: "lvh" },
-        el("h3", {}, "Edit scene " + (i + 1)),
+        { class: "mxWrap live" },
         el(
-          "button",
-          {
-            class: "btn sm",
-            onclick: () => {
-              LV.edIdx = -1;
-              liveRenderSceneEd();
-            }
-          },
-          "✕ Close"
-        )
-      ),
-      isF ? el(
-        "div",
-        { class: "lvrow" },
-        el("label", { class: "lvf" }, "Name", name),
-        el("label", { class: "lvf" }, "Rhythm", rh),
-        el("label", { class: "lvf" }, "Length", len)
-      ) : el(
-        "div",
-        { class: "lvrow" },
-        el("label", { class: "lvf" }, "Name", name),
-        el("label", { class: "lvf" }, "Length", len),
-        el("label", { class: "lvf" }, "Energy", en, el("b", { id: "lvScEdE" }, String(sc.e))),
-        el("label", { class: "lvf" }, "Move", fx)
-      ),
-      el(
-        "div",
-        { class: "hint" },
-        isF ? "A flash is a quick break: every part hits the same rhythm with silence in between, a roll or run pulls you back, and the loop that was playing slams back in on the downbeat. Pick a rhythm to set all the parts at once, or change any part below. Parts left off stay silent during the flash." : "Under each part, choose which bars it plays, so parts can come and go inside the loop. Energy decides how the next scene lands: a jump of 4 or more is treated as a drop. Changes to the playing scene take effect on the next bar."
-      ),
-      parts2,
-      el(
-        "div",
-        { class: "lvBtns" },
-        el("button", { class: "btn sm", disabled: i === 0, onclick: () => move(-1) }, "◀ Move left"),
-        el("button", { class: "btn sm", disabled: i === LV.scenes.length - 1, onclick: () => move(1) }, "Move right ▶"),
-        el(
-          "button",
-          {
-            class: "btn sm",
-            disabled: LV.scenes.length >= 7,
-            title: LV.scenes.length >= 7 ? "Up to 7 scenes, on pads 1–7 (pad 8 is Break). Delete one to make room." : "Copy this scene next to it",
-            onclick: () => {
-              LV.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify({ ...sc, name: (sc.name + " copy").slice(0, 24) })));
-              LV.edIdx = i + 1;
-              save3();
-              liveRenderSceneEd();
-            }
-          },
-          "Duplicate"
+          "div",
+          { class: "mxTop" },
+          el("b", { class: "mxTitle" }, "Live mixer"),
+          el(
+            "span",
+            { class: "hint" },
+            "Live’s own mix, apart from the song’s. Mutes and solos land on the next beat while the jam plays."
+          ),
+          el(
+            "div",
+            { class: "mxActs" },
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Send every level, pan and send to the MC-707 now",
+                onclick: () => lvMixSendAll(lvNow())
+              },
+              "Send to MC-707"
+            ),
+            el("button", { type: "button", class: "btn sm", onclick: () => (unmuteAll(), refresh2()) }, "Unmute all"),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                onclick: () => (DEVS[DEV].tracks.forEach((t) => lvMixReset(t, lvNow())), refresh2())
+              },
+              "Reset all"
+            )
+          )
         ),
-        el(
-          "button",
-          {
-            class: "btn sm",
-            disabled: LV.scenes.length <= 1,
-            onclick: () => {
-              LV.scenes.splice(i, 1);
-              if (LV.cur >= LV.scenes.length) LV.cur = LV.scenes.length - 1;
-              LV.edIdx = -1;
-              LV.cues = LV.cues.filter((c) => c.type !== "scene");
-              save3();
-              liveRenderSceneEd();
-            }
-          },
-          "Delete"
-        ),
-        el(
-          "button",
-          {
-            class: "btn sm",
-            onclick: async () => {
-              const ok = await askDlg({
-                title: "Go back to the generated scenes?",
-                text: "Your edits to these scenes will be replaced.",
-                ok: "Reset scenes"
-              });
-              if (!ok) return;
-              lvClearCustom();
-              LV.edIdx = -1;
-              liveBuild();
-              liveRender();
-            }
-          },
-          "Reset all scenes"
-        )
+        el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]))
       )
     );
-  }
-
-  // src/live/set-builder.js
-  var avgPitch = (f) => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
-  var roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(avgPitch(f) - avgPitch(g)) >= 7;
-  function liveBuild() {
-    const st = lvStyle();
-    LV.style = st.id;
-    if (!LV.mode) LV.mode = lvModeFam(st.scale);
-    LV.fillIds = lvPool(st, "fill");
-    if (LV.custom && lvLoadScenes()) {
-      if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
-      LV.ver++;
-      return;
-    }
-    LV.custom = false;
-    const r = mulberry(LV.seed ^ 1540483477), P = {}, A = {}, at2 = {};
-    const shuf = (a) => {
-      a = a.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(r() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+    const tick = (now) => {
+      if (!h.open || my !== gen2) return;
+      for (const [t, node] of strips2) mixLight(node, midiAct(S.tracks[t].ch - 1));
+      if (!held2 && now - lastSig2 > 120) {
+        lastSig2 = now;
+        if (sig2() !== last2 || themeSig(lookSrc2()) !== look2) return refresh2();
       }
-      return a;
+      h.raf(tick);
     };
-    const take = (pool, pred) => {
-      if (!P[pool]) {
-        A[pool] = shuf(lvPool(st, pool));
-        P[pool] = shuf(moodFilter(lvFlavor(A[pool], LV.flavor), LV.mood, facById));
-      }
-      for (const arr of pred ? [P[pool], A[pool]] : [P[pool]]) {
-        if (!arr.length) continue;
-        at2[pool] = at2[pool] || 0;
-        for (let k2 = 0; k2 < arr.length; k2++) {
-          const id = arr[(at2[pool] + k2) % arr.length];
-          if (!pred || pred(facById(id))) {
-            at2[pool] = (at2[pool] + k2 + 1) % arr.length;
-            return id;
-          }
-        }
-      }
-      return null;
-    };
-    const bassKeys = new Set(
-      lvPool(st, "bass").map(facById).filter((f) => f && lvProg(f)).map((f) => lvProg(f) + "|" + f.bars)
-    );
-    const mkSet = () => {
-      const o = {};
-      o[4] = take("chords", (f) => lvProg(f) && bassKeys.has(lvProg(f) + "|" + f.bars)) || take("chords");
-      let cf = facById(o[4]);
-      if (!(cf && lvProg(cf))) {
-        const b = take("bass", (f) => lvProg(f));
-        if (b) {
-          o[3] = b;
-          cf = facById(b);
-        }
-      }
-      const prog = cf && lvProg(cf), pb = cf && cf.bars;
-      const fit = (p, ok = () => true) => prog && take(p, (f) => lvProg(f) === prog && f.bars === pb && ok(f)) || take(p, (f) => !lvProg(f) && ok(f)) || prog && take(p, (f) => lvProg(f) === prog && f.bars === pb) || take(p, (f) => !lvProg(f)) || (p === "bass" || !prog ? take(p) : null);
-      o[3] = o[3] || fit("bass");
-      o[5] = fit("pad");
-      o[6] = fit("lead");
-      const lead2 = facById(o[6]);
-      o[7] = fit("pluck", (f) => !lead2 || roomFor(f, lead2));
-      o[0] = take("kit");
-      o[1] = take("hats");
-      o[2] = take("perc");
-      if (oneKit()) {
-        o[0] = take("full") || o[0];
-        o[1] = o[2] = null;
-      }
-      if (DEV === "101") o[5] = o[7] = null;
-      const tr = { chords: o[4] }, seen = /* @__PURE__ */ new Set();
-      for (let t = 0; t < 8; t++) {
-        const s = slotOf(t), pool = poolOf(t), own = !seen.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
-        seen.add(s);
-        if (own || s === 0 && oneKit()) tr[t] = o[s];
-        else tr[t] = S.tracks[t].type === "drum" ? take(pool) : fit(pool);
-      }
-      return tr;
-    };
-    const sets = { A: mkSet(), B: mkSet() }, scenes = [];
-    const MOVE = ["h2", "alt", "rest", "odd"];
-    for (const [name, kind, bars2, e, fx, parts2] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
-      const cells = {};
-      for (let t = 0; t < 8; t++) {
-        const spec = parts2[slotOf(t)];
-        if (!spec) continue;
-        const [set, play0] = spec.split(":");
-        let id, pool = poolOf(t);
-        if (set === "R") {
-          id = take("build", (f) => f.bars === bars2) || take("build");
-          pool = "build";
-        }
-        if (t === trackOf(0) && oneKit() && set !== "R") pool = "full";
-        if (!id) id = sets[set === "R" ? "A" : set][t];
-        if (!id || !facById(id)) continue;
-        let play2 = play0;
-        if (S.tracks[t].type === "tone" && r() < 0.25)
-          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE[Math.floor(r() * MOVE.length)];
-        cells[t] = { id, pool };
-        if (play2) cells[t].play = play2;
-      }
-      if (!Object.keys(cells).length)
-        [0, 1, 3].map(trackOf).forEach((t) => {
-          if (t >= 0 && sets.A[t]) cells[t] = { id: sets.A[t], pool: poolOf(t) };
-        });
-      const tL = trackOf(6), tP = trackOf(7), ld = cells[tL] && facById(cells[tL].id), pk2 = cells[tP] && facById(cells[tP].id);
-      if (ld && pk2 && bars2 >= 4 && !roomFor(ld, pk2)) {
-        cells[tL].play = "h1";
-        cells[tP].play = "h2";
-      }
-      const sc = { kind, name, bars: bars2, e, cells };
-      if (fx) sc.fx = fx;
-      scenes.push(sc);
-    }
-    {
-      for (let t = 0; t < 8; t++) {
-        if (!devOn(t) || S.tracks[t].type !== "tone") continue;
-        const mm = cmFix()[t], own = patType({ pool: poolOf(t) });
-        const alt = mm.types.slice(0, mm.n).find((ty) => CT_POOL[ty] && ty !== own);
-        if (!alt) continue;
-        scenes.forEach((sc) => {
-          if (/ B$/.test(sc.name) && sc.cells[t]) {
-            const cb = facById(sets.B.chords), pB = cb && lvProg(cb);
-            const id = take(CT_POOL[alt], (f) => !pB || !lvProg(f) || lvProg(f) === pB && f.bars === cb.bars);
-            if (id) sc.cells[t] = { id, pool: CT_POOL[alt], play: sc.cells[t].play, clip: clipFor(t, alt) };
-          }
-        });
-      }
-    }
-    LV.scenes = scenes;
-    LV.fillIds = lvPool(st, "fill");
-    if (LV.cur >= scenes.length) LV.cur = 0;
-    LV.ver++;
+    h.raf(tick);
   }
-  function liveSwapIds(t) {
-    const st = lvStyle(), pool = t === trackOf(0) && oneKit() ? "full" : poolOf(t);
-    return moodFilter(lvFlavor(lvPool(st, pool), LV.flavor), LV.mood, facById).filter((id) => {
-      const f = facById(id);
-      return f && f.type === S.tracks[t].type;
-    });
+  function refresh2() {
+    const h = popoutOf(ID2);
+    if (h) h.refresh();
   }
-
-  // src/live/mood-move.js
-  function lvMoodMove(m) {
-    const intense = !!m && m.i >= 60, calm = !!m && m.i <= 40;
-    let t1 = lvBoundary(1);
-    if (t1 - TR.tick < 8) t1 += 32;
-    const t2 = t1 + 32;
-    LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend"].includes(c.type) && c.type !== "fill");
-    LV.blend = null;
-    const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick3 = fills.filter((f) => want.test(f.name));
-    const fill2 = pick3.length ? lvRand(pick3) : fills.length ? lvRand(fills) : null;
-    if (fill2 && LV.scenes[LV.cur] && LV.scenes[LV.cur].cells[trackOf(0)])
-      LV.cues.push({ type: "fill", tick: t1, end: t2, f: fill2 });
-    const T2 = toneTracksAll();
-    if (T2.length)
-      lvMove({
-        id: "moodsweep",
-        tag: "q",
-        tracks: T2,
-        cc: 80,
-        kind: "ramp",
-        from: "rest",
-        to: calm ? lvFilterAway(0.55) : 127,
-        curve: calm ? "log" : "exp",
-        start: t1,
-        end: t2
-      });
-    if (calm && T2.length)
-      lvMove({
-        id: "moodwash",
-        tag: "q",
-        tracks: T2,
-        cc: 91,
-        kind: "ramp",
-        from: "rest",
-        to: 100,
-        curve: "exp",
-        start: t1,
-        end: t2
-      });
-    if (intense) LV.cues.push({ type: "gap", tick: t2 - 4 });
-    const idx = Math.min(LV.cur, LV.scenes.length - 1);
-    LV.cues.push({ type: "scene", idx: Math.max(0, idx), tick: t2, hard: intense || void 0 });
-    lvSortCues();
-    LV.ver++;
-    return t2;
-  }
-
-  // src/live/mood-ui.js
-  function lvMoodApply() {
-    const m = LV.mood;
-    HUM.push = m && Math.abs(m.i - 50) >= 10 ? Math.max(-1, Math.min(1, (m.i - 50) / 50)) : 0;
-  }
-  function moodSettings(m) {
-    const st = lvStyle(), said = [];
-    const [lo, hi] = st.bpm;
-    if (Math.abs(m.i - 50) >= 15 && hi > lo) {
-      const bpm = Math.round(lo + (hi - lo) * m.i / 100);
-      if (bpm !== LV.bpm) liveBpm(bpm - LV.bpm);
-      said.push(LV.bpm + " BPM");
-    }
-    if (m.i >= 70) {
-      Object.assign(LV, { entry: "hard", dropStyle: "hard", brkStyle: "stutter" });
-      if ((LV.human || 0) > 0) LV.feel = "pushed", said.push("pushed feel");
-      LV.chaos = Math.max(LV.chaos, 55);
-      said.push("hard drops");
-    } else if (m.i <= 35) {
-      Object.assign(LV, { feel: "laidback", entry: "slow", dropStyle: "smooth" });
-      LV.chaos = Math.min(LV.chaos, 15);
-      if ((LV.human || 0) < 25) LV.human = 25;
-      said.push("laid back", "smooth entries");
-    }
-    humanizeSync();
-    lvHumApply();
-    return said;
-  }
-  function lvMoodSet(m, quiet) {
-    LV.mood = m ? { i: Math.round(m.i), c: Math.round(m.c) } : null;
-    const said = m ? moodSettings(LV.mood) : [];
-    lvMoodApply();
-    saveLive();
-    liveBuild();
-    const live2 = lvOn();
-    if (live2) lvMoodMove(LV.mood);
-    moodSync();
-    liveRender();
-    if (!quiet)
-      toast(
-        "Mood: " + moodName(LV.mood) + (said.length ? " (" + said.join(", ") + ")" : "") + (live2 ? LV.mood && LV.mood.i <= 40 ? ". Easing into it on the next bar" : ". Into it on the next bar" : "")
-      );
-  }
-  function moodControl() {
-    const menu = el(
-      "select",
-      {
-        id: "lvMood",
-        "aria-label": "Mood",
-        title: "Mood: leans the whole set one way inside the genre. Intense moods pick harder, busier, shorter parts, play them harder and faster, and drop hard; calm moods pick softer, longer, sparser parts and lay back. Dark moods pick minor, clashing, lower parts; bright moods major, open, higher ones. Off leaves the picks as they were.",
-        onchange: (e) => {
-          const v = e.target.value, p = MOODS.find((x) => x[0] === v);
-          lvMoodSet(p ? { i: p[2], c: p[3] } : null);
-        }
-      },
-      el("option", { value: "off" }, "Off"),
-      ...MOODS.map(([v, n]) => el("option", { value: v }, n)),
-      el("option", { value: "custom", disabled: true }, "Custom")
-    );
-    const dot = el("i", { class: "lvMoodDot", id: "lvMoodDot" });
-    const pad3 = el(
-      "div",
-      {
-        class: "lvMoodPad",
-        id: "lvMoodPad",
-        role: "slider",
-        "aria-label": "Mood pad: calm to intense across, dark to bright up",
-        title: "Drag: calm ← → intense, dark ↓ ↑ bright. Release to rebuild the set. Double-click for Off, right-click for the list.",
-        ondblclick: () => lvMoodSet(null),
-        oncontextmenu: (e) => {
-          e.preventDefault();
-          showMenu(e.clientX, e.clientY, [
-            { label: "Off", checked: !LV.mood, action: () => lvMoodSet(null) },
-            "-",
-            ...MOODS.map(([, n, i, c]) => ({
-              label: n,
-              checked: !!LV.mood && LV.mood.i === i && LV.mood.c === c,
-              action: () => lvMoodSet({ i, c })
-            }))
-          ]);
-        }
-      },
-      dot
-    );
-    let drag = null;
-    const at2 = (e) => {
-      const r = pad3.getBoundingClientRect();
-      return {
-        i: Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)),
-        c: Math.max(0, Math.min(100, (1 - (e.clientY - r.top) / r.height) * 100))
-      };
-    };
-    pad3.addEventListener("pointerdown", (e) => {
-      drag = at2(e);
-      pad3.setPointerCapture(e.pointerId);
-      showDot(drag);
-    });
-    pad3.addEventListener("pointermove", (e) => {
-      if (!drag) return;
-      drag = at2(e);
-      showDot(drag);
-    });
-    pad3.addEventListener("pointerup", () => {
-      if (!drag) return;
-      const near = MOODS.find((x) => Math.hypot(x[2] - drag.i, x[3] - drag.c) < 9);
-      lvMoodSet(near ? { i: near[2], c: near[3] } : drag);
-      drag = null;
-    });
-    return el("span", { class: "lvf" }, "Mood", menu, pad3);
-  }
-  function showDot(m) {
-    const d = $("#lvMoodDot");
-    if (!d) return;
-    d.hidden = !m;
-    if (m) {
-      d.style.left = m.i + "%";
-      d.style.top = 100 - m.c + "%";
-    }
-  }
-  function moodSync() {
-    const s = $("#lvMood"), m = LV.mood;
-    if (s) {
-      const p = m && MOODS.find((x) => x[2] === m.i && x[3] === m.c);
-      s.value = !m ? "off" : p ? p[0] : "custom";
-    }
-    showDot(m);
-    const pad3 = $("#lvMoodPad");
-    if (pad3) pad3.classList.toggle("on", !!m);
+  function liveMixerOpen() {
+    popout({ id: ID2, title: "Live mixer", w: 760, h: 560, build: build2 });
   }
 
   // src/live/ui.js
@@ -33598,6 +34625,16 @@ body[data-mode='synth'] #synth {
           title: "Build a fresh set of scenes and patterns in this style"
         },
         "🎲 New patterns"
+      ),
+      el(
+        "button",
+        {
+          class: "btn",
+          id: "lvMixer",
+          onclick: () => liveMixerOpen(),
+          title: "Live’s mixer: levels, pans, sends, mutes and solos, in a window you can move to another screen"
+        },
+        "🎚 Mixer"
       ),
       el("span", { class: "hint", id: "lvMidiSt" }, ""),
       /* tools opened from the Live menu: kept here hidden so the menu, shortcuts and Fullscreen label find them */
@@ -34682,11 +35719,11 @@ body[data-mode='synth'] #synth {
     const str = (s) => [...s].map((ch) => ch.charCodeAt(0) & 127);
     const chunk = (evs) => {
       evs.sort((a, b) => a.t - b.t || a.o - b.o);
-      let last = 0;
+      let last3 = 0;
       const d = [];
       for (const e of evs) {
-        d.push(...vlq(e.t - last), ...e.b);
-        last = e.t;
+        d.push(...vlq(e.t - last3), ...e.b);
+        last3 = e.t;
       }
       d.push(0, 255, 47, 0);
       return [...str("MTrk"), ...u32(d.length), ...d];
@@ -34739,11 +35776,11 @@ body[data-mode='synth'] #synth {
         );
       }
       for (const cl of S.clips.filter((c) => c.t === ti && c.cc && c.cc.pts && c.cc.pts.length && !c.mute)) {
-        let last = -1;
+        let last3 = -1;
         for (let st = 0; st <= Math.round(cl.len * 16); st++) {
           const v = Math.round(clamp(envInterp(cl.cc.pts, st / (cl.len * 16), 0.5), 0, 1) * 127);
-          if (v !== last) {
-            last = v;
+          if (v !== last3) {
+            last3 = v;
             evs.push({ t: Math.round((cl.start * 16 + st) * ST), o: 0.5, b: [176 | ch, cl.cc.n, v] });
           }
         }
@@ -35070,20 +36107,20 @@ body[data-mode='synth'] #synth {
   var rtMcDevs = () => AUDREC.devices.filter((d) => /MC-?707|MC-?101/i.test(d.label));
   function rtAutoMatch() {
     let n = 0;
-    const set = (k2, dev) => {
+    const set2 = (k2, dev) => {
       rtSet(k2, { dev, pair: 0 });
       n++;
     };
     for (const d of rtMcDevs()) {
       const L2 = d.label;
       let m;
-      if (m = /track\s*(\d)/i.exec(L2)) set("t" + (+m[1] - 1), d.deviceId);
-      else if (/\b(mix|master|main)\b/i.test(L2)) set("mix", d.deviceId);
-      else if (/\bext/i.test(L2)) set("ext", d.deviceId);
+      if (m = /track\s*(\d)/i.exec(L2)) set2("t" + (+m[1] - 1), d.deviceId);
+      else if (/\b(mix|master|main)\b/i.test(L2)) set2("mix", d.deviceId);
+      else if (/\bext/i.test(L2)) set2("ext", d.deviceId);
       else if (m = /(\d{1,2})\s*[-–]\s*(\d{1,2})/.exec(L2)) {
         const p = +m[1] - 1 >> 1;
         const k2 = p === 0 ? "mix" : p === 9 ? "ext" : p <= 8 ? "t" + (p - 1) : null;
-        if (k2) set(k2, d.deviceId);
+        if (k2) set2(k2, d.deviceId);
       }
     }
     return n;
@@ -37483,6 +38520,7 @@ body[data-mode='synth'] #synth {
       syncControls();
       scheduleSave();
     });
+    $("#bMixer").addEventListener("click", () => songMixerOpen());
     $("#bMetro").addEventListener("click", () => {
       S.metro = !S.metro;
       syncControls();
@@ -41557,8 +42595,8 @@ body[data-mode='synth'] #synth {
   };
   var KIT_LOW = 21;
   var pk = (key, i, id) => key + (i == null ? "" : i) + "." + id;
-  var DEF = {};
-  for (const b in ZC_BLOCKS) DEF[b] = Object.fromEntries(ZC_BLOCKS[b].p.map((p) => [p[0], p]));
+  var DEF3 = {};
+  for (const b in ZC_BLOCKS) DEF3[b] = Object.fromEntries(ZC_BLOCKS[b].p.map((p) => [p[0], p]));
   var ALL = {};
   function allParams(kind) {
     if (ALL[kind]) return ALL[kind];
@@ -41663,7 +42701,7 @@ body[data-mode='synth'] #synth {
   }
   async function readSound(snd, base, keys2, progress) {
     const rs = runs(snd.kind, keys2);
-    let ok = 0, bad = 0, done = 0, silent = 0;
+    let ok = 0, bad = 0, done2 = 0, silent = 0;
     const take = (it, bytes) => {
       const v = decode(it[1], bytes);
       if (v == null) return false;
@@ -41697,7 +42735,7 @@ body[data-mode='synth'] #synth {
           snd.known.delete(it[0]);
           bad++;
         }
-      if (progress) progress(++done, rs.length);
+      if (progress) progress(++done2, rs.length);
     }
     return { ok, bad, total: ok + bad };
   }
@@ -44521,25 +45559,25 @@ body[data-mode='synth'] #synth {
   var k = (ctx2, lfo, id) => pk("LFO", ctx2.part, "LFO" + lfo + "_" + id);
   var isSeq = (ctx2) => ctx2.get(k(ctx2, 1, "FORM")) === 10 && ctx2.get(k(ctx2, 1, "PIT_DEPTH")) === 63;
   function seqTemplate(ctx2, shape = 11) {
-    const set = (key, v) => ctx2.set(key, v, false);
+    const set2 = (key, v) => ctx2.set(key, v, false);
     for (const lfo of [1, 2]) {
-      set(k(ctx2, lfo, "FORM"), 10);
-      set(k(ctx2, lfo, "RATE_SYNC"), 1);
-      set(k(ctx2, lfo, "RATE_NOTE"), RATE_IX["1/16"]);
-      set(k(ctx2, lfo, "STEP_MAX"), 15);
-      set(k(ctx2, lfo, "KEY_TRIG"), 1);
-      for (const d of ["DELAY", "FADE", "OFST", "PAN_DEPTH", "TVF_DEPTH"]) set(k(ctx2, lfo, d), 0);
+      set2(k(ctx2, lfo, "FORM"), 10);
+      set2(k(ctx2, lfo, "RATE_SYNC"), 1);
+      set2(k(ctx2, lfo, "RATE_NOTE"), RATE_IX["1/16"]);
+      set2(k(ctx2, lfo, "STEP_MAX"), 15);
+      set2(k(ctx2, lfo, "KEY_TRIG"), 1);
+      for (const d of ["DELAY", "FADE", "OFST", "PAN_DEPTH", "TVF_DEPTH"]) set2(k(ctx2, lfo, d), 0);
     }
-    set(k(ctx2, 1, "PIT_DEPTH"), 63);
-    set(k(ctx2, 1, "TVA_DEPTH"), 0);
-    set(k(ctx2, 2, "PIT_DEPTH"), 0);
-    set(k(ctx2, 2, "TVA_DEPTH"), 100);
+    set2(k(ctx2, 1, "PIT_DEPTH"), 63);
+    set2(k(ctx2, 1, "TVA_DEPTH"), 0);
+    set2(k(ctx2, 2, "PIT_DEPTH"), 0);
+    set2(k(ctx2, 2, "TVA_DEPTH"), 100);
     for (let i = 1; i <= 16; i++) {
-      set(k(ctx2, 1, "STEP_" + i), 0);
-      set(k(ctx2, 2, "STEP_" + i), 0);
-      set(k(ctx2, 2, "STEP_CURVE_" + i), shape);
+      set2(k(ctx2, 1, "STEP_" + i), 0);
+      set2(k(ctx2, 2, "STEP_" + i), 0);
+      set2(k(ctx2, 2, "STEP_CURVE_" + i), shape);
     }
-    for (const s of ["FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]) set(pk("SPTL", ctx2.part, s), 1);
+    for (const s of ["FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]) set2(pk("SPTL", ctx2.part, s), 1);
     ctx2.commit();
   }
   function seqPattern(ctx2, notes) {
@@ -45419,11 +46457,11 @@ body[data-mode='synth'] #synth {
     ["Pitch shifter: octave down", "Pitch Shifter", { Coarse: -12, Balance: 50 }]
   ];
   function mfxPreset(i) {
-    const [label2, typeName, set] = MFX_PRESETS[i];
+    const [label2, typeName, set2] = MFX_PRESETS[i];
     const type = mfxNames().indexOf(typeName);
     if (type < 0) throw new Error(label2 + ": no MFX type " + typeName);
     const sps = mfxParams(type), vals = mfxDefaults(type);
-    for (const [name, val] of Object.entries(set)) {
+    for (const [name, val] of Object.entries(set2)) {
       const j = sps.findIndex((sp2) => sp2.name === name), sp = sps[j];
       if (!sp) throw new Error(label2 + ": " + typeName + " has no " + name);
       const v = sp.kind === "L" ? (sp.list === NOTES ? NOTES : sp.list).indexOf(String(val)) : val;
@@ -45613,12 +46651,12 @@ body[data-mode='synth'] #synth {
   // src/zen/zc-starters.js
   function tone(name, fn) {
     const s = newSound("tone");
-    const set = (key, i, id, v) => s.v[pk(key, i, id)] = v;
+    const set2 = (key, i, id, v) => s.v[pk(key, i, id)] = v;
     s.v["CMN.NAME"] = name;
-    for (let i = 0; i < 4; i++) set("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
-    set("SPTL", 0, "OSC_TYPE", 1);
+    for (let i = 0; i < 4; i++) set2("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
+    set2("SPTL", 0, "OSC_TYPE", 1);
     fn(
-      (id, v, i = 0) => set(
+      (id, v, i = 0) => set2(
         id.split(".")[0],
         ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(id.split(".")[0]) ? null : i,
         id.split(".")[1],
@@ -46566,7 +47604,7 @@ body[data-mode='synth'] #synth {
 
   // src/zen/zc-factory-ui.js
   var frame2 = () => new Promise((r) => setTimeout(r, 30));
-  function factoryImport(done) {
+  function factoryImport(done2) {
     const i = el("input", {
       type: "file",
       accept: ".bin",
@@ -46582,7 +47620,7 @@ body[data-mode='synth'] #synth {
           toast(
             n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
           );
-          done(n);
+          done2(n);
         } catch (e) {
           toast("That file could not be read");
         }
@@ -46590,19 +47628,19 @@ body[data-mode='synth'] #synth {
     });
     i.click();
   }
-  function factoryItems(done) {
+  function factoryItems(done2) {
     const have = ZS.list.some((e) => e.src === "factory");
     return [
       {
         label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
-        action: () => factoryImport(done)
+        action: () => factoryImport(done2)
       },
       have ? {
         label: "Remove the factory tones",
         action: async () => {
           const n = await soundsRemoveSrc("factory");
           toast("Removed " + n + " factory tones");
-          done(0);
+          done2(0);
         }
       } : null
     ].filter(Boolean);
@@ -46920,7 +47958,7 @@ body[data-mode='synth'] #synth {
   }
   function load3(e) {
     B.cur = e.id;
-    const done = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
+    const done2 = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
     const box = $("#zbOv .zbList");
     if (box) {
       box.querySelectorAll(".zbItem.cur").forEach((r2) => r2.classList.remove("cur"));
@@ -46928,7 +47966,7 @@ body[data-mode='synth'] #synth {
       if (r) r.classList.add("cur"), r.scrollIntoView({ block: "nearest" });
       box.focus({ preventScroll: true });
     }
-    return done;
+    return done2;
   }
   async function play(e, x) {
     x.stopPropagation();
@@ -46940,7 +47978,7 @@ body[data-mode='synth'] #synth {
     if (!up) audition2(e.type === "bass" || /bass/i.test(catOf(e)) ? 36 : 60);
   }
   var chip = (label2, on2, fn, title) => el("button", { type: "button", class: "zbChip" + (on2 ? " on" : ""), title: title || "", onclick: fn }, label2);
-  function form(e, done) {
+  function form(e, done2) {
     const name = el("input", { class: "zbName", value: e.name, "aria-label": "Name", maxlength: 40 });
     const type = el(
       "select",
@@ -46975,11 +48013,11 @@ body[data-mode='synth'] #synth {
           {
             type: "button",
             class: "btn sm on",
-            onclick: () => done({ name: name.value.trim() || e.name, type: type.value, tags: [...tags] })
+            onclick: () => done2({ name: name.value.trim() || e.name, type: type.value, tags: [...tags] })
           },
           "Save"
         ),
-        el("button", { type: "button", class: "btn sm", onclick: () => done(null) }, "Cancel")
+        el("button", { type: "button", class: "btn sm", onclick: () => done2(null) }, "Cancel")
       )
     );
   }
@@ -47028,7 +48066,7 @@ body[data-mode='synth'] #synth {
     if (v) await soundUpdate(e.id, v);
     render();
   }) : null;
-  async function grab(scope) {
+  async function grab2(scope) {
     if (B.grab) return;
     B.grab = { stop: false, done: 0, n: 0, added: 0, msg: "" };
     render();
@@ -47090,9 +48128,9 @@ body[data-mode='synth'] #synth {
         "Grab from " + DEVS[DEV].name + " ▾",
         "Read sounds from the " + DEVS[DEV].name + "'s clips into the library",
         () => [
-          { label: "This clip", action: () => grab("clip") },
-          { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
-          { label: "Every clip of every track", action: () => grab("all") },
+          { label: "This clip", action: () => grab2("clip") },
+          { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab2("track") },
+          { label: "Every clip of every track", action: () => grab2("all") },
           ...ZE.kind === "tone" ? ["-", ...factoryItems((n) => (n && (B.bank = "factory"), render()))] : []
         ]
       ),
@@ -47606,11 +48644,11 @@ body[data-mode='synth'] #synth {
     ZE.undo.push(Object.fromEntries(Object.keys(prev.v).map((k2) => [k2, prev.v[k2]])));
     ZE.redo = [];
     ZE.snd = snd;
-    const live2 = sending();
-    let done = Promise.resolve();
-    if (live2) {
+    const live3 = sending();
+    let done2 = Promise.resolve();
+    if (live3) {
       const base = zeBase(), t = ZE.t, k2 = ZE.k;
-      done = zeQuietly(
+      done2 = zeQuietly(
         () => sendSound(snd, base, new Set(Object.keys(snd.v))),
         t,
         () => reselect(t, k2)
@@ -47618,8 +48656,8 @@ body[data-mode='synth'] #synth {
     }
     remember();
     zeRender();
-    if (why) toast(why + (live2 ? " and sent to the " + DEVS[DEV].name : ""));
-    return done;
+    if (why) toast(why + (live3 ? " and sent to the " + DEVS[DEV].name : ""));
+    return done2;
   }
   function mfxType(type, vals) {
     const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = vals || mfxDefaults(type);
@@ -48327,9 +49365,9 @@ body[data-mode='synth'] #synth {
     clearTimeout(d._t);
     d._t = setTimeout(() => d.classList.remove("on"), 120);
   }
-  var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
-  function fader(label2, v, set, title, t, centre) {
-    const out2 = el("b", {}, centre ? panText(v) : String(v));
+  var panText2 = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
+  function fader(label2, v, set2, title, t, centre) {
+    const out2 = el("b", {}, centre ? panText2(v) : String(v));
     const paint = (inp2, x) => {
       const p = x / 127 * 100;
       inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
@@ -48344,9 +49382,9 @@ body[data-mode='synth'] #synth {
       "aria-label": label2 + ", track " + devNum(t),
       oninput: (e) => {
         const x = +e.target.value;
-        set(x);
+        set2(x);
         paint(e.target, x);
-        out2.textContent = centre ? panText(x) : String(x);
+        out2.textContent = centre ? panText2(x) : String(x);
       },
       /* double-click back to the middle (pan) or the default level */
       ondblclick: (e) => {
@@ -48521,10 +49559,10 @@ body[data-mode='synth'] #synth {
           thruSet(SY.thru, true);
           synthRender();
         });
-      if (!SY.names.some(Boolean)) refresh(true);
+      if (!SY.names.some(Boolean)) refresh3(true);
     }
   }
-  async function refresh(quiet) {
+  async function refresh3(quiet) {
     busy = "Reading the sounds…";
     synthRender();
     const ok = await readNames();
@@ -48539,7 +49577,7 @@ body[data-mode='synth'] #synth {
       if ($("#zcOv")) return;
       clearInterval(wait);
       quickForget(t);
-      refresh(true);
+      refresh3(true);
     }, 400);
   }
   async function readSetup() {
@@ -48619,7 +49657,7 @@ body[data-mode='synth'] #synth {
     i.click();
   }
   function synthAct(what) {
-    if (what === "read") refresh(false);
+    if (what === "read") refresh3(false);
     else if (what === "save") saveSetup();
     else if (what === "open") openSetup2();
     else if (what === "keep") keepSetup();
@@ -48632,7 +49670,7 @@ body[data-mode='synth'] #synth {
       }
     }
   }
-  var ACT = { open: (t, b) => openEditor(t, b), refresh: () => refresh(true), render: () => synthRender() };
+  var ACT = { open: (t, b) => openEditor(t, b), refresh: () => refresh3(true), render: () => synthRender() };
   function synthRender() {
     const box = $("#synth");
     if (!box) return;
@@ -48708,7 +49746,7 @@ body[data-mode='synth'] #synth {
           { class: "syActs" },
           el(
             "button",
-            { type: "button", class: "btn", onclick: () => refresh(false), title: "Read every track’s sound name again" },
+            { type: "button", class: "btn", onclick: () => refresh3(false), title: "Read every track’s sound name again" },
             "Read sounds"
           ),
           el(
@@ -48809,9 +49847,9 @@ body[data-mode='synth'] #synth {
     UI.sel = null;
     afterReplaceKeepUndo();
   }
-  function startOpen(last = true) {
+  function startOpen(last3 = true) {
     if ($("#startOv")) return;
-    const has2 = !!last;
+    const has2 = !!last3;
     const close = () => ov.remove();
     const card = (icon, title, text, fn, on2) => el(
       "button",
@@ -48840,7 +49878,7 @@ body[data-mode='synth'] #synth {
           { class: "stGrid" },
           has2 ? card(
             "↻",
-            last === "menu" ? "Back to this song" : "Load last session",
+            last3 === "menu" ? "Back to this song" : "Load last session",
             (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
             () => {
             },
@@ -48976,7 +50014,7 @@ body[data-mode='synth'] #synth {
   function render2(ov) {
     ov.textContent = "";
     const roles = S.tracks.map((x, t) => roleOf(t)), shown3 = DEVS[DEV].tracks, nD = shown3.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
-    const set = async (r) => {
+    const set2 = async (r) => {
       if (await applyRoles(r)) {
         toast("Track setup changed");
         render2(ov);
@@ -48985,7 +50023,7 @@ body[data-mode='synth'] #synth {
     const rows = shown3.map((t) => {
       const sel = el("select", {
         "aria-label": "Track " + devNum(t) + " role",
-        onchange: (e) => set(roles.map((r, i) => i === t ? e.target.value : r))
+        onchange: (e) => set2(roles.map((r, i) => i === t ? e.target.value : r))
       });
       for (const [lab, list] of [
         ["Drum track", ROLES.filter((r) => r[2] === "drum")],
@@ -49039,7 +50077,7 @@ body[data-mode='synth'] #synth {
           ...PRESETS.map(
             ([lab, r]) => el(
               "button",
-              { class: "btn sm" + (r.every((x, t) => x === roles[t]) ? " on" : ""), onclick: () => set(r.slice()) },
+              { class: "btn sm" + (r.every((x, t) => x === roles[t]) ? " on" : ""), onclick: () => set2(r.slice()) },
               lab
             )
           )
@@ -49380,8 +50418,8 @@ body[data-mode='synth'] #synth {
         )
       )
     );
-    const playing2 = TR.playing && (TR.mode === "song" || TR.mode === "live"), live2 = document.body.dataset.mode === "live";
-    const when = playing2 ? "from the next bar" : live2 ? "starting the set" : "from bar " + (Math.floor(S.cursor) + 1);
+    const playing2 = TR.playing && (TR.mode === "song" || TR.mode === "live"), live3 = document.body.dataset.mode === "live";
+    const when = playing2 ? "from the next bar" : live3 ? "starting the set" : "from bar " + (Math.floor(S.cursor) + 1);
     p.append(
       el(
         "div",
@@ -49766,6 +50804,7 @@ body[data-mode='synth'] #synth {
           ["Loop the whole song", go("#bLoopAll")],
           ["Loop the selected clip", go("#bLoopClip"), "\\"],
           ["Tap tempo", go("#bTap")],
+          ["Mixer…", () => songMixerOpen()],
           0,
           ["Record audio", go("#bAudRec"), "R"],
           ["Audio inputs and settings…", go("#bAudSet")]
@@ -49783,6 +50822,7 @@ body[data-mode='synth'] #synth {
           0,
           ["Grab a sample…", () => grabOpen($(".mb.open") || $("#lvStart"))],
           ["Capture to Song", () => liveCapture()],
+          ["Mixer…", () => liveMixerOpen()],
           ["Your MC-707 clips…", () => clipMapOpen()],
           0,
           ["Connect MC-707", go("#lvMidi")],
@@ -50290,14 +51330,14 @@ body[data-mode='synth'] #synth {
     ];
   }
   function lvPadMenu(i) {
-    const a = LV.acts[i], set = (v) => {
+    const a = LV.acts[i], set2 = (v) => {
       LV.acts[i] = v;
       saveLive();
       liveRenderPads();
     };
     const grp = (label2, list) => ({
       label: label2,
-      sub: list.map((v) => ({ label: actLabel(v), checked: a === v, action: () => set(v) }))
+      sub: list.map((v) => ({ label: actLabel(v), checked: a === v, action: () => set2(v) }))
     });
     const items = [
       { label: "Pad " + (i + 1) + ": " + actLabel(a), disabled: true },
@@ -50355,7 +51395,7 @@ body[data-mode='synth'] #synth {
     items.push("-", {
       label: "Back to default (" + actLabel(def) + ")",
       disabled: a === def,
-      action: () => set(def)
+      action: () => set2(def)
     });
     return items;
   }
@@ -50867,6 +51907,7 @@ body[data-mode='synth'] #synth {
         panic(true);
       } catch (e) {
       }
+      popoutCloseAll();
     });
     addEventListener("beforeunload", () => {
       try {

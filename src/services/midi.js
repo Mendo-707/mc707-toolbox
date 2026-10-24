@@ -1,6 +1,6 @@
 // Web MIDI: the output and input ports, sending messages, and panic (all notes off).
 //
-// Owns: MIDI (MIDI ports).
+// Owns: MIDI (MIDI ports), MIDI_ACT (the last note sent on each channel, for activity lights).
 // Reads: S, AU.
 // Calls up the layers through hooks (core/hooks.js).
 import { $, el } from '../core/dom.js';
@@ -23,6 +23,14 @@ export function sentRecently(ch, note, ms = 80) {
  * @param {number[]} bytes
  * @param {number} at  AU.ctx time; use AU.ctx.currentTime for now
  */
+/** The last note-on sent on each MIDI channel (0-15): {at: performance.now() time it plays, v: velocity}. */
+export const MIDI_ACT = Array.from({ length: 16 }, () => ({ at: -1e9, v: 0 }));
+/** How lit a channel's activity light is now (0-1): the last note's velocity, dying away over 0.3 s. */
+export function midiAct(ch) {
+  const a = MIDI_ACT[ch],
+    dt = performance.now() - a.at;
+  return dt < 0 || dt > 300 ? 0 : (a.v / 127) * (1 - dt / 300);
+}
 export function sendMidi(bytes, at) {
   const o = MIDI.out;
   if (!o) return;
@@ -31,6 +39,9 @@ export function sendMidi(bytes, at) {
     if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) {
       NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
       SENTAT.set(((bytes[0] & 15) << 7) | bytes[1], Math.max(ms, performance.now()));
+      const a = MIDI_ACT[bytes[0] & 15],
+        t = Math.max(ms, performance.now());
+      if (t >= a.at + 40 || bytes[2] > a.v) ((a.at = t), (a.v = bytes[2]));
     }
     o.send(bytes, Math.max(ms, 0));
   } catch (e) {}

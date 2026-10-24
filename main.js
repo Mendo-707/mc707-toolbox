@@ -34,17 +34,35 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
   win.on('leave-full-screen', () => win.webContents.send('fullscreen', false));
-  // Keep the window on the app: never navigate away or open pop-up windows.
+  // Keep the window on the app: never navigate away or open other pages. The app's own tool windows (the
+  // mixers, blank windows named mc707-…) open as windows of their own that can go on another screen.
   // Help links (the guide, releases, problem reports, Roland's driver page) open in the system browser.
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    if ((url === 'about:blank' || url === '') && /^mc707-[a-z-]+$/.test(frameName || ''))
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          autoHideMenuBar: true,
+          backgroundColor: '#050906',
+          icon: path.join(__dirname, 'icon.png'),
+          webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
+        }
+      };
     if (/^https:\/\/([a-z0-9-]+\.)*(github\.com|github\.io|roland\.com)\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+  // a tool window never navigates away either, and closes with the app
+  win.webContents.on('did-create-window', (child) => {
+    child.setMenu(null);
+    child.webContents.on('will-navigate', (e) => e.preventDefault());
+    child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   });
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   // Let the app send "all notes off" to the MC-707 before the window closes.
   win.on('close', (e) => {
     if (closing) return;
     e.preventDefault();
+    for (const w of BrowserWindow.getAllWindows()) if (w !== win) w.destroy();
     win.webContents.send('app-closing');
     setTimeout(() => { closing = true; if (win) win.close(); }, 900);
   });

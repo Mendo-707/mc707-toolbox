@@ -2,6 +2,7 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
+import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
 import { $, clamp, el, toast } from '../core/dom.js';
@@ -257,6 +258,16 @@ export function liveInit() {
         title: 'Build a fresh set of scenes and patterns in this style'
       },
       '🎲 New patterns'
+    ),
+    el(
+      'button',
+      {
+        class: 'btn',
+        id: 'lvMixer',
+        onclick: () => liveMixerOpen(),
+        title: 'Live’s mixer: levels, pans, sends, mutes and solos, in a window you can move to another screen'
+      },
+      '🎚 Mixer'
     ),
     el('span', { class: 'hint', id: 'lvMidiSt' }, ''),
     /* tools opened from the Live menu: kept here hidden so the menu, shortcuts and Fullscreen label find them */

@@ -33,6 +33,7 @@ import { lvExtreme, lvTrapRoll, lvTrapRolls, lvXExtra, lvXSkip, lvXType } from '
 import { knobUI } from './pads.js';
 import { lvAnchorStart, lvFitIds } from './harmony.js';
 import { liveJamEnd, liveJamStart, lvJamStep } from './jam.js';
+import { lvMixSendAll } from './mix.js';
 
 /* ---- engine ---- */
 export const lvTop = t => {
@@ -730,6 +731,8 @@ export function liveStart(idx) {
   if (S.clock && MIDI.out) sendMidi([0xfa], TR.nextTime);
   Object.keys(AUTOLAST).forEach(k => delete AUTOLAST[k]);
   sendTrackCCs();
+  /* then Live's own mix (live/mix.js), so its levels, pans and sends win over the song's */
+  if (MIDI.out) lvMixSendAll(AU.ctx.currentTime + 0.03);
   TICKER.start();
   sched();
   LV.ver++;

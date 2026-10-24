@@ -32,7 +32,14 @@ export function lvFilterAway(amt) {
   const r = LV.rest[0];
   return Math.round(r < 32 ? r + (127 - r) * amt : r - r * amt);
 }
+const MIX_KEY = { 7: 'lvl', 10: 'pan', 91: 'rev', 92: 'cho' };
 export function lvRestCC(t, cc) {
+  /* level, pan, reverb and chorus rest where Live's own mixer has them (live/mix.js) */
+  const mk = MIX_KEY[cc];
+  if (mk && LV.mix) {
+    const v = LV.mix[mk][t];
+    return v != null ? v : cc === 91 ? LV.revRest | 0 : MC_PARAMS.find(x => x.n === cc).def;
+  }
   const tr = S.tracks[t];
   if (tr.cc && tr.cc[cc] != null) return tr.cc[cc];
   if (cc >= 80 && cc <= 83) return LV.rest[cc - 80];

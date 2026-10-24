@@ -1,0 +1,295 @@
+/* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
+   they open in (services/popout.js): a window of its own, or a panel over the app. The colours are the
+   tokens of the mode the mixer belongs to, copied onto the window by popTheme(): Song Mode's own (light or
+   dark as the app is) and Live Mode's (the Live theme picked). Each track's colour is on its strip. */
+body.popWin {
+  margin: 0;
+  background: var(--bg, #f6f4ef);
+  color: var(--ink, #1d1d1b);
+  overflow: auto;
+}
+.popPanel {
+  position: fixed;
+  z-index: 9400;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #f6f4ef);
+  color: var(--ink, #1d1d1b);
+  border: 1px solid var(--line, #d6d1c4);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #0006;
+  overflow: hidden;
+}
+.popBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--panel, #fff);
+  border-bottom: 1px solid var(--line, #d6d1c4);
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+.popBar b {
+  flex: 1;
+  color: var(--ink, #1d1d1b);
+}
+.popPanel .popRoot {
+  overflow: auto;
+}
+.mxWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.mxTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.mxTitle {
+  font-size: 17px;
+  color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
+}
+.mxTop .hint {
+  font-size: 12px;
+  color: var(--mute, #6b6759);
+}
+.mxActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+.mxStrips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+.mxStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px 6px 8px;
+  background: linear-gradient(var(--panel, #fff), var(--panel2, #efece4));
+  border: 1px solid var(--line, #d6d1c4);
+  border-top: 3px solid var(--tc);
+  border-radius: 6px;
+}
+.mxStrip.muted {
+  opacity: 0.62;
+}
+.mxStrip.dim .mxName {
+  color: var(--mute, #6b6759);
+}
+.mxHead {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 2px 5px;
+}
+.mxNum {
+  font-weight: 700;
+  font-size: 12px;
+  color: #000;
+  background: var(--tc);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.mxLight {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 6px var(--tc);
+  opacity: 0.15;
+}
+.mxName {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink, #1d1d1b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mxSub {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--mute, #6b6759);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mxRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0 4px;
+  font-size: 11px;
+  color: var(--mute, #6b6759);
+}
+.mxRow span {
+  grid-column: 1 / -1;
+}
+.mxRow b {
+  font-weight: 600;
+  color: var(--ink, #1d1d1b);
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mxKnob,
+.mxFader {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mxKnob {
+  width: 100%;
+  height: 14px;
+}
+.mxKnob::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--raise, #e2ddd0) 0 var(--lo, 0%),
+    var(--tc) var(--lo, 0%) var(--hi),
+    var(--raise, #e2ddd0) var(--hi) 100%
+  );
+}
+.mxKnob::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--panel, #fff);
+  border: 2px solid var(--tc);
+}
+.mxFaderBox {
+  flex: 1;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.mxMeter {
+  position: relative;
+  width: 6px;
+  border-radius: 3px;
+  background: var(--raise, #e2ddd0);
+  overflow: hidden;
+}
+.mxMeterFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: linear-gradient(to top, var(--acc, #3a9a5b), var(--hot, #e0603f) 85%);
+}
+.mxFader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 22px;
+  height: auto;
+  min-height: 140px;
+}
+.mxFader::-webkit-slider-runnable-track {
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to top, var(--tc) 0 var(--hi), var(--raise, #e2ddd0) var(--hi) 100%);
+}
+.mxFader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 12px;
+  margin-left: -8px;
+  border-radius: 3px;
+  background: var(--panel, #fff);
+  border: 1px solid var(--line, #888);
+  box-shadow: 0 1px 4px #0005;
+}
+.mxVal {
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.mxBtns {
+  display: flex;
+  gap: 4px;
+}
+.mxTg {
+  flex: 1;
+  font: inherit;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 0;
+  border-radius: 4px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel2, #efece4);
+  color: var(--ink, #1d1d1b);
+  cursor: pointer;
+}
+.mxTg.mute.on {
+  background: var(--hot, #e0603f);
+  border-color: var(--hot, #e0603f);
+  color: #fff;
+}
+.mxTg.solo.on {
+  background: #e9c93a;
+  border-color: #e9c93a;
+  color: #000;
+}
+.mxTg.pend {
+  animation: mxBlink 0.5s steps(2) infinite;
+}
+@keyframes mxBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (max-width: 560px) {
+  .mxStrips {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Live Mode's window: its own glow from the Live theme, on the strips and the title */
+.popLive .mxStrip {
+  box-shadow: 0 0 14px -6px var(--glow1, transparent);
+}
+.popLive .mxTitle {
+  text-shadow: 0 0 10px var(--glow1, transparent);
+}
+
+/* the mixers' own buttons (they follow the colours of the mode they are in) */
+.mxWrap .btn,
+.popBar .btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel2, #efece4);
+  color: var(--ink, #1d1d1b);
+  cursor: pointer;
+}
+.mxWrap .btn:hover,
+.popBar .btn:hover {
+  border-color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
+  color: var(--ink, #1d1d1b);
+}
