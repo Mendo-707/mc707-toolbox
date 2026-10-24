@@ -27,7 +27,24 @@ const keepPlace = (id, p) => {
 
 /* the app's styles, copied into the window's page */
 function copyStyles(doc) {
-  for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) doc.head.append(n.cloneNode(true));
+  /* the rules the app's page has already loaded, written into the window's own page (nothing to load
+     again); only a sheet whose rules cannot be read (web fonts from another site) is linked */
+  for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) {
+    let css = null;
+    try {
+      css = n.tagName === 'LINK' ? [...n.sheet.cssRules].map(r => r.cssText).join('\n') : n.textContent;
+    } catch (e) {}
+    if (css != null) {
+      const s = doc.createElement('style');
+      s.textContent = css;
+      doc.head.append(s);
+    } else if (n.href) {
+      const l = doc.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = n.href;
+      doc.head.append(l);
+    }
+  }
   doc.documentElement.className = document.documentElement.className;
   for (const a of document.documentElement.attributes)
     if (a.name.startsWith('data-')) doc.documentElement.setAttribute(a.name, a.value);

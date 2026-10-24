@@ -1,6 +1,7 @@
-// The partial bar above the partial pages: pick the partial you see (1-4), and link any of them so a
-// change to one linked partial goes to every linked partial (link 1 and 3 to edit both, all four to
-// edit the whole tone).
+// The partial bar above the partial pages: pick the partial you see (1-4), switch any partial on or off
+// in one click (to hear one partial alone, or what a layer adds), and link any of them so a change to
+// one linked partial goes to every linked partial (link 1 and 3 to edit both, all four to edit the
+// whole tone).
 //
 // Reads: the open editor's state (passed in), the sound's partial switches.
 import { el } from '../core/dom.js';
@@ -15,8 +16,12 @@ export function linkedKeys(key, linked) {
   return [0, 1, 2, 3].filter(i => linked[i]).map(i => key.replace(/\d\./, i + '.'));
 }
 
-/** The bar: partial buttons, then the link chips and All. `ze` is the editor state, `redraw` re-renders. */
-export function partialBar(ze, redraw) {
+/**
+ * The bar: partial buttons, the on/off switches, then the link chips and All. `ze` is the editor state,
+ * `redraw` re-renders, `set(key, v)` changes a value (one undo step, sent to the MC-707).
+ */
+export function partialBar(ze, redraw, set) {
+  const swKey = i => pk('PMT', null, 'PMT' + (i + 1) + '_PTL_SW');
   const linked = ze.linked || (ze.linked = [false, false, false, false]),
     all = linked.every(Boolean),
     chip = i =>
@@ -38,7 +43,7 @@ export function partialBar(ze, redraw) {
     { class: 'zcParts' },
     el('span', { class: 'zcL' }, 'Partial'),
     ...[0, 1, 2, 3].map(i => {
-      const on = ze.snd.v[pk('PMT', null, 'PMT' + (i + 1) + '_PTL_SW')];
+      const on = ze.snd.v[swKey(i)];
       return el(
         'button',
         {
@@ -53,6 +58,28 @@ export function partialBar(ze, redraw) {
         String(i + 1)
       );
     }),
+    set
+      ? el(
+          'span',
+          { class: 'zcOns', title: 'Switch a partial on or off (the Partials page has the same switch)' },
+          el('span', { class: 'zcL' }, 'On'),
+          ...[0, 1, 2, 3].map(i => {
+            const on = !!ze.snd.v[swKey(i)];
+            return el(
+              'button',
+              {
+                type: 'button',
+                class: 'zcOnSw' + (on ? ' on' : ''),
+                'aria-pressed': String(on),
+                title:
+                  'Partial ' + (i + 1) + (on ? ' is on: click to switch it off' : ' is off: click to switch it on'),
+                onclick: () => set(swKey(i), on ? 0 : 1)
+              },
+              '⏻ ' + (i + 1)
+            );
+          })
+        )
+      : null,
     el(
       'span',
       {

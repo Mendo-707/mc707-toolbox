@@ -81,7 +81,11 @@ test('Factory tones: read tones from an update file into the Sound browser, and 
   await page.locator('#zbOv .zbItem', { hasText: 'Test Tone 2' }).click();
   await page.keyboard.press('ArrowDown');
   await page.waitForTimeout(300);
-  assert.equal(await page.evaluate(`${z}.ZE.snd.v['CMN.NAME']`), 'Test Tone 1', 'the next one down is loaded (still sorted by name, reversed)');
+  assert.equal(
+    await page.evaluate(`${z}.ZE.snd.v['CMN.NAME']`),
+    'Test Tone 1',
+    'the next one down is loaded (still sorted by name, reversed)'
+  );
   assert.ok(
     !(await page.evaluate(
       `JSON.parse(${z}.libraryJSON ? ${z}.libraryJSON() : '{"list":[]}').list.some(e => e.src === 'factory')`

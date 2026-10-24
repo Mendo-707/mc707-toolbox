@@ -48,7 +48,7 @@ export function toggleFull() {
   }
   if (!canFull()) {
     toast(
-      "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the Windows app."
+      "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the desktop app."
     );
     return;
   }

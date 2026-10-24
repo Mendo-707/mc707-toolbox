@@ -171,6 +171,33 @@
   gap: 3px;
   margin-left: 10px;
 }
+/* each partial's on/off switch, one click */
+.zcOns {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 10px;
+}
+.zcOnSw {
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 12px;
+  border: 1px solid var(--zc-line);
+  background: var(--zc-well);
+  color: var(--zc-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zcOnSw.on {
+  border-color: var(--zc-acc);
+  background: color-mix(in srgb, var(--zc-acc) 22%, var(--zc-well));
+  color: var(--zc-acc);
+}
+.zcOnSw:hover {
+  border-color: var(--zc-acc);
+}
 .zcLinkChip {
   min-width: 22px;
   height: 22px;

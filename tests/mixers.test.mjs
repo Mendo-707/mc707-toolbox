@@ -39,6 +39,8 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   assert.ok(await ccSent(page, ch, 10, 30), 'pan sent as CC 10');
   /* undo takes the reverb back, and the window follows */
   await page.keyboard.press('Control+z');
+  /* the window redraws on its animation frames, which a browser can hold back for a window behind */
+  await win.bringToFront();
   await win.waitForFunction(
     () => document.querySelectorAll('.mxStrip')[3].querySelectorAll('.mxKnob')[1].value === '0'
   );
@@ -119,10 +121,9 @@ test('Mixers in the Windows app: borderless, dragged by the header, with pin, mi
   const [win] = await Promise.all([page.waitForEvent('popup'), page.click('#bMixer')]);
   await win.waitForSelector('.mxStrip');
   assert.equal(await win.evaluate(() => document.body.classList.contains('popFrameless')), true);
-  assert.equal(
-    await win.evaluate(() => getComputedStyle(document.querySelector('.mxTop')).getPropertyValue('-webkit-app-region')),
-    'drag',
-    'the header drags the window'
+  /* the header drags the window (wait: run from the source, the styles load a moment later) */
+  await win.waitForFunction(
+    () => getComputedStyle(document.querySelector('.mxTop')).getPropertyValue('-webkit-app-region') === 'drag'
   );
   await win.locator('.popWb.pin').click();
   await win.waitForSelector('.popWb.pin.on');

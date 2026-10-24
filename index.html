@@ -4669,6 +4669,33 @@ input[type='number'] {
   gap: 3px;
   margin-left: 10px;
 }
+/* each partial's on/off switch, one click */
+.zcOns {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 10px;
+}
+.zcOnSw {
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 12px;
+  border: 1px solid var(--zc-line);
+  background: var(--zc-well);
+  color: var(--zc-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zcOnSw.on {
+  border-color: var(--zc-acc);
+  background: color-mix(in srgb, var(--zc-acc) 22%, var(--zc-well));
+  color: var(--zc-acc);
+}
+.zcOnSw:hover {
+  border-color: var(--zc-acc);
+}
 .zcLinkChip {
   min-width: 22px;
   height: 22px;
@@ -7292,7 +7319,23 @@ body.popFrameless .mxTop input {
     }
   };
   function copyStyles(doc) {
-    for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) doc.head.append(n.cloneNode(true));
+    for (const n of document.querySelectorAll('style, link[rel="stylesheet"]')) {
+      let css2 = null;
+      try {
+        css2 = n.tagName === "LINK" ? [...n.sheet.cssRules].map((r) => r.cssText).join("\n") : n.textContent;
+      } catch (e) {
+      }
+      if (css2 != null) {
+        const s = doc.createElement("style");
+        s.textContent = css2;
+        doc.head.append(s);
+      } else if (n.href) {
+        const l = doc.createElement("link");
+        l.rel = "stylesheet";
+        l.href = n.href;
+        doc.head.append(l);
+      }
+    }
     doc.documentElement.className = document.documentElement.className;
     for (const a of document.documentElement.attributes)
       if (a.name.startsWith("data-")) doc.documentElement.setAttribute(a.name, a.value);
@@ -11256,6 +11299,7 @@ body.popFrameless .mxTop input {
     scheduleSave();
   }
   var HOST = window.toolbox || null;
+  var APP_NAME = HOST ? { darwin: "Mac app", linux: "Linux app" }[HOST.platform] || "Windows app" : null;
   var PROJ = { name: "", path: "", dirty: false, t: null };
   var saveT = 0;
   function scheduleSave() {
@@ -24447,7 +24491,7 @@ body.popFrameless .mxTop input {
     }
     if (!canFull()) {
       toast(
-        "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the Windows app."
+        "This window does not allow fullscreen. Press F11 for your browser's own fullscreen, or use the desktop app."
       );
       return;
     }
@@ -38089,7 +38133,13 @@ body.popFrameless .mxTop input {
     );
     const c1 = el("div", { class: "wcard" }, el("h3", {}, "1. Connect"));
     if (!sup)
-      c1.append(ckLine("bad", "This browser has no Web MIDI", "Use Chrome or Edge on a computer, or the Windows app."));
+      c1.append(
+        ckLine(
+          "bad",
+          "This browser has no Web MIDI",
+          "Use Chrome or Edge on a computer, or the desktop app (Windows, Mac or Linux)."
+        )
+      );
     c1.append(
       el(
         "div",
@@ -38672,7 +38722,7 @@ body.popFrameless .mxTop input {
   }
   async function projFolder(kind) {
     if (!HOST) {
-      toast("Folders can be opened in the Windows app. In the browser, files go to your Downloads folder.");
+      toast("Folders can be opened in the desktop app. In the browser, files go to your Downloads folder.");
       return;
     }
     try {
@@ -38684,7 +38734,7 @@ body.popFrameless .mxTop input {
   }
   async function projChooseFolder(kind) {
     if (!HOST) {
-      toast("Folder choice is available in the Windows app.");
+      toast("Folder choice is available in the desktop app.");
       return;
     }
     try {
@@ -49086,7 +49136,8 @@ body.popFrameless .mxTop input {
     if (!m || !linked || !linked[+m[2]]) return [key];
     return [0, 1, 2, 3].filter((i) => linked[i]).map((i) => key.replace(/\d\./, i + "."));
   }
-  function partialBar(ze, redraw) {
+  function partialBar(ze, redraw, set2) {
+    const swKey = (i) => pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW");
     const linked = ze.linked || (ze.linked = [false, false, false, false]), all = linked.every(Boolean), chip2 = (i) => el(
       "button",
       {
@@ -49105,7 +49156,7 @@ body.popFrameless .mxTop input {
       { class: "zcParts" },
       el("span", { class: "zcL" }, "Partial"),
       ...[0, 1, 2, 3].map((i) => {
-        const on2 = ze.snd.v[pk("PMT", null, "PMT" + (i + 1) + "_PTL_SW")];
+        const on2 = ze.snd.v[swKey(i)];
         return el(
           "button",
           {
@@ -49120,6 +49171,25 @@ body.popFrameless .mxTop input {
           String(i + 1)
         );
       }),
+      set2 ? el(
+        "span",
+        { class: "zcOns", title: "Switch a partial on or off (the Partials page has the same switch)" },
+        el("span", { class: "zcL" }, "On"),
+        ...[0, 1, 2, 3].map((i) => {
+          const on2 = !!ze.snd.v[swKey(i)];
+          return el(
+            "button",
+            {
+              type: "button",
+              class: "zcOnSw" + (on2 ? " on" : ""),
+              "aria-pressed": String(on2),
+              title: "Partial " + (i + 1) + (on2 ? " is on: click to switch it off" : " is off: click to switch it on"),
+              onclick: () => set2(swKey(i), on2 ? 0 : 1)
+            },
+            "⏻ " + (i + 1)
+          );
+        })
+      ) : null,
       el(
         "span",
         {
@@ -49520,7 +49590,7 @@ body.popFrameless .mxTop input {
         )
       )
     );
-    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender) : null;
+    const parts2 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender, (k2, v) => c.set(k2, v, true)) : null;
     const page = el("div", { class: "zcPage" }, cur2[2](c));
     ov.append(
       el(
@@ -51373,7 +51443,7 @@ body.popFrameless .mxTop input {
   }
 
   // src/core/version.js
-  var VERSION = "1.4.0";
+  var VERSION = "1.4.1";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -51421,7 +51491,7 @@ body.popFrameless .mxTop input {
             "div",
             {},
             el("h2", { id: "abTitle" }, "MC-707 Toolbox"),
-            el("div", { class: "abVer" }, "Version " + VERSION + (HOST ? " · Windows app" : " · web"))
+            el("div", { class: "abVer" }, "Version " + VERSION + " · " + (APP_NAME || "web"))
           )
         ),
         el(

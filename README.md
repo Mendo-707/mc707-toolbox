@@ -8,43 +8,40 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 - **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen.
 
-> **Version 1.4.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.4.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
-**Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the Windows app from [Releases](../../releases).
+**Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
 ![Live Mode](docs/live-mode.png)
 ![Song Mode](docs/song-mode.png)
 
 <details>
-<summary><b>More screenshots and a tour in 12 cards</b></summary>
+<summary><b>More screenshots and a tour in 8 cards</b></summary>
 
 ![Your MC-707 clips](docs/mc707-clips.png)
 ![ZenCore editor](docs/zencore-editor.png)
 
-![Start screen](docs/features/1-start-screen.png)
-![Song Mode](docs/features/2-song-mode.png)
-![Song wizard](docs/features/3-song-wizard.png)
-![Pattern packs](docs/features/4-harmony-pack.png)
-![Live Mode](docs/features/5-live-mode.png)
-![Breaks, builds and smooth blends](docs/features/6-performance.png)
+![Song Mode](docs/features/1-song-mode.png)
+![Live Mode](docs/features/2-live-mode.png)
+![Synth Mode](docs/features/3-synth-mode.png)
+![ZenCore editor](docs/features/4-zencore-editor.png)
+![Sound browser](docs/features/5-sound-browser.png)
+![Mixers](docs/features/6-mixers.png)
 ![Your MC-707 clips](docs/features/7-mc707-clips.png)
-![ZenCore editor](docs/features/8-zencore-editor.png)
-![Track setup](docs/features/9-track-setup.png)
-![Raven mode and keyboards](docs/features/10-raven-and-keyboards.png)
-![Synth Mode](docs/features/11-synth-mode.png)
-![Sound browser](docs/features/12-sound-browser.png)
+![Windows, Mac, Linux and the web](docs/features/8-everywhere.png)
 
 </details>
 
 ## New in 1.4
 
-- **Mixers**: Song Mode and Live Mode each get a mixer (**🎚 Mixer**, or Song › Mixer and Live › Mixer): a strip per track with level, pan, reverb and chorus, mute and solo, a light for the notes going out, and a meter. Song's mixer is the song's own mix (saved with it, with undo, sent to the MC-707 when the song starts); Live's is Live's own (kept apart from the song's, sent at Start, and its mutes and solos land on the next beat while the jam plays). Each opens in a window of its own you can drag onto another screen, in the colours of its mode (Live's follow the Live theme). In the Windows app the window is borderless: drag it by its header, with 📌 to keep it on top, minimise and close.
+- **Mixers**: Song Mode and Live Mode each get a mixer (**🎚 Mixer**, or Song › Mixer and Live › Mixer): a strip per track with level, pan, reverb and chorus, mute and solo, a light for the notes going out, and a meter. Song's mixer is the song's own mix (saved with it, with undo, sent to the MC-707 when the song starts); Live's is Live's own (kept apart from the song's, sent at Start, and its mutes and solos land on the next beat while the jam plays). Each opens in a window of its own you can drag onto another screen, in the colours of its mode (Live's follow the Live theme). In the desktop app the window is borderless: drag it by its header, with 📌 to keep it on top, minimise and close.
 - **Synth Mode: Expand** a track and the others shrink to a column on the left while its full ZenCore editor fills the screen. Click another track to edit that one; **Collapse**, **All tracks**, **Done** or **Esc** go back to all eight. The reverb send is gone from the strips (the MC-707's main effects only reach its MIX output, not a track's own USB output).
 - **Sound browser**: your own **folders** under My sounds (make, rename, remove; kept in backups); **Ctrl-click** and **Shift-click** pick several sounds to tag, set their ZenCore category, copy (factory tones and starters too) or move into a folder, or delete; a **Tag** filter under the categories; **Save this tone** and **Save a copy** always land in My sounds and show you the sound saved; **Edit in ZenCore** goes back to the editor and **Done** back to the tracks.
 - **ZenCore editor**: ◀ ▶ beside long lists (the MFX type and its settings, wave groups and more) step to the previous or next choice.
 - **Factory tones**: random pitch number and condition are read from the right place (thanks to kraftf for the report).
 - **Live Mode**: the half and double speed buttons are gone.
 - **Start screen**: a **ZenCore editor** card opens the editor straight away.
+- **1.4.1: Mac and Linux apps**, alongside the Windows one: a .dmg for Apple Silicon and Intel Macs, and an AppImage and a .deb for Linux (see [Getting started](#getting-started)). The ZenCore editor's partial bar switches each partial **on or off** in one click (⏻ 1–4).
 
 ## New in 1.3
 
@@ -80,9 +77,28 @@ Both keep their work in the same place, so you can switch between them. The firs
 
 **Build it yourself:** install **Node.js LTS** from <https://nodejs.org>, double-click **`build-exe.bat`** and wait 2–5 minutes. Both files appear in the **`dist`** folder. If the build fails, the details are in `build-log.txt`.
 
+### Mac app
+
+Download from [Releases](../../releases): **`MC-707-Toolbox-mac-arm64.dmg`** for Apple Silicon Macs (M1 and later) or **`MC-707-Toolbox-mac-x64.dmg`** for Intel Macs (Apple menu › About This Mac shows which you have). Open it and drag **MC-707 Toolbox** into **Applications**.
+
+The app isn't signed with a paid Apple developer certificate, so the first time you open it macOS says it can't check it. Click **Done**, then open **System Settings › Privacy & Security**, scroll down to *"MC-707 Toolbox was blocked"* and click **Open Anyway**. After that it opens normally. Allow the microphone when it asks if you want to record audio.
+
+**Build it yourself** (on a Mac): install Node.js LTS, then `npm install` and `npm run dist:mac` in this folder.
+
+### Linux app
+
+Download from [Releases](../../releases):
+
+- **`MC-707-Toolbox-linux-amd64.deb`** for Ubuntu, Debian, Mint and the like: `sudo apt install ./MC-707-Toolbox-linux-amd64.deb`, then open it from your apps.
+- **`MC-707-Toolbox-linux-x86_64.AppImage`** for any other Linux: make it executable (`chmod +x`) and run it. It needs FUSE 2 (`sudo apt install libfuse2t64` on Ubuntu 24.04, `libfuse2` on older ones). If Ubuntu 24.04 or later stops it with a sandbox error, start it with `--no-sandbox` or use the .deb.
+
+**Build it yourself:** install Node.js LTS, then `npm install` and `npm run dist:linux`.
+
+The Mac and Linux apps are new in 1.4 and haven't been tried on a real MC-707 yet: if yours doesn't show up in **Settings › Quick setup**, install Roland's MC-707 driver for your system if there is one, and please tell us in an [issue](../../issues).
+
 ### In a browser
 
-Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download `index.html` and open it, in **Chrome or Edge**. Everything works except real folders and Save As dialogs, which need the Windows app. Firefox and Safari don't support Web MIDI.
+Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download `index.html` and open it, in **Chrome or Edge**. Everything works except real folders and Save As dialogs, which need the desktop app. Firefox and Safari don't support Web MIDI.
 
 ### Connect the MC-707
 
@@ -183,7 +199,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 | **Oscillator** | Each of the 4 partials: PCM wave, VA (saw, square, triangle, sine, Juno …), PCM-Sync, SuperSAW or noise, with pulse width, PWM, detune, FXM and stereo width. A preview draws the wave, including pulse width, PWM and SuperSAW detune. |
 | **Filter** | TVF or the VCF models (JP, M, P) at -12, -18 or -24 dB, cutoff, resonance, key follow, HPF, Fat, and a filter envelope. A response curve shows the cutoff, resonance and slope as you change them. |
 | **Amp, Pitch, LFO** | Amp and pitch envelopes, velocity, pan and sends; two LFOs per partial with tempo sync and the 16-step STEP wave, each with a picture of its shape, delay and fade. The **Step sequencer** turns a partial into a 16-step riff that plays in time while you hold one key. |
-| **Matrix, EQ, Partials** | Four matrix controls, each partial's EQ, key and velocity ranges, and ring and cross modulation. |
+| **Matrix, EQ, Partials** | Four matrix controls, each partial's EQ, key and velocity ranges, and ring and cross modulation. The bar above the partial pages picks a partial, switches any partial on or off (⏻ 1–4), and links partials so a change goes to all of them. |
 | **MFX** | All 91 effect types with their own settings (◀ ▶ beside the type step through them), and 28 **presets** (dotted delay, dub tape echo, Juno chorus I and II, slow and fast Leslie, trance gate, filter wobble, 8-bit, cassette lo-fi and more). |
 | **Drum kits** | Kit level and effect; each key's instrument, level, pan, tuning, filter, envelope and EQ; the six drum compressors. |
 
@@ -196,7 +212,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 - **Closing the editor** releases every note it played, so nothing keeps ringing.
 - **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
 - **Starters** (32 sounds in groups: saw lead, acid, Reese and wobble basses, Juno and PWM pads, strings, brass, Hoover, sync lead, bell, organ, house chord stab, kick, five step sequences, four FM-style sounds and more), **Sounds** (the Sound browser, below), **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
-- **Sound browser** (**Sounds**, or *Browse all sounds…* at the top of Starters): every starter and every sound you've saved, in one list with search, an instrument filter (bass, pads, leads, keys, plucks and more, worked out from each sound's ZenCore category or name), genre tags and ★ favourites. Click a sound to load it into the clip (with Live on you hear it at once); hold ▶ to play a note. **Save this tone** keeps the sound you're editing with a name, type and tags. **Grab from MC-707** reads one clip, a track's 16 clips or every clip on every track and keeps each sound it finds, so factory sounds you pick on the MC-707 end up in your library (empty clips and sounds you already have are skipped). **Backup** exports the library to a file and imports one, to move it to another computer or share it. The library lives in this browser (or the Windows app) and holds thousands of sounds. Your older My sounds move in by themselves. Make your own **folders** under My sounds (right-click one to rename or remove it). **Ctrl-click** or **Shift-click** picks several sounds: the bar above the list tags them, sets their category, copies them (factory tones and starters too) or moves your own into a folder, or deletes them. The **Tag** list under the categories shows only the sounds with a tag. **Edit in ZenCore** closes the browser for the editor; **Done** closes both.
+- **Sound browser** (**Sounds**, or *Browse all sounds…* at the top of Starters): every starter and every sound you've saved, in one list with search, an instrument filter (bass, pads, leads, keys, plucks and more, worked out from each sound's ZenCore category or name), genre tags and ★ favourites. Click a sound to load it into the clip (with Live on you hear it at once); hold ▶ to play a note. **Save this tone** keeps the sound you're editing with a name, type and tags. **Grab from MC-707** reads one clip, a track's 16 clips or every clip on every track and keeps each sound it finds, so factory sounds you pick on the MC-707 end up in your library (empty clips and sounds you already have are skipped). **Backup** exports the library to a file and imports one, to move it to another computer or share it. The library lives in this browser (or the desktop app) and holds thousands of sounds. Your older My sounds move in by themselves. Make your own **folders** under My sounds (right-click one to rename or remove it). **Ctrl-click** or **Shift-click** picks several sounds: the bar above the list tags them, sets their category, copies them (factory tones and starters too) or moves your own into a folder, or deletes them. The **Tag** list under the categories shows only the sounds with a tag. **Edit in ZenCore** closes the browser for the editor; **Done** closes both.
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
 
 **For developers:** everything the editor learned about the MC-707's SysEx is written up in [docs/MC707-SYSEX.md](docs/MC707-SYSEX.md) (message format, where each clip's sound lives, the device's quirks, the project settings mapped so far), with every tone, drum kit and MFX parameter in [docs/ZENCORE-PARAMETERS.md](docs/ZENCORE-PARAMETERS.md).
@@ -213,12 +229,12 @@ Roland hasn't published SysEx details for the MC-707, so the editor builds on co
 - **Drums on one track (full kits)**: the whole groove plays on Drums 1, freeing Drums 2 for another sound. Over 1,100 full kits are built from the library.
 - **MC-101 mode (beta)**: **Settings › Device: MC-101** switches to its four tracks (Drums, Bass, Chords and Lead on channels 1–4), with full kits on the one drum track. The song wizard, Live Mode and the ZenCore editor all work with the four tracks. When the app finds an MC-101 on the MIDI port it switches to MC-101 mode by itself. The ZenCore editor is confirmed working on a real MC-101; the rest has been tested on a simulated one, so if you try it, run **Live › Settings and mapping › Pad test** and send the result in an issue.
 
-## Files and folders (Windows app)
+## Files and folders (desktop app)
 
 | What | Where |
 |---|---|
-| Projects | `Documents\MC-707 Toolbox\Projects` |
-| Recordings | `Documents\MC-707 Toolbox\Recordings` |
+| Projects | `Documents/MC-707 Toolbox/Projects` |
+| Recordings | `Documents/MC-707 Toolbox/Recordings` |
 
 Change either folder from the **File** menu. Work also autosaves inside the app; **File › Save** (Ctrl+S) keeps a project file you can back up or share.
 
@@ -245,7 +261,7 @@ More are under **Help › Shortcuts and tips**.
 - **Pad notes:** with a drum track selected, the MC-707 pads send drum notes on that track's channel: top row 37 39 42 46 49 51 54 56, bottom row 36 38 41 45 48 62 63 64. If nothing arrives, hold SHIFT and press the track's TRACK SEL button, open the MIDI page and turn **TxMIDI Note** on with output to USB. **Pad test** shows exactly what your pads send.
 - **Controls Live Mode uses:** CC 71 (resonance), CC 91 (reverb send), CC 11 (expression, for pump and fades), CC 10 (pan) and CC 80–83 (the four knobs). Each returns to its rest value; set **Reverb rest** in Settings and mapping to the send your tracks normally use.
 - **Song position:** the MC-707 doesn't follow MIDI song position, so starting mid-song doesn't move its own sequencer.
-- **Privacy:** no accounts, no tracking, and nothing you make leaves your computer. The fonts, and the MP3 encoder in the browser version, load from public CDNs; the Windows app bundles the encoder.
+- **Privacy:** no accounts, no tracking, and nothing you make leaves your computer. The fonts, and the MP3 encoder in the browser version, load from public CDNs; the desktop app bundles the encoder.
 - **Background playback:** timing keeps running when the window is minimised or behind another app.
 
 ## Working on the code
@@ -255,20 +271,20 @@ index.html      the whole app in one file, built from src/ (don't edit it direct
 src/            the source: about 125 JavaScript modules, the page markup and the styles
 scripts/        build, development server and code checks
 tests/          automated tests (Playwright, with a simulated MC-707)
-main.js         Windows app window, file dialogs, folders, keep-awake
+main.js         desktop app window, file dialogs, folders, keep-awake
 preload.js      the small bridge the page uses to reach those features
 build-exe.bat   one-click Windows build
 docs/           ARCHITECTURE.md, and the screenshots and cards in this README
 AGENTS.md       how to work on the code (for people and coding agents)
 LICENSE.md      PolyForm Noncommercial 1.0.0
-.github/        runs the tests on every push, and builds the Windows app for each release
+.github/        runs the tests on every push, and builds the Windows, Mac and Linux apps for each release
 ```
 
-Read [AGENTS.md](AGENTS.md) first, then [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: `npm run tools` once, `npm run dev` to work on `src/` in the browser, `npm run build` to make `index.html`, and `npm test` before committing. `npm install` then `npm start` runs the Windows app without building the exe.
+Read [AGENTS.md](AGENTS.md) first, then [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: `npm run tools` once, `npm run dev` to work on `src/` in the browser, `npm run build` to make `index.html`, and `npm test` before committing. `npm install` then `npm start` runs the desktop app without building it.
 
 ## Reporting problems
 
-Open an [issue](../../issues) and say what you pressed, what you expected and what happened. Your Windows version and MC-707 firmware version help. Some features (8-channel recording, controller keyboards, MC-101 mode and parts of the ZenCore editor) have only been tested against a simulated MC-707, so reports from real hardware are very welcome.
+Open an [issue](../../issues) and say what you pressed, what you expected and what happened. Your system (Windows, macOS or Linux, and its version) and MC-707 firmware version help. Some features (8-channel recording, controller keyboards, MC-101 mode and parts of the ZenCore editor) have only been tested against a simulated MC-707, so reports from real hardware are very welcome.
 
 **ZenCore diagnostics:** if the ZenCore editor doesn't work with your MC-707 or MC-101, open the [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html) in Chrome or Edge. It only reads from the device and never changes anything. Press **Identity request** and **Read sound**, then **Save everything to a file** and attach the file to your issue.
 

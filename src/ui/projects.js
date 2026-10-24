@@ -162,7 +162,7 @@ export async function projSaveAs() {
 }
 export async function projFolder(kind) {
   if (!HOST) {
-    toast('Folders can be opened in the Windows app. In the browser, files go to your Downloads folder.');
+    toast('Folders can be opened in the desktop app. In the browser, files go to your Downloads folder.');
     return;
   }
   try {
@@ -174,7 +174,7 @@ export async function projFolder(kind) {
 }
 export async function projChooseFolder(kind) {
   if (!HOST) {
-    toast('Folder choice is available in the Windows app.');
+    toast('Folder choice is available in the desktop app.');
     return;
   }
   try {

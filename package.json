@@ -1,7 +1,7 @@
 {
   "name": "mc707-toolbox",
   "productName": "MC-707 Toolbox",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Unofficial song arranger and live performance tool for the Roland MC-707",
   "main": "main.js",
   "scripts": {
@@ -13,7 +13,9 @@
     "dev": "node scripts/dev.mjs",
     "test": "node --test tests/*.test.mjs",
     "format": "npx --prefix .ci-tools prettier --write src scripts tests",
-    "tools": "npm install --prefix .ci-tools --no-audit --no-fund playwright@1.56.1 esbuild@0.28.2 prettier@3.8.1 && npx --prefix .ci-tools playwright install chromium"
+    "tools": "npm install --prefix .ci-tools --no-audit --no-fund playwright@1.56.1 esbuild@0.28.2 prettier@3.8.1 && npx --prefix .ci-tools playwright install chromium",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -55,9 +57,56 @@
     "portable": {
       "artifactName": "MC-707-Toolbox.exe"
     },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.music",
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "MC-707-Toolbox-mac-${arch}.${ext}",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "MC-707 Toolbox records audio from your MC-707 or audio interface when you ask it to."
+      }
+    },
+    "dmg": {
+      "title": "MC-707 Toolbox",
+      "artifactName": "MC-707-Toolbox-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Audio",
+      "icon": "build/icon.png",
+      "executableName": "mc707-toolbox",
+      "maintainer": "Mendo-707 <342262505+Mendo-707@users.noreply.github.com>",
+      "synopsis": "Song arranger, live performance and synth tool for the Roland MC-707",
+      "artifactName": "MC-707-Toolbox-linux-${arch}.${ext}"
+    },
     "publish": null,
     "npmRebuild": false,
-    "compression": "normal"
+    "compression": "normal",
+    "afterPack": "build/after-pack.cjs"
   },
   "private": true,
   "author": "Aaron",

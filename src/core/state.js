@@ -135,6 +135,8 @@ function afterReplace() {
   scheduleSave();
 }
 export const HOST = window.toolbox || null;
+/** What the desktop app is called here: 'Windows app', 'Mac app' or 'Linux app' (null in a browser). */
+export const APP_NAME = HOST ? { darwin: 'Mac app', linux: 'Linux app' }[HOST.platform] || 'Windows app' : null;
 export const PROJ = { name: '', path: '', dirty: false, t: null };
 let saveT = 0;
 /** Autosave soon (debounced), and mark the project as changed. Call after changing the song. */
