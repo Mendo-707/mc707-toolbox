@@ -2,6 +2,7 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
+import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
 import { $, clamp, el, toast } from '../core/dom.js';
@@ -28,7 +29,6 @@ import {
   liveLock,
   liveLockSave,
   liveModeCue,
-  liveRate,
   liveRiser,
   liveStutter,
   liveTap,
@@ -257,6 +257,16 @@ export function liveInit() {
         title: 'Build a fresh set of scenes and patterns in this style'
       },
       '🎲 New patterns'
+    ),
+    el(
+      'button',
+      {
+        class: 'btn',
+        id: 'lvMixer',
+        onclick: () => liveMixerOpen(),
+        title: 'Live’s mixer: levels, pans, sends, mutes and solos, in a window you can move to another screen'
+      },
+      '🎚 Mixer'
     ),
     el('span', { class: 'hint', id: 'lvMidiSt' }, ''),
     /* tools opened from the Live menu: kept here hidden so the menu, shortcuts and Fullscreen label find them */
@@ -638,18 +648,6 @@ export function liveInit() {
       el(
         'div',
         { class: 'lvBtns' },
-        el('span', { class: 'hint' }, 'Speed'),
-        ...[
-          [0.5, '½×'],
-          [1, '1×'],
-          [2, '2×']
-        ].map(([r, l]) =>
-          el(
-            'button',
-            { class: 'btn lvrate', id: 'lvRate' + String(r).replace('.', '_'), onclick: () => liveRate(r) },
-            l
-          )
-        ),
         el(
           'label',
           { class: 'lvf' },

@@ -2,6 +2,8 @@
 // belongs to), and wiring the setup wizard's buttons.
 //
 // Reads: S, SU, STAGE, DEV.
+import { songMixerOpen } from '../song/song-mixer.js';
+import { liveMixerOpen } from '../live/live-mixer.js';
 import { $, el, toast } from '../core/dom.js';
 import { DEV, oneKit } from '../core/device.js';
 import { HOST, S, scheduleSave } from '../core/state.js';
@@ -113,6 +115,7 @@ function initMenubar() {
         ['Loop the whole song', go('#bLoopAll')],
         ['Loop the selected clip', go('#bLoopClip'), '\\'],
         ['Tap tempo', go('#bTap')],
+        ['Mixer…', () => songMixerOpen()],
         0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]
@@ -130,6 +133,7 @@ function initMenubar() {
         0,
         ['Grab a sample…', () => grabOpen($('.mb.open') || $('#lvStart'))],
         ['Capture to Song', () => liveCapture()],
+        ['Mixer…', () => liveMixerOpen()],
         ['Your MC-707 clips…', () => clipMapOpen()],
         0,
         ['Connect MC-707', go('#lvMidi')],

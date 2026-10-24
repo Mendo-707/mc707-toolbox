@@ -5,6 +5,7 @@
 // Reads: S, PROJ, LV, TR, MIDI, AU, FAC.
 // Calls up the layers through hooks (core/hooks.js).
 // Load order matters: each module is evaluated once, in this order (see AGENTS.md).
+import { popoutCloseAll } from './services/popout.js';
 import './core/dom.js';
 import './core/icons.js';
 import './core/theory.js';
@@ -201,6 +202,7 @@ PROJ.t = projTitle;
       stopAll();
       panic(true);
     } catch (e) {}
+    popoutCloseAll();
   });
   addEventListener('beforeunload', () => {
     try {

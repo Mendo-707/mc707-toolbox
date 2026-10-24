@@ -100,10 +100,6 @@ export function liveSync() {
   }
   const pv = $('#lvPrev');
   if (pv) pv.checked = !!S.preview;
-  [0.5, 1, 2].forEach(r => {
-    const x = $('#lvRate' + String(r).replace('.', '_'));
-    if (x) x.classList.toggle('on', LV.rate === r);
-  });
   if (!on) liveStatus(0);
 }
 export function liveRenderKeyRec() {

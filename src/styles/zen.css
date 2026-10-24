@@ -285,6 +285,40 @@
 .zcC.wide {
   grid-column: span 2;
 }
+/* a long list with ◀ ▶ to step through it (zc-widgets.js stepper) */
+.zcStep {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+.zcStep select {
+  order: 2;
+  flex: 1;
+  min-width: 0;
+}
+.zcStepB {
+  flex: none;
+  width: 24px;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  color: var(--zc-acc);
+  background: var(--zc-well);
+  border: 1px solid var(--zc-line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.zcStepB.prev {
+  order: 1;
+}
+.zcStepB.next {
+  order: 3;
+}
+.zcStepB:hover {
+  border-color: var(--zc-acc);
+}
 .zcName {
   font:
     700 15px ui-monospace,
@@ -772,6 +806,56 @@
 .zbItem.cur .zbNm {
   color: var(--zc-acc);
 }
+/* sounds picked with Ctrl- or Shift-click, and the bar of what to do with them */
+.zbItem {
+  user-select: none;
+}
+.zbItem.sel {
+  background: #10301b;
+  box-shadow: inset 3px 0 0 #9dffbf;
+}
+.zbItem.sel.cur {
+  box-shadow: inset 3px 0 0 var(--zc-acc);
+}
+.zbSelBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px dashed var(--zc-line);
+  border-radius: 6px;
+}
+.zbSelBar.on {
+  border-style: solid;
+  border-color: var(--zc-acc);
+  background: #07160c;
+}
+.zbSelBar b {
+  color: var(--zc-acc);
+  margin-right: 4px;
+}
+.zbSelBar .zbGap {
+  flex: 1;
+}
+.zbBox .btn.zbDanger:hover {
+  border-color: #ff5f45;
+  color: #ff8f7a;
+}
+/* your folders under My sounds, and the tags under the categories */
+.zbBk.zbNewF {
+  color: var(--zc-dim);
+  font-style: italic;
+}
+.zbCats h4.zbTagH {
+  margin-top: 12px;
+}
+.zbNoTags {
+  margin: 0 6px;
+  font-size: 11px;
+}
 .zbNm {
   font-weight: 600;
   overflow: hidden;
@@ -906,13 +990,13 @@ body[data-mode='synth'] #main {
 body[data-mode='synth'] #synth {
   display: flex;
 }
-#synth .btn {
+#synth .btn:not(.syDock *) {
   background: #07100a;
   color: #c9f7d5;
   border: 1px solid #23462f;
   border-radius: 6px;
 }
-#synth .btn:hover {
+#synth .btn:not(.syDock *):hover {
   border-color: var(--zc-acc);
   color: #fff;
 }
@@ -924,7 +1008,7 @@ body[data-mode='synth'] #synth {
   outline: 2px solid var(--zc-acc);
   outline-offset: 2px;
 }
-#synth select {
+#synth select:not(.syDock *) {
   background: var(--zc-well);
   color: #d9ffe3;
   border: 1px solid var(--zc-line);
@@ -1329,5 +1413,81 @@ body[data-mode='synth'] #synth {
 @media (prefers-reduced-motion: reduce) {
   .syAct {
     transition: none;
+  }
+}
+
+/* one track expanded (Synth Mode): the other strips shrink to a rail on the left, the track's strip
+   stays beside it, and its ZenCore editor is docked in the rest of the screen instead of over it */
+.syExp {
+  display: grid;
+  grid-template-columns: 150px 240px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.syRail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.syMini {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  color: #c9f7d5;
+  background: linear-gradient(#08120b, #040805);
+  border: 1px solid #142a1b;
+  border-left: 3px solid var(--tc);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.syMini:hover {
+  border-color: var(--zc-acc);
+  border-left-color: var(--tc);
+}
+.syMini.muted {
+  opacity: 0.55;
+}
+.syMini.solo {
+  border-color: var(--sy-solo);
+  border-left-color: var(--tc);
+}
+.syMiniName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.syAll {
+  margin-top: 4px;
+}
+.syExpBtn.on {
+  border-color: var(--zc-acc) !important;
+  color: var(--zc-acc) !important;
+}
+.syDock {
+  min-width: 0;
+}
+.zcDock .zcBox {
+  max-width: none;
+  width: 100%;
+  height: max(600px, calc(100vh - 190px));
+  max-height: none;
+  margin: 0;
+  box-sizing: border-box;
+}
+@media (max-width: 1100px) {
+  .syExp {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .syRail {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .syMini {
+    flex: 1 1 120px;
   }
 }

@@ -5,7 +5,7 @@
 import { el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { LANES } from '../core/theory.js';
-import { ctl, group } from './zc-widgets.js';
+import { ctl, group, stepper } from './zc-widgets.js';
 import { mfxNames, mfxParams, mfxText, shown, stored } from './zc-mfx.js';
 import { MFX_PRESETS, mfxPreset } from './zc-mfx-presets.js';
 import { KIT_LOW, pk } from './zc-tone.js';
@@ -56,7 +56,7 @@ export function pageMfx(ctx) {
       sp.list.forEach((n, j) =>
         s.append(el('option', { value: j, selected: j === v }, n + (sp.unit && /\d$/.test(n) ? ' ' + sp.unit : '')))
       );
-      box.append(s);
+      box.append(stepper(s));
     } else {
       const step = sp.kind === 'D' ? 1 / 10 ** sp.dec : 1;
       const out = el('span', { class: 'zcV' }, mfxText(sp, v));
@@ -92,7 +92,7 @@ export function pageMfx(ctx) {
     {},
     group(
       'Multi-effect',
-      el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Type'), typeSel),
+      el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Type'), stepper(typeSel)),
       el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Presets'), presetSel),
       ctl(ctx, 'MFX.mfxSwitch', { label: 'On' }),
       ctl(ctx, 'MFX.choSend', { label: 'Delay send' }),

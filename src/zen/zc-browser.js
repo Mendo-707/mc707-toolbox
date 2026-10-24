@@ -3,7 +3,9 @@
 // and a sortable table of sounds with star ratings (zc-browser-table.js; what shows is zc-browse-data.js).
 // Click a sound to load it into the clip being edited (and hear it, with Live on); ↑ ↓ step through;
 // hold ▶ to play a note. Grab reads the clips on the MC-707 (one, a track's 16 or every track's) and keeps
-// each sound found. Backup exports and imports your library (not the factory tones).
+// each sound found. Backup exports and imports your library (not the factory tones). Your own folders sit
+// under My sounds; Ctrl- or Shift-click picks several sounds to tag, give a category, copy or move into a
+// folder, or delete. Tags filter from the middle column.
 //
 // Reads: ZE, DEV.
 // Calls up the layers through hooks (core/hooks.js).
@@ -13,7 +15,7 @@ import { hooks } from '../core/hooks.js';
 import { showMenu } from '../ui/menu.js';
 import { askDlg } from '../ui/dialogs.js';
 import { starterMenu } from './zc-starters-more.js';
-import { ZE, audition, zeLoad } from './zc-editor.js';
+import { ZE, audition, zeLoad, zenClose } from './zc-editor.js';
 import { factoryItems } from './zc-factory-ui.js';
 import {
   CAT_GROUPS,
@@ -32,12 +34,18 @@ import {
   GENRE_TAGS,
   TYPES,
   ZS,
+  folderAdd,
+  folderDelete,
+  folderList,
+  folderRename,
   libraryImport,
   libraryJSON,
+  setCategoryOf,
   soundAdd,
   soundDelete,
   soundOf,
   soundUpdate,
+  soundsUpdate,
   soundsLoad,
   ratingOf,
   setRating,
@@ -54,7 +62,10 @@ const B = {
   sort: { by: 'bank', dir: 1 },
   edit: null,
   grab: null,
-  cur: null
+  cur: null,
+  /* the sounds picked with Ctrl- or Shift-click, and where a Shift-click range starts */
+  sel: new Set(),
+  anchor: null
 };
 
 /* the starters as browser entries (made once) */
@@ -181,6 +192,208 @@ function form(e, done) {
   );
 }
 
+/* after a save: My sounds, with the sound picked, so it is there to see (or the same one, already saved) */
+function showSaved(e, name) {
+  const got = e || ZS.list.find(x => x.src === 'mine' && x.name === name);
+  toast(e ? 'Saved ' + e.name + ' to My sounds' : 'It is already in My sounds as ' + name);
+  if (got) Object.assign(B, { bank: 'mine', group: '', cat: '', tag: '', q: '', cur: got.id });
+}
+
+/* ---- picking several ---- */
+/* your own sounds can be changed; factory tones and starters only copied */
+const editable = e => e.src !== 'starter' && e.src !== 'factory';
+const picked = () => entries().filter(e => B.sel.has(e.id));
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+/* a click on a row: Ctrl (⌘) adds or removes it, Shift picks the range from the last one, a plain click
+   loads it (and lets go of any picked) */
+function click(e, x) {
+  if (x.ctrlKey || x.metaKey) {
+    B.sel.has(e.id) ? B.sel.delete(e.id) : B.sel.add(e.id);
+    B.anchor = e.id;
+    return paintSel();
+  }
+  if (x.shiftKey) {
+    const l = shown(),
+      a = l.findIndex(y => y.id === (B.anchor || B.cur)),
+      b = l.findIndex(y => y.id === e.id);
+    if (a < 0) B.sel.add(e.id);
+    else for (let i = Math.min(a, b); i <= Math.max(a, b); i++) B.sel.add(l[i].id);
+    return paintSel();
+  }
+  B.anchor = e.id;
+  if (B.sel.size) (B.sel.clear(), paintSel());
+  load(e);
+}
+/* show what is picked without redrawing the list (keeps its place) */
+function paintSel() {
+  const ov = $('#zbOv');
+  if (!ov) return;
+  ov.querySelectorAll('.zbItem').forEach(r => {
+    const on = B.sel.has(r.dataset.id);
+    r.classList.toggle('sel', on);
+    r.setAttribute('aria-selected', String(on));
+  });
+  const bar = $('.zbSelBar', ov);
+  if (bar) bar.replaceWith(selBar());
+}
+const menuFrom = (x, items) => {
+  const r = x.currentTarget.getBoundingClientRect();
+  showMenu(r.left, r.bottom + 4, items);
+};
+/* change your own sounds among list; the others are left, and the message says so */
+async function changeOwn(list, fn, what) {
+  const own = list.filter(editable),
+    left = list.length - own.length;
+  if (!own.length) return toast('Factory tones and starters cannot be changed. Copy them to a folder first.');
+  await soundsUpdate(
+    own.map(e => e.id),
+    fn
+  );
+  toast(what + ' ' + plural(own.length, 'sound') + (left ? '. ' + left + ' factory or starter left as they are' : ''));
+  render();
+}
+async function newFolder() {
+  const n = await askDlg({ title: 'New folder', input: true, def: '', ok: 'Make' });
+  return n ? folderAdd(n) : '';
+}
+/* the places a sound can go: My sounds, each folder, a new folder */
+function targets(fn) {
+  return [
+    { label: 'My sounds', action: () => fn('') },
+    ...folderList().map(f => ({ label: '📁 ' + f, action: () => fn(f) })),
+    '-',
+    {
+      label: 'New folder…',
+      action: async () => {
+        const f = await newFolder();
+        if (f) fn(f);
+      }
+    }
+  ];
+}
+const placeName = f => (f ? f : 'My sounds');
+/* copies (any sound: factory tones and starters too) */
+async function copyTo(list, folder) {
+  let n = 0;
+  for (const e of list)
+    if (
+      await soundAdd(e.make ? e.make() : soundOf(e), {
+        name: e.name,
+        type: e.type,
+        tags: e.tags || [],
+        src: 'mine',
+        folder,
+        mine: true
+      })
+    )
+      n++;
+  toast(
+    n
+      ? 'Copied ' + plural(n, 'sound') + ' to ' + placeName(folder)
+      : 'Already in ' + placeName(folder) + ' under the same name'
+  );
+  render();
+}
+const moveTo = (list, folder) =>
+  changeOwn(
+    list,
+    e => {
+      e.src = 'mine';
+      if (folder) e.folder = folder;
+      else delete e.folder;
+    },
+    'Moved to ' + placeName(folder) + ':'
+  );
+/* the tag menu: add one (the genre tags, the ones in use, a new one) or take one off */
+function tagItems(list) {
+  const have = [...new Set(list.flatMap(e => e.tags || []))].sort();
+  const all = [...new Set([...GENRE_TAGS, ...entries().flatMap(e => e.tags || [])])];
+  const add = t => changeOwn(list, e => (e.tags = [...new Set([...(e.tags || []), t])]), 'Tagged ' + t + ':');
+  return [
+    {
+      label: 'Add tag',
+      sub: [
+        ...all.map(t => ({ label: t, action: () => add(t) })),
+        '-',
+        {
+          label: 'New tag…',
+          action: async () => {
+            const t = await askDlg({ title: 'New tag', input: true, def: '', ok: 'Add' });
+            if (t && t.trim()) add(t.trim().slice(0, 20));
+          }
+        }
+      ]
+    },
+    have.length
+      ? {
+          label: 'Remove tag',
+          sub: have.map(t => ({
+            label: t,
+            action: () => changeOwn(list, e => (e.tags = (e.tags || []).filter(x => x !== t)), 'Took ' + t + ' off')
+          }))
+        }
+      : null
+  ];
+}
+/* the category menu, in its groups (tones only: a kit is always Drums) */
+const catItems = list =>
+  CAT_GROUPS.map(([g, cats]) => ({
+    label: g,
+    sub: cats.map(c => ({
+      label: catLabel(c),
+      action: () => changeOwn(list, e => setCategoryOf(e, c), 'Set ' + catLabel(c) + ' on')
+    }))
+  }));
+async function deleteMany(list) {
+  const own = list.filter(editable);
+  if (!own.length) return toast('Factory tones and starters cannot be deleted');
+  if (!(await askDlg({ title: 'Delete ' + plural(own.length, 'sound') + '?', ok: 'Delete' }))) return;
+  for (const e of own) {
+    await soundDelete(e.id);
+    B.sel.delete(e.id);
+  }
+  render();
+}
+
+/* the bar above the table: what is picked and what to do with it */
+function selBar() {
+  const list = picked();
+  if (!list.length)
+    return el(
+      'div',
+      { class: 'zbSelBar hint' },
+      'Ctrl-click or Shift-click sounds to pick several: tag them, set their category, or copy them to a folder.'
+    );
+  const btn = (label, title, onclick, cls) =>
+    el('button', { type: 'button', class: 'btn sm' + (cls || ''), title, onclick }, label);
+  return el(
+    'div',
+    { class: 'zbSelBar on', role: 'toolbar', 'aria-label': 'Picked sounds' },
+    el('b', {}, list.length + ' picked'),
+    btn('Tag ▾', 'Add a tag to the picked sounds, or take one off', x => menuFrom(x, tagItems(list))),
+    ZE.kind === 'tone'
+      ? btn('Category ▾', 'Set the ZenCore category of the picked sounds', x => menuFrom(x, catItems(list)))
+      : null,
+    btn('Copy to ▾', 'Copy them into My sounds or a folder', x =>
+      menuFrom(
+        x,
+        targets(f => copyTo(list, f))
+      )
+    ),
+    btn('Move to ▾', 'Move your own sounds into My sounds or a folder', x =>
+      menuFrom(
+        x,
+        targets(f => moveTo(list, f))
+      )
+    ),
+    btn('Delete', 'Delete the picked sounds of your own', () => deleteMany(list), ' zbDanger'),
+    el('span', { class: 'zbGap' }),
+    btn('Pick all shown', 'Pick every sound in the list', () => (shown().forEach(e => B.sel.add(e.id)), paintSel())),
+    btn('Clear', 'Let go of the picked sounds', () => (B.sel.clear(), paintSel()))
+  );
+}
+
 /* a sound's right-click menu */
 function rowMenu(e, x, y) {
   const r = ratingOf(e.id),
@@ -201,8 +414,14 @@ function rowMenu(e, x, y) {
       ? {
           label: 'Save a copy to my sounds',
           action: async () => {
-            const n = await soundAdd(e.make ? e.make() : soundOf(e), { name: e.name, type: e.type, src: 'mine' });
-            toast(n ? 'Saved ' + e.name : 'That sound is already in the library');
+            const n = await soundAdd(e.make ? e.make() : soundOf(e), {
+              name: e.name,
+              type: e.type,
+              tags: e.tags || [],
+              src: 'mine',
+              mine: true
+            });
+            showSaved(n, e.name);
             render();
           }
         }
@@ -212,6 +431,9 @@ function rowMenu(e, x, y) {
       action: () => ((B.cat = catOf(e)), (B.group = ''), render())
     },
     { label: 'Show its bank', action: () => ((B.bank = bankOf(e)), render()) },
+    '-',
+    { label: 'Copy to', sub: targets(f => copyTo([e], f)) },
+    editable(e) ? { label: 'Move to', sub: targets(f => moveTo([e], f)) } : null,
     mine && e.src !== 'factory'
       ? {
           label: 'Delete…',
@@ -316,7 +538,26 @@ function toolbar() {
       { label: 'Export the library to a file…', action: () => hooks.saveFile('mc707-sounds.json', libraryJSON()) },
       { label: 'Import a library file…', action: importLib }
     ]),
-    el('button', { type: 'button', class: 'btn sm on', onclick: browserClose }, 'Done')
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn sm',
+        onclick: browserClose,
+        title: 'Close the browser and edit this sound in the ZenCore editor'
+      },
+      'Edit in ZenCore'
+    ),
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn sm on',
+        onclick: () => (browserClose(), zenClose()),
+        title: 'Close the browser and the editor, back to the tracks'
+      },
+      'Done'
+    )
   );
 }
 
@@ -337,13 +578,66 @@ function banksPane(all) {
     );
   const banks = banksIn(all),
     fac = banks.filter(b => b.startsWith('f:'));
+  /* a folder: right-click to rename or remove it */
+  const folder = f => {
+    const b = item('u:' + f, '📁 ' + f, 'zbSub zbFold', 'Right-click to rename or remove');
+    b.oncontextmenu = x => {
+      x.preventDefault();
+      showMenu(x.clientX, x.clientY, [
+        {
+          label: 'Rename…',
+          action: async () => {
+            const n = await askDlg({ title: 'Rename ' + f, input: true, def: f, ok: 'Rename' });
+            if (n && n.trim()) {
+              await folderRename(f, n);
+              if (B.bank === 'u:' + f) B.bank = 'u:' + n.trim().slice(0, 30);
+              render();
+            }
+          }
+        },
+        {
+          label: 'Remove the folder…',
+          danger: true,
+          action: async () => {
+            if (
+              !(await askDlg({
+                title: 'Remove ' + f + '?',
+                text: 'Its sounds go back to My sounds; none are deleted.',
+                ok: 'Remove'
+              }))
+            )
+              return;
+            await folderDelete(f);
+            if (B.bank === 'u:' + f) B.bank = 'mine';
+            render();
+          }
+        }
+      ]);
+    };
+    return b;
+  };
   return el(
     'nav',
     { class: 'zbBanks', 'aria-label': 'Banks' },
     el('h4', {}, 'Bank'),
     item('all', 'All'),
     item('fav', '★ Favourites', '', 'Every sound you have rated'),
-    ...banks.filter(b => !b.startsWith('f:') && b !== 'starter').map(b => item(b, bankName(b))),
+    item('mine', 'My sounds', '', 'Sounds you saved that are in no folder'),
+    ...folderList().map(folder),
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'zbChip zbBk zbSub zbNewF',
+        title: 'Make a folder for your own sounds',
+        onclick: async () => {
+          const f = await newFolder();
+          if (f) ((B.bank = 'u:' + f), (B.group = B.cat = ''), render());
+        }
+      },
+      '+ New folder'
+    ),
+    ...banks.filter(b => b === 'mc707').map(b => item(b, bankName(b))),
     ZE.kind === 'tone'
       ? item('factory', 'Factory', 'zbGrp', fac.length ? 'Every factory bank' : 'Add them with Grab ▾ › Factory tones')
       : null,
@@ -369,7 +663,36 @@ function catsPane(inBank) {
     for (const k of cats)
       if (c[k]) out.push(item(catLabel(k), c[k], B.cat === k, () => ((B.cat = k), (B.group = ''), render())));
   }
-  return el('nav', { class: 'zbCats', 'aria-label': 'Categories' }, el('h4', {}, 'Category'), ...out);
+  return el(
+    'nav',
+    { class: 'zbCats', 'aria-label': 'Categories' },
+    el('h4', {}, 'Category'),
+    ...out,
+    ...tagsPart(inBank)
+  );
+}
+/* the tags under the categories: click one to show only the sounds with it (again to show all) */
+function tagsPart(inBank) {
+  const all = entries(),
+    base = filterList(all, { ...B, tag: '', q: '' }),
+    tags = [...new Set(all.flatMap(e => e.tags || []))].sort((a, b) => a.localeCompare(b));
+  const n = t => base.filter(e => (e.tags || []).includes(t)).length;
+  const item = (label, count, on, fn, title) =>
+    el(
+      'button',
+      { type: 'button', class: 'zbCt zbTagF' + (on ? ' on' : ''), title, onclick: fn },
+      el('span', {}, label),
+      el('i', {}, String(count))
+    );
+  return [
+    el('h4', { class: 'zbTagH' }, 'Tag'),
+    tags.length
+      ? item('Any', base.length, !B.tag, () => ((B.tag = ''), render()), 'Sounds with any tag or none')
+      : el('p', { class: 'hint zbNoTags' }, 'No tags yet. Pick sounds and use Tag ▾, or ⋯ › Name, type and tags.'),
+    ...tags.map(t =>
+      item(t, n(t), B.tag === t, () => ((B.tag = B.tag === t ? '' : t), render()), 'Only sounds tagged ' + t)
+    )
+  ];
 }
 
 function emptyText(all) {
@@ -396,7 +719,7 @@ function render() {
     box.textContent = '';
     box.scrollTop = 0;
     if (!l.length) box.append(el('p', { class: 'hint zbEmpty' }, emptyText(all)));
-    fillTable(box, l, { cur: B.cur, load, play, menu: rowMenu, more, redraw: render }, editRow);
+    fillTable(box, l, { cur: B.cur, sel: B.sel, click, load, play, menu: rowMenu, more, redraw: render }, editRow);
   };
   const q = el('input', {
     id: 'zbQ',
@@ -411,7 +734,6 @@ function render() {
       drawList();
     }
   });
-  const usedTags = [...new Set(all.flatMap(e => e.tags || []))].sort();
   const inBank = filterList(all, { ...B, group: '', cat: '' });
   ov.append(
     el(
@@ -424,9 +746,7 @@ function render() {
             async v => {
               B.edit = null;
               if (v) {
-                const e = await soundAdd(ZE.snd, { ...v, src: 'mine' });
-                toast(e ? 'Saved ' + e.name : 'That sound is already in the library');
-                if (e) B.cur = e.id;
+                showSaved(await soundAdd(ZE.snd, { ...v, src: 'mine', mine: true }), v.name);
               }
               render();
             }
@@ -441,15 +761,7 @@ function render() {
         el(
           'div',
           { class: 'zbMain' },
-          usedTags.length
-            ? el(
-                'div',
-                { class: 'zbFilt' },
-                ...usedTags.map(t =>
-                  chip(t, B.tag === t, () => ((B.tag = B.tag === t ? '' : t), render()), 'Only sounds tagged ' + t)
-                )
-              )
-            : null,
+          selBar(),
           tableHead(B.sort, by => {
             B.sort = { by, dir: B.sort.by === by ? -B.sort.dir : 1 };
             render();

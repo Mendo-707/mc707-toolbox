@@ -7,12 +7,12 @@
 //
 // Reads: SY, DEV.
 import { $, el, toast } from '../core/dom.js';
-import { DEVS, DEV, devNum } from '../core/device.js';
+import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { hooks } from '../core/hooks.js';
 import { MIDI, connectMidi } from '../services/midi.js';
 import { showMenu } from '../ui/menu.js';
 import { askDlg } from '../ui/dialogs.js';
-import { zenOpen } from './zc-editor.js';
+import { ZE, zenClose, zenOpen } from './zc-editor.js';
 import { ZX } from './zc-sysex.js';
 import { browserOpen } from './zc-browser.js';
 import { flash, strip } from './zc-synth-strip.js';
@@ -34,10 +34,16 @@ import {
 } from './zc-synth-io.js';
 
 let busy = '';
+/* the track expanded to fill the screen with its ZenCore editor (null: all eight strips), and the box the
+   editor is docked in (kept across redraws, so the editor in it carries on) */
+let exp = null;
+const dock = el('div', { class: 'syDock' });
+const docked = () => !!$('#zcOv') && dock.contains($('#zcOv'));
 const dn = () => DEVS[DEV].name;
 
 /** Enter or leave Synth mode (called by the mode switch). */
 export function synthEnter(on) {
+  if (!on && docked()) zenClose();
   thruSet(SY.thru, on);
   SYHOOK.activity = on ? flash : null;
   if (on) {
@@ -61,13 +67,49 @@ async function refresh(quiet) {
   if (!ok && !quiet) toast('The ' + dn() + ' did not answer. Connect it by USB and allow MIDI with SysEx.');
 }
 /* opening the editor (or the browser over it); the strip's name is read again when it closes */
+let edT = 0,
+  wait = 0;
 function openEditor(t, browse) {
+  if (exp != null) return expand(t, browse);
+  edT = t;
   zenOpen(t, SY.slot[t]);
   if (browse) setTimeout(browserOpen, 0);
-  const wait = setInterval(() => {
-    if ($('#zcOv')) return;
+  watch();
+}
+/* expand track t: the other strips shrink to a rail and its ZenCore editor fills the rest of the screen */
+function expand(t, browse) {
+  if (docked() && edT !== t) quickForget(edT);
+  exp = t;
+  edT = t;
+  synthRender();
+  zenOpen(t, SY.slot[t], dock);
+  if (browse) setTimeout(browserOpen, 0);
+  watch();
+}
+/* back to all eight strips (closing the editor; the watch below redraws) */
+function collapse() {
+  if (docked()) zenClose();
+  else {
+    exp = null;
+    synthRender();
+  }
+}
+/* while the editor is open: follow it to another track (its Track menu), and when it closes read the
+   sound's name again and, when it was docked, go back to all eight strips */
+function watch() {
+  clearInterval(wait);
+  wait = setInterval(() => {
+    if ($('#zcOv')) {
+      if (exp != null && ZE.t !== exp && tracks().includes(ZE.t)) {
+        quickForget(edT);
+        exp = edT = ZE.t;
+        synthRender();
+      }
+      return;
+    }
     clearInterval(wait);
-    quickForget(t);
+    quickForget(edT);
+    exp = null;
     refresh(true);
   }, 400);
 }
@@ -166,7 +208,28 @@ export function synthAct(what) {
   }
 }
 /* what the strips call back */
-const ACT = { open: (t, b) => openEditor(t, b), refresh: () => refresh(true), render: () => synthRender() };
+const ACT = {
+  open: (t, b) => openEditor(t, b),
+  refresh: () => refresh(true),
+  render: () => synthRender(),
+  exp: () => exp,
+  expand: t => (exp === t ? collapse() : expand(t))
+};
+/* a track shrunk to the rail while another is expanded: click to expand it instead */
+const mini = t =>
+  el(
+    'button',
+    {
+      type: 'button',
+      class: 'syMini' + (SY.mute[t] ? ' muted' : '') + (SY.solo[t] ? ' solo' : ''),
+      style: '--tc:' + (TRACK_COLORS[t] || '#39ff7a'),
+      title: 'Expand track ' + devNum(t) + (SY.names[t] ? ', ' + SY.names[t] : '') + ' and edit it here',
+      onclick: () => expand(t)
+    },
+    el('span', { class: 'syNum' }, String(devNum(t))),
+    el('i', { class: 'syAct', id: 'syAct' + t }),
+    el('span', { class: 'syMiniName' }, SY.names[t] || '—')
+  );
 
 /** Draw the Synth mode screen. */
 export function synthRender() {
@@ -298,7 +361,24 @@ export function synthRender() {
       ),
       el('span', { id: 'syBusy', class: 'syBusy' }, busy)
     ),
-    el('div', { class: 'syGrid' }, ...tracks().map(t => strip(t, ACT))),
+    exp != null && tracks().includes(exp)
+      ? el(
+          'div',
+          { class: 'syExp' },
+          el(
+            'nav',
+            { class: 'syRail', 'aria-label': 'The other tracks' },
+            ...tracks().map(t => (t === exp ? null : mini(t))),
+            el(
+              'button',
+              { type: 'button', class: 'btn sm syAll', onclick: collapse, title: 'Back to all eight strips (Esc)' },
+              'All tracks'
+            )
+          ),
+          strip(exp, ACT),
+          dock
+        )
+      : el('div', { class: 'syGrid' }, ...tracks().map(t => strip(t, ACT))),
     el(
       'details',
       { class: 'syHelp' },

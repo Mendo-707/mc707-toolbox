@@ -34,21 +34,59 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
   win.on('leave-full-screen', () => win.webContents.send('fullscreen', false));
-  // Keep the window on the app: never navigate away or open pop-up windows.
+  // Keep the window on the app: never navigate away or open other pages. The app's own tool windows (the
+  // mixers, blank windows named mc707-…) open as windows of their own that can go on another screen.
   // Help links (the guide, releases, problem reports, Roland's driver page) open in the system browser.
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    if ((url === 'about:blank' || url === '') && /^mc707-[a-z-]+$/.test(frameName || ''))
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          // borderless: the window's own header is where you drag it (and has pin, minimise, close)
+          frame: false,
+          minWidth: 380,
+          minHeight: 280,
+          autoHideMenuBar: true,
+          backgroundColor: '#050906',
+          icon: path.join(__dirname, 'icon.png'),
+          webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
+        }
+      };
     if (/^https:\/\/([a-z0-9-]+\.)*(github\.com|github\.io|roland\.com)\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+  // a tool window never navigates away either, and closes with the app
+  win.webContents.on('did-create-window', (child, details) => {
+    const name = (details && details.frameName) || '';
+    if (name) {
+      tools.set(name, child);
+      child.on('closed', () => tools.get(name) === child && tools.delete(name));
+    }
+    child.setMenu(null);
+    child.webContents.on('will-navigate', (e) => e.preventDefault());
+    child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   });
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   // Let the app send "all notes off" to the MC-707 before the window closes.
   win.on('close', (e) => {
     if (closing) return;
     e.preventDefault();
+    for (const w of BrowserWindow.getAllWindows()) if (w !== win) w.destroy();
     win.webContents.send('app-closing');
     setTimeout(() => { closing = true; if (win) win.close(); }, 900);
   });
 }
+
+// the tool windows by name (mc707-song-mixer…), for their own pin, minimise and close buttons
+const tools = new Map();
+ipcMain.handle('pop-win', (_e, name, act, on) => {
+  const w = tools.get(name);
+  if (!w || w.isDestroyed()) return false;
+  if (act === 'min') w.minimize();
+  else if (act === 'close') w.close();
+  else if (act === 'top') w.setAlwaysOnTop(!!on, 'floating');
+  return w.isAlwaysOnTop();
+});
 
 let blocker = null;
 ipcMain.on('keep-awake', (_e, on) => {

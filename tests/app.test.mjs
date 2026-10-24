@@ -555,13 +555,21 @@ test('the start screen opens the last session or Live Mode, which asks for a gen
     'Empty template',
     'Song wizard',
     'Live Mode',
-    'Synth Mode'
+    'Synth Mode',
+    'ZenCore editor'
   ]);
   const clips = await page.evaluate(() => window.__app.S.clips.length);
   assert.ok(clips > 0, 'the saved song is loaded behind the screen');
   await page.locator('.stCard', { hasText: 'Empty template' }).click();
   assert.equal(await page.evaluate(() => window.__app.S.clips.length), 0);
   assert.equal(await page.evaluate(() => window.__app.S.markers.length), 7);
+  /* File › Start screen, then ZenCore editor: the editor opens on the first tone track */
+  await page.locator('#menubar .mb', { hasText: 'File' }).click();
+  await page.locator('.mdrop:not([hidden]) button', { hasText: 'Start screen' }).click();
+  await page.locator('.stCard', { hasText: 'ZenCore editor' }).click();
+  await page.waitForSelector('#zcOv');
+  assert.equal(await page.evaluate(() => window.__app.S.tracks[window.__app.zen.ZE.t].type), 'tone');
+  await page.locator('#zcOv button', { hasText: 'Done' }).click();
   /* File › Start screen, then Live Mode: the genre picker opens and builds a set in the chosen style */
   await page.locator('#menubar .mb', { hasText: 'File' }).click();
   await page.locator('.mdrop:not([hidden]) button', { hasText: 'Start screen' }).click();

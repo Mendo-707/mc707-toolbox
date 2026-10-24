@@ -289,8 +289,12 @@ export async function zeSendAll() {
 export const targetName = (k = ZE.k) => (k === 16 ? 'track sound' : 'clip ' + (k + 1));
 
 /* ---- opening ---- */
-/** Open the editor on track t, clip k (0-15, or 16 for the track's own sound). */
-export async function zenOpen(t, k) {
+/**
+ * Open the editor on track t, clip k (0-15, or 16 for the track's own sound). With host, it is drawn
+ * inside host (docked in a screen, as Synth Mode's expanded track) instead of over the app; once docked
+ * it stays there until closed, even when opened again without one (its own Track menu).
+ */
+export async function zenOpen(t, k, host) {
   ZE.t = t;
   ZE.k = k;
   ZE.kind = S.tracks[t].type === 'drum' ? 'kit' : 'tone';
@@ -307,6 +311,11 @@ export async function zenOpen(t, k) {
     ov = el('div', { id: 'zcOv', class: 'ptOv', role: 'dialog', 'aria-label': 'ZenCore editor' });
     document.body.append(ov);
     addEventListener('keydown', keys, true);
+  }
+  if (host && ov.parentNode !== host) {
+    host.append(ov);
+    ov.className = 'zcDock';
+    ov.setAttribute('role', 'region');
   }
   ZX.onState = status;
   ZX.onIdle = screenNudge;

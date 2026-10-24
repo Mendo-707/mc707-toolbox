@@ -63,6 +63,7 @@ export const LV_KBD_OFF = [0, 2, 4, 5, 7, 9, 11, 12, null, 1, 3, null, 6, 8, 10,
 export const lvKbdNotes = base => LV_KBD_OFF.map(o => (o == null ? null : base + o));
 export const LV_TOPFN = ['Oct −', null, null, 'Step', null, null, null, 'Oct +'];
 const LV_SAVE = [
+  'mix',
   'style',
   'seed',
   'key',
@@ -257,6 +258,15 @@ export const liveSwingAmt = () => LV.swing;
     )
   )
     LV.ktarget = 'all';
+  /* Live Mode's own mixer (live/mix.js): level, pan, reverb and chorus per track; a reverb of null
+     follows the Reverb rest setting */
+  const arr = (a, d, nul) =>
+    Array.from({ length: 8 }, (_, i) => {
+      const v = Array.isArray(a) ? a[i] : undefined;
+      return nul && v === null ? null : Number.isFinite(+v) && v !== null ? clamp(Math.round(+v), 0, 127) : d;
+    });
+  const m = LV.mix && typeof LV.mix === 'object' ? LV.mix : {};
+  LV.mix = { lvl: arr(m.lvl, 100), pan: arr(m.pan, 64), rev: arr(m.rev, null, true), cho: arr(m.cho, 0) };
   LV.tg = Array.from({ length: 8 }, () => mkEnv(1, 1, 0, 0));
   LV.pulse = Array.from({ length: 8 }, () => ({ time: -9, v: 0 }));
 })();
