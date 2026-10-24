@@ -246,6 +246,19 @@ export function strip(t, act) {
         },
         'Edit'
       ),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn sm syExpBtn' + (act.exp && act.exp() === t ? ' on' : ''),
+          onclick: () => act.expand(t),
+          title:
+            act.exp && act.exp() === t
+              ? 'Back to all eight strips'
+              : 'Expand this track: the others shrink to the side and its ZenCore editor fills the screen'
+        },
+        act.exp && act.exp() === t ? '⤡ Collapse' : '⤢ Expand'
+      ),
       playBtn(t)
     ),
     quickPanel(t),

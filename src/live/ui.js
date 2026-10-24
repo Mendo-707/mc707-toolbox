@@ -29,7 +29,6 @@ import {
   liveLock,
   liveLockSave,
   liveModeCue,
-  liveRate,
   liveRiser,
   liveStutter,
   liveTap,
@@ -649,14 +648,6 @@ export function liveInit() {
       el(
         'div',
         { class: 'lvBtns' },
-        el('span', { class: 'hint' }, 'Speed'),
-        ...[[1, '1×']].map(([r, l]) =>
-          el(
-            'button',
-            { class: 'btn lvrate', id: 'lvRate' + String(r).replace('.', '_'), onclick: () => liveRate(r) },
-            l
-          )
-        ),
         el(
           'label',
           { class: 'lvf' },
