@@ -3,8 +3,11 @@
 // IndexedDB (room for thousands; only the values that differ from Roland's initial sound are stored),
 // with a backup file to export and import. The older My sounds list moves in on first use.
 //
-// Owns: ZS (the library in memory), the 'mc707-sounds' IndexedDB, localStorage 'mc707-zen-favs' and
-// 'mc707-zen-ratings' (0-3 stars by id; a rated sound is a favourite).
+// Your own sounds can sit in folders you make (an entry's folder; the names are kept apart too, so an
+// empty folder stays).
+//
+// Owns: ZS (the library in memory), the 'mc707-sounds' IndexedDB, localStorage 'mc707-zen-favs',
+// 'mc707-zen-ratings' (0-3 stars by id; a rated sound is a favourite) and 'mc707-zen-folders'.
 // Reads: localStorage 'mc707-zen' (My sounds, once).
 import { ZC_CATEGORIES } from './zc-data.js';
 import { newSound, soundFrom } from './zc-tone.js';
@@ -190,15 +193,17 @@ export async function soundsLoad() {
  * could not be stored. With mine (a save asked for), only the same sound under the same name in My
  * sounds counts as already there.
  * @param {object} snd
- * @param {{name?:string,type?:string,tags?:string[],src?:string,at?:number,mine?:boolean}} meta
+ * @param {{name?:string,type?:string,tags?:string[],src?:string,at?:number,mine?:boolean,folder?:string}} meta
  */
 export async function soundAdd(snd, meta = {}) {
   const d = diffOf(snd),
     h = hashOf(snd.kind, d);
   const name = (meta.name || snd.v['CMN.NAME'] || snd.v['KCMN.NAME'] || 'Untitled').trim();
   /* a sound already in the library is skipped (grabbing, importing); a save you ask for (meta.mine)
-     only skips one already in My sounds under the same name */
-  if (ZS.list.some(e => e.h === h && (!meta.mine || (e.src === 'mine' && e.name === name)))) return null;
+     only skips one already in the same place in My sounds under the same name */
+  const folder = (meta.folder || '').trim();
+  const same = e => e.src === 'mine' && e.name === name && (e.folder || '') === folder;
+  if (ZS.list.some(e => e.h === h && (!meta.mine || same(e)))) return null;
   const e = {
     id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     at: meta.at || Date.now(),
@@ -207,6 +212,7 @@ export async function soundAdd(snd, meta = {}) {
     type: meta.type || typeOf(snd, name),
     tags: meta.tags || [],
     src: meta.src || 'mine',
+    ...(folder ? { folder } : {}),
     h,
     d
   };
@@ -258,6 +264,70 @@ export async function soundUpdate(id, patch) {
   Object.assign(e, patch);
   await tx('readwrite', s => s.put(e));
 }
+/** Change several entries at once (fn changes each) in one store write. Returns how many. */
+export async function soundsUpdate(ids, fn) {
+  const want = new Set(ids),
+    hit = ZS.list.filter(e => want.has(e.id));
+  hit.forEach(fn);
+  await tx('readwrite', s => hit.forEach(e => s.put(e)));
+  return hit.length;
+}
+/** Set a library tone's ZenCore category (by name), as the MC-707 shows it once loaded. */
+export function setCategoryOf(e, cat) {
+  const n = Math.max(0, ZC_CATEGORIES.indexOf(cat));
+  if (n === init('tone').v['CMN.CATEGORY']) delete e.d['CMN.CATEGORY'];
+  else e.d['CMN.CATEGORY'] = n;
+  e.h = hashOf(e.kind, e.d);
+  delete e.cat;
+}
+
+/* ---- your folders ---- */
+const FKEY = 'mc707-zen-folders';
+function storedFolders() {
+  try {
+    const a = JSON.parse(localStorage.getItem(FKEY) || '[]');
+    return Array.isArray(a) ? a.filter(x => typeof x === 'string' && x) : [];
+  } catch (e) {
+    return [];
+  }
+}
+function keepFolders(a) {
+  try {
+    localStorage.setItem(FKEY, JSON.stringify([...new Set(a)]));
+  } catch (e) {}
+}
+/** Your folders, by name (the kept ones and any an entry is in). */
+export const folderList = () =>
+  [...new Set([...storedFolders(), ...ZS.list.map(e => e.folder).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+/** Make a folder. Returns its name ('' for none). */
+export function folderAdd(name) {
+  name = String(name || '')
+    .trim()
+    .slice(0, 30);
+  if (name) keepFolders([...storedFolders(), name]);
+  return name;
+}
+/** Rename a folder (its sounds go with it). */
+export async function folderRename(from, to) {
+  to = String(to || '')
+    .trim()
+    .slice(0, 30);
+  if (!to || to === from) return;
+  keepFolders([...storedFolders().filter(x => x !== from), to]);
+  await soundsUpdate(
+    ZS.list.filter(e => e.folder === from).map(e => e.id),
+    e => (e.folder = to)
+  );
+}
+/** Remove a folder; its sounds go back to My sounds. Returns how many it held. */
+export async function folderDelete(name) {
+  keepFolders(storedFolders().filter(x => x !== name));
+  return soundsUpdate(
+    ZS.list.filter(e => e.folder === name).map(e => e.id),
+    e => delete e.folder
+  );
+}
+
 export async function soundDelete(id) {
   ZS.list = ZS.list.filter(x => x.id !== id);
   ZS.favs.delete(id);
@@ -276,7 +346,8 @@ export const libraryJSON = () =>
     sounds: 1,
     favs: [...ZS.favs],
     ratings: ZS.rate,
-    list: ZS.list.filter(e => e.src !== 'factory').map(({ h, ...e }) => e)
+    folders: folderList(),
+    list: ZS.list.filter(e => e.src !== 'factory').map(({ h, cat, ...e }) => e)
   });
 /** Add the sounds from a backup file. Returns {added, same}. */
 export async function libraryImport(text) {
@@ -284,6 +355,7 @@ export async function libraryImport(text) {
   if (!o || o.sounds !== 1 || !Array.isArray(o.list)) throw new Error('not a sound library');
   let added = 0,
     same = 0;
+  if (Array.isArray(o.folders)) o.folders.forEach(f => typeof f === 'string' && folderAdd(f));
   for (const e of o.list.slice().reverse()) {
     const s = soundOf(e || {});
     if (!s) continue;
@@ -292,7 +364,8 @@ export async function libraryImport(text) {
       type: e.type,
       tags: Array.isArray(e.tags) ? e.tags : [],
       src: e.src,
-      at: e.at
+      at: e.at,
+      folder: typeof e.folder === 'string' ? e.folder : ''
     });
     if (r) {
       added++;

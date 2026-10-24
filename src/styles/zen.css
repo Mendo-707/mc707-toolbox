@@ -285,6 +285,40 @@
 .zcC.wide {
   grid-column: span 2;
 }
+/* a long list with ◀ ▶ to step through it (zc-widgets.js stepper) */
+.zcStep {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+.zcStep select {
+  order: 2;
+  flex: 1;
+  min-width: 0;
+}
+.zcStepB {
+  flex: none;
+  width: 24px;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  color: var(--zc-acc);
+  background: var(--zc-well);
+  border: 1px solid var(--zc-line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.zcStepB.prev {
+  order: 1;
+}
+.zcStepB.next {
+  order: 3;
+}
+.zcStepB:hover {
+  border-color: var(--zc-acc);
+}
 .zcName {
   font:
     700 15px ui-monospace,
@@ -771,6 +805,56 @@
 }
 .zbItem.cur .zbNm {
   color: var(--zc-acc);
+}
+/* sounds picked with Ctrl- or Shift-click, and the bar of what to do with them */
+.zbItem {
+  user-select: none;
+}
+.zbItem.sel {
+  background: #10301b;
+  box-shadow: inset 3px 0 0 #9dffbf;
+}
+.zbItem.sel.cur {
+  box-shadow: inset 3px 0 0 var(--zc-acc);
+}
+.zbSelBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px dashed var(--zc-line);
+  border-radius: 6px;
+}
+.zbSelBar.on {
+  border-style: solid;
+  border-color: var(--zc-acc);
+  background: #07160c;
+}
+.zbSelBar b {
+  color: var(--zc-acc);
+  margin-right: 4px;
+}
+.zbSelBar .zbGap {
+  flex: 1;
+}
+.zbBox .btn.zbDanger:hover {
+  border-color: #ff5f45;
+  color: #ff8f7a;
+}
+/* your folders under My sounds, and the tags under the categories */
+.zbBk.zbNewF {
+  color: var(--zc-dim);
+  font-style: italic;
+}
+.zbCats h4.zbTagH {
+  margin-top: 12px;
+}
+.zbNoTags {
+  margin: 0 6px;
+  font-size: 11px;
 }
 .zbNm {
   font-weight: 600;

@@ -30,7 +30,7 @@ test('Sound browser: load a starter, grab the clips from the MC-707, star, tag a
     await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
     await page.fill('#zbQ', name);
     await page.locator('#zbOv .zbItem', { hasText: name }).first().click();
-    await page.locator('#zbOv button', { hasText: 'Done' }).click();
+    await page.locator('#zbOv button', { hasText: 'Edit in ZenCore' }).click();
     await page.evaluate(`${z}.sendAll()`);
     await page.waitForTimeout(300);
   }
@@ -85,7 +85,7 @@ test('Sound browser: load a starter, grab the clips from the MC-707, star, tag a
     'only the changed values are stored (' + Object.keys(saved.d).length + ')'
   );
   await page.locator('#zbOv .zbChip', { hasText: 'All' }).first().click();
-  await page.locator('#zbOv .zbFilt .zbChip', { hasText: 'Ambient' }).click();
+  await page.locator('#zbOv .zbTagF', { hasText: 'Ambient' }).click();
   assert.equal(await page.locator('#zbOv .zbItem').count(), 1, 'the tag filter');
   /* loading a library sound puts it in the editor */
   await page.locator('#zbOv .zbItem').first().click();
@@ -219,7 +219,7 @@ test('the track always comes back after a load, even when the MC-707 does not an
   assert.ok(Date.now() - t0 < 4000, 'back within a few seconds');
   /* and closing the editor puts the expression back too */
   await page.evaluate('window.__out.length = 0');
-  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.locator('#zbOv button', { hasText: 'Edit in ZenCore' }).click();
   await page.locator('#zcOv button', { hasText: 'Done' }).click();
   const last = await page.evaluate('window.__out.filter(b => b[0] === 0xb3 && b[1] === 11).pop()');
   assert.deepEqual(last, [0xb3, 11, 127]);

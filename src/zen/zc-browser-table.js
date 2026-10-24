@@ -1,7 +1,8 @@
 // The Sound browser's table: one row per sound with its rating (three stars), bank, number, name,
 // category and tags, a ▶ to load and play it, and a ⋯ menu. Headers sort (click again to reverse).
 // Rows are drawn in batches as the list scrolls, so the factory banks (thousands of tones) stay quick.
-// ↑ and ↓ move through the list and load each sound, as on ZENOLOGY.
+// ↑ and ↓ move through the list and load each sound, as on ZENOLOGY. Ctrl-click and Shift-click pick
+// several (act.click decides; the picked ones are act.sel).
 //
 // Reads: ZS (ratings).
 import { el } from '../core/dom.js';
@@ -73,19 +74,20 @@ export function tableHead(sort, onSort) {
 }
 
 /**
- * One row. act: {cur, load(e), play(e, x), menu(e, x, y), more(e, x), redraw()}.
+ * One row. act: {cur, sel?:Set, click?(e, x), load(e), play(e, x), menu(e, x, y), more(e, x), redraw()}.
  */
 export function tableRow(e, act) {
   const b = bankOf(e);
   return el(
     'div',
     {
-      class: 'zbItem' + (act.cur === e.id ? ' cur' : ''),
+      class: 'zbItem' + (act.cur === e.id ? ' cur' : '') + (act.sel && act.sel.has(e.id) ? ' sel' : ''),
       role: 'row',
       tabindex: -1,
+      'aria-selected': String(!!(act.sel && act.sel.has(e.id))),
       'data-id': e.id,
-      title: 'Load into this clip · ↑ ↓ for the next · right-click for more',
-      onclick: () => act.load(e),
+      title: 'Load into this clip · ↑ ↓ for the next · Ctrl- or Shift-click to pick several · right-click for more',
+      onclick: x => (act.click ? act.click(e, x) : act.load(e)),
       oncontextmenu: x => {
         x.preventDefault();
         x.stopPropagation();

@@ -203,7 +203,7 @@ export function ctl(ctx, key, opts = {}) {
   if (list && list.length <= 160) {
     const s = el('select', { onchange: e => ctx.set(key, +e.target.value, true) });
     list.forEach((n, i) => s.append(el('option', { value: p[3] + i, selected: p[3] + i === v }, n)));
-    box.append(s);
+    box.append(stepper(s));
     return box;
   }
   const out = el('span', { class: 'zcV' }, valText(ctx.kind, key, v));
@@ -235,6 +235,34 @@ export function ctl(ctx, key, opts = {}) {
   }
   box.append(r, out);
   return box;
+}
+/**
+ * A long list (8 or more entries) with ◀ ▶ beside it, to step to the previous or next entry without
+ * opening it. Each step is a change, as if picked. Shorter lists come back as they are.
+ * @param {HTMLSelectElement} s
+ */
+export function stepper(s, min = 8) {
+  if (s.options.length < min) return s;
+  const go = d => {
+    const i = s.selectedIndex + d;
+    if (i < 0 || i >= s.options.length) return;
+    s.selectedIndex = i;
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  /* the list comes first, so a click on the label still opens it; the ◀ shows before it */
+  const b = (d, t, lab) =>
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'zcStepB ' + (d < 0 ? 'prev' : 'next'),
+        title: t,
+        'aria-label': t,
+        onclick: e => (e.preventDefault(), go(d))
+      },
+      lab
+    );
+  return el('span', { class: 'zcStep' }, s, b(-1, 'Previous', '◀'), b(1, 'Next', '▶'));
 }
 /** A titled group of controls. */
 export const group = (title, ...kids) => el('fieldset', { class: 'zcG' }, el('legend', {}, title), ...kids);

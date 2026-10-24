@@ -40,14 +40,17 @@ export function catOf(e) {
 }
 export const groupOf = e => GROUP_OF[catOf(e)] || 'Other';
 
-/** An entry's bank id: 'f:A' for a factory bank, else its source ('mine', 'mc707', 'starter'). */
+/** An entry's bank id: 'f:A' for a factory bank, 'u:name' for one of your folders, else its source
+ * ('mine', 'mc707', 'starter'). */
 export function bankOf(e) {
   if (e.src === 'factory') return 'f:' + (e.bank || '?');
+  if (e.folder && (e.src === 'mine' || e.src === 'file')) return 'u:' + e.folder;
   return e.src === 'file' ? 'mine' : e.src;
 }
 const SRC_NAME = { mine: 'My sounds', mc707: 'From the MC-707', starter: 'Starters' };
 /** A bank's name in the list and the table. */
 export function bankName(id, short) {
+  if (id.startsWith('u:')) return id.slice(2);
   if (id.startsWith('f:')) {
     const l = id.slice(2);
     if (l === '?') return 'Factory';
@@ -59,7 +62,14 @@ export function bankName(id, short) {
 export function banksIn(list) {
   const have = new Set(list.map(bankOf));
   const fac = [...have].filter(b => b.startsWith('f:')).sort();
-  return [...['mine', 'mc707'].filter(b => have.has(b)), ...fac, ...(have.has('starter') ? ['starter'] : [])];
+  const own = [...have].filter(b => b.startsWith('u:')).sort();
+  return [
+    ...(have.has('mine') ? ['mine'] : []),
+    ...own,
+    ...(have.has('mc707') ? ['mc707'] : []),
+    ...fac,
+    ...(have.has('starter') ? ['starter'] : [])
+  ];
 }
 
 /**
@@ -101,7 +111,8 @@ export function catCounts(list) {
   return c;
 }
 
-const BANK_ORDER = b => (b === 'mine' ? '0' : b === 'mc707' ? '1' : b.startsWith('f:') ? '2' + b : '3');
+const BANK_ORDER = b =>
+  b === 'mine' ? '0' : b.startsWith('u:') ? '0' + b : b === 'mc707' ? '1' : b.startsWith('f:') ? '2' + b : '3';
 /** Sort in place by 'bank' (then number, then newest), 'name', 'cat' or 'rating'; dir 1 or -1. */
 export function sortList(list, by, dir) {
   const key = {

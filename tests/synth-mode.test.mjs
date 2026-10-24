@@ -18,7 +18,7 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
   await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
   await page.fill('#zbQ', 'Warm pad');
   await page.locator('#zbOv .zbItem', { hasText: 'Warm pad' }).first().click();
-  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.locator('#zbOv button', { hasText: 'Edit in ZenCore' }).click();
   await page.evaluate(`${z}.sendAll()`);
   await page.waitForTimeout(1500);
   await page.locator('#zcOv button', { hasText: 'Done' }).click();
@@ -120,13 +120,10 @@ test('Synth mode: strips, names, sound source, level, setup file and notes passe
   assert.equal(await page.locator('#synth .syStrip.quiet').count(), 1, 'one muted strip');
   await page.locator('#synth .syStrip').nth(0).locator('button', { hasText: /^M$/ }).click();
   await page.evaluate('window.__out.length = 0');
-  await page.locator('#synth .syStrip').nth(3).locator('input[type=range]').nth(2).fill('70');
+  /* no reverb send: the MC-707's main effects only reach its MIX output */
+  assert.equal(await page.locator('#synth .syStrip').nth(3).locator('input[type=range]').count(), 2, 'level and pan');
   await page.locator('#synth button', { hasText: 'Panic' }).click();
   out = await page.evaluate('window.__out');
-  assert.ok(
-    out.some(b => b[0] === 0xb3 && b[1] === 91 && b[2] === 70),
-    'reverb send is CC 91'
-  );
   assert.equal(out.filter(b => (b[0] & 0xf0) === 0xb0 && b[1] === 123).length, 8, 'panic: all notes off on all 8');
   /* the song's Space shortcut does nothing here */
   await page.keyboard.press('Space');
@@ -221,7 +218,7 @@ test('Synth mode: quick settings read a page from the MC-707 and move every play
   await page.locator('#zbOv .zbChip', { hasText: 'Starters' }).click();
   await page.fill('#zbQ', 'Supersaw');
   await page.locator('#zbOv .zbItem', { hasText: 'Supersaw' }).first().click();
-  await page.locator('#zbOv button', { hasText: 'Done' }).click();
+  await page.locator('#zbOv button', { hasText: 'Edit in ZenCore' }).click();
   await page.evaluate(`${z}.sendAll()`);
   await page.waitForTimeout(1500);
   const before = await page.evaluate(

@@ -24,7 +24,6 @@ import {
   setLevel,
   setMute,
   setPan,
-  setRev,
   setSlot,
   setSolo
 } from './zc-synth-io.js';
@@ -112,7 +111,7 @@ function stripMenu(t, act, x, y) {
     '-',
     { label: 'Mute', checked: SY.mute[t], action: () => (setMute(t, !SY.mute[t]), act.render()) },
     { label: 'Solo', checked: SY.solo[t], action: () => (setSolo(t, !SY.solo[t]), act.render()) },
-    { label: 'Reset level, pan and reverb', action: () => (resetMix(t), act.render()) },
+    { label: 'Reset level and pan', action: () => (resetMix(t), act.render()) },
     { label: 'Play it from the keyboard (Notes in)', checked: SY.kbd === t, action: () => (kbdSet(t), act.render()) },
     '-',
     {
@@ -266,8 +265,8 @@ export function strip(t, act) {
       'div',
       { class: 'syMix' },
       fader('Level', SY.level[t], v => setLevel(t, v), 'Track level (MIDI volume, CC 7)', t),
-      fader('Pan', SY.pan[t], v => setPan(t, v), 'Pan (CC 10)', t, true),
-      fader('Reverb', SY.rev[t], v => setRev(t, v), 'Reverb send (CC 91)', t)
+      /* no reverb send here: the MC-707's main effects only reach its MIX output, not a track's own */
+      fader('Pan', SY.pan[t], v => setPan(t, v), 'Pan (CC 10)', t, true)
     )
   );
 }

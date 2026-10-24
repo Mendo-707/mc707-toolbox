@@ -4783,6 +4783,40 @@ input[type='number'] {
 .zcC.wide {
   grid-column: span 2;
 }
+/* a long list with ◀ ▶ to step through it (zc-widgets.js stepper) */
+.zcStep {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+.zcStep select {
+  order: 2;
+  flex: 1;
+  min-width: 0;
+}
+.zcStepB {
+  flex: none;
+  width: 24px;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  color: var(--zc-acc);
+  background: var(--zc-well);
+  border: 1px solid var(--zc-line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.zcStepB.prev {
+  order: 1;
+}
+.zcStepB.next {
+  order: 3;
+}
+.zcStepB:hover {
+  border-color: var(--zc-acc);
+}
 .zcName {
   font:
     700 15px ui-monospace,
@@ -5269,6 +5303,56 @@ input[type='number'] {
 }
 .zbItem.cur .zbNm {
   color: var(--zc-acc);
+}
+/* sounds picked with Ctrl- or Shift-click, and the bar of what to do with them */
+.zbItem {
+  user-select: none;
+}
+.zbItem.sel {
+  background: #10301b;
+  box-shadow: inset 3px 0 0 #9dffbf;
+}
+.zbItem.sel.cur {
+  box-shadow: inset 3px 0 0 var(--zc-acc);
+}
+.zbSelBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px dashed var(--zc-line);
+  border-radius: 6px;
+}
+.zbSelBar.on {
+  border-style: solid;
+  border-color: var(--zc-acc);
+  background: #07160c;
+}
+.zbSelBar b {
+  color: var(--zc-acc);
+  margin-right: 4px;
+}
+.zbSelBar .zbGap {
+  flex: 1;
+}
+.zbBox .btn.zbDanger:hover {
+  border-color: #ff5f45;
+  color: #ff8f7a;
+}
+/* your folders under My sounds, and the tags under the categories */
+.zbBk.zbNewF {
+  color: var(--zc-dim);
+  font-style: italic;
+}
+.zbCats h4.zbTagH {
+  margin-top: 12px;
+}
+.zbNoTags {
+  margin: 0 6px;
+  font-size: 11px;
 }
 .zbNm {
   font-weight: 600;
@@ -18951,7 +19035,7 @@ body.popWin {
       const c = curClip();
       return c && S.tracks[c.t].type === "tone" ? "tone" : "drum";
     })();
-    const picked = await modalBox("New pattern", (box, close) => {
+    const picked2 = await modalBox("New pattern", (box, close) => {
       const kb = el("div", { style: "display:flex;gap:6px" });
       const trk = el("select", { "aria-label": "Track" });
       const len = el(
@@ -19099,7 +19183,7 @@ body.popWin {
         )
       );
     });
-    return picked;
+    return picked2;
   }
   function clearTrack(t) {
     pushUndo();
@@ -23722,10 +23806,10 @@ body.popWin {
       );
       if (!hits.length) return;
       const sel = hits.filter((n) => ED.selNotes.has(n));
-      const targets = sel.length ? sel : [hits.reduce((a, b) => Math.abs(a.s * g.cw - x) < Math.abs(b.s * g.cw - x) ? a : b)];
-      const first = Math.min(...targets.map((n) => n.s));
+      const targets2 = sel.length ? sel : [hits.reduce((a, b) => Math.abs(a.s * g.cw - x) < Math.abs(b.s * g.cw - x) ? a : b)];
+      const first = Math.min(...targets2.map((n) => n.s));
       p.notes.forEach((n) => {
-        if (targets.includes(n) || !sel.length && n.s === first && targets.some((t) => t.s === n.s)) n.v = v;
+        if (targets2.includes(n) || !sel.length && n.s === first && targets2.some((t) => t.s === n.s)) n.v = v;
       });
       touch(p);
       drawEditor();
@@ -45557,7 +45641,7 @@ body.popWin {
     if (list && list.length <= 160) {
       const s = el("select", { onchange: (e) => ctx2.set(key, +e.target.value, true) });
       list.forEach((n, i) => s.append(el("option", { value: p[3] + i, selected: p[3] + i === v }, n)));
-      box.append(s);
+      box.append(stepper(s));
       return box;
     }
     const out2 = el("span", { class: "zcV" }, valText(ctx2.kind, key, v));
@@ -45588,6 +45672,27 @@ body.popWin {
     }
     box.append(r, out2);
     return box;
+  }
+  function stepper(s, min = 8) {
+    if (s.options.length < min) return s;
+    const go = (d) => {
+      const i = s.selectedIndex + d;
+      if (i < 0 || i >= s.options.length) return;
+      s.selectedIndex = i;
+      s.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    const b = (d, t, lab) => el(
+      "button",
+      {
+        type: "button",
+        class: "zcStepB " + (d < 0 ? "prev" : "next"),
+        title: t,
+        "aria-label": t,
+        onclick: (e) => (e.preventDefault(), go(d))
+      },
+      lab
+    );
+    return el("span", { class: "zcStep" }, s, b(-1, "Previous", "◀"), b(1, "Next", "▶"));
   }
   var group = (title, ...kids) => el("fieldset", { class: "zcG" }, el("legend", {}, title), ...kids);
 
@@ -46570,7 +46675,7 @@ body.popWin {
         sp.list.forEach(
           (n, j) => s.append(el("option", { value: j, selected: j === v }, n + (sp.unit && /\d$/.test(n) ? " " + sp.unit : "")))
         );
-        box.append(s);
+        box.append(stepper(s));
       } else {
         const step = sp.kind === "D" ? 1 / 10 ** sp.dec : 1;
         const out2 = el("span", { class: "zcV" }, mfxText(sp, v));
@@ -46606,7 +46711,7 @@ body.popWin {
       {},
       group(
         "Multi-effect",
-        el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Type"), typeSel),
+        el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Type"), stepper(typeSel)),
         el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Presets"), presetSel),
         ctl(ctx2, "MFX.mfxSwitch", { label: "On" }),
         ctl(ctx2, "MFX.choSend", { label: "Delay send" }),
@@ -47568,7 +47673,9 @@ body.popWin {
   async function soundAdd(snd, meta = {}) {
     const d = diffOf(snd), h = hashOf(snd.kind, d);
     const name = (meta.name || snd.v["CMN.NAME"] || snd.v["KCMN.NAME"] || "Untitled").trim();
-    if (ZS.list.some((e2) => e2.h === h && (!meta.mine || e2.src === "mine" && e2.name === name))) return null;
+    const folder = (meta.folder || "").trim();
+    const same = (e2) => e2.src === "mine" && e2.name === name && (e2.folder || "") === folder;
+    if (ZS.list.some((e2) => e2.h === h && (!meta.mine || same(e2)))) return null;
     const e = {
       id: "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       at: meta.at || Date.now(),
@@ -47577,6 +47684,7 @@ body.popWin {
       type: meta.type || typeOf(snd, name),
       tags: meta.tags || [],
       src: meta.src || "mine",
+      ...folder ? { folder } : {},
       h,
       d
     };
@@ -47620,6 +47728,56 @@ body.popWin {
     Object.assign(e, patch);
     await tx("readwrite", (s) => s.put(e));
   }
+  async function soundsUpdate(ids, fn) {
+    const want = new Set(ids), hit = ZS.list.filter((e) => want.has(e.id));
+    hit.forEach(fn);
+    await tx("readwrite", (s) => hit.forEach((e) => s.put(e)));
+    return hit.length;
+  }
+  function setCategoryOf(e, cat) {
+    const n = Math.max(0, ZC_CATEGORIES.indexOf(cat));
+    if (n === init("tone").v["CMN.CATEGORY"]) delete e.d["CMN.CATEGORY"];
+    else e.d["CMN.CATEGORY"] = n;
+    e.h = hashOf(e.kind, e.d);
+    delete e.cat;
+  }
+  var FKEY = "mc707-zen-folders";
+  function storedFolders() {
+    try {
+      const a = JSON.parse(localStorage.getItem(FKEY) || "[]");
+      return Array.isArray(a) ? a.filter((x) => typeof x === "string" && x) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function keepFolders(a) {
+    try {
+      localStorage.setItem(FKEY, JSON.stringify([...new Set(a)]));
+    } catch (e) {
+    }
+  }
+  var folderList = () => [.../* @__PURE__ */ new Set([...storedFolders(), ...ZS.list.map((e) => e.folder).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+  function folderAdd(name) {
+    name = String(name || "").trim().slice(0, 30);
+    if (name) keepFolders([...storedFolders(), name]);
+    return name;
+  }
+  async function folderRename(from, to) {
+    to = String(to || "").trim().slice(0, 30);
+    if (!to || to === from) return;
+    keepFolders([...storedFolders().filter((x) => x !== from), to]);
+    await soundsUpdate(
+      ZS.list.filter((e) => e.folder === from).map((e) => e.id),
+      (e) => e.folder = to
+    );
+  }
+  async function folderDelete(name) {
+    keepFolders(storedFolders().filter((x) => x !== name));
+    return soundsUpdate(
+      ZS.list.filter((e) => e.folder === name).map((e) => e.id),
+      (e) => delete e.folder
+    );
+  }
   async function soundDelete(id) {
     ZS.list = ZS.list.filter((x) => x.id !== id);
     ZS.favs.delete(id);
@@ -47632,12 +47790,14 @@ body.popWin {
     sounds: 1,
     favs: [...ZS.favs],
     ratings: ZS.rate,
-    list: ZS.list.filter((e) => e.src !== "factory").map(({ h, ...e }) => e)
+    folders: folderList(),
+    list: ZS.list.filter((e) => e.src !== "factory").map(({ h, cat, ...e }) => e)
   });
   async function libraryImport(text) {
     const o = JSON.parse(text);
     if (!o || o.sounds !== 1 || !Array.isArray(o.list)) throw new Error("not a sound library");
     let added = 0, same = 0;
+    if (Array.isArray(o.folders)) o.folders.forEach((f) => typeof f === "string" && folderAdd(f));
     for (const e of o.list.slice().reverse()) {
       const s = soundOf(e || {});
       if (!s) continue;
@@ -47646,7 +47806,8 @@ body.popWin {
         type: e.type,
         tags: Array.isArray(e.tags) ? e.tags : [],
         src: e.src,
-        at: e.at
+        at: e.at,
+        folder: typeof e.folder === "string" ? e.folder : ""
       });
       if (r) {
         added++;
@@ -47733,10 +47894,12 @@ body.popWin {
   var groupOf = (e) => GROUP_OF[catOf(e)] || "Other";
   function bankOf(e) {
     if (e.src === "factory") return "f:" + (e.bank || "?");
+    if (e.folder && (e.src === "mine" || e.src === "file")) return "u:" + e.folder;
     return e.src === "file" ? "mine" : e.src;
   }
   var SRC_NAME = { mine: "My sounds", mc707: "From the MC-707", starter: "Starters" };
   function bankName(id, short2) {
+    if (id.startsWith("u:")) return id.slice(2);
     if (id.startsWith("f:")) {
       const l = id.slice(2);
       if (l === "?") return "Factory";
@@ -47747,7 +47910,14 @@ body.popWin {
   function banksIn(list) {
     const have = new Set(list.map(bankOf));
     const fac = [...have].filter((b) => b.startsWith("f:")).sort();
-    return [...["mine", "mc707"].filter((b) => have.has(b)), ...fac, ...have.has("starter") ? ["starter"] : []];
+    const own = [...have].filter((b) => b.startsWith("u:")).sort();
+    return [
+      ...have.has("mine") ? ["mine"] : [],
+      ...own,
+      ...have.has("mc707") ? ["mc707"] : [],
+      ...fac,
+      ...have.has("starter") ? ["starter"] : []
+    ];
   }
   function filterList(list, f) {
     const q = f.q.trim().toLowerCase();
@@ -47777,7 +47947,7 @@ body.popWin {
     }
     return c;
   }
-  var BANK_ORDER = (b) => b === "mine" ? "0" : b === "mc707" ? "1" : b.startsWith("f:") ? "2" + b : "3";
+  var BANK_ORDER = (b) => b === "mine" ? "0" : b.startsWith("u:") ? "0" + b : b === "mc707" ? "1" : b.startsWith("f:") ? "2" + b : "3";
   function sortList(list, by, dir) {
     const key = {
       bank: (e) => BANK_ORDER(bankOf(e)),
@@ -47850,12 +48020,13 @@ body.popWin {
     return el(
       "div",
       {
-        class: "zbItem" + (act.cur === e.id ? " cur" : ""),
+        class: "zbItem" + (act.cur === e.id ? " cur" : "") + (act.sel && act.sel.has(e.id) ? " sel" : ""),
         role: "row",
         tabindex: -1,
+        "aria-selected": String(!!(act.sel && act.sel.has(e.id))),
         "data-id": e.id,
-        title: "Load into this clip · ↑ ↓ for the next · right-click for more",
-        onclick: () => act.load(e),
+        title: "Load into this clip · ↑ ↓ for the next · Ctrl- or Shift-click to pick several · right-click for more",
+        onclick: (x) => act.click ? act.click(e, x) : act.load(e),
         oncontextmenu: (x) => {
           x.preventDefault();
           x.stopPropagation();
@@ -47961,7 +48132,10 @@ body.popWin {
     sort: { by: "bank", dir: 1 },
     edit: null,
     grab: null,
-    cur: null
+    cur: null,
+    /* the sounds picked with Ctrl- or Shift-click, and where a Shift-click range starts */
+    sel: /* @__PURE__ */ new Set(),
+    anchor: null
   };
   var STARTS = null;
   function starters() {
@@ -48082,6 +48256,177 @@ body.popWin {
     toast(e ? "Saved " + e.name + " to My sounds" : "It is already in My sounds as " + name);
     if (got) Object.assign(B, { bank: "mine", group: "", cat: "", tag: "", q: "", cur: got.id });
   }
+  var editable = (e) => e.src !== "starter" && e.src !== "factory";
+  var picked = () => entries().filter((e) => B.sel.has(e.id));
+  var plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+  function click2(e, x) {
+    if (x.ctrlKey || x.metaKey) {
+      B.sel.has(e.id) ? B.sel.delete(e.id) : B.sel.add(e.id);
+      B.anchor = e.id;
+      return paintSel();
+    }
+    if (x.shiftKey) {
+      const l = shown2(), a = l.findIndex((y) => y.id === (B.anchor || B.cur)), b = l.findIndex((y) => y.id === e.id);
+      if (a < 0) B.sel.add(e.id);
+      else for (let i = Math.min(a, b); i <= Math.max(a, b); i++) B.sel.add(l[i].id);
+      return paintSel();
+    }
+    B.anchor = e.id;
+    if (B.sel.size) B.sel.clear(), paintSel();
+    load3(e);
+  }
+  function paintSel() {
+    const ov = $("#zbOv");
+    if (!ov) return;
+    ov.querySelectorAll(".zbItem").forEach((r) => {
+      const on2 = B.sel.has(r.dataset.id);
+      r.classList.toggle("sel", on2);
+      r.setAttribute("aria-selected", String(on2));
+    });
+    const bar2 = $(".zbSelBar", ov);
+    if (bar2) bar2.replaceWith(selBar());
+  }
+  var menuFrom = (x, items) => {
+    const r = x.currentTarget.getBoundingClientRect();
+    showMenu(r.left, r.bottom + 4, items);
+  };
+  async function changeOwn(list, fn, what) {
+    const own = list.filter(editable), left = list.length - own.length;
+    if (!own.length) return toast("Factory tones and starters cannot be changed. Copy them to a folder first.");
+    await soundsUpdate(
+      own.map((e) => e.id),
+      fn
+    );
+    toast(what + " " + plural(own.length, "sound") + (left ? ". " + left + " factory or starter left as they are" : ""));
+    render();
+  }
+  async function newFolder() {
+    const n = await askDlg({ title: "New folder", input: true, def: "", ok: "Make" });
+    return n ? folderAdd(n) : "";
+  }
+  function targets(fn) {
+    return [
+      { label: "My sounds", action: () => fn("") },
+      ...folderList().map((f) => ({ label: "📁 " + f, action: () => fn(f) })),
+      "-",
+      {
+        label: "New folder…",
+        action: async () => {
+          const f = await newFolder();
+          if (f) fn(f);
+        }
+      }
+    ];
+  }
+  var placeName = (f) => f ? f : "My sounds";
+  async function copyTo(list, folder) {
+    let n = 0;
+    for (const e of list)
+      if (await soundAdd(e.make ? e.make() : soundOf(e), {
+        name: e.name,
+        type: e.type,
+        tags: e.tags || [],
+        src: "mine",
+        folder,
+        mine: true
+      }))
+        n++;
+    toast(
+      n ? "Copied " + plural(n, "sound") + " to " + placeName(folder) : "Already in " + placeName(folder) + " under the same name"
+    );
+    render();
+  }
+  var moveTo = (list, folder) => changeOwn(
+    list,
+    (e) => {
+      e.src = "mine";
+      if (folder) e.folder = folder;
+      else delete e.folder;
+    },
+    "Moved to " + placeName(folder) + ":"
+  );
+  function tagItems(list) {
+    const have = [...new Set(list.flatMap((e) => e.tags || []))].sort();
+    const all = [.../* @__PURE__ */ new Set([...GENRE_TAGS, ...entries().flatMap((e) => e.tags || [])])];
+    const add = (t) => changeOwn(list, (e) => e.tags = [.../* @__PURE__ */ new Set([...e.tags || [], t])], "Tagged " + t + ":");
+    return [
+      {
+        label: "Add tag",
+        sub: [
+          ...all.map((t) => ({ label: t, action: () => add(t) })),
+          "-",
+          {
+            label: "New tag…",
+            action: async () => {
+              const t = await askDlg({ title: "New tag", input: true, def: "", ok: "Add" });
+              if (t && t.trim()) add(t.trim().slice(0, 20));
+            }
+          }
+        ]
+      },
+      have.length ? {
+        label: "Remove tag",
+        sub: have.map((t) => ({
+          label: t,
+          action: () => changeOwn(list, (e) => e.tags = (e.tags || []).filter((x) => x !== t), "Took " + t + " off")
+        }))
+      } : null
+    ];
+  }
+  var catItems = (list) => CAT_GROUPS.map(([g, cats]) => ({
+    label: g,
+    sub: cats.map((c) => ({
+      label: catLabel(c),
+      action: () => changeOwn(list, (e) => setCategoryOf(e, c), "Set " + catLabel(c) + " on")
+    }))
+  }));
+  async function deleteMany(list) {
+    const own = list.filter(editable);
+    if (!own.length) return toast("Factory tones and starters cannot be deleted");
+    if (!await askDlg({ title: "Delete " + plural(own.length, "sound") + "?", ok: "Delete" })) return;
+    for (const e of own) {
+      await soundDelete(e.id);
+      B.sel.delete(e.id);
+    }
+    render();
+  }
+  function selBar() {
+    const list = picked();
+    if (!list.length)
+      return el(
+        "div",
+        { class: "zbSelBar hint" },
+        "Ctrl-click or Shift-click sounds to pick several: tag them, set their category, or copy them to a folder."
+      );
+    const btn2 = (label2, title, onclick, cls) => el("button", { type: "button", class: "btn sm" + (cls || ""), title, onclick }, label2);
+    return el(
+      "div",
+      { class: "zbSelBar on", role: "toolbar", "aria-label": "Picked sounds" },
+      el("b", {}, list.length + " picked"),
+      btn2("Tag ▾", "Add a tag to the picked sounds, or take one off", (x) => menuFrom(x, tagItems(list))),
+      ZE.kind === "tone" ? btn2("Category ▾", "Set the ZenCore category of the picked sounds", (x) => menuFrom(x, catItems(list))) : null,
+      btn2(
+        "Copy to ▾",
+        "Copy them into My sounds or a folder",
+        (x) => menuFrom(
+          x,
+          targets((f) => copyTo(list, f))
+        )
+      ),
+      btn2(
+        "Move to ▾",
+        "Move your own sounds into My sounds or a folder",
+        (x) => menuFrom(
+          x,
+          targets((f) => moveTo(list, f))
+        )
+      ),
+      btn2("Delete", "Delete the picked sounds of your own", () => deleteMany(list), " zbDanger"),
+      el("span", { class: "zbGap" }),
+      btn2("Pick all shown", "Pick every sound in the list", () => (shown2().forEach((e) => B.sel.add(e.id)), paintSel())),
+      btn2("Clear", "Let go of the picked sounds", () => (B.sel.clear(), paintSel()))
+    );
+  }
   function rowMenu(e, x, y) {
     const r = ratingOf(e.id), mine = e.src !== "starter";
     showMenu(x, y, [
@@ -48115,6 +48460,9 @@ body.popWin {
         action: () => (B.cat = catOf(e), B.group = "", render())
       },
       { label: "Show its bank", action: () => (B.bank = bankOf(e), render()) },
+      "-",
+      { label: "Copy to", sub: targets((f) => copyTo([e], f)) },
+      editable(e) ? { label: "Move to", sub: targets((f) => moveTo([e], f)) } : null,
       mine && e.src !== "factory" ? {
         label: "Delete…",
         danger: true,
@@ -48205,7 +48553,26 @@ body.popWin {
         { label: "Export the library to a file…", action: () => hooks.saveFile("mc707-sounds.json", libraryJSON()) },
         { label: "Import a library file…", action: importLib }
       ]),
-      el("button", { type: "button", class: "btn sm on", onclick: browserClose }, "Done")
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          onclick: browserClose,
+          title: "Close the browser and edit this sound in the ZenCore editor"
+        },
+        "Edit in ZenCore"
+      ),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm on",
+          onclick: () => (browserClose(), zenClose()),
+          title: "Close the browser and the editor, back to the tracks"
+        },
+        "Done"
+      )
     );
   }
   function banksPane(all) {
@@ -48222,13 +48589,63 @@ body.popWin {
       el("i", {}, String(n(id)))
     );
     const banks = banksIn(all), fac = banks.filter((b) => b.startsWith("f:"));
+    const folder = (f) => {
+      const b = item("u:" + f, "📁 " + f, "zbSub zbFold", "Right-click to rename or remove");
+      b.oncontextmenu = (x) => {
+        x.preventDefault();
+        showMenu(x.clientX, x.clientY, [
+          {
+            label: "Rename…",
+            action: async () => {
+              const n2 = await askDlg({ title: "Rename " + f, input: true, def: f, ok: "Rename" });
+              if (n2 && n2.trim()) {
+                await folderRename(f, n2);
+                if (B.bank === "u:" + f) B.bank = "u:" + n2.trim().slice(0, 30);
+                render();
+              }
+            }
+          },
+          {
+            label: "Remove the folder…",
+            danger: true,
+            action: async () => {
+              if (!await askDlg({
+                title: "Remove " + f + "?",
+                text: "Its sounds go back to My sounds; none are deleted.",
+                ok: "Remove"
+              }))
+                return;
+              await folderDelete(f);
+              if (B.bank === "u:" + f) B.bank = "mine";
+              render();
+            }
+          }
+        ]);
+      };
+      return b;
+    };
     return el(
       "nav",
       { class: "zbBanks", "aria-label": "Banks" },
       el("h4", {}, "Bank"),
       item("all", "All"),
       item("fav", "★ Favourites", "", "Every sound you have rated"),
-      ...banks.filter((b) => !b.startsWith("f:") && b !== "starter").map((b) => item(b, bankName(b))),
+      item("mine", "My sounds", "", "Sounds you saved that are in no folder"),
+      ...folderList().map(folder),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "zbChip zbBk zbSub zbNewF",
+          title: "Make a folder for your own sounds",
+          onclick: async () => {
+            const f = await newFolder();
+            if (f) B.bank = "u:" + f, B.group = B.cat = "", render();
+          }
+        },
+        "+ New folder"
+      ),
+      ...banks.filter((b) => b === "mc707").map((b) => item(b, bankName(b))),
       ZE.kind === "tone" ? item("factory", "Factory", "zbGrp", fac.length ? "Every factory bank" : "Add them with Grab ▾ › Factory tones") : null,
       ...fac.map((b) => item(b, bankName(b), "zbSub")),
       banks.includes("starter") ? item("starter", "Starters") : null
@@ -48249,7 +48666,30 @@ body.popWin {
       for (const k2 of cats)
         if (c[k2]) out2.push(item(catLabel(k2), c[k2], B.cat === k2, () => (B.cat = k2, B.group = "", render())));
     }
-    return el("nav", { class: "zbCats", "aria-label": "Categories" }, el("h4", {}, "Category"), ...out2);
+    return el(
+      "nav",
+      { class: "zbCats", "aria-label": "Categories" },
+      el("h4", {}, "Category"),
+      ...out2,
+      ...tagsPart(inBank)
+    );
+  }
+  function tagsPart(inBank) {
+    const all = entries(), base = filterList(all, { ...B, tag: "", q: "" }), tags = [...new Set(all.flatMap((e) => e.tags || []))].sort((a, b) => a.localeCompare(b));
+    const n = (t) => base.filter((e) => (e.tags || []).includes(t)).length;
+    const item = (label2, count, on2, fn, title) => el(
+      "button",
+      { type: "button", class: "zbCt zbTagF" + (on2 ? " on" : ""), title, onclick: fn },
+      el("span", {}, label2),
+      el("i", {}, String(count))
+    );
+    return [
+      el("h4", { class: "zbTagH" }, "Tag"),
+      tags.length ? item("Any", base.length, !B.tag, () => (B.tag = "", render()), "Sounds with any tag or none") : el("p", { class: "hint zbNoTags" }, "No tags yet. Pick sounds and use Tag ▾, or ⋯ › Name, type and tags."),
+      ...tags.map(
+        (t) => item(t, n(t), B.tag === t, () => (B.tag = B.tag === t ? "" : t, render()), "Only sounds tagged " + t)
+      )
+    ];
   }
   function emptyText(all) {
     if (B.bank === "factory" && !all.some((e) => e.src === "factory"))
@@ -48272,7 +48712,7 @@ body.popWin {
       box.textContent = "";
       box.scrollTop = 0;
       if (!l.length) box.append(el("p", { class: "hint zbEmpty" }, emptyText(all)));
-      fillTable(box, l, { cur: B.cur, load: load3, play, menu: rowMenu, more, redraw: render }, editRow);
+      fillTable(box, l, { cur: B.cur, sel: B.sel, click: click2, load: load3, play, menu: rowMenu, more, redraw: render }, editRow);
     };
     const q = el("input", {
       id: "zbQ",
@@ -48286,7 +48726,6 @@ body.popWin {
         drawList();
       }
     });
-    const usedTags = [...new Set(all.flatMap((e) => e.tags || []))].sort();
     const inBank = filterList(all, { ...B, group: "", cat: "" });
     ov.append(
       el(
@@ -48312,13 +48751,7 @@ body.popWin {
           el(
             "div",
             { class: "zbMain" },
-            usedTags.length ? el(
-              "div",
-              { class: "zbFilt" },
-              ...usedTags.map(
-                (t) => chip(t, B.tag === t, () => (B.tag = B.tag === t ? "" : t, render()), "Only sounds tagged " + t)
-              )
-            ) : null,
+            selBar(),
             tableHead(B.sort, (by) => {
               B.sort = { by, dir: B.sort.by === by ? -B.sort.dir : 1 };
               render();
@@ -49480,7 +49913,7 @@ body.popWin {
       "-",
       { label: "Mute", checked: SY.mute[t], action: () => (setMute(t, !SY.mute[t]), act.render()) },
       { label: "Solo", checked: SY.solo[t], action: () => (setSolo(t, !SY.solo[t]), act.render()) },
-      { label: "Reset level, pan and reverb", action: () => (resetMix(t), act.render()) },
+      { label: "Reset level and pan", action: () => (resetMix(t), act.render()) },
       { label: "Play it from the keyboard (Notes in)", checked: SY.kbd === t, action: () => (kbdSet(t), act.render()) },
       "-",
       {
@@ -49619,8 +50052,8 @@ body.popWin {
         "div",
         { class: "syMix" },
         fader("Level", SY.level[t], (v) => setLevel(t, v), "Track level (MIDI volume, CC 7)", t),
-        fader("Pan", SY.pan[t], (v) => setPan(t, v), "Pan (CC 10)", t, true),
-        fader("Reverb", SY.rev[t], (v) => setRev(t, v), "Reverb send (CC 91)", t)
+        /* no reverb send here: the MC-707's main effects only reach its MIX output, not a track's own */
+        fader("Pan", SY.pan[t], (v) => setPan(t, v), "Pan (CC 10)", t, true)
       )
     );
   }
