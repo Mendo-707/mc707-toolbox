@@ -187,15 +187,18 @@ export async function soundsLoad() {
 }
 /**
  * Add a sound. Returns the entry, or null when the same sound is already in the library (dup) or it
- * could not be stored.
+ * could not be stored. With mine (a save asked for), only the same sound under the same name in My
+ * sounds counts as already there.
  * @param {object} snd
- * @param {{name?:string,type?:string,tags?:string[],src?:string,at?:number}} meta
+ * @param {{name?:string,type?:string,tags?:string[],src?:string,at?:number,mine?:boolean}} meta
  */
 export async function soundAdd(snd, meta = {}) {
   const d = diffOf(snd),
     h = hashOf(snd.kind, d);
-  if (ZS.list.some(e => e.h === h)) return null;
   const name = (meta.name || snd.v['CMN.NAME'] || snd.v['KCMN.NAME'] || 'Untitled').trim();
+  /* a sound already in the library is skipped (grabbing, importing); a save you ask for (meta.mine)
+     only skips one already in My sounds under the same name */
+  if (ZS.list.some(e => e.h === h && (!meta.mine || (e.src === 'mine' && e.name === name)))) return null;
   const e = {
     id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     at: meta.at || Date.now(),

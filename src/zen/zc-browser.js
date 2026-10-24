@@ -181,6 +181,13 @@ function form(e, done) {
   );
 }
 
+/* after a save: My sounds, with the sound picked, so it is there to see (or the same one, already saved) */
+function showSaved(e, name) {
+  const got = e || ZS.list.find(x => x.src === 'mine' && x.name === name);
+  toast(e ? 'Saved ' + e.name + ' to My sounds' : 'It is already in My sounds as ' + name);
+  if (got) Object.assign(B, { bank: 'mine', group: '', cat: '', tag: '', q: '', cur: got.id });
+}
+
 /* a sound's right-click menu */
 function rowMenu(e, x, y) {
   const r = ratingOf(e.id),
@@ -201,8 +208,14 @@ function rowMenu(e, x, y) {
       ? {
           label: 'Save a copy to my sounds',
           action: async () => {
-            const n = await soundAdd(e.make ? e.make() : soundOf(e), { name: e.name, type: e.type, src: 'mine' });
-            toast(n ? 'Saved ' + e.name : 'That sound is already in the library');
+            const n = await soundAdd(e.make ? e.make() : soundOf(e), {
+              name: e.name,
+              type: e.type,
+              tags: e.tags || [],
+              src: 'mine',
+              mine: true
+            });
+            showSaved(n, e.name);
             render();
           }
         }
@@ -424,9 +437,7 @@ function render() {
             async v => {
               B.edit = null;
               if (v) {
-                const e = await soundAdd(ZE.snd, { ...v, src: 'mine' });
-                toast(e ? 'Saved ' + e.name : 'That sound is already in the library');
-                if (e) B.cur = e.id;
+                showSaved(await soundAdd(ZE.snd, { ...v, src: 'mine', mine: true }), v.name);
               }
               render();
             }

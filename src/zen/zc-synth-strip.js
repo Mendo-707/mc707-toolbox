@@ -120,8 +120,8 @@ function stripMenu(t, act, x, y) {
       action: () =>
         withSound('Reading the sound…', async snd => {
           await soundsLoad();
-          const e = await soundAdd(snd, { src: 'mine' });
-          toast(e ? 'Saved ' + e.name + ' to the Sound library' : 'That sound is already in the library');
+          const e = await soundAdd(snd, { src: 'mine', mine: true });
+          toast(e ? 'Saved ' + e.name + ' to My sounds' : 'It is already in My sounds');
         })
     },
     others.length
