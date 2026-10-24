@@ -6286,6 +6286,126 @@ body.popWin {
   border-color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
   color: var(--ink, #1d1d1b);
 }
+
+/* ---- polish: the window filled, names in full, values in chips ---- */
+html:has(> body.popWin),
+body.popWin,
+body.popWin > .popRoot {
+  height: 100%;
+}
+body.popWin .mxWrap {
+  height: 100%;
+  min-height: 0;
+}
+.mxStrips {
+  grid-auto-rows: minmax(300px, 1fr);
+  min-height: 0;
+}
+.mxStrip {
+  min-height: 0;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.mxStrip:hover {
+  border-color: color-mix(in srgb, var(--tc) 55%, var(--line, #d6d1c4));
+}
+/* number, what it is and the light on the first line; the name in full under them */
+.mxHead {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'num . light'
+    'name name name'
+    'sub sub sub';
+}
+.mxNum {
+  grid-area: num;
+  justify-self: start;
+}
+.mxSub {
+  grid-area: sub;
+  grid-column: auto;
+  font-size: 10.5px;
+}
+.mxLight {
+  grid-area: light;
+}
+.mxName {
+  grid-area: name;
+  font-size: 14px;
+  margin-top: 1px;
+}
+/* the fader takes the height there is */
+.mxFaderBox {
+  min-height: 120px;
+  align-items: stretch;
+}
+.mxFader {
+  min-height: 0;
+  height: 100%;
+}
+.mxVal {
+  align-self: center;
+  min-width: 42px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--raise, #e2ddd0);
+  font-weight: 700;
+}
+.mxStrip.muted .mxVal {
+  color: var(--mute, #6b6759);
+}
+
+/* ---- the Windows app's borderless window: drag it by the header ---- */
+body.popFrameless .mxWrap {
+  border-top: 2px solid var(--acc, var(--hot, #e0603f));
+}
+body.popFrameless .mxTop {
+  -webkit-app-region: drag;
+  user-select: none;
+  margin: -12px -12px 0;
+  padding: 10px 8px 6px 12px;
+}
+body.popFrameless .mxTop button,
+body.popFrameless .mxTop select,
+body.popFrameless .mxTop input {
+  -webkit-app-region: no-drag;
+}
+.popWbs {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+  -webkit-app-region: no-drag;
+}
+.popWb {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--mute, #6b6759);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.popWb:hover {
+  background: var(--raise, #e2ddd0);
+  color: var(--ink, #1d1d1b);
+}
+.popWb.x:hover {
+  background: #e0503a;
+  color: #fff;
+}
+.popWb.pin {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.popWb.pin.on {
+  opacity: 1;
+  filter: none;
+  background: var(--raise, #e2ddd0);
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -7157,6 +7277,7 @@ body.popWin {
 
   // src/services/popout.js
   var OPEN = /* @__PURE__ */ new Map();
+  var APP = window.toolbox && window.toolbox.popWin ? window.toolbox : null;
   var placeOf = (id) => {
     try {
       return JSON.parse(localStorage.getItem("mc707-popout-" + id) || "null");
@@ -7211,14 +7332,25 @@ body.popWin {
     doc.close();
     doc.title = o.title + " · MC-707 Toolbox";
     copyStyles(doc);
-    doc.body.className = "popWin";
+    doc.body.className = "popWin" + (APP ? " popFrameless" : "");
+    h.name = "mc707-" + o.id;
+    h.frameless = !!APP;
+    h.top = !!(APP && p.top);
+    if (h.top) APP.popWin(h.name, "top", true);
     const root = el("div", { class: "popRoot" });
     doc.body.append(root);
     forwardKeys(win);
     const save3 = () => {
       try {
         if (!win.closed)
-          keepPlace(o.id, { x: win.screenX, y: win.screenY, w: win.innerWidth, h: win.innerHeight, win: 1 });
+          keepPlace(o.id, {
+            x: win.screenX,
+            y: win.screenY,
+            w: win.innerWidth,
+            h: win.innerHeight,
+            win: 1,
+            ...h.top ? { top: 1 } : {}
+          });
       } catch (e) {
       }
     };
@@ -7297,6 +7429,21 @@ body.popWin {
       return old;
     }
     const h = { id: o.id, build: o.build, open: true };
+    h.winBtns = () => {
+      if (!h.frameless) return null;
+      const b = (label2, title, cls, fn) => el("button", { type: "button", class: "popWb " + cls, title, "aria-label": title, onclick: fn }, label2);
+      const pin = b("📌", "Keep this window on top of the others", "pin" + (h.top ? " on" : ""), async () => {
+        h.top = await APP.popWin(h.name, "top", !h.top);
+        pin.classList.toggle("on", h.top);
+      });
+      return el(
+        "div",
+        { class: "popWbs" },
+        pin,
+        b("—", "Minimise", "min", () => APP.popWin(h.name, "min")),
+        b("✕", "Close", "x", () => h.close())
+      );
+    };
     h.refresh = () => {
       if (!h.open) return;
       h.root.textContent = "";
@@ -24554,7 +24701,7 @@ body.popWin {
         num: devNum(t),
         name: tr.name,
         color: TRACK_COLORS[t],
-        sub: (tr.type === "drum" ? "Drums" : "Tone") + " · ch " + tr.ch,
+        sub: (tr.type === "drum" ? "Kit" : "Tone") + " · ch " + tr.ch,
         lvl: valOf(t, "lvl"),
         pan: valOf(t, "pan"),
         rev: valOf(t, "rev"),
@@ -24646,7 +24793,8 @@ body.popWin {
               { type: "button", class: "btn sm", onclick: () => change(() => DEVS[DEV].tracks.forEach(resetTrack)) },
               "Reset all"
             )
-          )
+          ),
+          h.winBtns()
         ),
         el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]))
       )
@@ -34445,7 +34593,7 @@ body.popWin {
         num: devNum(t),
         name: tr.name,
         color: TRACK_COLORS[t],
-        sub: (tr.type === "drum" ? "Drums" : "Tone") + " · ch " + tr.ch,
+        sub: (tr.type === "drum" ? "Kit" : "Tone") + " · ch " + tr.ch,
         lvl: lvMixNow(t, "lvl"),
         pan: lvMixNow(t, "pan"),
         rev: lvMixNow(t, "rev"),
@@ -34544,7 +34692,8 @@ body.popWin {
               },
               "Reset all"
             )
-          )
+          ),
+          h.winBtns()
         ),
         el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]))
       )
@@ -50486,6 +50635,13 @@ body.popWin {
             "Synth Mode",
             "The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.",
             () => setMode("synth")
+          ),
+          card(
+            "◈",
+            "ZenCore editor",
+            "Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.",
+            /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
+            () => zenOpen(DEVS[DEV].tracks.find((t) => S.tracks[t].type !== "drum") ?? DEVS[DEV].tracks[0], 0)
           )
         ),
         el(
@@ -51217,7 +51373,7 @@ body.popWin {
   }
 
   // src/core/version.js
-  var VERSION = "1.3.9";
+  var VERSION = "1.4.0";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",

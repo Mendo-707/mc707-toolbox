@@ -81,7 +81,7 @@ function stripFor(t) {
       num: devNum(t),
       name: tr.name,
       color: TRACK_COLORS[t],
-      sub: (tr.type === 'drum' ? 'Drums' : 'Tone') + ' · ch ' + tr.ch,
+      sub: (tr.type === 'drum' ? 'Kit' : 'Tone') + ' · ch ' + tr.ch,
       lvl: valOf(t, 'lvl'),
       pan: valOf(t, 'pan'),
       rev: valOf(t, 'rev'),
@@ -178,7 +178,8 @@ function build(root, h) {
             { type: 'button', class: 'btn sm', onclick: () => change(() => DEVS[DEV].tracks.forEach(resetTrack)) },
             'Reset all'
           )
-        )
+        ),
+        h.winBtns()
       ),
       el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]))
     )

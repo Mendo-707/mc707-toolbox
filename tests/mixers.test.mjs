@@ -106,3 +106,33 @@ test('Live mixer: its own mix, sent at Start, mutes on the beat', async () => {
   await page.evaluate(() => document.querySelector('#lvStart').click());
   assert.deepEqual(errors, []);
 });
+
+test('Mixers in the Windows app: borderless, dragged by the header, with pin, minimise and close', async () => {
+  const { page, errors } = await openApp();
+  /* stand in for the Windows app's window controls (preload.js) */
+  await page.addInitScript(() => {
+    window.__pop = [];
+    window.toolbox = { popWin: async (name, act, on) => (window.__pop.push([name, act, on]), !!on) };
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__app);
+  const [win] = await Promise.all([page.waitForEvent('popup'), page.click('#bMixer')]);
+  await win.waitForSelector('.mxStrip');
+  assert.equal(await win.evaluate(() => document.body.classList.contains('popFrameless')), true);
+  assert.equal(
+    await win.evaluate(() => getComputedStyle(document.querySelector('.mxTop')).getPropertyValue('-webkit-app-region')),
+    'drag',
+    'the header drags the window'
+  );
+  await win.locator('.popWb.pin').click();
+  await win.waitForSelector('.popWb.pin.on');
+  await win.locator('.popWb.min').click();
+  assert.deepEqual(await page.evaluate('window.__pop'), [
+    ['mc707-song-mixer', 'top', true],
+    ['mc707-song-mixer', 'min', undefined]
+  ]);
+  await win.locator('.popWb.x').click();
+  await win.waitForEvent('close', { timeout: 3000 }).catch(() => {});
+  assert.equal(win.isClosed(), true, 'closed');
+  assert.deepEqual(errors, []);
+});

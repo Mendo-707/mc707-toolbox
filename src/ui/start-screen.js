@@ -1,6 +1,6 @@
 // The start screen: when the app opens (in Song Mode) it offers to load the last session, start
-// a blank song or an empty template with its sections marked, open the song wizard, or go to Live
-// Mode. A tick box turns it off.
+// a blank song or an empty template with its sections marked, open the song wizard, go to Live or
+// Synth Mode, or open the ZenCore editor. A tick box turns it off.
 //
 // Reads: S, PROJ.
 // Owns: localStorage 'mc707-start' ('0' = do not show at start).
@@ -9,6 +9,8 @@ import { PROJ, S, UI, pushUndo, replaceState, newState } from '../core/state.js'
 import { afterReplaceKeepUndo } from './controls.js';
 import { openWiz } from '../song/wizard-ui.js';
 import { setMode } from './mode.js';
+import { DEVS, DEV } from '../core/device.js';
+import { zenOpen } from '../zen/zc-editor.js';
 
 const KEY = 'mc707-start';
 /** True unless the start screen was turned off. */
@@ -103,6 +105,13 @@ export function startOpen(last = true) {
           'Synth Mode',
           'The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.',
           () => setMode('synth')
+        ),
+        card(
+          '◈',
+          'ZenCore editor',
+          'Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.',
+          /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
+          () => zenOpen(DEVS[DEV].tracks.find(t => S.tracks[t].type !== 'drum') ?? DEVS[DEV].tracks[0], 0)
         )
       ),
       el(

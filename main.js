@@ -42,6 +42,10 @@ function createWindow() {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
+          // borderless: the window's own header is where you drag it (and has pin, minimise, close)
+          frame: false,
+          minWidth: 380,
+          minHeight: 280,
           autoHideMenuBar: true,
           backgroundColor: '#050906',
           icon: path.join(__dirname, 'icon.png'),
@@ -52,7 +56,12 @@ function createWindow() {
     return { action: 'deny' };
   });
   // a tool window never navigates away either, and closes with the app
-  win.webContents.on('did-create-window', (child) => {
+  win.webContents.on('did-create-window', (child, details) => {
+    const name = (details && details.frameName) || '';
+    if (name) {
+      tools.set(name, child);
+      child.on('closed', () => tools.get(name) === child && tools.delete(name));
+    }
     child.setMenu(null);
     child.webContents.on('will-navigate', (e) => e.preventDefault());
     child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -67,6 +76,17 @@ function createWindow() {
     setTimeout(() => { closing = true; if (win) win.close(); }, 900);
   });
 }
+
+// the tool windows by name (mc707-song-mixer…), for their own pin, minimise and close buttons
+const tools = new Map();
+ipcMain.handle('pop-win', (_e, name, act, on) => {
+  const w = tools.get(name);
+  if (!w || w.isDestroyed()) return false;
+  if (act === 'min') w.minimize();
+  else if (act === 'close') w.close();
+  else if (act === 'top') w.setAlwaysOnTop(!!on, 'floating');
+  return w.isAlwaysOnTop();
+});
 
 let blocker = null;
 ipcMain.on('keep-awake', (_e, on) => {

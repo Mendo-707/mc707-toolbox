@@ -293,3 +293,123 @@ body.popWin {
   border-color: var(--acc, var(--hot, var(--ink, #1d1d1b)));
   color: var(--ink, #1d1d1b);
 }
+
+/* ---- polish: the window filled, names in full, values in chips ---- */
+html:has(> body.popWin),
+body.popWin,
+body.popWin > .popRoot {
+  height: 100%;
+}
+body.popWin .mxWrap {
+  height: 100%;
+  min-height: 0;
+}
+.mxStrips {
+  grid-auto-rows: minmax(300px, 1fr);
+  min-height: 0;
+}
+.mxStrip {
+  min-height: 0;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.mxStrip:hover {
+  border-color: color-mix(in srgb, var(--tc) 55%, var(--line, #d6d1c4));
+}
+/* number, what it is and the light on the first line; the name in full under them */
+.mxHead {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'num . light'
+    'name name name'
+    'sub sub sub';
+}
+.mxNum {
+  grid-area: num;
+  justify-self: start;
+}
+.mxSub {
+  grid-area: sub;
+  grid-column: auto;
+  font-size: 10.5px;
+}
+.mxLight {
+  grid-area: light;
+}
+.mxName {
+  grid-area: name;
+  font-size: 14px;
+  margin-top: 1px;
+}
+/* the fader takes the height there is */
+.mxFaderBox {
+  min-height: 120px;
+  align-items: stretch;
+}
+.mxFader {
+  min-height: 0;
+  height: 100%;
+}
+.mxVal {
+  align-self: center;
+  min-width: 42px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--raise, #e2ddd0);
+  font-weight: 700;
+}
+.mxStrip.muted .mxVal {
+  color: var(--mute, #6b6759);
+}
+
+/* ---- the Windows app's borderless window: drag it by the header ---- */
+body.popFrameless .mxWrap {
+  border-top: 2px solid var(--acc, var(--hot, #e0603f));
+}
+body.popFrameless .mxTop {
+  -webkit-app-region: drag;
+  user-select: none;
+  margin: -12px -12px 0;
+  padding: 10px 8px 6px 12px;
+}
+body.popFrameless .mxTop button,
+body.popFrameless .mxTop select,
+body.popFrameless .mxTop input {
+  -webkit-app-region: no-drag;
+}
+.popWbs {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+  -webkit-app-region: no-drag;
+}
+.popWb {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--mute, #6b6759);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.popWb:hover {
+  background: var(--raise, #e2ddd0);
+  color: var(--ink, #1d1d1b);
+}
+.popWb.x:hover {
+  background: #e0503a;
+  color: #fff;
+}
+.popWb.pin {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.popWb.pin.on {
+  opacity: 1;
+  filter: none;
+  background: var(--raise, #e2ddd0);
+}

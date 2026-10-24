@@ -3,12 +3,15 @@
 // panel over the app that you drag by its title bar. The window keeps its place and size for next time.
 // The caller draws into the window's root with the usual helpers (nodes move into the window's page as
 // they are added, their handlers still run here). Keys pressed in the window reach the app, so Space
-// still starts and stops.
+// still starts and stops. In the Windows app the window is borderless: the tool's own header is where you
+// drag it, with pin (stay on top), minimise and close buttons (h.winBtns()).
 //
-// Owns: localStorage 'mc707-popout-<id>' (where each window was).
+// Owns: localStorage 'mc707-popout-<id>' (where each window was, and whether it stays on top).
 import { el } from '../core/dom.js';
 
 const OPEN = new Map();
+/* the Windows app's tool-window controls (main.js makes those windows borderless) */
+const APP = window.toolbox && window.toolbox.popWin ? window.toolbox : null;
 const placeOf = id => {
   try {
     return JSON.parse(localStorage.getItem('mc707-popout-' + id) || 'null');
@@ -68,14 +71,25 @@ function openWindow(o, h) {
   doc.close();
   doc.title = o.title + ' · MC-707 Toolbox';
   copyStyles(doc);
-  doc.body.className = 'popWin';
+  doc.body.className = 'popWin' + (APP ? ' popFrameless' : '');
+  h.name = 'mc707-' + o.id;
+  h.frameless = !!APP;
+  h.top = !!(APP && p.top);
+  if (h.top) APP.popWin(h.name, 'top', true);
   const root = el('div', { class: 'popRoot' });
   doc.body.append(root);
   forwardKeys(win);
   const save = () => {
     try {
       if (!win.closed)
-        keepPlace(o.id, { x: win.screenX, y: win.screenY, w: win.innerWidth, h: win.innerHeight, win: 1 });
+        keepPlace(o.id, {
+          x: win.screenX,
+          y: win.screenY,
+          w: win.innerWidth,
+          h: win.innerHeight,
+          win: 1,
+          ...(h.top ? { top: 1 } : {})
+        });
     } catch (e) {}
   };
   const watch = setInterval(() => {
@@ -164,6 +178,23 @@ export function popout(o) {
     return old;
   }
   const h = { id: o.id, build: o.build, open: true };
+  /* a borderless window's own buttons (null anywhere else): stay on top, minimise, close */
+  h.winBtns = () => {
+    if (!h.frameless) return null;
+    const b = (label, title, cls, fn) =>
+      el('button', { type: 'button', class: 'popWb ' + cls, title, 'aria-label': title, onclick: fn }, label);
+    const pin = b('📌', 'Keep this window on top of the others', 'pin' + (h.top ? ' on' : ''), async () => {
+      h.top = await APP.popWin(h.name, 'top', !h.top);
+      pin.classList.toggle('on', h.top);
+    });
+    return el(
+      'div',
+      { class: 'popWbs' },
+      pin,
+      b('—', 'Minimise', 'min', () => APP.popWin(h.name, 'min')),
+      b('✕', 'Close', 'x', () => h.close())
+    );
+  };
   h.refresh = () => {
     if (!h.open) return;
     h.root.textContent = '';
