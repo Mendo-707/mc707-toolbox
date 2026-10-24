@@ -650,11 +650,7 @@ export function liveInit() {
         'div',
         { class: 'lvBtns' },
         el('span', { class: 'hint' }, 'Speed'),
-        ...[
-          [0.5, '½×'],
-          [1, '1×'],
-          [2, '2×']
-        ].map(([r, l]) =>
+        ...[[1, '1×']].map(([r, l]) =>
           el(
             'button',
             { class: 'btn lvrate', id: 'lvRate' + String(r).replace('.', '_'), onclick: () => liveRate(r) },

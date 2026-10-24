@@ -35016,11 +35016,7 @@ body.popWin {
           "div",
           { class: "lvBtns" },
           el("span", { class: "hint" }, "Speed"),
-          ...[
-            [0.5, "½×"],
-            [1, "1×"],
-            [2, "2×"]
-          ].map(
+          ...[[1, "1×"]].map(
             ([r, l]) => el(
               "button",
               { class: "btn lvrate", id: "lvRate" + String(r).replace(".", "_"), onclick: () => liveRate(r) },
@@ -47244,7 +47240,7 @@ body.popWin {
       1432,
       1,
       0,
-      "UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b RND_PIT_VAL:5b RND_PIT_NUM:6b CONDITION:7b"
+      "UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b RND_PIT_VAL:5b RND_PIT_NUM:7b CONDITION:8b"
     ],
     [
       "SPMT",
@@ -51812,9 +51808,7 @@ body.popWin {
     ["#lvEnergy", "Energy: how many parts play. Fewer for a breakdown, all 8 for full power. Changes on the next bar."],
     ["#lvVary", "Variation: how often the set changes by itself. 0 holds every scene; past High is Extreme."],
     ["button", "Sweep the FILTER knob down over the next bars", "Riser ↓"],
-    ["#lvRate0_5", "Play at half speed"],
     ["#lvRate1", "Play at normal speed"],
-    ["#lvRate2", "Play at double speed"],
     ["#lvKT", "Which tracks the four knobs and the XY pad move"],
     ["#lvReps", "How many times Auto-pilot plays each scene before moving on"],
     ["#lvQ", "When a scene pad you press comes in: at the end of the phrase, or after 1 to 8 bars"],
