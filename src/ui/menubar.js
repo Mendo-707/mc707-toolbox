@@ -23,6 +23,7 @@ import { showMenu } from './menu.js';
 import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
+import { songToClipsOpen } from '../zen/zc-seq.js';
 import {
   exitApp,
   projChooseFolder,
@@ -116,6 +117,7 @@ function initMenubar() {
         ['Loop the selected clip', go('#bLoopClip'), '\\'],
         ['Tap tempo', go('#bTap')],
         ['Mixer…', () => songMixerOpen()],
+        ['Send patterns to MC-707 clips…', () => songToClipsOpen()],
         0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]

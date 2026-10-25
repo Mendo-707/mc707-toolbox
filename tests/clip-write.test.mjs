@@ -154,3 +154,73 @@ test('Clip write: the editor’s → MC-707 clip button asks where, then writes'
   await toastHas(page, 'clip 5, read back and checked');
   assert.deepEqual(errors, []);
 });
+
+test('Clip write: Replace writes over a clip with notes, all 128 steps, and names the clip', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  await seed(page, 5, 2, 16, [{ step: 2, note: 62 }]);
+  /* a name field of 12 characters (the reply says how long it is) */
+  await page.evaluate(() => {
+    const a = window.__app.seq.clipAddr(5, 2);
+    for (let i = 12; i < 16; i++) window.__zcMem.delete(a + i);
+  });
+  const p = { name: 'Deep riff number one', type: 'tone', bars: 1, notes: [{ s: 0, l: 1, n: 60, v: 100 }] };
+  await page.evaluate(([p]) => window.__app.seq.write(p, 5, 2, { replace: true, name: true }), [p]);
+  await toastHas(page, 'Replaced the notes in track 6 clip 3 with 1 notes, read back and checked');
+  const [s2, s127, nm] = await page.evaluate(() => [
+    window.__app.seq.stepAddr(5, 2, 2),
+    window.__app.seq.stepAddr(5, 2, 127),
+    window.__app.seq.clipAddr(5, 2)
+  ]);
+  assert.deepEqual([await byte(page, s2 + 0x10), await byte(page, s2 + 0x11)], [15, 15], 'the old note is gone');
+  assert.equal(await byte(page, s127 + 0x10), 15, 'the last of the 128 steps is cleared too');
+  const name = await page.evaluate(
+    ([a]) => String.fromCharCode(...Array.from({ length: 12 }, (_, i) => window.__zcMem.get(a + i))),
+    [nm]
+  );
+  assert.equal(name, 'Deep riff nu', 'as many characters as the field holds');
+  assert.equal(await byte(page, nm + 12), undefined, 'nothing written past the name field');
+  assert.deepEqual(errors, []);
+});
+
+test('Clip write: Song › Send patterns to MC-707 clips puts each track’s patterns in its clips', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  await page.evaluate(() => {
+    const S = window.__app.S;
+    S.clips = [];
+    S.patterns.pA = { id: 'pA', name: 'Riff A', type: 'tone', bars: 1, notes: [{ s: 0, l: 1, n: 60, v: 100 }] };
+    S.patterns.pB = { id: 'pB', name: 'Riff B', type: 'tone', bars: 1, notes: [{ s: 2, l: 1, n: 64, v: 90 }] };
+    const c = (id, start, pat, tr) => ({ id, t: 3, start, len: 1, off: 0, pat, ...(tr ? { tr } : {}) });
+    S.clips.push(c('c1', 0, 'pA'), c('c2', 1, 'pB'), c('c3', 2, 'pA'), c('c4', 3, 'pA', 12));
+  });
+  for (const k of [2, 3, 4]) await seed(page, 3, k, 16);
+  await page.locator('#menubar .mb', { hasText: 'Song' }).first().click();
+  await page.locator('.mdrop:not([hidden]) button', { hasText: 'Send patterns to MC-707 clips' }).click();
+  await page.waitForSelector('#scOv');
+  await page.locator('#scOv select[aria-label="First clip for track 4"]').selectOption('2');
+  assert.match(
+    await page.locator('#scOv .scRow').first().textContent(),
+    /clip 3: Riff A · clip 4: Riff B · clip 5: Riff A \+12/
+  );
+  await page.locator('#scOv button', { hasText: 'Send' }).click();
+  const dlg = page.locator('[role=dialog][aria-modal]', { hasText: 'Sent 3 patterns to MC-707 clips' });
+  await dlg.waitFor({ timeout: 60000 });
+  const note = k =>
+    page.evaluate(
+      ([k]) => {
+        const a = window.__app.seq.stepAddr(3, k, 0);
+        return window.__zcMem.get(a + 0x10) * 16 + window.__zcMem.get(a + 0x11);
+      },
+      [k]
+    );
+  assert.equal(await note(2), 60, 'Riff A in clip 3');
+  assert.equal(await note(4), 72, 'Riff A +12 in clip 5');
+  const b = await page.evaluate(() => {
+    const a = window.__app.seq.stepAddr(3, 3, 2);
+    return window.__zcMem.get(a + 0x10) * 16 + window.__zcMem.get(a + 0x11);
+  });
+  assert.equal(b, 64, 'Riff B in clip 4, on its third step');
+  await dlg.locator('button', { hasText: 'OK' }).click();
+  assert.deepEqual(errors, []);
+});

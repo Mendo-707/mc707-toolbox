@@ -702,3 +702,34 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* sending patterns to MC-707 clips (zen/zc-seq.js): the options and one row per track */
+.cwOpt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.scRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 46vh;
+  overflow: auto;
+  margin: 12px 0;
+}
+.scRow {
+  display: grid;
+  grid-template-columns: 190px 130px 1fr;
+  align-items: center;
+  gap: 4px 10px;
+}
+.scRow .hint {
+  font-size: 13px;
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .scRow {
+    grid-template-columns: 1fr;
+  }
+}

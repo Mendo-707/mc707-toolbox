@@ -148,6 +148,7 @@ import {
   clipPacked,
   clipWriteAsk,
   clipWriteNow,
+  songToClipsOpen,
   stepAddr,
   paramAddr,
   clipAddr
@@ -244,7 +245,15 @@ PROJ.t = projTitle;
         return ZE;
       }
     },
-    seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine, write: clipWriteNow },
+    seq: {
+      clipPacked,
+      stepAddr,
+      paramAddr,
+      clipAddr,
+      read: clipNotesToMine,
+      write: clipWriteNow,
+      song: songToClipsOpen
+    },
     get S() {
       return S;
     },

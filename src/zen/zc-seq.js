@@ -211,7 +211,14 @@ export async function readClip(t, k, onStep) {
     steps.push(decodeStep(f));
     if (onStep) onStep(s + 1, params.steps);
   }
-  return { ok: true, params, notes: joinNotes(steps), name: name || 'Track ' + devNum(t) + ' clip ' + (k + 1) };
+  return {
+    ok: true,
+    params,
+    notes: joinNotes(steps),
+    name: name || 'Track ' + devNum(t) + ' clip ' + (k + 1),
+    /* how many name bytes the MC-707 sent: the name field's length, for writing a name */
+    nameLen: nm ? nm.length : 0
+  };
 }
 
 let busy = false;
@@ -350,36 +357,50 @@ const sig = notes =>
     .map(x => [x.step, x.note, x.start, x.len, x.vel].join(','))
     .sort()
     .join(' ');
+/** The clip name bytes for a pattern name: printable ASCII, padded with spaces to the field's length. */
+export const nameBytes = (s, n) =>
+  Array.from({ length: n }, (_, i) => {
+    const c = String(s || '').charCodeAt(i);
+    return c >= 32 && c < 127 ? c : 32;
+  });
 /**
- * Write pattern p into clip k of app track t, only if the clip has no notes, then read it back.
- * @returns {Promise<{ok:boolean, why?:string, notes?:number, skipped?:number, checked?:boolean}>}
+ * Write pattern p into clip k of app track t, then read it back. A clip that holds notes is left alone
+ * unless o.replace; replacing writes all 128 steps, so nothing of the old notes stays past the end.
+ * With o.name, the clip is named after the pattern (as many characters as its name field holds).
+ * @param {{replace?:boolean, name?:boolean, onStep?:(done:number, of:number)=>void}} [o]
+ * @returns {Promise<{ok:boolean, why?:string, notes?:number, skipped?:number, checked?:boolean, replaced?:boolean}>}
  */
-export async function writeClip(t, k, p, onStep) {
+export async function writeClip(t, k, p, o = {}) {
+  const onStep = o.onStep;
   const type = S.tracks[t].type === 'drum' ? 'drum' : 'tone';
   if (p.type !== type) return { ok: false, why: 'That is a ' + p.type + ' pattern and this is a ' + type + ' track' };
   const enc = encodePattern(p, type);
   if (enc.error) return { ok: false, why: enc.error };
   const before = await readClip(t, k);
   if (!before.ok) return before;
-  if (before.notes.length)
+  if (before.notes.length && !o.replace)
     return {
       ok: false,
-      why: 'Clip ' + (k + 1) + ' already has notes. Clear it on the MC-707 first (writing over notes comes later)'
+      why: 'Clip ' + (k + 1) + ' already has notes. Tick Replace the notes to write over them'
     };
+  const replaced = before.notes.length > 0;
   zxWrite(paramAddr(t, k), [1, (enc.steps >> 4) & 15, enc.steps & 15]);
-  for (let s = 0; s < enc.steps; s++) {
+  if (o.name && before.nameLen) zxWrite(clipAddr(t, k), nameBytes(p.name, before.nameLen));
+  /* every step a replaced clip may have used, so none of its notes stays behind */
+  const count = o.replace ? MAX_STEPS : enc.steps;
+  for (let s = 0; s < count; s++) {
     const a = stepAddr(t, k, s);
-    for (const [off, data] of stepWrites(enc.slots[s])) zxWrite(a + off, data);
+    for (const [off, data] of stepWrites(enc.slots[s] || [])) zxWrite(a + off, data);
     if (onStep && s % 8 === 7) {
       await zxFlush();
-      onStep(s + 1, enc.steps);
+      onStep(s + 1, count);
     }
   }
   await zxFlush();
   const want = joinNotes(enc.slots);
   const after = await readClip(t, k);
   const checked = after.ok && after.params.steps === enc.steps && sig(after.notes) === sig(want);
-  return { ok: true, notes: want.length, skipped: enc.skipped, checked };
+  return { ok: true, notes: want.length, skipped: enc.skipped, checked, replaced };
 }
 
 /* the picker: which track (of the pattern's type) and which clip */
@@ -399,6 +420,10 @@ export function clipWriteAsk(p, t) {
     { 'aria-label': 'Clip' },
     ...Array.from({ length: 16 }, (_, k) => el('option', { value: k }, 'Clip ' + (k + 1)))
   );
+  const box = (label, on, title) =>
+    el('label', { class: 'cwOpt', title }, el('input', { type: 'checkbox', checked: on }), ' ' + label);
+  const repl = box('Replace the notes if the clip has some', false, 'Otherwise a clip that holds notes is left alone'),
+    named = box('Name the clip after the pattern', true, 'The clip’s name on the MC-707');
   const close = () => ov.remove();
   const go = el(
     'button',
@@ -407,7 +432,10 @@ export function clipWriteAsk(p, t) {
       class: 'btn on',
       onclick: () => {
         close();
-        clipWriteNow(p, +trk.value, +clip.value);
+        clipWriteNow(p, +trk.value, +clip.value, {
+          replace: repl.firstChild.checked,
+          name: named.firstChild.checked
+        });
       }
     },
     'Write'
@@ -422,11 +450,12 @@ export function clipWriteAsk(p, t) {
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
-        'Experimental. The clip must be empty: the app reads it first and stops if it holds notes. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the ' +
+        'Experimental. The app reads the clip first, and leaves one that holds notes alone unless you tick Replace. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the ' +
           DEVS[DEV].name +
           '; use a project you can lose while trying this.'
       ),
       el('div', { style: 'display:flex;gap:8px;margin:12px 0' }, trk, clip),
+      el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin-bottom:12px' }, repl, named),
       el(
         'div',
         { style: 'display:flex;gap:8px;justify-content:flex-end' },
@@ -440,23 +469,197 @@ export function clipWriteAsk(p, t) {
   setTimeout(() => go.focus(), 30);
 }
 /** Write pattern p into clip k of app track t now, with progress and the result as messages. */
-export async function clipWriteNow(p, t, k) {
+export async function clipWriteNow(p, t, k, o = {}) {
   if (wbusy) return;
   wbusy = true;
   const where = 'track ' + devNum(t) + ' clip ' + (k + 1);
   toast('Checking ' + where + ' is empty…');
   try {
     if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
-    const r = await writeClip(t, k, p, (d, n) => toast('Writing ' + where + '… step ' + d + ' of ' + n));
+    const r = await writeClip(t, k, p, {
+      ...o,
+      onStep: (d, n) => toast('Writing ' + where + '… step ' + d + ' of ' + n)
+    });
     if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k) : toast(r.why);
     toast(
-      'Wrote ' +
+      (r.replaced ? 'Replaced the notes in ' + where + ' with ' : 'Wrote ') +
         r.notes +
-        ' notes to ' +
-        where +
+        (r.replaced ? ' notes' : ' notes to ' + where) +
         (r.checked ? ', read back and checked' : '. The read-back did not match: check the clip on the MC-707') +
         (r.skipped ? '. ' + r.skipped + ' notes could not go in (no drum note, past the end, or a full step)' : '')
     );
+  } finally {
+    wbusy = false;
+  }
+}
+
+/* ---- a whole song into clips ---- */
+/**
+ * What the song would send: for each track, its patterns in the order they first play (one per
+ * pattern and transpose), each with the clip it goes to from that track's starting clip.
+ * @param {Record<number, number>} starts  first clip (0-15) by app track
+ * @returns {{t:number, items:{k:number, p:object, label:string, skip?:string}[]}[]}
+ */
+export function songPlan(starts = {}) {
+  const out = [];
+  for (const t of DEVS[DEV].tracks) {
+    const seen = new Map();
+    for (const c of [...S.clips].filter(c => c.t === t).sort((a, b) => a.start - b.start)) {
+      const p = S.patterns[c.pat];
+      if (!p || !p.notes.length) continue;
+      const tr = p.type === 'tone' ? c.tr || 0 : 0,
+        key = c.pat + ':' + tr;
+      if (seen.has(key)) continue;
+      const q = tr
+        ? {
+            ...p,
+            name: p.name + ' ' + (tr > 0 ? '+' : '') + tr,
+            notes: p.notes.map(n => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
+          }
+        : p;
+      seen.set(key, q);
+    }
+    if (!seen.size) continue;
+    let k = starts[t] || 0;
+    const items = [];
+    for (const p of seen.values()) {
+      const skip = p.bars * 16 > MAX_STEPS ? 'longer than 8 bars' : k > 15 ? 'no clip left on this track' : '';
+      items.push({ k: skip ? -1 : k, p, label: p.name, ...(skip ? { skip } : {}) });
+      if (!skip) k++;
+    }
+    out.push({ t, items });
+  }
+  return out;
+}
+/** The Song menu's Send patterns to MC-707 clips: pick each track's first clip, then write them all. */
+export function songToClipsOpen() {
+  if (wbusy || $('#scOv')) return;
+  const starts = {};
+  const plan0 = songPlan();
+  if (!plan0.length) return toast('The song has no patterns to send');
+  const body = el('div', { class: 'scRows' });
+  const repl = el(
+      'label',
+      { class: 'cwOpt' },
+      el('input', { type: 'checkbox' }),
+      ' Replace the notes in clips that have some'
+    ),
+    named = el(
+      'label',
+      { class: 'cwOpt' },
+      el('input', { type: 'checkbox', checked: true }),
+      ' Name each clip after its pattern'
+    );
+  const draw = () => {
+    body.textContent = '';
+    for (const row of songPlan(starts)) {
+      const sel = el(
+        'select',
+        {
+          'aria-label': 'First clip for track ' + devNum(row.t),
+          onchange: e => ((starts[row.t] = +e.target.value), draw())
+        },
+        ...Array.from({ length: 16 }, (_, k) =>
+          el('option', { value: k, selected: (starts[row.t] || 0) === k }, 'from clip ' + (k + 1))
+        )
+      );
+      body.append(
+        el(
+          'div',
+          { class: 'scRow' },
+          el('b', {}, 'Track ' + devNum(row.t) + ' · ' + S.tracks[row.t].name),
+          sel,
+          el(
+            'span',
+            { class: 'hint' },
+            row.items
+              .map(i => (i.skip ? i.label + ' (skipped: ' + i.skip + ')' : 'clip ' + (i.k + 1) + ': ' + i.label))
+              .join(' · ')
+          )
+        )
+      );
+    }
+  };
+  draw();
+  const close = () => ov.remove();
+  const go = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn on',
+      onclick: () => {
+        close();
+        songToClipsNow(songPlan(starts), { replace: repl.firstChild.checked, name: named.firstChild.checked });
+      }
+    },
+    'Send'
+  );
+  const ov = el(
+    'div',
+    { id: 'scOv', class: 'ptOv', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Send patterns to MC-707 clips' },
+    el(
+      'div',
+      { class: 'ptBox', style: 'max-width:720px' },
+      el('h3', {}, 'Send the song’s patterns to MC-707 clips'),
+      el(
+        'p',
+        { class: 'hint', style: 'line-height:1.45' },
+        'Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each, in 1/16 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the ' +
+          DEVS[DEV].name +
+          '.'
+      ),
+      body,
+      el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin:12px 0' }, repl, named),
+      el(
+        'div',
+        { style: 'display:flex;gap:8px;justify-content:flex-end' },
+        el('button', { type: 'button', class: 'btn', onclick: close }, 'Cancel'),
+        go
+      )
+    )
+  );
+  ov.addEventListener('keydown', e => e.key === 'Escape' && close());
+  document.body.append(ov);
+}
+/** Write a song plan (songPlan) clip by clip, then show what went where. */
+export async function songToClipsNow(plan, o = {}) {
+  if (wbusy) return;
+  wbusy = true;
+  const lines = [];
+  let done = 0,
+    left = 0,
+    bad = 0;
+  try {
+    if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
+    const todo = plan.flatMap(r => r.items.filter(i => !i.skip).map(i => ({ t: r.t, ...i })));
+    for (const [n, it] of todo.entries()) {
+      const where = 'track ' + devNum(it.t) + ' clip ' + (it.k + 1);
+      toast('Sending ' + (n + 1) + ' of ' + todo.length + ': ' + it.label + ' → ' + where);
+      const r = await writeClip(it.t, it.k, it.p, { replace: o.replace, name: o.name });
+      if (r.ok) {
+        done++;
+        if (!r.checked) bad++;
+        lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match)'));
+      } else {
+        left++;
+        lines.push(where + ': ' + it.label + ' (not sent: ' + r.why + ')');
+      }
+    }
+    for (const r of plan)
+      for (const i of r.items)
+        if (i.skip) lines.push('track ' + devNum(r.t) + ': ' + i.label + ' (skipped: ' + i.skip + ')');
+    await askDlg({
+      title: 'Sent ' + done + ' pattern' + (done === 1 ? '' : 's') + ' to MC-707 clips',
+      text:
+        (bad ? bad + ' did not read back the same; check those clips. ' : '') +
+        (left ? left + ' were not sent. ' : '') +
+        'Save the project on the ' +
+        DEVS[DEV].name +
+        ' to keep them.\n\n' +
+        lines.join('\n'),
+      ok: 'OK',
+      cancel: 'Close'
+    });
   } finally {
     wbusy = false;
   }
