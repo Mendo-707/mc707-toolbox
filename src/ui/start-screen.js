@@ -1,6 +1,6 @@
 // The start screen: when the app opens (in Song Mode) it offers to load the last session, start
-// a blank song or an empty template with its sections marked, open the song wizard, go to Live or
-// Synth Mode, or open the ZenCore editor. A tick box turns it off.
+// a blank song or an empty template with its sections marked, open the song wizard, go to Scene, Live
+// or Synth Mode, or open the ZenCore editor. A tick box turns it off.
 //
 // Reads: S, PROJ.
 // Owns: localStorage 'mc707-start' ('0' = do not show at start).
@@ -97,6 +97,12 @@ export function startOpen(last = true) {
           fresh(true)
         ),
         card('✦', 'Song wizard', 'Pick a style and get a full arrangement to start from.', () => openWiz()),
+        card(
+          '▦',
+          'Scene Mode',
+          'Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.',
+          () => setMode('scene')
+        ),
         card('◉', 'Live Mode', 'Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.', () =>
           setMode('live')
         ),

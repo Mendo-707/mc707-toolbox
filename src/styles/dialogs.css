@@ -702,3 +702,108 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* sending patterns to MC-707 clips (zen/zc-seq.js): the options and one row per track */
+.cwOpt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.scRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 46vh;
+  overflow: auto;
+  margin: 12px 0;
+}
+.scRow {
+  display: grid;
+  grid-template-columns: 190px 130px 1fr;
+  align-items: center;
+  gap: 4px 10px;
+}
+.scRow .hint {
+  font-size: 13px;
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .scRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* the panel that stays up while the MC-707's clips are written (zen/zc-seq.js) */
+.wpPanel {
+  position: fixed;
+  z-index: 9700;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--hot);
+  box-shadow:
+    var(--shadow),
+    0 0 0 3px color-mix(in srgb, var(--hot) 25%, transparent);
+}
+.wpLine {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.wpBar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--raise);
+  overflow: hidden;
+}
+.wpBar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--hot);
+  transition: width 0.2s;
+}
+
+/* the scene finder (zen/zc-scan.js) */
+.sfSteps {
+  margin: 6px 0 12px;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+.sfOut {
+  margin: 10px 0;
+  max-height: 34vh;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font:
+    12px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+/* Send song to MC-707 scenes: the scenes list */
+.scSceneBox {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.scSceneBox h4 {
+  margin: 0 0 4px;
+}
+.scScenes {
+  max-height: 30vh;
+  overflow: auto;
+}

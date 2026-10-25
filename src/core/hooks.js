@@ -30,6 +30,7 @@
 //   renderArr          src/song/arrangement.js
 //   saveFile           src/song/export.js
 //   scheduleUI         src/song/arrangement.js
+//   setMode            src/ui/mode.js
 //   stopAll            src/services/transport.js
 //   suAutoConnect      src/ui/setup-wizard.js
 //   syncControls       src/ui/controls.js
@@ -40,4 +41,6 @@
 //   vizNote            src/live/visualizer.js
 //   wizCellAt          src/song/wizard-plan.js
 //   zenOpen            src/zen/zc-editor.js
+//   clipNotesToMine    src/zen/zc-seq.js
+//   clipWriteAsk       src/zen/zc-seq.js
 export const hooks = {};

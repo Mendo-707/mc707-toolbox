@@ -4,6 +4,7 @@
 //
 // Owns: S (the song), UI (song screen state), ED (editor state), PROJ (the open project).
 // Calls up the layers through hooks (core/hooks.js).
+import { fixScenes } from './scene-model.js';
 import { $, toast } from './dom.js';
 import { LANES, SCALES } from './theory.js';
 import { MC_PARAMS } from './mc707-params.js';
@@ -135,6 +136,9 @@ function afterReplace() {
   scheduleSave();
 }
 export const HOST = window.toolbox || null;
+/** Work that must not overlap playback: while BUSY.write is a message (the MC-707's clips being
+ * written, zen/zc-seq.js), Play, patterns and Live Mode's Start show it instead of starting. */
+export const BUSY = { write: '' };
 /** What the desktop app is called here: 'Windows app', 'Mac app' or 'Linux app' (null in a browser). */
 export const APP_NAME = HOST ? { darwin: 'Mac app', linux: 'Linux app' }[HOST.platform] || 'Windows app' : null;
 export const PROJ = { name: '', path: '', dirty: false, t: null };
@@ -341,6 +345,7 @@ export function fixState(s) {
   s.clips.forEach(c => {
     s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
   });
+  fixScenes(s, pats);
   s.nextId = Math.max(Math.round(num(s.nextId, 1, 1e9, 1)), maxId + 1);
   return s;
 }

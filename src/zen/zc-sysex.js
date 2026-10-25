@@ -80,7 +80,8 @@ export const ZX = {
   log: [] /* the last messages, for the editor's details view */,
   model: 0 /* the model byte the device answered to (0 = not known yet) */,
   modelFor: '' /* the device setting and port it was learnt for */,
-  onIdle: null /* called each time the write queue empties */
+  onIdle: null /* called each time the write queue empties */,
+  pace: 0 /* ms between queued writes when set (the clip notes write slower), else PACE */
 };
 const setState = s => {
   ZX.state = s;
@@ -156,7 +157,7 @@ function pump() {
   const [l, data] = it.value;
   ZX.q.delete(l);
   rawSend(dt1(l, data));
-  if (ZX.q.size) ZX.timer = setTimeout(pump, PACE);
+  if (ZX.q.size) ZX.timer = setTimeout(pump, ZX.pace || PACE);
   else if (ZX.onIdle) ZX.onIdle();
 }
 /** Resolves once every queued write has gone out. */
@@ -184,10 +185,23 @@ function onIn(e) {
     data = [...d.slice(12, d.length - 2)];
   /* a reply can come in more than one packet: each must carry the address where the last one ended.
      Anything else is a stray (a late reply to an earlier request) and is set aside. */
-  const want = replyBytes(w.l + w.buf.length);
-  if (!a.every((b, i) => b === want[i])) {
-    w.stray++;
-    return;
+  /* the tone and kit areas answer with the masked form; the plain form is accepted too. A loose read
+     (the clip notes, zc-seq.js, as Ada Locriana's tools read them) takes the first reply whatever its
+     address, and keeps the address it came with */
+  const want = replyBytes(w.l + w.buf.length),
+    plain = addrBytes(w.l + w.buf.length);
+  if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
+    if (!(w.loose && !w.buf.length)) {
+      w.stray++;
+      return;
+    }
+    w.from = a;
+  }
+  /* a loose read takes a reply shorter than asked for (the clip step settings are 3 bytes; some steps
+     answer for half their slots): once the packets stop coming, it is done */
+  if (w.loose) {
+    clearTimeout(w.idle);
+    w.idle = setTimeout(w.done, 60);
   }
   ZX.model = d[6];
   ZX.modelFor = DEV + ':' + (ZX.out && ZX.out.name);
@@ -195,16 +209,18 @@ function onIn(e) {
   if (w.buf.length >= w.n) w.done();
 }
 /* send a request and gather its reply: {buf, stray} once n bytes are in, or whatever came by the timeout */
-function askRq(msg, l, n, ms) {
+function askRq(msg, l, n, ms, loose) {
   return new Promise(res => {
     const w = {
       kind: 'rq',
       l,
       n,
+      loose,
       buf: [],
       stray: 0,
       done: () => {
         clearTimeout(t);
+        clearTimeout(w.idle);
         ZX.wait = null;
         res({ buf: w.buf, stray: w.stray });
       }
@@ -240,9 +256,11 @@ const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
  * for this address and length (see the module header); undefined when nothing answered.
  * After a reply it waits a moment, so a late packet cannot be taken as the answer to the next request
  * (partials 1 and 2, and 3 and 4, answer with the same address).
+ * With loose, the first reply counts whatever address it carries (for areas whose replies are not
+ * mapped yet), and a shorter reply than asked for is returned as it came.
  * @returns {Promise<number[]|null|undefined>}
  */
-export function zxRead(l, n, ms = 450) {
+export function zxRead(l, n, ms = 450, loose = false) {
   return serial(async () => {
     if (!ZX.inp) return undefined;
     for (let tries = 0; tries < 3; tries++) {
@@ -251,10 +269,10 @@ export function zxRead(l, n, ms = 450) {
       if (tries === 2 && !guess) break;
       const msg = rq1(l, n);
       if (guess) msg[6] = guess;
-      const r = await askRq(msg, l, n, ms);
+      const r = await askRq(msg, l, n, ms, loose);
       if (!r.buf.length && !r.stray) continue;
       await pause(SETTLE);
-      return r.buf.length === n ? r.buf : null;
+      return r.buf.length === n || (loose && r.buf.length) ? r.buf : null;
     }
     return undefined;
   });

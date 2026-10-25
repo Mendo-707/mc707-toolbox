@@ -2,6 +2,7 @@
 // (renderAll).
 //
 // Reads: S, UI, ED, TR, MIDI, AUDREC, STAGE, CM, bw.
+import { sceneKeyDown } from '../scene/screen.js';
 import { songMixerOpen } from '../song/song-mixer.js';
 import { hooks } from '../core/hooks.js';
 import { $, clamp, el, toast } from '../core/dom.js';
@@ -337,13 +338,14 @@ export function initControls() {
     }
     if (ED.geom) layoutEditor();
   });
+  const redraw = () => {
+    drawEditor();
+    renderLibrary();
+    renderArr();
+  };
   const mq = matchMedia('(prefers-color-scheme: dark)');
-  mq.addEventListener &&
-    mq.addEventListener('change', () => {
-      drawEditor();
-      renderLibrary();
-      renderArr();
-    });
+  mq.addEventListener && mq.addEventListener('change', redraw);
+  addEventListener('mc707-theme', redraw);
 }
 export function afterReplaceKeepUndo() {
   ED.selNotes.clear();
@@ -410,6 +412,10 @@ function onKey(e) {
   if (typing) return;
   if (document.body.dataset.mode === 'live') {
     liveKeyDown(e);
+    return;
+  }
+  if (document.body.dataset.mode === 'scene') {
+    sceneKeyDown(e);
     return;
   }
   /* Synth mode: the DAW plays; the song's shortcuts (Space, record) stay out of the way */

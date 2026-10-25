@@ -40,6 +40,7 @@ src/
   song/             Song Mode: arrangement, pattern editor, library panel, wizard, export, recording
   live/             Live Mode: engine, scenes, cues, moves, breaks, pads, Raven mode, controller keyboard
   zen/              the ZenCore editor: MC-707 SysEx, tone and kit parameter tables, MFX types, editor pages
+  scene/            Scene Mode: the song as MC-707 scenes, sent to the MC-707 (app layer: uses song/ and zen/)
   ui/               the app shell: menu bar, toolbar and shortcuts, projects, menus, dialogs, grabber
 scripts/            build, dev server, import-layer check, module-map generator
 tests/              Playwright tests, baselines (expected output) and fixtures (saved data from v0.10.0)

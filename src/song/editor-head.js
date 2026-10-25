@@ -429,6 +429,11 @@ export function renderEdHead() {
       ? []
       : [
           act('Save to My patterns', () => saveToMine(c), 'Keep this pattern in your own library, for every song'),
+          act(
+            '→ MC-707 clip',
+            () => hooks.clipWriteAsk(p, c.t),
+            'Write this pattern into an empty clip on the MC-707 (experimental)'
+          ),
           act('Duplicate clip', dupClip, 'Place a linked copy right after this clip (Ctrl/Cmd+D)'),
           act('Delete clip', deleteClip, 'Remove this clip from the arrangement (Delete)')
         ])
@@ -486,6 +491,11 @@ function viewGroup(c) {
       ? b('Update My pattern', () => saveToMine(c, true), 'Save your changes over this pattern in My patterns')
       : null,
     b('Save to My patterns', () => saveToMine(c), 'Keep a copy in your own library, for every song'),
+    b(
+      '→ MC-707 clip',
+      () => hooks.clipWriteAsk(patOf(c), c.t),
+      'Write this pattern into an empty clip on the MC-707 (experimental)'
+    ),
     b('Close', closeView, 'Close the pattern without placing it')
   );
 }

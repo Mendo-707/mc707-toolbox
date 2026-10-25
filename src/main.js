@@ -7,6 +7,7 @@
 // Load order matters: each module is evaluated once, in this order (see AGENTS.md).
 import { popoutCloseAll } from './services/popout.js';
 import './core/dom.js';
+import { applyTheme } from './core/theme.js';
 import './core/icons.js';
 import './core/theory.js';
 import './library/factory.js';
@@ -140,10 +141,28 @@ import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
+import * as sceneModel from './scene/model.js';
+import { pending, writeAll, writeChanged, writeOneClip, writeOneScene, writeThese } from './scene/write.js';
+import { songToRows, scenesToSong } from './scene/convert.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
+import {
+  clipNotesToMine,
+  clipPacked,
+  encodePattern,
+  clipWriteAsk,
+  clipWriteNow,
+  songToClipsOpen,
+  songToClipsNow,
+  songPlan,
+  stepAddr,
+  paramAddr,
+  clipAddr
+} from './zen/zc-seq.js';
 import { browserOpen } from './zen/zc-browser.js';
+import { songSections } from './zen/zc-scenes.js';
+import { scanOnce, scanDiff, scanReset, sceneFinderOpen } from './zen/zc-scan.js';
 import { ZS, libraryJSON } from './zen/zc-sounds.js';
 import { FW_REC, fwFields } from './zen/zc-factory.js';
 import { newSound } from './zen/zc-tone.js';
@@ -151,6 +170,9 @@ import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
 import { hoverHelpStart } from './ui/hover-help.js';
+
+/* the colours first, so the app does not flash light before going dark */
+applyTheme();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
@@ -176,6 +198,7 @@ Object.assign(hooks, {
   renderAll,
   renderArr,
   scheduleUI,
+  setMode,
   stopAll,
   suAutoConnect,
   syncControls,
@@ -186,7 +209,9 @@ Object.assign(hooks, {
   vizNote,
   wizCellAt,
   saveFile,
-  zenOpen
+  zenOpen,
+  clipNotesToMine,
+  clipWriteAsk
 });
 
 PROJ.t = projTitle;
@@ -232,6 +257,32 @@ PROJ.t = projTitle;
       get ZE() {
         return ZE;
       }
+    },
+    seq: {
+      clipPacked,
+      encode: encodePattern,
+      stepAddr,
+      paramAddr,
+      clipAddr,
+      read: clipNotesToMine,
+      write: clipWriteNow,
+      song: songToClipsOpen,
+      sendSong: songToClipsNow,
+      songPlan,
+      sections: songSections,
+      scan: { once: scanOnce, diff: scanDiff, reset: scanReset, open: sceneFinderOpen }
+    },
+    scene: {
+      ...sceneModel,
+      pending,
+      write: writeThese,
+      writeAll,
+      writeChanged,
+      writeOneClip,
+      writeOneScene,
+      fromSong: songToRows,
+      toSong: scenesToSong,
+      setMode
     },
     get S() {
       return S;

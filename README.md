@@ -3,12 +3,13 @@
 Write songs and play live sets on the **Roland MC-707** from your computer. One USB cable carries all eight tracks, and the app can record the audio that comes back.
 
 - **Song Mode**: arrange a whole track on a timeline, then play it on the MC-707 note for note.
+- **Scene Mode**: arrange a song as MC-707 clips and scenes, then write it there so the MC-707 plays it by itself, no computer needed.
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **Synth Mode**: the MC-707 as an 8-track hardware synth for your DAW.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 - **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen.
 
-> **Version 1.4.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.5.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -16,12 +17,13 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Song Mode](docs/song-mode.png)
 
 <details>
-<summary><b>More screenshots and a tour in 8 cards</b></summary>
+<summary><b>More screenshots and a tour in 9 cards</b></summary>
 
 ![Your MC-707 clips](docs/mc707-clips.png)
 ![ZenCore editor](docs/zencore-editor.png)
 
 ![Song Mode](docs/features/1-song-mode.png)
+![Scene Mode](docs/features/9-scene-mode.png)
 ![Live Mode](docs/features/2-live-mode.png)
 ![Synth Mode](docs/features/3-synth-mode.png)
 ![ZenCore editor](docs/features/4-zencore-editor.png)
@@ -31,6 +33,14 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Windows, Mac, Linux and the web](docs/features/8-everywhere.png)
 
 </details>
+
+## New in 1.5
+
+![Scene Mode](docs/features/9-scene-mode.png)
+
+- **Scene Mode** (new, experimental): arrange a song the way the MC-707 keeps one, as each track's 16 clips and a chain of scenes, then write it over USB so the MC-707 plays the whole song by itself. Make the clips and scenes from your Song Mode arrangement in one click, edit any clip's notes in the pattern editor and its sound in the ZenCore editor, and see every clip and scene marked written, changed or new. Write what changed, one clip, a track, a scene or everything, or let Auto-write do it. See [Scene Mode](#scene-mode). Thanks to Ada for the pointers on the scene chain.
+- **Your MC-707 clips**: read a clip's notes from the MC-707 into My patterns, write a pattern into a clip (read back to check), and send a whole song's patterns to the MC-707's clips. Patterns up to 8 bars go in 1/16 steps and 9–16 bars in 1/8; triplet patterns go in 1/16T or 1/8T steps so every note lands on a step; drum rolls and flams use the MC-707's sub steps (1/2, 1/3, 1/4, FLAM).
+- **Theme**: the app is now **dark** by default. **Settings › Theme** switches to Light, or Match the computer.
 
 ## New in 1.4
 
@@ -169,6 +179,22 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Stage ready** | Seven colour themes, a reactive visualizer, **F11** fullscreen, and the screen stays awake while playing. |
 | **Mixer** | **🎚 Mixer** (or Live › Mixer) opens Live's own mix, kept apart from the song's, in a window you can drag onto another screen, in your Live theme's colours. Level, pan, reverb and chorus become the rest values moves come back to and are sent at Start; mutes and solos wait for the next beat while the jam plays (they blink until they land). Each strip shows a track the energy level took out or one you're playing yourself. |
 
+## Scene Mode
+
+Arrange a song the way the MC-707 keeps one, then write it there so the MC-707 plays it by itself, with no computer. In Song Mode's look, in three parts, with the four steps of the job along the top: **1 Clips › 2 Scenes › 3 Write › 4 On the MC-707**, each showing how far it has got. New and experimental: use a project you can lose the first time, and save the project on the MC-707 to keep what is written.
+
+| | |
+|---|---|
+| **Clips board** | Each track's 16 MC-707 clips in a row, as the CLIP pads hold them. A clip is a pattern (with a transpose) and the tone it should have. Click an empty clip to choose its pattern (the library by genre and part, with ▶ to hear it, My patterns or the song's own), a full one to edit it. The clips the selected scene plays are outlined; clips no scene plays are faded. Right-click a clip to edit it, change its pattern or tone, transpose it, play it, put it in or take it out of the selected scene, write it, copy, paste, move or swap it with another clip (the scenes follow), clear it, or read the MC-707 clip's notes or open its sound there. Right-click a track to write or check its clips. |
+| **Scene chain** | Down the left, the scenes in the order the MC-707's scene chain plays them, from the scene you pick (1-1, 1-2 … as Call Scene TYPE2 numbers them). Each has a name, how many bars it plays before the next (the last keeps playing, ↻), and a chip per track for the clip it plays: click a chip to choose another clip, a new one or nothing. ▶ plays from a scene; right-click to loop it, write it, add one before or after, copy, move or remove it. |
+| **Clip editor** | Under the board, for the selected clip: **Notes** is Song Mode's own pattern editor (steps, piano roll, velocity, length, scale lock and its tools), **Sound** the full ZenCore editor with its Sound browser (your sounds, the factory tones from your update file, the starters), working on that MC-707 clip as you go and kept as the clip's tone. ◀ ▶ step through the track's clips; it says which scenes play the clip, and **Make it this clip's own** copies a pattern other clips share. **⤢ Expand** gives the editor the board's room. |
+| **Written, changed, new** | Every clip and scene shows **✓** written to the MC-707, **●** changed since, **!** written but read back differently (**Write ▾ › Show the last write report** says how), or **+** not written yet, so you and the MC-707 stay on the same page. The marks are saved with the song; **Forget what was written** clears them after you load another project on the MC-707. |
+| **Write** | **Write n changes** sends only what is new or changed. Or write one clip (its button in the editor, or right-click), a track's clips (⤒ by its name), or one scene (its Write button; the clips it plays that are not written go first). **Write ▾** has write everything, the clips only or the scenes only, **Auto-write** (changes go over a moment after you make them, when the MC-707 is connected and nothing is playing), and the settings: write over clips that hold notes, send the tones, name clips after their patterns, set the MC-707's tempo. **Check the new clips** reads them (read-only) and rings any that already hold notes there. |
+| **Play** | Plays the chain here from the selected scene, on the MC-707 over MIDI and the preview sound, the way the scene chain will; the playing scene and its clips light up. **Space** plays and stops. **⚠ Not connected** shows when the MC-707 isn't (click it to connect). |
+| **On the MC-707** | Step 4 (or **? How it works**) lists what to do there: system 1.71 or later, Call Scene TYPE2, CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button; the app can't switch it), call up the first scene and play, save the project. |
+| **From the song / to the song** | Make clips and scenes from the Song Mode arrangement (each track's patterns become its clips; a scene wherever they change, named after the markers), or lay the scenes out in Song Mode with a marker per scene. Songs from the first Scene Mode open in the new layout. |
+| **Keys** | Arrows move on the board, Page Up and Page Down between scenes, Enter edits, Delete clears a clip, Ctrl+C and Ctrl+V copy and paste clips, Ctrl+Z undoes, Space plays. |
+
 ## Synth Mode
 
 The MC-707 as an 8-track hardware synth for your DAW, with no plugin needed. The MC-707 sends each track's audio to the DAW over USB as its own input, the DAW plays each track on its MIDI channel, and this screen picks, edits and mixes the eight sounds. Your computer does no sound work at all.
@@ -187,7 +213,7 @@ The app's own sequencer stays quiet in Synth Mode, and Space and the recording k
 
 ## Your MC-707 clips
 
-**My MC-707 clips & ZenCore** (top right of Song Mode, or **Settings › Your MC-707 clips**) shows the MC-707 the way CLIP mode does. Pick a track and its clips light up on the 16 pads. Set how many clips each track has and what each holds (bass, chords, pad, lead, pluck/arp, acid, FX). In Song Mode, turn on automatic switching and a track jumps to the matching clip when it plays a different kind of part. Live Mode keeps its own clip choices: its B scenes use the extra sounds, and each lane has a clip button. Use clips that hold a sound but no notes.
+**My MC-707 clips & ZenCore** (top right of Song Mode, or **Settings › Your MC-707 clips**) shows the MC-707 the way CLIP mode does. Pick a track and its clips light up on the 16 pads. Set how many clips each track has and what each holds (bass, chords, pad, lead, pluck/arp, acid, FX). In Song Mode, turn on automatic switching and a track jumps to the matching clip when it plays a different kind of part. Live Mode keeps its own clip choices: its B scenes use the extra sounds, and each lane has a clip button. Use clips that hold a sound but no notes. **READ NOTES** (in the CLIP EDIT menu, new and experimental) reads the notes in the selected clip from the MC-707 into **My patterns**, to edit, place in a song or use in Live Mode; it only reads, so nothing on the MC-707 changes, and reading a clip again replaces its earlier copy. The other way, **→ MC-707 clip** in the pattern editor writes a pattern (up to 8 bars in 1/16 steps, or up to 16 bars in 1/8 steps) into a clip you pick and reads it back to check. It leaves a clip that holds notes alone unless you tick **Replace the notes**, and can name the clip after the pattern. **Song › Send patterns to MC-707 clips** does it for the whole song: each track's patterns go into its clips in the order they play, from a clip you choose per track, and a list shows what went where. **Song › Send song to MC-707 scenes** goes one further so the MC-707 plays the song by itself: after the clips, each part of the song where the patterns change becomes a scene (1-1, 1-2 …) with its length in bars for the scene chain, and the last scene stays; turn CHAIN on in the SCENE CHAIN screen (MC-707 system 1.71 or later) and play from the first scene. Nothing is kept until you save the project on the MC-707, so try it with a project you can lose. Clip notes over SysEx were worked out by [Ada Locriana](https://github.com/Locriana/mctools_seq).
 
 ## ZenCore editor
 
@@ -225,6 +251,7 @@ Roland hasn't published SysEx details for the MC-707, so the editor builds on co
 
 ## More settings
 
+- **Theme** (**Settings › Theme**): Dark (the default), Light, or Match the computer (follows Windows', macOS' or Linux's light or dark setting). Live Mode keeps its own colour themes on top (Theme in Live Mode's bar).
 - **App sounds** (top of the **Settings** menu): turn the app's own sound in the browser on or off. With it off, only the MC-707 plays.
 - **Drums on one track (full kits)**: the whole groove plays on Drums 1, freeing Drums 2 for another sound. Over 1,100 full kits are built from the library.
 - **MC-101 mode (beta)**: **Settings › Device: MC-101** switches to its four tracks (Drums, Bass, Chords and Lead on channels 1–4), with full kits on the one drum track. The song wizard, Live Mode and the ZenCore editor all work with the four tracks. When the app finds an MC-101 on the MIDI port it switches to MC-101 mode by itself. The ZenCore editor is confirmed working on a real MC-101; the rest has been tested on a simulated one, so if you try it, run **Live › Settings and mapping › Pad test** and send the result in an issue.

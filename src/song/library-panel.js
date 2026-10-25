@@ -42,7 +42,7 @@ export const SHORT = {
   memphis: 'Memphis'
 };
 const GENRE_WORDS = { dnb: 'dnb d&b', hiphop: 'hiphop hip hop rap' };
-const GENRE_LABELS = {
+export const GENRE_LABELS = {
   dnb: 'Drum and bass',
   hiphop: 'Hip hop',
   house: 'House',
