@@ -7022,6 +7022,67 @@ body[data-mode='scene'] #scene {
 .scnTabs .btn {
   min-width: 56px;
 }
+/* ▦ Clips: each track's 16 MC-707 clips under its name, lit where the scenes use one */
+.scnClips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.scnPads {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+.scnPad {
+  font-size: 9px;
+  overflow: hidden;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 3px;
+  color: var(--mute);
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.scnPad.use {
+  background: var(--tc);
+  border-color: var(--tc);
+  color: #000;
+  font-weight: 700;
+}
+.scnPad.free::after {
+  content: '';
+}
+.scnPad.use.free {
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+.scnPad.busy {
+  outline: 2px solid #e8452a;
+  outline-offset: -1px;
+}
+.scnPad.busy:not(.use) {
+  background: color-mix(in srgb, #e8452a 18%, var(--bg));
+}
+.scnClips select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+.scnTrk {
+  min-width: 0;
+}
+.scnClipSum {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  color: var(--ink);
+}
+.scnClipSum .warn {
+  color: var(--hot);
+  font-weight: 600;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -11718,13 +11779,13 @@ body[data-mode='scene'] #scene {
     FAC.forEach((f) => {
       cnt[f.name] = (cnt[f.name] || 0) + 1;
     });
-    const used = /* @__PURE__ */ new Set();
+    const used2 = /* @__PURE__ */ new Set();
     FAC.forEach((f) => {
       if (cnt[f.name] > 1) f.name += " (" + (GTAG[f.genre] || f.genre) + ")";
       let n = f.name, i = 2;
-      while (used.has(n)) n = f.name + " #" + i++;
+      while (used2.has(n)) n = f.name + " #" + i++;
       f.name = n;
-      used.add(n);
+      used2.add(n);
     });
   })();
 
@@ -11767,7 +11828,10 @@ body[data-mode='scene'] #scene {
     if (!rows2.length) return void delete s.scn;
     const first = Math.round(+q.first);
     s.scn = { first: Number.isFinite(first) ? Math.max(0, Math.min(SCN_MAX - 1, first)) : 0, rows: rows2, tones };
+    if (Array.isArray(q.start) && q.start.some(Boolean))
+      s.scn.start = Array.from({ length: 8 }, (_, t) => Math.max(0, Math.min(15, Math.round(+q.start[t]) || 0)));
   }
+  var scnStart = (q, t) => q && q.start ? q.start[t] || 0 : 0;
   function scnClips(q) {
     const clip = q.rows.map(() => Array(8).fill(-1)), items = [], over = Array(8).fill(0);
     for (let t = 0; t < 8; t++) {
@@ -11776,9 +11840,10 @@ body[data-mode='scene'] #scene {
         const c = r.cells[t];
         if (!c) return;
         let k2 = seen.findIndex((x) => sameCell(x, c));
-        if (k2 < 0) {
-          if (seen.length >= 16) return void over[t]++;
-          k2 = seen.push(c) - 1;
+        if (k2 >= 0) k2 += scnStart(q, t);
+        else {
+          if (scnStart(q, t) + seen.length >= 16) return void over[t]++;
+          k2 = scnStart(q, t) + seen.push(c) - 1;
           items.push({ t, k: k2, cell: c, row: i });
         }
         clip[i][t] = k2;
@@ -12593,14 +12658,14 @@ body[data-mode='scene'] #scene {
     };
     const genres = [...new Set(FAC.map((f) => f.genre))];
     for (const g of genres) {
-      const used = /* @__PURE__ */ new Map();
+      const used2 = /* @__PURE__ */ new Map();
       FAC.forEach((f) => {
         if (f.genre === g && f.pool === "chords") {
           const p = progOf(f.name);
-          if (p && PR[p]) used.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
+          if (p && PR[p]) used2.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
         }
       });
-      const pairs2 = pickN([...used.values()], 6);
+      const pairs2 = pickN([...used2.values()], 6);
       const four = FOUR.has(g);
       pairs2.forEach(({ p, bars: bars2, keyName }) => {
         const kn2 = keyName && KEYS[keyName] ? keyName : /^[iv]/.test(p) ? "Am" : "C";
@@ -18657,15 +18722,15 @@ body[data-mode='scene'] #scene {
       const k2 = page * 8 + r;
       at2(el("span", { class: "lcdNum" + (k2 === kk ? " on" : "") }, String(k2 + 1)), 2, 2 + r);
       tracks3.forEach((t, i) => {
-        const mm = map[t], used = k2 < mm.n, cur2 = t === CMAP.t && k2 === kk, pl = PCLAST[t] === k2;
+        const mm = map[t], used2 = k2 < mm.n, cur2 = t === CMAP.t && k2 === kk, pl = PCLAST[t] === k2;
         at2(
           el(
             "span",
             {
               "data-t": t,
               "data-k": k2,
-              class: "lcdCell" + (used ? " used" : "") + (cur2 ? " cur" : "") + (pl ? " play" : "") + (t === CMAP.t ? " col" : "") + (k2 === kk ? " row" : ""),
-              title: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used ? ": " + ctInfo(mm.types[k2])[1] + (mm.names[k2] ? " (" + mm.names[k2] + ")" : "") : " (not used)"),
+              class: "lcdCell" + (used2 ? " used" : "") + (cur2 ? " cur" : "") + (pl ? " play" : "") + (t === CMAP.t ? " col" : "") + (k2 === kk ? " row" : ""),
+              title: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used2 ? ": " + ctInfo(mm.types[k2])[1] + (mm.names[k2] ? " (" + mm.names[k2] + ")" : "") : " (not used)"),
               onclick: () => {
                 CMAP.t = t;
                 if (k2 >= mm.n) mm.n = k2 + 1;
@@ -18673,7 +18738,7 @@ body[data-mode='scene'] #scene {
                 clipMapRender();
               }
             },
-            used ? String(mm.names[k2] || ctInfo(mm.types[k2])[1].split(" ")[0]).slice(0, 9).toUpperCase() : ""
+            used2 ? String(mm.names[k2] || ctInfo(mm.types[k2])[1].split(" ")[0]).slice(0, 9).toUpperCase() : ""
           ),
           C0 + i,
           2 + r
@@ -24107,8 +24172,8 @@ body[data-mode='scene'] #scene {
     if (p.type === "drum") return LANES.map((l, i) => ({ id: i, label: l[0], sub: noteName(S.drumMap[i]), kind: "d" }));
     const key = p.key || { root: S.key, scale: S.scale };
     const sc = SCALES[key.scale] || SCALES.chromatic;
-    const used = new Set(p.notes.map((n) => n.n));
-    const lows = [...used], inS = (m) => sc.includes(((m - key.root) % 12 + 12) % 12);
+    const used2 = new Set(p.notes.map((n) => n.n));
+    const lows = [...used2], inS = (m) => sc.includes(((m - key.root) % 12 + 12) % 12);
     let hi, lo;
     if (ED.mode === "roll") {
       hi = Math.max(96, ...lows);
@@ -24119,7 +24184,7 @@ body[data-mode='scene'] #scene {
     }
     const out2 = [];
     for (let m = hi; m >= lo; m--) {
-      if (ED.mode === "steps" && !inS(m) && !used.has(m)) continue;
+      if (ED.mode === "steps" && !inS(m) && !used2.has(m)) continue;
       out2.push({
         id: m,
         label: noteName(m),
@@ -24368,8 +24433,8 @@ body[data-mode='scene'] #scene {
       const sc = $("#edScroll");
       sc.scrollLeft = 0;
       if (p.type === "tone" && rows2.length) {
-        const used = p.notes.map((n) => n.n);
-        const mid = used.length ? used.reduce((a, b) => a + b, 0) / used.length : ED.lo + 12;
+        const used2 = p.notes.map((n) => n.n);
+        const mid = used2.length ? used2.reduce((a, b) => a + b, 0) / used2.length : ED.lo + 12;
         let best = 0, bd = 1e9;
         rows2.forEach((r, i) => {
           const d = Math.abs(r.id - mid);
@@ -25093,11 +25158,11 @@ body[data-mode='scene'] #scene {
     const cv = el("canvas");
     drawClipPreview(cv, c, p, w, h, col);
     drawClipOverlay(cv, c, w, h, col);
-    const used = S.clips.filter((x) => x.pat === c.pat).length;
+    const used2 = S.clips.filter((x) => x.pat === c.pat).length;
     e.append(
       cv,
       el("span", { class: "cname" }, p.name),
-      ...used > 1 || c.tr || c.vel || c.mute ? [
+      ...used2 > 1 || c.tr || c.vel || c.mute ? [
         el(
           "span",
           { class: "lnk" },
@@ -25105,7 +25170,7 @@ body[data-mode='scene'] #scene {
             c.mute ? "muted" : "",
             c.tr ? (c.tr > 0 ? "+" : "") + c.tr + " st" : "",
             c.vel ? c.vel + "%" : "",
-            used > 1 ? "linked ×" + used : ""
+            used2 > 1 ? "linked ×" + used2 : ""
           ].filter(Boolean).join(" · ")
         )
       ] : [],
@@ -25309,6 +25374,7 @@ body[data-mode='scene'] #scene {
     setFirst: () => setFirst,
     setName: () => setName,
     setPattern: () => setPattern,
+    setStart: () => setStart,
     setTone: () => setTone,
     setTranspose: () => setTranspose,
     toneOf: () => toneOf
@@ -28958,6 +29024,8 @@ body[data-mode='scene'] #scene {
     /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
     edit: false,
     big: false,
+    /* the MC-707 clips shown under the track names */
+    clipsOn: true,
     /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */
     tab: "notes",
     inDock: false,
@@ -29007,6 +29075,13 @@ body[data-mode='scene'] #scene {
     const n = String(name || "").trim().slice(0, 20) || "Scene " + (i + 1);
     if (rows()[i] && rows()[i].name !== n) edit((q) => q.rows[i].name = n);
   }
+  function setStart(t, k2) {
+    edit((q) => {
+      q.start = q.start || Array(8).fill(0);
+      q.start[t] = Math.max(0, Math.min(15, k2 | 0));
+      if (!q.start.some(Boolean)) delete q.start;
+    });
+  }
   function setFirst(k2) {
     edit((q) => q.first = Math.max(0, Math.min(SCN_MAX - 1, k2 | 0)));
   }
@@ -29035,8 +29110,8 @@ body[data-mode='scene'] #scene {
       const key = hashOf(tone2.kind, tone2.d);
       q.tones[key] = { name: String(tone2.name || "Tone").slice(0, 16), kind: tone2.kind, d: tone2.d };
       x.tone = key;
-      const used = new Set(q.rows.flatMap((r) => r.cells.map((y) => y && y.tone)));
-      for (const k2 in q.tones) if (!used.has(k2)) delete q.tones[k2];
+      const used2 = new Set(q.rows.flatMap((r) => r.cells.map((y) => y && y.tone)));
+      for (const k2 in q.tones) if (!used2.has(k2)) delete q.tones[k2];
     });
   }
   function clearCell(i, t) {
@@ -29353,15 +29428,15 @@ body[data-mode='scene'] #scene {
     E: "XV Collection"
   };
   function fwTones(b) {
-    const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
+    const out2 = [], runs2 = fwScan(b), used2 = /* @__PURE__ */ new Set();
     const banks = runs2.map(([o]) => BANKS[nameAt(b, o)] || null);
-    banks.forEach((x) => x && used.add(x));
+    banks.forEach((x) => x && used2.add(x));
     let next = "F";
     runs2.forEach(([o, n], r) => {
       let bank = banks[r];
       if (!bank || banks.indexOf(bank) !== r) {
-        while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
-        used.add(bank = next);
+        while (used2.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
+        used2.add(bank = next);
       }
       for (let i = 0; i < n; i++) {
         const snd = fwTone(b, o + i * FW_REC);
@@ -30373,11 +30448,11 @@ body[data-mode='scene'] #scene {
     Drums: ["Kick"]
   };
   function starterMenu() {
-    const all = [...STARTERS, ...MORE_STARTERS], used = /* @__PURE__ */ new Set(), out2 = Object.entries(GROUP).map(([g, names]) => [
+    const all = [...STARTERS, ...MORE_STARTERS], used2 = /* @__PURE__ */ new Set(), out2 = Object.entries(GROUP).map(([g, names]) => [
       g,
-      names.map((n) => all.find((x) => x[0] === n)).filter(Boolean).map((x) => (used.add(x[0]), x))
+      names.map((n) => all.find((x) => x[0] === n)).filter(Boolean).map((x) => (used2.add(x[0]), x))
     ]);
-    const rest = all.filter((x) => !used.has(x[0]));
+    const rest = all.filter((x) => !used2.has(x[0]));
     if (rest.length) out2.push(["Other", rest]);
     return out2.filter(([, list2]) => list2.length);
   }
@@ -30889,17 +30964,17 @@ body[data-mode='scene'] #scene {
     return out2;
   }
   function joinNotes(steps) {
-    const used = steps.map((s) => s.map(() => false)), out2 = [];
+    const used2 = steps.map((s) => s.map(() => false)), out2 = [];
     steps.forEach((slots, si) => {
       slots.forEach((c, ci) => {
-        if (used[si][ci]) return;
-        used[si][ci] = true;
+        if (used2[si][ci]) return;
+        used2[si][ci] = true;
         let len = c.end < 100 ? Math.max(1, c.end - c.start) : 100 - c.start;
         let at2 = si + 1, on2 = c.end >= 100;
         while (on2 && at2 < steps.length) {
-          const j = steps[at2].findIndex((x2, xi) => x2.note === c.note && !used[at2][xi]);
+          const j = steps[at2].findIndex((x2, xi) => x2.note === c.note && !used2[at2][xi]);
           if (j < 0) break;
-          used[at2][j] = true;
+          used2[at2][j] = true;
           const x = steps[at2][j];
           if (x.end >= 100) len += 100;
           else {
@@ -30984,6 +31059,19 @@ body[data-mode='scene'] #scene {
       /* how many name bytes the MC-707 sent: the name field's length, for writing a name */
       nameLen: nm ? nm.length : 0
     };
+  }
+  async function clipHasNotes(t, k2) {
+    if (!await zxConnect())
+      return { ok: false, why: "The MC-707 is not connected (or MIDI with SysEx is not allowed)" };
+    const params = decodeParams(await read2(paramAddr(t, k2), 3, 600));
+    if (!params) return { ok: false, why: "The MC-707 did not answer for that clip" };
+    const nm = await read2(clipAddr(t, k2), 16, 400);
+    const name = nm ? String.fromCharCode(...nm.map((c) => c >= 32 && c < 127 ? c : 32)).trim() : "";
+    for (let s = 0; s < params.steps; s++) {
+      const a = stepAddr(t, k2, s), lo = await read2(a + 16, 16, 300), hi = await read2(a + 32, 16, 200);
+      if ([...pairs(lo || NONE), ...pairs(hi || NONE)].some((n) => n !== EMPTY)) return { ok: true, notes: true, name };
+    }
+    return { ok: true, notes: false, name };
   }
   var busy = false;
   async function clipNotesToMine(t, k2) {
@@ -36460,6 +36548,88 @@ body[data-mode='scene'] #scene {
     status2();
   }
 
+  // src/scene/clips-bar.js
+  var CK = { res: {}, busy: false, line: "" };
+  var used = (map, t) => map.items.filter((x) => x.t === t);
+  function clipPads(t, map) {
+    const mine = new Map(used(map, t).map((x) => [x.k, x])), first = scnStart(S.scn, t);
+    const pads = el("div", { class: "scnPads", role: "group", "aria-label": "Track " + devNum(t) + " clips" });
+    for (let k2 = 0; k2 < 16; k2++) {
+      const it = mine.get(k2), r = CK.res[t + ":" + k2], p = it && S.patterns[it.cell.pat];
+      const why = it ? "Clip " + (k2 + 1) + ": " + (p ? p.name : "") + (r && r.notes ? ". On the MC-707 it holds notes (" + (r.name || "no name") + "): Send writes over them" : r && !r.err ? ". Empty on the MC-707" : "") : "Clip " + (k2 + 1) + ": not used by the scenes" + (r && r.notes ? " (holds notes on the MC-707)" : "");
+      pads.append(
+        el(
+          "span",
+          {
+            class: "scnPad" + (it ? " use" : "") + (r && r.notes ? " busy" : "") + (r && !r.err && !r.notes ? " free" : ""),
+            title: why
+          },
+          String(k2 + 1)
+        )
+      );
+    }
+    const sel = el(
+      "select",
+      {
+        "aria-label": "Track " + devNum(t) + ": first clip",
+        title: "The clip this track’s scenes start from",
+        onchange: (e) => setStart(t, +e.target.value)
+      },
+      ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2, selected: k2 === first }, "from clip " + (k2 + 1)))
+    );
+    return el("div", { class: "scnClips" }, pads, sel);
+  }
+  function clipsSummary(map) {
+    const n = DEVS[DEV].tracks.map((t) => used(map, t).length), busy3 = map.items.filter((x) => (CK.res[x.t + ":" + x.k] || {}).notes).length;
+    return el(
+      "div",
+      { class: "scnClipSum" },
+      el("b", {}, "MC-707 clips"),
+      el("span", { class: "hint" }, n.reduce((a, b) => a + b, 0) + " in use, lit on each track"),
+      busy3 ? el("span", { class: "warn" }, busy3 + " already hold notes") : null,
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          disabled: CK.busy,
+          onclick: () => checkClips(map),
+          title: "Read the clips the scenes use from the MC-707 (read-only) and mark any that hold notes"
+        },
+        CK.busy ? "Checking…" : "Check the MC-707"
+      ),
+      CK.line ? el("span", { class: "hint" }, CK.line) : null
+    );
+  }
+  async function checkClips(map) {
+    if (CK.busy) return;
+    const list2 = map.items;
+    if (!list2.length) return toast("The scenes use no clips yet");
+    CK.busy = true;
+    SC.draw();
+    let busy3 = 0, bad = 0;
+    for (const [n, it] of list2.entries()) {
+      CK.line = "Clip " + (n + 1) + " of " + list2.length + "…";
+      SC.draw();
+      const r = await clipHasNotes(it.t, it.k);
+      if (!r.ok) {
+        bad++;
+        CK.res[it.t + ":" + it.k] = { err: r.why };
+        if (/not connected/.test(r.why)) break;
+        continue;
+      }
+      CK.res[it.t + ":" + it.k] = { notes: r.notes, name: r.name };
+      if (r.notes) busy3++;
+    }
+    CK.busy = false;
+    CK.line = bad ? "Some clips did not answer" : busy3 ? busy3 + " of the clips hold notes: pick other clips, or let Send write over them" : "All " + list2.length + " clips are empty: ready to send";
+    SC.draw();
+  }
+  function forgetCheck() {
+    CK.res = {};
+    CK.line = "";
+  }
+
   // src/scene/send.js
   var pause5 = (ms) => new Promise((r) => setTimeout(r, ms));
   function clipPattern(c) {
@@ -36494,12 +36664,16 @@ body[data-mode='scene'] #scene {
         "div",
         { class: "scRow" },
         el("b", {}, "Track " + devNum(t) + " · " + S.tracks[t].name),
-        el("span", {}, "clips 1–" + its.length),
+        el(
+          "span",
+          {},
+          its.length === 1 ? "clip " + (its[0].k + 1) : "clips " + (its[0].k + 1) + "–" + (its[its.length - 1].k + 1)
+        ),
         el(
           "span",
           { class: "hint" },
           its.map(
-            (x) => "clip " + (x.k + 1) + ": " + clipPattern(x.cell).name + (toneOf(x.cell) ? " ♪ " + toneOf(x.cell).name : "")
+            (x) => "clip " + (x.k + 1) + ": " + clipPattern(x.cell).name + (toneOf(x.cell) ? " ♪ " + toneOf(x.cell).name : "") + ((CK.res[x.t + ":" + x.k] || {}).notes ? " (holds notes now)" : "")
           ).join(" · ")
         )
       );
@@ -36519,7 +36693,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint", style: "line-height:1.45" },
-          "Experimental. Each track’s clips are written from clip 1, then the scenes and their lengths. Use a project you can lose, and save it on the MC-707 to keep what is sent. Afterwards turn CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button) and play from scene " + sceneName(f) + "."
+          "Experimental. Each track’s clips are written from the clip it starts from (▦ Clips), then the scenes and their lengths. Use a project you can lose, and save it on the MC-707 to keep what is sent. Afterwards turn CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button) and play from scene " + sceneName(f) + "."
         ),
         el("div", { class: "scRows" }, ...byTrack),
         plan2.over.some(Boolean) ? el("p", { class: "hint warn" }, "Some tracks have more than 16 different cells; those past 16 play nothing.") : null,
@@ -36585,6 +36759,8 @@ body[data-mode='scene'] #scene {
       sc = await writeScenes(plan2.scenes, f);
     });
     if (ran === null) return;
+    forgetCheck();
+    SC.draw();
     const last3 = f + plan2.scenes.length - 1;
     await askDlg({
       title: stopped ? "Stopped part-way" : "Sent the scenes to the MC-707",
@@ -36677,6 +36853,17 @@ body[data-mode='scene'] #scene {
       el(
         "div",
         { class: "grp", style: "margin-left:auto" },
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn" + (SC.clipsOn ? " on" : ""),
+            "aria-pressed": String(SC.clipsOn),
+            title: "Show which MC-707 clips each track uses, and check them on the MC-707",
+            onclick: () => (SC.clipsOn = !SC.clipsOn, SC.draw())
+          },
+          "▦ Clips"
+        ),
         el("label", { title: "Where the scenes go on the MC-707" }, "MC-707 scenes ", first),
         el(
           "button",
@@ -36999,11 +37186,11 @@ body[data-mode='scene'] #scene {
   function drawTop() {
     drawPlay();
   }
-  function head2(clipsUsed) {
+  function head2(clipsUsed, map) {
     return el(
       "div",
       { class: "scnHead" },
-      el("div", { class: "scnCorner" }, "Scene"),
+      el("div", { class: "scnCorner" }, SC.clipsOn ? clipsSummary(map) : "Scene"),
       ...tracks().map(
         (t) => el(
           "div",
@@ -37013,7 +37200,8 @@ body[data-mode='scene'] #scene {
             "span",
             { class: "hint" },
             (S.tracks[t].type === "drum" ? "Drums" : "Tone") + " · " + clipsUsed[t] + " of 16 clips"
-          )
+          ),
+          SC.clipsOn ? clipPads(t, map) : null
         )
       )
     );
@@ -37098,16 +37286,16 @@ body[data-mode='scene'] #scene {
     document.querySelectorAll("#scene .scnRow").forEach((r, j) => r.classList.toggle("cur", j === SC.row));
   }
   function drawGrid(wrap) {
-    const map = scnClips(S.scn), used = Array(8).fill(0);
-    for (const it of map.items) used[it.t]++;
-    const over = map.over.map((n, t) => n ? "track " + devNum(t) + " needs " + (16 + n) + " clips" : "").filter(Boolean);
+    const map = scnClips(S.scn), used2 = Array(8).fill(0);
+    for (const it of map.items) used2[it.t]++;
+    const over = map.over.map((n, t) => n ? "track " + devNum(t) + " runs out of clips" : "").filter(Boolean);
     const top = wrap.scrollTop;
     wrap.textContent = "";
     wrap.append(
       el(
         "div",
         { class: "scnGrid", style: "--n:" + tracks().length },
-        head2(used),
+        head2(used2, map),
         ...rows().map((r, i) => row(r, i, map.clip))
       ),
       el(
@@ -40829,11 +41017,11 @@ body[data-mode='scene'] #scene {
     if (plan2.total > 128) a.push("This is long (" + plan2.total + " bars). Consider shorter sections.");
     if (w.modulate && w.modulate.on)
       a.push("The final drop or hook will be raised by " + w.modulate.semi + " semitones for a lift.");
-    const used = /* @__PURE__ */ new Set();
+    const used2 = /* @__PURE__ */ new Set();
     plan2.sections.forEach((s) => {
-      for (const t in s.cells) if (s.cells[t].id) used.add(s.cells[t].id);
+      for (const t in s.cells) if (s.cells[t].id) used2.add(s.cells[t].id);
     });
-    a.push("Uses " + used.size + " different patterns across " + plan2.sections.length + " sections.");
+    a.push("Uses " + used2.size + " different patterns across " + plan2.sections.length + " sections.");
     a.push("Total length: " + plan2.total + " bars, about " + fmtDur(plan2.total, w.bpm) + " at " + w.bpm + " BPM.");
     return a;
   }
@@ -55375,21 +55563,21 @@ body[data-mode='scene'] #scene {
     ];
   }
   function cmClipMenu(t, k2) {
-    const m = cmFix()[t], used = k2 < m.n, tr = S.tracks[t], re = () => {
+    const m = cmFix()[t], used2 = k2 < m.n, tr = S.tracks[t], re = () => {
       scheduleSave();
       clipMapRender();
     };
     const types = CLIP_TYPES.filter((x) => tr.type === "drum" ? x[0] === "drums" || x[0] === "fx" : x[0] !== "drums");
     return [
       {
-        label: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used ? " · " + (m.names[k2] || ctInfo(m.types[k2])[1]) : " (not used)"),
+        label: "Track " + devNum(t) + ", clip " + (k2 + 1) + (used2 ? " · " + (m.names[k2] || ctInfo(m.types[k2])[1]) : " (not used)"),
         disabled: true
       },
       {
-        label: used ? "Holds" : "Use it for",
+        label: used2 ? "Holds" : "Use it for",
         sub: types.map(([v, l]) => ({
           label: l,
-          checked: used && m.types[k2] === v,
+          checked: used2 && m.types[k2] === v,
           action: () => {
             if (k2 >= m.n) m.n = k2 + 1;
             m.types[k2] = v;
@@ -55401,7 +55589,7 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Rename…",
-        disabled: !used,
+        disabled: !used2,
         action: async () => {
           const n = await askDlg({
             title: "Name clip " + (k2 + 1),
@@ -55425,7 +55613,7 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Switch the " + devNm() + " to it now",
-        disabled: !used || !MIDI.out,
+        disabled: !used2 || !MIDI.out,
         action: () => {
           sendClip(t, k2, AU.ctx ? AU.ctx.currentTime : 0);
           toast("Sent: track " + devNum(t) + " → clip " + (k2 + 1));
@@ -55434,7 +55622,7 @@ body[data-mode='scene'] #scene {
       "-",
       {
         label: "Duplicate into the next clip",
-        disabled: !used || m.n >= 16,
+        disabled: !used2 || m.n >= 16,
         action: () => {
           m.types.splice(k2 + 1, 0, m.types[k2]);
           m.types.length = 16;
@@ -55454,7 +55642,7 @@ body[data-mode='scene'] #scene {
       {
         label: "Remove this clip",
         danger: true,
-        disabled: !used || m.n <= 1,
+        disabled: !used2 || m.n <= 1,
         action: () => {
           m.types.splice(k2, 1);
           m.types.push(m.types[m.types.length - 1]);

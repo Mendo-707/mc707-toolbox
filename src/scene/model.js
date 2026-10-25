@@ -17,6 +17,8 @@ export const SC = {
   /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
   edit: false,
   big: false,
+  /* the MC-707 clips shown under the track names */
+  clipsOn: true,
   /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */
   tab: 'notes',
   inDock: false,
@@ -76,6 +78,14 @@ export function setName(i, name) {
       .trim()
       .slice(0, 20) || 'Scene ' + (i + 1);
   if (rows()[i] && rows()[i].name !== n) edit(q => (q.rows[i].name = n));
+}
+/** Track t's clips start at MC-707 clip k (0-15). */
+export function setStart(t, k) {
+  edit(q => {
+    q.start = q.start || Array(8).fill(0);
+    q.start[t] = Math.max(0, Math.min(15, k | 0));
+    if (!q.start.some(Boolean)) delete q.start;
+  });
 }
 export function setFirst(k) {
   edit(q => (q.first = Math.max(0, Math.min(SCN_MAX - 1, k | 0))));

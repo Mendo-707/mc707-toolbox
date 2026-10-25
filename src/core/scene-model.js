@@ -3,6 +3,7 @@
 // a song without scenes has no S.scn. Plain data helpers only; Scene Mode (scene/) changes it.
 //
 //   S.scn = { first: 0-127,                      the MC-707 scene the first row goes into
+//             start: [0-15] × 8,                 each track's first MC-707 clip (left out: all 0)
 //             rows: [{ id, name, bars (1-127), cells: [cell or null] × 8 }],
 //             tones: { key: { name, kind: 'tone'|'kit', d: {param: value} } } }
 //   cell  = { pat: song pattern id, tr?: semitones, tone?: key in tones }
@@ -60,11 +61,16 @@ export function fixScenes(s, pats) {
   if (!rows.length) return void delete s.scn;
   const first = Math.round(+q.first);
   s.scn = { first: Number.isFinite(first) ? Math.max(0, Math.min(SCN_MAX - 1, first)) : 0, rows, tones };
+  if (Array.isArray(q.start) && q.start.some(Boolean))
+    s.scn.start = Array.from({ length: 8 }, (_, t) => Math.max(0, Math.min(15, Math.round(+q.start[t]) || 0)));
 }
 
+/** Track t's first MC-707 clip (0-15). */
+export const scnStart = (q, t) => (q && q.start ? q.start[t] || 0 : 0);
 /**
  * Which MC-707 clip each cell goes into: per track, every different clip (pattern, transpose and tone) in
- * the order it first plays gets the next clip from 0. Clips past 16 are left out (-1) and counted.
+ * the order it first plays gets the next clip from the track's first one. Clips past 16 are left out (-1)
+ * and counted.
  * @returns {{clip: number[][], items: {t:number, k:number, cell:object, row:number}[], over: number[]}}
  *          clip[row][track] is 0-15 or -1 (nothing plays); over[track] counts clips that did not fit
  */
@@ -78,9 +84,10 @@ export function scnClips(q) {
       const c = r.cells[t];
       if (!c) return;
       let k = seen.findIndex(x => sameCell(x, c));
-      if (k < 0) {
-        if (seen.length >= 16) return void over[t]++;
-        k = seen.push(c) - 1;
+      if (k >= 0) k += scnStart(q, t);
+      else {
+        if (scnStart(q, t) + seen.length >= 16) return void over[t]++;
+        k = scnStart(q, t) + seen.push(c) - 1;
         items.push({ t, k, cell: c, row: i });
       }
       clip[i][t] = k;

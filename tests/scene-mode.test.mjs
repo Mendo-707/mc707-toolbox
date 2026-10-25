@@ -254,3 +254,62 @@ test('Scene Mode: the Sound tab docks the ZenCore editor for the cell’s clip a
   await page.locator('.scnDock #editor').waitFor();
   assert.deepEqual(errors, []);
 });
+
+test('Scene Mode: ▦ Clips shows the clips each track uses, starts a track later, and checks them on the MC-707', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  await page.evaluate(seedSong);
+  await page.locator('.mtab', { hasText: 'Scene Mode' }).click();
+  await page.locator('#scene button', { hasText: 'Make scenes from the song' }).click();
+  const lit = t =>
+    page.evaluate(
+      t => [...document.querySelectorAll('#scene .scnTrk')[t].querySelectorAll('.scnPad.use')].map(p => +p.textContent),
+      t
+    );
+  assert.deepEqual(await lit(3), [1, 2]);
+  /* track 4 from clip 5: its cells move to clips 5 and 6 */
+  await page.locator('#scene .scnTrk').nth(3).locator('select').selectOption('4');
+  assert.deepEqual(await lit(3), [5, 6]);
+  assert.deepEqual(
+    await page.evaluate(() =>
+      window.__app.scene
+        .plan()
+        .items.filter(x => x.t === 3)
+        .map(x => x.k)
+    ),
+    [4, 5]
+  );
+  /* the check: clip 5 holds a note on the fake MC-707, clip 6 is empty */
+  await page.evaluate(() => {
+    const Q = window.__app.seq,
+      mem = window.__zcMem,
+      put = (l, b) => b.forEach((x, i) => mem.set(l + i, x));
+    for (const k of [4, 5]) {
+      put(Q.paramAddr(3, k), [1, 1, 0]);
+      put(Q.clipAddr(3, k), Array(16).fill(32));
+      for (let s = 0; s < 16; s++) put(Q.stepAddr(3, k, s) + 0x10, Array(32).fill(15));
+    }
+    put(Q.stepAddr(3, 4, 2) + 0x10, [3, 0]);
+  });
+  await page.evaluate(() => {
+    const A = window.__app;
+    for (const t of [0, 6])
+      for (const k of [0, 1]) {
+        const mem = window.__zcMem,
+          put = (l, b) => b.forEach((x, i) => mem.set(l + i, x));
+        put(A.seq.paramAddr(t, k), [1, 1, 0]);
+        put(A.seq.clipAddr(t, k), Array(16).fill(32));
+        for (let s = 0; s < 16; s++) put(A.seq.stepAddr(t, k, s) + 0x10, Array(32).fill(15));
+      }
+  });
+  await page.locator('#scene .scnClipSum button', { hasText: 'Check the MC-707' }).click();
+  await page.locator('#scene .scnClipSum', { hasText: 'hold notes' }).first().waitFor({ timeout: 30000 });
+  const busy = await page.evaluate(() =>
+    [...document.querySelectorAll('#scene .scnTrk')[3].querySelectorAll('.scnPad.busy')].map(p => +p.textContent)
+  );
+  assert.deepEqual(busy, [5]);
+  /* ▦ Clips hides them */
+  await page.locator('#scene .scnTop button', { hasText: 'Clips' }).click();
+  assert.equal(await page.locator('#scene .scnPads').count(), 0);
+  assert.deepEqual(errors, []);
+});

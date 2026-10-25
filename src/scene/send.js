@@ -14,8 +14,9 @@ import { sceneName, writeScenes } from '../zen/zc-scenes.js';
 import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
 import { sendSound, soundFrom } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
-import { firstScene, rows, toneOf } from './model.js';
+import { SC, firstScene, rows, toneOf } from './model.js';
 import { sceneLabel } from './names.js';
+import { CK, forgetCheck } from './clips-bar.js';
 
 const pause = ms => new Promise(r => setTimeout(r, ms));
 /** The pattern a cell's clip gets (a transposed copy, named for it, when it has a transpose). */
@@ -62,7 +63,11 @@ export function scenesSendOpen() {
         'div',
         { class: 'scRow' },
         el('b', {}, 'Track ' + devNum(t) + ' · ' + S.tracks[t].name),
-        el('span', {}, 'clips 1–' + its.length),
+        el(
+          'span',
+          {},
+          its.length === 1 ? 'clip ' + (its[0].k + 1) : 'clips ' + (its[0].k + 1) + '–' + (its[its.length - 1].k + 1)
+        ),
         el(
           'span',
           { class: 'hint' },
@@ -73,7 +78,8 @@ export function scenesSendOpen() {
                 (x.k + 1) +
                 ': ' +
                 clipPattern(x.cell).name +
-                (toneOf(x.cell) ? ' ♪ ' + toneOf(x.cell).name : '')
+                (toneOf(x.cell) ? ' ♪ ' + toneOf(x.cell).name : '') +
+                ((CK.res[x.t + ':' + x.k] || {}).notes ? ' (holds notes now)' : '')
             )
             .join(' · ')
         )
@@ -101,7 +107,7 @@ export function scenesSendOpen() {
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
-        'Experimental. Each track’s clips are written from clip 1, then the scenes and their lengths. Use a project you can lose, and save it on the MC-707 to keep what is sent. Afterwards turn CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button) and play from scene ' +
+        'Experimental. Each track’s clips are written from the clip it starts from (▦ Clips), then the scenes and their lengths. Use a project you can lose, and save it on the MC-707 to keep what is sent. Afterwards turn CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button) and play from scene ' +
           sceneName(f) +
           '.'
       ),
@@ -188,6 +194,8 @@ export async function scenesSend(o = {}) {
     sc = await writeScenes(plan.scenes, f);
   });
   if (ran === null) return;
+  forgetCheck();
+  SC.draw();
   const last = f + plan.scenes.length - 1;
   await askDlg({
     title: stopped ? 'Stopped part-way' : 'Sent the scenes to the MC-707',

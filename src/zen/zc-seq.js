@@ -223,6 +223,27 @@ export async function readClip(t, k, onStep) {
   };
 }
 
+/**
+ * Whether clip k of app track t holds notes (read-only): its name and whether any step has a note,
+ * stopping at the first. Quicker than readClip for checking which clips are free.
+ * @returns {Promise<{ok:true, notes:boolean, name:string} | {ok:false, why:string}>}
+ */
+export async function clipHasNotes(t, k) {
+  if (!(await zxConnect()))
+    return { ok: false, why: 'The MC-707 is not connected (or MIDI with SysEx is not allowed)' };
+  const params = decodeParams(await read(paramAddr(t, k), 3, 600));
+  if (!params) return { ok: false, why: 'The MC-707 did not answer for that clip' };
+  const nm = await read(clipAddr(t, k), 16, 400);
+  const name = nm ? String.fromCharCode(...nm.map(c => (c >= 32 && c < 127 ? c : 32))).trim() : '';
+  for (let s = 0; s < params.steps; s++) {
+    const a = stepAddr(t, k, s),
+      lo = await read(a + 0x10, 16, 300),
+      hi = await read(a + 0x20, 16, 200);
+    if ([...pairs(lo || NONE), ...pairs(hi || NONE)].some(n => n !== EMPTY)) return { ok: true, notes: true, name };
+  }
+  return { ok: true, notes: false, name };
+}
+
 let busy = false;
 /**
  * Read clip k of app track t from the MC-707 into My patterns (the clips screen's READ NOTES).

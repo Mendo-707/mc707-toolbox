@@ -480,3 +480,64 @@ body[data-mode='scene'] #scene {
 .scnTabs .btn {
   min-width: 56px;
 }
+/* ▦ Clips: each track's 16 MC-707 clips under its name, lit where the scenes use one */
+.scnClips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.scnPads {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+.scnPad {
+  font-size: 9px;
+  overflow: hidden;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 3px;
+  color: var(--mute);
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.scnPad.use {
+  background: var(--tc);
+  border-color: var(--tc);
+  color: #000;
+  font-weight: 700;
+}
+.scnPad.free::after {
+  content: '';
+}
+.scnPad.use.free {
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+.scnPad.busy {
+  outline: 2px solid #e8452a;
+  outline-offset: -1px;
+}
+.scnPad.busy:not(.use) {
+  background: color-mix(in srgb, #e8452a 18%, var(--bg));
+}
+.scnClips select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+.scnTrk {
+  min-width: 0;
+}
+.scnClipSum {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  color: var(--ink);
+}
+.scnClipSum .warn {
+  color: var(--hot);
+  font-weight: 600;
+}

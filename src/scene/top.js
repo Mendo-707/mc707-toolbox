@@ -5,7 +5,7 @@
 import { el, toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { sceneName } from '../zen/zc-scenes.js';
-import { addRow, firstScene, rows, setFirst } from './model.js';
+import { SC, addRow, firstScene, rows, setFirst } from './model.js';
 import { scenesSendOpen } from './send.js';
 import { scenesFromSong, scenesToSong } from './convert.js';
 
@@ -91,6 +91,17 @@ export function sceneTop(toggle) {
     el(
       'div',
       { class: 'grp', style: 'margin-left:auto' },
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn' + (SC.clipsOn ? ' on' : ''),
+          'aria-pressed': String(SC.clipsOn),
+          title: 'Show which MC-707 clips each track uses, and check them on the MC-707',
+          onclick: () => ((SC.clipsOn = !SC.clipsOn), SC.draw())
+        },
+        '▦ Clips'
+      ),
       el('label', { title: 'Where the scenes go on the MC-707' }, 'MC-707 scenes ', first),
       el(
         'button',

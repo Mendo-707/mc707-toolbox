@@ -15,6 +15,7 @@ import { cellMenu, choosePattern, rowMenu, sceneKey } from './menus.js';
 import { sceneLabel } from './names.js';
 import { scenesFromSong } from './convert.js';
 import { sceneTop } from './top.js';
+import { clipPads, clipsSummary } from './clips-bar.js';
 import { dock, editCell, trackColumn, undock } from './dock.js';
 
 const tracks = () => DEVS[DEV].tracks;
@@ -91,11 +92,11 @@ function drawTop() {
   drawPlay();
 }
 
-function head(clipsUsed) {
+function head(clipsUsed, map) {
   return el(
     'div',
     { class: 'scnHead' },
-    el('div', { class: 'scnCorner' }, 'Scene'),
+    el('div', { class: 'scnCorner' }, SC.clipsOn ? clipsSummary(map) : 'Scene'),
     ...tracks().map(t =>
       el(
         'div',
@@ -105,7 +106,8 @@ function head(clipsUsed) {
           'span',
           { class: 'hint' },
           (S.tracks[t].type === 'drum' ? 'Drums' : 'Tone') + ' · ' + clipsUsed[t] + ' of 16 clips'
-        )
+        ),
+        SC.clipsOn ? clipPads(t, map) : null
       )
     )
   );
@@ -209,16 +211,14 @@ function drawGrid(wrap) {
   const map = scnClips(S.scn),
     used = Array(8).fill(0);
   for (const it of map.items) used[it.t]++;
-  const over = map.over
-    .map((n, t) => (n ? 'track ' + devNum(t) + ' needs ' + (16 + n) + ' clips' : ''))
-    .filter(Boolean);
+  const over = map.over.map((n, t) => (n ? 'track ' + devNum(t) + ' runs out of clips' : '')).filter(Boolean);
   const top = wrap.scrollTop;
   wrap.textContent = '';
   wrap.append(
     el(
       'div',
       { class: 'scnGrid', style: '--n:' + tracks().length },
-      head(used),
+      head(used, map),
       ...rows().map((r, i) => row(r, i, map.clip))
     ),
     el(
