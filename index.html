@@ -8316,6 +8316,40 @@ body[data-mode='scene'] #scene {
     for (const h of [...OPEN.values()]) h.close(true);
   }
 
+  // src/core/theme.js
+  var KEY = "mc707-theme";
+  var THEMES = [
+    ["dark", "Dark"],
+    ["light", "Light"],
+    ["system", "Match the computer"]
+  ];
+  function themeNow() {
+    try {
+      const v = localStorage.getItem(KEY);
+      return THEMES.some((t) => t[0] === v) ? v : "dark";
+    } catch (e) {
+      return "dark";
+    }
+  }
+  function applyTheme(v = themeNow()) {
+    const r = document.documentElement;
+    if (v === "system") {
+      delete r.dataset.theme;
+      r.style.colorScheme = "";
+    } else {
+      r.dataset.theme = v;
+      r.style.colorScheme = v;
+    }
+  }
+  function setTheme(v) {
+    try {
+      localStorage.setItem(KEY, v);
+    } catch (e) {
+    }
+    applyTheme(v);
+    dispatchEvent(new Event("mc707-theme"));
+  }
+
   // src/core/icons.js
   var ICON = {
     play: '<svg viewBox="0 0 12 12"><path d="M2 1v10l9-5z"/></svg>',
@@ -17003,11 +17037,11 @@ body[data-mode='scene'] #scene {
   }
 
   // src/library/user-lib.js
-  var KEY = "mc707-user-patterns";
+  var KEY2 = "mc707-user-patterns";
   var LIST = null;
   function load() {
     try {
-      const a = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const a = JSON.parse(localStorage.getItem(KEY2) || "[]");
       return Array.isArray(a) ? a.filter(
         (p) => p && typeof p.id === "string" && Array.isArray(p.notes) && (p.type === "drum" || p.type === "tone")
       ) : [];
@@ -17021,7 +17055,7 @@ body[data-mode='scene'] #scene {
   }
   function save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify(userLib()));
+      localStorage.setItem(KEY2, JSON.stringify(userLib()));
       return true;
     } catch (e) {
       return false;
@@ -31614,13 +31648,13 @@ body[data-mode='scene'] #scene {
   var sceneLabel = (i) => firstScene() + i < 128 ? sceneName(firstScene() + i) : "—";
 
   // src/zen/zc-library.js
-  var KEY2 = "mc707-zen";
+  var KEY3 = "mc707-zen";
   var ZLIB = { lib: [], clips: {}, loaded: false };
   function load2() {
     if (ZLIB.loaded) return;
     ZLIB.loaded = true;
     try {
-      const o = JSON.parse(localStorage.getItem(KEY2) || "{}");
+      const o = JSON.parse(localStorage.getItem(KEY3) || "{}");
       if (Array.isArray(o.lib)) ZLIB.lib = o.lib.filter((e) => e && typeof e.id === "string" && soundFrom(e.s));
       if (o.clips && typeof o.clips === "object") ZLIB.clips = o.clips;
     } catch (e) {
@@ -31628,7 +31662,7 @@ body[data-mode='scene'] #scene {
   }
   function save2() {
     try {
-      localStorage.setItem(KEY2, JSON.stringify({ lib: ZLIB.lib, clips: ZLIB.clips }));
+      localStorage.setItem(KEY3, JSON.stringify({ lib: ZLIB.lib, clips: ZLIB.clips }));
       return true;
     } catch (e) {
       return false;
@@ -36635,16 +36669,16 @@ body[data-mode='scene'] #scene {
   var uncheck = (t, k2) => delete CK.res[t + ":" + k2];
 
   // src/scene/write.js
-  var KEY3 = "mc707-scene-write";
+  var KEY4 = "mc707-scene-write";
   var WO = { replace: true, tones: true, tempo: true, names: true, auto: false };
   try {
-    Object.assign(WO, JSON.parse(localStorage.getItem(KEY3) || "{}"));
+    Object.assign(WO, JSON.parse(localStorage.getItem(KEY4) || "{}"));
   } catch (e) {
   }
   function setWO(k2, v) {
     WO[k2] = v;
     try {
-      localStorage.setItem(KEY3, JSON.stringify(WO));
+      localStorage.setItem(KEY4, JSON.stringify(WO));
     } catch (e) {
     }
     SC.draw();
@@ -41749,7 +41783,7 @@ body[data-mode='scene'] #scene {
     return o;
   }
   function customRows(st, r, row) {
-    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY7 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY8 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
       row(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
@@ -41758,7 +41792,7 @@ body[data-mode='scene'] #scene {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
-      const k2 = poolOf(t) === "acid" ? "bass" : KEY7[slotOf(t)];
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY8[slotOf(t)];
       out2.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
@@ -52321,12 +52355,14 @@ body[data-mode='scene'] #scene {
       }
       if (ED.geom) layoutEditor();
     });
-    const mq = matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener && mq.addEventListener("change", () => {
+    const redraw = () => {
       drawEditor();
       renderLibrary();
       renderArr();
-    });
+    };
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener && mq.addEventListener("change", redraw);
+    addEventListener("mc707-theme", redraw);
   }
   function afterReplaceKeepUndo() {
     ED.selNotes.clear();
@@ -52980,10 +53016,10 @@ body[data-mode='scene'] #scene {
   }
 
   // src/live/genre-picker.js
-  var KEY4 = "mc707-live-pick";
+  var KEY5 = "mc707-live-pick";
   function livePickOnOpen() {
     try {
-      return localStorage.getItem(KEY4) !== "0";
+      return localStorage.getItem(KEY5) !== "0";
     } catch (e) {
       return true;
     }
@@ -53044,7 +53080,7 @@ body[data-mode='scene'] #scene {
             checked: true,
             onchange: (e) => {
               try {
-                localStorage.setItem(KEY4, e.target.checked ? "1" : "0");
+                localStorage.setItem(KEY5, e.target.checked ? "1" : "0");
               } catch (er) {
               }
             }
@@ -53064,7 +53100,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/zen/zc-synth-io.js
-  var KEY5 = "mc707-synth";
+  var KEY6 = "mc707-synth";
   var SETUPS = "mc707-synth-setups";
   var SY = {
     slot: Array(8).fill(0),
@@ -53081,7 +53117,7 @@ body[data-mode='scene'] #scene {
     kbd: "own"
   };
   try {
-    const o = JSON.parse(localStorage.getItem(KEY5) || "{}");
+    const o = JSON.parse(localStorage.getItem(KEY6) || "{}");
     for (const k2 of ["slot", "level", "pan", "rev", "names", "mute", "solo"])
       if (Array.isArray(o[k2]) && o[k2].length === 8)
         SY[k2] = o[k2].map(
@@ -53094,7 +53130,7 @@ body[data-mode='scene'] #scene {
   }
   function synthSave() {
     try {
-      localStorage.setItem(KEY5, JSON.stringify(SY));
+      localStorage.setItem(KEY6, JSON.stringify(SY));
     } catch (e) {
     }
   }
@@ -54077,10 +54113,10 @@ body[data-mode='scene'] #scene {
   }
 
   // src/ui/start-screen.js
-  var KEY6 = "mc707-start";
+  var KEY7 = "mc707-start";
   function startOnOpen() {
     try {
-      return localStorage.getItem(KEY6) !== "0";
+      return localStorage.getItem(KEY7) !== "0";
     } catch (e) {
       return true;
     }
@@ -54185,7 +54221,7 @@ body[data-mode='scene'] #scene {
             checked: true,
             onchange: (e) => {
               try {
-                localStorage.setItem(KEY6, e.target.checked ? "1" : "0");
+                localStorage.setItem(KEY7, e.target.checked ? "1" : "0");
               } catch (er) {
               }
             }
@@ -54906,7 +54942,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/core/version.js
-  var VERSION = "1.4.1";
+  var VERSION = "1.5.0";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -55341,7 +55377,15 @@ body[data-mode='scene'] #scene {
           ["MIDI and sound…", go("#bMidi")],
           ["Track MIDI controls…", go("#bTrackCtl")],
           ["Audio inputs…", go("#bAudSet")],
-          ["App sounds (hear the app in this browser)", toggleAppSound, "", () => !!S.preview]
+          ["App sounds (hear the app in this browser)", toggleAppSound, "", () => !!S.preview],
+          0,
+          [
+            "Theme",
+            null,
+            "",
+            null,
+            () => THEMES.map(([v, label2]) => ({ label: label2, checked: themeNow() === v, action: () => setTheme(v) }))
+          ]
         ]
       ],
       [
@@ -56336,6 +56380,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/main.js
+  applyTheme();
   Object.assign(hooks, {
     applyDevice,
     audRender,

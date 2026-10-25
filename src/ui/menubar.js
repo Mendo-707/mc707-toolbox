@@ -30,6 +30,7 @@ import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
 import { WO, setWO, writeAll, writeChanged } from '../scene/write.js';
 import { checkNew } from '../scene/check.js';
+import { THEMES, setTheme, themeNow } from '../core/theme.js';
 import { sceneGuideOpen } from '../scene/guide.js';
 import {
   exitApp,
@@ -207,7 +208,15 @@ function initMenubar() {
         ['MIDI and sound…', go('#bMidi')],
         ['Track MIDI controls…', go('#bTrackCtl')],
         ['Audio inputs…', go('#bAudSet')],
-        ['App sounds (hear the app in this browser)', toggleAppSound, '', () => !!S.preview]
+        ['App sounds (hear the app in this browser)', toggleAppSound, '', () => !!S.preview],
+        0,
+        [
+          'Theme',
+          null,
+          '',
+          null,
+          () => THEMES.map(([v, label]) => ({ label, checked: themeNow() === v, action: () => setTheme(v) }))
+        ]
       ]
     ],
     [

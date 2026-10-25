@@ -338,13 +338,14 @@ export function initControls() {
     }
     if (ED.geom) layoutEditor();
   });
+  const redraw = () => {
+    drawEditor();
+    renderLibrary();
+    renderArr();
+  };
   const mq = matchMedia('(prefers-color-scheme: dark)');
-  mq.addEventListener &&
-    mq.addEventListener('change', () => {
-      drawEditor();
-      renderLibrary();
-      renderArr();
-    });
+  mq.addEventListener && mq.addEventListener('change', redraw);
+  addEventListener('mc707-theme', redraw);
 }
 export function afterReplaceKeepUndo() {
   ED.selNotes.clear();

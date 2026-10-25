@@ -7,6 +7,7 @@
 // Load order matters: each module is evaluated once, in this order (see AGENTS.md).
 import { popoutCloseAll } from './services/popout.js';
 import './core/dom.js';
+import { applyTheme } from './core/theme.js';
 import './core/icons.js';
 import './core/theory.js';
 import './library/factory.js';
@@ -169,6 +170,9 @@ import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
 import { hoverHelpStart } from './ui/hover-help.js';
+
+/* the colours first, so the app does not flash light before going dark */
+applyTheme();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
