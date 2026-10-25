@@ -55281,7 +55281,7 @@ body[data-mode='scene'] #scene {
     testShape: () => testShape,
     writeMotion: () => writeMotion
   });
-  var MOTION_LANES = ["C1", "C2", "C3", "C4", "Lane 5", "Lane 6", "Lane 7", "Lane 8"];
+  var MOTION_LANES = ["FILTER", "MOD", "FX", "Knob 4", "Lane 5", "Lane 6", "Lane 7", "Lane 8"];
   var MOTION_PER_STEP = 8;
   var MOTION_NONE = -1;
   var motionAddr = (t, k2, s, lane) => lin(clipPacked(devTrack(t), k2) + 262144 + s * 256 + lane * 16);
@@ -55546,7 +55546,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Each " + name + " clip can play back knob moves, called motion, in 8 lanes: one for each of the knobs C1 to C4, and four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept."
+          "Each " + name + " clip can play back knob moves, called motion, in 8 lanes: the first four follow the track’s knobs as KNOB ASSIGN sets them (FILTER, MOD, FX and a fourth), then four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept."
         ),
         step(
           1,
@@ -55560,13 +55560,13 @@ body[data-mode='scene'] #scene {
         step(
           2,
           "Look first (read only)",
-          "Press Read every lane. It lists which lanes of that clip already hold knob moves (C1 to C4, then Lane 5 to 8). Nothing is changed. If it says the " + name + " did not answer, check the track and clip, and that the " + name + " is connected.",
+          "Press Read every lane. It lists which lanes of that clip already hold knob moves (FILTER, MOD, FX, Knob 4, then Lane 5 to 8). Nothing is changed. If it says the " + name + " did not answer, check the track and clip, and that the " + name + " is connected.",
           row(readAll)
         ),
         step(
           3,
           "Write the test shape",
-          'Leave the lane on C4 (or pick another) and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
+          'Pick a lane and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
           row(lane, write)
         ),
         step(
@@ -55589,18 +55589,18 @@ body[data-mode='scene'] #scene {
                 "li",
                 {},
                 el("b", {}, "No change: "),
-                "that lane may move something this sound does not use. Try C1 in step 5."
+                "that lane may move something this sound does not use. Try FILTER in step 5."
               )
             ),
-            "To see what that knob is set to, turn the knob for the lane you wrote (C4 for lane C4) a little while the clip plays: its name shows on the " + name + "’s screen. Turning it can take over from the motion for a moment, which is fine.",
-            "Then pick what you heard, type the knob name, and press Add to results."
+            "To see what each knob is set to, press KNOB ASSIGN on the " + name + ": it lists what each track’s FILTER, MOD, FX and fourth knob controls (the C1-C4 knobs are something else: they change with the screen).",
+            "Then pick what you heard, type what KNOB ASSIGN shows for that knob, and press Add to results."
           ],
           row(heard, knob2, note)
         ),
         step(
           5,
           "Try another lane (optional)",
-          "Clear lane takes the test shape out of the lane picked in step 3. To compare, pick C1 (usually the filter, easy to hear), write the test shape again and listen. Clear each lane when you are done with it.",
+          "Clear lane takes the test shape out of the lane picked in step 3. To compare, pick FILTER (easy to hear), write the test shape again and listen. Clear each lane when you are done with it.",
           row(clear)
         ),
         step(

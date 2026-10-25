@@ -31,10 +31,10 @@ test('Motion: lanes are 8 values a step, at the clip + 04 00 00 + step and lane,
   assert.deepEqual(errors, []);
 });
 
-test('Motion test: reads which lanes hold motion, writes the test shape to C4 and reads it back', async () => {
+test('Motion test: reads which lanes hold motion, writes the test shape to Knob 4 and reads it back', async () => {
   const { page, errors } = await openApp();
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
-  /* a 4-step clip on track 4, clip 2: no motion but some on C2 */
+  /* a 4-step clip on track 4, clip 2: no motion but some on MOD */
   await page.evaluate(() => {
     const Q = window.__app.seq,
       M = window.__app.motion,
@@ -53,9 +53,9 @@ test('Motion test: reads which lanes hold motion, writes the test shape to C4 an
     timeout: 30000
   });
   const read = await page.textContent('#mtOv .sfOut');
-  assert.match(read, /C1: no motion/);
-  assert.match(read, /C2: 2 values, 40 to 90 \(first at step 3: 90\)/);
-  assert.match(read, /C4: no motion/);
+  assert.match(read, /FILTER: no motion/);
+  assert.match(read, /MOD: 2 values, 40 to 90 \(first at step 3: 90\)/);
+  assert.match(read, /Knob 4: no motion/);
   await page.click('#mtOv button:has-text("Write test shape")');
   await page.getByRole('button', { name: 'Write', exact: true }).click();
   await page.waitForFunction(
@@ -63,7 +63,7 @@ test('Motion test: reads which lanes hold motion, writes the test shape to C4 an
     null,
     { timeout: 30000 }
   );
-  assert.match(await page.textContent('#mtOv .sfOut'), /C4 of track 4 clip 2: read back the same/);
+  assert.match(await page.textContent('#mtOv .sfOut'), /Knob 4 of track 4 clip 2: read back the same/);
   const got = await page.evaluate(() => {
     const M = window.__app.motion,
       mem = window.__zcMem;
@@ -74,8 +74,11 @@ test('Motion test: reads which lanes hold motion, writes the test shape to C4 an
   await page.selectOption('#mtOv select[aria-label="What did you hear?"]', { index: 1 });
   await page.fill('#mtOv input[type=text]', 'LEVEL');
   await page.click('#mtOv button:has-text("Add to results")');
-  assert.match(await page.textContent('#mtOv .sfOut'), /Heard on C4 \(track 4 clip 2\): Volume: fades in and out; LEVEL/);
-  /* C2 is left alone */
+  assert.match(
+    await page.textContent('#mtOv .sfOut'),
+    /Heard on Knob 4 \(track 4 clip 2\): Volume: fades in and out; LEVEL/
+  );
+  /* MOD is left alone */
   const c2 = await page.evaluate(() => {
     const M = window.__app.motion,
       mem = window.__zcMem;
