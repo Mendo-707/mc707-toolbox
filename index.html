@@ -52281,6 +52281,18 @@ body.popFrameless .mxTop input {
     if (run2) out2.push(run2);
     return out2.map((r) => hexAddr(r.at) + ": " + r.from.map(hx).join(" ") + " → " + r.to.map(hx).join(" "));
   }
+  function scanRuns(mem) {
+    const keys2 = [...mem.keys()].sort((x, y) => x - y), out2 = [];
+    let run2 = null;
+    for (const k2 of keys2) {
+      if (!run2 || k2 !== run2.at + run2.b.length) {
+        run2 = { at: k2, b: [] };
+        out2.push(run2);
+      }
+      run2.b.push(mem.get(k2));
+    }
+    return out2.map((r) => ({ at: hexAddr(r.at), hex: r.b.map(hx).join(" ") }));
+  }
   var areaList = () => regions.map((r) => r.label + " " + hexAddr(r.from) + " (" + r.blocks * BLOCK + " bytes)").join("\n");
   function sceneFinderOpen() {
     if (document.getElementById("sfOv")) return;
@@ -52339,6 +52351,19 @@ body.popFrameless .mxTop input {
       },
       "Copy results"
     );
+    const save3 = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => {
+          if (!scans.length) return toast("Scan first");
+          const data = { saved: (/* @__PURE__ */ new Date()).toISOString(), notes: out2.textContent, scans: scans.map(scanRuns) };
+          hooks.saveFile("mc707-scene-scans.json", JSON.stringify(data, null, 1));
+        }
+      },
+      "Save scans to a file"
+    );
     const close = () => ov.remove();
     const ov = el(
       "div",
@@ -52355,16 +52380,18 @@ body.popFrameless .mxTop input {
         el(
           "ol",
           { class: "hint sfSteps" },
-          el("li", {}, "Press Scan."),
-          el("li", {}, "On the " + name + ": in scene 1-1, change track 1 to clip 5 and store the scene. Press Scan."),
+          el("li", {}, "Call up scene 1-1. Press Scan."),
+          el("li", {}, "Call up scene 1-2 (store nothing). Press Scan."),
           el(
             "li",
             {},
-            "On the " + name + ": in the SCENE CHAIN screen, for scene 1-1 set CHAIN on and LENGTH to 7. Press Scan."
+            "Call up scene 1-1, change track 3 to clip 7 and store it into scene 1-1 (check the display says it was stored). Press Scan."
           ),
-          el("li", {}, "Press Copy results and paste them into the chat.")
+          el("li", {}, "Call up scene 1-2, then 1-1 again: track 3 should go to clip 7. Press Scan."),
+          el("li", {}, "In the SCENE CHAIN screen, set scene 1-2’s LENGTH to 3. Press Scan."),
+          el("li", {}, "Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.")
         ),
-        el("div", { style: "display:flex;gap:8px;align-items:center" }, scan, copy),
+        el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, scan, copy, save3),
         status3,
         bar2,
         out2,

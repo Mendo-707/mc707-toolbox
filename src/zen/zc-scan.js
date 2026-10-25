@@ -9,6 +9,7 @@ import { el, toast } from '../core/dom.js';
 import { DEVS, DEV } from '../core/device.js';
 import { ZX, hexAddr, lin, zxConnect, zxRead } from './zc-sysex.js';
 import { clipPacked } from './zc-seq.js';
+import { hooks } from '../core/hooks.js';
 
 const BLOCK = 128;
 /* the project block, all of it (it answers up to 10 00 3A 7F; scenes may sit past that) */
@@ -79,6 +80,20 @@ export function scanDiff(a, b) {
   if (run) out.push(run);
   return out.map(r => hexAddr(r.at) + ': ' + r.from.map(hx).join(' ') + ' → ' + r.to.map(hx).join(' '));
 }
+/** A scan as runs of bytes: [{at: "10 00 00 00", hex: "4d 59 …"}], for the saved file. */
+export function scanRuns(mem) {
+  const keys = [...mem.keys()].sort((x, y) => x - y),
+    out = [];
+  let run = null;
+  for (const k of keys) {
+    if (!run || k !== run.at + run.b.length) {
+      run = { at: k, b: [] };
+      out.push(run);
+    }
+    run.b.push(mem.get(k));
+  }
+  return out.map(r => ({ at: hexAddr(r.at), hex: r.b.map(hx).join(' ') }));
+}
 const areaList = () =>
   regions.map(r => r.label + ' ' + hexAddr(r.from) + ' (' + r.blocks * BLOCK + ' bytes)').join('\n');
 
@@ -144,6 +159,19 @@ export function sceneFinderOpen() {
     },
     'Copy results'
   );
+  const save = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn',
+      onclick: () => {
+        if (!scans.length) return toast('Scan first');
+        const data = { saved: new Date().toISOString(), notes: out.textContent, scans: scans.map(scanRuns) };
+        hooks.saveFile('mc707-scene-scans.json', JSON.stringify(data, null, 1));
+      }
+    },
+    'Save scans to a file'
+  );
   const close = () => ov.remove();
   const ov = el(
     'div',
@@ -162,16 +190,18 @@ export function sceneFinderOpen() {
       el(
         'ol',
         { class: 'hint sfSteps' },
-        el('li', {}, 'Press Scan.'),
-        el('li', {}, 'On the ' + name + ': in scene 1-1, change track 1 to clip 5 and store the scene. Press Scan.'),
+        el('li', {}, 'Call up scene 1-1. Press Scan.'),
+        el('li', {}, 'Call up scene 1-2 (store nothing). Press Scan.'),
         el(
           'li',
           {},
-          'On the ' + name + ': in the SCENE CHAIN screen, for scene 1-1 set CHAIN on and LENGTH to 7. Press Scan.'
+          'Call up scene 1-1, change track 3 to clip 7 and store it into scene 1-1 (check the display says it was stored). Press Scan.'
         ),
-        el('li', {}, 'Press Copy results and paste them into the chat.')
+        el('li', {}, 'Call up scene 1-2, then 1-1 again: track 3 should go to clip 7. Press Scan.'),
+        el('li', {}, 'In the SCENE CHAIN screen, set scene 1-2’s LENGTH to 3. Press Scan.'),
+        el('li', {}, 'Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.')
       ),
-      el('div', { style: 'display:flex;gap:8px;align-items:center' }, scan, copy),
+      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, scan, copy, save),
       status,
       bar,
       out,
