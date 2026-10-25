@@ -93,6 +93,8 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
         for (let st = 0; st < 16; st++) put(Q.stepAddr(t, k, st) + 0x10, Array(32).fill(15));
       }
     put(Q.paramAddr(3, 4), [1, 1, 0]);
+    /* track 6 already plays each clip's own sound: it stays that way */
+    mem.set(((0x10 << 21) | (0x08 << 7)) + 5 * 0x100 + 4, 1);
     put(Q.stepAddr(3, 4, 0) + 0x10, [3, 12, ...Array(14).fill(15)]);
   });
   /* send */
@@ -104,9 +106,13 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
       timeout: 60000
     }
   );
-  const src = await page.evaluate(TRK => [3, 4, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
-  assert.deepEqual(src.slice(0, 2), [1, 0], 'track 4 (3 clips) plays its clips’ sounds; track 5 (1 clip) its own');
-  assert.notEqual(src[2], 1, 'a drum track with nothing sent is left alone');
+  const src = await page.evaluate(TRK => [3, 4, 5, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
+  assert.deepEqual(
+    src.slice(0, 3),
+    [1, 0, 1],
+    'track 4 (3 clips): its clips’ sounds; track 5 (1 clip, on its own sound): its own; track 6 (on clip sounds): stays'
+  );
+  assert.notEqual(src[3], 1, 'a drum track with nothing sent is left alone');
   assert.equal(
     await page.evaluate(() => window.__app.S.clipMap[4].names[0]),
     'House Piano',

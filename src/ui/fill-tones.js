@@ -19,7 +19,7 @@ import { ZS, soundOf, soundsLoad } from '../zen/zc-sounds.js';
 import { soundFrom } from '../zen/zc-tone.js';
 import { sendSound } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
-import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
+import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxRead, zxWrite } from '../zen/zc-sysex.js';
 import { clipHasNotes, writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
 import { pickTone } from '../scene/pick-tone.js';
@@ -301,7 +301,7 @@ export async function fillTonesOpen() {
       el(
         'p',
         { class: 'hint' },
-        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track with one clip set up gets its sound as the track’s own, which all its clips play (Sound Source TRACK). A track with more gets a sound in each clip (Sound Source CLIP), and any other clip of it that holds notes gets one of its sounds too, so none goes quiet.'
+        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track that plays its own sound (Sound Source TRACK) with one clip set up here gets the new sound as that track sound. Otherwise each clip gets its own (Sound Source CLIP, which a different kit or tone per clip needs), and any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet. Clips that already have their own sound keep it.'
       ),
       el(
         'div',
@@ -411,6 +411,15 @@ export async function fillTonesOpen() {
         ' own sound again'
     );
   };
+  /* one byte, or a sound slot's name, read from the MC-707 (null: no answer) */
+  const readByte = async l => {
+    const r = await zxRead(l, 1, 400, true);
+    return Array.isArray(r) && r.length ? r[0] : null;
+  };
+  const ownName = async (kind, t, k) => {
+    const r = await zxRead(slotAddr(kind, t, k), 16, 400, true);
+    return Array.isArray(r) ? String.fromCharCode(...r.map(c => (c >= 32 && c < 127 ? c : 32))).trim() : null;
+  };
   const send = async () => {
     if (!(await zxConnect()))
       return toast('The ' + DEVS[DEV].name + ' is not connected (or MIDI with SysEx is not allowed)');
@@ -424,24 +433,31 @@ export async function fillTonesOpen() {
       extra = 0;
     const ran = await writeSession('Filling tones', async ui => {
       const tracks = new Map();
-      /* a track with one clip set up gets the sound as its own track sound, which every clip plays
-         (Sound Source TRACK): no clip can go quiet. A track with more needs each clip's own sound
-         (Sound Source CLIP), and then any other clip that holds notes gets one of its sounds too */
+      /* How each track keeps its sound stays as it is on the MC-707, unless it has to change:
+         - a track on its own sound (Sound Source TRACK) with one clip set up here gets the new sound as
+           that track sound, which all its clips play;
+         - otherwise each clip set up here gets its own (Sound Source CLIP, which a track needs for a
+           different kit or tone per clip), and any other clip of it that holds notes but has no sound
+           of its own (blank or INIT) gets one of the track's new sounds, so none goes quiet. */
       const lead = [...new Set(jobs.map(j => j.t))];
       for (const t of lead) {
         const mine = jobs.filter(j => j.t === t),
-          n = plan[t].length;
-        if (n === 1) {
+          n = plan[t].length,
+          kind = mine[0].r.snd.kind;
+        ui.set('Track ' + devNum(t) + ': how does it keep its sound?', 0);
+        const src = await readByte(trackSetAddr(t) + 4);
+        if (n === 1 && src !== 1) {
           mine.forEach(j => (j.k = 16));
           continue;
         }
         for (let k = n; k < 16 && !ui.cancelled; k++) {
           ui.set('Track ' + devNum(t) + ': does clip ' + (k + 1) + ' hold notes?', 0);
           const r = await clipHasNotes(t, k);
-          if (r.ok && r.notes) {
-            jobs.push({ t, k, r: mine[(k - n) % mine.length].r });
-            extra++;
-          }
+          if (!r.ok || !r.notes) continue;
+          const own = await ownName(kind, t, k);
+          if (own && !/^init (tone|kit)$/i.test(own)) continue;
+          jobs.push({ t, k, r: mine[(k - n) % mine.length].r });
+          extra++;
         }
       }
       for (const [i, j] of jobs.entries()) {
