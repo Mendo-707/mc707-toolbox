@@ -24,6 +24,7 @@ import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
+import { sceneFinderOpen } from '../zen/zc-scan.js';
 import {
   exitApp,
   projChooseFolder,
@@ -118,6 +119,7 @@ function initMenubar() {
         ['Tap tempo', go('#bTap')],
         ['Mixer…', () => songMixerOpen()],
         ['Send patterns to MC-707 clips…', () => songToClipsOpen()],
+        ['Find MC-707 scene data (read-only)…', () => sceneFinderOpen()],
         0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]

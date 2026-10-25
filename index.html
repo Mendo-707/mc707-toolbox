@@ -1872,6 +1872,28 @@ input[type='range'] {
   background: var(--hot);
   transition: width 0.2s;
 }
+
+/* the scene finder (zen/zc-scan.js) */
+.sfSteps {
+  margin: 6px 0 12px;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+.sfOut {
+  margin: 10px 0;
+  max-height: 34vh;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font:
+    12px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  user-select: text;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -52204,6 +52226,164 @@ body.popFrameless .mxTop input {
     });
   }
 
+  // src/zen/zc-scan.js
+  var BLOCK = 128;
+  var PROJECT = { from: lin(268435456), blocks: 128, label: "project" };
+  function probes() {
+    const p = [];
+    for (const a of [268500992, 268566528, 268697600, 268959744, 269484032, 270532608, 272629760])
+      p.push({ at: a, label: "project+" });
+    for (let h = 0; h <= 31; h++) if (h !== 16) p.push({ at: h << 24, label: "area " + h.toString(16) });
+    for (const a of [675282944, 687865856, 704643072, 721420288, 738197504, 754974720, 771751936, 788529152])
+      p.push({ at: a, label: "after the clips" });
+    for (let d = 0; d < 8; d++)
+      for (let s = 0; s < 6; s++) p.push({ at: clipPacked(d, 16) + s * 65536, label: "track " + (d + 1) + " slot 17" });
+    return p;
+  }
+  var hx = (b) => b == null ? "--" : b.toString(16).padStart(2, "0").toUpperCase();
+  var regions = null;
+  var scans = [];
+  async function scanOnce(onStep, ms = 300) {
+    if (!await zxConnect()) return /* @__PURE__ */ new Map();
+    if (!regions) {
+      regions = [PROJECT];
+      const p = probes();
+      for (let i = 0; i < p.length; i++) {
+        if (onStep) onStep("Looking for other areas: " + p[i].label, i / p.length);
+        const r = await zxRead(lin(p[i].at), 16, ms, true);
+        if (Array.isArray(r) && r.length) regions.push({ from: lin(p[i].at), blocks: 8, label: p[i].label });
+      }
+    }
+    const mem = /* @__PURE__ */ new Map(), total = regions.reduce((n, r) => n + r.blocks, 0);
+    let done2 = 0;
+    for (const r of regions)
+      for (let b = 0; b < r.blocks; b++, done2++) {
+        if (onStep) onStep("Reading " + r.label + " " + hexAddr(r.from + b * BLOCK), done2 / total);
+        const at2 = r.from + b * BLOCK, got = await zxRead(at2, BLOCK, ms, true);
+        if (Array.isArray(got)) got.forEach((v, i) => mem.set(at2 + i, v));
+      }
+    return mem;
+  }
+  function scanDiff(a, b) {
+    const keys2 = [.../* @__PURE__ */ new Set([...a.keys(), ...b.keys()])].sort((x, y) => x - y), out2 = [];
+    let run2 = null;
+    for (const k2 of keys2) {
+      const x = a.get(k2), y = b.get(k2);
+      if (x === y) continue;
+      if (run2 && k2 === run2.at + run2.from.length) {
+        run2.from.push(x);
+        run2.to.push(y);
+      } else {
+        if (run2) out2.push(run2);
+        run2 = { at: k2, from: [x], to: [y] };
+      }
+    }
+    if (run2) out2.push(run2);
+    return out2.map((r) => hexAddr(r.at) + ": " + r.from.map(hx).join(" ") + " → " + r.to.map(hx).join(" "));
+  }
+  var areaList = () => regions.map((r) => r.label + " " + hexAddr(r.from) + " (" + r.blocks * BLOCK + " bytes)").join("\n");
+  function sceneFinderOpen() {
+    if (document.getElementById("sfOv")) return;
+    const name = DEVS[DEV].name;
+    const out2 = el("pre", { class: "sfOut" }, "No scans yet."), status3 = el("div", { class: "hint", role: "status", "aria-live": "polite" }, ""), fill2 = el("i", {}), bar2 = el("div", { class: "wpBar" }, fill2);
+    let log = [];
+    const show = () => out2.textContent = log.join("\n") || "No scans yet.";
+    const scan = el(
+      "button",
+      {
+        type: "button",
+        class: "btn on",
+        onclick: async () => {
+          if (!await zxConnect()) return toast("The " + name + " is not connected (or MIDI with SysEx is not allowed)");
+          scan.disabled = true;
+          const n = scans.length + 1;
+          try {
+            const mem = await scanOnce((t, f) => {
+              status3.textContent = "Scan " + n + ": " + t;
+              fill2.style.width = Math.round(f * 100) + "%";
+            });
+            scans.push(mem);
+            if (n === 1) log.push("Scan 1: " + mem.size + " bytes read from:\n" + areaList());
+            else {
+              const d = scanDiff(scans[n - 2], mem);
+              log.push(
+                "",
+                "Scan " + n + " against scan " + (n - 1) + ": " + (d.length ? d.length + " changes" : "nothing changed"),
+                ...d.slice(0, 300)
+              );
+              if (d.length > 300) log.push("… and " + (d.length - 300) + " more");
+            }
+            status3.textContent = "Scan " + n + " done (" + mem.size + " bytes). Now make the next change, then Scan again.";
+            fill2.style.width = "100%";
+          } finally {
+            scan.disabled = false;
+            show();
+          }
+        }
+      },
+      "Scan"
+    );
+    const copy = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: async () => {
+          try {
+            await navigator.clipboard.writeText(out2.textContent);
+            toast("Copied: paste it into the chat");
+          } catch (e) {
+            toast("Could not copy: select the text and copy it");
+          }
+        }
+      },
+      "Copy results"
+    );
+    const close = () => ov.remove();
+    const ov = el(
+      "div",
+      { id: "sfOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Find scene data" },
+      el(
+        "div",
+        { class: "ptBox", style: "max-width:720px" },
+        el("h3", {}, "Find where the " + name + " keeps its scenes"),
+        el(
+          "p",
+          { class: "hint", style: "line-height:1.45" },
+          "Read-only: this only asks the " + name + " for data, it changes nothing. Stop playback first. The first scan takes about two minutes, later ones about one."
+        ),
+        el(
+          "ol",
+          { class: "hint sfSteps" },
+          el("li", {}, "Press Scan."),
+          el("li", {}, "On the " + name + ": in scene 1-1, change track 1 to clip 5 and store the scene. Press Scan."),
+          el(
+            "li",
+            {},
+            "On the " + name + ": in the SCENE CHAIN screen, for scene 1-1 set CHAIN on and LENGTH to 7. Press Scan."
+          ),
+          el("li", {}, "Press Copy results and paste them into the chat.")
+        ),
+        el("div", { style: "display:flex;gap:8px;align-items:center" }, scan, copy),
+        status3,
+        bar2,
+        out2,
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Close")
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    document.body.append(ov);
+  }
+  function scanReset() {
+    regions = null;
+    scans.length = 0;
+    ZX.log.length = 0;
+  }
+
   // src/ui/menubar.js
   function toggleAppSound() {
     S.preview = !S.preview;
@@ -52282,6 +52462,7 @@ body.popFrameless .mxTop input {
           ["Tap tempo", go("#bTap")],
           ["Mixer…", () => songMixerOpen()],
           ["Send patterns to MC-707 clips…", () => songToClipsOpen()],
+          ["Find MC-707 scene data (read-only)…", () => sceneFinderOpen()],
           0,
           ["Record audio", go("#bAudRec"), "R"],
           ["Audio inputs and settings…", go("#bAudSet")]
@@ -53422,7 +53603,8 @@ body.popFrameless .mxTop input {
         clipAddr,
         read: clipNotesToMine,
         write: clipWriteNow,
-        song: songToClipsOpen
+        song: songToClipsOpen,
+        scan: { once: scanOnce, diff: scanDiff, reset: scanReset, open: sceneFinderOpen }
       },
       get S() {
         return S;

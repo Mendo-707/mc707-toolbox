@@ -771,3 +771,25 @@
   background: var(--hot);
   transition: width 0.2s;
 }
+
+/* the scene finder (zen/zc-scan.js) */
+.sfSteps {
+  margin: 6px 0 12px;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+.sfOut {
+  margin: 10px 0;
+  max-height: 34vh;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font:
+    12px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  user-select: text;
+}
