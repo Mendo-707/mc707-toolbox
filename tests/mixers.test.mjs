@@ -137,3 +137,42 @@ test('Mixers in the Windows app: borderless, dragged by the header, with pin, mi
   assert.equal(win.isClosed(), true, 'closed');
   assert.deepEqual(errors, []);
 });
+
+test('Mixers: each track’s FILTER, MOD, FX and SOUND knobs (CC 80-83), sent once set', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  const [win] = await Promise.all([page.waitForEvent('popup'), page.click('#bMixer')]);
+  await win.waitForSelector('.mxStrip');
+  const s4 = win.locator('.mxStrip').nth(3),
+    knobs = s4.locator('.mxKnobs .mxKnob');
+  assert.equal(await knobs.count(), 4, 'Filter, Mod, FX and Sound');
+  assert.equal(await s4.locator('.mxKnobs .mxRow.unset').count(), 4, 'none set yet');
+  await page.evaluate('window.__out.length = 0');
+  /* the song's mix goes out without the knobs nobody set */
+  await win.locator('button', { hasText: 'Send to MC-707' }).click();
+  assert.equal(
+    await page.evaluate(() => window.__out.filter(b => (b[0] & 0xf0) === 0xb0 && b[1] >= 80 && b[1] <= 83).length),
+    0
+  );
+  await setRange(knobs.nth(0), 30);
+  await setRange(knobs.nth(3), 110);
+  const ch = (await page.evaluate('window.__app.S.tracks[3].ch')) - 1;
+  assert.ok(await ccSent(page, ch, 80, 30), 'Filter as CC 80');
+  assert.ok(await ccSent(page, ch, 83, 110), 'Sound as CC 83');
+  const cc = await page.evaluate('window.__app.S.tracks[3].cc');
+  assert.deepEqual([cc[80], cc[83], cc[81]], [30, 110, undefined], 'saved in the song');
+  await page.evaluate('window.__out.length = 0');
+  await win.locator('button', { hasText: 'Send to MC-707' }).click();
+  assert.ok(await ccSent(page, ch, 80, 30), 'a set knob goes out with the mix');
+  /* Live's mixer: a track's own knob rest, else Live's knob panel's */
+  await win.close();
+  await page.evaluate(() => document.querySelector('.mtab[data-mode=live]').click());
+  const [lw] = await Promise.all([page.waitForEvent('popup'), page.click('#lvMixer')]);
+  await lw.waitForSelector('.mxStrip');
+  const l2 = lw.locator('.mxStrip').nth(1).locator('.mxKnobs .mxKnob');
+  assert.equal(await l2.count(), 4);
+  await setRange(l2.nth(2), 20);
+  assert.equal(await page.evaluate('window.__app.LV.mix.fx[1]'), 20, 'Live keeps it in its own mix');
+  assert.equal(await page.evaluate('window.__app.LV.mix.fx[2]'), null, 'other tracks follow the knob panel');
+  assert.deepEqual(errors, []);
+});

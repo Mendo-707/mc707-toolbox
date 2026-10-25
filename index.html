@@ -6586,6 +6586,22 @@ body.popFrameless .mxTop input {
   filter: none;
   background: var(--raise, #e2ddd0);
 }
+/* the track's four knobs (FILTER, MOD, FX, SOUND), boxed together just above the fader, as on the MC-707 */
+.mxKnobs {
+  display: grid;
+  gap: 4px;
+  padding: 5px 6px 6px;
+  margin: 2px -2px 4px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tc, #39ff7a) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tc, #39ff7a) 22%, transparent);
+}
+.mxRow.unset b {
+  opacity: 0.45;
+}
+.mxRow.unset .mxKnob {
+  opacity: 0.6;
+}
 </style>
     <style>
 /* Scene Mode (scene/), in Song Mode's look (its colour tokens, light and dark): the toolbar with the four
@@ -38794,7 +38810,13 @@ body[data-mode='scene'] #scene {
   // src/services/mixer-strip.js
   var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
   var DEF2 = { lvl: 100, pan: 64, rev: 0, cho: 0 };
-  function knob(label2, key, v, s, o) {
+  var STRIP_KNOBS = [
+    ["flt", "Filter", 80, "C1 · the track’s FILTER knob (CC 80): cutoff, or what KNOB ASSIGN has on it"],
+    ["mod", "Mod", 81, "C2 · the track’s MOD knob (CC 81): what KNOB ASSIGN has on it"],
+    ["fx", "FX", 82, "C3 · the track’s FX knob (CC 82): what KNOB ASSIGN has on it"],
+    ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83), which KNOB ASSIGN lists with the others: Decay, Level…"]
+  ];
+  function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false) {
     const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
     const paint = (inp2, x) => {
       const p = x / 127 * 100;
@@ -38813,19 +38835,30 @@ body[data-mode='scene'] #scene {
         const x = +e.target.value;
         paint(e.target, x);
         out2.textContent = centre ? panText(x) : String(x);
+        row.classList.remove("unset");
         o.set(key, x);
       },
       onchange: () => o.done && o.done(key),
       onpointerup: () => o.done && o.done(key),
       onpointercancel: () => o.done && o.done(key),
       ondblclick: (e) => {
-        e.target.value = DEF2[key];
+        e.target.value = def;
         e.target.dispatchEvent(new Event("input"));
         e.target.dispatchEvent(new Event("change"));
       }
     });
     paint(inp, v);
-    return el("label", { class: "mxRow", title: label2 + " · double-click to reset" }, el("span", {}, label2), inp, out2);
+    const row = el(
+      "label",
+      {
+        class: "mxRow" + (unset ? " unset" : ""),
+        title: tip + (unset ? " · not sent yet: the MC-707 keeps its own" : "") + " · double-click to reset"
+      },
+      el("span", {}, label2),
+      inp,
+      out2
+    );
+    return row;
   }
   function mixStrip(s, o) {
     const lvlOut = el("b", { class: "mxVal" }, String(s.lvl));
@@ -38892,6 +38925,14 @@ body[data-mode='scene'] #scene {
       knob("Reverb", "rev", s.rev, s, o),
       knob("Chorus", "cho", s.cho, s, o),
       ...s.extra || [],
+      s.knobs ? el(
+        "div",
+        { class: "mxKnobs", role: "group", "aria-label": "Knobs, " + s.name },
+        ...s.knobs.map((k2) => {
+          const [, label2, , tip] = STRIP_KNOBS.find((x) => x[0] === k2.key);
+          return knob(label2, k2.key, k2.v, s, o, k2.def, tip, k2.unset);
+        })
+      ) : null,
       el("div", { class: "mxFaderBox" }, el("span", { class: "mxMeter" }, meter), fader2),
       lvlOut,
       el(
@@ -38918,8 +38959,10 @@ body[data-mode='scene'] #scene {
   }
 
   // src/song/song-mixer.js
-  var CC = { lvl: 7, pan: 10, rev: 91, cho: 92 };
-  var DEF3 = { lvl: 100, pan: 64, rev: 0, cho: 0 };
+  var CC = { lvl: 7, pan: 10, rev: 91, cho: 92, flt: 80, mod: 81, fx: 82, snd: 83 };
+  var DEF3 = { lvl: 100, pan: 64, rev: 0, cho: 0, flt: 64, mod: 0, fx: 64, snd: 64 };
+  var KNOBS = ["flt", "mod", "fx", "snd"];
+  var isSet = (t, key) => !!S.tracks[t].cc && S.tracks[t].cc[CC[key]] != null;
   var ID = "song-mixer";
   var held = false;
   var valOf = (t, key) => {
@@ -38945,11 +38988,14 @@ body[data-mode='scene'] #scene {
     if (tr.cc) for (const k2 in CC) delete tr.cc[CC[k2]];
     if (tr.cc && !Object.keys(tr.cc).length) delete tr.cc;
     tr.vol = 100;
-    if (live()) for (const k2 in CC) sendCC(t, CC[k2], DEF3[k2]);
+    if (live()) {
+      for (const k2 in CC) if (!KNOBS.includes(k2)) sendCC(t, CC[k2], DEF3[k2]);
+    }
   }
   function songMixSend() {
     if (!live()) return;
-    for (const t of DEVS[DEV].tracks) for (const k2 in CC) sendCC(t, CC[k2], valOf(t, k2));
+    for (const t of DEVS[DEV].tracks)
+      for (const k2 in CC) if (!KNOBS.includes(k2) || isSet(t, k2)) sendCC(t, CC[k2], valOf(t, k2));
   }
   function stripFor(t) {
     const tr = S.tracks[t];
@@ -38988,6 +39034,7 @@ body[data-mode='scene'] #scene {
         cho: valOf(t, "cho"),
         mute: tr.mute,
         solo: tr.solo,
+        knobs: KNOBS.map((key) => ({ key, v: valOf(t, key), def: DEF3[key], unset: !isSet(t, key) })),
         extra: [
           el(
             "label",
@@ -39054,7 +39101,7 @@ body[data-mode='scene'] #scene {
               {
                 type: "button",
                 class: "btn sm",
-                title: "Send every level, pan and send to the MC-707 now",
+                title: "Send every level, pan, send and set knob to the MC-707 now",
                 onclick: songMixSend
               },
               "Send to MC-707"
@@ -39095,7 +39142,7 @@ body[data-mode='scene'] #scene {
     if (h) h.refresh();
   }
   function songMixerOpen() {
-    popout({ id: ID, title: "Song mixer", w: 760, h: 560, build });
+    popout({ id: ID, title: "Song mixer", w: 760, h: 700, build });
   }
 
   // src/library/harmony-pack.js
@@ -43778,7 +43825,17 @@ body[data-mode='scene'] #scene {
       return nul && v === null ? null : Number.isFinite(+v) && v !== null ? clamp(Math.round(+v), 0, 127) : d;
     });
     const m = LV.mix && typeof LV.mix === "object" ? LV.mix : {};
-    LV.mix = { lvl: arr(m.lvl, 100), pan: arr(m.pan, 64), rev: arr(m.rev, null, true), cho: arr(m.cho, 0) };
+    LV.mix = {
+      lvl: arr(m.lvl, 100),
+      pan: arr(m.pan, 64),
+      rev: arr(m.rev, null, true),
+      cho: arr(m.cho, 0),
+      /* the track's knobs (FILTER, MOD, FX, SOUND): null rests where Live's knob panel has them */
+      flt: arr(m.flt, null, true),
+      mod: arr(m.mod, null, true),
+      fx: arr(m.fx, null, true),
+      snd: arr(m.snd, null, true)
+    };
     LV.tg = Array.from({ length: 8 }, () => mkEnv(1, 1, 0, 0));
     LV.pulse = Array.from({ length: 8 }, () => ({ time: -9, v: 0 }));
   })();
@@ -46988,8 +47045,9 @@ body[data-mode='scene'] #scene {
   }
 
   // src/live/mix.js
-  var MIX_CC = { lvl: 7, pan: 10, rev: 91, cho: 92 };
-  var KEY_OF = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho" };
+  var MIX_CC = { lvl: 7, pan: 10, rev: 91, cho: 92, flt: 80, mod: 81, fx: 82, snd: 83 };
+  var KEY_OF = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho", 80: "flt", 81: "mod", 82: "fx", 83: "snd" };
+  var MIX_KNOBS = ["flt", "mod", "fx", "snd"];
   function lvMixRest(t, cc2) {
     return KEY_OF[cc2] ? lvRestCC(t, cc2) : void 0;
   }
@@ -47003,12 +47061,7 @@ body[data-mode='scene'] #scene {
     lvSendCC(t, MIX_CC[key], v, nt);
   }
   function lvMixReset(t, nt) {
-    for (const [k2, d] of [
-      ["lvl", 100],
-      ["pan", 64],
-      ["rev", null],
-      ["cho", 0]
-    ]) {
+    for (const [k2, d] of [["lvl", 100], ["pan", 64], ["rev", null], ["cho", 0], ...MIX_KNOBS.map((k3) => [k3, null])]) {
       LV.mix[k2][t] = d;
       lvSendCC(t, MIX_CC[k2], lvMixRest(t, MIX_CC[k2]), nt);
     }
@@ -48526,12 +48579,13 @@ body[data-mode='scene'] #scene {
     const r = LV.rest[0];
     return Math.round(r < 32 ? r + (127 - r) * amt : r - r * amt);
   }
-  var MIX_KEY = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho" };
+  var MIX_KEY = { 7: "lvl", 10: "pan", 91: "rev", 92: "cho", 80: "flt", 81: "mod", 82: "fx", 83: "snd" };
   function lvRestCC(t, cc2) {
     const mk = MIX_KEY[cc2];
-    if (mk && LV.mix) {
+    if (mk && LV.mix && LV.mix[mk]) {
       const v = LV.mix[mk][t];
-      return v != null ? v : cc2 === 91 ? LV.revRest | 0 : MC_PARAMS.find((x) => x.n === cc2).def;
+      if (v != null) return v;
+      if (cc2 < 80 || cc2 > 83) return cc2 === 91 ? LV.revRest | 0 : MC_PARAMS.find((x) => x.n === cc2).def;
     }
     const tr = S.tracks[t];
     if (tr.cc && tr.cc[cc2] != null) return tr.cc[cc2];
@@ -48882,7 +48936,8 @@ body[data-mode='scene'] #scene {
         mute: eff,
         solo: soloT === t,
         pending: pend,
-        dim
+        dim,
+        knobs: MIX_KNOBS.map((key) => ({ key, v: lvMixNow(t, key), def: LV.rest[MIX_CC[key] - 80] }))
       },
       {
         title: "Right-click for more",
@@ -48995,7 +49050,7 @@ body[data-mode='scene'] #scene {
     if (h) h.refresh();
   }
   function liveMixerOpen() {
-    popout({ id: ID2, title: "Live mixer", w: 760, h: 560, build: build2 });
+    popout({ id: ID2, title: "Live mixer", w: 760, h: 700, build: build2 });
   }
 
   // src/live/ui.js

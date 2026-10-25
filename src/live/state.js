@@ -266,7 +266,17 @@ export const liveSwingAmt = () => LV.swing;
       return nul && v === null ? null : Number.isFinite(+v) && v !== null ? clamp(Math.round(+v), 0, 127) : d;
     });
   const m = LV.mix && typeof LV.mix === 'object' ? LV.mix : {};
-  LV.mix = { lvl: arr(m.lvl, 100), pan: arr(m.pan, 64), rev: arr(m.rev, null, true), cho: arr(m.cho, 0) };
+  LV.mix = {
+    lvl: arr(m.lvl, 100),
+    pan: arr(m.pan, 64),
+    rev: arr(m.rev, null, true),
+    cho: arr(m.cho, 0),
+    /* the track's knobs (FILTER, MOD, FX, SOUND): null rests where Live's knob panel has them */
+    flt: arr(m.flt, null, true),
+    mod: arr(m.mod, null, true),
+    fx: arr(m.fx, null, true),
+    snd: arr(m.snd, null, true)
+  };
   LV.tg = Array.from({ length: 8 }, () => mkEnv(1, 1, 0, 0));
   LV.pulse = Array.from({ length: 8 }, () => ({ time: -9, v: 0 }));
 })();

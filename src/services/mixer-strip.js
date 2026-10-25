@@ -1,6 +1,7 @@
 // One channel strip for the mixers (Song Mode's and Live Mode's): the track's number, name and
-// colour, an activity light that flickers with the notes going out, a tall level fader, pan, reverb
-// and chorus sends, and mute and solo buttons. Double-click a control to put it back. The strip only
+// colour, an activity light that flickers with the notes going out, the track's four knobs (FILTER, MOD
+// and FX above each MC-707 fader, and SOUND, the C4 knob KNOB ASSIGN lists with them), a tall level
+// fader, pan, reverb and chorus sends, and mute and solo buttons. Double-click a control to put it back. The strip only
 // draws and reports: the mixer that owns it decides what a change means and sends it.
 //
 // Reads: nothing shared.
@@ -8,9 +9,16 @@ import { el } from '../core/dom.js';
 
 const panText = v => (v === 64 ? 'C' : v < 64 ? 'L' + (64 - v) : 'R' + (v - 64));
 const DEF = { lvl: 100, pan: 64, rev: 0, cho: 0 };
+/** The track's knobs: key, label, CC, and what the tooltip says. */
+export const STRIP_KNOBS = [
+  ['flt', 'Filter', 80, 'C1 · the track’s FILTER knob (CC 80): cutoff, or what KNOB ASSIGN has on it'],
+  ['mod', 'Mod', 81, 'C2 · the track’s MOD knob (CC 81): what KNOB ASSIGN has on it'],
+  ['fx', 'FX', 82, 'C3 · the track’s FX knob (CC 82): what KNOB ASSIGN has on it'],
+  ['snd', 'Sound', 83, 'C4 · the SOUND knob (CC 83), which KNOB ASSIGN lists with the others: Decay, Level…']
+];
 
 /* a small horizontal control: pan from the centre, sends from the left */
-function knob(label, key, v, s, o) {
+function knob(label, key, v, s, o, def = DEF[key], tip = label, unset = false) {
   const centre = key === 'pan',
     out = el('b', {}, centre ? panText(v) : String(v));
   const paint = (inp, x) => {
@@ -30,25 +38,38 @@ function knob(label, key, v, s, o) {
       const x = +e.target.value;
       paint(e.target, x);
       out.textContent = centre ? panText(x) : String(x);
+      row.classList.remove('unset');
       o.set(key, x);
     },
     onchange: () => o.done && o.done(key),
     onpointerup: () => o.done && o.done(key),
     onpointercancel: () => o.done && o.done(key),
     ondblclick: e => {
-      e.target.value = DEF[key];
+      e.target.value = def;
       e.target.dispatchEvent(new Event('input'));
       e.target.dispatchEvent(new Event('change'));
     }
   });
   paint(inp, v);
-  return el('label', { class: 'mxRow', title: label + ' · double-click to reset' }, el('span', {}, label), inp, out);
+  const row = el(
+    'label',
+    {
+      class: 'mxRow' + (unset ? ' unset' : ''),
+      title: tip + (unset ? ' · not sent yet: the MC-707 keeps its own' : '') + ' · double-click to reset'
+    },
+    el('span', {}, label),
+    inp,
+    out
+  );
+  return row;
 }
 
 /**
  * A strip.
  * @param {{num:string|number, name:string, color:string, sub?:string, lvl:number, pan:number, rev:number,
- *   cho:number, mute:boolean, solo:boolean, pending?:string, dim?:string, extra?:Node[]}} s  pending: 'mute'
+ *   cho:number, mute:boolean, solo:boolean, pending?:string, dim?:string, extra?:Node[],
+ *   knobs?:{key:string, v:number, def:number, unset?:boolean}[]} s  knobs: the track's knobs to show
+ *   (STRIP_KNOBS keys), unset when nothing was sent yet; pending: 'mute'
  *   or 'unmute' while a change waits for the beat; dim: why the track is quiet anyway (shown greyed)
  * @param {{set:(key:string, v:number)=>void, done?:(key:string)=>void, grab?:()=>void, mute:()=>void,
  *   solo:()=>void, menu?:(e:MouseEvent)=>void, title?:string}} o  set runs while a control moves, done
@@ -121,6 +142,16 @@ export function mixStrip(s, o) {
     knob('Reverb', 'rev', s.rev, s, o),
     knob('Chorus', 'cho', s.cho, s, o),
     ...(s.extra || []),
+    s.knobs
+      ? el(
+          'div',
+          { class: 'mxKnobs', role: 'group', 'aria-label': 'Knobs, ' + s.name },
+          ...s.knobs.map(k => {
+            const [, label, , tip] = STRIP_KNOBS.find(x => x[0] === k.key);
+            return knob(label, k.key, k.v, s, o, k.def, tip, k.unset);
+          })
+        )
+      : null,
     el('div', { class: 'mxFaderBox' }, el('span', { class: 'mxMeter' }, meter), fader),
     lvlOut,
     el(

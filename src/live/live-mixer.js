@@ -1,4 +1,5 @@
-// Live Mode's mixer: a strip per MC-707 track with Live's own level, pan, reverb and chorus (live/mix.js,
+// Live Mode's mixer: a strip per MC-707 track with Live's own level, pan, reverb and chorus and the
+// track's FILTER, MOD, FX and SOUND knobs (live/mix.js,
 // kept apart from the song's mix and saved with Live's settings), and mute and solo that wait for the
 // next beat while the jam plays, like the controller's mutes. It shows what the set is doing too: the
 // notes going out, a track the energy level has taken out, one you are playing yourself, and a level a
@@ -18,7 +19,7 @@ import { lvNow } from './themes.js';
 import { lvUserOwns } from './moves.js';
 import { lvEmute, lvTarget } from './engine.js';
 import { lvEffMute, lvOn, lvSortCues } from './cues.js';
-import { MIX_CC, lvMixNow, lvMixReset, lvMixSendAll, lvMixSet } from './mix.js';
+import { MIX_CC, MIX_KNOBS, lvMixNow, lvMixReset, lvMixSendAll, lvMixSet } from './mix.js';
 
 const ID = 'live-mixer';
 let held = false,
@@ -77,7 +78,8 @@ function stripFor(t) {
       mute: eff,
       solo: soloT === t,
       pending: pend,
-      dim
+      dim,
+      knobs: MIX_KNOBS.map(key => ({ key, v: lvMixNow(t, key), def: LV.rest[MIX_CC[key] - 80] }))
     },
     {
       title: 'Right-click for more',
@@ -198,5 +200,5 @@ function refresh() {
 
 /** Open Live Mode's mixer (or bring it forward). */
 export function liveMixerOpen() {
-  popout({ id: ID, title: 'Live mixer', w: 760, h: 560, build });
+  popout({ id: ID, title: 'Live mixer', w: 760, h: 700, build });
 }

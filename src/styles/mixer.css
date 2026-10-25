@@ -413,3 +413,19 @@ body.popFrameless .mxTop input {
   filter: none;
   background: var(--raise, #e2ddd0);
 }
+/* the track's four knobs (FILTER, MOD, FX, SOUND), boxed together just above the fader, as on the MC-707 */
+.mxKnobs {
+  display: grid;
+  gap: 4px;
+  padding: 5px 6px 6px;
+  margin: 2px -2px 4px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tc, #39ff7a) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tc, #39ff7a) 22%, transparent);
+}
+.mxRow.unset b {
+  opacity: 0.45;
+}
+.mxRow.unset .mxKnob {
+  opacity: 0.6;
+}
