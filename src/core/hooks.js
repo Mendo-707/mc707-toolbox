@@ -43,4 +43,5 @@
 //   zenOpen            src/zen/zc-editor.js
 //   clipNotesToMine    src/zen/zc-seq.js
 //   clipWriteAsk       src/zen/zc-seq.js
+//   fillTones          src/ui/fill-tones.js
 export const hooks = {};

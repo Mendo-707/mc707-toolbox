@@ -1,5 +1,6 @@
 // Song Mode's mixer: a strip per MC-707 track with level, pan, reverb and chorus (MIDI CC 7, 10, 91
-// and 92, sent to the MC-707 as you move them and again whenever the song starts), the track's note
+// and 92, sent to the MC-707 as you move them and again whenever the song starts), the track's FILTER,
+// MOD, FX and SOUND knobs (CC 80-83: sent once you move them, then at every start), the track's note
 // velocity, and mute and solo. It is the song's own mix: saved with the song (the track MIDI controls),
 // with undo. It opens in a window of its own that can sit on another screen (services/popout.js).
 //
@@ -14,8 +15,11 @@ import { mixLight, mixStrip } from '../services/mixer-strip.js';
 import { showMenu } from '../ui/menu.js';
 import { renderArr } from './arrangement.js';
 
-const CC = { lvl: 7, pan: 10, rev: 91, cho: 92 };
-const DEF = { lvl: 100, pan: 64, rev: 0, cho: 0 };
+const CC = { lvl: 7, pan: 10, rev: 91, cho: 92, flt: 80, mod: 81, fx: 82, snd: 83 };
+const DEF = { lvl: 100, pan: 64, rev: 0, cho: 0, flt: 64, mod: 0, fx: 64, snd: 64 };
+/* the knobs: only sent once they have been set, since the MC-707's own position is not known */
+const KNOBS = ['flt', 'mod', 'fx', 'snd'];
+const isSet = (t, key) => !!S.tracks[t].cc && S.tracks[t].cc[CC[key]] != null;
 const ID = 'song-mixer';
 let held = false;
 
@@ -43,12 +47,13 @@ function resetTrack(t) {
   if (tr.cc) for (const k in CC) delete tr.cc[CC[k]];
   if (tr.cc && !Object.keys(tr.cc).length) delete tr.cc;
   tr.vol = 100;
-  if (live()) for (const k in CC) sendCC(t, CC[k], DEF[k]);
+  if (live()) for (const k in CC) if (!KNOBS.includes(k)) sendCC(t, CC[k], DEF[k]);
 }
 /** Send the whole mix to the MC-707 now. */
 export function songMixSend() {
   if (!live()) return;
-  for (const t of DEVS[DEV].tracks) for (const k in CC) sendCC(t, CC[k], valOf(t, k));
+  for (const t of DEVS[DEV].tracks)
+    for (const k in CC) if (!KNOBS.includes(k) || isSet(t, k)) sendCC(t, CC[k], valOf(t, k));
 }
 
 function stripFor(t) {
@@ -88,6 +93,7 @@ function stripFor(t) {
       cho: valOf(t, 'cho'),
       mute: tr.mute,
       solo: tr.solo,
+      knobs: KNOBS.map(key => ({ key, v: valOf(t, key), def: DEF[key], unset: !isSet(t, key) })),
       extra: [
         el(
           'label',
@@ -159,7 +165,7 @@ function build(root, h) {
             {
               type: 'button',
               class: 'btn sm',
-              title: 'Send every level, pan and send to the MC-707 now',
+              title: 'Send every level, pan, send and set knob to the MC-707 now',
               onclick: songMixSend
             },
             'Send to MC-707'
@@ -203,7 +209,7 @@ function refresh() {
 
 /** Open Song Mode's mixer (or bring it forward). */
 export function songMixerOpen() {
-  popout({ id: ID, title: 'Song mixer', w: 760, h: 560, build });
+  popout({ id: ID, title: 'Song mixer', w: 760, h: 700, build });
 }
 /** Close it (when leaving Song Mode). */
 export function songMixerClose() {

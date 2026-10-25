@@ -3,7 +3,7 @@
 // Reads: DEV.
 import { $, el } from '../core/dom.js';
 import { DEV, TRACK_COLORS, oneKit } from '../core/device.js';
-import { trackLabel } from '../library/styles.js';
+import { STYLES, trackLabel } from '../library/styles.js';
 import { DEF_ROLES, poolOf, roleInfo, roleOf, slotOf } from '../core/tracks.js';
 import { openWiz } from './wizard-ui.js';
 import { closeWiz } from './wizard-plan.js';
@@ -260,6 +260,52 @@ const SND_S = {
   },
   punk: { chords: ['E-133 Grungeroni', 'E-131 R&R Chunk'] }
 };
+/* the families' names, for Fill tones' genre list */
+const FAM_LABEL = {
+  dnb: 'Drum & bass',
+  hiphop: 'Hip hop',
+  house: 'House',
+  techno: 'Techno',
+  garage: 'UK garage',
+  bigbeat: 'Big beat',
+  dubstep: 'Dubstep',
+  trance: 'Trance',
+  electro: 'Electro',
+  funk: 'Funk',
+  reggae: 'Reggae',
+  latin: 'Latin',
+  synth: 'Synthwave and 80s',
+  pop: 'Pop',
+  ambient: 'Ambient',
+  rock: 'Rock'
+};
+/**
+ * Every genre with factory tone suggestions, for Fill tones: the families, then the styles that have
+ * their own (with the family's for the rest). roles: {drums: text, bass, chords, pad, lead, pluck: ['A-5 Dark Sub'…]}.
+ * @returns {{id:string, label:string, group:string, roles:object}[]}
+ */
+export function toneGenres() {
+  const out = Object.keys(SND_G).map(id => ({
+    id,
+    label: FAM_LABEL[id] || id,
+    group: '',
+    fam: id,
+    roles: { ...SND_G[id] }
+  }));
+  for (const id in SND_S) {
+    const st = STYLES.find(x => x.id === id);
+    if (!st) continue;
+    const fam = lvGenreOf(st);
+    out.push({
+      id,
+      label: st.name,
+      group: FAM_LABEL[fam] || fam,
+      fam,
+      roles: { ...(SND_G[fam] || SND_G.pop), ...SND_S[id] }
+    });
+  }
+  return out;
+}
 function soundRecs(st) {
   const g = SND_G[lvGenreOf(st)] || SND_G.dnb,
     s = SND_S[st.id] || {};

@@ -163,18 +163,25 @@ export function zeUnmute(t) {
   if (out) out.send([0xb0 | ch, 11, exprBack(t)]);
 }
 /** Send a whole sound to track t with the track muted while it goes in (Synth mode uses it too). */
-export async function zeQuietly(send, t = ZE.t, after = null) {
+/** zeQuietly's cap for a whole sound sent in a batch: wait for all of it (a kit is ~190 writes). */
+export const WHOLE_SOUND = 30000;
+export async function zeQuietly(send, t = ZE.t, after = null, cap = 1500) {
   const ch = chOf(t),
     out = ZX.out || MIDI.out,
     q = QUIET.get(ch) || { n: 0, t };
   if (!q.n++ && out) out.send([0xb0 | ch, 11, 0]);
   QUIET.set(ch, q);
   try {
-    /* the writes, the effect's reset and its settings: never more than a moment, whatever the checks do */
-    await Promise.race([send(), pause(1500)]);
-    await Promise.race([zxFlush(), pause(1500)]);
-    await pause(40);
+    /* the writes, the effect's reset and its settings: never more than a moment (cap), whatever the checks
+       do. A whole sound sent in a batch (Fill tones, Scene Mode) waits for every write to go out, and the
+       MC-707 a moment to take them, before the clip is selected again: selecting it while a kit is still
+       arriving, kit after kit, can leave the MC-707 stuck */
+    await Promise.race([send(), pause(cap)]);
+    await Promise.race([zxFlush(), pause(cap)]);
+    await pause(cap > 1500 ? 250 : 40);
     if (after) await after();
+    /* and a moment for the MC-707 to build the new voice before the next sound comes */
+    if (after && cap > 1500) await pause(250);
   } catch (e) {
     /* the track always comes back */
   } finally {
@@ -186,8 +193,9 @@ export async function zeQuietly(send, t = ZE.t, after = null) {
 }
 /* The MC-707 takes every value at once but keeps playing the voice it built until the clip is selected
    again, and selecting the clip it is already on does not count. So after a whole sound goes in (still
-   muted), hop to the next clip and straight back. Clips only: the track's own sound has no program. */
-async function reselect(t, k) {
+   muted), hop to the next clip and straight back. Clips only: the track's own sound has no program.
+   Fill tones and Scene Mode's writes use it too. */
+export async function reselect(t, k) {
   const out = ZX.out || MIDI.out;
   if (!out || k > 15) return;
   const ch = chOf(t);

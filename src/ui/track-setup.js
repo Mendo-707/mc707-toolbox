@@ -4,6 +4,7 @@
 // Clips that no longer fit a track's type are removed (with undo).
 //
 // Reads: S, DEV.
+import { templatesOpen } from './templates.js';
 import { $, el, toast } from '../core/dom.js';
 import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
@@ -47,8 +48,20 @@ function nameFor(roles, t) {
 const AUTO = new RegExp('^(' + [...DEF_NAMES, ...Object.values(SHORT)].join('|') + ')( \\d)?$');
 const autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
 
+/**
+ * Make the tracks drum or tone tracks as types says ('drum', 'tone', or anything else: leave that track):
+ * a track that changes gets a kit or a lead role, the rest keep theirs. Returns false when cancelled.
+ */
+export function matchTypes(types) {
+  const roles = S.tracks.map((x, t) => {
+    const r = roleOf(t);
+    if (types[t] !== 'drum' && types[t] !== 'tone') return r;
+    return roleInfo(r, t)[2] === types[t] ? r : types[t] === 'drum' ? 'kit' : 'lead';
+  });
+  return applyRoles(roles);
+}
 /** Apply roles to the 8 tracks (asks first when clips would be removed). */
-async function applyRoles(roles) {
+export async function applyRoles(roles) {
   const old = S.tracks.map((x, t) => roleOf(t)),
     types = roles.map((r, t) => roleInfo(r, t)[2]);
   const lose = S.clips.filter(c => types[c.t] !== S.tracks[c.t].type);
@@ -187,7 +200,13 @@ function render(ov) {
       el(
         'p',
         { class: 'hint' },
-        'On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings.'
+        'On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings. ',
+        el(
+          'button',
+          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templatesOpen()) },
+          'MC-707 project templates…'
+        ),
+        ' start a project with the tracks already set up.'
       )
     )
   );

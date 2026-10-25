@@ -122,7 +122,9 @@ function head(t, k, c) {
     b('◀', () => editClip(t, prev), 'The track’s clip before', prev == null ? 'off' : ''),
     b('▶', () => editClip(t, next), 'The track’s clip after', next == null ? 'off' : ''),
     b('Pattern…', () => choosePattern(t, k), 'Choose another pattern for this clip'),
-    b(tn ? '♪ ' + tn.name : '♪ Clip’s own sound', () => chooseTone(t, k), 'The tone this clip gets on the MC-707'),
+    S.tracks[t].type === 'drum'
+      ? null
+      : b(tn ? '♪ ' + tn.name : '♪ Clip’s own sound', () => chooseTone(t, k), 'The tone this clip gets on the MC-707'),
     b(
       c.pump ? '∿ Pump: ' + (c.pump.mode === 'level' ? 'Volume' : 'Filter') : '∿ Pump',
       () => pumpOpen(t, k),

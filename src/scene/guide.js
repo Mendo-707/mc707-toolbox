@@ -7,6 +7,7 @@ import { S } from '../core/state.js';
 import { sceneName } from '../zen/zc-scenes.js';
 import { firstScene, rows } from './model.js';
 import { pending } from './write.js';
+import { templatesOpen } from '../ui/templates.js';
 
 const STEPS = () => {
   const f = sceneName(firstScene());
@@ -14,6 +15,7 @@ const STEPS = () => {
     [
       'In the app',
       [
+        '0 · Start the MC-707 from a project template that matches your Track setup (Help › MC-707 project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.',
         '1 · Clips: fill the MC-707’s clips on the board. Click an empty clip to choose its pattern, a full one to edit its notes (Notes) and its sound (Sound: the ZenCore editor and the factory tones).',
         '2 · Scenes: add scenes to the chain. Each one plays a clip per track (its chips) for so many bars; the last keeps playing.',
         '3 · Write: Write sends what changed (✓ written · ● changed · + not written yet). Or write one clip, a track or a scene from its button or right-click, or turn on Auto-write. Use a project you can lose the first time.'
@@ -26,7 +28,8 @@ const STEPS = () => {
         'Set Call Scene to TYPE2 (UTILITY › SET › CTRL tab), so scenes are numbered as here: SCENE buttons pick the bank, step buttons the scene.',
         'Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON. (The app cannot switch it.)',
         'Call up scene ' + f + ' and press PLAY. Each scene plays its bars, then the next comes in.',
-        'Save the project on the MC-707 to keep it. Then unplug the computer: the MC-707 plays the song by itself.'
+        'Save the project on the MC-707 to keep it. Then unplug the computer: the MC-707 plays the song by itself.',
+        'A track silent on every clip? Check its Sound Source (the track settings, GENERAL tab): a clip given its own tone here sets it to CLIP, and clips with no sound of their own then play nothing. Set it to TRACK, or give each clip a tone.'
       ]
     ]
   ];
@@ -79,11 +82,16 @@ export function sceneGuideOpen() {
       ),
       el(
         'div',
-        { style: 'display:flex;justify-content:flex-end' },
+        { style: 'display:flex;justify-content:flex-end;gap:8px' },
+        el(
+          'button',
+          { type: 'button', class: 'btn', style: 'margin-right:auto', onclick: () => (close(), templatesOpen()) },
+          'MC-707 project templates…'
+        ),
         el('button', { type: 'button', class: 'btn on', onclick: close }, 'Got it')
       )
     )
   );
   document.body.append(ov);
-  ov.querySelector('button').focus();
+  ov.querySelector('button.on').focus();
 }

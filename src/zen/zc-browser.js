@@ -94,6 +94,8 @@ const shown = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
 
 /** Open the browser over the editor. */
 export async function browserOpen() {
+  /* tones only: the MC-707 keeps a kit's drum sounds whatever is sent */
+  if (ZE.kind === 'kit') return;
   await soundsLoad();
   let ov = $('#zbOv');
   if (!ov) {
@@ -706,6 +708,7 @@ function emptyText(all) {
 function render() {
   const ov = $('#zbOv');
   if (!ov) return;
+  if (ZE.kind === 'kit') return browserClose();
   const all = entries(),
     list = shown();
   const old = $('.zbList', ov),

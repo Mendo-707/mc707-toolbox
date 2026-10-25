@@ -7,9 +7,9 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **Synth Mode**: the MC-707 as an 8-track hardware synth for your DAW.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
-- **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen.
+- **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen, with every track's FILTER, MOD, FX and SOUND (C4) knobs.
 
-> **Version 1.5.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.5.2.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -41,6 +41,11 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Scene Mode** (new, experimental): arrange a song the way the MC-707 keeps one, as each track's 16 clips and a chain of scenes, then write it over USB so the MC-707 plays the whole song by itself. Make the clips and scenes from your Song Mode arrangement in one click, edit any clip's notes in the pattern editor and its sound in the ZenCore editor, and see every clip and scene marked written, changed or new. Write what changed, one clip, a track, a scene or everything, or let Auto-write do it. See [Scene Mode](#scene-mode). Thanks to Ada for the pointers on the scene chain.
 - **Your MC-707 clips**: read a clip's notes from the MC-707 into My patterns, write a pattern into a clip (read back to check), and send a whole song's patterns to the MC-707's clips. Patterns up to 8 bars go in 1/16 steps and 9–16 bars in 1/8; triplet patterns go in 1/16T or 1/8T steps so every note lands on a step; drum rolls and flams use the MC-707's sub steps (1/2, 1/3, 1/4, FLAM).
 - **1.5.1: Pump (sidechain), experimental**: in Scene Mode, right-click a bass, pad or chords clip › **Pump (sidechain)…** and the part ducks on every kick and comes back, written into the clip's motion so the MC-707 pumps it by itself. **Volume** (set SOUND (C4) to Level with KNOB ASSIGN on that track, once) or **Filter**; depth and rest level; when it starts, how long it holds and how long it comes back, set finely in eighths of a 16th, eased or straight; drawn over the clip and close up on a kick. Built on Ada Locriana's [mctools_sidechain](https://github.com/Locriana/mctools_sidechain), with her timing suggestion. **Help › For developers › Motion test** shows which knob each motion lane moves.
+- **1.5.2: Fill tones**: on the Your MC-707 clips screen (or Settings › Fill tones), pick a genre and every clip set up there gets a sound for its job (bass, chords, pad, lead, pluck, acid, FX; drum kits stay as they are, since the MC-707 won't take new drum sounds over MIDI, so choose those on the MC-707), different ones across a track's clips. Change any from the pool, 🎲 for another, or pick from the library, then send the ones ticked (Select all / none, or All / None per track): each goes into its MC-707 clip and every track written is set to play its clips' own sounds (Sound Source CLIP), so each clip can have its own tone; any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet. The pools are editable per genre and job; each starts with the factory tones the song wizard suggests for the genre, then fills (up to 24) with the sounds you have that fit: the right ZenCore category for the job (Synth Bass for bass, E.Piano or stabs for chords…) and words in the name that suit the genre (Reese and Sub for DnB, TB and Acid for acid techno, Glass and Amb for ambient…), plus your own sounds tagged with the genre. Add the factory tones from the MC-707 update file once for the most choice.
+- **1.5.2: Open an MC-707 project file**: File › Open an MC-707 project file (.mpj) shows what a project holds and brings its clips into Scene Mode or My patterns, and saves its samples as WAV files (see [Open an MC-707 project file](#open-an-mc-707-project-file)).
+- **1.5.2: MC-707 project templates**: an empty project for each track layout, with the steps to copy them onto the SD card in storage mode and start a song from one (see [MC-707 project templates](#mc-707-project-templates)); **Help › MC-707 project templates** names the one for your Track setup.
+- **1.5.2: Drum kits stay on the MC-707**: tested on a real MC-707, a kit's drum sounds can't be changed over MIDI (it keeps each key's instrument whatever is sent), so the ZenCore editor's Sound browser is for tones only and Scene Mode no longer sends kits; choose kits on the MC-707 itself. Writing tones is gentler too: each whole sound goes in before its clip is selected again.
+- **1.5.2: Mixer knobs**: each strip in the Song and Live mixers has the track's four knobs, **Filter, Mod, FX and Sound** (C1–C4: the FILTER, MOD and FX knobs above each MC-707 fader, and SOUND, the fourth KNOB ASSIGN lists), sent as CC 80–83. Whatever KNOB ASSIGN has on a knob is what it moves. In Song Mode a knob is saved with the song and only sent once you have set it (greyed until then); in Live Mode a track's knob rests where you put it, or where Live's knob panel has it.
 - **Theme**: the app is now **dark** by default. **Settings › Theme** switches to Light, or Match the computer.
 
 ## New in 1.4
@@ -110,6 +115,19 @@ The Mac and Linux apps are new in 1.4 and haven't been tried on a real MC-707 ye
 ### In a browser
 
 Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download `index.html` and open it, in **Chrome or Edge**. Everything works except real folders and Save As dialogs, which need the desktop app. Firefox and Safari don't support Web MIDI.
+
+### MC-707 project templates
+
+Empty MC-707 projects with the tracks already set as drum or tone tracks, one per layout (8 drum tracks, 6 + 2, 4 + 4, 3 + 5, 2 + 6, 1 + 7, 8 tone tracks, and EMPTY), so the MC-707 matches the app's Track setup from the start: [MC707-Project-Templates.zip](templates/MC707-Project-Templates.zip). In the app, **Help › MC-707 project templates** says which one fits your Track setup.
+
+1. Unzip it (8 .mpj files).
+2. On the MC-707 (not connected to the computer), hold **SHIFT** and press **KNOB ASSIGN**, pick **STORAGE MODE** and press **ENTER**, then connect the USB cable: the SD card shows up as a drive.
+3. Copy the .mpj files into the folder with your other MC-707 projects (the .mpj files under ROLAND), eject the drive, and turn the MC-707 off and on.
+4. **PROJECT › LOAD** the template, then straight away **PROJECT › WRITE** it under a new name, so the template stays empty.
+
+### Open an MC-707 project file
+
+**File › Open an MC-707 project file (.mpj)** reads a project copied off the MC-707's SD card in storage mode (see above; the file is only read, never changed). It shows the project's name and tempo, each track's kind (drum, tone, looper) and sound name, and which clips hold notes. **Bring the clips into Scene Mode** puts every clip's notes, length and step size in the same track and clip on Scene Mode's board, as patterns you can edit and write back (the tracks take their sounds' names, the song the tempo; tracks of the other kind can be switched to match). **Add them to My patterns** keeps them in your library. Samples in the project play with ▶ and save as WAV files, one at a time or all in a zip. Scenes 1-1 to 1-8 come in too, each as long as its longest clip. Not read yet: the sounds themselves (only their names), scenes past 1-8, chain lengths, motion and looper recordings.
 
 ### Connect the MC-707
 
@@ -245,7 +263,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 
 **For developers:** everything the editor learned about the MC-707's SysEx is written up in [docs/MC707-SYSEX.md](docs/MC707-SYSEX.md) (message format, where each clip's sound lives, the device's quirks, the project settings mapped so far), with every tone, drum kit and MFX parameter in [docs/ZENCORE-PARAMETERS.md](docs/ZENCORE-PARAMETERS.md).
 
-Roland hasn't published SysEx details for the MC-707, so the editor builds on community work: [mc-programmer](https://github.com/rsenna/mc-programmer) and [mcpoker / mctools_basic](https://github.com/Locriana/mctools_basic) found how the MC-707 answers SysEx and where clip tones live, and [Roland-Zen-Decode-XML](https://github.com/DrKnackeratorStrikesAgain/Roland-Zen-Decode-XML) decoded Roland's parameter list. Effect names come from the MC-707 Reference Manual. Drum kit editing and some effect values have only been tested against a simulated MC-707, so reports from real hardware are welcome. Wave and drum instrument names aren't published, so they show as numbers.
+Roland hasn't published SysEx details for the MC-707, so the editor builds on community work: [mc-programmer](https://github.com/rsenna/mc-programmer) and [mcpoker / mctools_basic](https://github.com/Locriana/mctools_basic) found how the MC-707 answers SysEx and where clip tones live, and [Roland-Zen-Decode-XML](https://github.com/DrKnackeratorStrikesAgain/Roland-Zen-Decode-XML) decoded Roland's parameter list. Effect names come from the MC-707 Reference Manual. Some effect values have only been tested against a simulated MC-707, so reports from real hardware are welcome. On a real MC-707 a drum kit's key settings (level, pitch, filter and so on) change over MIDI, but its drum sounds don't: the MC-707 keeps each key's instrument whatever is sent, so choose kits on the MC-707. Wave and drum instrument names aren't published, so they show as numbers.
 
 ## Track setup
 
