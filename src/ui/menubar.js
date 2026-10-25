@@ -27,6 +27,7 @@ import { songToClipsOpen } from '../zen/zc-seq.js';
 import { sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
+import { mpjPick } from './mpj-open.js';
 import { sceneToggle } from '../scene/screen.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
@@ -86,6 +87,7 @@ function initMenubar() {
         ['Saved songs (quick slots)…', go('#bFile')],
         ['Load demo song', go('#fDemo')],
         ['Export MIDI (.zip)', go('#fMidi')],
+        ['Open an MC-707 project file (.mpj)…', () => mpjPick()],
         0,
         [
           'Folders',

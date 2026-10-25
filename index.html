@@ -1981,6 +1981,72 @@ input[type='range'] {
   padding: 8px 10px;
   border-radius: 4px;
 }
+/* an MC-707 project file (ui/mpj-open.js) */
+.mpjBox {
+  max-width: 820px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.mpjBox .hint {
+  line-height: 1.45;
+}
+.mpjTracks {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+}
+.mpjTrk {
+  display: grid;
+  grid-template-columns: 64px 64px 130px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--tc);
+  background: var(--panel2);
+  border-radius: 4px;
+}
+.mpjKind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--mute);
+}
+.mpjSound {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mpjClips {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.mpjClip {
+  min-width: 22px;
+  text-align: center;
+  font-size: 11px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tc) 30%, transparent);
+  border: 1px solid var(--tc);
+}
+.mpjClip.empty {
+  background: none;
+  border-color: var(--line);
+  color: var(--mute);
+}
+.mpjActs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.mpjSmp {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -29470,8 +29536,8 @@ body[data-mode='scene'] #scene {
     folders: folderList(),
     list: ZS.list.filter((e) => e.src !== "factory").map(({ h, cat, ...e }) => e)
   });
-  async function libraryImport(text) {
-    const o = JSON.parse(text);
+  async function libraryImport(text2) {
+    const o = JSON.parse(text2);
     if (!o || o.sounds !== 1 || !Array.isArray(o.list)) throw new Error("not a sound library");
     let added = 0, same = 0;
     if (Array.isArray(o.folders)) o.folders.forEach((f) => typeof f === "string" && folderAdd(f));
@@ -29826,10 +29892,10 @@ body[data-mode='scene'] #scene {
   };
   async function showWhy(why, t, k2) {
     const lines = ZX.log.slice(0, 12).reverse();
-    const text = why + ". Asked for track " + devNum(t) + " clip " + (k2 + 1) + " at " + hexAddr(paramAddr(t, k2)) + " (step settings) and " + hexAddr(stepAddr(t, k2, 0)) + " (step 1). The last SysEx messages (→ sent, ← received):\n" + (lines.length ? lines.join("\n") : "(none)");
-    if (await askDlg({ title: "Reading the clip’s notes did not work", text, ok: "Copy and close", cancel: "Close" }))
+    const text2 = why + ". Asked for track " + devNum(t) + " clip " + (k2 + 1) + " at " + hexAddr(paramAddr(t, k2)) + " (step settings) and " + hexAddr(stepAddr(t, k2, 0)) + " (step 1). The last SysEx messages (→ sent, ← received):\n" + (lines.length ? lines.join("\n") : "(none)");
+    if (await askDlg({ title: "Reading the clip’s notes did not work", text: text2, ok: "Copy and close", cancel: "Close" }))
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(text2);
         toast("Copied: paste it into a problem report");
       } catch (e) {
       }
@@ -30110,8 +30176,8 @@ body[data-mode='scene'] #scene {
     );
     document.body.append(box);
     return {
-      set: (text, f) => {
-        line.textContent = text;
+      set: (text2, f) => {
+        line.textContent = text2;
         fill2.style.width = Math.round(Math.max(0, Math.min(1, f)) * 100) + "%";
       },
       get cancelled() {
@@ -30248,7 +30314,7 @@ body[data-mode='scene'] #scene {
     const plan0 = songPlan();
     if (!plan0.length) return toast("The song has no patterns to send");
     const body = el("div", { class: "scRows" }), scBody = el("div", { class: "scScenes" });
-    const tick = (text, on3) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on3 }), " " + text);
+    const tick = (text2, on3) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on3 }), " " + text2);
     const repl = tick("Replace the notes in clips that have some", false), named = tick("Name each clip after its pattern", true), clipsToo = tick("Send the clips too (untick when they are already on the MC-707)", true);
     const draw = () => {
       body.textContent = "";
@@ -30702,11 +30768,11 @@ body[data-mode='scene'] #scene {
       "Add to results"
     );
     const row = (...kids) => el("div", { class: "mtRow" }, ...kids);
-    const step = (n, title, text, ...kids) => el(
+    const step = (n, title, text2, ...kids) => el(
       "section",
       { class: "mtStep" },
       el("b", {}, el("span", { class: "mtNum" }, String(n)), title),
-      ...(Array.isArray(text) ? text : [text]).map((t) => typeof t === "string" ? el("p", { class: "hint" }, t) : t),
+      ...(Array.isArray(text2) ? text2 : [text2]).map((t) => typeof t === "string" ? el("p", { class: "hint" }, t) : t),
       ...kids
     );
     const ov = el(
@@ -37236,10 +37302,10 @@ body[data-mode='scene'] #scene {
       "aria-label",
       close ? "Close up on the first kick: the " + (pm.lane === 3 ? "volume" : "filter") + " point by point" : "The " + (pm.lane === 3 ? "volume" : "filter") + " over the clip, dipping on " + pm.kicks.length + " kicks"
     );
-    const add = (tag, at3, text) => {
+    const add = (tag, at3, text2) => {
       const n = document.createElementNS(ns, tag);
       for (const a in at3) n.setAttribute(a, at3[a]);
-      if (text) n.textContent = text;
+      if (text2) n.textContent = text2;
       svg.append(n);
     };
     const at2 = (s) => pm.vals[(Math.round(s / dt) % pm.vals.length + pm.vals.length) % pm.vals.length];
@@ -53048,10 +53114,10 @@ body[data-mode='scene'] #scene {
     } catch (e) {
     }
   }
-  function projLoadText(text, name, path2) {
+  function projLoadText(text2, name, path2) {
     let s;
     try {
-      s = JSON.parse(text);
+      s = JSON.parse(text2);
       if (!s || s.v !== 1 || !Array.isArray(s.tracks) || s.tracks.length !== 8 || !s.patterns || !Array.isArray(s.clips))
         throw 0;
     } catch (e) {
@@ -55284,7 +55350,7 @@ body[data-mode='scene'] #scene {
     if ($("#startOv")) return;
     const has2 = !!last3;
     const close = () => ov.remove();
-    const card = (icon, title, text, fn, on3) => el(
+    const card = (icon, title, text2, fn, on3) => el(
       "button",
       {
         type: "button",
@@ -55296,7 +55362,7 @@ body[data-mode='scene'] #scene {
       },
       el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
       el("b", {}, title),
-      el("small", {}, text)
+      el("small", {}, text2)
     );
     const ov = el(
       "div",
@@ -55407,6 +55473,14 @@ body[data-mode='scene'] #scene {
   }
   var AUTO = new RegExp("^(" + [...DEF_NAMES, ...Object.values(SHORT2)].join("|") + ")( \\d)?$");
   var autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
+  function matchTypes(types) {
+    const roles = S.tracks.map((x, t) => {
+      const r = roleOf(t);
+      if (types[t] !== "drum" && types[t] !== "tone") return r;
+      return roleInfo(r, t)[2] === types[t] ? r : types[t] === "drum" ? "kit" : "lead";
+    });
+    return applyRoles(roles);
+  }
   async function applyRoles(roles) {
     const old = S.tracks.map((x, t) => roleOf(t)), types = roles.map((r, t) => roleInfo(r, t)[2]);
     const lose = S.clips.filter((c) => types[c.t] !== S.tracks[c.t].type);
@@ -56341,6 +56415,355 @@ body[data-mode='scene'] #scene {
     ZX.log.length = 0;
   }
 
+  // src/core/mpj.js
+  var PRJ_CLIPS = 4336;
+  var CLIP_SIZE = 23616;
+  var STEP0 = 976;
+  var STEP_SIZE = 96;
+  var MPJ_KINDS = { 0: "tone", 1: "drum", 2: "looper" };
+  var text = (u8, at2, n) => String.fromCharCode(...u8.subarray(at2, at2 + n)).replace(/\0.*$/, "").replace(/[^\x20-\x7e]/g, " ").trim();
+  function mpjSections(u8) {
+    if (u8.length < 64 || text(u8, 2, 4) !== "PRJ5") return null;
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), out2 = {};
+    for (let p = 16; p + 16 <= u8.length && p < 16 + 16 * 32; p += 16) {
+      const tag = text(u8, p, 4), model = text(u8, p + 4, 4);
+      if (!/^[A-Z]{3}[a-z]$/.test(tag) && tag !== "DUMY") break;
+      if (tag === "DUMY") break;
+      const at2 = dv.getUint32(p + 8, true), size = dv.getUint32(p + 12, true);
+      if (model !== "MC77" || at2 + size > u8.length) return null;
+      out2[tag] = { at: at2, size };
+    }
+    return out2.PRJa ? out2 : null;
+  }
+  function clipSteps2(u8, base, steps2) {
+    const out2 = [];
+    for (let s = 0; s < steps2; s++) {
+      const b = base + STEP0 + s * STEP_SIZE, slots = [];
+      for (let j = 0; j < 16; j++) {
+        const note = u8[b + j];
+        if (note === 255 || note > 127) continue;
+        const st = u8[b + 32 + j];
+        slots.push({
+          note,
+          vel: u8[b + 16 + j] || 100,
+          start: st > 127 ? st - 256 : st,
+          end: u8[b + 48 + j],
+          sub: u8[b + 64 + j] || 0
+        });
+      }
+      out2.push(slots);
+    }
+    return out2;
+  }
+  function readMpj(u8) {
+    const sec = mpjSections(u8);
+    if (!sec) return { error: "That is not an MC-707 project file (.mpj)" };
+    const P2 = sec.PRJa.at, dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    if (sec.PRJa.size < PRJ_CLIPS + 136 * CLIP_SIZE) return { error: "The project file is shorter than expected" };
+    const tracks3 = [];
+    for (let t = 0; t < 8; t++) {
+      const kind = MPJ_KINDS[u8[P2 + 532 + t * 256]] || "empty", clips = [];
+      for (let k2 = 0; k2 < 16; k2++) {
+        const base = P2 + PRJ_CLIPS + (t * 17 + k2) * CLIP_SIZE, size = u8[base + 768], steps2 = u8[base + 769];
+        if (kind === "looper" || !(steps2 >= 1 && steps2 <= 128) || size > 5) {
+          clips.push(null);
+          continue;
+        }
+        const slots = clipSteps2(u8, base, steps2);
+        clips.push({ size, steps: steps2, sound: text(u8, base, 16), slots, notes: slots.reduce((n, s) => n + s.length, 0) });
+      }
+      tracks3.push({ kind, sound: text(u8, P2 + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips });
+    }
+    const samples = [];
+    if (sec.USDa) {
+      const end = sec.USDa.at + sec.USDa.size;
+      let p = sec.USDa.at + 48;
+      while (p + 48 <= end && text(u8, p, 4) === "SMPd") {
+        const hs = dv.getUint16(p + 4, true), ch = dv.getUint16(p + 6, true), size = dv.getUint32(p + 8, true), count = dv.getUint32(p + 12, true), rate = dv.getUint32(p + 36, true);
+        if (!hs || p + hs + count * 2 > end || ch < 1 || ch > 2) break;
+        samples.push({
+          name: text(u8, p + 16, 16) || "Sample " + (samples.length + 1),
+          channels: ch,
+          rate,
+          at: p + hs,
+          count
+        });
+        p += hs + size;
+      }
+    }
+    const loops = [];
+    if (sec.LPDa && text(u8, sec.LPDa.at + 16, 4) === "DIK0") {
+      const D2 = sec.LPDa.at + 16, end = sec.LPDa.at + sec.LPDa.size, seen = /* @__PURE__ */ new Set();
+      for (let e = 0; e < 128; e++) {
+        const bytes = dv.getUint32(D2 + 16 + e * 16, true), off = dv.getUint32(D2 + 16 + e * 16 + 4, true);
+        if (!bytes || bytes % 4 || D2 + off + bytes > end || seen.has(off)) continue;
+        seen.add(off);
+        loops.push({ track: e >> 4, clip: e & 15, at: D2 + off, bytes });
+      }
+    }
+    return {
+      name: text(u8, P2 + 16, 16),
+      bpm: dv.getUint16(P2 + 32, true) / 100,
+      tracks: tracks3,
+      samples,
+      loops
+    };
+  }
+  function sampleAudio(u8, s) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), frames = Math.floor(s.count / s.channels), ch = Array.from({ length: s.channels }, () => new Float32Array(frames));
+    for (let i = 0; i < frames; i++)
+      for (let c = 0; c < s.channels; c++) ch[c][i] = dv.getInt16(s.at + (i * s.channels + c) * 2, true) / 32768;
+    return ch;
+  }
+  function wavBytes(chs, rate, bits = 16) {
+    const n = chs[0].length, c = chs.length, bps = bits / 8, out2 = new Uint8Array(44 + n * c * bps), dv = new DataView(out2.buffer);
+    const w = (o, s) => [...s].forEach((x, i) => dv.setUint8(o + i, x.charCodeAt(0)));
+    w(0, "RIFF");
+    dv.setUint32(4, 36 + n * c * bps, true);
+    w(8, "WAVE");
+    w(12, "fmt ");
+    dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true);
+    dv.setUint16(22, c, true);
+    dv.setUint32(24, rate, true);
+    dv.setUint32(28, rate * c * bps, true);
+    dv.setUint16(32, c * bps, true);
+    dv.setUint16(34, bits, true);
+    w(36, "data");
+    dv.setUint32(40, n * c * bps, true);
+    let p = 44;
+    for (let i = 0; i < n; i++)
+      for (let k2 = 0; k2 < c; k2++) {
+        const x = Math.max(-1, Math.min(1, chs[k2][i]));
+        if (bits === 16) {
+          dv.setInt16(p, Math.round(x < 0 ? x * 32768 : x * 32767), true);
+          p += 2;
+        } else {
+          const v = Math.round(x < 0 ? x * 8388608 : x * 8388607);
+          out2[p++] = v & 255;
+          out2[p++] = v >> 8 & 255;
+          out2[p++] = v >> 16 & 255;
+        }
+      }
+    return out2;
+  }
+
+  // src/ui/mpj-open.js
+  function mpjPick() {
+    const inp = el("input", { type: "file", accept: ".mpj,.MPJ", style: "display:none" });
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      inp.remove();
+      if (!f) return;
+      toast("Reading " + f.name + "…");
+      try {
+        mpjOpen(new Uint8Array(await f.arrayBuffer()), f.name);
+      } catch (e) {
+        toast("Could not read " + f.name);
+      }
+    };
+    document.body.append(inp);
+    inp.click();
+  }
+  var plural3 = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+  var tidy2 = (s) => s.replace(/\s+/g, " ").trim();
+  function clipPattern2(m, t, k2, file) {
+    const c = m.tracks[t].clips[k2], tr = m.tracks[t];
+    const name = tidy2((c.sound || tr.sound || m.name || file) + " · T" + (t + 1) + " C" + (k2 + 1));
+    return toPattern(joinNotes(c.slots), { size: c.size, steps: c.steps }, tr.kind === "drum" ? "drum" : "tone", name);
+  }
+  function mpjOpen(u8, file) {
+    const m = readMpj(u8);
+    if (m.error) return toast(m.error);
+    document.getElementById("mpjOv")?.remove();
+    const close = () => ov.remove();
+    const title = m.name || file.replace(/\.mpj$/i, "");
+    const full = (t, k2) => {
+      const c = m.tracks[t].clips[k2];
+      return c && c.notes ? c : null;
+    };
+    const clipCount = m.tracks.reduce((n, tr, t) => n + tr.clips.filter((c, k2) => full(t, k2)).length, 0);
+    let playing2 = null;
+    const stop = () => {
+      if (playing2) playing2.stop();
+      playing2 = null;
+    };
+    const play2 = (s) => {
+      ensureAudio();
+      stop();
+      const ch = sampleAudio(u8, s), buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate);
+      ch.forEach((d, i) => buf.copyToChannel(d, i));
+      const src = AU.ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(AU.ctx.destination);
+      src.start();
+      playing2 = src;
+    };
+    const wavName = (s, i) => String(i + 1).padStart(2, "0") + " " + s.name.replace(/\.wav$/i, "") + ".wav";
+    const trackRows = m.tracks.map(
+      (tr, t) => el(
+        "div",
+        { class: "mpjTrk", style: "--tc:" + TRACK_COLORS[t] },
+        el("b", {}, "Track " + (t + 1)),
+        el("span", { class: "mpjKind " + tr.kind }, tr.kind.toUpperCase()),
+        el("span", { class: "mpjSound", title: "The track’s sound" }, tr.sound || "—"),
+        el(
+          "span",
+          { class: "mpjClips" },
+          ...tr.kind === "looper" ? [el("span", { class: "hint" }, "Looper track: its recordings are not read yet")] : tr.clips.map(
+            (c, k2) => full(t, k2) ? el(
+              "span",
+              {
+                class: "mpjClip",
+                title: "Clip " + (k2 + 1) + (c.sound ? " · " + c.sound : "") + ": " + plural3(c.notes, "note") + ", " + c.steps + " steps of " + STEP_NAMES[c.size]
+              },
+              String(k2 + 1)
+            ) : el("span", { class: "mpjClip empty", "aria-hidden": "true" }, "·")
+          )
+        )
+      )
+    );
+    const sampleRows = m.samples.map(
+      (s, i) => el(
+        "div",
+        { class: "mpjSmp" },
+        el("button", { type: "button", class: "btn sm", title: "Play it", onclick: () => play2(s) }, "▶"),
+        el("b", {}, s.name),
+        el(
+          "span",
+          { class: "hint" },
+          (s.channels === 2 ? "stereo" : "mono") + " · " + (s.count / s.channels / s.rate).toFixed(2) + " s · " + s.rate / 1e3 + " kHz"
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            onclick: () => saveFile(wavName(s, i), wavBytes(sampleAudio(u8, s), s.rate))
+          },
+          "Save WAV"
+        )
+      )
+    );
+    const toScenes = async () => {
+      const types = m.tracks.map((tr) => tr.kind);
+      const wrong = DEVS[DEV].tracks.filter(
+        (t) => (types[t] === "drum" || types[t] === "tone") && m.tracks[t].clips.some((c, k2) => full(t, k2)) && S.tracks[t].type !== types[t]
+      );
+      if (wrong.length) {
+        const ok = await askDlg({
+          title: "Set the tracks to match the project?",
+          text: "In the project, " + wrong.map((t) => "track " + (t + 1) + " is a " + types[t] + " track").join(", ") + ". The app’s Track setup changes to match (Undo brings it back); without that, those clips are left out.",
+          ok: "Match the tracks",
+          cancel: "Leave them out"
+        });
+        if (ok && !await matchTypes(types)) return;
+      }
+      if (S.scn && !await askDlg({
+        title: "Replace Scene Mode’s clips?",
+        text: "Scene Mode’s clips are replaced by the project’s (its scenes are kept, Undo brings the clips back).",
+        ok: "Replace"
+      }))
+        return;
+      pushUndo();
+      let dropped = 0, put = 0, skipped = 0;
+      const clips = emptyClips();
+      for (const t of DEVS[DEV].tracks)
+        for (let k2 = 0; k2 < 16; k2++) {
+          if (!full(t, k2)) continue;
+          if (S.tracks[t].type !== m.tracks[t].kind) {
+            skipped++;
+            continue;
+          }
+          const r = clipPattern2(m, t, k2, file);
+          dropped += r.dropped;
+          if (!r.pattern.notes.length) continue;
+          const p = r.pattern;
+          clips[t][k2] = { pat: addPattern(p.type, p.name, p.bars, p.notes, { role: p.role || "" }) };
+          put++;
+        }
+      S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
+      S.scn.clips = clips;
+      S.scn.rows.forEach((r) => r.pick = r.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1));
+      S.scn.done = { c: {}, s: {}, p: {} };
+      if (m.bpm >= 20 && m.bpm <= 300) S.bpm = m.bpm;
+      for (const t of DEVS[DEV].tracks)
+        if (m.tracks[t].sound && m.tracks[t].kind !== "empty") S.tracks[t].name = m.tracks[t].sound.slice(0, 16);
+      scheduleSave();
+      close();
+      hooks.setMode("scene");
+      hooks.renderAll();
+      toast(
+        "Brought in " + plural3(put, "clip") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+      );
+    };
+    const toMine = () => {
+      let n = 0;
+      m.tracks.forEach(
+        (tr, t) => tr.clips.forEach((c, k2) => {
+          if (!full(t, k2) || tr.kind !== "drum" && tr.kind !== "tone") return;
+          const r = clipPattern2(m, t, k2, file);
+          if (r.pattern.notes.length && userSave(r.pattern)) n++;
+        })
+      );
+      hooks.renderAll();
+      toast("Added " + plural3(n, "clip") + " from " + title + " to My patterns");
+    };
+    const saveAll = () => saveFile(
+      title.replace(/[^\w\- ]+/g, "").trim() + " samples.zip",
+      makeZip(m.samples.map((s, i) => ({ name: wavName(s, i), data: wavBytes(sampleAudio(u8, s), s.rate) })))
+    );
+    const ov = el(
+      "div",
+      { id: "mpjOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "MC-707 project file" },
+      el(
+        "div",
+        { class: "ptBox mpjBox" },
+        el("h3", {}, "MC-707 project: " + title),
+        el(
+          "p",
+          { class: "hint" },
+          file + " · " + (m.bpm ? m.bpm + " BPM · " : "") + plural3(clipCount, "clip") + " with notes · " + plural3(m.samples.length, "sample") + ". Read only: the file is not changed."
+        ),
+        el("div", { class: "mpjTracks" }, ...trackRows),
+        el(
+          "div",
+          { class: "mpjActs" },
+          el(
+            "button",
+            { type: "button", class: "btn on", onclick: toScenes, disabled: !clipCount },
+            "Bring the clips into Scene Mode"
+          ),
+          el("button", { type: "button", class: "btn", onclick: toMine, disabled: !clipCount }, "Add them to My patterns")
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), the scenes, motion, and looper recordings."
+        ),
+        m.samples.length ? el(
+          "div",
+          { class: "mpjSamples" },
+          el("h4", {}, "Samples in the project"),
+          ...sampleRows,
+          el(
+            "div",
+            { class: "mpjActs" },
+            el("button", { type: "button", class: "btn", onclick: saveAll }, "Save all samples (zip)")
+          )
+        ) : null,
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: () => (stop(), close()) }, "Close")
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && (stop(), close()));
+    document.body.append(ov);
+    return m;
+  }
+
   // src/ui/menubar.js
   function toggleAppSound() {
     S.preview = !S.preview;
@@ -56377,6 +56800,7 @@ body[data-mode='scene'] #scene {
           ["Saved songs (quick slots)…", go("#bFile")],
           ["Load demo song", go("#fDemo")],
           ["Export MIDI (.zip)", go("#fMidi")],
+          ["Open an MC-707 project file (.mpj)…", () => mpjPick()],
           0,
           [
             "Folders",
@@ -57485,10 +57909,10 @@ body[data-mode='scene'] #scene {
     ["button", "Move a control on your controller to link it", "Learn"]
   ];
   function apply2(root) {
-    for (const [sel, help, text] of HELP)
+    for (const [sel, help, text2] of HELP)
       for (const e of root.querySelectorAll(sel)) {
         if (e.title || e.closest('[title]:not([title=""])') || e.dataset.helped) continue;
-        if (text && !(e.textContent || "").trim().startsWith(text)) continue;
+        if (text2 && !(e.textContent || "").trim().startsWith(text2)) continue;
         e.title = help;
         e.dataset.helped = "1";
       }
@@ -57617,6 +58041,7 @@ body[data-mode='scene'] #scene {
       },
       motion: zc_motion_exports,
       pump: pump_exports,
+      mpj: { open: mpjOpen, read: readMpj },
       get S() {
         return S;
       },

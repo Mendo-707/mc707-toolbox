@@ -171,6 +171,8 @@ import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
 import * as motion from './zen/zc-motion.js';
 import * as pump from './core/pump.js';
+import { mpjOpen } from './ui/mpj-open.js';
+import { readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
@@ -288,6 +290,7 @@ PROJ.t = projTitle;
     },
     motion,
     pump,
+    mpj: { open: mpjOpen, read: readMpj },
     get S() {
       return S;
     },

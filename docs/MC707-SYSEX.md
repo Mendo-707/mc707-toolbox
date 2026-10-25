@@ -192,3 +192,21 @@ the app does not load them: a kit key plays a copy of one of the file's 711 drum
 MC-707 ignores a new instrument number sent over SysEx (by hand in the editor too), while the key's
 other settings change. The copied instrument data is not in the kit's SysEx address space (a full
 read of a kit slot only answers where the parameter tables say).
+
+
+## Project files (.mpj)
+
+The MC-707 saves a project on its SD card as one .mpj file. It is not SysEx, but the app reads it (src/core/mpj.js), so what is known is kept here. All numbers little-endian; offsets in hex.
+
+| Where | What |
+|---|---|
+| 0 | 2 bytes, then "PRJ5" |
+| 10 | Sections, 16 bytes each until "DUMY": tag (PRJa, STPa, SYSa, USRa, LPPa, LPDa, USDa, DIFa), "MC77", offset, size |
+| PRJa + 10 | Project name, 16 characters |
+| PRJa + 20 | Tempo, BPM × 100 (16 bits) |
+| PRJa + 200 + track × 100, + 14 | Track kind: 0 tone, 1 drum, 2 looper (FF in an empty template) |
+| PRJa + 10F0 + (track × 17 + clip) × 5C40 | Clip block (clip 17 of each track is the track's own sound): sound name (16 characters) at + 0; step size (0-5 as SysEx) at + 300, steps (1-128) at + 301; 128 steps of 60 bytes from + 3D0: 16 note numbers (FF none), 16 velocities, 16 starts (signed), 16 ends (100 ties), 16 sub steps, 16 unused; motion after the steps (not mapped yet) |
+| USDa | Samples: "SMPh", then per sample "SMPd": header size (30), channels, data size (to 1 KB), sample count (all channels), name (16), number, rate, then 16-bit PCM |
+| LPDa | Looper recordings: "DIK0" and 256 entries (size, offset); the sample format is not worked out yet |
+
+Worked out from empty template projects with known track layouts and a full project (2026).

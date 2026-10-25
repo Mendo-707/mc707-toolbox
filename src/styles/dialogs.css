@@ -880,3 +880,69 @@
   padding: 8px 10px;
   border-radius: 4px;
 }
+/* an MC-707 project file (ui/mpj-open.js) */
+.mpjBox {
+  max-width: 820px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.mpjBox .hint {
+  line-height: 1.45;
+}
+.mpjTracks {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+}
+.mpjTrk {
+  display: grid;
+  grid-template-columns: 64px 64px 130px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--tc);
+  background: var(--panel2);
+  border-radius: 4px;
+}
+.mpjKind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--mute);
+}
+.mpjSound {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mpjClips {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.mpjClip {
+  min-width: 22px;
+  text-align: center;
+  font-size: 11px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tc) 30%, transparent);
+  border: 1px solid var(--tc);
+}
+.mpjClip.empty {
+  background: none;
+  border-color: var(--line);
+  color: var(--mute);
+}
+.mpjActs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.mpjSmp {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0;
+}

@@ -48,8 +48,20 @@ function nameFor(roles, t) {
 const AUTO = new RegExp('^(' + [...DEF_NAMES, ...Object.values(SHORT)].join('|') + ')( \\d)?$');
 const autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
 
+/**
+ * Make the tracks drum or tone tracks as types says ('drum', 'tone', or anything else: leave that track):
+ * a track that changes gets a kit or a lead role, the rest keep theirs. Returns false when cancelled.
+ */
+export function matchTypes(types) {
+  const roles = S.tracks.map((x, t) => {
+    const r = roleOf(t);
+    if (types[t] !== 'drum' && types[t] !== 'tone') return r;
+    return roleInfo(r, t)[2] === types[t] ? r : types[t] === 'drum' ? 'kit' : 'lead';
+  });
+  return applyRoles(roles);
+}
 /** Apply roles to the 8 tracks (asks first when clips would be removed). */
-async function applyRoles(roles) {
+export async function applyRoles(roles) {
   const old = S.tracks.map((x, t) => roleOf(t)),
     types = roles.map((r, t) => roleInfo(r, t)[2]);
   const lose = S.clips.filter(c => types[c.t] !== S.tracks[c.t].type);
