@@ -25,6 +25,7 @@ import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { sceneFinderOpen } from '../zen/zc-scan.js';
+import { motionTestOpen } from '../zen/zc-motion.js';
 import { sceneToggle } from '../scene/screen.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
@@ -248,7 +249,8 @@ function initMenubar() {
             { label: 'MC-707 SysEx guide', action: () => openLink(LINKS.sysex) },
             { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
             { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) },
-            { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() }
+            { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() },
+            { label: 'Motion test (which lane moves what)…', action: () => motionTestOpen() }
           ]
         ],
         [

@@ -6,15 +6,18 @@
 //
 //   S.scn = { v: 2,
 //             first: 0-127,                         the MC-707 scene the first row goes into
-//             clips: [[clip or null] × 16] × 8,     clip = { pat: song pattern id, tr?, tone?: key in tones }
+//             clips: [[clip or null] × 16] × 8,     clip = { pat: song pattern id, tr?, tone?: key in tones,
+//                                                    pump?: {mode, depth, rel, rest} (core/pump.js) }
 //             rows: [{ id, name, bars (1-127), pick: [clip 0-15 or -1] × 8 }],
 //             tones: { key: { name, kind: 'tone'|'kit', d: {param: value} } },
-//             done: { c: { 't:k': mark }, s: { scene: mark } } }   what was written (marks from markOf)
+//             done: { c: { 't:k': mark }, s: { scene: mark }, p: { 't:k': pump mode } } }   what was written
+//                   (p: the motion lane a pump was written into, to clear it when the pump goes)
 //
 // Songs saved by the first Scene Mode (rows of cells, each with its own pattern) are turned into this
 // shape when they load: each track's different cells become its clips in the order they first play.
 //
 // Reads: nothing (works on the song object it is given).
+import { fixPump, kickHits } from './pump.js';
 
 /** The most scenes the MC-707 holds, and the longest scene LENGTH, in bars. */
 export const SCN_MAX = 128,
@@ -48,6 +51,42 @@ export function clipMark(clip, pats, tones) {
 /** What scene row i would put on the MC-707: its clips, and its LENGTH (OFF when it is the last). */
 export const sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
 
+/**
+ * Where a pumping clip gets its kicks: the drum clips with kicks that play alongside it, in the scenes that
+ * play it (the set most of them have). null when no scene plays it.
+ * @returns {{from:number[][], scenes:number[], differ:boolean}|null}  from: [track, clip] pairs
+ */
+export function pumpSource(q, pats, t, k) {
+  const sets = new Map();
+  q.rows.forEach((r, i) => {
+    if (r.pick[t] !== k) return;
+    const from = r.pick
+      .map((kk, tt) => [tt, kk])
+      .filter(([tt, kk]) => tt !== t && kk >= 0 && q.clips[tt][kk] && kickHits(pats[q.clips[tt][kk].pat]).length);
+    const key = JSON.stringify(from);
+    if (!sets.has(key)) sets.set(key, { from, scenes: [] });
+    sets.get(key).scenes.push(i);
+  });
+  if (!sets.size) return null;
+  const list = [...sets.values()].sort((a, b) => b.scenes.length - a.scenes.length);
+  return { ...list[0], differ: list.length > 1 };
+}
+/** The kicks of a pump source, for kicksUnder: [{hits, period}]. */
+export const pumpKicks = (q, pats, src) =>
+  src
+    ? src.from.map(([tt, kk]) => {
+        const p = pats[q.clips[tt][kk].pat];
+        return { hits: kickHits(p), period: p.bars * 16 };
+      })
+    : [];
+/** Clip k of track t's mark: what it puts on the MC-707, with its pump and the kicks the pump follows. */
+export function clipMarkAt(q, pats, t, k) {
+  const c = q.clips[t][k],
+    base = clipMark(c, pats, q.tones);
+  if (!c || !c.pump) return base;
+  return fnv(base + JSON.stringify([c.pump, pumpKicks(q, pats, pumpSource(q, pats, t, k))]));
+}
+
 /* a mark starting with ! was written, but the MC-707 read it back differently */
 const stateOf = (was, now) => (!was ? 'new' : was === now ? 'written' : was === '!' + now ? 'odd' : 'changed');
 /**
@@ -57,7 +96,7 @@ const stateOf = (was, now) => (!was ? 'new' : was === now ? 'written' : was === 
 export function clipState(q, pats, t, k) {
   const c = q.clips[t][k];
   if (!c) return 'empty';
-  return stateOf(q.done && q.done.c[t + ':' + k], clipMark(c, pats, q.tones));
+  return stateOf(q.done && q.done.c[t + ':' + k], clipMarkAt(q, pats, t, k));
 }
 /** Scene row i: 'new', 'written', 'odd' or 'changed'. */
 export const sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
@@ -107,6 +146,8 @@ export function fixScenes(s, pats) {
       if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
       if (typeof c.tone === 'string' && tones[c.tone] && tones[c.tone].kind === (p.type === 'drum' ? 'kit' : 'tone'))
         o.tone = c.tone;
+      const pump = fixPump(c.pump);
+      if (pump) o.pump = pump;
       clips[t][k] = o;
     }
   const ids = new Set();
@@ -134,7 +175,7 @@ export function fixScenes(s, pats) {
     clips,
     rows,
     tones,
-    done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s) }
+    done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s), p: marks(q.done && q.done.p) }
   };
 }
 

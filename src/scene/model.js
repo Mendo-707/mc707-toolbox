@@ -5,7 +5,8 @@
 // Owns: SC (the selected clip and scene, the copied clip, the editor's state, what redraws).
 // Reads: S.
 import { S, pushUndo, scheduleSave } from '../core/state.js';
-import { SCN_BARS, SCN_MAX, clipMark, emptyClips, newRow, sceneMark } from '../core/scene-model.js';
+import { SCN_BARS, SCN_MAX, clipMarkAt, emptyClips, newRow, sceneMark } from '../core/scene-model.js';
+import { fixPump } from '../core/pump.js';
 import { hashOf } from '../zen/zc-sounds.js';
 
 export const SC = {
@@ -20,6 +21,8 @@ export const SC = {
   big: false,
   tab: 'notes',
   inDock: false,
+  /* redraws the Pump window while it is open (pump.js) */
+  pumpDraw: null,
   /* redraws Scene Mode after a change, and what else runs after one (set by the screen: Auto-write) */
   draw: () => {},
   changed: () => {}
@@ -32,7 +35,7 @@ export const clipAt = (t, k) => (S.scn && S.scn.clips[t][k]) || null;
 /** The MC-707 scene the first row goes into (0-127). */
 export const firstScene = () => (S.scn ? S.scn.first : 0);
 const rowId = () => 'r' + S.nextId++;
-const blank = () => ({ v: 2, first: 0, clips: emptyClips(), rows: [], tones: {}, done: { c: {}, s: {} } });
+const blank = () => ({ v: 2, first: 0, clips: emptyClips(), rows: [], tones: {}, done: { c: {}, s: {}, p: {} } });
 
 /** Change the scenes as one undo step: fn(scn) edits S.scn (made when the song has none). */
 export function edit(fn) {
@@ -46,6 +49,7 @@ export function edit(fn) {
   scheduleSave();
   SC.row = Math.max(0, Math.min(SC.row, rows().length - 1));
   SC.draw();
+  if (SC.pumpDraw) SC.pumpDraw();
   SC.changed();
 }
 
@@ -124,6 +128,24 @@ export function setTone(t, k, tone) {
     x.tone = key;
   });
 }
+/** Give clip k of track t a pump (see core/pump.js), or none. */
+export function setPump(t, k, pump) {
+  if (!clipAt(t, k)) return;
+  edit(q => {
+    const x = q.clips[t][k],
+      p = fixPump(pump);
+    if (p) x.pump = p;
+    else delete x.pump;
+  });
+}
+/** Note which motion lane clip k of track t's pump was written into (mode), or that none is there. */
+export function markPump(t, k, mode) {
+  const q = S.scn;
+  if (!q) return;
+  q.done.p = q.done.p || {};
+  if (mode) q.done.p[t + ':' + k] = mode;
+  else delete q.done.p[t + ':' + k];
+}
 /** Empty clip k of track t; the scenes that played it play nothing there. */
 export function clearClip(t, k) {
   if (!clipAt(t, k)) return;
@@ -157,7 +179,7 @@ export const toneOf = c => (c && c.tone && S.scn && S.scn.tones[c.tone]) || null
 export function markClip(t, k, odd = false) {
   const q = S.scn,
     c = q && q.clips[t][k];
-  if (c) q.done.c[t + ':' + k] = (odd ? '!' : '') + clipMark(c, S.patterns, q.tones);
+  if (c) q.done.c[t + ':' + k] = (odd ? '!' : '') + clipMarkAt(q, S.patterns, t, k);
 }
 /** Mark scene row i as written as it is now (odd: read back differently). */
 export function markScene(i, odd = false) {
@@ -166,5 +188,5 @@ export function markScene(i, odd = false) {
 }
 /** Forget what was written (after loading another project on the MC-707). */
 export function forgetWritten() {
-  edit(q => (q.done = { c: {}, s: {} }));
+  edit(q => (q.done = { c: {}, s: {}, p: {} }));
 }

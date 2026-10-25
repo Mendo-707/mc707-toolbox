@@ -807,3 +807,51 @@
   max-height: 30vh;
   overflow: auto;
 }
+
+/* the Motion test (Help › For developers): numbered steps, each with its own controls */
+.mtBox {
+  max-width: 720px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.mtBox > .hint {
+  line-height: 1.45;
+}
+.mtStep {
+  border-top: 1px solid var(--line);
+  padding: 10px 0 4px;
+}
+.mtStep > b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.mtNum {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--hot);
+  color: #fff;
+  font-size: 13px;
+}
+.mtStep .hint {
+  margin: 6px 0 0 30px;
+  line-height: 1.45;
+}
+.mtList {
+  margin: 6px 0 0 30px;
+  padding-left: 18px;
+}
+.mtList li {
+  margin: 2px 0;
+}
+.mtRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0 6px 30px;
+}

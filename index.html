@@ -1908,6 +1908,54 @@ input[type='range'] {
   max-height: 30vh;
   overflow: auto;
 }
+
+/* the Motion test (Help › For developers): numbered steps, each with its own controls */
+.mtBox {
+  max-width: 720px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.mtBox > .hint {
+  line-height: 1.45;
+}
+.mtStep {
+  border-top: 1px solid var(--line);
+  padding: 10px 0 4px;
+}
+.mtStep > b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.mtNum {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--hot);
+  color: #fff;
+  font-size: 13px;
+}
+.mtStep .hint {
+  margin: 6px 0 0 30px;
+  line-height: 1.45;
+}
+.mtList {
+  margin: 6px 0 0 30px;
+  padding-left: 18px;
+}
+.mtList li {
+  margin: 2px 0;
+}
+.mtRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0 6px 30px;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -7199,6 +7247,91 @@ body[data-mode='scene'] #scene {
     display: none;
   }
 }
+
+/* the Pump window (pump.js) */
+.pmBox {
+  max-width: 700px;
+}
+.pmBox > .hint,
+.pmBox p {
+  line-height: 1.45;
+}
+.pmRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.pmLab {
+  width: 110px;
+  font-weight: 600;
+}
+.pmRow input[type='number'] {
+  width: 64px;
+}
+.pmDraw {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 10px 0 4px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.pmBar {
+  stroke: var(--grid-b);
+  stroke-width: 1;
+}
+.pmKick {
+  stroke: var(--hot);
+  stroke-width: 2;
+}
+.pmLine {
+  fill: none;
+  stroke: var(--tc, var(--hot));
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.pmWarn {
+  color: var(--hot);
+}
+.pmNote {
+  background: var(--panel2);
+  border-left: 3px solid var(--tc, var(--hot));
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+.pmEmpty {
+  margin: 10px 0;
+}
+
+.pmRow input[type='range'] {
+  width: 170px;
+}
+.pmVal {
+  min-width: 138px;
+  font-variant-numeric: tabular-nums;
+}
+.pmCap {
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 8px;
+}
+.pmDraw.pmClose {
+  margin-top: 4px;
+}
+.pmTick {
+  font-size: 11px;
+  fill: var(--mute);
+}
+.pmDot {
+  fill: var(--tc, var(--hot));
+}
+.pmBox {
+  max-height: 94vh;
+  overflow-y: auto;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -11939,6 +12072,104 @@ body[data-mode='scene'] #scene {
     });
   })();
 
+  // src/core/pump.js
+  var pump_exports = {};
+  __export(pump_exports, {
+    KICK_LANE: () => KICK_LANE,
+    PUMP_CURVES: () => PUMP_CURVES,
+    PUMP_DEPTH: () => PUMP_DEPTH,
+    PUMP_FINE: () => PUMP_FINE,
+    PUMP_GHOST: () => PUMP_GHOST,
+    PUMP_LANE: () => PUMP_LANE,
+    PUMP_MODES: () => PUMP_MODES,
+    PUMP_REL: () => PUMP_REL,
+    PUMP_REST: () => PUMP_REST,
+    PUMP_TIME: () => PUMP_TIME,
+    duck: () => duck,
+    fixPump: () => fixPump,
+    kickHits: () => kickHits,
+    kicksUnder: () => kicksUnder,
+    newPump: () => newPump,
+    pumpValues: () => pumpValues
+  });
+  var PUMP_LANE = { level: 3, filter: 0 };
+  var PUMP_MODES = [
+    ["level", "Volume"],
+    ["filter", "Filter"]
+  ];
+  var PUMP_DEPTH = { light: 0.35, medium: 0.6, heavy: 0.85 };
+  var PUMP_REL = { "1/16": 1, "1/8": 2, "1/4": 4 };
+  var PUMP_TIME = { rel: [0.25, 8, 2], hold: [0, 4, 0.5], start: [-1, 1, 0] };
+  var PUMP_FINE = 1 / 8;
+  var PUMP_CURVES = [
+    ["eased", "Eased"],
+    ["straight", "Straight"]
+  ];
+  var PUMP_REST = { level: 100, filter: 127 };
+  var PUMP_GHOST = 50;
+  var KICK_LANE = 0;
+  var newPump = (mode) => ({
+    mode,
+    depth: "medium",
+    rel: PUMP_TIME.rel[2],
+    hold: PUMP_TIME.hold[2],
+    start: PUMP_TIME.start[2],
+    curve: "eased",
+    rest: PUMP_REST[mode]
+  });
+  function fine(v, which) {
+    const [lo, hi, def] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
+    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def;
+  }
+  function fixPump(x) {
+    if (!x || typeof x !== "object" || !PUMP_LANE.hasOwnProperty(x.mode)) return null;
+    const rest = Math.round(+x.rest);
+    return {
+      mode: x.mode,
+      depth: PUMP_DEPTH.hasOwnProperty(x.depth) ? x.depth : "medium",
+      rel: fine(x.rel, "rel"),
+      hold: fine(x.hold, "hold"),
+      start: fine(x.start, "start"),
+      curve: x.curve === "straight" ? "straight" : "eased",
+      rest: Number.isFinite(rest) ? Math.max(1, Math.min(127, rest)) : PUMP_REST[x.mode]
+    };
+  }
+  var kickHits = (p) => (p && p.type === "drum" ? p.notes : []).filter((n) => n.n === KICK_LANE && (n.v || 100) >= PUMP_GHOST).map((n) => ({ s: n.s, v: n.v || 100 }));
+  function kicksUnder(srcs, len) {
+    const out2 = [];
+    for (const { hits, period } of srcs)
+      if (period > 0) {
+        for (let o = 0; o < len; o += period) for (const h of hits) if (h.s + o < len) out2.push({ s: h.s + o, v: h.v });
+      }
+    return out2.sort((a, b) => a.s - b.s);
+  }
+  function duck(d, o, early) {
+    const x = d - o.start;
+    if (x < -early - 1e-9 || x > o.hold + o.rel * 2) return 0;
+    if (x < 0) return 0.5;
+    if (x < o.hold) return 1;
+    const r = x - o.hold;
+    return o.curve === "straight" ? Math.max(0, 1 - r / o.rel) : Math.exp(-r * 3 / o.rel);
+  }
+  function pumpValues(pump2, kicks, steps2, k2) {
+    const n = steps2 * 8, dt = k2 / 8, len = steps2 * k2, depth = PUMP_DEPTH[pump2.depth] || 0.6, o = {
+      rel: fine(pump2.rel, "rel"),
+      hold: pump2.hold == null ? PUMP_TIME.hold[2] : fine(pump2.hold, "hold"),
+      start: pump2.start == null ? 0 : fine(pump2.start, "start"),
+      curve: pump2.curve
+    }, rest = pump2.rest;
+    const all = [...kicks, ...kicks.map((x) => ({ ...x, s: x.s - len })), ...kicks.map((x) => ({ ...x, s: x.s + len }))];
+    return Array.from({ length: n }, (_, i) => {
+      const t = i * dt;
+      let down = 0;
+      for (const x of all) {
+        const g = duck(t - x.s, o, dt);
+        if (g) down = Math.max(down, g * depth * Math.min(1, x.v / 100));
+      }
+      return Math.max(0, Math.min(127, Math.round(rest * (1 - down))));
+    });
+  }
+
   // src/core/scene-model.js
   var SCN_MAX = 128;
   var SCN_BARS = 127;
@@ -11957,11 +12188,33 @@ body[data-mode='scene'] #scene {
     return fnv(JSON.stringify([p.type, p.bars, p.notes, clip.tr || 0, tn ? [tn.kind, tn.d] : 0]));
   }
   var sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
+  function pumpSource(q, pats, t, k2) {
+    const sets = /* @__PURE__ */ new Map();
+    q.rows.forEach((r, i) => {
+      if (r.pick[t] !== k2) return;
+      const from = r.pick.map((kk, tt) => [tt, kk]).filter(([tt, kk]) => tt !== t && kk >= 0 && q.clips[tt][kk] && kickHits(pats[q.clips[tt][kk].pat]).length);
+      const key = JSON.stringify(from);
+      if (!sets.has(key)) sets.set(key, { from, scenes: [] });
+      sets.get(key).scenes.push(i);
+    });
+    if (!sets.size) return null;
+    const list2 = [...sets.values()].sort((a, b) => b.scenes.length - a.scenes.length);
+    return { ...list2[0], differ: list2.length > 1 };
+  }
+  var pumpKicks = (q, pats, src) => src ? src.from.map(([tt, kk]) => {
+    const p = pats[q.clips[tt][kk].pat];
+    return { hits: kickHits(p), period: p.bars * 16 };
+  }) : [];
+  function clipMarkAt(q, pats, t, k2) {
+    const c = q.clips[t][k2], base = clipMark(c, pats, q.tones);
+    if (!c || !c.pump) return base;
+    return fnv(base + JSON.stringify([c.pump, pumpKicks(q, pats, pumpSource(q, pats, t, k2))]));
+  }
   var stateOf = (was, now) => !was ? "new" : was === now ? "written" : was === "!" + now ? "odd" : "changed";
   function clipState(q, pats, t, k2) {
     const c = q.clips[t][k2];
     if (!c) return "empty";
-    return stateOf(q.done && q.done.c[t + ":" + k2], clipMark(c, pats, q.tones));
+    return stateOf(q.done && q.done.c[t + ":" + k2], clipMarkAt(q, pats, t, k2));
   }
   var sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
   function fromCells(q) {
@@ -11999,6 +12252,8 @@ body[data-mode='scene'] #scene {
         if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
         if (typeof c.tone === "string" && tones[c.tone] && tones[c.tone].kind === (p.type === "drum" ? "kit" : "tone"))
           o.tone = c.tone;
+        const pump2 = fixPump(c.pump);
+        if (pump2) o.pump = pump2;
         clips[t][k2] = o;
       }
     const ids = /* @__PURE__ */ new Set();
@@ -12025,7 +12280,7 @@ body[data-mode='scene'] #scene {
       clips,
       rows: rows2,
       tones,
-      done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s) }
+      done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s), p: marks(q.done && q.done.p) }
     };
   }
   var clipUses = (q, t, k2) => q.rows.filter((r) => r.pick[t] === k2).length;
@@ -17554,7 +17809,7 @@ body[data-mode='scene'] #scene {
     setTimeout(() => hooks.cmChipSet(t, k2), d);
   }
   var cmMarks = () => S.clipMarks || (S.clipMarks = []);
-  function clipMarkAt(t, bar2) {
+  function clipMarkAt2(t, bar2) {
     let r = null;
     for (const m of cmMarks()) if (m.t === t && m.bar <= bar2 + 1e-9 && (!r || m.bar > r.bar)) r = m;
     return r;
@@ -17571,7 +17826,7 @@ body[data-mode='scene'] #scene {
     const bar2 = Math.floor(tick / 32);
     for (let t = 0; t < 8; t++) {
       if (!devOn(t)) continue;
-      const mk = jump ? clipMarkAt(t, bar2) : S.clipMarks.find((m) => m.t === t && m.bar === bar2);
+      const mk = jump ? clipMarkAt2(t, bar2) : S.clipMarks.find((m) => m.t === t && m.bar === bar2);
       if (!mk) {
         if (jump) delete CLIPPIN[t];
         continue;
@@ -19393,7 +19648,7 @@ body[data-mode='scene'] #scene {
     hooks.renderArr();
   }
   function cmAtBar(t, bar2) {
-    const mk = clipMarkAt(t, bar2);
+    const mk = clipMarkAt2(t, bar2);
     if (mk && mk.k >= 0) return mk.k;
     let last3 = null;
     for (const c of S.clips) if (c.t === t && c.start <= bar2 + 1e-9 && (!last3 || c.start > last3.start)) last3 = c;
@@ -25548,6 +25803,7 @@ body[data-mode='scene'] #scene {
     forgetWritten: () => forgetWritten,
     freeClip: () => freeClip,
     markClip: () => markClip,
+    markPump: () => markPump,
     markScene: () => markScene,
     moveRow: () => moveRow,
     pasteClip: () => pasteClip2,
@@ -25558,6 +25814,7 @@ body[data-mode='scene'] #scene {
     setName: () => setName,
     setPattern: () => setPattern,
     setPick: () => setPick,
+    setPump: () => setPump,
     setTone: () => setTone,
     setTranspose: () => setTranspose,
     swapClips: () => swapClips,
@@ -29211,6 +29468,8 @@ body[data-mode='scene'] #scene {
     big: false,
     tab: "notes",
     inDock: false,
+    /* redraws the Pump window while it is open (pump.js) */
+    pumpDraw: null,
     /* redraws Scene Mode after a change, and what else runs after one (set by the screen: Auto-write) */
     draw: () => {
     },
@@ -29221,7 +29480,7 @@ body[data-mode='scene'] #scene {
   var clipAt = (t, k2) => S.scn && S.scn.clips[t][k2] || null;
   var firstScene = () => S.scn ? S.scn.first : 0;
   var rowId = () => "r" + S.nextId++;
-  var blank = () => ({ v: 2, first: 0, clips: emptyClips(), rows: [], tones: {}, done: { c: {}, s: {} } });
+  var blank = () => ({ v: 2, first: 0, clips: emptyClips(), rows: [], tones: {}, done: { c: {}, s: {}, p: {} } });
   function edit(fn) {
     pushUndo();
     if (!S.scn) S.scn = blank();
@@ -29232,6 +29491,7 @@ body[data-mode='scene'] #scene {
     scheduleSave();
     SC.row = Math.max(0, Math.min(SC.row, rows().length - 1));
     SC.draw();
+    if (SC.pumpDraw) SC.pumpDraw();
     SC.changed();
   }
   function addRow(i, copy = false) {
@@ -29294,6 +29554,21 @@ body[data-mode='scene'] #scene {
       x.tone = key;
     });
   }
+  function setPump(t, k2, pump2) {
+    if (!clipAt(t, k2)) return;
+    edit((q) => {
+      const x = q.clips[t][k2], p = fixPump(pump2);
+      if (p) x.pump = p;
+      else delete x.pump;
+    });
+  }
+  function markPump(t, k2, mode) {
+    const q = S.scn;
+    if (!q) return;
+    q.done.p = q.done.p || {};
+    if (mode) q.done.p[t + ":" + k2] = mode;
+    else delete q.done.p[t + ":" + k2];
+  }
   function clearClip(t, k2) {
     if (!clipAt(t, k2)) return;
     edit((q) => {
@@ -29318,14 +29593,14 @@ body[data-mode='scene'] #scene {
   var toneOf = (c) => c && c.tone && S.scn && S.scn.tones[c.tone] || null;
   function markClip(t, k2, odd = false) {
     const q = S.scn, c = q && q.clips[t][k2];
-    if (c) q.done.c[t + ":" + k2] = (odd ? "!" : "") + clipMark(c, S.patterns, q.tones);
+    if (c) q.done.c[t + ":" + k2] = (odd ? "!" : "") + clipMarkAt(q, S.patterns, t, k2);
   }
   function markScene(i, odd = false) {
     const q = S.scn;
     if (q && q.rows[i]) q.done.s[q.first + i] = (odd ? "!" : "") + sceneMark(q, i);
   }
   function forgetWritten() {
-    edit((q) => q.done = { c: {}, s: {} });
+    edit((q) => q.done = { c: {}, s: {}, p: {} });
   }
 
   // src/zen/zc-scenes.js
@@ -29400,6 +29675,9 @@ body[data-mode='scene'] #scene {
     }
     return { ok: true, checked: true };
   }
+
+  // src/scene/names.js
+  var sceneLabel = (i) => firstScene() + i < 128 ? sceneName(firstScene() + i) : "—";
 
   // src/zen/zc-seq.js
   var CLIP1 = [536870912, 554172416, 571473920, 588775424, 606076928, 623378432, 640679936, 657981440];
@@ -30119,1533 +30397,362 @@ body[data-mode='scene'] #scene {
     });
   }
 
-  // src/scene/pick-pattern.js
-  var PARTS = {
-    drum: [
-      ["kit", "Beats"],
-      ["full", "Full kits"],
-      ["hats", "Hats"],
-      ["perc", "Percussion"],
-      ["fill", "Fills"]
-    ],
-    tone: [
-      ["bass", "Bass"],
-      ["chords", "Chords"],
-      ["pad", "Pads"],
-      ["lead", "Leads"],
-      ["pluck", "Plucks and arps"],
-      ["acid", "Acid"]
-    ]
-  };
-  var SHOW = 250;
-  var P = { src: "fac", q: "", genre: "all", part: null };
-  function list(type) {
-    const q = P.q.trim().toLowerCase(), hit = (m) => !q || (m.name + " " + (m.role || "") + " " + (m.genre || "")).toLowerCase().includes(q);
-    if (P.src === "user") return userLib().filter((m) => m.type === type && hit(m));
-    if (P.src === "proj") return Object.values(S.patterns).filter((m) => m.type === type && hit(m));
-    return FAC.filter(
-      (f) => f.type === type && (P.genre === "all" || f.genre === P.genre) && (P.part === "all" || f.pool === P.part) && hit(f)
-    );
-  }
-  var meta = (m) => [
-    GENRE_LABELS[m.genre] || "",
-    m.bars + (m.bars === 1 ? " bar" : " bars"),
-    m.bpm ? m.bpm + " BPM" : "",
-    m.keyName || ""
-  ].filter(Boolean).join(" · ");
-  function pickPattern(t, title, done2, cur2) {
-    if ($("#spOv")) return;
-    const type = S.tracks[t].type, parts2 = PARTS[type];
-    if (!P.part || P.part !== "all" && !parts2.some((x) => x[0] === P.part))
-      P.part = parts2.some((x) => x[0] === poolOf(t)) ? poolOf(t) : "all";
-    const body = el("div", { class: "spList", role: "listbox", "aria-label": "Patterns" }), count = el("span", { class: "hint" });
-    const close = () => {
-      if (TR.playing && TR.mode === "pat") stopAll();
-      ov.remove();
-    };
-    const choose = (m) => {
-      close();
-      done2(P.src === "proj" ? m.id : instFactory(m));
-    };
-    const draw = () => {
-      const all = list(type);
-      body.textContent = "";
-      count.textContent = all.length > SHOW ? "First " + SHOW + " of " + all.length : all.length + " patterns";
-      for (const m of all.slice(0, SHOW)) {
-        const play2 = el(
-          "button",
-          {
-            type: "button",
-            class: "btn sm spPlay",
-            title: "Play it on track " + devNum(t),
-            "aria-label": "Play " + m.name,
-            onclick: (e) => {
-              e.stopPropagation();
-              if (TR.playing && TR.mode === "pat" && TR.pat === m) stopAll();
-              else startPat(m, t);
-            }
-          },
-          "▶"
-        );
-        body.append(
-          el(
-            "div",
-            {
-              class: "spRow" + (m.id === cur2 || cur2 && S.patterns[cur2] && S.patterns[cur2].src === m.id ? " cur" : ""),
-              role: "option",
-              tabindex: 0,
-              onclick: () => choose(m),
-              onkeydown: (e) => e.key === "Enter" && choose(m)
-            },
-            play2,
-            el("b", {}, m.name),
-            el("span", { class: "hint" }, meta(m))
-          )
-        );
-      }
-      if (!all.length) body.append(el("p", { class: "hint" }, "Nothing matches."));
-    };
-    const sel = (label2, opts, val, set2) => el(
-      "select",
-      { "aria-label": label2, onchange: (e) => (set2(e.target.value), draw()) },
-      ...opts.map(([v, l]) => el("option", { value: v, selected: v === val }, l))
-    );
-    const tabs = el("div", { class: "spTabs", role: "tablist" });
-    const filt2 = el("div", { class: "spFilt" });
-    const drawTop = () => {
-      tabs.textContent = "";
-      for (const [v, l] of [
-        ["fac", "Library"],
-        ["user", "My patterns"],
-        ["proj", "In this song"]
-      ])
-        tabs.append(
-          el(
-            "button",
-            {
-              type: "button",
-              role: "tab",
-              class: "btn" + (P.src === v ? " on" : ""),
-              "aria-selected": String(P.src === v),
-              onclick: () => (P.src = v, drawTop(), draw())
-            },
-            l
-          )
-        );
-      filt2.textContent = "";
-      filt2.append(search);
-      if (P.src === "fac")
-        filt2.append(
-          sel("Genre", [["all", "All genres"], ...Object.entries(GENRE_LABELS)], P.genre, (v) => P.genre = v),
-          sel("Part", [["all", "Any part"], ...parts2], P.part, (v) => P.part = v)
-        );
-      filt2.append(count);
-    };
-    const search = el("input", {
-      type: "search",
-      placeholder: "Search",
-      "aria-label": "Search patterns",
-      value: P.q,
-      oninput: (e) => (P.q = e.target.value, draw())
-    });
-    const ov = el(
-      "div",
-      {
-        id: "spOv",
-        class: "ptOv",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-label": "Choose a pattern",
-        onclick: (e) => e.target === ov && close(),
-        onkeydown: (e) => e.key === "Escape" && (e.stopPropagation(), close())
-      },
-      el(
-        "div",
-        { class: "ptBox spBox" },
-        el("h3", {}, "Pattern for track " + devNum(t) + " · " + S.tracks[t].name + ", " + title),
-        tabs,
-        filt2,
-        body,
-        el(
-          "div",
-          { style: "display:flex;justify-content:flex-end;margin-top:10px" },
-          el("button", { type: "button", class: "btn", onclick: close }, "Cancel")
-        )
-      )
-    );
-    drawTop();
-    draw();
-    document.body.append(ov);
-    search.focus();
-  }
-
-  // src/zen/zc-factory.js
-  var FW_REC = 1632;
-  var FW_MAP = [
-    [
-      "CMN",
-      0,
-      1,
-      0,
-      "NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:37b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b"
-    ],
-    [
-      "MFX",
-      64,
-      1,
-      0,
-      "mfxType:0b mfxSwitch:1b choSend:2b revSend:3b ctrlSrc1:4b ctrlSens1:5c ctrlSrc2:6b ctrlSens2:7c ctrlSrc3:8b ctrlSens3:9c ctrlSrc4:10b ctrlSens4:11c ctrlAsgn_1:12b ctrlAsgn_2:13b ctrlAsgn_3:14b ctrlAsgn_4:15b param_1:16s param_2:18s param_3:20s param_4:22s param_5:24s param_6:26s param_7:28s param_8:30s param_9:32s param_10:34s param_11:36s param_12:38s param_13:40s param_14:42s param_15:44s param_16:46s param_17:48s param_18:50s param_19:52s param_20:54s param_21:56s param_22:58s param_23:60s param_24:62s param_25:64s param_26:66s param_27:68s param_28:70s param_29:72s param_30:74s param_31:76s param_32:78s"
-    ],
-    [
-      "PMT",
-      144,
-      1,
-      0,
-      "VEL_CTRL:4b PMT_LEVEL_CRV:5b PMT1_PTL_SW:8b PMT1_KRANGE_LO:12b PMT1_KRANGE_UP:13b PMT1_KFADE_LO:14b PMT1_KFADE_UP:15b PMT1_VRANGE_LO:16b PMT1_VRANGE_UP:17b PMT1_VFADE_LO:18b PMT1_VFADE_UP:19b PMT2_PTL_SW:20b PMT2_KRANGE_LO:24b PMT2_KRANGE_UP:25b PMT2_KFADE_LO:26b PMT2_KFADE_UP:27b PMT2_VRANGE_LO:28b PMT2_VRANGE_UP:29b PMT2_VFADE_LO:30b PMT2_VFADE_UP:31b PMT3_PTL_SW:32b PMT3_KRANGE_LO:36b PMT3_KRANGE_UP:37b PMT3_KFADE_LO:38b PMT3_KFADE_UP:39b PMT3_VRANGE_LO:40b PMT3_VRANGE_UP:41b PMT3_VFADE_LO:42b PMT3_VFADE_UP:43b PMT4_PTL_SW:44b PMT4_KRANGE_LO:48b PMT4_KRANGE_UP:49b PMT4_KFADE_LO:50b PMT4_KFADE_UP:51b PMT4_VRANGE_LO:52b PMT4_VRANGE_UP:53b PMT4_VFADE_LO:54b PMT4_VFADE_UP:55b"
-    ],
-    [
-      "PTL",
-      200,
-      4,
-      124,
-      "LEVEL:0b PIT_CRS:2c PIT_FINE:3c PIT_RND:4w PAN:6c PAN_KF:7c PAN_RND:8b PAN_ALT:9c ENV_MODE:10b DELAY_MODE:11b DLY_TIME_SYNC:12b DLY_TIME_NOTE:13b DLY_TIME:14w CHO_SEND:16b REV_SEND:17b RX_BEND:18b RX_EXPR:19b RX_HOLD:20b REDAMP_SW:21b OUT_ASGN:22b WAV_GTYPE:23b WAV_GID:24w WAV_NUM_L:26w WAV_NUM_R:28w WAV_GAIN:30b FXM_SW:31b FXM_COLOR:32b FXM_DEPTH:33b PIT_KF:34s SOFT_EQ_SENS:36b FILTER_TYPE:37b CUTOFF:40w CUTOFF_KF:42s CUTOFF_VCRV:44b CUTOFF_VSENS:45c RESO:46w RESO_VSENS:48c BIAS_LEVEL:49c BIAS_POS:50b BIAS_DIR:51b LEVEL_VCRV:52b LEVEL_VSENS:53c PENV_TKF:54c FENV_TKF:55c AENV_TKF:56c VIB_PIT_SENS:57c VIB_CUT_SENS:58c VIB_AMP_SENS:59c MCTL1_SRC:60b MCTL1_DST1:61b MCTL1_SENS1:62c MCTL1_DST2:63b MCTL1_SENS2:64c MCTL1_DST3:65b MCTL1_SENS3:66c MCTL1_DST4:67b MCTL1_SENS4:68c MCTL2_SRC:72b MCTL2_DST1:73b MCTL2_SENS1:74c MCTL2_DST2:75b MCTL2_SENS2:76c MCTL2_DST3:77b MCTL2_SENS3:78c MCTL2_DST4:79b MCTL2_SENS4:80c MCTL3_SRC:84b MCTL3_DST1:85b MCTL3_SENS1:86c MCTL3_DST2:87b MCTL3_SENS2:88c MCTL3_DST3:89b MCTL3_SENS3:90c MCTL3_DST4:91b MCTL3_SENS4:92c MCTL4_SRC:96b MCTL4_DST1:97b MCTL4_SENS1:98c MCTL4_DST2:99b MCTL4_SENS2:100c MCTL4_DST3:101b MCTL4_SENS3:102c MCTL4_DST4:103b MCTL4_SENS4:104c DAMP_FREE:108b STEREO_WIDTH:109b STEREO_DETN:110c DF_DCY_OFST:111c TEMPO_SYNC:112b"
-    ],
-    [
-      "PENV",
-      696,
-      4,
-      24,
-      "DEPTH:0c VSENS:1c T1_VSENS:2c T4_VSENS:3c T1:4w T2:6w T3:8w T4:10w L0:12s L1:14s L2:16s L3:18s L4:20s VCRV:22b"
-    ],
-    [
-      "FENV",
-      792,
-      4,
-      24,
-      "DEPTH:0c VCRV:1b VSENS:2c T1_VSENS:3c T4_VSENS:4c T1:6w T2:8w T3:10w T4:12w L0:14w L1:16w L2:18w L3:20w L4:22w"
-    ],
-    ["AENV", 888, 4, 16, "T1_VSENS:0c T4_VSENS:1c T1:2w T2:4w T3:6w T4:8w L1:10w L2:12w L3:14w"],
-    [
-      "LFO",
-      952,
-      4,
-      104,
-      "LFO1_FORM:0b LFO1_RATE_SYNC:1b LFO1_RATE_NOTE:2b LFO1_STEP_MAX:3b LFO1_RATE:4w LFO1_OFST:6c LFO1_RATE_DETN:7b LFO1_DELAY:8w LFO1_DELAY_KF:10c LFO1_FADE_MODE:11b LFO1_FADE:12w LFO1_KEY_TRIG:14b LFO1_PIT_DEPTH:15c LFO1_TVF_DEPTH:16c LFO1_TVA_DEPTH:17c LFO1_PAN_DEPTH:18c LFO1_PHASE_POS:19b LFO1_STEP_1:20c LFO1_STEP_2:21c LFO1_STEP_3:22c LFO1_STEP_4:23c LFO1_STEP_5:24c LFO1_STEP_6:25c LFO1_STEP_7:26c LFO1_STEP_8:27c LFO1_STEP_9:28c LFO1_STEP_10:29c LFO1_STEP_11:30c LFO1_STEP_12:31c LFO1_STEP_13:32c LFO1_STEP_14:33c LFO1_STEP_15:34c LFO1_STEP_16:35c LFO1_STEP_CURVE_1:36b LFO1_STEP_CURVE_2:37b LFO1_STEP_CURVE_3:38b LFO1_STEP_CURVE_4:39b LFO1_STEP_CURVE_5:40b LFO1_STEP_CURVE_6:41b LFO1_STEP_CURVE_7:42b LFO1_STEP_CURVE_8:43b LFO1_STEP_CURVE_9:44b LFO1_STEP_CURVE_10:45b LFO1_STEP_CURVE_11:46b LFO1_STEP_CURVE_12:47b LFO1_STEP_CURVE_13:48b LFO1_STEP_CURVE_14:49b LFO1_STEP_CURVE_15:50b LFO1_STEP_CURVE_16:51b LFO2_FORM:52b LFO2_RATE_SYNC:53b LFO2_RATE_NOTE:54b LFO2_STEP_MAX:55b LFO2_RATE:56w LFO2_OFST:58c LFO2_RATE_DETN:59b LFO2_DELAY:60w LFO2_DELAY_KF:62c LFO2_FADE_MODE:63b LFO2_FADE:64w LFO2_KEY_TRIG:66b LFO2_PIT_DEPTH:67c LFO2_TVF_DEPTH:68c LFO2_TVA_DEPTH:69c LFO2_PAN_DEPTH:70c LFO2_PHASE_POS:71b LFO2_STEP_1:72c LFO2_STEP_2:73c LFO2_STEP_3:74c LFO2_STEP_4:75c LFO2_STEP_5:76c LFO2_STEP_6:77c LFO2_STEP_7:78c LFO2_STEP_8:79c LFO2_STEP_9:80c LFO2_STEP_10:81c LFO2_STEP_11:82c LFO2_STEP_12:83c LFO2_STEP_13:84c LFO2_STEP_14:85c LFO2_STEP_15:86c LFO2_STEP_16:87c LFO2_STEP_CURVE_1:88b LFO2_STEP_CURVE_2:89b LFO2_STEP_CURVE_3:90b LFO2_STEP_CURVE_4:91b LFO2_STEP_CURVE_5:92b LFO2_STEP_CURVE_6:93b LFO2_STEP_CURVE_7:94b LFO2_STEP_CURVE_8:95b LFO2_STEP_CURVE_9:96b LFO2_STEP_CURVE_10:97b LFO2_STEP_CURVE_11:98b LFO2_STEP_CURVE_12:99b LFO2_STEP_CURVE_13:100b LFO2_STEP_CURVE_14:101b LFO2_STEP_CURVE_15:102b LFO2_STEP_CURVE_16:103b"
-    ],
-    ["EQ", 1368, 4, 16, "LO_GAIN:0s MID_GAIN:2s HI_GAIN:4s LO_FREQ:6w MID_FREQ:8w HI_FREQ:10w MID_Q:12b SW:13b"],
-    [
-      "SCMN",
-      1432,
-      1,
-      0,
-      "UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b RND_PIT_VAL:5b RND_PIT_NUM:7b CONDITION:8b"
-    ],
-    [
-      "SPMT",
-      1440,
-      1,
-      0,
-      "STRUCT12:12b STRUCT34:13b RING12_LEVEL:16b RING34_LEVEL:17b RING_OSC1_LEVEL:18b RING_OSC2_LEVEL:19b RING_OSC3_LEVEL:20b RING_OSC4_LEVEL:21b XMOD12_DEPTH:24w XMOD34_DEPTH:26w XMOD_OSC1_LEVEL:28b XMOD_OSC2_LEVEL:29b XMOD_OSC3_LEVEL:30b XMOD_OSC4_LEVEL:31b PTL_PHS_LOCK:32b XMOD2_12_DEPTH:33b XMOD2_34_DEPTH:34b"
-    ],
-    [
-      "SPTL",
-      1488,
-      4,
-      36,
-      "OSC_TYPE:0b VA_FORM:1b SYNC_WAV_NUM:2w PW:4b PWM_DEPTH:5c SSAW_DETUNE:6b CLICK_TYPE:7b HPF_CUTOFF:8w FILTER_TYPE:10b FILTER_SLOPE:11b ADSR_ENV_SW:12b FAT:13b VCF_TYPE:14b OSC_ATT:15b CUTOFF_KF_BP:16b VA_INVERT_SW:17b FENV_FINE_DEPTH:18c PENV_LFO_TRIG_SW:19b FENV_LFO_TRIG_SW:20b AENV_LFO_TRIG_SW:21b PITCH_DOWN_DEPTH:22b VCF_GC:23b"
-    ]
-  ];
-  var FIELDS = null;
-  function fwFields() {
-    if (FIELDS) return FIELDS;
-    FIELDS = [];
-    for (const [blk, base, n, stride, list2] of FW_MAP)
-      for (const f of list2.split(" ")) {
-        const [, id, off, t] = /^(\w+):(\d+)([a-z])$/.exec(f);
-        for (let i = 0; i < n; i++) FIELDS.push([blk + (n > 1 ? i : "") + "." + id, base + i * stride + +off, t]);
-      }
-    return FIELDS;
-  }
-  function read2(b, o, t) {
-    if (t === "b") return b[o];
-    if (t === "c") return b[o] << 24 >> 24;
-    const w = b[o] | b[o + 1] << 8;
-    return t === "s" ? w << 16 >> 16 : w;
-  }
-  var nameAt = (b, o) => {
-    let s = "";
-    for (let i = 0; i < 16; i++) s += String.fromCharCode(b[o + i]);
-    return s.trimEnd();
-  };
-  function looksLikeTone(b, o) {
-    if (o + FW_REC > b.length) return false;
-    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
-    return b[o + 16] <= 49 && !b[o + 17] && !b[o + 18] && !b[o + 19] && b[o + 20] <= 127 && b[o + 64] < 128;
-  }
-  function fwTone(b, o) {
-    const snd = newSound("tone");
-    for (const [k2, off, t] of fwFields()) {
-      if (t === "a") {
-        snd.v[k2] = nameAt(b, o + off);
-        continue;
-      }
-      const [p] = paramOf("tone", k2), x = read2(b, o + off, t);
-      if (x < p[3] || x > p[4]) return null;
-      snd.v[k2] = x;
-    }
-    return snd;
-  }
-  function fwScan(b) {
-    const out2 = [];
-    for (let o = 0; o + FW_REC * 8 <= b.length; o += 4) {
-      if (!looksLikeTone(b, o)) continue;
-      let n = 0;
-      while (looksLikeTone(b, o + n * FW_REC)) n++;
-      if (n < 8) continue;
-      out2.push([o, n]);
-      o += n * FW_REC - 4;
-    }
-    return out2;
-  }
-  var BANKS = {
-    SysCtrlDeepEcho2: "A",
-    "AX Classic Lead": "B",
-    "SL-JP8 1": "C",
-    "JP8 Strings1": "D",
-    "128voicePno": "E"
-  };
-  var FW_BANK_NAMES = {
-    A: "Factory Presets",
-    B: "AX Collection",
-    C: "Synth Legend",
-    D: "Basic Synth",
-    E: "XV Collection"
-  };
-  function fwTones(b) {
-    const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
-    const banks = runs2.map(([o]) => BANKS[nameAt(b, o)] || null);
-    banks.forEach((x) => x && used.add(x));
-    let next = "F";
-    runs2.forEach(([o, n], r) => {
-      let bank = banks[r];
-      if (!bank || banks.indexOf(bank) !== r) {
-        while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
-        used.add(bank = next);
-      }
-      for (let i = 0; i < n; i++) {
-        const snd = fwTone(b, o + i * FW_REC);
-        if (!snd) continue;
-        const name = snd.v["CMN.NAME"];
-        if (!name || /^init tone$/i.test(name)) continue;
-        out2.push({ name, snd, bank, no: i + 1 });
-      }
-    });
-    return out2;
-  }
-
-  // src/zen/zc-browse-data.js
-  var CAT_GROUPS = [
-    ["Piano", ["Ac.Piano", "Pop-Piano", "E.Grand Piano"]],
-    ["E.Piano", ["E.Piano1", "E.Piano2"]],
-    ["Organ", ["E.Organ", "Pipe Organ", "Reed Organ"]],
-    ["Keyboard", ["Harpsichord", "Clav", "Celesta", "Accordion", "Harmonica", "Bell", "Mallet"]],
-    ["Guitar", ["Ac.Guitar", "E.Guitar", "Dist.Guitar", "Plucked/Stroke"]],
-    ["Bass", ["Ac.Bass", "E.Bass", "Synth Bass"]],
-    ["Strings", ["Solo Strings", "Ensemble Strs", "Orchestral"]],
-    ["Brass", ["Solo Brass", "Ensemble Brass"]],
-    ["Wind", ["Wind", "Flute", "Sax", "Recorder"]],
-    ["Vocal", ["Vox/Choir", "Scat"]],
-    ["Synth", ["Synth Lead", "Synth Brass", "Synth Pad/Str", "Synth BellPad", "Synth PolyKey", "Synth Seq/Pop"]],
-    ["Motion", ["Phrase", "Pulsating", "Beat&Groove"]],
-    ["FX", ["Synth FX", "Hit", "Sound FX"]],
-    ["Drums", ["Drums", "Percussion"]],
-    ["Other", ["None", "Stack", "Zone"]]
-  ];
-  var GROUP_OF = Object.fromEntries(CAT_GROUPS.flatMap(([g, l]) => l.map((c) => [c, g])));
-  var catLabel = (c) => c === "None" ? "No assign" : c;
-  function catOf(e) {
-    if (e.cat) return e.cat;
-    let n = 0;
-    if (e.kind === "kit") n = ZC_CATEGORIES.indexOf("Drums");
-    else if (e.make) n = e.make().v["CMN.CATEGORY"] | 0;
-    else if (e.d) n = e.d["CMN.CATEGORY"] | 0;
-    return e.cat = ZC_CATEGORIES[n] || "None";
-  }
-  var groupOf = (e) => GROUP_OF[catOf(e)] || "Other";
-  function bankOf(e) {
-    if (e.src === "factory") return "f:" + (e.bank || "?");
-    if (e.folder && (e.src === "mine" || e.src === "file")) return "u:" + e.folder;
-    return e.src === "file" ? "mine" : e.src;
-  }
-  var SRC_NAME = { mine: "My sounds", mc707: "From the MC-707", starter: "Starters" };
-  function bankName(id, short2) {
-    if (id.startsWith("u:")) return id.slice(2);
-    if (id.startsWith("f:")) {
-      const l = id.slice(2);
-      if (l === "?") return "Factory";
-      return short2 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
-    }
-    return SRC_NAME[id] || id;
-  }
-  function banksIn(list2) {
-    const have = new Set(list2.map(bankOf));
-    const fac = [...have].filter((b) => b.startsWith("f:")).sort();
-    const own = [...have].filter((b) => b.startsWith("u:")).sort();
-    return [
-      ...have.has("mine") ? ["mine"] : [],
-      ...own,
-      ...have.has("mc707") ? ["mc707"] : [],
-      ...fac,
-      ...have.has("starter") ? ["starter"] : []
-    ];
-  }
-  function filterList(list2, f) {
-    const q = f.q.trim().toLowerCase();
-    return list2.filter((e) => {
-      const b = bankOf(e);
-      if (f.bank === "fav" ? !ratingOf(e.id) : f.bank === "factory" ? e.src !== "factory" : f.bank !== "all" && b !== f.bank)
-        return false;
-      if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
-      if (f.tag && !(e.tags || []).includes(f.tag)) return false;
-      if (!q) return true;
-      const hay = [
-        e.name,
-        catLabel(catOf(e)),
-        ...e.tags || [],
-        e.group || "",
-        e.no ? String(e.no).padStart(4, "0") : ""
-      ];
-      return hay.join(" ").toLowerCase().includes(q);
-    });
-  }
-  function catCounts(list2) {
-    const c = {};
-    for (const e of list2) {
-      const k2 = catOf(e);
-      c[k2] = (c[k2] || 0) + 1;
-      c["g:" + groupOf(e)] = (c["g:" + groupOf(e)] || 0) + 1;
-    }
-    return c;
-  }
-  var BANK_ORDER = (b) => b === "mine" ? "0" : b.startsWith("u:") ? "0" + b : b === "mc707" ? "1" : b.startsWith("f:") ? "2" + b : "3";
-  function sortList(list2, by, dir) {
-    const key = {
-      bank: (e) => BANK_ORDER(bankOf(e)),
-      name: (e) => e.name.toLowerCase(),
-      cat: (e) => catLabel(catOf(e)).toLowerCase(),
-      rating: (e) => -ratingOf(e.id)
-    }[by];
-    const tie = (a, b) => (a.no || 0) - (b.no || 0) || (b.at || 0) - (a.at || 0) || a.name.localeCompare(b.name);
-    return list2.sort((a, b) => {
-      const x = key(a), y = key(b);
-      return (x < y ? -1 : x > y ? 1 : 0) * dir || tie(a, b);
-    });
-  }
-
-  // src/zen/zc-starters.js
-  function tone(name, fn) {
-    const s = newSound("tone");
-    const set2 = (key, i, id, v) => s.v[pk(key, i, id)] = v;
-    s.v["CMN.NAME"] = name;
-    for (let i = 0; i < 4; i++) set2("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
-    set2("SPTL", 0, "OSC_TYPE", 1);
-    fn(
-      (id, v, i = 0) => set2(
-        id.split(".")[0],
-        ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(id.split(".")[0]) ? null : i,
-        id.split(".")[1],
-        v
-      )
-    );
-    return s;
-  }
-  var STARTERS = [
-    ["Init tone", () => tone("INIT TONE", () => {
-    })],
-    [
-      "Saw lead",
-      () => tone("SAW LEAD", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_TIME", 120);
-        s("PTL.CUTOFF", 760);
-        s("PTL.RESO", 260);
-        s("FENV.DEPTH", 24);
-        s("FENV.T2", 420);
-        s("FENV.L2", 600);
-        s("AENV.T3", 0);
-        s("AENV.T4", 260);
-        s("PTL.REV_SEND", 30);
-      })
-    ],
-    [
-      "Supersaw stack",
-      () => tone("SUPERSAW", (s) => {
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 92);
-        s("PTL.CUTOFF", 880);
-        s("AENV.T1", 40);
-        s("AENV.T4", 520);
-        s("PTL.CHO_SEND", 40);
-        s("PTL.REV_SEND", 60);
-      })
-    ],
-    [
-      "Square bass",
-      () => tone("SQUARE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 1);
-        s("PTL.CUTOFF", 420);
-        s("PTL.RESO", 180);
-        s("FENV.DEPTH", 30);
-        s("FENV.T2", 300);
-        s("FENV.L2", 200);
-        s("FENV.L3", 150);
-        s("AENV.T4", 120);
-      })
-    ],
-    [
-      "Sub 808",
-      () => tone("SUB 808", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_MODE", 1);
-        s("CMN.PORTA_TIME", 260);
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 3);
-        s("PTL.CUTOFF", 1023);
-        s("PENV.DEPTH", 12);
-        s("PENV.L0", 300);
-        s("PENV.T1", 120);
-        s("PENV.L1", 0);
-        s("PENV.L2", 0);
-        s("PENV.L3", 0);
-        s("AENV.T2", 760);
-        s("AENV.L2", 700);
-        s("AENV.L3", 0);
-        s("AENV.T3", 760);
-        s("AENV.T4", 300);
-      })
-    ],
-    [
-      "Pluck",
-      () => tone("PLUCK", (s) => {
-        s("PTL.CUTOFF", 380);
-        s("PTL.RESO", 160);
-        s("FENV.DEPTH", 50);
-        s("FENV.T1", 0);
-        s("FENV.T2", 360);
-        s("FENV.L2", 0);
-        s("FENV.L3", 0);
-        s("AENV.T2", 420);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 300);
-        s("PTL.REV_SEND", 40);
-      })
-    ],
-    [
-      "Warm pad",
-      () => tone("WARM PAD", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPTL.VA_FORM", 2, 1);
-        s("PTL.PIT_FINE", -8);
-        s("PTL.PIT_FINE", 8, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 560, i);
-          s("AENV.T1", 620, i);
-          s("AENV.T4", 640, i);
-          s("LFO.LFO1_TVF_DEPTH", 12, i);
-          s("LFO.LFO1_RATE", 380, i);
-          s("PTL.REV_SEND", 80, i);
-          s("PTL.CHO_SEND", 50, i);
-        }
-      })
-    ],
-    [
-      "Noise sweep",
-      () => tone("NOISE SWEEP", (s) => {
-        s("SPTL.OSC_TYPE", 4);
-        s("PTL.FILTER_TYPE", 2);
-        s("PTL.CUTOFF", 200);
-        s("PTL.RESO", 500);
-        s("FENV.DEPTH", 50);
-        s("FENV.T1", 820);
-        s("FENV.L1", 1023);
-        s("AENV.T1", 300);
-        s("AENV.T4", 700);
-        s("PTL.REV_SEND", 90);
-      })
-    ],
-    [
-      "Acid bass",
-      () => tone("ACID BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.LEGATO_SW", 1);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_MODE", 1);
-        s("CMN.PORTA_TIME", 90);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 300);
-        s("PTL.RESO", 820);
-        s("FENV.DEPTH", 42);
-        s("FENV.T2", 180);
-        s("FENV.L2", 150);
-        s("FENV.L3", 100);
-        s("AENV.T4", 80);
-      })
-    ],
-    [
-      "Reese bass",
-      () => tone("REESE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -14);
-        s("PTL.PIT_FINE", 14, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 520, i);
-          s("PTL.RESO", 120, i);
-          s("AENV.T4", 140, i);
-        }
-      })
-    ],
-    [
-      "Wobble bass",
-      () => tone("WOBBLE BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 300);
-        s("PTL.RESO", 420);
-        s("LFO.LFO1_FORM", 0);
-        s("LFO.LFO1_RATE_SYNC", 1);
-        s("LFO.LFO1_RATE_NOTE", 9);
-        s("LFO.LFO1_TVF_DEPTH", 70);
-        s("AENV.T4", 120);
-      })
-    ],
-    [
-      "Juno pad",
-      () => tone("JUNO PAD", (s) => {
-        s("SPTL.VA_FORM", 5);
-        s("SCMN.UNISON_SW", 1);
-        s("SCMN.UNISON_SIZE", 4);
-        s("SCMN.UNISON_DETN", 30);
-        s("PTL.CUTOFF", 640);
-        s("AENV.T1", 520);
-        s("AENV.T4", 620);
-        s("PTL.CHO_SEND", 80);
-        s("PTL.REV_SEND", 70);
-      })
-    ],
-    [
-      "Strings",
-      () => tone("STRINGS", (s) => {
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 50);
-        s("PTL.CUTOFF", 700);
-        s("AENV.T1", 420);
-        s("AENV.T4", 520);
-        s("PTL.CHO_SEND", 40);
-        s("PTL.REV_SEND", 60);
-      })
-    ],
-    [
-      "Brass stab",
-      () => tone("BRASS STAB", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -6);
-        s("PTL.PIT_FINE", 6, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 520, i);
-          s("FENV.DEPTH", 30, i);
-          s("FENV.T1", 120, i);
-          s("FENV.T2", 320, i);
-          s("FENV.L2", 700, i);
-          s("AENV.T1", 60, i);
-          s("AENV.T4", 200, i);
-        }
-      })
-    ],
-    [
-      "Hoover",
-      () => tone("HOOVER", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.PORTA_SW", 1);
-        s("CMN.PORTA_TIME", 200);
-        s("SPTL.OSC_TYPE", 3);
-        s("SPTL.SSAW_DETUNE", 110);
-        s("PENV.DEPTH", 30);
-        s("PENV.L0", -150);
-        s("PENV.T1", 160);
-        s("PENV.L1", 0);
-        s("PTL.CUTOFF", 820);
-        s("PTL.CHO_SEND", 60);
-      })
-    ],
-    [
-      "Sync lead",
-      () => tone("SYNC LEAD", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPMT.STRUCT12", 1);
-        s("PTL.PIT_CRS", 19, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 860, i);
-          s("AENV.T4", 200, i);
-        }
-        s("PTL.REV_SEND", 30);
-      })
-    ],
-    [
-      "Bell",
-      () => tone("BELL", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPTL.VA_FORM", 3);
-        s("SPTL.VA_FORM", 3, 1);
-        s("SPMT.STRUCT12", 2);
-        s("PTL.PIT_CRS", 19, 1);
-        for (const i of [0, 1]) {
-          s("AENV.T2", 700, i);
-          s("AENV.L2", 0, i);
-          s("AENV.L3", 0, i);
-          s("AENV.T4", 600, i);
-          s("PTL.REV_SEND", 70, i);
-        }
-      })
-    ],
-    [
-      "Organ",
-      () => tone("ORGAN", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("PMT.PMT3_PTL_SW", 1);
-        [0, 12, 19].forEach((crs, i) => {
-          s("SPTL.OSC_TYPE", 1, i);
-          s("SPTL.VA_FORM", 3, i);
-          s("PTL.PIT_CRS", crs, i);
-          s("PTL.LEVEL", [127, 100, 80][i], i);
-          s("AENV.T1", 0, i);
-          s("AENV.T4", 40, i);
-          s("PTL.CHO_SEND", 60, i);
-        });
-      })
-    ],
-    [
-      "PWM pad",
-      () => tone("PWM PAD", (s) => {
-        s("SPTL.VA_FORM", 1);
-        s("SPTL.PWM_DEPTH", 40);
-        s("LFO.LFO1_RATE", 300);
-        s("PTL.CUTOFF", 620);
-        s("AENV.T1", 560);
-        s("AENV.T4", 640);
-        s("PTL.CHO_SEND", 60);
-        s("PTL.REV_SEND", 70);
-      })
-    ],
-    [
-      "House chord stab",
-      () => tone("CHORD STAB", (s) => {
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("PTL.PIT_FINE", -7);
-        s("PTL.PIT_FINE", 7, 1);
-        for (const i of [0, 1]) {
-          s("PTL.CUTOFF", 560, i);
-          s("FENV.DEPTH", 36, i);
-          s("FENV.T2", 200, i);
-          s("FENV.L2", 0, i);
-          s("FENV.L3", 0, i);
-          s("AENV.T2", 260, i);
-          s("AENV.L2", 0, i);
-          s("AENV.L3", 0, i);
-          s("AENV.T4", 160, i);
-          s("PTL.REV_SEND", 50, i);
-        }
-      })
-    ],
-    [
-      "Kick",
-      () => tone("KICK", (s) => {
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 3);
-        s("PTL.CUTOFF", 1023);
-        s("PENV.DEPTH", 60);
-        s("PENV.L0", 511);
-        s("PENV.T1", 120);
-        s("PENV.L1", 0);
-        s("PENV.L2", 0);
-        s("PENV.L3", 0);
-        s("AENV.T2", 300);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 60);
-      })
-    ]
-  ];
-
-  // src/zen/zc-widgets.js
-  var NAMES = {
-    NAME: "Name",
-    CATEGORY: "Category",
-    PIT_CRS: "Coarse tune",
-    PIT_FINE: "Fine tune",
-    OCTAVE: "Octave",
-    MONO_POLY: "Voice",
-    PORTA_SW: "Portamento",
-    PORTA_TIME: "Porta time",
-    PORTA_MODE: "Porta mode",
-    PORTA_TYPE: "Porta type",
-    PORTA_START: "Porta start",
-    PORTA_CRV: "Porta curve",
-    BEND_RANGE_UP: "Bend up",
-    BEND_RANGE_DW: "Bend down",
-    CUTOFF: "Cutoff",
-    RESO: "Resonance",
-    CUTOFF_KF: "Key follow",
-    CUTOFF_VCRV: "Velocity curve",
-    CUTOFF_VSENS: "Velocity sens",
-    RESO_VSENS: "Reso velocity",
-    FILTER_TYPE: "Filter type",
-    LEVEL_VCRV: "Velocity curve",
-    LEVEL_VSENS: "Velocity sens",
-    CHO_SEND: "Delay send",
-    REV_SEND: "Reverb send",
-    OSC_TYPE: "Oscillator",
-    VA_FORM: "Waveform",
-    PW: "Pulse width",
-    PWM_DEPTH: "PWM depth",
-    SSAW_DETUNE: "Detune",
-    WAV_GTYPE: "Wave bank",
-    WAV_GID: "Wave group",
-    WAV_NUM_L: "Wave (L)",
-    WAV_NUM_R: "Wave (R)",
-    WAV_GAIN: "Wave gain",
-    SYNC_WAV_NUM: "Sync wave",
-    UNISON_SW: "Unison",
-    UNISON_SIZE: "Voices",
-    UNISON_DETN: "Detune",
-    DEPTH: "Depth",
-    VSENS: "Velocity sens",
-    VCRV: "Velocity curve",
-    T1_VSENS: "T1 velocity",
-    T4_VSENS: "T4 velocity",
-    FORM: "Wave",
-    RATE: "Rate",
-    RATE_SYNC: "Sync to tempo",
-    RATE_NOTE: "Rate (note)",
-    PIT_DEPTH: "Pitch",
-    TVF_DEPTH: "Filter",
-    TVA_DEPTH: "Amp",
-    PAN_DEPTH: "Pan",
-    KEY_TRIG: "Key trigger",
-    FADE_MODE: "Fade mode",
-    FADE: "Fade time",
-    DELAY: "Delay",
-    OFST: "Offset",
-    RATE_DETN: "Rate detune",
-    PHASE_POS: "Phase",
-    STEP_MAX: "Steps",
-    LO_GAIN: "Low gain",
-    MID_GAIN: "Mid gain",
-    HI_GAIN: "High gain",
-    LO_FREQ: "Low freq",
-    MID_FREQ: "Mid freq",
-    HI_FREQ: "High freq",
-    MID_Q: "Mid Q",
-    SW: "On",
-    INST_NUM: "Instrument",
-    INST_GTYPE: "Inst bank",
-    INST_GID: "Inst group",
-    KEY_OFST: "Tune (semi)",
-    PIT_FINE_OFST: "Fine tune",
-    CUTOFF_OFST: "Cutoff",
-    RESO_OFST: "Resonance",
-    TVA_ATK_OFST: "Attack",
-    TVA_DCY_OFST: "Decay",
-    TVA_REL_OFST: "Release",
-    MUTE_GRP: "Mute group",
-    OUT_ASGN: "Output"
-  };
-  function nameOf(kind, key) {
-    const id = key.split(".")[1].replace(/^LFO\d_/, ""), p = paramOf(kind, key)[0];
-    return NAMES[id] || p[7].replace(/^(TVF|TVA|Pitch Env|TVF Env|TVA Env|PCMRhythm|MFX) /, "");
-  }
-  var VCRV = ["FIXED", "1", "2", "3", "4", "5", "6", "7"];
-  function listOf(kind, key) {
-    const id = key.split(".")[1], p = paramOf(kind, key)[0];
-    if (id === "CATEGORY" && kind === "tone") return ZC_CATEGORIES;
-    if (/VCRV$/.test(id)) return VCRV;
-    if (/PHASE_POS$/.test(id)) return ["0°", "90°", "180°", "270°"];
-    if (/^ctrlAsgn/.test(id)) return ["OFF", ...Array.from({ length: p[4] }, (_, i) => "Parameter " + (i + 1))];
-    if (p[8] && p[8].v) return p[8].v;
-    return p[3] === 0 && p[4] === 1 ? ["OFF", "ON"] : null;
-  }
-  function valText(kind, key, v) {
-    const id = key.split(".")[1], p = paramOf(kind, key)[0], x = p[8] || {}, list2 = listOf(kind, key);
-    if (list2) return list2[v - p[3]] ?? String(v);
-    if (/PAN$|PAN_ALT$/.test(id) && p[3] === -64 || id === "PAN") return v === 0 ? "C" : v < 0 ? "L" + -v : v + "R";
-    if (x.d && id !== "WAV_GID") {
-      const s = (x.d[1] - x.d[0]) / (p[4] - p[3]), d = x.d[0] + (v - p[3]) * s;
-      return (s < 1 ? d.toFixed(1) : String(Math.round(d))) + (x.u === "EQGAIN" ? " dB" : "");
-    }
-    const u = { semitone: " semi", cent: " cent", dB: " dB", EQFREQ: " Hz" }[x.u] || "";
-    return (v > 0 && p[3] < 0 ? "+" : "") + v + u;
-  }
-  var COPIED = null;
-  var partialOf = (key) => /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)(\d)\.(.+)$/.exec(key);
-  function ctlMenu(ctx2, key, p) {
-    const v = ctx2.get(key), m = ctx2.kind === "tone" && partialOf(key), id = key.replace(/^\D+\d*\./, "");
-    return [
-      {
-        label: "Back to the start value (" + valText(ctx2.kind, key, p[5]) + ")",
-        disabled: v === p[5],
-        action: () => ctx2.set(key, p[5], true)
-      },
-      "-",
-      { label: "Copy value (" + valText(ctx2.kind, key, v) + ")", action: () => COPIED = { id, v } },
-      {
-        label: COPIED && COPIED.id === id ? "Paste value (" + valText(ctx2.kind, key, COPIED.v) + ")" : "Paste value",
-        disabled: !(COPIED && COPIED.id === id && COPIED.v >= p[3] && COPIED.v <= p[4]),
-        action: () => ctx2.set(key, COPIED.v, true)
-      },
-      m ? {
-        label: "Same on all four partials",
-        action: () => {
-          const keys2 = [0, 1, 2, 3].map((i) => m[1] + i + "." + m[3]).filter((k2) => k2 !== key);
-          keys2.forEach((k2, i) => ctx2.set(k2, v, i === keys2.length - 1));
-        }
-      } : null
-    ];
-  }
-  function ctl(ctx2, key, opts = {}) {
-    const [p] = paramOf(ctx2.kind, key), list2 = listOf(ctx2.kind, key), v = ctx2.get(key), known2 = ctx2.snd.known.has(key), label2 = opts.label || nameOf(ctx2.kind, key);
-    const box = el("label", {
-      class: "zcC" + (known2 ? "" : " unk") + (opts.wide ? " wide" : ""),
-      title: (known2 ? "" : "Not read from the MC-707 yet. ") + p[7] + " · right-click for more",
-      oncontextmenu: (e) => {
-        if (e.target.matches("input[type=text], input[type=number]")) return;
-        e.preventDefault();
-        showMenu(e.clientX, e.clientY, ctlMenu(ctx2, key, p));
-      }
-    });
-    box.append(el("span", { class: "zcL" }, label2));
-    if (p[8] && p[8].ascii) {
-      box.append(
-        el("input", {
-          type: "text",
-          maxlength: p[2],
-          value: v,
-          class: "zcName",
-          onchange: (e) => ctx2.set(key, e.target.value.toUpperCase().slice(0, p[2]), true)
-        })
-      );
-      return box;
-    }
-    if (list2 && list2.length === 2 && /^(OFF|ON)$/.test(list2[0]) && list2[1] === "ON") {
-      box.classList.add("sw");
-      box.append(
-        el(
-          "button",
-          { type: "button", class: "zcSw" + (v ? " on" : ""), onclick: () => ctx2.set(key, v ? 0 : 1, true) },
-          v ? "ON" : "OFF"
-        )
-      );
-      return box;
-    }
-    if (list2 && list2.length <= 160) {
-      const s = el("select", { onchange: (e) => ctx2.set(key, +e.target.value, true) });
-      list2.forEach((n, i) => s.append(el("option", { value: p[3] + i, selected: p[3] + i === v }, n)));
-      box.append(stepper(s));
-      return box;
-    }
-    const out2 = el("span", { class: "zcV" }, valText(ctx2.kind, key, v));
-    const r = el("input", {
-      type: "range",
-      min: p[3],
-      max: p[4],
-      step: 1,
-      value: v,
-      oninput: (e) => {
-        out2.textContent = valText(ctx2.kind, key, +e.target.value);
-        ctx2.set(key, +e.target.value, false);
-      },
-      onchange: (e) => ctx2.set(key, +e.target.value, true),
-      ondblclick: () => ctx2.set(key, p[5], true)
-    });
-    if (p[4] - p[3] > 2e3) {
-      const n = el("input", {
-        type: "number",
-        min: p[3],
-        max: p[4],
-        value: v,
-        class: "zcNum",
-        onchange: (e) => ctx2.set(key, Math.max(p[3], Math.min(p[4], Math.round(+e.target.value || 0))), true)
-      });
-      box.append(n);
-      return box;
-    }
-    box.append(r, out2);
-    return box;
-  }
-  function stepper(s, min = 8) {
-    if (s.options.length < min) return s;
-    const go = (d) => {
-      const i = s.selectedIndex + d;
-      if (i < 0 || i >= s.options.length) return;
-      s.selectedIndex = i;
-      s.dispatchEvent(new Event("change", { bubbles: true }));
-    };
-    const b = (d, t, lab) => el(
-      "button",
-      {
-        type: "button",
-        class: "zcStepB " + (d < 0 ? "prev" : "next"),
-        title: t,
-        "aria-label": t,
-        onclick: (e) => (e.preventDefault(), go(d))
-      },
-      lab
-    );
-    return el("span", { class: "zcStep" }, s, b(-1, "Previous", "◀"), b(1, "Next", "▶"));
-  }
-  var group = (title, ...kids) => el("fieldset", { class: "zcG" }, el("legend", {}, title), ...kids);
-
-  // src/zen/zc-stepseq.js
-  var UNIT = 4;
-  var REST = -72;
-  var RATES = ["1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"];
-  var RATE_IX = { "1/32": 3, "1/16T": 4, "1/16": 6, "1/8T": 7, "1/8": 9, "1/4": 12 };
-  var SHAPES = [
-    ["Smooth", 1],
-    ["Plucky", 11],
-    ["Punchy", 15],
-    ["Short", 20]
-  ];
-  var SEQ_PATTERNS = [
-    ["Octave bounce", [0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12]],
-    ["Minor arp up", [0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12]],
-    ["Major arp up and down", [0, 4, 7, 12, 16, 12, 7, 4, 0, 4, 7, 12, 16, 12, 7, 4]],
-    ["Acid run", [0, 0, 12, 0, 3, null, 0, 15, 0, 12, null, 7, 0, 10, 12, 0]],
-    ["Trance gate (root)", [0, 0, null, 0, 0, null, 0, null, 0, 0, null, 0, 0, null, 0, null]],
-    ["Rolling bass", [0, null, 0, 12, 0, null, 0, 7, 0, null, 0, 12, 0, null, 10, 7]],
-    ["Fifths stab", [0, null, null, 7, null, null, 12, null, 0, null, null, 7, null, 10, null, null]],
-    ["Rest all", Array(16).fill(null)]
-  ];
-  var k = (ctx2, lfo, id) => pk("LFO", ctx2.part, "LFO" + lfo + "_" + id);
-  var isSeq = (ctx2) => ctx2.get(k(ctx2, 1, "FORM")) === 10 && ctx2.get(k(ctx2, 1, "PIT_DEPTH")) === 63;
-  function seqTemplate(ctx2, shape = 11) {
-    const set2 = (key, v) => ctx2.set(key, v, false);
-    for (const lfo of [1, 2]) {
-      set2(k(ctx2, lfo, "FORM"), 10);
-      set2(k(ctx2, lfo, "RATE_SYNC"), 1);
-      set2(k(ctx2, lfo, "RATE_NOTE"), RATE_IX["1/16"]);
-      set2(k(ctx2, lfo, "STEP_MAX"), 15);
-      set2(k(ctx2, lfo, "KEY_TRIG"), 1);
-      for (const d of ["DELAY", "FADE", "OFST", "PAN_DEPTH", "TVF_DEPTH"]) set2(k(ctx2, lfo, d), 0);
-    }
-    set2(k(ctx2, 1, "PIT_DEPTH"), 63);
-    set2(k(ctx2, 1, "TVA_DEPTH"), 0);
-    set2(k(ctx2, 2, "PIT_DEPTH"), 0);
-    set2(k(ctx2, 2, "TVA_DEPTH"), 100);
-    for (let i = 1; i <= 16; i++) {
-      set2(k(ctx2, 1, "STEP_" + i), 0);
-      set2(k(ctx2, 2, "STEP_" + i), 0);
-      set2(k(ctx2, 2, "STEP_CURVE_" + i), shape);
-    }
-    for (const s of ["FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]) set2(pk("SPTL", ctx2.part, s), 1);
-    ctx2.commit();
-  }
-  function seqPattern(ctx2, notes) {
-    notes.forEach((n, i) => {
-      ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), n == null ? 0 : n * UNIT, false);
-      ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), n == null ? REST : 0, false);
-    });
-    ctx2.commit();
-  }
-  var both = (ctx2, id, v) => {
-    ctx2.set(k(ctx2, 1, id), v, false);
-    ctx2.set(k(ctx2, 2, id), v, false);
-    ctx2.commit();
-  };
-  var interval = (s) => (s > 0 ? "+" : "") + s + ({ 0: " root", 12: " oct", "-12": " oct", 7: " 5th", "-5": " 5th", 3: " m3", 4: " M3" }[s] || "");
-  function stepCell(ctx2, i, len) {
-    const semis = Math.round(ctx2.get(k(ctx2, 1, "STEP_" + (i + 1))) / UNIT), rest = ctx2.get(k(ctx2, 2, "STEP_" + (i + 1))) <= REST + 8;
-    const sel = el(
-      "select",
-      { onchange: (e) => ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), +e.target.value * UNIT, true) },
-      ...[...Array(37)].map((_, j) => el("option", { value: 18 - j, selected: 18 - j === semis }, interval(18 - j)))
-    );
-    const gate2 = el(
-      "button",
-      {
-        type: "button",
-        class: "zcSw" + (rest ? "" : " on"),
-        title: rest ? "Rest: click to play this step" : "Plays: click to rest this step",
-        onclick: () => ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), rest ? 0 : REST, true)
-      },
-      rest ? "rest" : "play"
-    );
-    return el(
-      "div",
-      { class: "zcSeqStep" + (i > len ? " off" : "") },
-      el("span", { class: "zcL" }, String(i + 1)),
-      sel,
-      gate2
-    );
-  }
-  function seqTools(ctx2) {
-    const pick3 = (label2, opts, cur2, on3) => el(
-      "label",
-      { class: "zcC" },
-      el("span", { class: "zcL" }, label2),
-      el(
-        "select",
-        { onchange: (e) => on3(e.target.value) },
-        ...opts.map(([t, v]) => el("option", { value: v, selected: String(v) === String(cur2) }, t))
-      )
-    );
-    const rate = ctx2.get(k(ctx2, 1, "RATE_NOTE")), len = ctx2.get(k(ctx2, 1, "STEP_MAX")), shape = ctx2.get(k(ctx2, 2, "STEP_CURVE_1"));
-    return [
-      pick3(
-        "Step length",
-        RATES.map((r) => [r, RATE_IX[r]]),
-        rate,
-        (v) => both(ctx2, "RATE_NOTE", +v)
-      ),
-      pick3(
-        "Steps",
-        [...Array(16)].map((_, i) => [String(i + 1), i]),
-        len,
-        (v) => both(ctx2, "STEP_MAX", +v)
-      ),
-      pick3("Step shape", SHAPES, shape, (v) => {
-        for (let i = 1; i <= 16; i++) ctx2.set(k(ctx2, 2, "STEP_CURVE_" + i), +v, false);
-        ctx2.commit();
-      }),
-      pick3("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
-        if (+v >= 0) seqPattern(ctx2, SEQ_PATTERNS[+v][1]);
-      })
-    ];
-  }
-  function stepSeq(ctx2) {
-    if (!isSeq(ctx2))
-      return group(
-        "Step sequencer",
-        el(
-          "p",
-          { class: "hint zcWide" },
-          "Turns this partial into a 16-step riff that plays in time while you hold a key: LFO 1 plays the notes, LFO 2 shapes each step. Link partials first to set up several at once, then give each its own pattern for up to four voices. VA, SuperSAW and noise oscillators restart on every step; PCM waves only at the start of the note."
-        ),
-        el(
-          "button",
-          { type: "button", class: "btn", onclick: () => seqTemplate(ctx2) },
-          "Make this partial a step sequence"
-        )
-      );
-    const len = ctx2.get(k(ctx2, 1, "STEP_MAX"));
-    return group(
-      "Step sequencer",
-      ...seqTools(ctx2),
-      el("div", { class: "zcSeq zcWide" }, ...[...Array(16)].map((_, i) => stepCell(ctx2, i, len))),
-      el(
-        "p",
-        { class: "hint zcWide" },
-        "Hold a key: each step plays its interval from that key. Mono (Common page) keeps one riff per key; the steps follow the MC-707 tempo."
-      )
-    );
-  }
-
-  // src/zen/zc-starters-more.js
-  var pat = (name) => SEQ_PATTERNS.find((p) => p[0] === name)[1];
-  var RATE_1_16 = 6;
-  function seq(s, i, notes, shape = 11, rate = RATE_1_16) {
-    for (const l of [1, 2]) {
-      s("LFO.LFO" + l + "_FORM", 10, i);
-      s("LFO.LFO" + l + "_RATE_SYNC", 1, i);
-      s("LFO.LFO" + l + "_RATE_NOTE", rate, i);
-      s("LFO.LFO" + l + "_STEP_MAX", 15, i);
-      s("LFO.LFO" + l + "_KEY_TRIG", 1, i);
-    }
-    s("LFO.LFO1_PIT_DEPTH", 63, i);
-    s("LFO.LFO2_TVA_DEPTH", 100, i);
-    notes.forEach((n, j) => {
-      s("LFO.LFO1_STEP_" + (j + 1), n == null ? 0 : n * 4, i);
-      s("LFO.LFO2_STEP_" + (j + 1), n == null ? -72 : 0, i);
-      s("LFO.LFO2_STEP_CURVE_" + (j + 1), shape, i);
-    });
-    s("SPTL.FENV_LFO_TRIG_SW", 1, i);
-    s("SPTL.AENV_LFO_TRIG_SW", 1, i);
-  }
-  function fm(s, ratio, depth, modDecay) {
-    s("PMT.PMT2_PTL_SW", 1);
-    s("SPTL.OSC_TYPE", 1, 1);
-    s("SPTL.VA_FORM", 3);
-    s("SPTL.VA_FORM", 3, 1);
-    s("SPMT.STRUCT12", 3);
-    s("SPMT.XMOD12_DEPTH", depth);
-    s("PTL.PIT_CRS", ratio, 1);
-    s("AENV.T2", modDecay, 1);
-    s("AENV.L2", 0, 1);
-    s("AENV.L3", 0, 1);
-  }
-  var MORE_STARTERS = [
-    [
-      "Seq: acid riff",
-      () => tone("SEQ ACID", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 380);
-        s("PTL.RESO", 780);
-        s("FENV.DEPTH", 40);
-        s("FENV.T2", 120);
-        s("FENV.L2", 0);
-        s("FENV.L3", 0);
-        seq(s, 0, pat("Acid run"), 11);
-      })
-    ],
-    [
-      "Seq: trance gate",
-      () => tone("SEQ GATE", (s) => {
-        s("SPTL.OSC_TYPE", 3);
-        s("PTL.CUTOFF", 760);
-        s("PTL.REV_SEND", 50);
-        seq(s, 0, pat("Trance gate (root)"), 15);
-      })
-    ],
-    [
-      "Seq: octave bass",
-      () => tone("SEQ OCT BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("SPTL.VA_FORM", 1);
-        s("PTL.CUTOFF", 520);
-        seq(s, 0, pat("Octave bounce"), 11);
-      })
-    ],
-    [
-      "Seq: rolling bass",
-      () => tone("SEQ ROLL BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 460);
-        s("PTL.RESO", 300);
-        seq(s, 0, pat("Rolling bass"), 15);
-      })
-    ],
-    [
-      "Seq: two-voice arp",
-      () => tone("SEQ ARP 2V", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("PMT.PMT2_PTL_SW", 1);
-        s("SPTL.OSC_TYPE", 1, 1);
-        s("SPTL.VA_FORM", 2, 1);
-        s("PTL.PIT_CRS", 12, 1);
-        s("PTL.REV_SEND", 40);
-        s("PTL.REV_SEND", 40, 1);
-        seq(s, 0, pat("Minor arp up"), 11);
-        seq(s, 1, pat("Fifths stab"), 20);
-      })
-    ],
-    [
-      "FM: electric piano",
-      () => tone("FM EPIANO", (s) => {
-        fm(s, 12, 1800, 420);
-        s("AENV.T2", 900);
-        s("AENV.L2", 300);
-        s("AENV.L3", 0);
-        s("AENV.T4", 300);
-        s("PTL.REV_SEND", 40);
-      })
-    ],
-    [
-      "FM: glass bell",
-      () => tone("FM BELL", (s) => {
-        fm(s, 26, 3600, 900);
-        s("AENV.T2", 950);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 800);
-        s("PTL.REV_SEND", 80);
-      })
-    ],
-    [
-      "FM: bass",
-      () => tone("FM BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        fm(s, 0, 2400, 260);
-        s("AENV.T4", 80);
-      })
-    ],
-    [
-      "FM: metallic pluck",
-      () => tone("FM PLUCK", (s) => {
-        fm(s, 7, 4800, 150);
-        s("AENV.T2", 260);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 120);
-      })
-    ],
-    [
-      "Bass: deep sine sub",
-      () => tone("SINE SUB", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -2);
-        s("SPTL.VA_FORM", 3);
-        s("AENV.T4", 60);
-      })
-    ],
-    [
-      "Bass: punchy pluck",
-      () => tone("PLUCK BASS", (s) => {
-        s("CMN.MONO_POLY", 0);
-        s("CMN.OCTAVE", -1);
-        s("PTL.CUTOFF", 260);
-        s("PTL.RESO", 260);
-        s("FENV.DEPTH", 52);
-        s("FENV.T2", 90);
-        s("FENV.L2", 0);
-        s("FENV.L3", 0);
-        s("AENV.T2", 380);
-        s("AENV.L2", 0);
-        s("AENV.L3", 0);
-        s("AENV.T4", 60);
-      })
-    ]
-  ];
-  var GROUP = {
-    Basic: ["Init tone", "Saw lead", "Supersaw stack", "Pluck", "Noise sweep"],
-    Bass: [
-      "Square bass",
-      "Sub 808",
-      "Acid bass",
-      "Reese bass",
-      "Wobble bass",
-      "Bass: deep sine sub",
-      "Bass: punchy pluck"
-    ],
-    "Leads and stabs": ["Brass stab", "Hoover", "Sync lead", "House chord stab"],
-    "Pads and strings": ["Warm pad", "Juno pad", "Strings", "PWM pad"],
-    "Keys and bells": ["Bell", "Organ"],
-    "Step sequences": MORE_STARTERS.filter(([n]) => n.startsWith("Seq:")).map(([n]) => n),
-    "FM-style": MORE_STARTERS.filter(([n]) => n.startsWith("FM:")).map(([n]) => n),
-    Drums: ["Kick"]
-  };
-  function starterMenu() {
-    const all = [...STARTERS, ...MORE_STARTERS], used = /* @__PURE__ */ new Set(), out2 = Object.entries(GROUP).map(([g, names]) => [
-      g,
-      names.map((n) => all.find((x) => x[0] === n)).filter(Boolean).map((x) => (used.add(x[0]), x))
-    ]);
-    const rest = all.filter((x) => !used.has(x[0]));
-    if (rest.length) out2.push(["Other", rest]);
-    return out2.filter(([, list2]) => list2.length);
-  }
-
-  // src/zen/zc-factory-ui.js
-  var frame = () => new Promise((r) => setTimeout(r, 30));
-  function factoryImport(done2) {
-    const i = el("input", {
-      type: "file",
-      accept: ".bin",
-      onchange: async () => {
-        const f = i.files[0];
-        if (!f) return;
-        toast("Reading " + f.name + "…");
-        await frame();
-        try {
-          const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
-          if (!tones.length) return toast("No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).");
-          const n = await soundAddMany(tones.map((t) => ({ ...t, src: "factory" })));
-          toast(
-            n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
-          );
-          done2(n);
-        } catch (e) {
-          toast("That file could not be read");
-        }
-      }
-    });
-    i.click();
-  }
-  function factoryItems(done2) {
-    const have = ZS.list.some((e) => e.src === "factory");
-    return [
-      {
-        label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
-        action: () => factoryImport(done2)
-      },
-      have ? {
-        label: "Remove the factory tones",
-        action: async () => {
-          const n = await soundsRemoveSrc("factory");
-          toast("Removed " + n + " factory tones");
-          done2(0);
-        }
-      } : null
-    ].filter(Boolean);
-  }
-
-  // src/scene/pick-tone.js
-  var SHOW2 = 300;
-  var T2 = { q: "", bank: "all", group: "" };
-  var STARTS = null;
-  function starters() {
-    if (STARTS) return STARTS;
-    STARTS = [];
-    for (const [group2, items] of starterMenu())
-      for (const [name, make] of items) {
-        const snd = make();
-        STARTS.push({
-          id: "st:" + name,
-          name,
-          kind: snd.kind,
-          type: typeOf(snd, name),
-          tags: [],
-          src: "starter",
-          group: group2,
-          make
-        });
-      }
-    return STARTS;
-  }
-  var toneOf2 = (e) => ({
-    name: e.name,
-    kind: e.kind,
-    d: e.src === "starter" ? diffOf(e.make()) : diffOf(soundOf(e))
+  // src/zen/zc-motion.js
+  var zc_motion_exports = {};
+  __export(zc_motion_exports, {
+    MOTION_LANES: () => MOTION_LANES,
+    MOTION_NONE: () => MOTION_NONE,
+    MOTION_PER_STEP: () => MOTION_PER_STEP,
+    decodeMotion: () => decodeMotion,
+    encodeMotion: () => encodeMotion,
+    motionAddr: () => motionAddr,
+    motionSummary: () => motionSummary,
+    motionTestOpen: () => motionTestOpen,
+    motionThin: () => motionThin,
+    readMotion: () => readMotion,
+    testShape: () => testShape,
+    writeMotion: () => writeMotion
   });
-  async function pickTone(t, title, done2, curName) {
-    if ($("#stOv")) return;
-    await soundsLoad();
-    const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
-    const all = () => [...ZS.list, ...starters()].filter((e) => e.kind === kind);
-    const body = el("div", { class: "spList", role: "listbox", "aria-label": "Sounds" }), count = el("span", { class: "hint" }), filt2 = el("div", { class: "spFilt" });
-    const close = () => ov.remove();
-    const choose = (e) => (close(), done2(toneOf2(e)));
-    const draw = () => {
-      const list2 = sortList(filterList(all(), { ...T2, cat: "", tag: "" }), "bank", 1);
-      body.textContent = "";
-      count.textContent = list2.length > SHOW2 ? "First " + SHOW2 + " of " + list2.length : list2.length + " sounds";
-      for (const e of list2.slice(0, SHOW2))
-        body.append(
-          el(
-            "div",
-            {
-              class: "spRow" + (e.name === curName ? " cur" : ""),
-              role: "option",
-              tabindex: 0,
-              onclick: () => choose(e),
-              onkeydown: (x) => x.key === "Enter" && choose(e)
-            },
-            el("span", { class: "stBank" }, bankName(bankOf(e), true)),
-            el("b", {}, e.name),
-            el("span", { class: "hint" }, catLabel(catOf(e)))
-          )
-        );
-      if (!list2.length) body.append(el("p", { class: "hint" }, "Nothing matches."));
-    };
-    const drawFilt = () => {
-      const banks = banksIn(all()), hasFac = banks.some((b) => b.startsWith("f:"));
-      filt2.textContent = "";
-      filt2.append(
-        search,
-        el(
-          "select",
-          { "aria-label": "Bank", onchange: (e) => (T2.bank = e.target.value, draw()) },
-          el("option", { value: "all" }, "All banks"),
-          hasFac ? el("option", { value: "factory", selected: T2.bank === "factory" }, "All factory tones") : null,
-          ...banks.map((b) => el("option", { value: b, selected: T2.bank === b }, bankName(b)))
-        ),
-        kind === "tone" ? el(
-          "select",
-          { "aria-label": "Category", onchange: (e) => (T2.group = e.target.value, draw()) },
-          el("option", { value: "" }, "Any category"),
-          ...CAT_GROUPS.map(([g]) => el("option", { value: g, selected: T2.group === g }, g))
-        ) : null,
-        count
-      );
-      if (!hasFac)
-        filt2.append(
-          el(
-            "button",
-            {
-              type: "button",
-              class: "btn sm",
-              title: "Read the preset tones from the MC-707 system update file on your computer",
-              onclick: () => factoryImport(() => (drawFilt(), draw()))
-            },
-            "Add the factory tones…"
-          )
-        );
-    };
-    if (!banksIn(all()).includes(T2.bank) && !["all", "factory"].includes(T2.bank)) T2.bank = "all";
-    const search = el("input", {
-      type: "search",
-      placeholder: "Search",
-      "aria-label": "Search sounds",
-      value: T2.q,
-      oninput: (e) => (T2.q = e.target.value, draw())
+  var MOTION_LANES = ["FILTER", "MOD", "FX", "SOUND (C4)", "Lane 5", "Lane 6", "Lane 7", "Lane 8"];
+  var MOTION_PER_STEP = 8;
+  var MOTION_NONE = -1;
+  var motionAddr = (t, k2, s, lane) => lin(clipPacked(devTrack(t), k2) + 262144 + s * 256 + lane * 16);
+  function decodeMotion(b) {
+    const out2 = [];
+    for (let i = 0; i < MOTION_PER_STEP; i++) {
+      const v = b && b.length >= i * 2 + 2 ? (b[i * 2] & 15) << 4 | b[i * 2 + 1] & 15 : 255;
+      out2.push(v > 127 ? MOTION_NONE : v);
+    }
+    return out2;
+  }
+  var encodeMotion = (vals) => Array.from({ length: MOTION_PER_STEP }, (_, i) => {
+    const v = vals[i];
+    return v >= 0 && v <= 127 ? Math.round(v) : 255;
+  }).flatMap((v) => [v >> 4 & 15, v & 15]);
+  function motionThin(vals) {
+    let last3 = null;
+    return vals.map((v) => {
+      if (v === last3) return MOTION_NONE;
+      last3 = v;
+      return v;
     });
+  }
+  async function clipSteps(t, k2) {
+    const r = await zxRead(paramAddr(t, k2), 3, 600, true);
+    return decodeParams(Array.isArray(r) ? r : null);
+  }
+  async function readMotion(t, k2, lane, steps2, onStep) {
+    const out2 = [];
+    for (let s = 0; s < steps2; s++) {
+      const b = await zxRead(motionAddr(t, k2, s, lane), 16, 300, true);
+      if (!Array.isArray(b) && s === 0) return null;
+      out2.push(...decodeMotion(Array.isArray(b) ? b : null));
+      if (onStep) onStep(s + 1, steps2);
+    }
+    return out2;
+  }
+  async function writeMotion(t, k2, lane, vals, onStep, cancelled) {
+    const steps2 = Math.ceil(vals.length / MOTION_PER_STEP);
+    for (let s = 0; s < steps2; s++) {
+      zxWrite(motionAddr(t, k2, s, lane), encodeMotion(vals.slice(s * MOTION_PER_STEP, (s + 1) * MOTION_PER_STEP)));
+      await zxFlush();
+      if (onStep) onStep(s + 1, steps2);
+      if (cancelled && cancelled()) return false;
+    }
+    return true;
+  }
+  function motionSummary(vals) {
+    const set2 = vals.filter((v) => v >= 0);
+    if (!set2.length) return "no motion";
+    const first = vals.findIndex((v) => v >= 0);
+    return set2.length + " values, " + Math.min(...set2) + " to " + Math.max(...set2) + " (first at step " + (Math.floor(first / MOTION_PER_STEP) + 1) + ": " + vals[first] + ")";
+  }
+  function testShape(steps2) {
+    const n = steps2 * MOTION_PER_STEP;
+    return motionThin(Array.from({ length: n }, (_, i) => Math.round(127 * (1 - Math.abs(2 * i / n - 1)))));
+  }
+  var READ_ALL_STEPS = 32;
+  function motionTestOpen() {
+    if (document.getElementById("mtOv")) return;
+    const name = DEVS[DEV].name;
+    const firstTone = DEVS[DEV].tracks.find((i) => S.tracks[i].type !== "drum");
+    const trk = el(
+      "select",
+      { "aria-label": "Track" },
+      ...DEVS[DEV].tracks.map(
+        (i) => (
+          /* the first tone track to start with: a bass or pad shows a level change best */
+          el("option", { value: i, selected: i === firstTone }, "Track " + devNum(i) + " · " + S.tracks[i].name)
+        )
+      )
+    );
+    const clip = el(
+      "select",
+      { "aria-label": "Clip" },
+      ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2 }, "Clip " + (k2 + 1)))
+    );
+    const lane = el(
+      "select",
+      { "aria-label": "Lane" },
+      ...MOTION_LANES.map((n, i) => el("option", { value: i, selected: i === 3 }, n))
+    );
+    const out2 = el("pre", { class: "sfOut" }, "Nothing read yet."), status3 = el("div", { class: "hint", role: "status", "aria-live": "polite" }, "");
+    const log = [];
+    const say = (...l) => {
+      log.push(...l);
+      out2.textContent = log.join("\n");
+      out2.scrollTop = out2.scrollHeight;
+    };
+    const where2 = () => "track " + devNum(+trk.value) + " clip " + (+clip.value + 1);
+    let busy3 = false;
+    const run2 = async (job) => {
+      if (busy3) return;
+      if (!await zxConnect()) return toast("The " + name + " is not connected (or MIDI with SysEx is not allowed)");
+      const t = +trk.value, k2 = +clip.value;
+      const p = await clipSteps(t, k2);
+      if (!p) return say("", where2() + ": the " + name + " did not answer for that clip.");
+      busy3 = true;
+      btns.forEach((b) => b.disabled = true);
+      try {
+        await job(t, k2, p.steps);
+      } finally {
+        busy3 = false;
+        btns.forEach((b) => b.disabled = false);
+        status3.textContent = "";
+      }
+    };
+    const readAll = el(
+      "button",
+      {
+        type: "button",
+        class: "btn on",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const n = Math.min(steps2, READ_ALL_STEPS);
+          say("", "Read " + where2() + " (" + steps2 + " steps" + (n < steps2 ? ", the first " + n + " read" : "") + "):");
+          for (let l = 0; l < MOTION_LANES.length; l++) {
+            const v = await readMotion(t, k2, l, n, (d, of) => {
+              status3.textContent = "Reading " + MOTION_LANES[l] + "… step " + d + " of " + of;
+            });
+            say("  " + MOTION_LANES[l] + ": " + (v ? motionSummary(v) : "did not answer"));
+          }
+        })
+      },
+      "Read every lane"
+    );
+    const write = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const l = +lane.value, ln = MOTION_LANES[l];
+          const before = await readMotion(t, k2, l, steps2);
+          if (!await askDlg({
+            title: "Write the test shape?",
+            text: "Lane " + ln + " of " + where2() + " gets a slow move from 0 up to 127 and back across the clip (" + steps2 + " steps). Only this lane is written; the notes and the other lanes stay. " + (before && before.some((v) => v >= 0) ? "It holds motion now (" + motionSummary(before) + "), which is replaced." : "It holds no motion now."),
+            ok: "Write"
+          }))
+            return;
+          const shape = testShape(steps2);
+          const ok = await writeSession(
+            "Writing the test shape to " + where2() + ", " + ln,
+            (ui) => writeMotion(
+              t,
+              k2,
+              l,
+              shape,
+              (d, of) => ui.set("Step " + d + " of " + of, d / of),
+              () => ui.cancelled
+            )
+          );
+          if (!ok) return say("", "Stopped part-way: " + ln + " of " + where2() + " is only partly written.");
+          const back = await readMotion(t, k2, l, steps2);
+          const same = back && back.every((v, i) => v === shape[i]);
+          say(
+            "",
+            "Wrote the test shape to " + ln + " of " + where2() + ": " + (same ? "read back the same." : "read back differently (" + (back ? motionSummary(back) : "no answer") + ")."),
+            "Now go to step 4: play the clip on the " + name + " and listen to what changes over each loop."
+          );
+        })
+      },
+      "Write test shape"
+    );
+    const clear = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const l = +lane.value, ln = MOTION_LANES[l];
+          if (!await askDlg({
+            title: "Clear the lane?",
+            text: "Lane " + ln + " of " + where2() + " loses all its motion.",
+            ok: "Clear"
+          }))
+            return;
+          const ok = await writeSession(
+            "Clearing " + ln + " of " + where2(),
+            (ui) => writeMotion(
+              t,
+              k2,
+              l,
+              Array(steps2 * MOTION_PER_STEP).fill(MOTION_NONE),
+              (d, of) => ui.set("Step " + d + " of " + of, d / of),
+              () => ui.cancelled
+            )
+          );
+          say(
+            "",
+            ok ? "Cleared " + ln + " of " + where2() + "." : "Stopped part-way: " + ln + " is only partly cleared."
+          );
+        })
+      },
+      "Clear lane"
+    );
+    const copy = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: async () => {
+          try {
+            await navigator.clipboard.writeText(out2.textContent);
+            toast("Copied: paste it into the chat");
+          } catch (e) {
+            toast("Could not copy: select the text and copy it");
+          }
+        }
+      },
+      "Copy results"
+    );
+    const btns = [readAll, write, clear];
+    const close = () => !busy3 && ov.remove();
+    const heard = el(
+      "select",
+      { "aria-label": "What did you hear?" },
+      el("option", { value: "" }, "What did you hear?"),
+      el("option", {}, "Volume: fades in and out"),
+      el("option", {}, "Filter: muffled, bright, muffled"),
+      el("option", {}, "Something else (say what below)"),
+      el("option", {}, "No change")
+    );
+    const knob2 = el("input", {
+      type: "text",
+      "aria-label": "What the knob is called on the screen, or what else you heard",
+      placeholder: "Knob name on the screen, or what you heard",
+      style: "flex:1;min-width:220px"
+    });
+    const note = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => {
+          if (!heard.value && !knob2.value.trim()) return toast("Pick what you heard first");
+          say(
+            "",
+            "Heard on " + MOTION_LANES[+lane.value] + " (" + where2() + "): " + (heard.value || "-") + (knob2.value.trim() ? "; " + knob2.value.trim() : "")
+          );
+          heard.value = "";
+          knob2.value = "";
+          toast("Added to the results");
+        }
+      },
+      "Add to results"
+    );
+    const row = (...kids) => el("div", { class: "mtRow" }, ...kids);
+    const step = (n, title, text, ...kids) => el(
+      "section",
+      { class: "mtStep" },
+      el("b", {}, el("span", { class: "mtNum" }, String(n)), title),
+      ...(Array.isArray(text) ? text : [text]).map((t) => typeof t === "string" ? el("p", { class: "hint" }, t) : t),
+      ...kids
+    );
     const ov = el(
       "div",
-      {
-        id: "stOv",
-        class: "ptOv",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-label": "Choose a tone",
-        onclick: (e) => e.target === ov && close(),
-        onkeydown: (e) => e.key === "Escape" && (e.stopPropagation(), close())
-      },
+      { id: "mtOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Motion test" },
       el(
         "div",
-        { class: "ptBox spBox" },
-        el(
-          "h3",
-          {},
-          (kind === "kit" ? "Drum kit" : "Tone") + " for track " + devNum(t) + " · " + S.tracks[t].name + ", " + title
-        ),
+        { class: "ptBox mtBox" },
+        el("h3", {}, "Motion test: find which knob lane changes what"),
         el(
           "p",
           { class: "hint" },
-          "The MC-707 clip gets this sound when you send the scenes. Factory tones come from your MC-707 update file; your own sounds from the ZenCore editor."
+          "Each " + name + " clip can play back knob moves, called motion, in 8 lanes: the first four follow the track’s knobs as KNOB ASSIGN sets them (FILTER, MOD, FX and SOUND), then four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept."
         ),
-        filt2,
-        body,
+        step(
+          1,
+          "Choose a clip",
+          [
+            "Pick a track and a clip that already plays notes on the " + name + ". A pad, chords or a bass with long held notes is best, so a slow change is easy to hear. A 2 or 4-bar clip is better than 1 bar: the move is slower.",
+            "Stop playback on the " + name + " and in the app before you go on."
+          ],
+          row(trk, clip)
+        ),
+        step(
+          2,
+          "Look first (read only)",
+          "Press Read every lane. It lists which lanes of that clip already hold knob moves (FILTER, MOD, FX, SOUND, then Lane 5 to 8). Nothing is changed. If it says the " + name + " did not answer, check the track and clip, and that the " + name + " is connected.",
+          row(readAll)
+        ),
+        step(
+          3,
+          "Write the test shape",
+          'Pick a lane and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
+          row(lane, write)
+        ),
+        step(
+          4,
+          "Listen on the " + name,
+          [
+            "Start that clip on the " + name + " and let it loop a few times. The knobs are not motorised, so they will not move: listen instead.",
+            el(
+              "ul",
+              { class: "hint mtList" },
+              el(
+                "li",
+                {},
+                el("b", {}, "Volume: "),
+                "the part fades in, is loudest halfway, then fades out. This is the one for the sidechain pump."
+              ),
+              el("li", {}, el("b", {}, "Filter: "), "the part goes from dull and muffled to bright, and back."),
+              el("li", {}, el("b", {}, "Something else: "), "reverb, an effect, pitch… say what."),
+              el(
+                "li",
+                {},
+                el("b", {}, "No change: "),
+                "that lane may move something this sound does not use. Try FILTER in step 5."
+              )
+            ),
+            "To see what each knob is set to, press KNOB ASSIGN on the " + name + ": it lists what each track’s FILTER, MOD, FX and SOUND (C4) knobs control (the C1-C4 knobs are something else: they change with the screen).",
+            "Then pick what you heard, type what KNOB ASSIGN shows for that knob, and press Add to results."
+          ],
+          row(heard, knob2, note)
+        ),
+        step(
+          5,
+          "Try another lane (optional)",
+          "Clear lane takes the test shape out of the lane picked in step 3. To compare, pick FILTER (easy to hear), write the test shape again and listen. Clear each lane when you are done with it.",
+          row(clear)
+        ),
+        step(
+          6,
+          "Send the results",
+          "Press Copy results and paste it into the chat. It has what was read, what was written, and what you heard.",
+          row(copy)
+        ),
+        status3,
+        out2,
         el(
           "div",
-          { style: "display:flex;gap:8px;justify-content:flex-end;margin-top:10px" },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "btn",
-              title: "Send no sound: the clip keeps the one it has",
-              onclick: () => (close(), done2(null))
-            },
-            "Keep the clip’s sound"
-          ),
-          el("button", { type: "button", class: "btn", onclick: close }, "Cancel")
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Close")
         )
       )
     );
-    drawFilt();
-    draw();
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
     document.body.append(ov);
-    search.focus();
   }
-
-  // src/scene/names.js
-  var sceneLabel = (i) => firstScene() + i < 128 ? sceneName(firstScene() + i) : "—";
 
   // src/zen/zc-library.js
   var KEY3 = "mc707-zen";
@@ -34217,6 +33324,378 @@ body[data-mode='scene'] #scene {
     return out2;
   }
 
+  // src/zen/zc-widgets.js
+  var NAMES = {
+    NAME: "Name",
+    CATEGORY: "Category",
+    PIT_CRS: "Coarse tune",
+    PIT_FINE: "Fine tune",
+    OCTAVE: "Octave",
+    MONO_POLY: "Voice",
+    PORTA_SW: "Portamento",
+    PORTA_TIME: "Porta time",
+    PORTA_MODE: "Porta mode",
+    PORTA_TYPE: "Porta type",
+    PORTA_START: "Porta start",
+    PORTA_CRV: "Porta curve",
+    BEND_RANGE_UP: "Bend up",
+    BEND_RANGE_DW: "Bend down",
+    CUTOFF: "Cutoff",
+    RESO: "Resonance",
+    CUTOFF_KF: "Key follow",
+    CUTOFF_VCRV: "Velocity curve",
+    CUTOFF_VSENS: "Velocity sens",
+    RESO_VSENS: "Reso velocity",
+    FILTER_TYPE: "Filter type",
+    LEVEL_VCRV: "Velocity curve",
+    LEVEL_VSENS: "Velocity sens",
+    CHO_SEND: "Delay send",
+    REV_SEND: "Reverb send",
+    OSC_TYPE: "Oscillator",
+    VA_FORM: "Waveform",
+    PW: "Pulse width",
+    PWM_DEPTH: "PWM depth",
+    SSAW_DETUNE: "Detune",
+    WAV_GTYPE: "Wave bank",
+    WAV_GID: "Wave group",
+    WAV_NUM_L: "Wave (L)",
+    WAV_NUM_R: "Wave (R)",
+    WAV_GAIN: "Wave gain",
+    SYNC_WAV_NUM: "Sync wave",
+    UNISON_SW: "Unison",
+    UNISON_SIZE: "Voices",
+    UNISON_DETN: "Detune",
+    DEPTH: "Depth",
+    VSENS: "Velocity sens",
+    VCRV: "Velocity curve",
+    T1_VSENS: "T1 velocity",
+    T4_VSENS: "T4 velocity",
+    FORM: "Wave",
+    RATE: "Rate",
+    RATE_SYNC: "Sync to tempo",
+    RATE_NOTE: "Rate (note)",
+    PIT_DEPTH: "Pitch",
+    TVF_DEPTH: "Filter",
+    TVA_DEPTH: "Amp",
+    PAN_DEPTH: "Pan",
+    KEY_TRIG: "Key trigger",
+    FADE_MODE: "Fade mode",
+    FADE: "Fade time",
+    DELAY: "Delay",
+    OFST: "Offset",
+    RATE_DETN: "Rate detune",
+    PHASE_POS: "Phase",
+    STEP_MAX: "Steps",
+    LO_GAIN: "Low gain",
+    MID_GAIN: "Mid gain",
+    HI_GAIN: "High gain",
+    LO_FREQ: "Low freq",
+    MID_FREQ: "Mid freq",
+    HI_FREQ: "High freq",
+    MID_Q: "Mid Q",
+    SW: "On",
+    INST_NUM: "Instrument",
+    INST_GTYPE: "Inst bank",
+    INST_GID: "Inst group",
+    KEY_OFST: "Tune (semi)",
+    PIT_FINE_OFST: "Fine tune",
+    CUTOFF_OFST: "Cutoff",
+    RESO_OFST: "Resonance",
+    TVA_ATK_OFST: "Attack",
+    TVA_DCY_OFST: "Decay",
+    TVA_REL_OFST: "Release",
+    MUTE_GRP: "Mute group",
+    OUT_ASGN: "Output"
+  };
+  function nameOf(kind, key) {
+    const id = key.split(".")[1].replace(/^LFO\d_/, ""), p = paramOf(kind, key)[0];
+    return NAMES[id] || p[7].replace(/^(TVF|TVA|Pitch Env|TVF Env|TVA Env|PCMRhythm|MFX) /, "");
+  }
+  var VCRV = ["FIXED", "1", "2", "3", "4", "5", "6", "7"];
+  function listOf(kind, key) {
+    const id = key.split(".")[1], p = paramOf(kind, key)[0];
+    if (id === "CATEGORY" && kind === "tone") return ZC_CATEGORIES;
+    if (/VCRV$/.test(id)) return VCRV;
+    if (/PHASE_POS$/.test(id)) return ["0°", "90°", "180°", "270°"];
+    if (/^ctrlAsgn/.test(id)) return ["OFF", ...Array.from({ length: p[4] }, (_, i) => "Parameter " + (i + 1))];
+    if (p[8] && p[8].v) return p[8].v;
+    return p[3] === 0 && p[4] === 1 ? ["OFF", "ON"] : null;
+  }
+  function valText(kind, key, v) {
+    const id = key.split(".")[1], p = paramOf(kind, key)[0], x = p[8] || {}, list2 = listOf(kind, key);
+    if (list2) return list2[v - p[3]] ?? String(v);
+    if (/PAN$|PAN_ALT$/.test(id) && p[3] === -64 || id === "PAN") return v === 0 ? "C" : v < 0 ? "L" + -v : v + "R";
+    if (x.d && id !== "WAV_GID") {
+      const s = (x.d[1] - x.d[0]) / (p[4] - p[3]), d = x.d[0] + (v - p[3]) * s;
+      return (s < 1 ? d.toFixed(1) : String(Math.round(d))) + (x.u === "EQGAIN" ? " dB" : "");
+    }
+    const u = { semitone: " semi", cent: " cent", dB: " dB", EQFREQ: " Hz" }[x.u] || "";
+    return (v > 0 && p[3] < 0 ? "+" : "") + v + u;
+  }
+  var COPIED = null;
+  var partialOf = (key) => /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)(\d)\.(.+)$/.exec(key);
+  function ctlMenu(ctx2, key, p) {
+    const v = ctx2.get(key), m = ctx2.kind === "tone" && partialOf(key), id = key.replace(/^\D+\d*\./, "");
+    return [
+      {
+        label: "Back to the start value (" + valText(ctx2.kind, key, p[5]) + ")",
+        disabled: v === p[5],
+        action: () => ctx2.set(key, p[5], true)
+      },
+      "-",
+      { label: "Copy value (" + valText(ctx2.kind, key, v) + ")", action: () => COPIED = { id, v } },
+      {
+        label: COPIED && COPIED.id === id ? "Paste value (" + valText(ctx2.kind, key, COPIED.v) + ")" : "Paste value",
+        disabled: !(COPIED && COPIED.id === id && COPIED.v >= p[3] && COPIED.v <= p[4]),
+        action: () => ctx2.set(key, COPIED.v, true)
+      },
+      m ? {
+        label: "Same on all four partials",
+        action: () => {
+          const keys2 = [0, 1, 2, 3].map((i) => m[1] + i + "." + m[3]).filter((k2) => k2 !== key);
+          keys2.forEach((k2, i) => ctx2.set(k2, v, i === keys2.length - 1));
+        }
+      } : null
+    ];
+  }
+  function ctl(ctx2, key, opts = {}) {
+    const [p] = paramOf(ctx2.kind, key), list2 = listOf(ctx2.kind, key), v = ctx2.get(key), known2 = ctx2.snd.known.has(key), label2 = opts.label || nameOf(ctx2.kind, key);
+    const box = el("label", {
+      class: "zcC" + (known2 ? "" : " unk") + (opts.wide ? " wide" : ""),
+      title: (known2 ? "" : "Not read from the MC-707 yet. ") + p[7] + " · right-click for more",
+      oncontextmenu: (e) => {
+        if (e.target.matches("input[type=text], input[type=number]")) return;
+        e.preventDefault();
+        showMenu(e.clientX, e.clientY, ctlMenu(ctx2, key, p));
+      }
+    });
+    box.append(el("span", { class: "zcL" }, label2));
+    if (p[8] && p[8].ascii) {
+      box.append(
+        el("input", {
+          type: "text",
+          maxlength: p[2],
+          value: v,
+          class: "zcName",
+          onchange: (e) => ctx2.set(key, e.target.value.toUpperCase().slice(0, p[2]), true)
+        })
+      );
+      return box;
+    }
+    if (list2 && list2.length === 2 && /^(OFF|ON)$/.test(list2[0]) && list2[1] === "ON") {
+      box.classList.add("sw");
+      box.append(
+        el(
+          "button",
+          { type: "button", class: "zcSw" + (v ? " on" : ""), onclick: () => ctx2.set(key, v ? 0 : 1, true) },
+          v ? "ON" : "OFF"
+        )
+      );
+      return box;
+    }
+    if (list2 && list2.length <= 160) {
+      const s = el("select", { onchange: (e) => ctx2.set(key, +e.target.value, true) });
+      list2.forEach((n, i) => s.append(el("option", { value: p[3] + i, selected: p[3] + i === v }, n)));
+      box.append(stepper(s));
+      return box;
+    }
+    const out2 = el("span", { class: "zcV" }, valText(ctx2.kind, key, v));
+    const r = el("input", {
+      type: "range",
+      min: p[3],
+      max: p[4],
+      step: 1,
+      value: v,
+      oninput: (e) => {
+        out2.textContent = valText(ctx2.kind, key, +e.target.value);
+        ctx2.set(key, +e.target.value, false);
+      },
+      onchange: (e) => ctx2.set(key, +e.target.value, true),
+      ondblclick: () => ctx2.set(key, p[5], true)
+    });
+    if (p[4] - p[3] > 2e3) {
+      const n = el("input", {
+        type: "number",
+        min: p[3],
+        max: p[4],
+        value: v,
+        class: "zcNum",
+        onchange: (e) => ctx2.set(key, Math.max(p[3], Math.min(p[4], Math.round(+e.target.value || 0))), true)
+      });
+      box.append(n);
+      return box;
+    }
+    box.append(r, out2);
+    return box;
+  }
+  function stepper(s, min = 8) {
+    if (s.options.length < min) return s;
+    const go = (d) => {
+      const i = s.selectedIndex + d;
+      if (i < 0 || i >= s.options.length) return;
+      s.selectedIndex = i;
+      s.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    const b = (d, t, lab) => el(
+      "button",
+      {
+        type: "button",
+        class: "zcStepB " + (d < 0 ? "prev" : "next"),
+        title: t,
+        "aria-label": t,
+        onclick: (e) => (e.preventDefault(), go(d))
+      },
+      lab
+    );
+    return el("span", { class: "zcStep" }, s, b(-1, "Previous", "◀"), b(1, "Next", "▶"));
+  }
+  var group = (title, ...kids) => el("fieldset", { class: "zcG" }, el("legend", {}, title), ...kids);
+
+  // src/zen/zc-stepseq.js
+  var UNIT = 4;
+  var REST = -72;
+  var RATES = ["1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"];
+  var RATE_IX = { "1/32": 3, "1/16T": 4, "1/16": 6, "1/8T": 7, "1/8": 9, "1/4": 12 };
+  var SHAPES = [
+    ["Smooth", 1],
+    ["Plucky", 11],
+    ["Punchy", 15],
+    ["Short", 20]
+  ];
+  var SEQ_PATTERNS = [
+    ["Octave bounce", [0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12]],
+    ["Minor arp up", [0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12, 0, 3, 7, 12]],
+    ["Major arp up and down", [0, 4, 7, 12, 16, 12, 7, 4, 0, 4, 7, 12, 16, 12, 7, 4]],
+    ["Acid run", [0, 0, 12, 0, 3, null, 0, 15, 0, 12, null, 7, 0, 10, 12, 0]],
+    ["Trance gate (root)", [0, 0, null, 0, 0, null, 0, null, 0, 0, null, 0, 0, null, 0, null]],
+    ["Rolling bass", [0, null, 0, 12, 0, null, 0, 7, 0, null, 0, 12, 0, null, 10, 7]],
+    ["Fifths stab", [0, null, null, 7, null, null, 12, null, 0, null, null, 7, null, 10, null, null]],
+    ["Rest all", Array(16).fill(null)]
+  ];
+  var k = (ctx2, lfo, id) => pk("LFO", ctx2.part, "LFO" + lfo + "_" + id);
+  var isSeq = (ctx2) => ctx2.get(k(ctx2, 1, "FORM")) === 10 && ctx2.get(k(ctx2, 1, "PIT_DEPTH")) === 63;
+  function seqTemplate(ctx2, shape = 11) {
+    const set2 = (key, v) => ctx2.set(key, v, false);
+    for (const lfo of [1, 2]) {
+      set2(k(ctx2, lfo, "FORM"), 10);
+      set2(k(ctx2, lfo, "RATE_SYNC"), 1);
+      set2(k(ctx2, lfo, "RATE_NOTE"), RATE_IX["1/16"]);
+      set2(k(ctx2, lfo, "STEP_MAX"), 15);
+      set2(k(ctx2, lfo, "KEY_TRIG"), 1);
+      for (const d of ["DELAY", "FADE", "OFST", "PAN_DEPTH", "TVF_DEPTH"]) set2(k(ctx2, lfo, d), 0);
+    }
+    set2(k(ctx2, 1, "PIT_DEPTH"), 63);
+    set2(k(ctx2, 1, "TVA_DEPTH"), 0);
+    set2(k(ctx2, 2, "PIT_DEPTH"), 0);
+    set2(k(ctx2, 2, "TVA_DEPTH"), 100);
+    for (let i = 1; i <= 16; i++) {
+      set2(k(ctx2, 1, "STEP_" + i), 0);
+      set2(k(ctx2, 2, "STEP_" + i), 0);
+      set2(k(ctx2, 2, "STEP_CURVE_" + i), shape);
+    }
+    for (const s of ["FENV_LFO_TRIG_SW", "AENV_LFO_TRIG_SW"]) set2(pk("SPTL", ctx2.part, s), 1);
+    ctx2.commit();
+  }
+  function seqPattern(ctx2, notes) {
+    notes.forEach((n, i) => {
+      ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), n == null ? 0 : n * UNIT, false);
+      ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), n == null ? REST : 0, false);
+    });
+    ctx2.commit();
+  }
+  var both = (ctx2, id, v) => {
+    ctx2.set(k(ctx2, 1, id), v, false);
+    ctx2.set(k(ctx2, 2, id), v, false);
+    ctx2.commit();
+  };
+  var interval = (s) => (s > 0 ? "+" : "") + s + ({ 0: " root", 12: " oct", "-12": " oct", 7: " 5th", "-5": " 5th", 3: " m3", 4: " M3" }[s] || "");
+  function stepCell(ctx2, i, len) {
+    const semis = Math.round(ctx2.get(k(ctx2, 1, "STEP_" + (i + 1))) / UNIT), rest = ctx2.get(k(ctx2, 2, "STEP_" + (i + 1))) <= REST + 8;
+    const sel = el(
+      "select",
+      { onchange: (e) => ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), +e.target.value * UNIT, true) },
+      ...[...Array(37)].map((_, j) => el("option", { value: 18 - j, selected: 18 - j === semis }, interval(18 - j)))
+    );
+    const gate2 = el(
+      "button",
+      {
+        type: "button",
+        class: "zcSw" + (rest ? "" : " on"),
+        title: rest ? "Rest: click to play this step" : "Plays: click to rest this step",
+        onclick: () => ctx2.set(k(ctx2, 2, "STEP_" + (i + 1)), rest ? 0 : REST, true)
+      },
+      rest ? "rest" : "play"
+    );
+    return el(
+      "div",
+      { class: "zcSeqStep" + (i > len ? " off" : "") },
+      el("span", { class: "zcL" }, String(i + 1)),
+      sel,
+      gate2
+    );
+  }
+  function seqTools(ctx2) {
+    const pick3 = (label2, opts, cur2, on3) => el(
+      "label",
+      { class: "zcC" },
+      el("span", { class: "zcL" }, label2),
+      el(
+        "select",
+        { onchange: (e) => on3(e.target.value) },
+        ...opts.map(([t, v]) => el("option", { value: v, selected: String(v) === String(cur2) }, t))
+      )
+    );
+    const rate = ctx2.get(k(ctx2, 1, "RATE_NOTE")), len = ctx2.get(k(ctx2, 1, "STEP_MAX")), shape = ctx2.get(k(ctx2, 2, "STEP_CURVE_1"));
+    return [
+      pick3(
+        "Step length",
+        RATES.map((r) => [r, RATE_IX[r]]),
+        rate,
+        (v) => both(ctx2, "RATE_NOTE", +v)
+      ),
+      pick3(
+        "Steps",
+        [...Array(16)].map((_, i) => [String(i + 1), i]),
+        len,
+        (v) => both(ctx2, "STEP_MAX", +v)
+      ),
+      pick3("Step shape", SHAPES, shape, (v) => {
+        for (let i = 1; i <= 16; i++) ctx2.set(k(ctx2, 2, "STEP_CURVE_" + i), +v, false);
+        ctx2.commit();
+      }),
+      pick3("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
+        if (+v >= 0) seqPattern(ctx2, SEQ_PATTERNS[+v][1]);
+      })
+    ];
+  }
+  function stepSeq(ctx2) {
+    if (!isSeq(ctx2))
+      return group(
+        "Step sequencer",
+        el(
+          "p",
+          { class: "hint zcWide" },
+          "Turns this partial into a 16-step riff that plays in time while you hold a key: LFO 1 plays the notes, LFO 2 shapes each step. Link partials first to set up several at once, then give each its own pattern for up to four voices. VA, SuperSAW and noise oscillators restart on every step; PCM waves only at the start of the note."
+        ),
+        el(
+          "button",
+          { type: "button", class: "btn", onclick: () => seqTemplate(ctx2) },
+          "Make this partial a step sequence"
+        )
+      );
+    const len = ctx2.get(k(ctx2, 1, "STEP_MAX"));
+    return group(
+      "Step sequencer",
+      ...seqTools(ctx2),
+      el("div", { class: "zcSeq zcWide" }, ...[...Array(16)].map((_, i) => stepCell(ctx2, i, len))),
+      el(
+        "p",
+        { class: "hint zcWide" },
+        "Hold a key: each step plays its interval from that key. Mono (Common page) keeps one riff per key; the steps follow the MC-707 tempo."
+      )
+    );
+  }
+
   // src/zen/zc-env.js
   var NS = "http://www.w3.org/2000/svg";
   var sv = (tag, a = {}) => {
@@ -35185,6 +34664,850 @@ body[data-mode='scene'] #scene {
     );
   }
 
+  // src/zen/zc-starters.js
+  function tone(name, fn) {
+    const s = newSound("tone");
+    const set2 = (key, i, id, v) => s.v[pk(key, i, id)] = v;
+    s.v["CMN.NAME"] = name;
+    for (let i = 0; i < 4; i++) set2("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
+    set2("SPTL", 0, "OSC_TYPE", 1);
+    fn(
+      (id, v, i = 0) => set2(
+        id.split(".")[0],
+        ["CMN", "PMT", "SCMN", "SPMT", "MFX"].includes(id.split(".")[0]) ? null : i,
+        id.split(".")[1],
+        v
+      )
+    );
+    return s;
+  }
+  var STARTERS = [
+    ["Init tone", () => tone("INIT TONE", () => {
+    })],
+    [
+      "Saw lead",
+      () => tone("SAW LEAD", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_TIME", 120);
+        s("PTL.CUTOFF", 760);
+        s("PTL.RESO", 260);
+        s("FENV.DEPTH", 24);
+        s("FENV.T2", 420);
+        s("FENV.L2", 600);
+        s("AENV.T3", 0);
+        s("AENV.T4", 260);
+        s("PTL.REV_SEND", 30);
+      })
+    ],
+    [
+      "Supersaw stack",
+      () => tone("SUPERSAW", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 92);
+        s("PTL.CUTOFF", 880);
+        s("AENV.T1", 40);
+        s("AENV.T4", 520);
+        s("PTL.CHO_SEND", 40);
+        s("PTL.REV_SEND", 60);
+      })
+    ],
+    [
+      "Square bass",
+      () => tone("SQUARE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 1);
+        s("PTL.CUTOFF", 420);
+        s("PTL.RESO", 180);
+        s("FENV.DEPTH", 30);
+        s("FENV.T2", 300);
+        s("FENV.L2", 200);
+        s("FENV.L3", 150);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Sub 808",
+      () => tone("SUB 808", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_MODE", 1);
+        s("CMN.PORTA_TIME", 260);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 3);
+        s("PTL.CUTOFF", 1023);
+        s("PENV.DEPTH", 12);
+        s("PENV.L0", 300);
+        s("PENV.T1", 120);
+        s("PENV.L1", 0);
+        s("PENV.L2", 0);
+        s("PENV.L3", 0);
+        s("AENV.T2", 760);
+        s("AENV.L2", 700);
+        s("AENV.L3", 0);
+        s("AENV.T3", 760);
+        s("AENV.T4", 300);
+      })
+    ],
+    [
+      "Pluck",
+      () => tone("PLUCK", (s) => {
+        s("PTL.CUTOFF", 380);
+        s("PTL.RESO", 160);
+        s("FENV.DEPTH", 50);
+        s("FENV.T1", 0);
+        s("FENV.T2", 360);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        s("AENV.T2", 420);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 300);
+        s("PTL.REV_SEND", 40);
+      })
+    ],
+    [
+      "Warm pad",
+      () => tone("WARM PAD", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 2, 1);
+        s("PTL.PIT_FINE", -8);
+        s("PTL.PIT_FINE", 8, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 560, i);
+          s("AENV.T1", 620, i);
+          s("AENV.T4", 640, i);
+          s("LFO.LFO1_TVF_DEPTH", 12, i);
+          s("LFO.LFO1_RATE", 380, i);
+          s("PTL.REV_SEND", 80, i);
+          s("PTL.CHO_SEND", 50, i);
+        }
+      })
+    ],
+    [
+      "Noise sweep",
+      () => tone("NOISE SWEEP", (s) => {
+        s("SPTL.OSC_TYPE", 4);
+        s("PTL.FILTER_TYPE", 2);
+        s("PTL.CUTOFF", 200);
+        s("PTL.RESO", 500);
+        s("FENV.DEPTH", 50);
+        s("FENV.T1", 820);
+        s("FENV.L1", 1023);
+        s("AENV.T1", 300);
+        s("AENV.T4", 700);
+        s("PTL.REV_SEND", 90);
+      })
+    ],
+    [
+      "Acid bass",
+      () => tone("ACID BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.LEGATO_SW", 1);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_MODE", 1);
+        s("CMN.PORTA_TIME", 90);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 820);
+        s("FENV.DEPTH", 42);
+        s("FENV.T2", 180);
+        s("FENV.L2", 150);
+        s("FENV.L3", 100);
+        s("AENV.T4", 80);
+      })
+    ],
+    [
+      "Reese bass",
+      () => tone("REESE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -14);
+        s("PTL.PIT_FINE", 14, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("PTL.RESO", 120, i);
+          s("AENV.T4", 140, i);
+        }
+      })
+    ],
+    [
+      "Wobble bass",
+      () => tone("WOBBLE BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 300);
+        s("PTL.RESO", 420);
+        s("LFO.LFO1_FORM", 0);
+        s("LFO.LFO1_RATE_SYNC", 1);
+        s("LFO.LFO1_RATE_NOTE", 9);
+        s("LFO.LFO1_TVF_DEPTH", 70);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Juno pad",
+      () => tone("JUNO PAD", (s) => {
+        s("SPTL.VA_FORM", 5);
+        s("SCMN.UNISON_SW", 1);
+        s("SCMN.UNISON_SIZE", 4);
+        s("SCMN.UNISON_DETN", 30);
+        s("PTL.CUTOFF", 640);
+        s("AENV.T1", 520);
+        s("AENV.T4", 620);
+        s("PTL.CHO_SEND", 80);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "Strings",
+      () => tone("STRINGS", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 50);
+        s("PTL.CUTOFF", 700);
+        s("AENV.T1", 420);
+        s("AENV.T4", 520);
+        s("PTL.CHO_SEND", 40);
+        s("PTL.REV_SEND", 60);
+      })
+    ],
+    [
+      "Brass stab",
+      () => tone("BRASS STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -6);
+        s("PTL.PIT_FINE", 6, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 520, i);
+          s("FENV.DEPTH", 30, i);
+          s("FENV.T1", 120, i);
+          s("FENV.T2", 320, i);
+          s("FENV.L2", 700, i);
+          s("AENV.T1", 60, i);
+          s("AENV.T4", 200, i);
+        }
+      })
+    ],
+    [
+      "Hoover",
+      () => tone("HOOVER", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.PORTA_SW", 1);
+        s("CMN.PORTA_TIME", 200);
+        s("SPTL.OSC_TYPE", 3);
+        s("SPTL.SSAW_DETUNE", 110);
+        s("PENV.DEPTH", 30);
+        s("PENV.L0", -150);
+        s("PENV.T1", 160);
+        s("PENV.L1", 0);
+        s("PTL.CUTOFF", 820);
+        s("PTL.CHO_SEND", 60);
+      })
+    ],
+    [
+      "Sync lead",
+      () => tone("SYNC LEAD", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPMT.STRUCT12", 1);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 860, i);
+          s("AENV.T4", 200, i);
+        }
+        s("PTL.REV_SEND", 30);
+      })
+    ],
+    [
+      "Bell",
+      () => tone("BELL", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 3);
+        s("SPTL.VA_FORM", 3, 1);
+        s("SPMT.STRUCT12", 2);
+        s("PTL.PIT_CRS", 19, 1);
+        for (const i of [0, 1]) {
+          s("AENV.T2", 700, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 600, i);
+          s("PTL.REV_SEND", 70, i);
+        }
+      })
+    ],
+    [
+      "Organ",
+      () => tone("ORGAN", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("PMT.PMT3_PTL_SW", 1);
+        [0, 12, 19].forEach((crs, i) => {
+          s("SPTL.OSC_TYPE", 1, i);
+          s("SPTL.VA_FORM", 3, i);
+          s("PTL.PIT_CRS", crs, i);
+          s("PTL.LEVEL", [127, 100, 80][i], i);
+          s("AENV.T1", 0, i);
+          s("AENV.T4", 40, i);
+          s("PTL.CHO_SEND", 60, i);
+        });
+      })
+    ],
+    [
+      "PWM pad",
+      () => tone("PWM PAD", (s) => {
+        s("SPTL.VA_FORM", 1);
+        s("SPTL.PWM_DEPTH", 40);
+        s("LFO.LFO1_RATE", 300);
+        s("PTL.CUTOFF", 620);
+        s("AENV.T1", 560);
+        s("AENV.T4", 640);
+        s("PTL.CHO_SEND", 60);
+        s("PTL.REV_SEND", 70);
+      })
+    ],
+    [
+      "House chord stab",
+      () => tone("CHORD STAB", (s) => {
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("PTL.PIT_FINE", -7);
+        s("PTL.PIT_FINE", 7, 1);
+        for (const i of [0, 1]) {
+          s("PTL.CUTOFF", 560, i);
+          s("FENV.DEPTH", 36, i);
+          s("FENV.T2", 200, i);
+          s("FENV.L2", 0, i);
+          s("FENV.L3", 0, i);
+          s("AENV.T2", 260, i);
+          s("AENV.L2", 0, i);
+          s("AENV.L3", 0, i);
+          s("AENV.T4", 160, i);
+          s("PTL.REV_SEND", 50, i);
+        }
+      })
+    ],
+    [
+      "Kick",
+      () => tone("KICK", (s) => {
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 3);
+        s("PTL.CUTOFF", 1023);
+        s("PENV.DEPTH", 60);
+        s("PENV.L0", 511);
+        s("PENV.T1", 120);
+        s("PENV.L1", 0);
+        s("PENV.L2", 0);
+        s("PENV.L3", 0);
+        s("AENV.T2", 300);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 60);
+      })
+    ]
+  ];
+
+  // src/zen/zc-starters-more.js
+  var pat = (name) => SEQ_PATTERNS.find((p) => p[0] === name)[1];
+  var RATE_1_16 = 6;
+  function seq(s, i, notes, shape = 11, rate = RATE_1_16) {
+    for (const l of [1, 2]) {
+      s("LFO.LFO" + l + "_FORM", 10, i);
+      s("LFO.LFO" + l + "_RATE_SYNC", 1, i);
+      s("LFO.LFO" + l + "_RATE_NOTE", rate, i);
+      s("LFO.LFO" + l + "_STEP_MAX", 15, i);
+      s("LFO.LFO" + l + "_KEY_TRIG", 1, i);
+    }
+    s("LFO.LFO1_PIT_DEPTH", 63, i);
+    s("LFO.LFO2_TVA_DEPTH", 100, i);
+    notes.forEach((n, j) => {
+      s("LFO.LFO1_STEP_" + (j + 1), n == null ? 0 : n * 4, i);
+      s("LFO.LFO2_STEP_" + (j + 1), n == null ? -72 : 0, i);
+      s("LFO.LFO2_STEP_CURVE_" + (j + 1), shape, i);
+    });
+    s("SPTL.FENV_LFO_TRIG_SW", 1, i);
+    s("SPTL.AENV_LFO_TRIG_SW", 1, i);
+  }
+  function fm(s, ratio, depth, modDecay) {
+    s("PMT.PMT2_PTL_SW", 1);
+    s("SPTL.OSC_TYPE", 1, 1);
+    s("SPTL.VA_FORM", 3);
+    s("SPTL.VA_FORM", 3, 1);
+    s("SPMT.STRUCT12", 3);
+    s("SPMT.XMOD12_DEPTH", depth);
+    s("PTL.PIT_CRS", ratio, 1);
+    s("AENV.T2", modDecay, 1);
+    s("AENV.L2", 0, 1);
+    s("AENV.L3", 0, 1);
+  }
+  var MORE_STARTERS = [
+    [
+      "Seq: acid riff",
+      () => tone("SEQ ACID", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 380);
+        s("PTL.RESO", 780);
+        s("FENV.DEPTH", 40);
+        s("FENV.T2", 120);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        seq(s, 0, pat("Acid run"), 11);
+      })
+    ],
+    [
+      "Seq: trance gate",
+      () => tone("SEQ GATE", (s) => {
+        s("SPTL.OSC_TYPE", 3);
+        s("PTL.CUTOFF", 760);
+        s("PTL.REV_SEND", 50);
+        seq(s, 0, pat("Trance gate (root)"), 15);
+      })
+    ],
+    [
+      "Seq: octave bass",
+      () => tone("SEQ OCT BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("SPTL.VA_FORM", 1);
+        s("PTL.CUTOFF", 520);
+        seq(s, 0, pat("Octave bounce"), 11);
+      })
+    ],
+    [
+      "Seq: rolling bass",
+      () => tone("SEQ ROLL BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 460);
+        s("PTL.RESO", 300);
+        seq(s, 0, pat("Rolling bass"), 15);
+      })
+    ],
+    [
+      "Seq: two-voice arp",
+      () => tone("SEQ ARP 2V", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("PMT.PMT2_PTL_SW", 1);
+        s("SPTL.OSC_TYPE", 1, 1);
+        s("SPTL.VA_FORM", 2, 1);
+        s("PTL.PIT_CRS", 12, 1);
+        s("PTL.REV_SEND", 40);
+        s("PTL.REV_SEND", 40, 1);
+        seq(s, 0, pat("Minor arp up"), 11);
+        seq(s, 1, pat("Fifths stab"), 20);
+      })
+    ],
+    [
+      "FM: electric piano",
+      () => tone("FM EPIANO", (s) => {
+        fm(s, 12, 1800, 420);
+        s("AENV.T2", 900);
+        s("AENV.L2", 300);
+        s("AENV.L3", 0);
+        s("AENV.T4", 300);
+        s("PTL.REV_SEND", 40);
+      })
+    ],
+    [
+      "FM: glass bell",
+      () => tone("FM BELL", (s) => {
+        fm(s, 26, 3600, 900);
+        s("AENV.T2", 950);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 800);
+        s("PTL.REV_SEND", 80);
+      })
+    ],
+    [
+      "FM: bass",
+      () => tone("FM BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        fm(s, 0, 2400, 260);
+        s("AENV.T4", 80);
+      })
+    ],
+    [
+      "FM: metallic pluck",
+      () => tone("FM PLUCK", (s) => {
+        fm(s, 7, 4800, 150);
+        s("AENV.T2", 260);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 120);
+      })
+    ],
+    [
+      "Bass: deep sine sub",
+      () => tone("SINE SUB", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -2);
+        s("SPTL.VA_FORM", 3);
+        s("AENV.T4", 60);
+      })
+    ],
+    [
+      "Bass: punchy pluck",
+      () => tone("PLUCK BASS", (s) => {
+        s("CMN.MONO_POLY", 0);
+        s("CMN.OCTAVE", -1);
+        s("PTL.CUTOFF", 260);
+        s("PTL.RESO", 260);
+        s("FENV.DEPTH", 52);
+        s("FENV.T2", 90);
+        s("FENV.L2", 0);
+        s("FENV.L3", 0);
+        s("AENV.T2", 380);
+        s("AENV.L2", 0);
+        s("AENV.L3", 0);
+        s("AENV.T4", 60);
+      })
+    ]
+  ];
+  var GROUP = {
+    Basic: ["Init tone", "Saw lead", "Supersaw stack", "Pluck", "Noise sweep"],
+    Bass: [
+      "Square bass",
+      "Sub 808",
+      "Acid bass",
+      "Reese bass",
+      "Wobble bass",
+      "Bass: deep sine sub",
+      "Bass: punchy pluck"
+    ],
+    "Leads and stabs": ["Brass stab", "Hoover", "Sync lead", "House chord stab"],
+    "Pads and strings": ["Warm pad", "Juno pad", "Strings", "PWM pad"],
+    "Keys and bells": ["Bell", "Organ"],
+    "Step sequences": MORE_STARTERS.filter(([n]) => n.startsWith("Seq:")).map(([n]) => n),
+    "FM-style": MORE_STARTERS.filter(([n]) => n.startsWith("FM:")).map(([n]) => n),
+    Drums: ["Kick"]
+  };
+  function starterMenu() {
+    const all = [...STARTERS, ...MORE_STARTERS], used = /* @__PURE__ */ new Set(), out2 = Object.entries(GROUP).map(([g, names]) => [
+      g,
+      names.map((n) => all.find((x) => x[0] === n)).filter(Boolean).map((x) => (used.add(x[0]), x))
+    ]);
+    const rest = all.filter((x) => !used.has(x[0]));
+    if (rest.length) out2.push(["Other", rest]);
+    return out2.filter(([, list2]) => list2.length);
+  }
+
+  // src/zen/zc-factory.js
+  var FW_REC = 1632;
+  var FW_MAP = [
+    [
+      "CMN",
+      0,
+      1,
+      0,
+      "NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:37b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b"
+    ],
+    [
+      "MFX",
+      64,
+      1,
+      0,
+      "mfxType:0b mfxSwitch:1b choSend:2b revSend:3b ctrlSrc1:4b ctrlSens1:5c ctrlSrc2:6b ctrlSens2:7c ctrlSrc3:8b ctrlSens3:9c ctrlSrc4:10b ctrlSens4:11c ctrlAsgn_1:12b ctrlAsgn_2:13b ctrlAsgn_3:14b ctrlAsgn_4:15b param_1:16s param_2:18s param_3:20s param_4:22s param_5:24s param_6:26s param_7:28s param_8:30s param_9:32s param_10:34s param_11:36s param_12:38s param_13:40s param_14:42s param_15:44s param_16:46s param_17:48s param_18:50s param_19:52s param_20:54s param_21:56s param_22:58s param_23:60s param_24:62s param_25:64s param_26:66s param_27:68s param_28:70s param_29:72s param_30:74s param_31:76s param_32:78s"
+    ],
+    [
+      "PMT",
+      144,
+      1,
+      0,
+      "VEL_CTRL:4b PMT_LEVEL_CRV:5b PMT1_PTL_SW:8b PMT1_KRANGE_LO:12b PMT1_KRANGE_UP:13b PMT1_KFADE_LO:14b PMT1_KFADE_UP:15b PMT1_VRANGE_LO:16b PMT1_VRANGE_UP:17b PMT1_VFADE_LO:18b PMT1_VFADE_UP:19b PMT2_PTL_SW:20b PMT2_KRANGE_LO:24b PMT2_KRANGE_UP:25b PMT2_KFADE_LO:26b PMT2_KFADE_UP:27b PMT2_VRANGE_LO:28b PMT2_VRANGE_UP:29b PMT2_VFADE_LO:30b PMT2_VFADE_UP:31b PMT3_PTL_SW:32b PMT3_KRANGE_LO:36b PMT3_KRANGE_UP:37b PMT3_KFADE_LO:38b PMT3_KFADE_UP:39b PMT3_VRANGE_LO:40b PMT3_VRANGE_UP:41b PMT3_VFADE_LO:42b PMT3_VFADE_UP:43b PMT4_PTL_SW:44b PMT4_KRANGE_LO:48b PMT4_KRANGE_UP:49b PMT4_KFADE_LO:50b PMT4_KFADE_UP:51b PMT4_VRANGE_LO:52b PMT4_VRANGE_UP:53b PMT4_VFADE_LO:54b PMT4_VFADE_UP:55b"
+    ],
+    [
+      "PTL",
+      200,
+      4,
+      124,
+      "LEVEL:0b PIT_CRS:2c PIT_FINE:3c PIT_RND:4w PAN:6c PAN_KF:7c PAN_RND:8b PAN_ALT:9c ENV_MODE:10b DELAY_MODE:11b DLY_TIME_SYNC:12b DLY_TIME_NOTE:13b DLY_TIME:14w CHO_SEND:16b REV_SEND:17b RX_BEND:18b RX_EXPR:19b RX_HOLD:20b REDAMP_SW:21b OUT_ASGN:22b WAV_GTYPE:23b WAV_GID:24w WAV_NUM_L:26w WAV_NUM_R:28w WAV_GAIN:30b FXM_SW:31b FXM_COLOR:32b FXM_DEPTH:33b PIT_KF:34s SOFT_EQ_SENS:36b FILTER_TYPE:37b CUTOFF:40w CUTOFF_KF:42s CUTOFF_VCRV:44b CUTOFF_VSENS:45c RESO:46w RESO_VSENS:48c BIAS_LEVEL:49c BIAS_POS:50b BIAS_DIR:51b LEVEL_VCRV:52b LEVEL_VSENS:53c PENV_TKF:54c FENV_TKF:55c AENV_TKF:56c VIB_PIT_SENS:57c VIB_CUT_SENS:58c VIB_AMP_SENS:59c MCTL1_SRC:60b MCTL1_DST1:61b MCTL1_SENS1:62c MCTL1_DST2:63b MCTL1_SENS2:64c MCTL1_DST3:65b MCTL1_SENS3:66c MCTL1_DST4:67b MCTL1_SENS4:68c MCTL2_SRC:72b MCTL2_DST1:73b MCTL2_SENS1:74c MCTL2_DST2:75b MCTL2_SENS2:76c MCTL2_DST3:77b MCTL2_SENS3:78c MCTL2_DST4:79b MCTL2_SENS4:80c MCTL3_SRC:84b MCTL3_DST1:85b MCTL3_SENS1:86c MCTL3_DST2:87b MCTL3_SENS2:88c MCTL3_DST3:89b MCTL3_SENS3:90c MCTL3_DST4:91b MCTL3_SENS4:92c MCTL4_SRC:96b MCTL4_DST1:97b MCTL4_SENS1:98c MCTL4_DST2:99b MCTL4_SENS2:100c MCTL4_DST3:101b MCTL4_SENS3:102c MCTL4_DST4:103b MCTL4_SENS4:104c DAMP_FREE:108b STEREO_WIDTH:109b STEREO_DETN:110c DF_DCY_OFST:111c TEMPO_SYNC:112b"
+    ],
+    [
+      "PENV",
+      696,
+      4,
+      24,
+      "DEPTH:0c VSENS:1c T1_VSENS:2c T4_VSENS:3c T1:4w T2:6w T3:8w T4:10w L0:12s L1:14s L2:16s L3:18s L4:20s VCRV:22b"
+    ],
+    [
+      "FENV",
+      792,
+      4,
+      24,
+      "DEPTH:0c VCRV:1b VSENS:2c T1_VSENS:3c T4_VSENS:4c T1:6w T2:8w T3:10w T4:12w L0:14w L1:16w L2:18w L3:20w L4:22w"
+    ],
+    ["AENV", 888, 4, 16, "T1_VSENS:0c T4_VSENS:1c T1:2w T2:4w T3:6w T4:8w L1:10w L2:12w L3:14w"],
+    [
+      "LFO",
+      952,
+      4,
+      104,
+      "LFO1_FORM:0b LFO1_RATE_SYNC:1b LFO1_RATE_NOTE:2b LFO1_STEP_MAX:3b LFO1_RATE:4w LFO1_OFST:6c LFO1_RATE_DETN:7b LFO1_DELAY:8w LFO1_DELAY_KF:10c LFO1_FADE_MODE:11b LFO1_FADE:12w LFO1_KEY_TRIG:14b LFO1_PIT_DEPTH:15c LFO1_TVF_DEPTH:16c LFO1_TVA_DEPTH:17c LFO1_PAN_DEPTH:18c LFO1_PHASE_POS:19b LFO1_STEP_1:20c LFO1_STEP_2:21c LFO1_STEP_3:22c LFO1_STEP_4:23c LFO1_STEP_5:24c LFO1_STEP_6:25c LFO1_STEP_7:26c LFO1_STEP_8:27c LFO1_STEP_9:28c LFO1_STEP_10:29c LFO1_STEP_11:30c LFO1_STEP_12:31c LFO1_STEP_13:32c LFO1_STEP_14:33c LFO1_STEP_15:34c LFO1_STEP_16:35c LFO1_STEP_CURVE_1:36b LFO1_STEP_CURVE_2:37b LFO1_STEP_CURVE_3:38b LFO1_STEP_CURVE_4:39b LFO1_STEP_CURVE_5:40b LFO1_STEP_CURVE_6:41b LFO1_STEP_CURVE_7:42b LFO1_STEP_CURVE_8:43b LFO1_STEP_CURVE_9:44b LFO1_STEP_CURVE_10:45b LFO1_STEP_CURVE_11:46b LFO1_STEP_CURVE_12:47b LFO1_STEP_CURVE_13:48b LFO1_STEP_CURVE_14:49b LFO1_STEP_CURVE_15:50b LFO1_STEP_CURVE_16:51b LFO2_FORM:52b LFO2_RATE_SYNC:53b LFO2_RATE_NOTE:54b LFO2_STEP_MAX:55b LFO2_RATE:56w LFO2_OFST:58c LFO2_RATE_DETN:59b LFO2_DELAY:60w LFO2_DELAY_KF:62c LFO2_FADE_MODE:63b LFO2_FADE:64w LFO2_KEY_TRIG:66b LFO2_PIT_DEPTH:67c LFO2_TVF_DEPTH:68c LFO2_TVA_DEPTH:69c LFO2_PAN_DEPTH:70c LFO2_PHASE_POS:71b LFO2_STEP_1:72c LFO2_STEP_2:73c LFO2_STEP_3:74c LFO2_STEP_4:75c LFO2_STEP_5:76c LFO2_STEP_6:77c LFO2_STEP_7:78c LFO2_STEP_8:79c LFO2_STEP_9:80c LFO2_STEP_10:81c LFO2_STEP_11:82c LFO2_STEP_12:83c LFO2_STEP_13:84c LFO2_STEP_14:85c LFO2_STEP_15:86c LFO2_STEP_16:87c LFO2_STEP_CURVE_1:88b LFO2_STEP_CURVE_2:89b LFO2_STEP_CURVE_3:90b LFO2_STEP_CURVE_4:91b LFO2_STEP_CURVE_5:92b LFO2_STEP_CURVE_6:93b LFO2_STEP_CURVE_7:94b LFO2_STEP_CURVE_8:95b LFO2_STEP_CURVE_9:96b LFO2_STEP_CURVE_10:97b LFO2_STEP_CURVE_11:98b LFO2_STEP_CURVE_12:99b LFO2_STEP_CURVE_13:100b LFO2_STEP_CURVE_14:101b LFO2_STEP_CURVE_15:102b LFO2_STEP_CURVE_16:103b"
+    ],
+    ["EQ", 1368, 4, 16, "LO_GAIN:0s MID_GAIN:2s HI_GAIN:4s LO_FREQ:6w MID_FREQ:8w HI_FREQ:10w MID_Q:12b SW:13b"],
+    [
+      "SCMN",
+      1432,
+      1,
+      0,
+      "UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b RND_PIT_VAL:5b RND_PIT_NUM:7b CONDITION:8b"
+    ],
+    [
+      "SPMT",
+      1440,
+      1,
+      0,
+      "STRUCT12:12b STRUCT34:13b RING12_LEVEL:16b RING34_LEVEL:17b RING_OSC1_LEVEL:18b RING_OSC2_LEVEL:19b RING_OSC3_LEVEL:20b RING_OSC4_LEVEL:21b XMOD12_DEPTH:24w XMOD34_DEPTH:26w XMOD_OSC1_LEVEL:28b XMOD_OSC2_LEVEL:29b XMOD_OSC3_LEVEL:30b XMOD_OSC4_LEVEL:31b PTL_PHS_LOCK:32b XMOD2_12_DEPTH:33b XMOD2_34_DEPTH:34b"
+    ],
+    [
+      "SPTL",
+      1488,
+      4,
+      36,
+      "OSC_TYPE:0b VA_FORM:1b SYNC_WAV_NUM:2w PW:4b PWM_DEPTH:5c SSAW_DETUNE:6b CLICK_TYPE:7b HPF_CUTOFF:8w FILTER_TYPE:10b FILTER_SLOPE:11b ADSR_ENV_SW:12b FAT:13b VCF_TYPE:14b OSC_ATT:15b CUTOFF_KF_BP:16b VA_INVERT_SW:17b FENV_FINE_DEPTH:18c PENV_LFO_TRIG_SW:19b FENV_LFO_TRIG_SW:20b AENV_LFO_TRIG_SW:21b PITCH_DOWN_DEPTH:22b VCF_GC:23b"
+    ]
+  ];
+  var FIELDS = null;
+  function fwFields() {
+    if (FIELDS) return FIELDS;
+    FIELDS = [];
+    for (const [blk, base, n, stride, list2] of FW_MAP)
+      for (const f of list2.split(" ")) {
+        const [, id, off, t] = /^(\w+):(\d+)([a-z])$/.exec(f);
+        for (let i = 0; i < n; i++) FIELDS.push([blk + (n > 1 ? i : "") + "." + id, base + i * stride + +off, t]);
+      }
+    return FIELDS;
+  }
+  function read2(b, o, t) {
+    if (t === "b") return b[o];
+    if (t === "c") return b[o] << 24 >> 24;
+    const w = b[o] | b[o + 1] << 8;
+    return t === "s" ? w << 16 >> 16 : w;
+  }
+  var nameAt = (b, o) => {
+    let s = "";
+    for (let i = 0; i < 16; i++) s += String.fromCharCode(b[o + i]);
+    return s.trimEnd();
+  };
+  function looksLikeTone(b, o) {
+    if (o + FW_REC > b.length) return false;
+    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+    return b[o + 16] <= 49 && !b[o + 17] && !b[o + 18] && !b[o + 19] && b[o + 20] <= 127 && b[o + 64] < 128;
+  }
+  function fwTone(b, o) {
+    const snd = newSound("tone");
+    for (const [k2, off, t] of fwFields()) {
+      if (t === "a") {
+        snd.v[k2] = nameAt(b, o + off);
+        continue;
+      }
+      const [p] = paramOf("tone", k2), x = read2(b, o + off, t);
+      if (x < p[3] || x > p[4]) return null;
+      snd.v[k2] = x;
+    }
+    return snd;
+  }
+  function fwScan(b) {
+    const out2 = [];
+    for (let o = 0; o + FW_REC * 8 <= b.length; o += 4) {
+      if (!looksLikeTone(b, o)) continue;
+      let n = 0;
+      while (looksLikeTone(b, o + n * FW_REC)) n++;
+      if (n < 8) continue;
+      out2.push([o, n]);
+      o += n * FW_REC - 4;
+    }
+    return out2;
+  }
+  var BANKS = {
+    SysCtrlDeepEcho2: "A",
+    "AX Classic Lead": "B",
+    "SL-JP8 1": "C",
+    "JP8 Strings1": "D",
+    "128voicePno": "E"
+  };
+  var FW_BANK_NAMES = {
+    A: "Factory Presets",
+    B: "AX Collection",
+    C: "Synth Legend",
+    D: "Basic Synth",
+    E: "XV Collection"
+  };
+  function fwTones(b) {
+    const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
+    const banks = runs2.map(([o]) => BANKS[nameAt(b, o)] || null);
+    banks.forEach((x) => x && used.add(x));
+    let next = "F";
+    runs2.forEach(([o, n], r) => {
+      let bank = banks[r];
+      if (!bank || banks.indexOf(bank) !== r) {
+        while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
+        used.add(bank = next);
+      }
+      for (let i = 0; i < n; i++) {
+        const snd = fwTone(b, o + i * FW_REC);
+        if (!snd) continue;
+        const name = snd.v["CMN.NAME"];
+        if (!name || /^init tone$/i.test(name)) continue;
+        out2.push({ name, snd, bank, no: i + 1 });
+      }
+    });
+    return out2;
+  }
+
+  // src/zen/zc-factory-ui.js
+  var frame = () => new Promise((r) => setTimeout(r, 30));
+  function factoryImport(done2) {
+    const i = el("input", {
+      type: "file",
+      accept: ".bin",
+      onchange: async () => {
+        const f = i.files[0];
+        if (!f) return;
+        toast("Reading " + f.name + "…");
+        await frame();
+        try {
+          const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+          if (!tones.length) return toast("No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).");
+          const n = await soundAddMany(tones.map((t) => ({ ...t, src: "factory" })));
+          toast(
+            n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
+          );
+          done2(n);
+        } catch (e) {
+          toast("That file could not be read");
+        }
+      }
+    });
+    i.click();
+  }
+  function factoryItems(done2) {
+    const have = ZS.list.some((e) => e.src === "factory");
+    return [
+      {
+        label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
+        action: () => factoryImport(done2)
+      },
+      have ? {
+        label: "Remove the factory tones",
+        action: async () => {
+          const n = await soundsRemoveSrc("factory");
+          toast("Removed " + n + " factory tones");
+          done2(0);
+        }
+      } : null
+    ].filter(Boolean);
+  }
+
+  // src/zen/zc-browse-data.js
+  var CAT_GROUPS = [
+    ["Piano", ["Ac.Piano", "Pop-Piano", "E.Grand Piano"]],
+    ["E.Piano", ["E.Piano1", "E.Piano2"]],
+    ["Organ", ["E.Organ", "Pipe Organ", "Reed Organ"]],
+    ["Keyboard", ["Harpsichord", "Clav", "Celesta", "Accordion", "Harmonica", "Bell", "Mallet"]],
+    ["Guitar", ["Ac.Guitar", "E.Guitar", "Dist.Guitar", "Plucked/Stroke"]],
+    ["Bass", ["Ac.Bass", "E.Bass", "Synth Bass"]],
+    ["Strings", ["Solo Strings", "Ensemble Strs", "Orchestral"]],
+    ["Brass", ["Solo Brass", "Ensemble Brass"]],
+    ["Wind", ["Wind", "Flute", "Sax", "Recorder"]],
+    ["Vocal", ["Vox/Choir", "Scat"]],
+    ["Synth", ["Synth Lead", "Synth Brass", "Synth Pad/Str", "Synth BellPad", "Synth PolyKey", "Synth Seq/Pop"]],
+    ["Motion", ["Phrase", "Pulsating", "Beat&Groove"]],
+    ["FX", ["Synth FX", "Hit", "Sound FX"]],
+    ["Drums", ["Drums", "Percussion"]],
+    ["Other", ["None", "Stack", "Zone"]]
+  ];
+  var GROUP_OF = Object.fromEntries(CAT_GROUPS.flatMap(([g, l]) => l.map((c) => [c, g])));
+  var catLabel = (c) => c === "None" ? "No assign" : c;
+  function catOf(e) {
+    if (e.cat) return e.cat;
+    let n = 0;
+    if (e.kind === "kit") n = ZC_CATEGORIES.indexOf("Drums");
+    else if (e.make) n = e.make().v["CMN.CATEGORY"] | 0;
+    else if (e.d) n = e.d["CMN.CATEGORY"] | 0;
+    return e.cat = ZC_CATEGORIES[n] || "None";
+  }
+  var groupOf = (e) => GROUP_OF[catOf(e)] || "Other";
+  function bankOf(e) {
+    if (e.src === "factory") return "f:" + (e.bank || "?");
+    if (e.folder && (e.src === "mine" || e.src === "file")) return "u:" + e.folder;
+    return e.src === "file" ? "mine" : e.src;
+  }
+  var SRC_NAME = { mine: "My sounds", mc707: "From the MC-707", starter: "Starters" };
+  function bankName(id, short2) {
+    if (id.startsWith("u:")) return id.slice(2);
+    if (id.startsWith("f:")) {
+      const l = id.slice(2);
+      if (l === "?") return "Factory";
+      return short2 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
+    }
+    return SRC_NAME[id] || id;
+  }
+  function banksIn(list2) {
+    const have = new Set(list2.map(bankOf));
+    const fac = [...have].filter((b) => b.startsWith("f:")).sort();
+    const own = [...have].filter((b) => b.startsWith("u:")).sort();
+    return [
+      ...have.has("mine") ? ["mine"] : [],
+      ...own,
+      ...have.has("mc707") ? ["mc707"] : [],
+      ...fac,
+      ...have.has("starter") ? ["starter"] : []
+    ];
+  }
+  function filterList(list2, f) {
+    const q = f.q.trim().toLowerCase();
+    return list2.filter((e) => {
+      const b = bankOf(e);
+      if (f.bank === "fav" ? !ratingOf(e.id) : f.bank === "factory" ? e.src !== "factory" : f.bank !== "all" && b !== f.bank)
+        return false;
+      if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
+      if (f.tag && !(e.tags || []).includes(f.tag)) return false;
+      if (!q) return true;
+      const hay = [
+        e.name,
+        catLabel(catOf(e)),
+        ...e.tags || [],
+        e.group || "",
+        e.no ? String(e.no).padStart(4, "0") : ""
+      ];
+      return hay.join(" ").toLowerCase().includes(q);
+    });
+  }
+  function catCounts(list2) {
+    const c = {};
+    for (const e of list2) {
+      const k2 = catOf(e);
+      c[k2] = (c[k2] || 0) + 1;
+      c["g:" + groupOf(e)] = (c["g:" + groupOf(e)] || 0) + 1;
+    }
+    return c;
+  }
+  var BANK_ORDER = (b) => b === "mine" ? "0" : b.startsWith("u:") ? "0" + b : b === "mc707" ? "1" : b.startsWith("f:") ? "2" + b : "3";
+  function sortList(list2, by, dir) {
+    const key = {
+      bank: (e) => BANK_ORDER(bankOf(e)),
+      name: (e) => e.name.toLowerCase(),
+      cat: (e) => catLabel(catOf(e)).toLowerCase(),
+      rating: (e) => -ratingOf(e.id)
+    }[by];
+    const tie = (a, b) => (a.no || 0) - (b.no || 0) || (b.at || 0) - (a.at || 0) || a.name.localeCompare(b.name);
+    return list2.sort((a, b) => {
+      const x = key(a), y = key(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * dir || tie(a, b);
+    });
+  }
+
   // src/zen/zc-browser-table.js
   var BATCH = 200;
   var COLS = [
@@ -35360,14 +35683,14 @@ body[data-mode='scene'] #scene {
     sel: /* @__PURE__ */ new Set(),
     anchor: null
   };
-  var STARTS2 = null;
-  function starters2() {
-    if (STARTS2) return STARTS2;
-    STARTS2 = [];
+  var STARTS = null;
+  function starters() {
+    if (STARTS) return STARTS;
+    STARTS = [];
     for (const [group2, list2] of starterMenu())
       for (const [name, make] of list2) {
         const snd = make();
-        STARTS2.push({
+        STARTS.push({
           id: "st:" + name,
           name,
           kind: snd.kind,
@@ -35378,9 +35701,9 @@ body[data-mode='scene'] #scene {
           make
         });
       }
-    return STARTS2;
+    return STARTS;
   }
-  var entries = () => [...ZS.list, ...starters2()].filter((e) => e.kind === ZE.kind);
+  var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind);
   var shown2 = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
   async function browserOpen() {
     await soundsLoad();
@@ -36694,6 +37017,22 @@ body[data-mode='scene'] #scene {
       notes: p.notes.map((n) => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
     };
   }
+  function pumpMotion(t, k2, p = clipAt(t, k2) && clipPattern(clipAt(t, k2)), pump2 = null) {
+    const c = clipAt(t, k2);
+    pump2 = pump2 || c && c.pump;
+    if (!c || !pump2 || !p) return null;
+    const enc = encodePattern(p, p.type);
+    if (enc.error) return null;
+    const kk = STEP_SIZES[enc.size], src = pumpSource(S.scn, S.patterns, t, k2), kicks = kicksUnder(pumpKicks(S.scn, S.patterns, src), enc.steps * kk);
+    return {
+      lane: PUMP_LANE[pump2.mode],
+      vals: pumpValues(pump2, kicks, enc.steps, kk),
+      src,
+      kicks,
+      steps: enc.steps,
+      k: kk
+    };
+  }
   function pending() {
     const q = S.scn;
     if (!q) return { clips: [], scenes: [] };
@@ -36739,6 +37078,19 @@ body[data-mode='scene'] #scene {
           ui.set(head2 + " · tone " + tn.name, (n + 0.9) / N);
           await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k2)), t);
           zxWrite(trackSetAddr(t) + 4, [1]);
+        }
+        const was = S.scn.done.p && S.scn.done.p[t + ":" + k2], pm = pumpMotion(t, k2, p);
+        if (was && (!pm || PUMP_LANE[was] !== pm.lane)) {
+          ui.set(head2 + " · clearing the old pump", (n + 0.92) / N);
+          await writeMotion(t, k2, PUMP_LANE[was], Array(MAX_STEPS * MOTION_PER_STEP).fill(MOTION_NONE));
+          markPump(t, k2, null);
+        }
+        if (pm && !pm.kicks.length)
+          bad.push(where2 + ": the pump has no kicks to follow (put the clip in a scene with a kit clip that has kicks)");
+        else if (pm) {
+          ui.set(head2 + " · pump", (n + 0.95) / N);
+          await writeMotion(t, k2, pm.lane, motionThin(pm.vals));
+          markPump(t, k2, c.pump.mode);
         }
         markClip(t, k2, !r.checked);
         uncheck(t, k2);
@@ -36824,6 +37176,572 @@ body[data-mode='scene'] #scene {
     }, 1500);
   }
 
+  // src/scene/pump.js
+  var DEPTH_NAMES = { light: "Light", medium: "Medium", heavy: "Heavy" };
+  var REL_TIPS = { "1/16": "Tight and fast", "1/8": "The classic pump", "1/4": "Slow and breathing" };
+  var EIGHTHS = ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"];
+  function timeText(v) {
+    const a = Math.abs(v), whole = Math.floor(a + 1e-9), part = Math.round((a - whole) * 8) % 8, n = (whole ? String(whole) : "") + EIGHTHS[part] || "0";
+    return n + (a > 0 && a <= 1 ? " 16th" : " 16ths") + " · " + Math.round(a * 15e3 / (S.bpm || 120)) + " ms";
+  }
+  var startText = (v) => Math.abs(v) < 1e-9 ? "on the kick" : timeText(v).replace(" · ", v < 0 ? " early · " : " late · ");
+  function drawing(pm, close = false) {
+    const W = 640, H = close ? 150 : 110, pad3 = 8, dt = pm.k / 8, len = pm.steps * pm.k, k0 = pm.kicks.length ? pm.kicks[0].s : 0, from = close ? k0 - 1 : 0, to = close ? Math.min(len + k0, k0 + Math.max(4, Math.ceil(TAIL(pm) + 1))) : len, x = (s) => pad3 + (W - 2 * pad3) * (s - from) / (to - from), y = (v) => pad3 + (H - 2 * pad3 - (close ? 14 : 0)) * (1 - v / 127);
+    const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("class", "pmDraw" + (close ? " pmClose" : ""));
+    svg.setAttribute("role", "img");
+    svg.setAttribute(
+      "aria-label",
+      close ? "Close up on the first kick: the " + (pm.lane === 3 ? "volume" : "filter") + " point by point" : "The " + (pm.lane === 3 ? "volume" : "filter") + " over the clip, dipping on " + pm.kicks.length + " kicks"
+    );
+    const add = (tag, at3, text) => {
+      const n = document.createElementNS(ns, tag);
+      for (const a in at3) n.setAttribute(a, at3[a]);
+      if (text) n.textContent = text;
+      svg.append(n);
+    };
+    const at2 = (s) => pm.vals[(Math.round(s / dt) % pm.vals.length + pm.vals.length) % pm.vals.length];
+    if (close)
+      for (let s = Math.ceil(from); s <= to; s++) {
+        add("line", { x1: x(s), x2: x(s), y1: pad3, y2: H - pad3 - 14, class: "pmBar" });
+        if (x(s) < W - 24)
+          add("text", { x: x(s) + 3, y: H - 4, class: "pmTick" }, s === k0 ? "kick" : (s > k0 ? "+" : "") + (s - k0));
+      }
+    else for (let b = 0; b <= len; b += 16) add("line", { x1: x(b), x2: x(b), y1: pad3, y2: H - pad3, class: "pmBar" });
+    for (const kk of pm.kicks)
+      if (kk.s >= from && kk.s <= to)
+        add("line", {
+          x1: x(kk.s),
+          x2: x(kk.s),
+          y1: close ? pad3 : H - pad3 - 10,
+          y2: H - pad3 - (close ? 14 : 0),
+          class: "pmKick"
+        });
+    const pts = [];
+    for (let s = Math.ceil(from / dt) * dt; s <= to + 1e-9; s += dt) pts.push([x(s), y(at2(s))]);
+    add("polyline", { points: pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" "), class: "pmLine" });
+    if (close)
+      for (const [px, py] of pts) add("circle", { cx: px.toFixed(1), cy: py.toFixed(1), r: 2.2, class: "pmDot" });
+    return svg;
+  }
+  var TAIL = (pm) => {
+    const p = pm.pump;
+    return (p.start > 0 ? p.start : 0) + p.hold + p.rel * (p.curve === "straight" ? 1 : 1.6);
+  };
+  function pumpOpen(t, k2) {
+    document.getElementById("pmOv")?.remove();
+    const box = el("div", { class: "ptBox pmBox", style: "--tc:" + TRACK_COLORS[t] });
+    const ov = el("div", { id: "pmOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Pump" }, box);
+    const close = () => (ov.remove(), SC.pumpDraw = null);
+    const seg = (label2, opts, cur2, pick3) => el(
+      "div",
+      { class: "pmRow" },
+      el("span", { class: "pmLab" }, label2),
+      el(
+        "span",
+        { class: "grp", role: "radiogroup", "aria-label": label2 },
+        ...opts.map(
+          ([v, l, tip]) => el(
+            "button",
+            {
+              type: "button",
+              role: "radio",
+              "aria-checked": String(cur2 === v),
+              class: "btn sm" + (cur2 === v ? " on" : ""),
+              title: tip || l,
+              onclick: () => pick3(v)
+            },
+            l
+          )
+        )
+      )
+    );
+    const viewBox = el("div", { class: "pmViews" });
+    const showViews = (pump2) => {
+      const pm = pumpMotion(t, k2, void 0, pump2);
+      if (pm) pm.pump = { ...newPump(pump2.mode), ...pump2 };
+      viewBox.replaceChildren(
+        ...pm ? [
+          el("div", { class: "pmCap" }, "The whole clip"),
+          drawing(pm),
+          el("div", { class: "pmCap" }, "Close up on the first kick (each dot is one motion point)"),
+          drawing(pm, true)
+        ] : []
+      );
+    };
+    const views = () => (showViews(clipAt(t, k2).pump), viewBox);
+    const fineRow = (label2, which, pump2, set2, words, tip, extra = []) => {
+      const [lo, hi] = PUMP_TIME[which], val = el("span", { class: "pmVal" }, words(pump2[which]));
+      const slider = el("input", {
+        type: "range",
+        min: lo,
+        max: hi,
+        step: PUMP_FINE,
+        value: pump2[which],
+        title: tip,
+        "aria-label": label2 + " (in eighths of a 16th)",
+        oninput: (e) => {
+          const v = +e.target.value;
+          val.textContent = words(v);
+          showViews({ ...pump2, [which]: v });
+        },
+        onchange: (e) => set2({ [which]: +e.target.value })
+      });
+      const nudge = (d) => el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          title: (d < 0 ? "Less" : "More") + " by an eighth of a 16th",
+          onclick: () => set2({ [which]: Math.max(lo, Math.min(hi, pump2[which] + d * PUMP_FINE)) })
+        },
+        d < 0 ? "−" : "+"
+      );
+      return el(
+        "div",
+        { class: "pmRow", title: tip },
+        el("span", { class: "pmLab" }, label2),
+        nudge(-1),
+        slider,
+        nudge(1),
+        val,
+        ...extra
+      );
+    };
+    const draw = () => {
+      const c = clipAt(t, k2);
+      if (!c) return close();
+      const p = S.patterns[c.pat], pump2 = c.pump, set2 = (ch) => setPump(t, k2, { ...pump2, ...ch }), pm = pumpMotion(t, k2);
+      const src = pm && pm.src;
+      const from = !pump2 ? null : !src ? el(
+        "p",
+        { class: "pmWarn" },
+        "This clip is in no scene yet, so there are no kicks to follow. Put it in a scene with a kit clip."
+      ) : !src.from.length ? el(
+        "p",
+        { class: "pmWarn" },
+        "No kit clip with kicks plays alongside it (in " + src.scenes.map(sceneLabel).join(", ") + "), so it has nothing to follow."
+      ) : el(
+        "p",
+        { class: "hint" },
+        "Follows the kicks in " + src.from.map(([tt, kk]) => "track " + devNum(tt) + " clip " + (kk + 1)).join(" and ") + " (as in scene" + (src.scenes.length === 1 ? " " : "s ") + src.scenes.map(sceneLabel).join(", ") + ")" + (src.differ ? ". Other scenes play this clip with different kicks: one clip has one pump, so it follows the kicks most of its scenes have." : ".")
+      );
+      box.replaceChildren(
+        ...[
+          el("h3", {}, "Pump: track " + devNum(t) + " " + S.tracks[t].name + ", clip " + (k2 + 1)),
+          el(
+            "p",
+            { class: "hint" },
+            p.name + ". The part ducks on every kick and comes back, like sidechain compression. It is written into the clip’s motion with the clip, so the MC-707 pumps it by itself."
+          ),
+          seg(
+            "Pump",
+            [["off", "Off"], ...PUMP_MODES.map(([v, l]) => [v, l])],
+            pump2 ? pump2.mode : "off",
+            (v) => setPump(t, k2, v === "off" ? null : pump2 ? { ...pump2, mode: v, rest: PUMP_REST[v] } : newPump(v))
+          ),
+          pump2 ? [
+            seg(
+              "Depth",
+              Object.keys(PUMP_DEPTH).map((v) => [v, DEPTH_NAMES[v]]),
+              pump2.depth,
+              (v) => set2({ depth: v })
+            ),
+            fineRow(
+              "Starts",
+              "start",
+              pump2,
+              set2,
+              startText,
+              "When the dip starts against the kick: a little late can let the kick through and push the groove"
+            ),
+            fineRow("Holds down", "hold", pump2, set2, timeText, "How long it stays all the way down"),
+            fineRow(
+              "Comes back in",
+              "rel",
+              pump2,
+              set2,
+              timeText,
+              "How long it takes to come back: the most groove-shaping setting",
+              Object.entries(PUMP_REL).map(
+                ([l, v]) => el(
+                  "button",
+                  {
+                    type: "button",
+                    class: "btn sm" + (pump2.rel === v ? " on" : ""),
+                    title: REL_TIPS[l],
+                    onclick: () => set2({ rel: v })
+                  },
+                  l
+                )
+              )
+            ),
+            seg(
+              "Comes back",
+              PUMP_CURVES.map(([v, l]) => [
+                v,
+                l,
+                v === "eased" ? "Fast at first, then easing in, like a compressor" : "At an even rate, all the way back by the time set (as in Ada’s tool)"
+              ]),
+              pump2.curve,
+              (v) => set2({ curve: v })
+            ),
+            el(
+              "div",
+              { class: "pmRow" },
+              el("span", { class: "pmLab" }, "Rests at"),
+              el("input", {
+                type: "number",
+                min: 1,
+                max: 127,
+                value: pump2.rest,
+                "aria-label": "The value it rests at between kicks (1-127)",
+                onchange: (e) => set2({ rest: +e.target.value })
+              }),
+              el(
+                "span",
+                { class: "hint" },
+                pump2.mode === "level" ? "The part’s level between kicks (100 is a good start; 127 is full)." : "The filter between kicks (127 is fully open; lower if the sound is darker)."
+              )
+            ),
+            views(),
+            from,
+            el(
+              "p",
+              { class: "pmNote" },
+              pump2.mode === "level" ? "On the MC-707, once per track: press KNOB ASSIGN with track " + devNum(t) + " selected and set SOUND (C4) to Level. The pump moves that knob; set to something else, it moves that instead." : "The pump moves the FILTER knob (cutoff, unless KNOB ASSIGN has it on something else on track " + devNum(t) + ")."
+            )
+          ] : el("div", { class: "pmEmpty hint" }, "Pump is off for this clip."),
+          el(
+            "div",
+            { style: "display:flex;justify-content:flex-end;gap:8px" },
+            el(
+              "span",
+              { class: "hint", style: "margin-right:auto;align-self:center" },
+              "Write the clip to put the pump on the MC-707."
+            ),
+            el("button", { type: "button", class: "btn", onclick: close }, "Done")
+          )
+        ].flat()
+      );
+    };
+    SC.pumpDraw = draw;
+    draw();
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    ov.addEventListener("click", (e) => e.target === ov && close());
+    document.body.append(ov);
+  }
+
+  // src/scene/pick-pattern.js
+  var PARTS = {
+    drum: [
+      ["kit", "Beats"],
+      ["full", "Full kits"],
+      ["hats", "Hats"],
+      ["perc", "Percussion"],
+      ["fill", "Fills"]
+    ],
+    tone: [
+      ["bass", "Bass"],
+      ["chords", "Chords"],
+      ["pad", "Pads"],
+      ["lead", "Leads"],
+      ["pluck", "Plucks and arps"],
+      ["acid", "Acid"]
+    ]
+  };
+  var SHOW = 250;
+  var P = { src: "fac", q: "", genre: "all", part: null };
+  function list(type) {
+    const q = P.q.trim().toLowerCase(), hit = (m) => !q || (m.name + " " + (m.role || "") + " " + (m.genre || "")).toLowerCase().includes(q);
+    if (P.src === "user") return userLib().filter((m) => m.type === type && hit(m));
+    if (P.src === "proj") return Object.values(S.patterns).filter((m) => m.type === type && hit(m));
+    return FAC.filter(
+      (f) => f.type === type && (P.genre === "all" || f.genre === P.genre) && (P.part === "all" || f.pool === P.part) && hit(f)
+    );
+  }
+  var meta = (m) => [
+    GENRE_LABELS[m.genre] || "",
+    m.bars + (m.bars === 1 ? " bar" : " bars"),
+    m.bpm ? m.bpm + " BPM" : "",
+    m.keyName || ""
+  ].filter(Boolean).join(" · ");
+  function pickPattern(t, title, done2, cur2) {
+    if ($("#spOv")) return;
+    const type = S.tracks[t].type, parts2 = PARTS[type];
+    if (!P.part || P.part !== "all" && !parts2.some((x) => x[0] === P.part))
+      P.part = parts2.some((x) => x[0] === poolOf(t)) ? poolOf(t) : "all";
+    const body = el("div", { class: "spList", role: "listbox", "aria-label": "Patterns" }), count = el("span", { class: "hint" });
+    const close = () => {
+      if (TR.playing && TR.mode === "pat") stopAll();
+      ov.remove();
+    };
+    const choose = (m) => {
+      close();
+      done2(P.src === "proj" ? m.id : instFactory(m));
+    };
+    const draw = () => {
+      const all = list(type);
+      body.textContent = "";
+      count.textContent = all.length > SHOW ? "First " + SHOW + " of " + all.length : all.length + " patterns";
+      for (const m of all.slice(0, SHOW)) {
+        const play2 = el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm spPlay",
+            title: "Play it on track " + devNum(t),
+            "aria-label": "Play " + m.name,
+            onclick: (e) => {
+              e.stopPropagation();
+              if (TR.playing && TR.mode === "pat" && TR.pat === m) stopAll();
+              else startPat(m, t);
+            }
+          },
+          "▶"
+        );
+        body.append(
+          el(
+            "div",
+            {
+              class: "spRow" + (m.id === cur2 || cur2 && S.patterns[cur2] && S.patterns[cur2].src === m.id ? " cur" : ""),
+              role: "option",
+              tabindex: 0,
+              onclick: () => choose(m),
+              onkeydown: (e) => e.key === "Enter" && choose(m)
+            },
+            play2,
+            el("b", {}, m.name),
+            el("span", { class: "hint" }, meta(m))
+          )
+        );
+      }
+      if (!all.length) body.append(el("p", { class: "hint" }, "Nothing matches."));
+    };
+    const sel = (label2, opts, val, set2) => el(
+      "select",
+      { "aria-label": label2, onchange: (e) => (set2(e.target.value), draw()) },
+      ...opts.map(([v, l]) => el("option", { value: v, selected: v === val }, l))
+    );
+    const tabs = el("div", { class: "spTabs", role: "tablist" });
+    const filt2 = el("div", { class: "spFilt" });
+    const drawTop = () => {
+      tabs.textContent = "";
+      for (const [v, l] of [
+        ["fac", "Library"],
+        ["user", "My patterns"],
+        ["proj", "In this song"]
+      ])
+        tabs.append(
+          el(
+            "button",
+            {
+              type: "button",
+              role: "tab",
+              class: "btn" + (P.src === v ? " on" : ""),
+              "aria-selected": String(P.src === v),
+              onclick: () => (P.src = v, drawTop(), draw())
+            },
+            l
+          )
+        );
+      filt2.textContent = "";
+      filt2.append(search);
+      if (P.src === "fac")
+        filt2.append(
+          sel("Genre", [["all", "All genres"], ...Object.entries(GENRE_LABELS)], P.genre, (v) => P.genre = v),
+          sel("Part", [["all", "Any part"], ...parts2], P.part, (v) => P.part = v)
+        );
+      filt2.append(count);
+    };
+    const search = el("input", {
+      type: "search",
+      placeholder: "Search",
+      "aria-label": "Search patterns",
+      value: P.q,
+      oninput: (e) => (P.q = e.target.value, draw())
+    });
+    const ov = el(
+      "div",
+      {
+        id: "spOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Choose a pattern",
+        onclick: (e) => e.target === ov && close(),
+        onkeydown: (e) => e.key === "Escape" && (e.stopPropagation(), close())
+      },
+      el(
+        "div",
+        { class: "ptBox spBox" },
+        el("h3", {}, "Pattern for track " + devNum(t) + " · " + S.tracks[t].name + ", " + title),
+        tabs,
+        filt2,
+        body,
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end;margin-top:10px" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Cancel")
+        )
+      )
+    );
+    drawTop();
+    draw();
+    document.body.append(ov);
+    search.focus();
+  }
+
+  // src/scene/pick-tone.js
+  var SHOW2 = 300;
+  var T2 = { q: "", bank: "all", group: "" };
+  var STARTS2 = null;
+  function starters2() {
+    if (STARTS2) return STARTS2;
+    STARTS2 = [];
+    for (const [group2, items] of starterMenu())
+      for (const [name, make] of items) {
+        const snd = make();
+        STARTS2.push({
+          id: "st:" + name,
+          name,
+          kind: snd.kind,
+          type: typeOf(snd, name),
+          tags: [],
+          src: "starter",
+          group: group2,
+          make
+        });
+      }
+    return STARTS2;
+  }
+  var toneOf2 = (e) => ({
+    name: e.name,
+    kind: e.kind,
+    d: e.src === "starter" ? diffOf(e.make()) : diffOf(soundOf(e))
+  });
+  async function pickTone(t, title, done2, curName) {
+    if ($("#stOv")) return;
+    await soundsLoad();
+    const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
+    const all = () => [...ZS.list, ...starters2()].filter((e) => e.kind === kind);
+    const body = el("div", { class: "spList", role: "listbox", "aria-label": "Sounds" }), count = el("span", { class: "hint" }), filt2 = el("div", { class: "spFilt" });
+    const close = () => ov.remove();
+    const choose = (e) => (close(), done2(toneOf2(e)));
+    const draw = () => {
+      const list2 = sortList(filterList(all(), { ...T2, cat: "", tag: "" }), "bank", 1);
+      body.textContent = "";
+      count.textContent = list2.length > SHOW2 ? "First " + SHOW2 + " of " + list2.length : list2.length + " sounds";
+      for (const e of list2.slice(0, SHOW2))
+        body.append(
+          el(
+            "div",
+            {
+              class: "spRow" + (e.name === curName ? " cur" : ""),
+              role: "option",
+              tabindex: 0,
+              onclick: () => choose(e),
+              onkeydown: (x) => x.key === "Enter" && choose(e)
+            },
+            el("span", { class: "stBank" }, bankName(bankOf(e), true)),
+            el("b", {}, e.name),
+            el("span", { class: "hint" }, catLabel(catOf(e)))
+          )
+        );
+      if (!list2.length) body.append(el("p", { class: "hint" }, "Nothing matches."));
+    };
+    const drawFilt = () => {
+      const banks = banksIn(all()), hasFac = banks.some((b) => b.startsWith("f:"));
+      filt2.textContent = "";
+      filt2.append(
+        search,
+        el(
+          "select",
+          { "aria-label": "Bank", onchange: (e) => (T2.bank = e.target.value, draw()) },
+          el("option", { value: "all" }, "All banks"),
+          hasFac ? el("option", { value: "factory", selected: T2.bank === "factory" }, "All factory tones") : null,
+          ...banks.map((b) => el("option", { value: b, selected: T2.bank === b }, bankName(b)))
+        ),
+        kind === "tone" ? el(
+          "select",
+          { "aria-label": "Category", onchange: (e) => (T2.group = e.target.value, draw()) },
+          el("option", { value: "" }, "Any category"),
+          ...CAT_GROUPS.map(([g]) => el("option", { value: g, selected: T2.group === g }, g))
+        ) : null,
+        count
+      );
+      if (!hasFac)
+        filt2.append(
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn sm",
+              title: "Read the preset tones from the MC-707 system update file on your computer",
+              onclick: () => factoryImport(() => (drawFilt(), draw()))
+            },
+            "Add the factory tones…"
+          )
+        );
+    };
+    if (!banksIn(all()).includes(T2.bank) && !["all", "factory"].includes(T2.bank)) T2.bank = "all";
+    const search = el("input", {
+      type: "search",
+      placeholder: "Search",
+      "aria-label": "Search sounds",
+      value: T2.q,
+      oninput: (e) => (T2.q = e.target.value, draw())
+    });
+    const ov = el(
+      "div",
+      {
+        id: "stOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Choose a tone",
+        onclick: (e) => e.target === ov && close(),
+        onkeydown: (e) => e.key === "Escape" && (e.stopPropagation(), close())
+      },
+      el(
+        "div",
+        { class: "ptBox spBox" },
+        el(
+          "h3",
+          {},
+          (kind === "kit" ? "Drum kit" : "Tone") + " for track " + devNum(t) + " · " + S.tracks[t].name + ", " + title
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "The MC-707 clip gets this sound when you send the scenes. Factory tones come from your MC-707 update file; your own sounds from the ZenCore editor."
+        ),
+        filt2,
+        body,
+        el(
+          "div",
+          { style: "display:flex;gap:8px;justify-content:flex-end;margin-top:10px" },
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              title: "Send no sound: the clip keeps the one it has",
+              onclick: () => (close(), done2(null))
+            },
+            "Keep the clip’s sound"
+          ),
+          el("button", { type: "button", class: "btn", onclick: close }, "Cancel")
+        )
+      )
+    );
+    drawFilt();
+    draw();
+    document.body.append(ov);
+    search.focus();
+  }
+
   // src/scene/menus.js
   function choosePattern(t, k2, after) {
     const c = clipAt(t, k2), r = rows()[SC.row];
@@ -36862,6 +37780,10 @@ body[data-mode='scene'] #scene {
         sub: [shift(1), shift(-1), shift(12), shift(-12), { label: "None", action: () => setTranspose(t, k2, 0) }]
       } : null,
       c ? { label: "Play it on its own", action: () => playClip(t, k2) } : null,
+      c ? {
+        label: "Pump (sidechain)…" + (c.pump ? " · " + (c.pump.mode === "level" ? "Volume" : "Filter") : ""),
+        action: () => pumpOpen(t, k2)
+      } : null,
       "-",
       c && r ? r.pick[t] === k2 ? { label: "Take it out of scene " + sceneLabel(SC.row), action: () => setPick(SC.row, t, -1) } : { label: "Play it in scene " + sceneLabel(SC.row), action: () => setPick(SC.row, t, k2) } : null,
       c ? { label: "Write it to the MC-707" + (st === "written" ? " again" : ""), action: () => writeOneClip(t, k2) } : null,
@@ -37354,7 +38276,7 @@ body[data-mode='scene'] #scene {
   }
   function slot(t, k2, sel, act) {
     const q = S.scn, c = q.clips[t][k2], p = c && S.patterns[c.pat], st = clipState(q, S.patterns, t, k2), tn = toneOf(c), inScene = !!sel && sel.pick[t] === k2, uses2 = c ? clipUses(q, t, k2) : 0, ck2 = checked(t, k2), cur2 = SC.edit && SC.t === t && SC.k === k2;
-    const tip = p ? "Clip " + (k2 + 1) + ": " + p.name + (c.tr ? " (" + (c.tr > 0 ? "+" : "") + c.tr + ")" : "") + (tn ? ", tone " + tn.name : ", the clip’s own sound") + ". " + MARK_TIP[st] + ". " + (uses2 ? "In " + uses2 + " scene" + (uses2 === 1 ? "" : "s") : "In no scene yet") + (ck2 && ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + "): writing replaces them" : "") : "Clip " + (k2 + 1) + ": empty. Click to choose a pattern" + (ck2 ? ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + ")" : ". Empty on the MC-707 too" : "");
+    const tip = p ? "Clip " + (k2 + 1) + ": " + p.name + (c.tr ? " (" + (c.tr > 0 ? "+" : "") + c.tr + ")" : "") + (tn ? ", tone " + tn.name : ", the clip’s own sound") + (c.pump ? ", pumps its " + (c.pump.mode === "level" ? "volume" : "filter") + " on the kicks" : "") + ". " + MARK_TIP[st] + ". " + (uses2 ? "In " + uses2 + " scene" + (uses2 === 1 ? "" : "s") : "In no scene yet") + (ck2 && ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + "): writing replaces them" : "") : "Clip " + (k2 + 1) + ": empty. Click to choose a pattern" + (ck2 ? ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + ")" : ". Empty on the MC-707 too" : "");
     return el(
       "button",
       {
@@ -37373,7 +38295,7 @@ body[data-mode='scene'] #scene {
         el(
           "span",
           { class: "sbSub" },
-          (c.tr ? (c.tr > 0 ? "+" : "") + c.tr + " · " : "") + (tn ? "♪ " + tn.name : p.bars + (p.bars === 1 ? " bar" : " bars"))
+          (c.pump ? "∿ " : "") + (c.tr ? (c.tr > 0 ? "+" : "") + c.tr + " · " : "") + (tn ? "♪ " + tn.name : p.bars + (p.bars === 1 ? " bar" : " bars"))
         )
       ] : el("span", { class: "sbPlus" }, "+")
     );
@@ -37650,6 +38572,12 @@ body[data-mode='scene'] #scene {
       b("▶", () => editClip(t, next), "The track’s clip after", next == null ? "off" : ""),
       b("Pattern…", () => choosePattern(t, k2), "Choose another pattern for this clip"),
       b(tn ? "♪ " + tn.name : "♪ Clip’s own sound", () => chooseTone(t, k2), "The tone this clip gets on the MC-707"),
+      b(
+        c.pump ? "∿ Pump: " + (c.pump.mode === "level" ? "Volume" : "Filter") : "∿ Pump",
+        () => pumpOpen(t, k2),
+        "Duck this part on every kick (sidechain pump), written into the clip so the MC-707 pumps by itself",
+        c.pump ? "on" : ""
+      ),
       S.tracks[t].type === "tone" ? el(
         "span",
         { class: "grp scnTr", title: "Transpose this clip (semitones)" },
@@ -54942,7 +55870,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/core/version.js
-  var VERSION = "1.5.0";
+  var VERSION = "1.5.1";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -55417,7 +56345,8 @@ body[data-mode='scene'] #scene {
               { label: "MC-707 SysEx guide", action: () => openLink(LINKS.sysex) },
               { label: "ZenCore parameter reference", action: () => openLink(LINKS.params) },
               { label: "Diagnostics page", action: () => openLink(LINKS.diagnostics) },
-              { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() }
+              { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() },
+              { label: "Motion test (which lane moves what)…", action: () => motionTestOpen() }
             ]
           ],
           [
@@ -56489,6 +57418,8 @@ body[data-mode='scene'] #scene {
         toSong: scenesToSong,
         setMode
       },
+      motion: zc_motion_exports,
+      pump: pump_exports,
       get S() {
         return S;
       },

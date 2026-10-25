@@ -8,16 +8,18 @@
 import { toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
-import { clipState, sceneState } from '../core/scene-model.js';
+import { clipState, pumpKicks, pumpSource, sceneState } from '../core/scene-model.js';
+import { PUMP_LANE, kicksUnder, pumpValues } from '../core/pump.js';
 import { MIDI } from '../services/midi.js';
 import { TR } from '../services/transport.js';
 import { askDlg } from '../ui/dialogs.js';
-import { writeClip, writeSession } from '../zen/zc-seq.js';
+import { MAX_STEPS, STEP_SIZES, encodePattern, writeClip, writeSession } from '../zen/zc-seq.js';
+import { MOTION_NONE, MOTION_PER_STEP, motionThin, writeMotion } from '../zen/zc-motion.js';
 import { sceneName, writeScenes } from '../zen/zc-scenes.js';
 import { lin, slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
 import { sendSound, soundFrom } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
-import { SC, clipAt, firstScene, markClip, markScene, rows, toneOf } from './model.js';
+import { SC, clipAt, firstScene, markClip, markPump, markScene, rows, toneOf } from './model.js';
 import { uncheck } from './check.js';
 
 const KEY = 'mc707-scene-write';
@@ -45,6 +47,30 @@ export function clipPattern(c) {
     ...p,
     name: p.name + ' ' + (tr > 0 ? '+' : '') + tr,
     notes: p.notes.map(n => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
+  };
+}
+
+/**
+ * The pump's motion for clip k of track t, as it is written (pattern p, the clip's own copy; pump: a
+ * draft to show instead of the clip's own): the lane,
+ * the values, where the kicks come from and the kick times. null when the clip has no pump.
+ */
+export function pumpMotion(t, k, p = clipAt(t, k) && clipPattern(clipAt(t, k)), pump = null) {
+  const c = clipAt(t, k);
+  pump = pump || (c && c.pump);
+  if (!c || !pump || !p) return null;
+  const enc = encodePattern(p, p.type);
+  if (enc.error) return null;
+  const kk = STEP_SIZES[enc.size],
+    src = pumpSource(S.scn, S.patterns, t, k),
+    kicks = kicksUnder(pumpKicks(S.scn, S.patterns, src), enc.steps * kk);
+  return {
+    lane: PUMP_LANE[pump.mode],
+    vals: pumpValues(pump, kicks, enc.steps, kk),
+    src,
+    kicks,
+    steps: enc.steps,
+    k: kk
   };
 }
 
@@ -118,6 +144,21 @@ export async function writeThese(what, quiet = false) {
         await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k)), t);
         /* the track plays its clips' sounds (Sound Source CLIP) */
         zxWrite(trackSetAddr(t) + 4, [1]);
+      }
+      /* the pump: its lane written; a lane an earlier pump was written into, cleared when it went */
+      const was = S.scn.done.p && S.scn.done.p[t + ':' + k],
+        pm = pumpMotion(t, k, p);
+      if (was && (!pm || PUMP_LANE[was] !== pm.lane)) {
+        ui.set(head + ' · clearing the old pump', (n + 0.92) / N);
+        await writeMotion(t, k, PUMP_LANE[was], Array(MAX_STEPS * MOTION_PER_STEP).fill(MOTION_NONE));
+        markPump(t, k, null);
+      }
+      if (pm && !pm.kicks.length)
+        bad.push(where + ': the pump has no kicks to follow (put the clip in a scene with a kit clip that has kicks)');
+      else if (pm) {
+        ui.set(head + ' · pump', (n + 0.95) / N);
+        await writeMotion(t, k, pm.lane, motionThin(pm.vals));
+        markPump(t, k, c.pump.mode);
       }
       markClip(t, k, !r.checked);
       uncheck(t, k);

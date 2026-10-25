@@ -116,7 +116,8 @@ Addresses here are packed, as Roland writes them; each byte must stay below `80`
 | Next clip: `+08 00 00`, skipping any address with a byte of `80` or more. First clips of tracks 1-8: `20 00 00 00`, `21 08 00 00`, `22 10 00 00`, `23 18 00 00`, `24 20 00 00`, `25 28 00 00`, `26 30 00 00`, `27 38 00 00` | | |
 | Step settings: step size (0 1/8, 1 1/16, 2 1/32, 3 1/4T, 4 1/8T, 5 1/16T), then the number of steps (1-128) as two half-bytes | descriptor `+02 00 00` | Read by the Toolbox |
 | Step *s* (0-127) | descriptor `+03 00 00` + *s* × `01 00` | Read by the Toolbox |
-| Motion, pitch bend | descriptor `+04 00 00`, `+05 00 00` | Not used |
+| Motion | descriptor `+04 00 00` + step × `01 00` + lane × `10` | 8 lanes: the track's FILTER, MOD, FX and SOUND (C4) knobs as KNOB ASSIGN sets them (tested: cutoff, Sys-Ctrl1, reverb send, decay; SOUND can be set to Level), then 4 more that changed nothing, 8 values a step as half-byte pairs, 0-127 or `FF` for no change (from Ada Locriana's mctools_sidechain). Used by Scene Mode's Pump (SOUND lane set to Level, or FILTER) and Help › For developers › Motion test |
+| Pitch bend | descriptor `+05 00 00` | Not used |
 
 Each step has 16 note slots. Values marked ½ are two half-bytes (`06 03` = `0x63`):
 

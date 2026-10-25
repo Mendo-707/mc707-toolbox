@@ -657,3 +657,88 @@ body[data-mode='scene'] #scene {
     display: none;
   }
 }
+
+/* the Pump window (pump.js) */
+.pmBox {
+  max-width: 700px;
+}
+.pmBox > .hint,
+.pmBox p {
+  line-height: 1.45;
+}
+.pmRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.pmLab {
+  width: 110px;
+  font-weight: 600;
+}
+.pmRow input[type='number'] {
+  width: 64px;
+}
+.pmDraw {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 10px 0 4px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.pmBar {
+  stroke: var(--grid-b);
+  stroke-width: 1;
+}
+.pmKick {
+  stroke: var(--hot);
+  stroke-width: 2;
+}
+.pmLine {
+  fill: none;
+  stroke: var(--tc, var(--hot));
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.pmWarn {
+  color: var(--hot);
+}
+.pmNote {
+  background: var(--panel2);
+  border-left: 3px solid var(--tc, var(--hot));
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+.pmEmpty {
+  margin: 10px 0;
+}
+
+.pmRow input[type='range'] {
+  width: 170px;
+}
+.pmVal {
+  min-width: 138px;
+  font-variant-numeric: tabular-nums;
+}
+.pmCap {
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 8px;
+}
+.pmDraw.pmClose {
+  margin-top: 4px;
+}
+.pmTick {
+  font-size: 11px;
+  fill: var(--mute);
+}
+.pmDot {
+  fill: var(--tc, var(--hot));
+}
+.pmBox {
+  max-height: 94vh;
+  overflow-y: auto;
+}
