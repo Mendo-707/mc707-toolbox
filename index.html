@@ -55217,6 +55217,289 @@ body[data-mode='scene'] #scene {
     ZX.log.length = 0;
   }
 
+  // src/zen/zc-motion.js
+  var zc_motion_exports = {};
+  __export(zc_motion_exports, {
+    MOTION_LANES: () => MOTION_LANES,
+    MOTION_NONE: () => MOTION_NONE,
+    MOTION_PER_STEP: () => MOTION_PER_STEP,
+    decodeMotion: () => decodeMotion,
+    encodeMotion: () => encodeMotion,
+    motionAddr: () => motionAddr,
+    motionSummary: () => motionSummary,
+    motionTestOpen: () => motionTestOpen,
+    motionThin: () => motionThin,
+    readMotion: () => readMotion,
+    testShape: () => testShape,
+    writeMotion: () => writeMotion
+  });
+  var MOTION_LANES = ["C1", "C2", "C3", "C4", "Lane 5", "Lane 6", "Lane 7", "Lane 8"];
+  var MOTION_PER_STEP = 8;
+  var MOTION_NONE = -1;
+  var motionAddr = (t, k2, s, lane) => lin(clipPacked(devTrack(t), k2) + 262144 + s * 256 + lane * 16);
+  function decodeMotion(b) {
+    const out2 = [];
+    for (let i = 0; i < MOTION_PER_STEP; i++) {
+      const v = b && b.length >= i * 2 + 2 ? (b[i * 2] & 15) << 4 | b[i * 2 + 1] & 15 : 255;
+      out2.push(v > 127 ? MOTION_NONE : v);
+    }
+    return out2;
+  }
+  var encodeMotion = (vals) => Array.from({ length: MOTION_PER_STEP }, (_, i) => {
+    const v = vals[i];
+    return v >= 0 && v <= 127 ? Math.round(v) : 255;
+  }).flatMap((v) => [v >> 4 & 15, v & 15]);
+  function motionThin(vals) {
+    let last3 = null;
+    return vals.map((v) => {
+      if (v === last3) return MOTION_NONE;
+      last3 = v;
+      return v;
+    });
+  }
+  async function clipSteps(t, k2) {
+    const r = await zxRead(paramAddr(t, k2), 3, 600, true);
+    return decodeParams(Array.isArray(r) ? r : null);
+  }
+  async function readMotion(t, k2, lane, steps2, onStep) {
+    const out2 = [];
+    for (let s = 0; s < steps2; s++) {
+      const b = await zxRead(motionAddr(t, k2, s, lane), 16, 300, true);
+      if (!Array.isArray(b) && s === 0) return null;
+      out2.push(...decodeMotion(Array.isArray(b) ? b : null));
+      if (onStep) onStep(s + 1, steps2);
+    }
+    return out2;
+  }
+  async function writeMotion(t, k2, lane, vals, onStep, cancelled) {
+    const steps2 = Math.ceil(vals.length / MOTION_PER_STEP);
+    for (let s = 0; s < steps2; s++) {
+      zxWrite(motionAddr(t, k2, s, lane), encodeMotion(vals.slice(s * MOTION_PER_STEP, (s + 1) * MOTION_PER_STEP)));
+      await zxFlush();
+      if (onStep) onStep(s + 1, steps2);
+      if (cancelled && cancelled()) return false;
+    }
+    return true;
+  }
+  function motionSummary(vals) {
+    const set2 = vals.filter((v) => v >= 0);
+    if (!set2.length) return "no motion";
+    const first = vals.findIndex((v) => v >= 0);
+    return set2.length + " values, " + Math.min(...set2) + " to " + Math.max(...set2) + " (first at step " + (Math.floor(first / MOTION_PER_STEP) + 1) + ": " + vals[first] + ")";
+  }
+  function testShape(steps2) {
+    const n = steps2 * MOTION_PER_STEP;
+    return motionThin(Array.from({ length: n }, (_, i) => Math.round(127 * (1 - Math.abs(2 * i / n - 1)))));
+  }
+  var READ_ALL_STEPS = 32;
+  function motionTestOpen() {
+    if (document.getElementById("mtOv")) return;
+    const name = DEVS[DEV].name;
+    const firstTone = DEVS[DEV].tracks.find((i) => S.tracks[i].type !== "drum");
+    const trk = el(
+      "select",
+      { "aria-label": "Track" },
+      ...DEVS[DEV].tracks.map(
+        (i) => (
+          /* the first tone track to start with: a bass or pad shows a level change best */
+          el("option", { value: i, selected: i === firstTone }, "Track " + devNum(i) + " · " + S.tracks[i].name)
+        )
+      )
+    );
+    const clip = el(
+      "select",
+      { "aria-label": "Clip" },
+      ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2 }, "Clip " + (k2 + 1)))
+    );
+    const lane = el(
+      "select",
+      { "aria-label": "Lane" },
+      ...MOTION_LANES.map((n, i) => el("option", { value: i, selected: i === 3 }, n))
+    );
+    const out2 = el("pre", { class: "sfOut" }, "Nothing read yet."), status3 = el("div", { class: "hint", role: "status", "aria-live": "polite" }, "");
+    const log = [];
+    const say = (...l) => {
+      log.push(...l);
+      out2.textContent = log.join("\n");
+      out2.scrollTop = out2.scrollHeight;
+    };
+    const where2 = () => "track " + devNum(+trk.value) + " clip " + (+clip.value + 1);
+    let busy3 = false;
+    const run2 = async (job) => {
+      if (busy3) return;
+      if (!await zxConnect()) return toast("The " + name + " is not connected (or MIDI with SysEx is not allowed)");
+      const t = +trk.value, k2 = +clip.value;
+      const p = await clipSteps(t, k2);
+      if (!p) return say("", where2() + ": the " + name + " did not answer for that clip.");
+      busy3 = true;
+      btns.forEach((b) => b.disabled = true);
+      try {
+        await job(t, k2, p.steps);
+      } finally {
+        busy3 = false;
+        btns.forEach((b) => b.disabled = false);
+        status3.textContent = "";
+      }
+    };
+    const readAll = el(
+      "button",
+      {
+        type: "button",
+        class: "btn on",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const n = Math.min(steps2, READ_ALL_STEPS);
+          say("", "Read " + where2() + " (" + steps2 + " steps" + (n < steps2 ? ", the first " + n + " read" : "") + "):");
+          for (let l = 0; l < MOTION_LANES.length; l++) {
+            const v = await readMotion(t, k2, l, n, (d, of) => {
+              status3.textContent = "Reading " + MOTION_LANES[l] + "… step " + d + " of " + of;
+            });
+            say("  " + MOTION_LANES[l] + ": " + (v ? motionSummary(v) : "did not answer"));
+          }
+        })
+      },
+      "Read every lane"
+    );
+    const write = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const l = +lane.value, ln = MOTION_LANES[l];
+          const before = await readMotion(t, k2, l, steps2);
+          if (!await askDlg({
+            title: "Write the test shape?",
+            text: "Lane " + ln + " of " + where2() + " gets a slow move from 0 up to 127 and back across the clip (" + steps2 + " steps). Only this lane is written; the notes and the other lanes stay. " + (before && before.some((v) => v >= 0) ? "It holds motion now (" + motionSummary(before) + "), which is replaced." : "It holds no motion now."),
+            ok: "Write"
+          }))
+            return;
+          const shape = testShape(steps2);
+          const ok = await writeSession(
+            "Writing the test shape to " + where2() + ", " + ln,
+            (ui) => writeMotion(
+              t,
+              k2,
+              l,
+              shape,
+              (d, of) => ui.set("Step " + d + " of " + of, d / of),
+              () => ui.cancelled
+            )
+          );
+          if (!ok) return say("", "Stopped part-way: " + ln + " of " + where2() + " is only partly written.");
+          const back = await readMotion(t, k2, l, steps2);
+          const same = back && back.every((v, i) => v === shape[i]);
+          say(
+            "",
+            "Wrote the test shape to " + ln + " of " + where2() + ": " + (same ? "read back the same." : "read back differently (" + (back ? motionSummary(back) : "no answer") + ")."),
+            "Now play the clip on the " + name + " and watch the knobs: which one moves (C1-C4), and what do you hear change?"
+          );
+        })
+      },
+      "Write test shape"
+    );
+    const clear = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: () => run2(async (t, k2, steps2) => {
+          const l = +lane.value, ln = MOTION_LANES[l];
+          if (!await askDlg({
+            title: "Clear the lane?",
+            text: "Lane " + ln + " of " + where2() + " loses all its motion.",
+            ok: "Clear"
+          }))
+            return;
+          const ok = await writeSession(
+            "Clearing " + ln + " of " + where2(),
+            (ui) => writeMotion(
+              t,
+              k2,
+              l,
+              Array(steps2 * MOTION_PER_STEP).fill(MOTION_NONE),
+              (d, of) => ui.set("Step " + d + " of " + of, d / of),
+              () => ui.cancelled
+            )
+          );
+          say(
+            "",
+            ok ? "Cleared " + ln + " of " + where2() + "." : "Stopped part-way: " + ln + " is only partly cleared."
+          );
+        })
+      },
+      "Clear lane"
+    );
+    const copy = el(
+      "button",
+      {
+        type: "button",
+        class: "btn",
+        onclick: async () => {
+          try {
+            await navigator.clipboard.writeText(out2.textContent);
+            toast("Copied: paste it into the chat");
+          } catch (e) {
+            toast("Could not copy: select the text and copy it");
+          }
+        }
+      },
+      "Copy results"
+    );
+    const btns = [readAll, write, clear];
+    const close = () => !busy3 && ov.remove();
+    const ov = el(
+      "div",
+      { id: "mtOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Motion test" },
+      el(
+        "div",
+        { class: "ptBox", style: "max-width:680px" },
+        el("h3", {}, "Motion test: which lane moves what"),
+        el(
+          "p",
+          { class: "hint", style: "line-height:1.45" },
+          "A clip’s motion is the knob moves it plays back. This finds which of its 8 lanes moves which knob on your " + name + ". Use a clip that holds notes in a project you can lose, and stop playback first. Thanks to Ada Locriana for finding where motion is kept."
+        ),
+        el(
+          "ol",
+          { class: "hint sfSteps" },
+          el("li", {}, "Pick the track and clip. Read every lane (read-only) to see which lanes hold motion already."),
+          el(
+            "li",
+            {},
+            "Pick lane C4 and Write test shape. Play the clip on the " + name + ": which knob moves, and what changes?"
+          ),
+          el("li", {}, "Try C1-C3 the same way if you like. Clear lane takes the shape out again."),
+          el(
+            "li",
+            {},
+            "Optional: record a knob move on the " + name + " (motion rec), then Read every lane to see where it went."
+          ),
+          el("li", {}, "Copy results into the chat, with what moved.")
+        ),
+        el(
+          "div",
+          { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" },
+          trk,
+          clip,
+          readAll,
+          lane,
+          write,
+          clear,
+          copy
+        ),
+        status3,
+        out2,
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Close")
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    document.body.append(ov);
+  }
+
   // src/ui/menubar.js
   function toggleAppSound() {
     S.preview = !S.preview;
@@ -55417,7 +55700,8 @@ body[data-mode='scene'] #scene {
               { label: "MC-707 SysEx guide", action: () => openLink(LINKS.sysex) },
               { label: "ZenCore parameter reference", action: () => openLink(LINKS.params) },
               { label: "Diagnostics page", action: () => openLink(LINKS.diagnostics) },
-              { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() }
+              { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() },
+              { label: "Motion test (which lane moves what)…", action: () => motionTestOpen() }
             ]
           ],
           [
@@ -56489,6 +56773,7 @@ body[data-mode='scene'] #scene {
         toSong: scenesToSong,
         setMode
       },
+      motion: zc_motion_exports,
       get S() {
         return S;
       },
