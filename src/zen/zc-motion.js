@@ -1,5 +1,5 @@
 // A clip's motion: the knob moves the MC-707 records into a clip and plays back with it. Each clip has 8
-// lanes (the track's FILTER, MOD and FX knobs and a fourth, as KNOB ASSIGN sets them, then four more), and each step of a lane holds 8 values (0-127, or none: no change),
+// lanes (the track's FILTER, MOD, FX and SOUND (C4) knobs, as KNOB ASSIGN sets them, then four more), and each step of a lane holds 8 values (0-127, or none: no change),
 // two half-bytes each, at the clip's descriptor + 04 00 00 + step × 01 00 + lane × 10. Found by Ada
 // Locriana (github.com/Locriana/mctools_sidechain, MIT licence), whose sidechain tool writes a volume
 // dip there on every kick.
@@ -16,7 +16,7 @@ import { devTrack, lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.j
 import { clipPacked, decodeParams, paramAddr, writeSession } from './zc-seq.js';
 
 /** The lanes, by index. */
-export const MOTION_LANES = ['FILTER', 'MOD', 'FX', 'Knob 4', 'Lane 5', 'Lane 6', 'Lane 7', 'Lane 8'];
+export const MOTION_LANES = ['FILTER', 'MOD', 'FX', 'SOUND (C4)', 'Lane 5', 'Lane 6', 'Lane 7', 'Lane 8'];
 /** Values per step in a lane. */
 export const MOTION_PER_STEP = 8;
 /** A value that means no change. */
@@ -351,7 +351,7 @@ export function motionTestOpen() {
         { class: 'hint' },
         'Each ' +
           name +
-          ' clip can play back knob moves, called motion, in 8 lanes: the first four follow the track’s knobs as KNOB ASSIGN sets them (FILTER, MOD, FX and a fourth), then four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept.'
+          ' clip can play back knob moves, called motion, in 8 lanes: the first four follow the track’s knobs as KNOB ASSIGN sets them (FILTER, MOD, FX and SOUND), then four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept.'
       ),
       step(
         1,
@@ -367,7 +367,7 @@ export function motionTestOpen() {
       step(
         2,
         'Look first (read only)',
-        'Press Read every lane. It lists which lanes of that clip already hold knob moves (FILTER, MOD, FX, Knob 4, then Lane 5 to 8). Nothing is changed. If it says the ' +
+        'Press Read every lane. It lists which lanes of that clip already hold knob moves (FILTER, MOD, FX, SOUND, then Lane 5 to 8). Nothing is changed. If it says the ' +
           name +
           ' did not answer, check the track and clip, and that the ' +
           name +
@@ -407,7 +407,7 @@ export function motionTestOpen() {
           ),
           'To see what each knob is set to, press KNOB ASSIGN on the ' +
             name +
-            ': it lists what each track’s FILTER, MOD, FX and fourth knob controls (the C1-C4 knobs are something else: they change with the screen).',
+            ': it lists what each track’s FILTER, MOD, FX and SOUND (C4) knobs control (the C1-C4 knobs are something else: they change with the screen).',
           'Then pick what you heard, type what KNOB ASSIGN shows for that knob, and press Add to results.'
         ],
         row(heard, knob, note)

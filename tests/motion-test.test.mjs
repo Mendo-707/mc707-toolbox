@@ -31,7 +31,7 @@ test('Motion: lanes are 8 values a step, at the clip + 04 00 00 + step and lane,
   assert.deepEqual(errors, []);
 });
 
-test('Motion test: reads which lanes hold motion, writes the test shape to Knob 4 and reads it back', async () => {
+test('Motion test: reads which lanes hold motion, writes the test shape to SOUND (C4) and reads it back', async () => {
   const { page, errors } = await openApp();
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
   /* a 4-step clip on track 4, clip 2: no motion but some on MOD */
@@ -55,7 +55,7 @@ test('Motion test: reads which lanes hold motion, writes the test shape to Knob 
   const read = await page.textContent('#mtOv .sfOut');
   assert.match(read, /FILTER: no motion/);
   assert.match(read, /MOD: 2 values, 40 to 90 \(first at step 3: 90\)/);
-  assert.match(read, /Knob 4: no motion/);
+  assert.match(read, /SOUND \(C4\): no motion/);
   await page.click('#mtOv button:has-text("Write test shape")');
   await page.getByRole('button', { name: 'Write', exact: true }).click();
   await page.waitForFunction(
@@ -63,7 +63,7 @@ test('Motion test: reads which lanes hold motion, writes the test shape to Knob 
     null,
     { timeout: 30000 }
   );
-  assert.match(await page.textContent('#mtOv .sfOut'), /Knob 4 of track 4 clip 2: read back the same/);
+  assert.match(await page.textContent('#mtOv .sfOut'), /SOUND \(C4\) of track 4 clip 2: read back the same/);
   const got = await page.evaluate(() => {
     const M = window.__app.motion,
       mem = window.__zcMem;
@@ -76,7 +76,7 @@ test('Motion test: reads which lanes hold motion, writes the test shape to Knob 
   await page.click('#mtOv button:has-text("Add to results")');
   assert.match(
     await page.textContent('#mtOv .sfOut'),
-    /Heard on Knob 4 \(track 4 clip 2\): Volume: fades in and out; LEVEL/
+    /Heard on SOUND \(C4\) \(track 4 clip 2\): Volume: fades in and out; LEVEL/
   );
   /* MOD is left alone */
   const c2 = await page.evaluate(() => {
