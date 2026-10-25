@@ -464,3 +464,19 @@ body[data-mode='scene'] #scene {
   color: #000;
   font-weight: 700;
 }
+/* the Sound tab: the ZenCore editor (in its own look) filling the dock */
+.scnZen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.scnZen .zcDock .zcBox {
+  height: 100%;
+  min-height: 520px;
+}
+.scnZenNote {
+  padding: 16px;
+}
+.scnTabs .btn {
+  min-width: 56px;
+}

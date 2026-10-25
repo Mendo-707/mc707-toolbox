@@ -7006,6 +7006,22 @@ body[data-mode='scene'] #scene {
   color: #000;
   font-weight: 700;
 }
+/* the Sound tab: the ZenCore editor (in its own look) filling the dock */
+.scnZen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.scnZen .zcDock .zcBox {
+  height: 100%;
+  min-height: 520px;
+}
+.scnZenNote {
+  padding: 16px;
+}
+.scnTabs .btn {
+  min-width: 56px;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -7977,12 +7993,12 @@ body[data-mode='scene'] #scene {
       } catch (e) {
       }
     };
-    const watch3 = setInterval(() => {
+    const watch4 = setInterval(() => {
       if (win.closed) h.close(true);
       else save3();
     }, 1e3);
     win.addEventListener("beforeunload", save3);
-    Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch3) });
+    Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch4) });
     return true;
   }
   function openPanel(o, h) {
@@ -19599,7 +19615,7 @@ body[data-mode='scene'] #scene {
         continue;
       }
       let t = 0, run2 = 0, name = "";
-      const open = /* @__PURE__ */ new Map(), notes = [];
+      const open2 = /* @__PURE__ */ new Map(), notes = [];
       const vl = () => {
         let v = 0, b;
         do {
@@ -19634,16 +19650,16 @@ body[data-mode='scene'] #scene {
         const k2 = st & 240, ch = st & 15;
         let a = u[p++], b = 0;
         if (k2 !== 192 && k2 !== 208) b = u[p++];
-        if (k2 === 144 && b > 0) open.set(ch * 128 + a, { t, v: b });
+        if (k2 === 144 && b > 0) open2.set(ch * 128 + a, { t, v: b });
         else if (k2 === 128 || k2 === 144 && b === 0) {
-          const o = open.get(ch * 128 + a);
+          const o = open2.get(ch * 128 + a);
           if (o) {
             notes.push({ t: o.t, d: Math.max(1, t - o.t), n: a, v: o.v, ch });
-            open.delete(ch * 128 + a);
+            open2.delete(ch * 128 + a);
           }
         }
       }
-      open.forEach((o, key) => notes.push({ t: o.t, d: out2.ppq / 4, n: key % 128, v: o.v, ch: Math.floor(key / 128) }));
+      open2.forEach((o, key) => notes.push({ t: o.t, d: out2.ppq / 4, n: key % 128, v: o.v, ch: Math.floor(key / 128) }));
       const byCh = /* @__PURE__ */ new Map();
       notes.forEach((n) => {
         if (!byCh.has(n.ch)) byCh.set(n.ch, []);
@@ -28942,6 +28958,8 @@ body[data-mode='scene'] #scene {
     /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
     edit: false,
     big: false,
+    /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */
+    tab: "notes",
     inDock: false,
     /* redraws Scene Mode after a change (set by the screen) */
     draw: () => {
@@ -30797,21 +30815,21 @@ body[data-mode='scene'] #scene {
     S.clips = [];
     S.markers = [];
     let at2 = 0;
-    const open = Array(8).fill(null);
+    const open2 = Array(8).fill(null);
     const shut = (t) => {
-      if (open[t]) S.clips.push(open[t].clip), open[t] = null;
+      if (open2[t]) S.clips.push(open2[t].clip), open2[t] = null;
     };
     rs.forEach((r) => {
       S.markers.push({ bar: at2, name: r.name });
       for (let t = 0; t < 8; t++) {
         const c = r.cells[t];
-        if (open[t] && sameCell(open[t].cell, c)) open[t].clip.len += r.bars;
+        if (open2[t] && sameCell(open2[t].cell, c)) open2[t].clip.len += r.bars;
         else {
           shut(t);
           if (c && S.patterns[c.pat]) {
             const clip = { id: "c" + S.nextId++, t, start: at2, len: r.bars, off: 0, pat: c.pat };
             if (c.tr) clip.tr = c.tr;
-            open[t] = { cell: c, clip };
+            open2[t] = { cell: c, clip };
           }
         }
       }
@@ -36674,6 +36692,66 @@ body[data-mode='scene'] #scene {
     );
   }
 
+  // src/scene/sound-tab.js
+  var HOST2 = el("div", { class: "scnZen" });
+  var open = null;
+  var watch = null;
+  function watchClose() {
+    if (watch) return;
+    watch = new MutationObserver(() => {
+      if (!open || HOST2.querySelector("#zcOv")) return;
+      keepSound();
+      open = null;
+      SC.tab = "notes";
+      SC.draw();
+    });
+    watch.observe(HOST2, { childList: true });
+  }
+  var clipOf = (i, t) => S.scn ? scnClips(S.scn).clip[i][t] : -1;
+  function keepSound(later = false) {
+    if (!open || !ZE.snd || ZE.undo.length <= open.undo) return;
+    const v = ZE.snd.v, { i, t } = open, tone2 = { name: String(v["CMN.NAME"] || v["KCMN.NAME"] || "Tone").trim(), kind: ZE.snd.kind, d: diffOf(ZE.snd) };
+    open.undo = ZE.undo.length;
+    if (later) setTimeout(() => setTone(i, t, tone2));
+    else setTone(i, t, tone2);
+  }
+  function closeSound(later = false) {
+    if (!open) return;
+    keepSound(later);
+    if (!HOST2.isConnected) document.body.append(HOST2);
+    zenClose();
+    HOST2.remove();
+    open = null;
+  }
+  function soundHost(i, t) {
+    const k2 = clipOf(i, t);
+    if (k2 < 0) {
+      closeSound(true);
+      return el(
+        "p",
+        { class: "hint scnZenNote" },
+        "This cell has no MC-707 clip: a track holds 16 different cells at most."
+      );
+    }
+    const key = i + ":" + t + ":" + k2;
+    if (open && open.key === key) {
+      if (HOST2.querySelector("#zcOv")) return HOST2;
+      open = null;
+      return null;
+    }
+    closeSound(true);
+    watchClose();
+    open = { key, i, t, k: k2, undo: Infinity };
+    requestAnimationFrame(async () => {
+      await zenOpen(t, k2, HOST2);
+      const tn = toneOf(rows()[i] && rows()[i].cells[t]), snd = tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
+      if (snd) await zeLoad(snd, "Loaded this cell’s tone");
+      if (open && open.key === key) open.undo = ZE.undo.length;
+    });
+    return HOST2;
+  }
+  var soundNote = (i, t) => clipOf(i, t) < 0 ? "" : "Changes go to track " + devNum(t) + " clip " + (clipOf(i, t) + 1) + " on the MC-707 as you make them, and stay with this cell.";
+
   // src/scene/dock.js
   var EDITOR = null;
   var shown3 = "";
@@ -36686,13 +36764,20 @@ body[data-mode='scene'] #scene {
     SC.edit = true;
     SC.draw();
   }
+  function setTab(v) {
+    if (v === "notes") closeSound();
+    SC.tab = v;
+    SC.draw();
+  }
   function closeEdit() {
+    closeSound();
     SC.edit = false;
     SC.big = false;
     undock();
     SC.draw();
   }
-  function undock() {
+  function undock(later = false) {
+    closeSound(later);
     const ed = editorEl(), work = document.getElementById("work");
     if (ed && work && ed.parentNode !== work) work.append(ed);
     if (UI.view && UI.view.scene) {
@@ -36728,6 +36813,27 @@ body[data-mode='scene'] #scene {
         { class: "chip", style: "--c:" + TRACK_COLORS[t] },
         "Scene " + sceneLabel(i) + " · " + devNum(t) + " " + S.tracks[t].name
       ),
+      el(
+        "span",
+        { class: "grp scnTabs", role: "tablist" },
+        ...[
+          ["notes", "Notes", "The pattern editor"],
+          ["sound", "Sound", "The ZenCore editor and Sound browser, for this cell’s MC-707 clip"]
+        ].map(
+          ([v, l, title]) => el(
+            "button",
+            {
+              type: "button",
+              role: "tab",
+              class: "btn sm" + (SC.tab === v ? " on" : ""),
+              "aria-selected": String(SC.tab === v),
+              title,
+              onclick: () => setTab(v)
+            },
+            l
+          )
+        )
+      ),
       b("▲", () => editCell(i - 1, t), "The scene above, same track", i ? "" : "off"),
       b("▼", () => editCell(i + 1, t), "The scene below, same track", i < n - 1 ? "" : "off"),
       b("Pattern…", () => choosePattern(i, t), "Choose another pattern for this cell"),
@@ -36739,7 +36845,8 @@ body[data-mode='scene'] #scene {
         el("span", {}, (tr > 0 ? "+" : "") + tr),
         b("+", () => setTranspose(i, t, tr + 1), "Up a semitone")
       ) : null,
-      others > 0 ? el(
+      SC.tab === "sound" ? el("span", { class: "hint" }, soundNote(i, t)) : null,
+      others > 0 && SC.tab === "notes" ? el(
         "span",
         { class: "scnShared hint" },
         "Shared with " + [cells > 1 ? plural2(cells - 1, "other cell") : "", clips ? plural2(clips, "Song Mode clip") : ""].filter(Boolean).join(" and ") + " ",
@@ -36761,11 +36868,16 @@ body[data-mode='scene'] #scene {
     const i = SC.row, t = SC.t, c = rows()[i] && rows()[i].cells[t], p = c && S.patterns[c.pat];
     if (!SC.edit || !p) {
       if (SC.edit) SC.edit = SC.big = false;
-      undock();
+      undock(true);
       return null;
     }
-    const key = i + ":" + t + ":" + c.pat;
     if (!editorEl().isConnected) document.getElementById("work").append(editorEl());
+    if (SC.tab === "sound") {
+      const h = soundHost(i, t);
+      if (h) return el("div", { class: "scnDock", style: "--tc:" + TRACK_COLORS[t] }, head(i, t, c, p), h);
+      SC.tab = "notes";
+    } else closeSound(true);
+    const key = i + ":" + t + ":" + c.pat;
     if (key !== shown3 || !UI.view || !UI.view.scene) {
       UI.sel = null;
       UI.view = null;
@@ -36850,7 +36962,7 @@ body[data-mode='scene'] #scene {
       parts: tracks().filter((t) => r.cells[t] && S.patterns[r.cells[t].pat]).map((t) => ({ t, p: S.patterns[r.cells[t].pat], tr: r.cells[t].tr || 0 }))
     }));
     startScenes(list2, Math.min(i, rs.length - 1), loop2);
-    watch();
+    watch2();
   }
   function sceneToggle() {
     if (TR.playing) stopAll();
@@ -36858,7 +36970,7 @@ body[data-mode='scene'] #scene {
     drawTop();
   }
   var sceneKeyDown = (e) => sceneKey(e, sceneToggle);
-  function watch() {
+  function watch2() {
     cancelAnimationFrame(raf);
     const step = () => {
       const on2 = TR.playing && TR.mode === "scenes", i = on2 ? sceneRowAt(TR.tick) : -1;
@@ -36913,7 +37025,7 @@ body[data-mode='scene'] #scene {
       SC.t = t;
       markSel();
     };
-    const open = () => (pick3(), p ? editCell(i, t) : choosePattern(i, t));
+    const open2 = () => (pick3(), p ? editCell(i, t) : choosePattern(i, t));
     const menu = (e) => (e.preventDefault(), pick3(), cellMenu(i, t, e.clientX, e.clientY, editCell));
     return el(
       "button",
@@ -36925,7 +37037,7 @@ body[data-mode='scene'] #scene {
         "data-row": i,
         "data-t": t,
         "aria-label": "Scene " + sceneLabel(i) + ", track " + devNum(t) + ": " + (p ? p.name : "empty"),
-        onclick: open,
+        onclick: open2,
         oncontextmenu: menu
       },
       p ? [
@@ -37006,7 +37118,7 @@ body[data-mode='scene'] #scene {
       )
     );
     wrap.scrollTop = top;
-    if (TR.playing && TR.mode === "scenes") watch();
+    if (TR.playing && TR.mode === "scenes") watch2();
   }
   function sceneRender() {
     const host = $("#scene");
@@ -37025,7 +37137,7 @@ body[data-mode='scene'] #scene {
     const rs = rows();
     if (!rs.length) {
       SC.edit = SC.big = false;
-      undock();
+      undock(true);
       host.append(
         el(
           "div",
@@ -37058,7 +37170,7 @@ body[data-mode='scene'] #scene {
       grid.scrollTop = scroll;
     }
     host.append(body);
-    if (TR.playing && TR.mode === "scenes") watch();
+    if (TR.playing && TR.mode === "scenes") watch2();
     drawTop();
   }
 
@@ -53002,7 +53114,7 @@ body[data-mode='scene'] #scene {
     edT = t;
     zenOpen(t, SY.slot[t]);
     if (browse) setTimeout(browserOpen, 0);
-    watch2();
+    watch3();
   }
   function expand(t, browse) {
     if (docked() && edT !== t) quickForget(edT);
@@ -53011,7 +53123,7 @@ body[data-mode='scene'] #scene {
     synthRender();
     zenOpen(t, SY.slot[t], dock2);
     if (browse) setTimeout(browserOpen, 0);
-    watch2();
+    watch3();
   }
   function collapse() {
     if (docked()) zenClose();
@@ -53020,7 +53132,7 @@ body[data-mode='scene'] #scene {
       synthRender();
     }
   }
-  function watch2() {
+  function watch3() {
     clearInterval(wait);
     wait = setInterval(() => {
       if ($("#zcOv")) {

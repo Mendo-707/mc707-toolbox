@@ -219,3 +219,38 @@ test('Scene Mode: a cell opens Song Mode’s pattern editor docked under the sce
   assert.equal(await page.evaluate(() => document.getElementById('editor').parentNode.id), 'work');
   assert.deepEqual(errors, []);
 });
+
+test('Scene Mode: the Sound tab docks the ZenCore editor for the cell’s clip and keeps its changes in the cell', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(seedSong);
+  await page.locator('.mtab', { hasText: 'Scene Mode' }).click();
+  await page.locator('#scene button', { hasText: 'Make scenes from the song' }).click();
+  /* track 4 in scene 1-2 is its second clip (p3 +7) */
+  await page.locator('#scene .scnCell[data-row="1"][data-t="3"]').click();
+  await page.locator('.scnTabs button', { hasText: 'Sound' }).click();
+  await page.locator('#scene .scnDock #zcOv').waitFor();
+  assert.match(await page.locator('.scnDockHead').textContent(), /track 4 clip 2 on the MC-707/);
+  assert.deepEqual(await page.evaluate(() => [window.__app.zen.ZE.t, window.__app.zen.ZE.k]), [3, 1]);
+  /* an edit in the editor (as a control makes one), then back to the notes: the cell keeps the sound */
+  await page.evaluate(() => {
+    const ZE = window.__app.zen.ZE;
+    ZE.undo.push({});
+    ZE.snd.v['CMN.NAME'] = 'My Bass';
+  });
+  await page.locator('.scnTabs button', { hasText: 'Notes' }).click();
+  await page.locator('.scnDock #editor').waitFor();
+  assert.equal(await page.evaluate(() => !!document.querySelector('#zcOv')), false);
+  const tone = await page.evaluate(() => {
+    const q = window.__app.S.scn,
+      c = q.rows[1].cells[3];
+    return [q.tones[c.tone].name, q.tones[c.tone].kind];
+  });
+  assert.deepEqual(tone, ['My Bass', 'tone']);
+  assert.match(await page.locator('#scene .scnCell[data-row="1"][data-t="3"]').textContent(), /♪ My Bass/);
+  /* Done inside the editor goes back to the notes too */
+  await page.locator('.scnTabs button', { hasText: 'Sound' }).click();
+  await page.locator('#scene .scnDock #zcOv').waitFor();
+  await page.locator('#zcOv button', { hasText: 'Done' }).click();
+  await page.locator('.scnDock #editor').waitFor();
+  assert.deepEqual(errors, []);
+});

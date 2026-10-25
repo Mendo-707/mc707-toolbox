@@ -17,6 +17,8 @@ export const SC = {
   /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
   edit: false,
   big: false,
+  /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */
+  tab: 'notes',
   inDock: false,
   /* redraws Scene Mode after a change (set by the screen) */
   draw: () => {}

@@ -13,6 +13,7 @@ import { renderEditor } from '../song/editor.js';
 import { SC, edit, rows, setTranspose, toneOf } from './model.js';
 import { choosePattern, chooseTone } from './menus.js';
 import { sceneLabel } from './names.js';
+import { closeSound, soundHost, soundNote } from './sound-tab.js';
 
 let EDITOR = null,
   shown = '';
@@ -27,15 +28,23 @@ export function editCell(i, t) {
   SC.edit = true;
   SC.draw();
 }
+/** Notes (the pattern editor) or Sound (the ZenCore editor). */
+function setTab(v) {
+  if (v === 'notes') closeSound();
+  SC.tab = v;
+  SC.draw();
+}
 /** Close the editor (the grid gets the room back). */
 export function closeEdit() {
+  closeSound();
   SC.edit = false;
   SC.big = false;
   undock();
   SC.draw();
 }
-/** Put the editor back in Song Mode and let go of the pattern. */
-export function undock() {
+/** Put the editor back in Song Mode and let go of the pattern (later: while Scene Mode draws). */
+export function undock(later = false) {
+  closeSound(later);
   const ed = editorEl(),
     work = document.getElementById('work');
   if (ed && work && ed.parentNode !== work) work.append(ed);
@@ -82,6 +91,27 @@ function head(i, t, c, p) {
       { class: 'chip', style: '--c:' + TRACK_COLORS[t] },
       'Scene ' + sceneLabel(i) + ' · ' + devNum(t) + ' ' + S.tracks[t].name
     ),
+    el(
+      'span',
+      { class: 'grp scnTabs', role: 'tablist' },
+      ...[
+        ['notes', 'Notes', 'The pattern editor'],
+        ['sound', 'Sound', 'The ZenCore editor and Sound browser, for this cell’s MC-707 clip']
+      ].map(([v, l, title]) =>
+        el(
+          'button',
+          {
+            type: 'button',
+            role: 'tab',
+            class: 'btn sm' + (SC.tab === v ? ' on' : ''),
+            'aria-selected': String(SC.tab === v),
+            title,
+            onclick: () => setTab(v)
+          },
+          l
+        )
+      )
+    ),
     b('▲', () => editCell(i - 1, t), 'The scene above, same track', i ? '' : 'off'),
     b('▼', () => editCell(i + 1, t), 'The scene below, same track', i < n - 1 ? '' : 'off'),
     b('Pattern…', () => choosePattern(i, t), 'Choose another pattern for this cell'),
@@ -95,7 +125,8 @@ function head(i, t, c, p) {
           b('+', () => setTranspose(i, t, tr + 1), 'Up a semitone')
         )
       : null,
-    others > 0
+    SC.tab === 'sound' ? el('span', { class: 'hint' }, soundNote(i, t)) : null,
+    others > 0 && SC.tab === 'notes'
       ? el(
           'span',
           { class: 'scnShared hint' },
@@ -131,12 +162,17 @@ export function dock(changed) {
     p = c && S.patterns[c.pat];
   if (!SC.edit || !p) {
     if (SC.edit) SC.edit = SC.big = false;
-    undock();
+    undock(true);
     return null;
   }
-  const key = i + ':' + t + ':' + c.pat;
   /* the editor draws into the page, so it has to be in it while the pattern opens */
   if (!editorEl().isConnected) document.getElementById('work').append(editorEl());
+  if (SC.tab === 'sound') {
+    const h = soundHost(i, t);
+    if (h) return el('div', { class: 'scnDock', style: '--tc:' + TRACK_COLORS[t] }, head(i, t, c, p), h);
+    SC.tab = 'notes';
+  } else closeSound(true);
+  const key = i + ':' + t + ':' + c.pat;
   if (key !== shown || !UI.view || !UI.view.scene) {
     UI.sel = null;
     UI.view = null;

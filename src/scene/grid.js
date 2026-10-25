@@ -251,7 +251,7 @@ export function sceneRender() {
   const rs = rows();
   if (!rs.length) {
     SC.edit = SC.big = false;
-    undock();
+    undock(true);
     host.append(
       el(
         'div',
