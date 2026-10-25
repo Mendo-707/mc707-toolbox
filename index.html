@@ -37297,7 +37297,7 @@ body[data-mode='scene'] #scene {
           bad.push(
             where2 + ": " + r.skipped + " note" + (r.skipped === 1 ? "" : "s") + " could not go in (no drum note for its lane, past the end, or two of the same note in one step)"
           );
-        const tn = toneOf(c), snd = WO.tones && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
+        const tn = toneOf(c), snd = WO.tones && tn && tn.kind !== "kit" && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
         if (snd) {
           ui.set(head2 + " · tone " + tn.name, (n + 0.9) / N);
           zxWrite(trackSetAddr(t) + 4, [1]);
@@ -57205,13 +57205,15 @@ body[data-mode='scene'] #scene {
     for (const t of DEVS[DEV].tracks) {
       const n = cmFix()[t].n, used = /* @__PURE__ */ new Map();
       plan2[t] = Array.from({ length: n }, (_, k2) => {
-        const role = roleAt(t, k2), pool = poolOf2(gid, role), ok = pool.filter(resolve);
+        const role = roleAt(t, k2);
+        if (role === "drums") return { role, item: null, on: false };
+        const pool = poolOf2(gid, role), ok = pool.filter(resolve);
         const from = ok.length ? ok : pool;
         if (!from.length) return { role, item: null, on: false };
         const u = used.get(role) || { at: Math.floor(Math.random() * from.length), n: 0 };
         const item = from[(u.at + u.n++) % from.length];
         used.set(role, u);
-        return { role, item, on: role !== "drums" && !!resolve(item) };
+        return { role, item, on: !!resolve(item) };
       });
     }
     return plan2;
@@ -57246,6 +57248,22 @@ body[data-mode='scene'] #scene {
     const tick = (ts, on3) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on3 && !!(c.item && resolve(c.item))));
     const draw = () => {
       const rows2 = DEVS[DEV].tracks.map((t) => {
+        if (S.tracks[t].type === "drum")
+          return el(
+            "section",
+            { class: "ftTrk", style: "--tc:" + TRACK_COLORS[t] },
+            el(
+              "div",
+              { class: "ftHead" },
+              el("b", {}, devNum(t) + " " + S.tracks[t].name),
+              el("span", { class: "hint" }, "Drum kits: choose them on the " + DEVS[DEV].name)
+            ),
+            el(
+              "p",
+              { class: "hint ftKits" },
+              "A kit’s drum sounds can’t be changed over MIDI: the " + DEVS[DEV].name + " keeps each key’s instrument whatever is sent. Pick the kit for each clip on the " + DEVS[DEV].name + " itself."
+            )
+          );
         const clips = plan2[t].map((c, k2) => {
           const pool = poolOf2(gid, c.role), r = c.item && resolve(c.item);
           const pick3 = el(
@@ -57411,7 +57429,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Drum clips keep their kit unless the pool has one: add your own kits to a genre’s Drums pool. Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen."
+          "Drum kits stay as they are (the " + DEVS[DEV].name + " does not take new drum sounds over MIDI). Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen."
         ),
         el(
           "div",
@@ -57454,7 +57472,7 @@ body[data-mode='scene'] #scene {
       for (const t of DEVS[DEV].tracks)
         plan2[t].forEach((c, k2) => {
           const r = c.on && c.item && resolve(c.item);
-          if (r) jobs.push({ t, k: k2, r });
+          if (r && r.snd.kind !== "kit") jobs.push({ t, k: k2, r });
         });
       let done2 = 0, extra = 0;
       const ran = await writeSession("Filling tones", async (ui) => {
@@ -57538,7 +57556,7 @@ body[data-mode='scene'] #scene {
         el(
           "div",
           { class: "grp ftRoles", role: "tablist" },
-          ...ROLES2.map(
+          ...ROLES2.filter((r) => r !== "drums").map(
             (r) => el(
               "button",
               {

@@ -69,7 +69,8 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
     );
   const p = await picks();
   assert.equal(p.length, 8);
-  assert.deepEqual(p[0], [['Drums', 'Nothing in the pool', false]], 'drum clips keep their kit');
+  assert.deepEqual(p[0], [], 'drum tracks have no picks: kits are chosen on the MC-707');
+  assert.match(await page.locator('#ftOv .ftTrk').first().textContent(), /can’t be changed over MIDI/, 'and say why');
   const bass = p[3];
   assert.equal(bass.length, 3);
   const bassNames = ['House Bs', 'Round Bass', 'Acid Bs 1', 'TB Bass 1'];
@@ -119,11 +120,7 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
     }
   );
   const src = await page.evaluate(TRK => [3, 4, 5, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
-  assert.deepEqual(
-    src.slice(0, 3),
-    [1, 1, 1],
-    'every track written plays its clips’ own sounds'
-  );
+  assert.deepEqual(src.slice(0, 3), [1, 1, 1], 'every track written plays its clips’ own sounds');
   assert.notEqual(src[3], 1, 'a drum track with nothing sent is left alone');
   assert.equal(
     await page.evaluate(() => window.__app.S.clipMap[4].names[0]),

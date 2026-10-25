@@ -166,8 +166,11 @@ function makePlan(gid) {
     const n = cmFix()[t].n,
       used = new Map();
     plan[t] = Array.from({ length: n }, (_, k) => {
-      const role = roleAt(t, k),
-        pool = poolOf(gid, role),
+      const role = roleAt(t, k);
+      /* a kit's drum sounds cannot be changed over MIDI (the MC-707 ignores a new instrument for a key),
+         so drum clips are left to the MC-707 */
+      if (role === 'drums') return { role, item: null, on: false };
+      const pool = poolOf(gid, role),
         ok = pool.filter(resolve);
       const from = ok.length ? ok : pool;
       if (!from.length) return { role, item: null, on: false };
@@ -175,8 +178,7 @@ function makePlan(gid) {
       const u = used.get(role) || { at: Math.floor(Math.random() * from.length), n: 0 };
       const item = from[(u.at + u.n++) % from.length];
       used.set(role, u);
-      /* a kit only goes when you tick it: a drum track's own kit is usually what you want */
-      return { role, item, on: role !== 'drums' && !!resolve(item) };
+      return { role, item, on: !!resolve(item) };
     });
   }
   return plan;
@@ -222,6 +224,26 @@ export async function fillTonesOpen() {
   const tick = (ts, on) => ts.forEach(t => plan[t].forEach(c => (c.on = on && !!(c.item && resolve(c.item)))));
   const draw = () => {
     const rows = DEVS[DEV].tracks.map(t => {
+      if (S.tracks[t].type === 'drum')
+        return el(
+          'section',
+          { class: 'ftTrk', style: '--tc:' + TRACK_COLORS[t] },
+          el(
+            'div',
+            { class: 'ftHead' },
+            el('b', {}, devNum(t) + ' ' + S.tracks[t].name),
+            el('span', { class: 'hint' }, 'Drum kits: choose them on the ' + DEVS[DEV].name)
+          ),
+          el(
+            'p',
+            { class: 'hint ftKits' },
+            'A kit’s drum sounds can’t be changed over MIDI: the ' +
+              DEVS[DEV].name +
+              ' keeps each key’s instrument whatever is sent. Pick the kit for each clip on the ' +
+              DEVS[DEV].name +
+              ' itself.'
+          )
+        );
       const clips = plan[t].map((c, k) => {
         const pool = poolOf(gid, c.role),
           r = c.item && resolve(c.item);
@@ -391,7 +413,9 @@ export async function fillTonesOpen() {
       el(
         'p',
         { class: 'hint' },
-        'Drum clips keep their kit unless the pool has one: add your own kits to a genre’s Drums pool. Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen.'
+        'Drum kits stay as they are (the ' +
+          DEVS[DEV].name +
+          ' does not take new drum sounds over MIDI). Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen.'
       ),
       el(
         'div',
@@ -439,7 +463,7 @@ export async function fillTonesOpen() {
     for (const t of DEVS[DEV].tracks)
       plan[t].forEach((c, k) => {
         const r = c.on && c.item && resolve(c.item);
-        if (r) jobs.push({ t, k, r });
+        if (r && r.snd.kind !== 'kit') jobs.push({ t, k, r });
       });
     let done = 0,
       extra = 0;
@@ -548,7 +572,7 @@ function poolsOpen(gid, after) {
       el(
         'div',
         { class: 'grp ftRoles', role: 'tablist' },
-        ...ROLES.map(r =>
+        ...ROLES.filter(r => r !== 'drums').map(r =>
           el(
             'button',
             {

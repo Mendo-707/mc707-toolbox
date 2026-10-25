@@ -138,7 +138,8 @@ export async function writeThese(what, quiet = false) {
             ' could not go in (no drum note for its lane, past the end, or two of the same note in one step)'
         );
       const tn = toneOf(c),
-        snd = WO.tones && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
+        /* kits stay as they are: the MC-707 keeps each key's drum instrument whatever is sent */
+        snd = WO.tones && tn && tn.kind !== 'kit' && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
       if (snd) {
         ui.set(head + ' · tone ' + tn.name, (n + 0.9) / N);
         /* the track plays its clips' sounds (Sound Source CLIP), set first so the clip, selected again
