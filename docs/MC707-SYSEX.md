@@ -138,8 +138,11 @@ Replies, as seen on an MC-707: the step settings answer with **3 bytes** (`01 01
 then empty. So read this area accepting short replies.
 
 The Toolbox reads clips (Your MC-707 clips › READ NOTES, into My patterns) and writes a pattern into an
-empty clip (the pattern editor's → MC-707 clip): the step settings, then all 7 fields of every step in
-the clip's length, then a read-back to check.
+clip (the pattern editor's → MC-707 clip, or a whole song from the Song menu): the step settings, then
+all 7 fields of every step in the clip's length (all 128 when replacing notes), then a read-back to
+check. Up to 8 bars go in 1/16 steps; 9-16 bars in 1/8 steps, with a 16th that falls half way through a
+step kept as start `50`. Writes are paced and playback is held until they finish: starting the clip
+sequencer during a write crashed an MC-707 (it recovered after a restart).
 
 ## Checking a device
 

@@ -107,7 +107,7 @@ test('Clip write: a clip that holds notes is left alone', async () => {
   assert.deepEqual(errors, []);
 });
 
-test('Clip write: drum lanes become drum notes; over 8 bars is refused', async () => {
+test('Clip write: drum lanes become drum notes; over 16 bars is refused', async () => {
   const { page, errors } = await openApp();
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
   await seed(page, 0, 3, 16);
@@ -121,9 +121,9 @@ test('Clip write: drum lanes become drum notes; over 8 bars is refused', async (
     kick,
     'lane 0 written as the kick note'
   );
-  const long = { name: 'Long', type: 'drum', bars: 16, notes: [] };
+  const long = { name: 'Long', type: 'drum', bars: 32, notes: [] };
   await page.evaluate(([p]) => window.__app.seq.write(p, 0, 3), [long]);
-  await toastHas(page, 'up to 8 bars');
+  await toastHas(page, 'up to 16 bars');
   assert.deepEqual(errors, []);
 });
 
@@ -254,5 +254,46 @@ test('Clip write: while writing, a panel shows it, playback stops and cannot sta
   await page.keyboard.press('Space');
   await page.waitForFunction(() => window.__app.TR.playing);
   await page.keyboard.press('Space');
+  assert.deepEqual(errors, []);
+});
+
+test('Clip write: a 16-bar pattern goes in 1/8 steps, 16ths kept as half-step starts', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  await seed(page, 6, 0, 16);
+  const p = {
+    name: 'Long line',
+    type: 'tone',
+    bars: 16,
+    notes: [
+      { s: 0, l: 1, n: 60, v: 100 },
+      { s: 1, l: 1, n: 62, v: 100 },
+      { s: 128, l: 8, n: 67, v: 90 },
+      { s: 255, l: 1, n: 72, v: 80 }
+    ]
+  };
+  await page.evaluate(([p]) => window.__app.seq.write(p, 6, 0), [p]);
+  await toastHas(page, 'Wrote 4 notes to track 7 clip 1, read back and checked');
+  const [pa, s0, s127] = await page.evaluate(() => [
+    window.__app.seq.paramAddr(6, 0),
+    window.__app.seq.stepAddr(6, 0, 0),
+    window.__app.seq.stepAddr(6, 0, 127)
+  ]);
+  assert.deepEqual(
+    [await byte(page, pa), await byte(page, pa + 1), await byte(page, pa + 2)],
+    [0, 8, 0],
+    '128 steps of 1/8'
+  );
+  /* step 1 holds C4 at 0 and D4 half way (start 50 = 32 32) */
+  assert.deepEqual(
+    [
+      await byte(page, s0 + 0x12),
+      await byte(page, s0 + 0x13),
+      await byte(page, s0 + 0x42),
+      await byte(page, s0 + 0x43)
+    ],
+    [3, 14, 3, 2]
+  );
+  assert.deepEqual([await byte(page, s127 + 0x40), await byte(page, s127 + 0x41)], [3, 2], 'the last 16th');
   assert.deepEqual(errors, []);
 });

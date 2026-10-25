@@ -51824,8 +51824,8 @@ body.popFrameless .mxTop input {
   }
   var MAX_STEPS = 128;
   function encodePattern(p, type) {
-    const steps = Math.round(p.bars * 16);
-    if (steps > MAX_STEPS) return { error: "An MC-707 clip holds up to 8 bars of 16ths; this pattern is " + p.bars };
+    const size = p.bars * 16 <= MAX_STEPS ? 1 : 0, k2 = STEP_SIZES[size], steps = Math.round(p.bars * 16 / k2);
+    if (steps > MAX_STEPS) return { error: "An MC-707 clip holds up to 16 bars; this pattern is " + p.bars };
     const slots = Array.from({ length: steps }, () => []);
     let skipped = 0;
     const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
@@ -51835,14 +51835,15 @@ body.popFrameless .mxTop input {
         skipped++;
         continue;
       }
-      let at2 = Math.floor(x.s + 1e-6), start = Math.round((x.s - at2) * 100);
+      const pos = x.s / k2;
+      let at2 = Math.floor(pos + 1e-6), start = Math.round((pos - at2) * 100);
       if (start >= 100) at2++, start = 0;
       if (at2 < 0 || at2 >= steps) {
         skipped++;
         continue;
       }
       const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
-      let left = Math.max(1, Math.round((x.l || 0.8) * 100)), first = true, prev = null;
+      let left = Math.max(1, Math.round((x.l || 0.8) / k2 * 100)), first = true, prev = null;
       while (left > 0 && at2 < steps) {
         const room = 100 - start, tie = left > room;
         const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: 0 };
@@ -51862,7 +51863,7 @@ body.popFrameless .mxTop input {
       }
       if (prev && prev.end >= 100) prev.end = 99;
     }
-    return { steps, slots, skipped };
+    return { steps, size, slots, skipped };
   }
   var nib = (v) => [(v & 255) >> 4 & 15, v & 15];
   function stepWrites(slots) {
@@ -51896,7 +51897,7 @@ body.popFrameless .mxTop input {
         why: "Clip " + (k2 + 1) + " already has notes. Tick Replace the notes to write over them"
       };
     const replaced = before.notes.length > 0;
-    zxWrite(paramAddr(t, k2), [1, enc.steps >> 4 & 15, enc.steps & 15]);
+    zxWrite(paramAddr(t, k2), [enc.size, enc.steps >> 4 & 15, enc.steps & 15]);
     if (o.name && before.nameLen) zxWrite(clipAddr(t, k2), nameBytes(p.name, before.nameLen));
     const count = o.replace ? MAX_STEPS : enc.steps;
     for (let s = 0; s < count; s++) {
@@ -51910,7 +51911,7 @@ body.popFrameless .mxTop input {
     await zxFlush();
     const want = joinNotes(enc.slots);
     const after = await readClip(t, k2);
-    const checked = after.ok && after.params.steps === enc.steps && sig3(after.notes) === sig3(want);
+    const checked = after.ok && after.params.steps === enc.steps && after.params.size === enc.size && sig3(after.notes) === sig3(want);
     return { ok: true, notes: want.length, skipped: enc.skipped, checked, replaced };
   }
   var wbusy = false;
@@ -52010,7 +52011,7 @@ body.popFrameless .mxTop input {
         el(
           "p",
           { class: "hint", style: "line-height:1.45" },
-          "Experimental. The app reads the clip first, and leaves one that holds notes alone unless you tick Replace. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the " + DEVS[DEV].name + "; use a project you can lose while trying this."
+          "Experimental. The app reads the clip first, and leaves one that holds notes alone unless you tick Replace. Up to 8 bars go in 1/16 steps, up to 16 in 1/8 steps. Nothing is kept until you save the project on the " + DEVS[DEV].name + "; use a project you can lose while trying this."
         ),
         el("div", { style: "display:flex;gap:8px;margin:12px 0" }, trk, clip),
         el("div", { style: "display:flex;flex-direction:column;gap:6px;margin-bottom:12px" }, repl, named),
@@ -52064,7 +52065,7 @@ body.popFrameless .mxTop input {
       let k2 = starts[t] || 0;
       const items = [];
       for (const p of seen.values()) {
-        const skip = p.bars * 16 > MAX_STEPS ? "longer than 8 bars" : k2 > 15 ? "no clip left on this track" : "";
+        const skip = p.bars * 8 > MAX_STEPS ? "longer than 16 bars" : k2 > 15 ? "no clip left on this track" : "";
         items.push({ k: skip ? -1 : k2, p, label: p.name, ...skip ? { skip } : {} });
         if (!skip) k2++;
       }
@@ -52142,7 +52143,7 @@ body.popFrameless .mxTop input {
         el(
           "p",
           { class: "hint", style: "line-height:1.45" },
-          "Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each, in 1/16 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the " + DEVS[DEV].name + "."
+          "Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each go in 1/16 steps, up to 16 in 1/8 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the " + DEVS[DEV].name + "."
         ),
         body,
         el("div", { style: "display:flex;flex-direction:column;gap:6px;margin:12px 0" }, repl, named),

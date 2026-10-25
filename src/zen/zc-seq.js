@@ -284,16 +284,21 @@ function keepReads(m) {
 }
 
 /* ---- writing ---- */
-/** The most steps a clip holds (8 bars of 16ths). */
+/** The most steps a clip holds (8 bars of 16ths, or 16 bars of 8ths). */
 export const MAX_STEPS = 128;
 /**
- * A pattern as clip steps of 1/16: the step slots the MC-707 keeps (lowest slots first, each pitch once
- * per step, long notes tied across steps). Drum lanes become notes through the song's drum map.
- * @returns {{steps:number, slots:{note,vel,start,end,sub}[][], skipped:number} | {error:string}}
+ * A pattern as clip steps, 1/16 up to 8 bars and 1/8 up to 16: the step slots the MC-707 keeps (lowest
+ * slots first, each pitch once per step, long notes tied across steps). Drum lanes become notes through
+ * the song's drum map. In 1/8 steps two notes of one pitch in the same step cannot both go in.
+ * @returns {{steps:number, size:number, slots:{note,vel,start,end,sub}[][], skipped:number} | {error:string}}
  */
 export function encodePattern(p, type) {
-  const steps = Math.round(p.bars * 16);
-  if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 8 bars of 16ths; this pattern is ' + p.bars };
+  /* up to 8 bars in 1/16 steps; 9-16 bars in 1/8 steps, a note's place inside its step kept by its
+     start (50 = the second 16th); longer does not fit a clip */
+  const size = p.bars * 16 <= MAX_STEPS ? 1 : 0,
+    k = STEP_SIZES[size],
+    steps = Math.round((p.bars * 16) / k);
+  if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 16 bars; this pattern is ' + p.bars };
   const slots = Array.from({ length: steps }, () => []);
   let skipped = 0;
   const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
@@ -303,15 +308,16 @@ export function encodePattern(p, type) {
       skipped++;
       continue;
     }
-    let at = Math.floor(x.s + 1e-6),
-      start = Math.round((x.s - at) * 100);
+    const pos = x.s / k;
+    let at = Math.floor(pos + 1e-6),
+      start = Math.round((pos - at) * 100);
     if (start >= 100) (at++, (start = 0));
     if (at < 0 || at >= steps) {
       skipped++;
       continue;
     }
     const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
-    let left = Math.max(1, Math.round((x.l || 0.8) * 100)),
+    let left = Math.max(1, Math.round(((x.l || 0.8) / k) * 100)),
       first = true,
       prev = null;
     while (left > 0 && at < steps) {
@@ -336,7 +342,7 @@ export function encodePattern(p, type) {
     /* a note running past the clip's end stops on its last step */
     if (prev && prev.end >= 100) prev.end = 99;
   }
-  return { steps, slots, skipped };
+  return { steps, size, slots, skipped };
 }
 const nib = v => [((v & 0xff) >> 4) & 15, v & 15];
 /** The 7 writes (offset, 16 bytes) that set one step's slots; empty slots as the MC-707 keeps them. */
@@ -385,7 +391,7 @@ export async function writeClip(t, k, p, o = {}) {
       why: 'Clip ' + (k + 1) + ' already has notes. Tick Replace the notes to write over them'
     };
   const replaced = before.notes.length > 0;
-  zxWrite(paramAddr(t, k), [1, (enc.steps >> 4) & 15, enc.steps & 15]);
+  zxWrite(paramAddr(t, k), [enc.size, (enc.steps >> 4) & 15, enc.steps & 15]);
   if (o.name && before.nameLen) zxWrite(clipAddr(t, k), nameBytes(p.name, before.nameLen));
   /* every step a replaced clip may have used, so none of its notes stays behind */
   const count = o.replace ? MAX_STEPS : enc.steps;
@@ -401,7 +407,8 @@ export async function writeClip(t, k, p, o = {}) {
   await zxFlush();
   const want = joinNotes(enc.slots);
   const after = await readClip(t, k);
-  const checked = after.ok && after.params.steps === enc.steps && sig(after.notes) === sig(want);
+  const checked =
+    after.ok && after.params.steps === enc.steps && after.params.size === enc.size && sig(after.notes) === sig(want);
   return { ok: true, notes: want.length, skipped: enc.skipped, checked, replaced };
 }
 
@@ -513,7 +520,7 @@ export function clipWriteAsk(p, t) {
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
-        'Experimental. The app reads the clip first, and leaves one that holds notes alone unless you tick Replace. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the ' +
+        'Experimental. The app reads the clip first, and leaves one that holds notes alone unless you tick Replace. Up to 8 bars go in 1/16 steps, up to 16 in 1/8 steps. Nothing is kept until you save the project on the ' +
           DEVS[DEV].name +
           '; use a project you can lose while trying this.'
       ),
@@ -585,7 +592,7 @@ export function songPlan(starts = {}) {
     let k = starts[t] || 0;
     const items = [];
     for (const p of seen.values()) {
-      const skip = p.bars * 16 > MAX_STEPS ? 'longer than 8 bars' : k > 15 ? 'no clip left on this track' : '';
+      const skip = p.bars * 8 > MAX_STEPS ? 'longer than 16 bars' : k > 15 ? 'no clip left on this track' : '';
       items.push({ k: skip ? -1 : k, p, label: p.name, ...(skip ? { skip } : {}) });
       if (!skip) k++;
     }
@@ -666,7 +673,7 @@ export function songToClipsOpen() {
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
-        'Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each, in 1/16 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the ' +
+        'Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each go in 1/16 steps, up to 16 in 1/8 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the ' +
           DEVS[DEV].name +
           '.'
       ),
