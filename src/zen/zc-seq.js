@@ -182,7 +182,8 @@ async function showWhy(why, t, k) {
 export async function readClip(t, k, onStep) {
   if (!(await zxConnect()))
     return { ok: false, why: 'The MC-707 is not connected (or MIDI with SysEx is not allowed)' };
-  const params = decodeParams(await read(paramAddr(t, k), 4, 600));
+  /* the step settings answer with 3 bytes (seen on an MC-707: 01 01 00 = 16 steps of 1/16) */
+  const params = decodeParams(await read(paramAddr(t, k), 3, 600));
   if (!params) return { ok: false, why: 'The MC-707 did not answer for that clip' };
   const nm = await read(clipAddr(t, k), 16, 400);
   const name = nm ? String.fromCharCode(...nm.map(c => (c >= 32 && c < 127 ? c : 32))).trim() : '';

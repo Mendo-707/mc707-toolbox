@@ -39929,6 +39929,10 @@ body.popFrameless .mxTop input {
       }
       w.from = a;
     }
+    if (w.loose) {
+      clearTimeout(w.idle);
+      w.idle = setTimeout(w.done, 60);
+    }
     ZX.model = d[6];
     ZX.modelFor = DEV + ":" + (ZX.out && ZX.out.name);
     w.buf.push(...data);
@@ -39945,6 +39949,7 @@ body.popFrameless .mxTop input {
         stray: 0,
         done: () => {
           clearTimeout(t);
+          clearTimeout(w.idle);
           ZX.wait = null;
           res({ buf: w.buf, stray: w.stray });
         }
@@ -39968,7 +39973,7 @@ body.popFrameless .mxTop input {
         const r = await askRq(msg, l, n, ms, loose);
         if (!r.buf.length && !r.stray) continue;
         await pause(SETTLE);
-        return r.buf.length === n ? r.buf : null;
+        return r.buf.length === n || loose && r.buf.length ? r.buf : null;
       }
       return void 0;
     });
@@ -52719,7 +52724,7 @@ body.popFrameless .mxTop input {
   async function readClip(t, k2, onStep) {
     if (!await zxConnect())
       return { ok: false, why: "The MC-707 is not connected (or MIDI with SysEx is not allowed)" };
-    const params = decodeParams(await read2(paramAddr(t, k2), 4, 600));
+    const params = decodeParams(await read2(paramAddr(t, k2), 3, 600));
     if (!params) return { ok: false, why: "The MC-707 did not answer for that clip" };
     const nm = await read2(clipAddr(t, k2), 16, 400);
     const name = nm ? String.fromCharCode(...nm.map((c) => c >= 32 && c < 127 ? c : 32)).trim() : "";

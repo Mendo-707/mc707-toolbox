@@ -14,7 +14,8 @@ async function seedClip(page, t, k, size, steps) {
         mem = window.__zcMem;
       const put = (l, bytes) => bytes.forEach((b, i) => mem.set(l + i, b));
       const nib = v => [((v & 0xff) >> 4) & 15, v & 15];
-      put(S.paramAddr(t, k), [size, (steps.length >> 4) & 15, steps.length & 15, 0]);
+      /* 3 bytes, as the MC-707 answers */
+      put(S.paramAddr(t, k), [size, (steps.length >> 4) & 15, steps.length & 15]);
       put(S.clipAddr(t, k), [...'MY CLIP'].map(c => c.charCodeAt(0)).concat(Array(9).fill(32)));
       steps.forEach((slots, s) => {
         const a = S.stepAddr(t, k, s),

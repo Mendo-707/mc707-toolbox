@@ -196,6 +196,12 @@ function onIn(e) {
     }
     w.from = a;
   }
+  /* a loose read takes a reply shorter than asked for (the clip step settings are 3 bytes; some steps
+     answer for half their slots): once the packets stop coming, it is done */
+  if (w.loose) {
+    clearTimeout(w.idle);
+    w.idle = setTimeout(w.done, 60);
+  }
   ZX.model = d[6];
   ZX.modelFor = DEV + ':' + (ZX.out && ZX.out.name);
   w.buf.push(...data);
@@ -213,6 +219,7 @@ function askRq(msg, l, n, ms, loose) {
       stray: 0,
       done: () => {
         clearTimeout(t);
+        clearTimeout(w.idle);
         ZX.wait = null;
         res({ buf: w.buf, stray: w.stray });
       }
@@ -249,7 +256,7 @@ const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
  * After a reply it waits a moment, so a late packet cannot be taken as the answer to the next request
  * (partials 1 and 2, and 3 and 4, answer with the same address).
  * With loose, the first reply counts whatever address it carries (for areas whose replies are not
- * mapped yet).
+ * mapped yet), and a shorter reply than asked for is returned as it came.
  * @returns {Promise<number[]|null|undefined>}
  */
 export function zxRead(l, n, ms = 450, loose = false) {
@@ -264,7 +271,7 @@ export function zxRead(l, n, ms = 450, loose = false) {
       const r = await askRq(msg, l, n, ms, loose);
       if (!r.buf.length && !r.stray) continue;
       await pause(SETTLE);
-      return r.buf.length === n ? r.buf : null;
+      return r.buf.length === n || (loose && r.buf.length) ? r.buf : null;
     }
     return undefined;
   });
