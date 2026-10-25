@@ -29600,8 +29600,17 @@ body[data-mode='scene'] #scene {
       (a, b) => a.s - b.s || a.n - b.n
     );
   }
+  var GRIDS = [1, 5, 0, 4];
+  function stepSize(p) {
+    const on3 = (k2) => p.notes.every((x) => Math.abs(x.s / k2 - Math.round(x.s / k2)) < 0.02);
+    for (const size of GRIDS) {
+      const k2 = STEP_SIZES[size], steps2 = p.bars * 16 / k2;
+      if (Math.abs(steps2 - Math.round(steps2)) < 1e-6 && steps2 <= MAX_STEPS && on3(k2)) return size;
+    }
+    return p.bars * 16 <= MAX_STEPS ? 1 : 0;
+  }
   function encodePattern(p, type) {
-    const size = p.bars * 16 <= MAX_STEPS ? 1 : 0, k2 = STEP_SIZES[size], steps2 = Math.round(p.bars * 16 / k2);
+    const size = stepSize(p), k2 = STEP_SIZES[size], steps2 = Math.round(p.bars * 16 / k2);
     if (steps2 > MAX_STEPS) return { error: "An MC-707 clip holds up to 16 bars; this pattern is " + p.bars };
     const slots = Array.from({ length: steps2 }, () => []);
     let skipped = 0;
@@ -29692,7 +29701,11 @@ body[data-mode='scene'] #scene {
     }
     await zxFlush();
     const want = joinNotes(enc.slots);
-    const after = await readClip(t, k2);
+    let after = await readClip(t, k2);
+    for (let i = 0; i < 2 && !after.ok && /did not/.test(after.why); i++) {
+      await pause3(1e3);
+      after = await readClip(t, k2);
+    }
     const checked2 = after.ok && after.params.steps === enc.steps && after.params.size === enc.size && sig(after.notes) === sig(want);
     return {
       ok: true,

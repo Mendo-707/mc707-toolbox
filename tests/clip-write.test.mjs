@@ -334,3 +334,30 @@ test('Clip write: a roll becomes one note with a sub step, a grace note a flam, 
   assert.equal(r.notes, 11, 'the pattern itself is not changed');
   assert.deepEqual(errors, []);
 });
+
+test('Clip write: a pattern in 16th triplets is written in 1/16T steps, every note on a step', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const notes = [];
+    /* 4 bars of a 16th-triplet arp that repeats a pitch two triplets apart (which 1/16 steps cannot hold) */
+    for (let i = 0; i < 96; i++)
+      if (i % 4 !== 3) notes.push({ s: (i * 2) / 3, l: 0.6, n: [60, 67, 67, 72][i % 4], v: 90 });
+    const e = window.__app.seq.encode({ name: 'Arp', type: 'tone', bars: 4, notes }, 'tone');
+    const all = e.slots.flat();
+    return {
+      size: e.size,
+      steps: e.steps,
+      skipped: e.skipped,
+      n: all.length,
+      off: all.filter(c => c.start).length,
+      want: notes.length
+    };
+  });
+  assert.deepEqual(
+    [r.size, r.steps, r.skipped, r.off],
+    [5, 96, 0, 0],
+    '1/16T, 96 steps, nothing dropped or off the grid'
+  );
+  assert.equal(r.n, r.want);
+  assert.deepEqual(errors, []);
+});

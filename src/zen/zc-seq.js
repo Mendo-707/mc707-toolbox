@@ -363,10 +363,24 @@ function ratchets(notes, k) {
     (a, b) => a.s - b.s || a.n - b.n
   );
 }
+/* step sizes to try, in order: a pattern whose notes all sit on one of these grids is written in it, so
+   triplets (an arp in 16th triplets, say) land exactly on steps instead of off them */
+const GRIDS = [1, 5, 0, 4];
+/** The clip step size for pattern p: the first grid every note starts on that fits 128 steps, else 1/16
+    up to 8 bars and 1/8 up to 16. */
+export function stepSize(p) {
+  const on = k => p.notes.every(x => Math.abs(x.s / k - Math.round(x.s / k)) < 0.02);
+  for (const size of GRIDS) {
+    const k = STEP_SIZES[size],
+      steps = (p.bars * 16) / k;
+    if (Math.abs(steps - Math.round(steps)) < 1e-6 && steps <= MAX_STEPS && on(k)) return size;
+  }
+  return p.bars * 16 <= MAX_STEPS ? 1 : 0;
+}
 export function encodePattern(p, type) {
-  /* up to 8 bars in 1/16 steps; 9-16 bars in 1/8 steps, a note's place off the step kept by its start
-     (-50 = the 16th before a step); longer does not fit a clip */
-  const size = p.bars * 16 <= MAX_STEPS ? 1 : 0,
+  /* the grid the notes sit on (see stepSize), else up to 8 bars in 1/16 steps and 9-16 bars in 1/8, a
+     note's place off the step kept by its start (-50 = half a step early); longer does not fit a clip */
+  const size = stepSize(p),
     k = STEP_SIZES[size],
     steps = Math.round((p.bars * 16) / k);
   if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 16 bars; this pattern is ' + p.bars };
@@ -483,7 +497,12 @@ export async function writeClip(t, k, p, o = {}) {
   }
   await zxFlush();
   const want = joinNotes(enc.slots);
-  const after = await readClip(t, k);
+  /* the MC-707 can take a moment after a long write before it answers again */
+  let after = await readClip(t, k);
+  for (let i = 0; i < 2 && !after.ok && /did not/.test(after.why); i++) {
+    await pause(1000);
+    after = await readClip(t, k);
+  }
   const checked =
     after.ok && after.params.steps === enc.steps && after.params.size === enc.size && sig(after.notes) === sig(want);
   return {
