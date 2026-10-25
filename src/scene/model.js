@@ -17,6 +17,8 @@ export const SC = {
   /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
   edit: false,
   big: false,
+  /* the scenes as last sent to the MC-707 (JSON), to say when they changed since */
+  sent: '',
   /* the MC-707 clips shown under the track names */
   clipsOn: true,
   /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */

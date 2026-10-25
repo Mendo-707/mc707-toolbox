@@ -11,10 +11,12 @@ import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { sameCell, scnClips } from '../core/scene-model.js';
 import { TR, sceneRowAt, startScenes, stopAll } from '../services/transport.js';
 import { SC, addRow, rows, setBars, setName, toneOf } from './model.js';
-import { cellMenu, choosePattern, rowMenu, sceneKey } from './menus.js';
+import { cellMenu, choosePattern, rowMenu, sceneKey, trackMenu } from './menus.js';
+import { showMenu } from '../ui/menu.js';
 import { sceneLabel } from './names.js';
 import { scenesFromSong } from './convert.js';
 import { sceneTop } from './top.js';
+import { sceneGuideOpen } from './guide.js';
 import { clipPads, clipsSummary } from './clips-bar.js';
 import { dock, editCell, trackColumn, undock } from './dock.js';
 
@@ -100,7 +102,12 @@ function head(clipsUsed, map) {
     ...tracks().map(t =>
       el(
         'div',
-        { class: 'scnTrk', style: '--tc:' + TRACK_COLORS[t] },
+        {
+          class: 'scnTrk',
+          style: '--tc:' + TRACK_COLORS[t],
+          title: 'Right-click for this track: edit it, fill it, where its clips start, clear it',
+          oncontextmenu: e => (e.preventDefault(), trackMenu(t, e.clientX, e.clientY, editCell))
+        },
         el('b', {}, devNum(t) + ' · ' + S.tracks[t].name),
         el(
           'span',
@@ -162,6 +169,7 @@ function row(r, i, clip) {
     class: 'scnName',
     value: r.name,
     'aria-label': 'Scene name',
+    title: 'A name for you (the MC-707 does not keep scene names)',
     maxlength: 20,
     onchange: e => setName(i, e.target.value)
   });
@@ -180,8 +188,19 @@ function row(r, i, clip) {
     { class: 'scnRow' + (SC.row === i ? ' cur' : '') },
     el(
       'div',
-      { class: 'scnLabel' },
-      el('span', { class: 'scnNo', title: 'MC-707 scene' }, sceneLabel(i)),
+      {
+        class: 'scnLabel',
+        oncontextmenu: e => {
+          if (e.target.tagName === 'INPUT') return;
+          e.preventDefault();
+          rowMenu(i, e.clientX, e.clientY, scenePlay);
+        }
+      },
+      el(
+        'span',
+        { class: 'scnNo', title: 'The MC-707 scene this row goes into (as Call Scene TYPE2 numbers them: bank-scene)' },
+        sceneLabel(i)
+      ),
       name,
       el('label', { class: 'scnLen' }, bars, ' bars'),
       el(
@@ -227,7 +246,7 @@ function drawGrid(wrap) {
       over.length
         ? el('b', { class: 'warn' }, 'Too many different cells: ' + over.join(', ') + ' (16 at most). ')
         : null,
-      'Click a cell to edit its notes (an empty one to choose its pattern); right-click for its menu. Each track’s different cells become its MC-707 clips, in the order they first play. The last scene stays playing.'
+      'Click a cell to edit its notes and sound (an empty one to choose its pattern). Right-click a cell, a scene, a track name or a clip pad for more. Arrows move, Enter chooses, Delete clears, Space plays. Each track’s different cells become its MC-707 clips, in the order they first play; the last scene stays playing.'
     )
   );
   wrap.scrollTop = top;
@@ -266,13 +285,28 @@ export function sceneRender() {
           'div',
           { class: 'grp' },
           el('button', { type: 'button', class: 'btn on', onclick: () => addRow(null) }, '+ Add the first scene'),
-          el('button', { type: 'button', class: 'btn', onclick: scenesFromSong }, 'Make scenes from the song')
+          el('button', { type: 'button', class: 'btn', onclick: scenesFromSong }, 'Make scenes from the song'),
+          el('button', { type: 'button', class: 'btn', onclick: sceneGuideOpen }, '? How it plays on the MC-707')
         )
       )
     );
     return;
   }
-  const grid = el('div', { class: 'scnWrap' });
+  const grid = el('div', {
+    class: 'scnWrap',
+    oncontextmenu: e => {
+      if (e.target !== grid && !e.target.classList.contains('scnGrid')) return;
+      e.preventDefault();
+      showMenu(e.clientX, e.clientY, [
+        { label: 'Add a scene at the end', action: () => addRow(rows().length - 1) },
+        { label: 'Make scenes from the song…', action: scenesFromSong },
+        {
+          label: SC.clipsOn ? 'Hide the MC-707 clips' : 'Show the MC-707 clips',
+          action: () => ((SC.clipsOn = !SC.clipsOn), SC.draw())
+        }
+      ]);
+    }
+  });
   let col = null;
   const d = dock(() => (col ? col.replaceWith((col = trackColumn(SC.t))) : drawGrid(grid)));
   const body = el('div', { class: 'scnBody' + (d ? ' editing' : '') + (d && SC.big ? ' wide' : '') });

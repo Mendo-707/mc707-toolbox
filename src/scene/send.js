@@ -1,7 +1,7 @@
-// Scene Mode's Send to MC-707: each track's different cells go into its clips from clip 1 (notes, and
-// the tone when the cell has one, with the track set to play its clips' sounds), then the scenes: which
-// clip each track plays, and each scene's LENGTH so the scene chain plays them in order. Shows what it
-// will write first, then what went where.
+// Scene Mode's Send to MC-707: each track's different cells go into its clips from its first clip (notes,
+// and the tone when the cell has one, with the track set to play its clips' sounds), the project tempo,
+// then the scenes: which clip each track plays, and each scene's LENGTH so the scene chain plays them in
+// order. Shows what it will write first, then what went where and what to do next on the MC-707.
 //
 // Reads: S, DEV.
 import { $, el, toast } from '../core/dom.js';
@@ -11,12 +11,13 @@ import { scnClips } from '../core/scene-model.js';
 import { askDlg } from '../ui/dialogs.js';
 import { writeClip, writeSession } from '../zen/zc-seq.js';
 import { sceneName, writeScenes } from '../zen/zc-scenes.js';
-import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
+import { lin, slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
 import { sendSound, soundFrom } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
 import { SC, firstScene, rows, toneOf } from './model.js';
 import { sceneLabel } from './names.js';
 import { CK, forgetCheck } from './clips-bar.js';
+import { markSent, sceneGuideOpen } from './guide.js';
 
 const pause = ms => new Promise(r => setTimeout(r, ms));
 /** The pattern a cell's clip gets (a transposed copy, named for it, when it has a transpose). */
@@ -54,7 +55,8 @@ export function scenesSendOpen() {
     el('label', { class: 'cwOpt' }, el('input', { type: 'checkbox', checked: on }), ' ' + text);
   const repl = tick('Write over clips that already hold notes', true),
     tones = tick('Send the tones', true),
-    named = tick('Name each clip after its pattern', true);
+    named = tick('Name each clip after its pattern', true),
+    tempo = tick('Set the MC-707’s tempo to ' + S.bpm + ' BPM', true);
   const byTrack = DEVS[DEV].tracks
     .map(t => {
       const its = plan.items.filter(x => x.t === t);
@@ -115,7 +117,7 @@ export function scenesSendOpen() {
       plan.over.some(Boolean)
         ? el('p', { class: 'hint warn' }, 'Some tracks have more than 16 different cells; those past 16 play nothing.')
         : null,
-      el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin:12px 0' }, repl, tones, named),
+      el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin:12px 0' }, repl, tones, named, tempo),
       el(
         'div',
         { style: 'display:flex;gap:8px;justify-content:flex-end' },
@@ -130,7 +132,8 @@ export function scenesSendOpen() {
               scenesSend({
                 replace: repl.firstChild.checked,
                 tones: tones.firstChild.checked,
-                name: named.firstChild.checked
+                name: named.firstChild.checked,
+                tempo: tempo.firstChild.checked
               });
             }
           },
@@ -145,7 +148,7 @@ export function scenesSendOpen() {
 
 /**
  * Write the scenes to the MC-707.
- * @param {{replace?:boolean, tones?:boolean, name?:boolean}} o
+ * @param {{replace?:boolean, tones?:boolean, name?:boolean, tempo?:boolean}} o
  */
 export async function scenesSend(o = {}) {
   if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
@@ -190,33 +193,41 @@ export async function scenesSend(o = {}) {
     if (o.tones !== false)
       for (const t of new Set(plan.items.filter(x => toneOf(x.cell)).map(x => x.t))) zxWrite(trackSetAddr(t) + 4, [1]);
     await zxFlush();
+    /* the project tempo: 10 00 00 10, four half-bytes of BPM × 100 (seen on an MC-707: 03 02 00 00 = 128.00) */
+    if (o.tempo !== false) {
+      const v = Math.round(S.bpm * 100);
+      zxWrite(lin(0x10000010), [(v >> 12) & 15, (v >> 8) & 15, (v >> 4) & 15, v & 15]);
+    }
     ui.set('Writing ' + plan.scenes.length + ' scenes', (N - 1) / N);
     sc = await writeScenes(plan.scenes, f);
   });
   if (ran === null) return;
   forgetCheck();
+  if (!stopped && sc && sc.ok) markSent();
   SC.draw();
   const last = f + plan.scenes.length - 1;
-  await askDlg({
-    title: stopped ? 'Stopped part-way' : 'Sent the scenes to the MC-707',
+  const ok = !stopped && sc && sc.ok;
+  const next = await askDlg({
+    title: stopped ? 'Stopped part-way' : ok ? 'Sent: now on the MC-707' : 'Sent the clips; the scenes need a look',
     text:
       (stopped
         ? 'The scenes were not written.\n'
-        : !sc || !sc.ok
+        : !ok
           ? 'Scenes not written: ' + ((sc && sc.why) || 'stopped') + '.\n'
           : 'Scenes ' +
             sceneName(f) +
             ' to ' +
             sceneName(last) +
             ' written' +
-            (sc.checked ? ', read back and checked' : ' (the read-back did not match: check them on the MC-707)') +
-            '. Turn CHAIN on in the SCENE CHAIN screen, then play from scene ' +
+            (sc.checked ? ', read back and checked.' : ' (the read-back did not match: check them on the MC-707).') +
+            '\n\nOn the MC-707:\n1. SCENE CHAIN screen (MUTE, then SHIFT + a step button): C1 CHAIN to ON.\n2. Call up scene ' +
             sceneName(f) +
-            '.\n') +
-      (bad ? bad + ' clips need a look (see below). ' : '') +
-      'Save the project on the MC-707 to keep it.\n\n' +
+            ' and press PLAY.\n3. Save the project on the MC-707, or it is gone when you load another.\n') +
+      (bad ? '\n' + bad + ' clips need a look (see below).' : '') +
+      '\n\n' +
       lines.join('\n'),
-    ok: 'OK',
+    ok: ok ? 'Show every step' : 'OK',
     cancel: 'Close'
   });
+  if (ok && next) sceneGuideOpen();
 }

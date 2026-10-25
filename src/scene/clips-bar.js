@@ -9,7 +9,9 @@ import { el, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { scnStart } from '../core/scene-model.js';
-import { clipHasNotes } from '../zen/zc-seq.js';
+import { clipHasNotes, clipNotesToMine } from '../zen/zc-seq.js';
+import { showMenu } from '../ui/menu.js';
+import { hooks } from '../core/hooks.js';
 import { SC, setStart } from './model.js';
 
 /* t:k → {notes, name} for the clips checked, or {err}; and the check under way */
@@ -42,7 +44,8 @@ export function clipPads(t, map) {
         {
           class:
             'scnPad' + (it ? ' use' : '') + (r && r.notes ? ' busy' : '') + (r && !r.err && !r.notes ? ' free' : ''),
-          title: why
+          title: why + '. Right-click for more',
+          oncontextmenu: e => (e.preventDefault(), e.stopPropagation(), padMenu(t, k, e.clientX, e.clientY))
         },
         String(k + 1)
       )
@@ -60,6 +63,15 @@ export function clipPads(t, map) {
   return el('div', { class: 'scnClips' }, pads, sel);
 }
 
+/* a pad's menu: start the track's clips here, read the clip's notes, or edit its sound on the MC-707 */
+function padMenu(t, k, x, y) {
+  showMenu(x, y, [
+    { label: 'Start this track’s clips here', checked: scnStart(S.scn, t) === k, action: () => setStart(t, k) },
+    '-',
+    { label: 'Read its notes into My patterns', action: () => clipNotesToMine(t, k) },
+    { label: 'Edit its sound in the ZenCore editor', action: () => hooks.zenOpen(t, k) }
+  ]);
+}
 /** The corner: how many clips the scenes need, and Check the MC-707. */
 export function clipsSummary(map) {
   const n = DEVS[DEV].tracks.map(t => used(map, t).length),

@@ -29,6 +29,7 @@ import { sceneToggle } from '../scene/grid.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
 import { scenesSendOpen } from '../scene/send.js';
+import { sceneGuideOpen } from '../scene/guide.js';
 import {
   exitApp,
   projChooseFolder,
@@ -124,7 +125,7 @@ function initMenubar() {
         ['Mixer…', () => songMixerOpen()],
         ['Send patterns to MC-707 clips…', () => songToClipsOpen()],
         ['Send song to MC-707 scenes…', () => songToClipsOpen(true)],
-        ['Find MC-707 scene data (read-only)…', () => sceneFinderOpen()],
+        ['Arrange it in Scene Mode', () => (setMode('scene'), scenesFromSong())],
         0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]
@@ -141,8 +142,9 @@ function initMenubar() {
         ['Lay the scenes out in Song Mode', () => scenesToSong()],
         0,
         ['Send to MC-707…', () => scenesSendOpen()],
-        ['Your MC-707 clips…', () => clipMapOpen()],
-        ['Find MC-707 scene data (read-only)…', () => sceneFinderOpen()]
+        ['Play it on the MC-707: the steps…', () => sceneGuideOpen()],
+        0,
+        ['Your MC-707 clips…', () => clipMapOpen()]
       ]
     ],
     [
@@ -231,7 +233,8 @@ function initMenubar() {
           () => [
             { label: 'MC-707 SysEx guide', action: () => openLink(LINKS.sysex) },
             { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
-            { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) }
+            { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) },
+            { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() }
           ]
         ],
         [
@@ -367,11 +370,11 @@ function initMenubar() {
   });
   const tabs = el('div', { class: 'mtabs', role: 'tablist', 'aria-label': 'Mode' });
   [
-    ['song', 'Song Mode'],
-    ['scene', 'Scene Mode'],
-    ['live', 'Live Mode'],
-    ['synth', 'Synth Mode']
-  ].forEach(([m, l]) =>
+    ['song', 'Song Mode', 'Arrange a song on a timeline; the app plays the MC-707 note for note'],
+    ['scene', 'Scene Mode', 'Arrange in MC-707 scenes and send them, so the MC-707 plays the song by itself'],
+    ['live', 'Live Mode', 'Perform a looping set from 16 pads'],
+    ['synth', 'Synth Mode', 'The MC-707 as an 8-track synth for your DAW']
+  ].forEach(([m, l, tip]) =>
     tabs.append(
       el(
         'button',
@@ -380,6 +383,7 @@ function initMenubar() {
           role: 'tab',
           'data-mode': m,
           'aria-selected': String(document.body.dataset.mode === m),
+          title: tip,
           onclick: () => setMode(m)
         },
         l

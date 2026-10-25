@@ -84,6 +84,7 @@ reading the MC-707 with the read-only scan pages and changing one setting at a t
 | What | Address | Status |
 |---|---|---|
 | Project name (16 characters), then level at +`14` | `10 00 00 00` | Confirmed |
+| Project tempo: BPM × 100 as four half-bytes (`03 02 00 00` = 128.00) | `10 00 00 10` | Read on an MC-707 at 128 BPM; written by Scene Mode |
 | Track settings, track *t* (0-7): bank select at +0/+1, Sound Source at +4 (0 TRACK, 1 CLIP) | `10 00 08 00` + *t* × `00 00 02 00` | Confirmed |
 | Track EQs, track *t* | `10 00 18 00` + *t* × `00 00 01 00` | Very likely |
 | Three project MFX | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |

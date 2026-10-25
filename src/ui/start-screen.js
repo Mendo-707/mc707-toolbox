@@ -97,8 +97,11 @@ export function startOpen(last = true) {
           fresh(true)
         ),
         card('✦', 'Song wizard', 'Pick a style and get a full arrangement to start from.', () => openWiz()),
-        card('▦', 'Scene Mode', 'Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.', () =>
-          setMode('scene')
+        card(
+          '▦',
+          'Scene Mode',
+          'Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.',
+          () => setMode('scene')
         ),
         card('◉', 'Live Mode', 'Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.', () =>
           setMode('live')

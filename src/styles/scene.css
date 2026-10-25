@@ -55,7 +55,7 @@ body[data-mode='scene'] #scene {
   width: 64px;
 }
 .scnTop .pos {
-  min-width: 170px;
+  min-width: 150px;
   font-variant-numeric: tabular-nums;
 }
 .scnNote {
@@ -70,7 +70,7 @@ body[data-mode='scene'] #scene {
 }
 .scnGrid {
   display: grid;
-  grid-template-columns: 300px repeat(var(--n), minmax(118px, 1fr));
+  grid-template-columns: 270px repeat(var(--n), minmax(112px, 1fr));
   gap: 6px;
   min-width: max-content;
 }
@@ -489,7 +489,7 @@ body[data-mode='scene'] #scene {
 }
 .scnPads {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 2px;
 }
 .scnPad {
@@ -540,4 +540,40 @@ body[data-mode='scene'] #scene {
 .scnClipSum .warn {
   color: var(--hot);
   font-weight: 600;
+}
+.scnSent {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  color: var(--mute);
+  white-space: nowrap;
+}
+.scnSent.sent {
+  color: #2e9e52;
+  border-color: #2e9e52;
+}
+.scnSent.changed {
+  color: var(--hot);
+  border-color: var(--hot);
+}
+.sgBox {
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  line-height: 1.5;
+}
+.sgPart h4 {
+  margin: 12px 0 4px;
+}
+.sgPart ol {
+  margin: 0;
+  padding-left: 22px;
+}
+.sgPart li {
+  margin: 3px 0;
+}
+.scnConn {
+  color: var(--hot);
+  border-color: var(--hot);
 }

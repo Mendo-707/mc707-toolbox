@@ -6597,7 +6597,7 @@ body[data-mode='scene'] #scene {
   width: 64px;
 }
 .scnTop .pos {
-  min-width: 170px;
+  min-width: 150px;
   font-variant-numeric: tabular-nums;
 }
 .scnNote {
@@ -6612,7 +6612,7 @@ body[data-mode='scene'] #scene {
 }
 .scnGrid {
   display: grid;
-  grid-template-columns: 300px repeat(var(--n), minmax(118px, 1fr));
+  grid-template-columns: 270px repeat(var(--n), minmax(112px, 1fr));
   gap: 6px;
   min-width: max-content;
 }
@@ -7031,7 +7031,7 @@ body[data-mode='scene'] #scene {
 }
 .scnPads {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 2px;
 }
 .scnPad {
@@ -7082,6 +7082,42 @@ body[data-mode='scene'] #scene {
 .scnClipSum .warn {
   color: var(--hot);
   font-weight: 600;
+}
+.scnSent {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  color: var(--mute);
+  white-space: nowrap;
+}
+.scnSent.sent {
+  color: #2e9e52;
+  border-color: #2e9e52;
+}
+.scnSent.changed {
+  color: var(--hot);
+  border-color: var(--hot);
+}
+.sgBox {
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  line-height: 1.5;
+}
+.sgPart h4 {
+  margin: 12px 0 4px;
+}
+.sgPart ol {
+  margin: 0;
+  padding-left: 22px;
+}
+.sgPart li {
+  margin: 3px 0;
+}
+.scnConn {
+  color: var(--hot);
+  border-color: var(--hot);
 }
 </style>
     <style>
@@ -29024,6 +29060,8 @@ body[data-mode='scene'] #scene {
     /* the cell open in the track editor (row and t), the editor expanded, the last click inside it */
     edit: false,
     big: false,
+    /* the scenes as last sent to the MC-707 (JSON), to say when they changed since */
+    sent: "",
     /* the MC-707 clips shown under the track names */
     clipsOn: true,
     /* the editor's tab: 'notes' (the pattern) or 'sound' (the ZenCore editor) */
@@ -30748,6 +30786,7 @@ body[data-mode='scene'] #scene {
     const shift = (d) => ({ label: (d > 0 ? "+" : "") + d, action: () => setTranspose(i, t, tr + d) });
     showMenu(x, y, [
       c ? { label: "Edit the notes", action: () => onEdit(i, t) } : null,
+      c ? { label: "Edit the sound (ZenCore)", action: () => (SC.tab = "sound", onEdit(i, t)) } : null,
       { label: c ? "Change pattern…" : "Choose a pattern…", action: () => choosePattern(i, t) },
       c ? { label: toneOf(c) ? "Change tone…" : "Choose a tone…", action: () => chooseTone(i, t) } : null,
       c && toneOf(c) ? { label: "Keep the clip’s own sound", action: () => setTone(i, t, null) } : null,
@@ -30769,12 +30808,43 @@ body[data-mode='scene'] #scene {
   function paste(i, t) {
     if (!pasteCell(i, t, SC.copy)) toast("That cell is for the other kind of track (drums and tones don’t mix)");
   }
+  function trackMenu(t, x, y, onEdit) {
+    const rs = rows(), has2 = rs.findIndex((r) => r.cells[t]);
+    showMenu(x, y, [
+      {
+        label: "Edit this track",
+        disabled: has2 < 0,
+        action: () => (SC.big = true, SC.tab = "notes", onEdit(Math.max(0, has2), t))
+      },
+      { label: "Choose a pattern for every empty scene…", disabled: !rs.length, action: () => fillTrack(t) },
+      "-",
+      {
+        label: "Its clips start from",
+        sub: Array.from({ length: 16 }, (_, k2) => ({
+          label: "clip " + (k2 + 1),
+          checked: scnStart(S.scn, t) === k2,
+          action: () => setStart(t, k2)
+        }))
+      },
+      "-",
+      {
+        label: "Clear it in every scene",
+        danger: true,
+        disabled: has2 < 0,
+        action: () => edit((q) => q.rows.forEach((r) => r.cells[t] = null))
+      }
+    ]);
+  }
+  function fillTrack(t) {
+    pickPattern(t, "every empty scene", (pid) => edit((q) => q.rows.forEach((r) => r.cells[t] || (r.cells[t] = { pat: pid }))));
+  }
   function rowMenu(i, x, y, play2) {
     const n = rows().length;
     showMenu(x, y, [
       { label: "Play from this scene", action: () => play2(i, false) },
       { label: "Loop this scene", action: () => play2(i, true) },
       "-",
+      { label: "Add a scene before it", action: () => addRow(i - 1) },
       { label: "Add a scene after it", action: () => addRow(i) },
       { label: "Copy it below", action: () => addRow(i, true) },
       { label: "Move up", disabled: i === 0, action: () => moveRow(i, -1) },
@@ -36562,7 +36632,8 @@ body[data-mode='scene'] #scene {
           "span",
           {
             class: "scnPad" + (it ? " use" : "") + (r && r.notes ? " busy" : "") + (r && !r.err && !r.notes ? " free" : ""),
-            title: why
+            title: why + ". Right-click for more",
+            oncontextmenu: (e) => (e.preventDefault(), e.stopPropagation(), padMenu(t, k2, e.clientX, e.clientY))
           },
           String(k2 + 1)
         )
@@ -36578,6 +36649,14 @@ body[data-mode='scene'] #scene {
       ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2, selected: k2 === first }, "from clip " + (k2 + 1)))
     );
     return el("div", { class: "scnClips" }, pads, sel);
+  }
+  function padMenu(t, k2, x, y) {
+    showMenu(x, y, [
+      { label: "Start this track’s clips here", checked: scnStart(S.scn, t) === k2, action: () => setStart(t, k2) },
+      "-",
+      { label: "Read its notes into My patterns", action: () => clipNotesToMine(t, k2) },
+      { label: "Edit its sound in the ZenCore editor", action: () => hooks.zenOpen(t, k2) }
+    ]);
   }
   function clipsSummary(map) {
     const n = DEVS[DEV].tracks.map((t) => used(map, t).length), busy3 = map.items.filter((x) => (CK.res[x.t + ":" + x.k] || {}).notes).length;
@@ -36630,6 +36709,77 @@ body[data-mode='scene'] #scene {
     CK.line = "";
   }
 
+  // src/scene/guide.js
+  function markSent() {
+    SC.sent = JSON.stringify(S.scn || null);
+  }
+  var sentState = () => !SC.sent ? "none" : SC.sent === JSON.stringify(S.scn || null) ? "sent" : "changed";
+  var STEPS = () => {
+    const f = sceneName(firstScene());
+    return [
+      [
+        "In the app",
+        [
+          "Arrange the scenes: a pattern per track in each scene, and how many bars each scene plays. The last scene keeps playing.",
+          "▦ Clips shows the MC-707 clips each track will use. Keep those clips free, or pick another starting clip; Check the MC-707 rings any that already hold notes.",
+          "Send to MC-707 writes the clips (notes and tones), then the scenes and their lengths. Use a project you can lose the first time."
+        ]
+      ],
+      [
+        "On the MC-707",
+        [
+          "System 1.71 or later: the scene chain came in 1.71 (Roland’s support page has the update).",
+          "Set Call Scene to TYPE2 (UTILITY › SET › CTRL tab), so scenes are numbered as here: SCENE buttons pick the bank, step buttons the scene.",
+          "Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON.",
+          "Call up scene " + f + " and press PLAY. Each scene plays its bars, then the next comes in.",
+          "Save the project on the MC-707 to keep it. Then unplug the computer: the MC-707 plays the song by itself."
+        ]
+      ]
+    ];
+  };
+  function sceneGuideOpen() {
+    if ($("#sgOv")) return;
+    const close = () => ov.remove();
+    const st = sentState();
+    const ov = el(
+      "div",
+      {
+        id: "sgOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Play it on the MC-707",
+        onclick: (e) => e.target === ov && close(),
+        onkeydown: (e) => e.key === "Escape" && (e.stopPropagation(), close())
+      },
+      el(
+        "div",
+        { class: "ptBox sgBox" },
+        el("h3", {}, "Play your scenes on the MC-707, without the computer"),
+        el(
+          "p",
+          { class: "hint" },
+          rows().length + " scene" + (rows().length === 1 ? "" : "s") + ", from scene " + sceneName(firstScene()) + ". " + (st === "sent" ? "Sent, and not changed since." : st === "changed" ? "Changed since you sent them: send again." : "Not sent yet.")
+        ),
+        ...STEPS().map(
+          ([h, list2]) => el("div", { class: "sgPart" }, el("h4", {}, h), el("ol", {}, ...list2.map((x) => el("li", {}, x))))
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "Without sending, Play here plays the scenes on the MC-707 over MIDI, the app keeping time. The MC-707 needs the computer for that."
+        ),
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn on", onclick: close }, "Got it")
+        )
+      )
+    );
+    document.body.append(ov);
+    ov.querySelector("button").focus();
+  }
+
   // src/scene/send.js
   var pause5 = (ms) => new Promise((r) => setTimeout(r, ms));
   function clipPattern(c) {
@@ -36656,7 +36806,7 @@ body[data-mode='scene'] #scene {
     const plan2 = sendPlan(), f = firstScene(), n = rows().length;
     if (f + n > 128) return toast("That is more scenes than the MC-707 has: start from an earlier scene");
     const tick = (text, on2) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on2 }), " " + text);
-    const repl = tick("Write over clips that already hold notes", true), tones = tick("Send the tones", true), named = tick("Name each clip after its pattern", true);
+    const repl = tick("Write over clips that already hold notes", true), tones = tick("Send the tones", true), named = tick("Name each clip after its pattern", true), tempo = tick("Set the MC-707’s tempo to " + S.bpm + " BPM", true);
     const byTrack = DEVS[DEV].tracks.map((t) => {
       const its = plan2.items.filter((x) => x.t === t);
       if (!its.length) return null;
@@ -36697,7 +36847,7 @@ body[data-mode='scene'] #scene {
         ),
         el("div", { class: "scRows" }, ...byTrack),
         plan2.over.some(Boolean) ? el("p", { class: "hint warn" }, "Some tracks have more than 16 different cells; those past 16 play nothing.") : null,
-        el("div", { style: "display:flex;flex-direction:column;gap:6px;margin:12px 0" }, repl, tones, named),
+        el("div", { style: "display:flex;flex-direction:column;gap:6px;margin:12px 0" }, repl, tones, named, tempo),
         el(
           "div",
           { style: "display:flex;gap:8px;justify-content:flex-end" },
@@ -36712,7 +36862,8 @@ body[data-mode='scene'] #scene {
                 scenesSend({
                   replace: repl.firstChild.checked,
                   tones: tones.firstChild.checked,
-                  name: named.firstChild.checked
+                  name: named.firstChild.checked,
+                  tempo: tempo.firstChild.checked
                 });
               }
             },
@@ -36755,19 +36906,26 @@ body[data-mode='scene'] #scene {
       if (o.tones !== false)
         for (const t of new Set(plan2.items.filter((x) => toneOf(x.cell)).map((x) => x.t))) zxWrite(trackSetAddr(t) + 4, [1]);
       await zxFlush();
+      if (o.tempo !== false) {
+        const v = Math.round(S.bpm * 100);
+        zxWrite(lin(268435472), [v >> 12 & 15, v >> 8 & 15, v >> 4 & 15, v & 15]);
+      }
       ui.set("Writing " + plan2.scenes.length + " scenes", (N - 1) / N);
       sc = await writeScenes(plan2.scenes, f);
     });
     if (ran === null) return;
     forgetCheck();
+    if (!stopped && sc && sc.ok) markSent();
     SC.draw();
     const last3 = f + plan2.scenes.length - 1;
-    await askDlg({
-      title: stopped ? "Stopped part-way" : "Sent the scenes to the MC-707",
-      text: (stopped ? "The scenes were not written.\n" : !sc || !sc.ok ? "Scenes not written: " + (sc && sc.why || "stopped") + ".\n" : "Scenes " + sceneName(f) + " to " + sceneName(last3) + " written" + (sc.checked ? ", read back and checked" : " (the read-back did not match: check them on the MC-707)") + ". Turn CHAIN on in the SCENE CHAIN screen, then play from scene " + sceneName(f) + ".\n") + (bad ? bad + " clips need a look (see below). " : "") + "Save the project on the MC-707 to keep it.\n\n" + lines.join("\n"),
-      ok: "OK",
+    const ok = !stopped && sc && sc.ok;
+    const next = await askDlg({
+      title: stopped ? "Stopped part-way" : ok ? "Sent: now on the MC-707" : "Sent the clips; the scenes need a look",
+      text: (stopped ? "The scenes were not written.\n" : !ok ? "Scenes not written: " + (sc && sc.why || "stopped") + ".\n" : "Scenes " + sceneName(f) + " to " + sceneName(last3) + " written" + (sc.checked ? ", read back and checked." : " (the read-back did not match: check them on the MC-707).") + "\n\nOn the MC-707:\n1. SCENE CHAIN screen (MUTE, then SHIFT + a step button): C1 CHAIN to ON.\n2. Call up scene " + sceneName(f) + " and press PLAY.\n3. Save the project on the MC-707, or it is gone when you load another.\n") + (bad ? "\n" + bad + " clips need a look (see below)." : "") + "\n\n" + lines.join("\n"),
+      ok: ok ? "Show every step" : "OK",
       cancel: "Close"
     });
+    if (ok && next) sceneGuideOpen();
   }
 
   // src/scene/top.js
@@ -36778,6 +36936,7 @@ body[data-mode='scene'] #scene {
       max: 240,
       value: S.bpm,
       "aria-label": "Tempo (BPM)",
+      title: "The song’s tempo. Send to MC-707 sets the MC-707’s tempo to it too",
       onchange: (e) => {
         S.bpm = Math.max(40, Math.min(240, Math.round(+e.target.value) || S.bpm));
         e.target.value = S.bpm;
@@ -36837,7 +36996,7 @@ body[data-mode='scene'] #scene {
             title: "Make scenes from the song in Song Mode: a scene wherever its patterns change",
             onclick: scenesFromSong
           },
-          "From the song"
+          "From song"
         ),
         el(
           "button",
@@ -36847,7 +37006,7 @@ body[data-mode='scene'] #scene {
             title: "Lay the scenes out in Song Mode, one after another",
             onclick: scenesToSong
           },
-          "To Song Mode"
+          "To song"
         )
       ),
       el(
@@ -36864,7 +37023,7 @@ body[data-mode='scene'] #scene {
           },
           "▦ Clips"
         ),
-        el("label", { title: "Where the scenes go on the MC-707" }, "MC-707 scenes ", first),
+        el("label", { title: "Where the scenes go on the MC-707" }, "Scenes ", first),
         el(
           "button",
           {
@@ -36874,8 +37033,40 @@ body[data-mode='scene'] #scene {
             onclick: scenesSendOpen
           },
           "Send to MC-707…"
+        ),
+        sentPill(),
+        MIDI.out ? null : el(
+          "button",
+          {
+            type: "button",
+            class: "btn scnConn",
+            title: "No MC-707 connected. Play still works here with the app’s own preview sound; Send to MC-707 and the clip check need it connected over USB. Click to connect.",
+            onclick: () => connectMidi().then(() => SC.draw())
+          },
+          "⚠ Not connected"
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn",
+            title: "What to do, in the app and on the MC-707, so it plays the scenes with no computer",
+            onclick: sceneGuideOpen
+          },
+          "? How it plays"
         )
       )
+    );
+  }
+  function sentPill() {
+    const st = sentState();
+    return el(
+      "span",
+      {
+        class: "scnSent " + st,
+        title: st === "sent" ? "The MC-707 has these scenes (until you load another project there without saving)" : st === "changed" ? "You changed the scenes after sending: send again for the MC-707 to play them" : "Not sent from this session. Play here works anyway (the app plays the MC-707 over MIDI)"
+      },
+      st === "sent" ? "✓ Sent" : st === "changed" ? "● Changed since sent" : "Not sent"
     );
   }
 
@@ -37194,7 +37385,12 @@ body[data-mode='scene'] #scene {
       ...tracks().map(
         (t) => el(
           "div",
-          { class: "scnTrk", style: "--tc:" + TRACK_COLORS[t] },
+          {
+            class: "scnTrk",
+            style: "--tc:" + TRACK_COLORS[t],
+            title: "Right-click for this track: edit it, fill it, where its clips start, clear it",
+            oncontextmenu: (e) => (e.preventDefault(), trackMenu(t, e.clientX, e.clientY, editCell))
+          },
           el("b", {}, devNum(t) + " · " + S.tracks[t].name),
           el(
             "span",
@@ -37244,6 +37440,7 @@ body[data-mode='scene'] #scene {
       class: "scnName",
       value: r.name,
       "aria-label": "Scene name",
+      title: "A name for you (the MC-707 does not keep scene names)",
       maxlength: 20,
       onchange: (e) => setName(i, e.target.value)
     });
@@ -37262,8 +37459,19 @@ body[data-mode='scene'] #scene {
       { class: "scnRow" + (SC.row === i ? " cur" : "") },
       el(
         "div",
-        { class: "scnLabel" },
-        el("span", { class: "scnNo", title: "MC-707 scene" }, sceneLabel(i)),
+        {
+          class: "scnLabel",
+          oncontextmenu: (e) => {
+            if (e.target.tagName === "INPUT") return;
+            e.preventDefault();
+            rowMenu(i, e.clientX, e.clientY, scenePlay);
+          }
+        },
+        el(
+          "span",
+          { class: "scnNo", title: "The MC-707 scene this row goes into (as Call Scene TYPE2 numbers them: bank-scene)" },
+          sceneLabel(i)
+        ),
         name,
         el("label", { class: "scnLen" }, bars2, " bars"),
         el(
@@ -37302,7 +37510,7 @@ body[data-mode='scene'] #scene {
         "p",
         { class: "hint scnFoot" },
         over.length ? el("b", { class: "warn" }, "Too many different cells: " + over.join(", ") + " (16 at most). ") : null,
-        "Click a cell to edit its notes (an empty one to choose its pattern); right-click for its menu. Each track’s different cells become its MC-707 clips, in the order they first play. The last scene stays playing."
+        "Click a cell to edit its notes and sound (an empty one to choose its pattern). Right-click a cell, a scene, a track name or a clip pad for more. Arrows move, Enter chooses, Delete clears, Space plays. Each track’s different cells become its MC-707 clips, in the order they first play; the last scene stays playing."
       )
     );
     wrap.scrollTop = top;
@@ -37340,13 +37548,28 @@ body[data-mode='scene'] #scene {
             "div",
             { class: "grp" },
             el("button", { type: "button", class: "btn on", onclick: () => addRow(null) }, "+ Add the first scene"),
-            el("button", { type: "button", class: "btn", onclick: scenesFromSong }, "Make scenes from the song")
+            el("button", { type: "button", class: "btn", onclick: scenesFromSong }, "Make scenes from the song"),
+            el("button", { type: "button", class: "btn", onclick: sceneGuideOpen }, "? How it plays on the MC-707")
           )
         )
       );
       return;
     }
-    const grid = el("div", { class: "scnWrap" });
+    const grid = el("div", {
+      class: "scnWrap",
+      oncontextmenu: (e) => {
+        if (e.target !== grid && !e.target.classList.contains("scnGrid")) return;
+        e.preventDefault();
+        showMenu(e.clientX, e.clientY, [
+          { label: "Add a scene at the end", action: () => addRow(rows().length - 1) },
+          { label: "Make scenes from the song…", action: scenesFromSong },
+          {
+            label: SC.clipsOn ? "Hide the MC-707 clips" : "Show the MC-707 clips",
+            action: () => (SC.clipsOn = !SC.clipsOn, SC.draw())
+          }
+        ]);
+      }
+    });
     let col = null;
     const d = dock(() => col ? col.replaceWith(col = trackColumn(SC.t)) : drawGrid(grid));
     const body = el("div", { class: "scnBody" + (d ? " editing" : "") + (d && SC.big ? " wide" : "") });
@@ -54793,7 +55016,7 @@ body[data-mode='scene'] #scene {
           ["Mixer…", () => songMixerOpen()],
           ["Send patterns to MC-707 clips…", () => songToClipsOpen()],
           ["Send song to MC-707 scenes…", () => songToClipsOpen(true)],
-          ["Find MC-707 scene data (read-only)…", () => sceneFinderOpen()],
+          ["Arrange it in Scene Mode", () => (setMode("scene"), scenesFromSong())],
           0,
           ["Record audio", go("#bAudRec"), "R"],
           ["Audio inputs and settings…", go("#bAudSet")]
@@ -54810,8 +55033,9 @@ body[data-mode='scene'] #scene {
           ["Lay the scenes out in Song Mode", () => scenesToSong()],
           0,
           ["Send to MC-707…", () => scenesSendOpen()],
-          ["Your MC-707 clips…", () => clipMapOpen()],
-          ["Find MC-707 scene data (read-only)…", () => sceneFinderOpen()]
+          ["Play it on the MC-707: the steps…", () => sceneGuideOpen()],
+          0,
+          ["Your MC-707 clips…", () => clipMapOpen()]
         ]
       ],
       [
@@ -54900,7 +55124,8 @@ body[data-mode='scene'] #scene {
             () => [
               { label: "MC-707 SysEx guide", action: () => openLink(LINKS.sysex) },
               { label: "ZenCore parameter reference", action: () => openLink(LINKS.params) },
-              { label: "Diagnostics page", action: () => openLink(LINKS.diagnostics) }
+              { label: "Diagnostics page", action: () => openLink(LINKS.diagnostics) },
+              { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() }
             ]
           ],
           [
@@ -55036,12 +55261,12 @@ body[data-mode='scene'] #scene {
     });
     const tabs = el("div", { class: "mtabs", role: "tablist", "aria-label": "Mode" });
     [
-      ["song", "Song Mode"],
-      ["scene", "Scene Mode"],
-      ["live", "Live Mode"],
-      ["synth", "Synth Mode"]
+      ["song", "Song Mode", "Arrange a song on a timeline; the app plays the MC-707 note for note"],
+      ["scene", "Scene Mode", "Arrange in MC-707 scenes and send them, so the MC-707 plays the song by itself"],
+      ["live", "Live Mode", "Perform a looping set from 16 pads"],
+      ["synth", "Synth Mode", "The MC-707 as an 8-track synth for your DAW"]
     ].forEach(
-      ([m, l]) => tabs.append(
+      ([m, l, tip]) => tabs.append(
         el(
           "button",
           {
@@ -55049,6 +55274,7 @@ body[data-mode='scene'] #scene {
             role: "tab",
             "data-mode": m,
             "aria-selected": String(document.body.dataset.mode === m),
+            title: tip,
             onclick: () => setMode(m)
           },
           l

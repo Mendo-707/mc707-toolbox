@@ -9,17 +9,20 @@ import { ED, S, pushUndo, redo, undo } from '../core/state.js';
 import { curPat, touch } from '../core/song-model.js';
 import { drawEditor } from '../song/editor.js';
 import { showMenu } from '../ui/menu.js';
+import { scnStart } from '../core/scene-model.js';
 import { hooks } from '../core/hooks.js';
 import { openView } from '../song/lib-view.js';
 import {
   SC,
   addRow,
   clearCell,
+  edit,
   moveRow,
   pasteCell,
   removeRow,
   rows,
   setPattern,
+  setStart,
   setTone,
   setTranspose,
   toneOf
@@ -57,6 +60,7 @@ export function cellMenu(i, t, x, y, onEdit) {
   const shift = d => ({ label: (d > 0 ? '+' : '') + d, action: () => setTranspose(i, t, tr + d) });
   showMenu(x, y, [
     c ? { label: 'Edit the notes', action: () => onEdit(i, t) } : null,
+    c ? { label: 'Edit the sound (ZenCore)', action: () => ((SC.tab = 'sound'), onEdit(i, t)) } : null,
     { label: c ? 'Change pattern…' : 'Choose a pattern…', action: () => choosePattern(i, t) },
     c ? { label: toneOf(c) ? 'Change tone…' : 'Choose a tone…', action: () => chooseTone(i, t) } : null,
     c && toneOf(c) ? { label: 'Keep the clip’s own sound', action: () => setTone(i, t, null) } : null,
@@ -82,6 +86,39 @@ export function cellMenu(i, t, x, y, onEdit) {
 function paste(i, t) {
   if (!pasteCell(i, t, SC.copy)) toast('That cell is for the other kind of track (drums and tones don’t mix)');
 }
+/** A track's menu (its name in the grid head) at x, y. onEdit opens a cell in the track editor. */
+export function trackMenu(t, x, y, onEdit) {
+  const rs = rows(),
+    has = rs.findIndex(r => r.cells[t]);
+  showMenu(x, y, [
+    {
+      label: 'Edit this track',
+      disabled: has < 0,
+      action: () => ((SC.big = true), (SC.tab = 'notes'), onEdit(Math.max(0, has), t))
+    },
+    { label: 'Choose a pattern for every empty scene…', disabled: !rs.length, action: () => fillTrack(t) },
+    '-',
+    {
+      label: 'Its clips start from',
+      sub: Array.from({ length: 16 }, (_, k) => ({
+        label: 'clip ' + (k + 1),
+        checked: scnStart(S.scn, t) === k,
+        action: () => setStart(t, k)
+      }))
+    },
+    '-',
+    {
+      label: 'Clear it in every scene',
+      danger: true,
+      disabled: has < 0,
+      action: () => edit(q => q.rows.forEach(r => (r.cells[t] = null)))
+    }
+  ]);
+}
+/* one pattern into every scene where the track is empty */
+function fillTrack(t) {
+  pickPattern(t, 'every empty scene', pid => edit(q => q.rows.forEach(r => r.cells[t] || (r.cells[t] = { pat: pid }))));
+}
 /** A scene's menu at x, y. play(i, loop) plays from it. */
 export function rowMenu(i, x, y, play) {
   const n = rows().length;
@@ -89,6 +126,7 @@ export function rowMenu(i, x, y, play) {
     { label: 'Play from this scene', action: () => play(i, false) },
     { label: 'Loop this scene', action: () => play(i, true) },
     '-',
+    { label: 'Add a scene before it', action: () => addRow(i - 1) },
     { label: 'Add a scene after it', action: () => addRow(i) },
     { label: 'Copy it below', action: () => addRow(i, true) },
     { label: 'Move up', disabled: i === 0, action: () => moveRow(i, -1) },

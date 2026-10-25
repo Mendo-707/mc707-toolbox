@@ -6,8 +6,10 @@ import { el, toast } from '../core/dom.js';
 import { S, scheduleSave } from '../core/state.js';
 import { sceneName } from '../zen/zc-scenes.js';
 import { SC, addRow, firstScene, rows, setFirst } from './model.js';
+import { MIDI, connectMidi } from '../services/midi.js';
 import { scenesSendOpen } from './send.js';
 import { scenesFromSong, scenesToSong } from './convert.js';
+import { sceneGuideOpen, sentState } from './guide.js';
 
 /** The toolbar; toggle plays or stops. */
 export function sceneTop(toggle) {
@@ -17,6 +19,7 @@ export function sceneTop(toggle) {
     max: 240,
     value: S.bpm,
     'aria-label': 'Tempo (BPM)',
+    title: 'The song’s tempo. Send to MC-707 sets the MC-707’s tempo to it too',
     onchange: e => {
       S.bpm = Math.max(40, Math.min(240, Math.round(+e.target.value) || S.bpm));
       e.target.value = S.bpm;
@@ -75,7 +78,7 @@ export function sceneTop(toggle) {
           title: 'Make scenes from the song in Song Mode: a scene wherever its patterns change',
           onclick: scenesFromSong
         },
-        'From the song'
+        'From song'
       ),
       el(
         'button',
@@ -85,7 +88,7 @@ export function sceneTop(toggle) {
           title: 'Lay the scenes out in Song Mode, one after another',
           onclick: scenesToSong
         },
-        'To Song Mode'
+        'To song'
       )
     ),
     el(
@@ -102,7 +105,7 @@ export function sceneTop(toggle) {
         },
         '▦ Clips'
       ),
-      el('label', { title: 'Where the scenes go on the MC-707' }, 'MC-707 scenes ', first),
+      el('label', { title: 'Where the scenes go on the MC-707' }, 'Scenes ', first),
       el(
         'button',
         {
@@ -112,7 +115,48 @@ export function sceneTop(toggle) {
           onclick: scenesSendOpen
         },
         'Send to MC-707…'
+      ),
+      sentPill(),
+      MIDI.out
+        ? null
+        : el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn scnConn',
+              title:
+                'No MC-707 connected. Play still works here with the app’s own preview sound; Send to MC-707 and the clip check need it connected over USB. Click to connect.',
+              onclick: () => connectMidi().then(() => SC.draw())
+            },
+            '⚠ Not connected'
+          ),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn',
+          title: 'What to do, in the app and on the MC-707, so it plays the scenes with no computer',
+          onclick: sceneGuideOpen
+        },
+        '? How it plays'
       )
     )
+  );
+}
+/* whether the MC-707 has the scenes as they are here */
+function sentPill() {
+  const st = sentState();
+  return el(
+    'span',
+    {
+      class: 'scnSent ' + st,
+      title:
+        st === 'sent'
+          ? 'The MC-707 has these scenes (until you load another project there without saving)'
+          : st === 'changed'
+            ? 'You changed the scenes after sending: send again for the MC-707 to play them'
+            : 'Not sent from this session. Play here works anyway (the app plays the MC-707 over MIDI)'
+    },
+    st === 'sent' ? '✓ Sent' : st === 'changed' ? '● Changed since sent' : 'Not sent'
   );
 }

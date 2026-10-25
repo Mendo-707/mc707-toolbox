@@ -27,6 +27,7 @@ function seedSong() {
     { id: 'c3', t: 3, start: 4, len: 4, off: 0, pat: 'p3', tr: 7 },
     { id: 'c4', t: 6, start: 4, len: 4, off: 0, pat: 'p4' }
   ];
+  S.bpm = 120;
   S.markers = [
     { bar: 0, name: 'Intro' },
     { bar: 4, name: 'Drop' }
@@ -127,10 +128,11 @@ test('Scene Mode: send writes the clips, their tones, the scenes and the chain l
   await page.evaluate(() => {
     window.__app.scene.send({ replace: true, tones: true, name: true });
   });
-  const dlg = page.locator('[role=dialog][aria-modal]', { hasText: 'Sent the scenes to the MC-707' });
+  const dlg = page.locator('[role=dialog][aria-modal]', { hasText: 'Sent: now on the MC-707' });
   await dlg.waitFor({ timeout: 60000 });
   const text = await dlg.textContent();
   assert.match(text, /Scenes 2-1 to 2-2 written, read back and checked/);
+  assert.match(text, /C1 CHAIN to ON/);
   assert.match(text, /track 7 clip 1: p4 ♪ Scene Lead/);
   assert.match(text, /track 4 clip 2: p3 \+7/);
   const mem = await page.evaluate(
@@ -143,12 +145,14 @@ test('Scene Mode: send writes the clips, their tones, the scenes and the chain l
         t7: run(TRK + 6 * 0x100 + 0x3e + 16, 2),
         len: run(LEN + 16, 2),
         src7: m.get(TRK + 6 * 0x100 + 4),
+        tempo: run((0x10 << 21) + 0x10, 4),
         src4: m.get(TRK + 3 * 0x100 + 4) ?? null
       };
     },
     [TRK, LEN]
   );
   assert.deepEqual(mem.t1, [1, 1]);
+  assert.deepEqual(mem.tempo, [2, 14, 14, 0], '120 BPM as 12000 in half-bytes');
   assert.deepEqual(mem.t4, [1, 2]);
   assert.deepEqual(mem.t7, [0, 1], 'no lead in the first scene');
   assert.deepEqual(mem.len, [4, 0], 'four bars, then the last scene stays');
@@ -311,5 +315,37 @@ test('Scene Mode: ▦ Clips shows the clips each track uses, starts a track late
   /* ▦ Clips hides them */
   await page.locator('#scene .scnTop button', { hasText: 'Clips' }).click();
   assert.equal(await page.locator('#scene .scnPads').count(), 0);
+  assert.deepEqual(errors, []);
+});
+
+test('Scene Mode: right-click menus, the steps for the MC-707, and the tempo sent with the scenes', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(seedSong);
+  await page.locator('.mtab', { hasText: 'Scene Mode' }).click();
+  await page.locator('#scene button', { hasText: 'Make scenes from the song' }).click();
+  /* a track name: its menu sets where its clips start */
+  await page.locator('#scene .scnTrk').nth(3).click({ button: 'right' });
+  await page.locator('.cmenu .cmi.sub', { hasText: 'Its clips start from' }).click();
+  await page.locator('.cmenu .subm .cmi', { hasText: 'clip 3' }).click();
+  assert.equal(await page.evaluate(() => window.__app.S.scn.start[3]), 2);
+  /* a scene: insert one before it */
+  await page
+    .locator('#scene .scnLabel')
+    .nth(1)
+    .click({ button: 'right', position: { x: 4, y: 4 } });
+  await page.locator('.cmenu .cmi', { hasText: 'Add a scene before it' }).click();
+  assert.equal(await page.locator('#scene .scnRow').count(), 3);
+  /* a pad: start the track's clips there */
+  await page.locator('#scene .scnTrk').nth(0).locator('.scnPad').nth(5).click({ button: 'right' });
+  await page.locator('.cmenu .cmi', { hasText: 'Start this track’s clips here' }).click();
+  assert.equal(await page.evaluate(() => window.__app.S.scn.start[0]), 5);
+  /* the steps for the MC-707, and the status: not sent, not connected */
+  assert.match(await page.locator('.scnTop').textContent(), /Not sent/);
+  await page.locator('.scnTop button', { hasText: 'How it plays' }).click();
+  const guide = page.locator('#sgOv');
+  await guide.waitFor();
+  assert.match(await guide.textContent(), /C1 CHAIN to ON/);
+  assert.match(await guide.textContent(), /Call Scene to TYPE2/);
+  await guide.locator('button', { hasText: 'Got it' }).click();
   assert.deepEqual(errors, []);
 });
