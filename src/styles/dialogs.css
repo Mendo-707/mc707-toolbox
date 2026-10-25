@@ -956,3 +956,88 @@
 .mpjScn b {
   width: 42px;
 }
+
+/* Fill tones (ui/fill-tones.js) */
+.ftBox {
+  max-width: 980px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.ftBox > .hint {
+  line-height: 1.45;
+}
+.ftTop,
+.ftActs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.ftActs {
+  justify-content: flex-end;
+}
+.ftTracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 8px;
+}
+.ftTrk {
+  border-left: 3px solid var(--tc);
+  background: var(--panel2);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.ftHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ftClip {
+  display: grid;
+  grid-template-columns: auto 18px 70px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+.ftClip.off select {
+  opacity: 0.55;
+}
+.ftClip select {
+  min-width: 0;
+}
+.ftRole {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ftWarn {
+  background: var(--panel2);
+  border-left: 3px solid var(--hot);
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+.ftRoles {
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.ftPool {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.ftItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--panel2);
+  border-radius: 4px;
+}
+.ftItem.off span:first-child {
+  opacity: 0.6;
+}

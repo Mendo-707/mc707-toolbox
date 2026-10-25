@@ -374,6 +374,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/controls.js` | The Song Mode toolbar and keyboard shortcuts, and redrawing everything after big changes (renderAll). |  |
 | `ui/device.js` | Switching between MC-707 and MC-101 and the one-kit drums option, which rebuild Song and Live. |  |
 | `ui/dialogs.js` | A simple ask dialog (OK / Cancel, or a text box). |  |
+| `ui/fill-tones.js` | Fill tones: give the MC-707's clips their sounds in one go. Pick a genre and every clip set up on the Your MC-707 clips screen gets a suggested tone for its job (bass, chords, pad, lead, pluck, acid, FX; a kit for drum clips when the pool has one), different ones across a track's clips. Change any of them (from the pool, a shuffle, or any sound in the library), then send them all: each goes into its MC-707 clip and the track plays its clips' own sounds (Sound Source CLIP). |  |
 | `ui/fullscreen.js` | Fullscreen (the Windows app or the browser) and keeping the screen awake while playing. | STAGE (fullscreen and wake lock) |
 | `ui/grab-pattern.js` | Record sample from the pattern editor: play one pattern on its own, through the track you choose, and record it to a WAV with the sample grabber (that track's own USB channel when Audio has per-track channels set up, otherwise the mix). |  |
 | `ui/grabber.js` | The sample grabber: record a few bars of one track or the mix to a WAV, lined up on the bar, from Song or Live Mode. | GRAB (the sample grabber) |

@@ -28,6 +28,7 @@ import { sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
 import { mpjPick } from './mpj-open.js';
+import { fillTonesOpen } from './fill-tones.js';
 import { sceneToggle } from '../scene/screen.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
@@ -171,6 +172,7 @@ function initMenubar() {
         ['Capture to Song', () => liveCapture()],
         ['Mixer…', () => liveMixerOpen()],
         ['Your MC-707 clips…', () => clipMapOpen()],
+        ['Fill tones…', () => fillTonesOpen()],
         0,
         ['Connect MC-707', go('#lvMidi')],
         ['Settings and mapping…', go('#lvPadSet')]
@@ -207,6 +209,7 @@ function initMenubar() {
         ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
         ['Your MC-707 clips…', () => clipMapOpen()],
+        ['Fill tones…', () => fillTonesOpen()],
         0,
         ['Quick setup…', go('#bSetup')],
         ['MIDI and sound…', go('#bMidi')],

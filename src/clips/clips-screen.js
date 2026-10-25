@@ -360,6 +360,15 @@ export function clipMapRender() {
       'div',
       { class: 'cmHead' },
       el('h3', {}, 'Your ' + dn + ' clips'),
+      el(
+        'button',
+        {
+          class: 'btn sm on',
+          title: 'Give every clip set up here a sound for its job, by genre, and send them to the ' + dn,
+          onclick: () => hooks.fillTones()
+        },
+        '♪ Fill tones…'
+      ),
       el('button', { class: 'btn sm', onclick: clipMapClose }, 'Done')
     ),
     el(

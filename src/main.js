@@ -172,6 +172,7 @@ import { STYLES } from './library/styles.js';
 import * as motion from './zen/zc-motion.js';
 import * as pump from './core/pump.js';
 import { mpjOpen } from './ui/mpj-open.js';
+import { fillTonesOpen } from './ui/fill-tones.js';
 import { readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
@@ -180,6 +181,7 @@ applyTheme();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
+  fillTones: fillTonesOpen,
   applyDevice,
   audRender,
   closePops,

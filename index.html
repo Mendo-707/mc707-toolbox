@@ -2057,6 +2057,91 @@ input[type='range'] {
 .mpjScn b {
   width: 42px;
 }
+
+/* Fill tones (ui/fill-tones.js) */
+.ftBox {
+  max-width: 980px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.ftBox > .hint {
+  line-height: 1.45;
+}
+.ftTop,
+.ftActs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.ftActs {
+  justify-content: flex-end;
+}
+.ftTracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 8px;
+}
+.ftTrk {
+  border-left: 3px solid var(--tc);
+  background: var(--panel2);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.ftHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ftClip {
+  display: grid;
+  grid-template-columns: auto 18px 70px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+.ftClip.off select {
+  opacity: 0.55;
+}
+.ftClip select {
+  min-width: 0;
+}
+.ftRole {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ftWarn {
+  background: var(--panel2);
+  border-left: 3px solid var(--hot);
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+.ftRoles {
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.ftPool {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.ftItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--panel2);
+  border-radius: 4px;
+}
+.ftItem.off span:first-child {
+  opacity: 0.6;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -13206,8 +13291,8 @@ body[data-mode='scene'] #scene {
       const sh = Math.round((center - m) / 12) * 12;
       return ns.map((n) => n + sh).sort((a, b) => a - b);
     };
-    const genres = [...new Set(FAC.map((f) => f.genre))];
-    for (const g of genres) {
+    const genres2 = [...new Set(FAC.map((f) => f.genre))];
+    for (const g of genres2) {
       const used = /* @__PURE__ */ new Map();
       FAC.forEach((f) => {
         if (f.genre === g && f.pool === "chords") {
@@ -14483,8 +14568,8 @@ body[data-mode='scene'] #scene {
         }
     }
     let uid = 0;
-    const genres = [...new Set(FAC.filter((f) => f.pool === "chords").map((f) => f.genre))];
-    for (const g of genres) {
+    const genres2 = [...new Set(FAC.filter((f) => f.pool === "chords").map((f) => f.genre))];
+    for (const g of genres2) {
       const cls = CLS[g] || "band";
       const keysOf2 = (sc) => [
         ...new Set(
@@ -14790,8 +14875,8 @@ body[data-mode='scene'] #scene {
         o
       )
     );
-    const genres = [...new Set(FAC.map((f) => f.genre))].filter((g) => G[g]);
-    for (const g of genres) flashFor(g, G[g], NAME[g] || g, push);
+    const genres2 = [...new Set(FAC.map((f) => f.genre))].filter((g) => G[g]);
+    for (const g of genres2) flashFor(g, G[g], NAME[g] || g, push);
   })();
   function flashFor(g, q, nm, push) {
     for (const [rid, rl, bars2, hits, pick3] of FLASH_RH) {
@@ -19446,6 +19531,15 @@ body[data-mode='scene'] #scene {
         "div",
         { class: "cmHead" },
         el("h3", {}, "Your " + dn2 + " clips"),
+        el(
+          "button",
+          {
+            class: "btn sm on",
+            title: "Give every clip set up here a sound for its job, by genre, and send them to the " + dn2,
+            onclick: () => hooks.fillTones()
+          },
+          "♪ Fill tones…"
+        ),
         el("button", { class: "btn sm", onclick: clipMapClose }, "Done")
       ),
       el(
@@ -39951,8 +40045,8 @@ body[data-mode='scene'] #scene {
       return notes;
     }
     let uid = 0;
-    const genres = [...new Set(FAC.filter((f) => f.pool === "chords").map((f) => f.genre))];
-    for (const g of genres) {
+    const genres2 = [...new Set(FAC.filter((f) => f.pool === "chords").map((f) => f.genre))];
+    for (const g of genres2) {
       const keysOf2 = (sc) => {
         const m = /* @__PURE__ */ new Map();
         FAC.forEach((f) => {
@@ -42130,13 +42224,13 @@ body[data-mode='scene'] #scene {
     list2.forEach((m) => {
       const gf = FAC.find((f) => f.gen && f.styles && f.styles.includes(m.id));
       const genre = m.genre || (gf ? gf.genre : "house");
-      const pools = {}, more2 = {};
+      const pools2 = {}, more2 = {};
       ["kit", "hats", "perc", "fill", "intro", "bass", "chords", "pad", "lead", "pluck"].forEach((pool) => {
         const all = FAC.filter((f) => f.gen && f.pool === pool && f.styles.includes(m.id)).map((f) => f.id);
-        pools[pool] = all.slice(0, 10);
+        pools2[pool] = all.slice(0, 10);
         more2[pool] = all;
       });
-      STYLES.push({ ...m, genre, pools, more: more2, ...m.genre ? { _genre: m.genre } : {} });
+      STYLES.push({ ...m, genre, pools: pools2, more: more2, ...m.genre ? { _genre: m.genre } : {} });
       SHORT[m.id] = m.name;
     });
   })();
@@ -42981,6 +43075,39 @@ body[data-mode='scene'] #scene {
     },
     punk: { chords: ["E-133 Grungeroni", "E-131 R&R Chunk"] }
   };
+  var FAM_LABEL = {
+    dnb: "Drum & bass",
+    hiphop: "Hip hop",
+    house: "House",
+    techno: "Techno",
+    garage: "UK garage",
+    bigbeat: "Big beat",
+    dubstep: "Dubstep",
+    trance: "Trance",
+    electro: "Electro",
+    funk: "Funk",
+    reggae: "Reggae",
+    latin: "Latin",
+    synth: "Synthwave and 80s",
+    pop: "Pop",
+    ambient: "Ambient",
+    rock: "Rock"
+  };
+  function toneGenres() {
+    const out2 = Object.keys(SND_G).map((id) => ({ id, label: FAM_LABEL[id] || id, group: "", roles: { ...SND_G[id] } }));
+    for (const id in SND_S) {
+      const st = STYLES.find((x) => x.id === id);
+      if (!st) continue;
+      const fam = lvGenreOf(st);
+      out2.push({
+        id,
+        label: st.name,
+        group: FAM_LABEL[fam] || fam,
+        roles: { ...SND_G[fam] || SND_G.pop, ...SND_S[id] }
+      });
+    }
+    return out2;
+  }
   function soundRecs(st) {
     const g = SND_G[lvGenreOf(st)] || SND_G.dnb, s = SND_S[st.id] || {};
     const o = {};
@@ -42988,7 +43115,7 @@ body[data-mode='scene'] #scene {
     return o;
   }
   function customRows(st, r, row) {
-    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY8 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY9 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
       row(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
@@ -42997,7 +43124,7 @@ body[data-mode='scene'] #scene {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
-      const k2 = poolOf(t) === "acid" ? "bass" : KEY8[slotOf(t)];
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY9[slotOf(t)];
       out2.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
@@ -56823,6 +56950,422 @@ body[data-mode='scene'] #scene {
     return m;
   }
 
+  // src/ui/fill-tones.js
+  var KEY8 = "mc707-tone-pools";
+  var GKEY = "mc707-fill-genre";
+  var ROLES2 = CLIP_TYPES.map((c) => c[0]);
+  var EXTRA = {
+    acid: ["C-83 SL-TB Saw 1", "D-741 Acid Bs 1", "D-686 TB Bass 1", "D-640 MC202 Bs 1"],
+    fx: []
+  };
+  var POOLS = null;
+  function pools() {
+    if (POOLS) return POOLS;
+    try {
+      POOLS = JSON.parse(localStorage.getItem(KEY8) || "{}") || {};
+    } catch (e) {
+      POOLS = {};
+    }
+    return POOLS;
+  }
+  function savePools() {
+    try {
+      localStorage.setItem(KEY8, JSON.stringify(POOLS));
+    } catch (e) {
+      toast("Could not keep the pools: the browser storage is full");
+    }
+  }
+  var genres = () => toneGenres();
+  var genreOf = (id) => genres().find((g) => g.id === id) || genres()[0];
+  function genreNow() {
+    try {
+      const g = localStorage.getItem(GKEY);
+      if (g && genres().some((x) => x.id === g)) return g;
+    } catch (e) {
+    }
+    return "house";
+  }
+  var itemName = (it) => typeof it === "string" ? it.replace(/^[A-Z]-\d+ /, "") : it.name;
+  var itemKey = (it) => typeof it === "string" ? it : "mine:" + it.kind + ":" + it.name;
+  function resolve(it) {
+    if (typeof it !== "string") return { name: it.name, snd: soundFrom({ zencore: 1, kind: it.kind, v: it.d }) };
+    const m = /^([A-Z])-(\d+) (.*)$/.exec(it);
+    const e = m ? ZS.list.find((x) => x.src === "factory" && x.bank === m[1] && x.no === +m[2]) || ZS.list.find((x) => x.src === "factory" && x.name === m[3]) : ZS.list.find((x) => x.name === it);
+    return e ? { name: e.name, snd: soundOf(e) } : null;
+  }
+  function defaults(gid, role) {
+    const g = genreOf(gid), list2 = role === "drums" ? [] : Array.isArray(g.roles[role]) ? g.roles[role] : EXTRA[role] || [];
+    const tag = g.label.toLowerCase(), fam = (g.group || "").toLowerCase();
+    const typeFor = {
+      drums: "drums",
+      bass: "bass",
+      acid: "bass",
+      chords: null,
+      pad: "pad",
+      lead: "lead",
+      pluck: "pluck",
+      fx: "fx"
+    };
+    const mine = ZS.list.filter(
+      (e) => e.src !== "factory" && (e.tags || []).some((t) => [tag, fam].includes(String(t).toLowerCase())) && (role === "drums" ? e.kind === "kit" : e.kind === "tone" && (!typeFor[role] || e.type === typeFor[role]))
+    ).map((e) => ({ name: e.name, kind: e.kind, d: e.d }));
+    return [...list2, ...mine];
+  }
+  function poolOf2(gid, role) {
+    const p = pools()[gid];
+    return p && Array.isArray(p[role]) ? p[role] : defaults(gid, role);
+  }
+  function setPool(gid, role, list2) {
+    pools();
+    POOLS[gid] = POOLS[gid] || {};
+    POOLS[gid][role] = list2;
+    savePools();
+  }
+  function resetPool(gid, role) {
+    pools();
+    if (POOLS[gid]) delete POOLS[gid][role];
+    savePools();
+  }
+  var roleAt = (t, k2) => S.tracks[t].type === "drum" ? "drums" : cmFix()[t].types[k2] === "drums" ? "pluck" : cmFix()[t].types[k2];
+  function makePlan(gid) {
+    const plan2 = {};
+    for (const t of DEVS[DEV].tracks) {
+      const n = cmFix()[t].n, used = /* @__PURE__ */ new Map();
+      plan2[t] = Array.from({ length: n }, (_, k2) => {
+        const role = roleAt(t, k2), pool = poolOf2(gid, role), ok = pool.filter(resolve);
+        const from = ok.length ? ok : pool;
+        if (!from.length) return { role, item: null, on: false };
+        const u = used.get(role) || { at: Math.floor(Math.random() * from.length), n: 0 };
+        const item = from[(u.at + u.n++) % from.length];
+        used.set(role, u);
+        return { role, item, on: !!resolve(item) };
+      });
+    }
+    return plan2;
+  }
+  async function fillTonesOpen() {
+    await soundsLoad();
+    $("#ftOv")?.remove();
+    let gid = genreNow(), plan2 = makePlan(gid);
+    const box = el("div", { class: "ptBox ftBox" });
+    const ov = el(
+      "div",
+      { id: "ftOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Fill tones" },
+      box
+    );
+    const close = () => ov.remove();
+    const hasFactory = () => ZS.list.some((e) => e.src === "factory");
+    const genreSel = (cur2, on3) => el(
+      "select",
+      { "aria-label": "Genre", onchange: (e) => on3(e.target.value) },
+      ...[...new Set(genres().map((g) => g.group))].map(
+        (grp) => grp ? el(
+          "optgroup",
+          { label: grp + " styles" },
+          ...genres().filter((g) => g.group === grp).map((g) => el("option", { value: g.id, selected: g.id === cur2 }, g.label))
+        ) : el(
+          "optgroup",
+          { label: "Genres" },
+          ...genres().filter((g) => !g.group).map((g) => el("option", { value: g.id, selected: g.id === cur2 }, g.label))
+        )
+      )
+    );
+    const draw = () => {
+      const rows2 = DEVS[DEV].tracks.map((t) => {
+        const clips = plan2[t].map((c, k2) => {
+          const pool = poolOf2(gid, c.role), r = c.item && resolve(c.item);
+          const pick3 = el(
+            "select",
+            {
+              "aria-label": "Track " + devNum(t) + " clip " + (k2 + 1) + " sound",
+              onchange: (e) => {
+                const v = e.target.value;
+                if (v === "__lib") return chooseLib(t, k2);
+                c.item = pool.find((it) => itemKey(it) === v) || c.item;
+                c.on = !!resolve(c.item);
+                draw();
+              }
+            },
+            ...c.item && !pool.some((it) => itemKey(it) === itemKey(c.item)) ? [el("option", { value: itemKey(c.item), selected: true }, itemName(c.item))] : [],
+            ...pool.map(
+              (it) => el(
+                "option",
+                { value: itemKey(it), selected: c.item && itemKey(it) === itemKey(c.item), disabled: !resolve(it) },
+                itemName(it) + (resolve(it) ? "" : " (factory tones not added)")
+              )
+            ),
+            el("option", { value: "__lib" }, "Any sound in the library…")
+          );
+          if (!c.item)
+            pick3.prepend(el("option", { value: "", selected: true }, pool.length ? "—" : "Nothing in the pool"));
+          return el(
+            "div",
+            { class: "ftClip" + (c.on ? "" : " off") },
+            el("input", {
+              type: "checkbox",
+              checked: c.on,
+              disabled: !r,
+              "aria-label": "Send clip " + (k2 + 1),
+              title: r ? "Send this one" : "Nothing to send",
+              onchange: (e) => (c.on = e.target.checked, draw())
+            }),
+            el("b", {}, String(k2 + 1)),
+            el("span", { class: "ftRole", style: "--rc:" + ctInfo(c.role)[2] }, ctInfo(c.role)[1]),
+            pick3,
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Another suggestion from the pool",
+                onclick: () => {
+                  const ok = pool.filter(resolve);
+                  if (!ok.length) return toast("Nothing in this pool can be sent yet");
+                  const others = ok.filter((it) => !c.item || itemKey(it) !== itemKey(c.item));
+                  c.item = (others.length ? others : ok)[Math.floor(Math.random() * (others.length || ok.length))];
+                  c.on = true;
+                  draw();
+                }
+              },
+              "🎲"
+            )
+          );
+        });
+        return el(
+          "section",
+          { class: "ftTrk", style: "--tc:" + TRACK_COLORS[t] },
+          el(
+            "div",
+            { class: "ftHead" },
+            el("b", {}, devNum(t) + " " + S.tracks[t].name),
+            el("span", { class: "hint" }, plan2[t].length + " clip" + (plan2[t].length === 1 ? "" : "s"))
+          ),
+          ...clips
+        );
+      });
+      const n = DEVS[DEV].tracks.reduce((a, t) => a + plan2[t].filter((c) => c.on).length, 0);
+      box.replaceChildren(
+        el("h3", {}, "Fill tones"),
+        el(
+          "p",
+          { class: "hint" },
+          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each goes into its MC-707 clip, and those tracks play their clips’ own sounds (Sound Source CLIP)."
+        ),
+        el(
+          "div",
+          { class: "ftTop" },
+          el("span", {}, "Genre "),
+          genreSel(gid, (v) => {
+            gid = v;
+            try {
+              localStorage.setItem(GKEY, v);
+            } catch (e) {
+            }
+            plan2 = makePlan(gid);
+            draw();
+          }),
+          el(
+            "button",
+            { type: "button", class: "btn sm", onclick: () => (plan2 = makePlan(gid), draw()) },
+            "🎲 Shuffle all"
+          ),
+          el(
+            "button",
+            { type: "button", class: "btn sm", onclick: () => poolsOpen(gid, () => (plan2 = makePlan(gid), draw())) },
+            "Edit the pools…"
+          )
+        ),
+        hasFactory() ? null : el(
+          "p",
+          { class: "ftWarn" },
+          "The suggestions are MC-707 factory tones: add them once from the MC-707 system update file (MC707_UPA_up.bin) to send them. ",
+          el(
+            "button",
+            { type: "button", class: "btn sm", onclick: () => factoryImport(() => (plan2 = makePlan(gid), draw())) },
+            "Add the factory tones…"
+          )
+        ),
+        el("div", { class: "ftTracks" }, ...rows2),
+        el(
+          "p",
+          { class: "hint" },
+          "Drum clips keep their kit unless the pool has one: add your own kits to a genre’s Drums pool. Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen."
+        ),
+        el(
+          "div",
+          { class: "ftActs" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Close"),
+          el(
+            "button",
+            { type: "button", class: "btn on", disabled: !n, onclick: () => send2() },
+            "Send " + n + " sound" + (n === 1 ? "" : "s") + " to the " + DEVS[DEV].name
+          )
+        )
+      );
+    };
+    const chooseLib = (t, k2) => pickTone(
+      t,
+      "Track " + devNum(t) + " clip " + (k2 + 1),
+      (tone2) => {
+        if (tone2) plan2[t][k2] = { ...plan2[t][k2], item: { name: tone2.name, kind: tone2.kind, d: tone2.d }, on: true };
+        draw();
+      },
+      plan2[t][k2].item ? itemName(plan2[t][k2].item) : ""
+    );
+    const send2 = async () => {
+      if (!await zxConnect())
+        return toast("The " + DEVS[DEV].name + " is not connected (or MIDI with SysEx is not allowed)");
+      const jobs = [];
+      for (const t of DEVS[DEV].tracks)
+        plan2[t].forEach((c, k2) => {
+          const r = c.on && c.item && resolve(c.item);
+          if (r) jobs.push({ t, k: k2, r });
+        });
+      let done2 = 0;
+      const ran = await writeSession("Filling tones", async (ui) => {
+        const tracks3 = /* @__PURE__ */ new Set();
+        for (const [i, j] of jobs.entries()) {
+          if (ui.cancelled) break;
+          ui.set(
+            "Track " + devNum(j.t) + " clip " + (j.k + 1) + ": " + j.r.name + " (" + (i + 1) + " of " + jobs.length + ")",
+            i / jobs.length
+          );
+          await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
+          const m = cmFix()[j.t];
+          m.names[j.k] = j.r.name.slice(0, 16);
+          tracks3.add(j.t);
+          done2++;
+        }
+        for (const t of tracks3) zxWrite(trackSetAddr(t) + 4, [1]);
+        await zxFlush();
+      });
+      if (ran === null) return;
+      scheduleSave();
+      close();
+      toast(
+        "Sent " + done2 + " sound" + (done2 === 1 ? "" : "s") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
+      );
+    };
+    draw();
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    document.body.append(ov);
+  }
+  function poolsOpen(gid, after) {
+    $("#fpOv")?.remove();
+    let role = "bass";
+    const box = el("div", { class: "ptBox ftBox" });
+    const ov = el(
+      "div",
+      { id: "fpOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Tone pools" },
+      box
+    );
+    const close = () => (ov.remove(), after && after());
+    const trackFor2 = (r) => DEVS[DEV].tracks.find((t) => S.tracks[t].type === "drum" === (r === "drums")) ?? DEVS[DEV].tracks[0];
+    const draw = () => {
+      const list2 = poolOf2(gid, role), edited = !!(pools()[gid] && pools()[gid][role]);
+      box.replaceChildren(
+        el("h3", {}, "Tone pools"),
+        el(
+          "p",
+          { class: "hint" },
+          "Fill tones suggests sounds from these, by genre and by each clip’s job. They start as the factory tones the song wizard suggests, plus your own sounds tagged with the genre. Add any sound, take one out, or put a pool back to the suggestions."
+        ),
+        el(
+          "div",
+          { class: "ftTop" },
+          el("span", {}, "Genre "),
+          el(
+            "select",
+            { "aria-label": "Genre", onchange: (e) => (gid = e.target.value, draw()) },
+            ...genres().map(
+              (g) => el("option", { value: g.id, selected: g.id === gid }, (g.group ? g.group + " › " : "") + g.label)
+            )
+          )
+        ),
+        el(
+          "div",
+          { class: "grp ftRoles", role: "tablist" },
+          ...ROLES2.map(
+            (r) => el(
+              "button",
+              {
+                type: "button",
+                role: "tab",
+                "aria-selected": String(r === role),
+                class: "btn sm" + (r === role ? " on" : ""),
+                onclick: () => (role = r, draw())
+              },
+              ctInfo(r)[1]
+            )
+          )
+        ),
+        el(
+          "div",
+          { class: "ftPool" },
+          ...list2.length ? list2.map(
+            (it, i) => el(
+              "div",
+              { class: "ftItem" + (resolve(it) ? "" : " off") },
+              el("span", {}, itemName(it)),
+              el(
+                "span",
+                { class: "hint" },
+                typeof it === "string" ? resolve(it) ? "factory" : "factory, not added yet" : it.kind === "kit" ? "your kit" : "your sound"
+              ),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "btn sm",
+                  title: "Take it out of the pool",
+                  onclick: () => (setPool(
+                    gid,
+                    role,
+                    list2.filter((x, j) => j !== i)
+                  ), draw())
+                },
+                "✕"
+              )
+            )
+          ) : [
+            el(
+              "p",
+              { class: "hint" },
+              role === "drums" ? "No kits yet: add your own kits here." : "Nothing in this pool yet."
+            )
+          ]
+        ),
+        el(
+          "div",
+          { class: "ftActs" },
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn sm",
+              onclick: () => pickTone(trackFor2(role), "Add to the " + ctInfo(role)[1] + " pool", (tone2) => {
+                if (!tone2) return;
+                const it = { name: tone2.name, kind: tone2.kind, d: tone2.d };
+                if (!list2.some((x) => itemKey(x) === itemKey(it))) setPool(gid, role, [...list2, it]);
+                draw();
+              })
+            },
+            "+ Add a sound…"
+          ),
+          el(
+            "button",
+            { type: "button", class: "btn sm", disabled: !edited, onclick: () => (resetPool(gid, role), draw()) },
+            "Back to the suggestions"
+          ),
+          el("button", { type: "button", class: "btn on", style: "margin-left:auto", onclick: close }, "Done")
+        )
+      );
+    };
+    draw();
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && (e.stopPropagation(), close()));
+    document.body.append(ov);
+  }
+
   // src/ui/menubar.js
   function toggleAppSound() {
     S.preview = !S.preview;
@@ -56943,6 +57486,7 @@ body[data-mode='scene'] #scene {
           ["Capture to Song", () => liveCapture()],
           ["Mixer…", () => liveMixerOpen()],
           ["Your MC-707 clips…", () => clipMapOpen()],
+          ["Fill tones…", () => fillTonesOpen()],
           0,
           ["Connect MC-707", go("#lvMidi")],
           ["Settings and mapping…", go("#lvPadSet")]
@@ -56979,6 +57523,7 @@ body[data-mode='scene'] #scene {
           ["Track setup…", () => trackSetupOpen()],
           ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
           ["Your MC-707 clips…", () => clipMapOpen()],
+          ["Fill tones…", () => fillTonesOpen()],
           0,
           ["Quick setup…", go("#bSetup")],
           ["MIDI and sound…", go("#bMidi")],
@@ -57991,6 +58536,7 @@ body[data-mode='scene'] #scene {
   // src/main.js
   applyTheme();
   Object.assign(hooks, {
+    fillTones: fillTonesOpen,
     applyDevice,
     audRender,
     closePops,
