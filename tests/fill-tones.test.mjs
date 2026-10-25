@@ -68,17 +68,15 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
       )
     );
   const p = await picks();
-  assert.equal(p.length, 8);
-  assert.deepEqual(p[0], [], 'drum tracks have no picks: kits are chosen on the MC-707');
-  assert.match(await page.locator('#ftOv .ftTrk').first().textContent(), /can’t be changed over MIDI/, 'and say why');
-  const bass = p[3];
+  assert.equal(p.length, 5, 'tone tracks only: kits are chosen on the MC-707');
+  const bass = p[0];
   assert.equal(bass.length, 3);
   const bassNames = ['House Bs', 'Round Bass', 'Acid Bs 1', 'TB Bass 1'];
   assert.ok(bassNames.includes(bass[0][1]) && bassNames.includes(bass[1][1]), bass.join());
   assert.notEqual(bass[0][1], bass[1][1], 'two different basses');
   assert.ok(['Acid Bs 1', 'TB Bass 1'].includes(bass[2][1]), 'the acid clip gets an acid bass');
-  assert.equal(p[4][0][0], 'Chords');
-  assert.equal(p[4][0][1], 'House Piano', 'the only chords sound there is');
+  assert.equal(p[1][0][0], 'Chords');
+  assert.equal(p[1][0][1], 'House Piano', 'the only chords sound there is');
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 7 sounds/);
   assert.equal(await page.locator('#ftOv .ftWarn').count(), 0, 'no factory tones warning when they are in');
   /* select none, then all, then none on track 1-3's and all again on track 4 */
@@ -86,9 +84,9 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 0 sounds/);
   await page.click('#ftOv button:has-text("Select all")');
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 7 sounds/);
-  await page.locator('#ftOv .ftTrk').nth(3).locator('button', { hasText: 'None' }).click();
+  await page.locator('#ftOv .ftTrk').nth(0).locator('button', { hasText: 'None' }).click();
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 4 sounds/);
-  await page.locator('#ftOv .ftTrk').nth(3).locator('button', { hasText: 'All' }).click();
+  await page.locator('#ftOv .ftTrk').nth(0).locator('button', { hasText: 'All' }).click();
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 7 sounds/);
   /* track 4's clip 5 holds notes on the MC-707: past the 3 set up, it gets a sound too */
   await page.evaluate(() => {

@@ -83,8 +83,8 @@ export function clipMenu(t, k, x, y, onEdit) {
     c ? { label: 'Edit the notes', action: () => onEdit(t, k, 'notes') } : null,
     c ? { label: 'Edit the sound (ZenCore)', action: () => onEdit(t, k, 'sound') } : null,
     { label: c ? 'Change pattern…' : 'Choose a pattern…', action: () => choosePattern(t, k) },
-    c ? { label: toneOf(c) ? 'Change tone…' : 'Choose a tone…', action: () => chooseTone(t, k) } : null,
-    c && toneOf(c) ? { label: 'Keep the MC-707 clip’s own sound', action: () => setTone(t, k, null) } : null,
+    c && tone ? { label: toneOf(c) ? 'Change tone…' : 'Choose a tone…', action: () => chooseTone(t, k) } : null,
+    c && tone && toneOf(c) ? { label: 'Keep the MC-707 clip’s own sound', action: () => setTone(t, k, null) } : null,
     c && tone
       ? {
           label: 'Transpose' + (tr ? ' (' + (tr > 0 ? '+' : '') + tr + ')' : ''),

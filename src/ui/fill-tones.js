@@ -223,8 +223,72 @@ export async function fillTonesOpen() {
   /* tick (or untick) every clip of these tracks that has something to send */
   const tick = (ts, on) => ts.forEach(t => plan[t].forEach(c => (c.on = on && !!(c.item && resolve(c.item)))));
   const draw = () => {
-    const rows = DEVS[DEV].tracks.map(t => {
-      if (S.tracks[t].type === 'drum')
+    /* tone tracks only: a kit's drum sounds can't be changed over MIDI */
+    const rows = DEVS[DEV].tracks
+      .filter(t => S.tracks[t].type !== 'drum')
+      .map(t => {
+        const clips = plan[t].map((c, k) => {
+          const pool = poolOf(gid, c.role),
+            r = c.item && resolve(c.item);
+          const pick = el(
+            'select',
+            {
+              'aria-label': 'Track ' + devNum(t) + ' clip ' + (k + 1) + ' sound',
+              onchange: e => {
+                const v = e.target.value;
+                if (v === '__lib') return chooseLib(t, k);
+                c.item = pool.find(it => itemKey(it) === v) || c.item;
+                c.on = !!resolve(c.item);
+                draw();
+              }
+            },
+            ...(c.item && !pool.some(it => itemKey(it) === itemKey(c.item))
+              ? [el('option', { value: itemKey(c.item), selected: true }, itemName(c.item))]
+              : []),
+            ...pool.map(it =>
+              el(
+                'option',
+                { value: itemKey(it), selected: c.item && itemKey(it) === itemKey(c.item), disabled: !resolve(it) },
+                itemName(it) + (resolve(it) ? '' : ' (factory tones not added)')
+              )
+            ),
+            el('option', { value: '__lib' }, 'Any sound in the library…')
+          );
+          if (!c.item)
+            pick.prepend(el('option', { value: '', selected: true }, pool.length ? '—' : 'Nothing in the pool'));
+          return el(
+            'div',
+            { class: 'ftClip' + (c.on ? '' : ' off') },
+            el('input', {
+              type: 'checkbox',
+              checked: c.on,
+              disabled: !r,
+              'aria-label': 'Send clip ' + (k + 1),
+              title: r ? 'Send this one' : 'Nothing to send',
+              onchange: e => ((c.on = e.target.checked), draw())
+            }),
+            el('b', {}, String(k + 1)),
+            el('span', { class: 'ftRole', style: '--rc:' + ctInfo(c.role)[2] }, ctInfo(c.role)[1]),
+            pick,
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'btn sm',
+                title: 'Another suggestion from the pool',
+                onclick: () => {
+                  const ok = pool.filter(resolve);
+                  if (!ok.length) return toast('Nothing in this pool can be sent yet');
+                  const others = ok.filter(it => !c.item || itemKey(it) !== itemKey(c.item));
+                  c.item = (others.length ? others : ok)[Math.floor(Math.random() * (others.length || ok.length))];
+                  c.on = true;
+                  draw();
+                }
+              },
+              '🎲'
+            )
+          );
+        });
         return el(
           'section',
           { class: 'ftTrk', style: '--tc:' + TRACK_COLORS[t] },
@@ -232,123 +296,42 @@ export async function fillTonesOpen() {
             'div',
             { class: 'ftHead' },
             el('b', {}, devNum(t) + ' ' + S.tracks[t].name),
-            el('span', { class: 'hint' }, 'Drum kits: choose them on the ' + DEVS[DEV].name)
-          ),
-          el(
-            'p',
-            { class: 'hint ftKits' },
-            'A kit’s drum sounds can’t be changed over MIDI: the ' +
-              DEVS[DEV].name +
-              ' keeps each key’s instrument whatever is sent. Pick the kit for each clip on the ' +
-              DEVS[DEV].name +
-              ' itself.'
-          )
-        );
-      const clips = plan[t].map((c, k) => {
-        const pool = poolOf(gid, c.role),
-          r = c.item && resolve(c.item);
-        const pick = el(
-          'select',
-          {
-            'aria-label': 'Track ' + devNum(t) + ' clip ' + (k + 1) + ' sound',
-            onchange: e => {
-              const v = e.target.value;
-              if (v === '__lib') return chooseLib(t, k);
-              c.item = pool.find(it => itemKey(it) === v) || c.item;
-              c.on = !!resolve(c.item);
-              draw();
-            }
-          },
-          ...(c.item && !pool.some(it => itemKey(it) === itemKey(c.item))
-            ? [el('option', { value: itemKey(c.item), selected: true }, itemName(c.item))]
-            : []),
-          ...pool.map(it =>
+            el('span', { class: 'hint' }, plan[t].length + ' clip' + (plan[t].length === 1 ? '' : 's')),
             el(
-              'option',
-              { value: itemKey(it), selected: c.item && itemKey(it) === itemKey(c.item), disabled: !resolve(it) },
-              itemName(it) + (resolve(it) ? '' : ' (factory tones not added)')
+              'span',
+              { class: 'grp ftSel' },
+              el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'btn sm',
+                  title: 'Send every clip of this track that has a sound',
+                  onclick: () => (tick([t], true), draw())
+                },
+                'All'
+              ),
+              el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'btn sm',
+                  title: 'Send nothing to this track',
+                  onclick: () => (tick([t], false), draw())
+                },
+                'None'
+              )
             )
           ),
-          el('option', { value: '__lib' }, 'Any sound in the library…')
-        );
-        if (!c.item)
-          pick.prepend(el('option', { value: '', selected: true }, pool.length ? '—' : 'Nothing in the pool'));
-        return el(
-          'div',
-          { class: 'ftClip' + (c.on ? '' : ' off') },
-          el('input', {
-            type: 'checkbox',
-            checked: c.on,
-            disabled: !r,
-            'aria-label': 'Send clip ' + (k + 1),
-            title: r ? 'Send this one' : 'Nothing to send',
-            onchange: e => ((c.on = e.target.checked), draw())
-          }),
-          el('b', {}, String(k + 1)),
-          el('span', { class: 'ftRole', style: '--rc:' + ctInfo(c.role)[2] }, ctInfo(c.role)[1]),
-          pick,
-          el(
-            'button',
-            {
-              type: 'button',
-              class: 'btn sm',
-              title: 'Another suggestion from the pool',
-              onclick: () => {
-                const ok = pool.filter(resolve);
-                if (!ok.length) return toast('Nothing in this pool can be sent yet');
-                const others = ok.filter(it => !c.item || itemKey(it) !== itemKey(c.item));
-                c.item = (others.length ? others : ok)[Math.floor(Math.random() * (others.length || ok.length))];
-                c.on = true;
-                draw();
-              }
-            },
-            '🎲'
-          )
+          ...clips
         );
       });
-      return el(
-        'section',
-        { class: 'ftTrk', style: '--tc:' + TRACK_COLORS[t] },
-        el(
-          'div',
-          { class: 'ftHead' },
-          el('b', {}, devNum(t) + ' ' + S.tracks[t].name),
-          el('span', { class: 'hint' }, plan[t].length + ' clip' + (plan[t].length === 1 ? '' : 's')),
-          el(
-            'span',
-            { class: 'grp ftSel' },
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'btn sm',
-                title: 'Send every clip of this track that has a sound',
-                onclick: () => (tick([t], true), draw())
-              },
-              'All'
-            ),
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'btn sm',
-                title: 'Send nothing to this track',
-                onclick: () => (tick([t], false), draw())
-              },
-              'None'
-            )
-          )
-        ),
-        ...clips
-      );
-    });
     const n = DEVS[DEV].tracks.reduce((a, t) => a + plan[t].filter(c => c.on).length, 0);
     box.replaceChildren(
       el('h3', {}, 'Fill tones'),
       el(
         'p',
         { class: 'hint' },
-        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different kit or tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it.'
+        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it.'
       ),
       el(
         'div',
@@ -413,9 +396,9 @@ export async function fillTonesOpen() {
       el(
         'p',
         { class: 'hint' },
-        'Drum kits stay as they are (the ' +
+        'Tone tracks only: choose drum kits on the ' +
           DEVS[DEV].name +
-          ' does not take new drum sounds over MIDI). Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen.'
+          ' itself, since it doesn’t take new drum sounds over MIDI. Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen.'
       ),
       el(
         'div',

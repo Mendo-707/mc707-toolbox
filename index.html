@@ -38002,8 +38002,8 @@ body[data-mode='scene'] #scene {
       c ? { label: "Edit the notes", action: () => onEdit(t, k2, "notes") } : null,
       c ? { label: "Edit the sound (ZenCore)", action: () => onEdit(t, k2, "sound") } : null,
       { label: c ? "Change pattern…" : "Choose a pattern…", action: () => choosePattern(t, k2) },
-      c ? { label: toneOf(c) ? "Change tone…" : "Choose a tone…", action: () => chooseTone(t, k2) } : null,
-      c && toneOf(c) ? { label: "Keep the MC-707 clip’s own sound", action: () => setTone(t, k2, null) } : null,
+      c && tone2 ? { label: toneOf(c) ? "Change tone…" : "Choose a tone…", action: () => chooseTone(t, k2) } : null,
+      c && tone2 && toneOf(c) ? { label: "Keep the MC-707 clip’s own sound", action: () => setTone(t, k2, null) } : null,
       c && tone2 ? {
         label: "Transpose" + (tr ? " (" + (tr > 0 ? "+" : "") + tr + ")" : ""),
         sub: [shift(1), shift(-1), shift(12), shift(-12), { label: "None", action: () => setTranspose(t, k2, 0) }]
@@ -38929,7 +38929,7 @@ body[data-mode='scene'] #scene {
       b("◀", () => editClip(t, prev), "The track’s clip before", prev == null ? "off" : ""),
       b("▶", () => editClip(t, next), "The track’s clip after", next == null ? "off" : ""),
       b("Pattern…", () => choosePattern(t, k2), "Choose another pattern for this clip"),
-      b(tn ? "♪ " + tn.name : "♪ Clip’s own sound", () => chooseTone(t, k2), "The tone this clip gets on the MC-707"),
+      S.tracks[t].type === "drum" ? null : b(tn ? "♪ " + tn.name : "♪ Clip’s own sound", () => chooseTone(t, k2), "The tone this clip gets on the MC-707"),
       b(
         c.pump ? "∿ Pump: " + (c.pump.mode === "level" ? "Volume" : "Filter") : "∿ Pump",
         () => pumpOpen(t, k2),
@@ -57247,23 +57247,7 @@ body[data-mode='scene'] #scene {
     );
     const tick = (ts, on3) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on3 && !!(c.item && resolve(c.item))));
     const draw = () => {
-      const rows2 = DEVS[DEV].tracks.map((t) => {
-        if (S.tracks[t].type === "drum")
-          return el(
-            "section",
-            { class: "ftTrk", style: "--tc:" + TRACK_COLORS[t] },
-            el(
-              "div",
-              { class: "ftHead" },
-              el("b", {}, devNum(t) + " " + S.tracks[t].name),
-              el("span", { class: "hint" }, "Drum kits: choose them on the " + DEVS[DEV].name)
-            ),
-            el(
-              "p",
-              { class: "hint ftKits" },
-              "A kit’s drum sounds can’t be changed over MIDI: the " + DEVS[DEV].name + " keeps each key’s instrument whatever is sent. Pick the kit for each clip on the " + DEVS[DEV].name + " itself."
-            )
-          );
+      const rows2 = DEVS[DEV].tracks.filter((t) => S.tracks[t].type !== "drum").map((t) => {
         const clips = plan2[t].map((c, k2) => {
           const pool = poolOf2(gid, c.role), r = c.item && resolve(c.item);
           const pick3 = el(
@@ -57365,7 +57349,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different kit or tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it."
+          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it."
         ),
         el(
           "div",
@@ -57429,7 +57413,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Drum kits stay as they are (the " + DEVS[DEV].name + " does not take new drum sounds over MIDI). Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen."
+          "Tone tracks only: choose drum kits on the " + DEVS[DEV].name + " itself, since it doesn’t take new drum sounds over MIDI. Set up how many clips each track has, and their jobs, on the Your MC-707 clips screen."
         ),
         el(
           "div",
