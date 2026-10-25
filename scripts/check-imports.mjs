@@ -10,7 +10,8 @@
 //   services  MIDI, transport, sound, audio inputs, and the generic UI pieces (menus, dialogs)
 //   clips     the MC-707 clips screen and clip chips, used by both Song and Live
 //   features  song/, live/ and zen/ (the ZenCore editor)
-//   app       the shell that ties features together (menu bar, right-click menus, projects, main.js)
+//   app       the shell that ties features together (menu bar, right-click menus, projects, main.js),
+//             and Scene Mode (scene/), which uses Song Mode's patterns and the zen/ SysEx
 // Song and Live never import each other directly; anything they share lives lower down,
 // and the app layer wires them together through core/hooks.js.
 // Import cycles between folders fail the check. Modules inside one feature folder (live/, song/,

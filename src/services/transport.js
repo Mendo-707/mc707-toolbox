@@ -210,6 +210,8 @@ export function processTick(tick, time) {
     }
   } else if (TR.mode === 'live') {
     hooks.liveTick(tick, nt, td);
+  } else if (TR.mode === 'scenes') {
+    scenesTick(tick, nt, td);
   } else {
     const p = TR.pat;
     const evs = patIndex(p).get(tick);
@@ -250,6 +252,15 @@ export function advance() {
     }
   } else if (TR.mode === 'live') {
     /* runs until stopped */
+  } else if (TR.mode === 'scenes') {
+    const q = TR.scn;
+    if (TR.tick >= q.to) {
+      if (q.loop) TR.tick = q.from;
+      else {
+        TR.ending = true;
+        TR.endTime = TR.nextTime;
+      }
+    }
   } else if (TR.tick >= (TR.loopB || TR.pat.bars * 32)) TR.tick = TR.loopA || 0;
 }
 /* How the clock copes on stage: TR.late counts the stalls it rode out, TR.errs the ticks that failed. */
@@ -413,6 +424,71 @@ export function startPat(p, ti, range, shift, bpm, swing) {
   TICKER.start();
   sched();
   hooks.updTransport();
+}
+/* ---- scenes (Scene Mode): rows played in order, as the MC-707's scene chain plays them ---- */
+/**
+ * Play scenes in order. Each row lasts its bars; each track loops its pattern from where it came in, and
+ * a pattern that carries on into the next scene keeps going (the MC-707 does the same).
+ * @param {{bars:number, parts:{t:number, p:import('../core/types.js').Pattern, tr?:number}[]}[]} rows
+ * @param {number} [first]  the row to start from
+ * @param {boolean} [loop]  play only that row, on a loop
+ */
+export function startScenes(rows, first = 0, loop = false) {
+  if (BUSY.write) return void toast(BUSY.write);
+  if (!rows.length) return;
+  stopAll();
+  ensureAudio();
+  const starts = [];
+  let at = 0;
+  for (const r of rows) (starts.push(at), (at += r.bars * 32));
+  /* where each part's pattern started: earlier when the same part plays in the row before */
+  const since = rows.map((r, i) =>
+    r.parts.map(x => {
+      let j = i;
+      while (j > 0 && rows[j - 1].parts.some(y => y.t === x.t && y.p === x.p && (y.tr || 0) === (x.tr || 0))) j--;
+      return starts[j];
+    })
+  );
+  const from = starts[first] || 0;
+  Object.assign(TR, {
+    playing: true,
+    mode: 'scenes',
+    scn: { rows, starts, since, from, to: loop ? from + rows[first].bars * 32 : at, loop },
+    tick: from,
+    nextTime: AU.ctx.currentTime + 0.06,
+    vis: [],
+    ending: false
+  });
+  TICKER.start();
+  sched();
+  hooks.updTransport();
+}
+/** The row playing at a tick of the scenes mode, or -1. */
+export function sceneRowAt(tick) {
+  const q = TR.scn;
+  if (!q) return -1;
+  for (let i = q.rows.length - 1; i >= 0; i--) if (tick >= q.starts[i]) return i;
+  return -1;
+}
+function scenesTick(tick, nt, td) {
+  const q = TR.scn,
+    i = sceneRowAt(tick);
+  if (i < 0) return;
+  q.rows[i].parts.forEach((x, j) => {
+    const L = x.p.bars * 32,
+      local = (tick - q.since[i][j]) % L,
+      evs = patIndex(x.p).get(local);
+    if (!evs) return;
+    const tone = x.p.type === 'tone';
+    for (const n of evs)
+      emitNote(
+        x.t,
+        tone ? clamp(n.n + (x.tr || 0), 0, 127) : n.n,
+        n.v,
+        nt + subTick(n) * (TR.subTd || td),
+        n.l * 2 * td
+      );
+  });
 }
 /** Stop whatever is playing, send all notes off, and update the transport display. */
 export function stopAll() {

@@ -3,6 +3,7 @@
 Write songs and play live sets on the **Roland MC-707** from your computer. One USB cable carries all eight tracks, and the app can record the audio that comes back.
 
 - **Song Mode**: arrange a whole track on a timeline, then play it on the MC-707 note for note.
+- **Scene Mode**: arrange a song as MC-707 scenes, then send it so the MC-707 plays it by itself.
 - **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
 - **Synth Mode**: the MC-707 as an 8-track hardware synth for your DAW.
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
@@ -168,6 +169,20 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Capture to Song** | Turns what you just played into a Song Mode arrangement, with a marker for each scene. |
 | **Stage ready** | Seven colour themes, a reactive visualizer, **F11** fullscreen, and the screen stays awake while playing. |
 | **Mixer** | **🎚 Mixer** (or Live › Mixer) opens Live's own mix, kept apart from the song's, in a window you can drag onto another screen, in your Live theme's colours. Level, pan, reverb and chorus become the rest values moves come back to and are sent at Start; mutes and solos wait for the next beat while the jam plays (they blink until they land). Each strip shows a track the energy level took out or one you're playing yourself. |
+
+## Scene Mode
+
+Arrange a song the way the MC-707 plays one: as scenes in a chain. A grid like the MC-707's, the eight tracks across and the scenes down, in Song Mode's look. Then **Send to MC-707** writes it into the MC-707's clips and scenes, so the MC-707 plays the whole song on its own, with no computer needed. New and experimental: try it with a project you can lose, and save the project on the MC-707 to keep what is sent.
+
+| | |
+|---|---|
+| **Scenes** | Each row is a scene: its MC-707 number (1-1, 1-2 … as Call Scene TYPE2 shows them, from the scene you pick), a name, and how many bars it plays before the next (1-127, its LENGTH in the scene chain). The last scene stays playing. ⋯ or right-click: play from it, loop it, copy it below, move it, remove it. Up to 128 scenes. |
+| **Cells** | Click an empty cell to choose a pattern from the library (by genre and part, with ▶ to hear it), My patterns or the song's own. Right-click a cell for its menu: change the pattern or the **tone**, transpose, copy and paste, the same as the scene above, clear. A cell the same as the one above is shaded: the MC-707 keeps it playing across the change. Arrows move, Enter chooses, Delete clears, Ctrl+C and Ctrl+V copy and paste, Ctrl+Z undoes. |
+| **Track editor** | Click a full cell to edit its notes in Song Mode's own pattern editor (steps, piano roll, velocity, length, scale lock and its tools), docked under the scenes. Above it: the scene and track, ▲ ▼ to the same track in the scene above or below, the pattern, the tone and the transpose. A pattern other cells or song clips share says so, and **Make it this cell's own** copies it so your changes stay in this cell. **⤢ Expand** gives the editor the whole screen beside the track's column of scenes, with buttons to switch track; **✕ Close** gives the grid its room back. |
+| **Tones** | Each cell can carry the sound its MC-707 clip should have: the factory tones (from your own MC-707 update file, as in the ZenCore editor), your own sounds, sounds grabbed from the MC-707, or the starters. Drum tracks get kits. A cell without one keeps the clip's own sound. |
+| **Play** | Plays the scenes in order from the selected one, on the MC-707 and the preview sound, the way the scene chain will; the playing scene lights up. **Space** plays and stops. |
+| **Send to MC-707** | Each track's different cells go into its clips from clip 1 (16 at most per track), with their tones (the track then plays its clips' sounds), then each scene's clips and LENGTH. Turn **CHAIN** on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button; MC-707 system 1.71 or later) and play from the first scene. |
+| **From the song / To Song Mode** | Make scenes from the Song Mode arrangement (a scene wherever its patterns change, named after its markers), or lay the scenes out in Song Mode one after another (a marker per scene). The scenes are saved with the song. |
 
 ## Synth Mode
 

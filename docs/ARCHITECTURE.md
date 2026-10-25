@@ -14,7 +14,8 @@ Every module belongs to one layer, and imports only from its own layer or lower 
 
 ```
   app       ui/ (menu bar, toolbar and shortcuts, projects, grabber, capture to song,
-            device switch, Live menus) and main.js        ties Song and Live together
+            device switch, Live menus), scene/ (Scene Mode) and main.js
+                                                           ties Song, Live and zen together
      │
   features  song/   live/   zen/ (ZenCore editor)          never import each other
      │
@@ -174,6 +175,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `core/mc707-params.js` | The MC-707 controls the app can automate (CC numbers, names, ranges). |  |
 | `core/random.js` | Seeded random numbers (mulberry32) and a string hash, so generated patterns come out the same every run. |  |
 | `core/rolls.js` | Hi-hat and snare roll shapes (16th triplets, 32nds, 64th ramps …) as note positions inside one beat, and a parser for beat-by-beat hat lines like '8 8 t16 32'. Used by the genre pack and by Live Mode's Extreme variation. |  |
+| `core/scene-model.js` | Scene Mode's part of the song (S.scn): the scenes in order, each a length in bars and, per track, the pattern it plays (with a transpose) and the tone the MC-707 clip should have. Saved with the song; a song without scenes has no S.scn. Plain data helpers only; Scene Mode (scene/) changes it. |  |
 | `core/song-model.js` | Reading and editing the song's clips: find the clip at a bar, cut a gap into a track, place a clip, the song's length, and clip arithmetic (loop length, 16th-step rounding). |  |
 | `core/state.js` | The song (S) and everything that saves it: a new song, autosave to localStorage, undo and redo, loading and checking saved songs (fixState), plus the shared screen state UI and the editor state ED. | S (the song), UI (song screen state), ED (editor state), PROJ (the open project) |
 | `core/theory.js` | Music theory tables: note names, the drum lanes, keys and scales. |  |
@@ -338,6 +340,21 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `zen/zc-tone.js` | The ZenCore sound being edited: a tone (4 partials) or a drum kit (88 keys), as a flat map of parameter values, and how each value goes to and from the MC-707 (addresses, bytes, whole-sound reads and writes). |  |
 | `zen/zc-widgets.js` | Controls for the ZenCore editor: a slider, menu or switch for one parameter, with friendly names, value text (pan, dB, notes, value names) and the "not read from the MC-707" state. |  |
 
+### scene/ (layer: app)
+
+| Module | What it does | Owns |
+| --- | --- | --- |
+| `scene/convert.js` | Between Song Mode and Scene Mode: make scenes from the song (a scene wherever the patterns playing change, named after the song's markers) and lay the scenes out as the song (a clip per run of the same cell, a marker per scene). |  |
+| `scene/dock.js` | Scene Mode's track editor: Song Mode's own pattern editor (steps, piano roll, velocity, length and its tools), docked under the scenes for the cell being edited, or expanded to fill the screen beside that track's column of scenes. Above it, the cell's own controls: the scene and track, the pattern and tone, transpose, the scene above or below, an own copy of a pattern other cells or clips share, expand and close. The editor changes the song's pattern itself, so every cell that uses it changes. |  |
+| `scene/grid.js` | Scene Mode: arrange a song as MC-707 scenes. A grid like the MC-707's: the eight tracks across, the scenes down in the order the scene chain plays them. Each scene has a name and a length in bars; each cell a pattern (with a transpose) and the tone its MC-707 clip should have. Play runs the scenes in order through the MC-707 (and the preview sound); Send to MC-707 writes the clips, their tones and the scenes, chained (scene/send.js). |  |
+| `scene/menus.js` | Scene Mode's menus and the actions behind them: a cell's menu (pattern, tone, transpose, edit in Song Mode, copy and paste, clear) and a scene's menu (play, copy, move, remove), and the keys Scene Mode answers (Space, arrows, Delete, copy and paste, undo). |  |
+| `scene/model.js` | Scene Mode's edits to the song's scenes (S.scn, see core/scene-model.js): add, copy, move and remove scenes, set a scene's length and name, put a pattern and a tone in a cell, and the selection. Every change is one undo step and is saved with the song. | SC (the selected cell, the copied cell, what redraws after a change) |
+| `scene/names.js` | How Scene Mode names an MC-707 scene: the row's place from the first scene, as the MC-707 shows it with Call Scene TYPE2 (8 banks of 16: 1-1 … 8-16). |  |
+| `scene/pick-pattern.js` | Scene Mode's pattern picker: the factory library (by genre and part), My patterns, or the song's own patterns, with a search. ▶ plays a pattern on the track; picking one copies it into the song (once) and puts it in the cell. |  |
+| `scene/pick-tone.js` | Scene Mode's tone picker: the sounds in your library (My sounds and your folders, sounds grabbed from the MC-707, the factory tones from its update file once added) and the starters, by bank, category and search. Drum tracks get drum kits. Picking one gives the cell that tone; the MC-707 clip gets it when the scenes are sent. |  |
+| `scene/send.js` | Scene Mode's Send to MC-707: each track's different cells go into its clips from clip 1 (notes, and the tone when the cell has one, with the track set to play its clips' sounds), then the scenes: which clip each track plays, and each scene's LENGTH so the scene chain plays them in order. Shows what it will write first, then what went where. |  |
+| `scene/top.js` | Scene Mode's toolbar: play and stop with where it is, the tempo, add a scene, from and to Song Mode, which MC-707 scene the first row goes into, and Send to MC-707. |  |
+
 ### ui/ (layer: app)
 
 | Module | What it does | Owns |
@@ -355,12 +372,12 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/live-capture.js` | Capture to Song: turns what was played in Live Mode into an arrangement, markers and clip changes. |  |
 | `ui/live-menus.js` | Right-click menus in Live Mode: scene cards, pads, tracks and keys. |  |
 | `ui/menu.js` | The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items. | CM (the open menu) |
-| `ui/menubar.js` | The top menu bar (File, Edit, Song, Live, Synth, Settings, View, Help, each shown in the modes it belongs to), and wiring the setup wizard's buttons. |  |
-| `ui/mode.js` | Switching between Song Mode, Live Mode and Synth mode. |  |
+| `ui/menubar.js` | The top menu bar (File, Edit, Song, Scene, Live, Synth, Settings, View, Help, each shown in the modes it belongs to), and wiring the setup wizard's buttons. |  |
+| `ui/mode.js` | Switching between Song Mode, Scene Mode, Live Mode and Synth mode. |  |
 | `ui/projects.js` | Project files: new, open, save, recent projects and the project title, through the Windows app or the browser. |  |
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |
 | `ui/setup-wizard.js` | The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio. | SU (the setup wizard) |
-| `ui/start-screen.js` | The start screen: when the app opens (in Song Mode) it offers to load the last session, start a blank song or an empty template with its sections marked, open the song wizard, go to Live or Synth Mode, or open the ZenCore editor. A tick box turns it off. | localStorage 'mc707-start' ('0' = do not show at start) |
+| `ui/start-screen.js` | The start screen: when the app opens (in Song Mode) it offers to load the last session, start a blank song or an empty template with its sections marked, open the song wizard, go to Scene, Live or Synth Mode, or open the ZenCore editor. A tick box turns it off. | localStorage 'mc707-start' ('0' = do not show at start) |
 | `ui/track-setup.js` | Track setup: choose what each of the 8 tracks is for, anywhere from 8 drum tracks to 8 tone tracks. Each track gets a role (kit, hats, perc, bass, chords, pad, lead, pluck or acid); the role sets whether it is a drum or tone track, what the song wizard and Live Mode play on it, and its name. Clips that no longer fit a track's type are removed (with undo). |  |
 | `ui/transport-view.js` | The transport display: position, play state, and moving the playhead in Song Mode, the editor and the wizard. |  |
 

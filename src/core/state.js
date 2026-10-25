@@ -4,6 +4,7 @@
 //
 // Owns: S (the song), UI (song screen state), ED (editor state), PROJ (the open project).
 // Calls up the layers through hooks (core/hooks.js).
+import { fixScenes } from './scene-model.js';
 import { $, toast } from './dom.js';
 import { LANES, SCALES } from './theory.js';
 import { MC_PARAMS } from './mc707-params.js';
@@ -344,6 +345,7 @@ export function fixState(s) {
   s.clips.forEach(c => {
     s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
   });
+  fixScenes(s, pats);
   s.nextId = Math.max(Math.round(num(s.nextId, 1, 1e9, 1)), maxId + 1);
   return s;
 }

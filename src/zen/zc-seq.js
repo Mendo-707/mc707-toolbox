@@ -458,7 +458,7 @@ function writePanel(title) {
   };
 }
 /* one writing job: playback stopped and held, the slower pace, the panel; fn(panel) does the work */
-async function writeSession(title, fn) {
+export async function writeSession(title, fn) {
   if (wbusy) return null;
   wbusy = true;
   if (TR.playing) stopAll();

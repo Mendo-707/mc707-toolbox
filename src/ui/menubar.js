@@ -1,4 +1,4 @@
-// The top menu bar (File, Edit, Song, Live, Synth, Settings, View, Help, each shown in the modes it
+// The top menu bar (File, Edit, Song, Scene, Live, Synth, Settings, View, Help, each shown in the modes it
 // belongs to), and wiring the setup wizard's buttons.
 //
 // Reads: S, SU, STAGE, DEV.
@@ -25,6 +25,10 @@ import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { sceneFinderOpen } from '../zen/zc-scan.js';
+import { sceneToggle } from '../scene/grid.js';
+import { addRow, rows } from '../scene/model.js';
+import { scenesFromSong, scenesToSong } from '../scene/convert.js';
+import { scenesSendOpen } from '../scene/send.js';
 import {
   exitApp,
   projChooseFolder,
@@ -124,6 +128,21 @@ function initMenubar() {
         0,
         ['Record audio', go('#bAudRec'), 'R'],
         ['Audio inputs and settings…', go('#bAudSet')]
+      ]
+    ],
+    [
+      'Scene',
+      'scene',
+      [
+        ['Play / stop', () => sceneToggle(), 'Space'],
+        0,
+        ['Add a scene', () => addRow(rows().length ? rows().length - 1 : null)],
+        ['Make scenes from the song', () => scenesFromSong()],
+        ['Lay the scenes out in Song Mode', () => scenesToSong()],
+        0,
+        ['Send to MC-707…', () => scenesSendOpen()],
+        ['Your MC-707 clips…', () => clipMapOpen()],
+        ['Find MC-707 scene data (read-only)…', () => sceneFinderOpen()]
       ]
     ],
     [
@@ -349,6 +368,7 @@ function initMenubar() {
   const tabs = el('div', { class: 'mtabs', role: 'tablist', 'aria-label': 'Mode' });
   [
     ['song', 'Song Mode'],
+    ['scene', 'Scene Mode'],
     ['live', 'Live Mode'],
     ['synth', 'Synth Mode']
   ].forEach(([m, l]) =>

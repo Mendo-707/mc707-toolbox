@@ -1,0 +1,466 @@
+/* Scene Mode (scene/): the scenes as a grid like the MC-707's, in Song Mode's own look (its colour tokens,
+   light and dark), the eight tracks across in their colours and the scenes down in chain order. */
+body[data-mode='scene'] #menubar [data-m='song'],
+body[data-mode='scene'] #menubar [data-m='live'],
+body[data-mode='scene'] #menubar [data-m='synth'],
+body:not([data-mode='scene']) #menubar [data-m='scene'] {
+  display: none !important;
+}
+body[data-mode='scene'] #top > *:not(.pop) {
+  display: none;
+}
+body[data-mode='scene'] #top {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+  height: 0;
+  gap: 0;
+}
+body[data-mode='scene'] #main {
+  display: none;
+}
+#scene {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+}
+body[data-mode='scene'] #scene {
+  display: flex;
+}
+.scnTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.scnTop .grp {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.scnTop label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--mute);
+}
+.scnTop input[type='number'] {
+  width: 64px;
+}
+.scnTop .pos {
+  min-width: 170px;
+  font-variant-numeric: tabular-nums;
+}
+.scnNote {
+  margin: 8px 12px 0;
+  color: var(--mute);
+}
+.scnWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+.scnGrid {
+  display: grid;
+  grid-template-columns: 300px repeat(var(--n), minmax(118px, 1fr));
+  gap: 6px;
+  min-width: max-content;
+}
+.scnHead,
+.scnRow {
+  display: contents;
+}
+.scnCorner,
+.scnTrk {
+  position: sticky;
+  top: -12px;
+  z-index: 2;
+  background: var(--bg);
+  padding: 6px 8px 8px;
+  font-size: 13px;
+  color: var(--mute);
+}
+.scnTrk {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 3px solid var(--tc);
+  background: var(--panel);
+  border-radius: 6px 6px 0 0;
+}
+.scnTrk b {
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scnLabel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  overflow: hidden;
+}
+.scnNo {
+  min-width: 42px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--panel2);
+  border-radius: 4px;
+  padding: 6px 4px;
+}
+.scnName {
+  min-width: 0;
+  font: inherit;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: var(--ink);
+}
+.scnName:hover,
+.scnName:focus {
+  border-color: var(--line);
+  background: var(--bg);
+}
+.scnLabel .btn.sm {
+  padding: 2px 8px;
+}
+.scnLen {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--mute);
+  font-size: 13px;
+}
+.scnBars {
+  width: 50px;
+}
+.scnProg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+}
+.scnProg i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--hot);
+}
+.scnRow.cur .scnLabel {
+  border-color: var(--grid-c);
+}
+.scnRow.playing .scnLabel {
+  border-color: var(--hot);
+  box-shadow: inset 3px 0 0 var(--hot);
+}
+.scnRow.playing .scnCell:not(.empty) {
+  box-shadow: inset 0 -3px 0 var(--tc);
+}
+.scnCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 6px 8px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--tc);
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.scnCell b {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scnCell .hint {
+  font-size: 12px;
+}
+.scnTone {
+  max-width: 100%;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scnTone.none {
+  color: var(--mute);
+  font-style: italic;
+}
+.scnCell.same {
+  background: var(--panel2);
+  border-left-color: color-mix(in srgb, var(--tc) 45%, transparent);
+}
+.scnCell.same b,
+.scnCell.same .scnTone {
+  color: var(--mute);
+}
+.scnCell.empty {
+  align-items: center;
+  background: transparent;
+  border-style: dashed;
+  border-left: 1px dashed var(--line);
+}
+.scnPlus {
+  color: var(--mute);
+  font-size: 20px;
+}
+.scnCell:hover {
+  border-color: var(--tc);
+}
+.scnCell.sel {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.scnCell.over {
+  opacity: 0.55;
+  border-style: dotted;
+}
+.scnFoot {
+  margin: 0;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.scnEmpty {
+  margin: 48px auto;
+  max-width: 560px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  line-height: 1.5;
+}
+.scnEmpty h2 {
+  margin: 0;
+}
+.scnEmpty .grp {
+  display: flex;
+  gap: 8px;
+}
+/* the pattern and tone pickers */
+.spBox {
+  width: min(760px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+.spTabs,
+.spFilt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.spFilt input[type='search'] {
+  flex: 1;
+  min-width: 160px;
+}
+.spList {
+  flex: 1;
+  min-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.spRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.spRow b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spRow:hover,
+.spRow:focus-visible {
+  background: var(--panel2);
+}
+.spRow.cur {
+  box-shadow: inset 3px 0 0 var(--hot);
+}
+.stBank {
+  font-size: 12px;
+  color: var(--mute);
+  min-width: 70px;
+}
+@media (max-width: 700px) {
+  .scnGrid {
+    grid-template-columns: 170px repeat(var(--n), minmax(104px, 1fr));
+  }
+}
+/* the track editor: Song Mode's pattern editor docked under the grid, or expanded beside the track's column */
+.scnBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.scnBody .scnWrap {
+  flex: 1;
+}
+.scnBody.editing .scnWrap {
+  flex: 1 1 30%;
+  min-height: 120px;
+}
+.scnDock {
+  flex: 1 1 58%;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  border-top: 3px solid var(--tc);
+  background: var(--panel);
+}
+.scnBody.wide {
+  flex-direction: row;
+}
+.scnBody.wide .scnDock {
+  flex: 1;
+  min-width: 0;
+  border-top: 0;
+  border-left: 3px solid var(--tc);
+}
+.scnDockHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.scnDockHead .grp {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.scnDockHead .btn.off {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.scnTr span {
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.scnShared {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.scnDock #editor {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  border-top: 0;
+}
+/* a scene pattern is the song's own: Song Mode's place-and-keep buttons don't belong here */
+.scnDock .edView {
+  display: none;
+}
+.scnCell.editing {
+  outline: 2px solid var(--tc);
+}
+.scnCol {
+  width: 220px;
+  flex: none;
+  overflow: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg);
+}
+.scnColHead {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px 8px;
+  border-top: 3px solid var(--tc);
+}
+.scnColCell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--tc);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.scnColCell span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scnColCell.empty {
+  color: var(--mute);
+  border-style: dashed;
+}
+.scnColCell.sel {
+  outline: 2px solid var(--tc);
+}
+.scnColCell .scnNo {
+  min-width: 36px;
+  padding: 2px 4px;
+}
+/* the cell's own controls say what the pattern is shared with */
+.scnDock .bswarn {
+  display: none;
+}
+.scnColTrks {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.scnColTrk {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 0;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-bottom: 3px solid var(--tc);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.scnColTrk.on {
+  background: var(--tc);
+  color: #000;
+  font-weight: 700;
+}
