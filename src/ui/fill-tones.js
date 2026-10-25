@@ -18,7 +18,7 @@ import { toneGenres } from '../song/sound-suggestions.js';
 import { ZS, soundOf, soundsLoad } from '../zen/zc-sounds.js';
 import { soundFrom } from '../zen/zc-tone.js';
 import { sendSound } from '../zen/zc-tone.js';
-import { zeQuietly } from '../zen/zc-editor.js';
+import { reselect, zeQuietly } from '../zen/zc-editor.js';
 import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxRead, zxWrite } from '../zen/zc-sysex.js';
 import { decodeParams, paramAddr, stepAddr, writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
@@ -463,21 +463,31 @@ export async function fillTonesOpen() {
           extra++;
         }
       }
+      /* the tracks play their clips' own sounds: set first, so each clip, selected again once its sound
+         is in, plays the new one */
+      for (const t of new Set(jobs.map(j => j.t))) zxWrite(trackSetAddr(t) + 4, [1]);
+      await zxFlush();
       for (const [i, j] of jobs.entries()) {
         if (ui.cancelled) break;
         ui.set(
           'Track ' + devNum(j.t) + ' clip ' + (j.k + 1) + ': ' + j.r.name + ' (' + (i + 1) + ' of ' + jobs.length + ')',
           i / jobs.length
         );
-        await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
+        /* the whole sound, then the clip selected again: the MC-707 keeps playing the sound it built until
+           the clip is selected anew (as the ZenCore editor does) */
+        await zeQuietly(
+          () => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k), new Set(Object.keys(j.r.snd.v))),
+          j.t,
+          () => reselect(j.t, j.k)
+        );
         /* the clips screen shows the sound's name */
         cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);
         tracks.add(j.t);
         done++;
       }
-      /* the tracks play their clips' own sounds */
-      for (const t of tracks) zxWrite(trackSetAddr(t) + 4, [1]);
       await zxFlush();
+      /* each track ends on its first clip */
+      for (const t of tracks) await reselect(t, 0);
     });
     if (ran === null) return;
     scheduleSave();

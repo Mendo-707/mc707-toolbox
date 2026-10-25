@@ -18,7 +18,7 @@ import { MOTION_NONE, MOTION_PER_STEP, motionThin, writeMotion } from '../zen/zc
 import { sceneName, writeScenes } from '../zen/zc-scenes.js';
 import { lin, slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
 import { sendSound, soundFrom } from '../zen/zc-tone.js';
-import { zeQuietly } from '../zen/zc-editor.js';
+import { reselect, zeQuietly } from '../zen/zc-editor.js';
 import { SC, clipAt, firstScene, markClip, markPump, markScene, rows, toneOf } from './model.js';
 import { uncheck } from './check.js';
 
@@ -141,9 +141,14 @@ export async function writeThese(what, quiet = false) {
         snd = WO.tones && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
       if (snd) {
         ui.set(head + ' · tone ' + tn.name, (n + 0.9) / N);
-        await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k)), t);
-        /* the track plays its clips' sounds (Sound Source CLIP) */
+        /* the track plays its clips' sounds (Sound Source CLIP), set first so the clip, selected again
+           once its whole sound is in, plays the new one */
         zxWrite(trackSetAddr(t) + 4, [1]);
+        await zeQuietly(
+          () => sendSound(snd, slotAddr(snd.kind, t, k), new Set(Object.keys(snd.v))),
+          t,
+          () => reselect(t, k)
+        );
       }
       /* the pump: its lane written; a lane an earlier pump was written into, cleared when it went */
       const was = S.scn.done.p && S.scn.done.p[t + ':' + k],

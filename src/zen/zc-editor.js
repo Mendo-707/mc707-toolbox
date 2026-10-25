@@ -186,8 +186,9 @@ export async function zeQuietly(send, t = ZE.t, after = null) {
 }
 /* The MC-707 takes every value at once but keeps playing the voice it built until the clip is selected
    again, and selecting the clip it is already on does not count. So after a whole sound goes in (still
-   muted), hop to the next clip and straight back. Clips only: the track's own sound has no program. */
-async function reselect(t, k) {
+   muted), hop to the next clip and straight back. Clips only: the track's own sound has no program.
+   Fill tones and Scene Mode's writes use it too. */
+export async function reselect(t, k) {
   const out = ZX.out || MIDI.out;
   if (!out || k > 15) return;
   const ch = chOf(t);
