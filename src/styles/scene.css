@@ -715,3 +715,30 @@ body[data-mode='scene'] #scene {
 .pmEmpty {
   margin: 10px 0;
 }
+
+.pmRow input[type='range'] {
+  width: 170px;
+}
+.pmVal {
+  min-width: 138px;
+  font-variant-numeric: tabular-nums;
+}
+.pmCap {
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 8px;
+}
+.pmDraw.pmClose {
+  margin-top: 4px;
+}
+.pmTick {
+  font-size: 11px;
+  fill: var(--mute);
+}
+.pmDot {
+  fill: var(--tc, var(--hot));
+}
+.pmBox {
+  max-height: 94vh;
+  overflow-y: auto;
+}

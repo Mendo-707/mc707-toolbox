@@ -51,20 +51,22 @@ export function clipPattern(c) {
 }
 
 /**
- * The pump's motion for clip k of track t, as it is written (pattern p, the clip's own copy): the lane,
+ * The pump's motion for clip k of track t, as it is written (pattern p, the clip's own copy; pump: a
+ * draft to show instead of the clip's own): the lane,
  * the values, where the kicks come from and the kick times. null when the clip has no pump.
  */
-export function pumpMotion(t, k, p = clipAt(t, k) && clipPattern(clipAt(t, k))) {
+export function pumpMotion(t, k, p = clipAt(t, k) && clipPattern(clipAt(t, k)), pump = null) {
   const c = clipAt(t, k);
-  if (!c || !c.pump || !p) return null;
+  pump = pump || (c && c.pump);
+  if (!c || !pump || !p) return null;
   const enc = encodePattern(p, p.type);
   if (enc.error) return null;
   const kk = STEP_SIZES[enc.size],
     src = pumpSource(S.scn, S.patterns, t, k),
     kicks = kicksUnder(pumpKicks(S.scn, S.patterns, src), enc.steps * kk);
   return {
-    lane: PUMP_LANE[c.pump.mode],
-    vals: pumpValues(c.pump, kicks, enc.steps, kk),
+    lane: PUMP_LANE[pump.mode],
+    vals: pumpValues(pump, kicks, enc.steps, kk),
     src,
     kicks,
     steps: enc.steps,

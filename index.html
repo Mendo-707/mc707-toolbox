@@ -7305,6 +7305,33 @@ body[data-mode='scene'] #scene {
 .pmEmpty {
   margin: 10px 0;
 }
+
+.pmRow input[type='range'] {
+  width: 170px;
+}
+.pmVal {
+  min-width: 138px;
+  font-variant-numeric: tabular-nums;
+}
+.pmCap {
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 8px;
+}
+.pmDraw.pmClose {
+  margin-top: 4px;
+}
+.pmTick {
+  font-size: 11px;
+  fill: var(--mute);
+}
+.pmDot {
+  fill: var(--tc, var(--hot));
+}
+.pmBox {
+  max-height: 94vh;
+  overflow-y: auto;
+}
 </style>
     <style>
 /* Song wizard and MC-707 setup wizard. */
@@ -12049,12 +12076,15 @@ body[data-mode='scene'] #scene {
   var pump_exports = {};
   __export(pump_exports, {
     KICK_LANE: () => KICK_LANE,
+    PUMP_CURVES: () => PUMP_CURVES,
     PUMP_DEPTH: () => PUMP_DEPTH,
+    PUMP_FINE: () => PUMP_FINE,
     PUMP_GHOST: () => PUMP_GHOST,
     PUMP_LANE: () => PUMP_LANE,
     PUMP_MODES: () => PUMP_MODES,
     PUMP_REL: () => PUMP_REL,
     PUMP_REST: () => PUMP_REST,
+    PUMP_TIME: () => PUMP_TIME,
     duck: () => duck,
     fixPump: () => fixPump,
     kickHits: () => kickHits,
@@ -12069,17 +12099,38 @@ body[data-mode='scene'] #scene {
   ];
   var PUMP_DEPTH = { light: 0.35, medium: 0.6, heavy: 0.85 };
   var PUMP_REL = { "1/16": 1, "1/8": 2, "1/4": 4 };
+  var PUMP_TIME = { rel: [0.25, 8, 2], hold: [0, 4, 0.5], start: [-1, 1, 0] };
+  var PUMP_FINE = 1 / 8;
+  var PUMP_CURVES = [
+    ["eased", "Eased"],
+    ["straight", "Straight"]
+  ];
   var PUMP_REST = { level: 100, filter: 127 };
   var PUMP_GHOST = 50;
   var KICK_LANE = 0;
-  var newPump = (mode) => ({ mode, depth: "medium", rel: "1/8", rest: PUMP_REST[mode] });
+  var newPump = (mode) => ({
+    mode,
+    depth: "medium",
+    rel: PUMP_TIME.rel[2],
+    hold: PUMP_TIME.hold[2],
+    start: PUMP_TIME.start[2],
+    curve: "eased",
+    rest: PUMP_REST[mode]
+  });
+  function fine(v, which) {
+    const [lo, hi, def] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
+    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def;
+  }
   function fixPump(x) {
     if (!x || typeof x !== "object" || !PUMP_LANE.hasOwnProperty(x.mode)) return null;
     const rest = Math.round(+x.rest);
     return {
       mode: x.mode,
       depth: PUMP_DEPTH.hasOwnProperty(x.depth) ? x.depth : "medium",
-      rel: PUMP_REL.hasOwnProperty(x.rel) ? x.rel : "1/8",
+      rel: fine(x.rel, "rel"),
+      hold: fine(x.hold, "hold"),
+      start: fine(x.start, "start"),
+      curve: x.curve === "straight" ? "straight" : "eased",
       rest: Number.isFinite(rest) ? Math.max(1, Math.min(127, rest)) : PUMP_REST[x.mode]
     };
   }
@@ -12092,21 +12143,27 @@ body[data-mode='scene'] #scene {
       }
     return out2.sort((a, b) => a.s - b.s);
   }
-  function duck(d, rel, early) {
-    const hold = 0.5;
-    if (d < -early - 1e-9 || d > rel * 2) return 0;
-    if (d < 0) return 0.5;
-    if (d < hold) return 1;
-    return Math.exp(-(d - hold) * 3 / rel);
+  function duck(d, o, early) {
+    const x = d - o.start;
+    if (x < -early - 1e-9 || x > o.hold + o.rel * 2) return 0;
+    if (x < 0) return 0.5;
+    if (x < o.hold) return 1;
+    const r = x - o.hold;
+    return o.curve === "straight" ? Math.max(0, 1 - r / o.rel) : Math.exp(-r * 3 / o.rel);
   }
   function pumpValues(pump2, kicks, steps2, k2) {
-    const n = steps2 * 8, dt = k2 / 8, len = steps2 * k2, depth = PUMP_DEPTH[pump2.depth] || 0.6, rel = PUMP_REL[pump2.rel] || 2, rest = pump2.rest;
+    const n = steps2 * 8, dt = k2 / 8, len = steps2 * k2, depth = PUMP_DEPTH[pump2.depth] || 0.6, o = {
+      rel: fine(pump2.rel, "rel"),
+      hold: pump2.hold == null ? PUMP_TIME.hold[2] : fine(pump2.hold, "hold"),
+      start: pump2.start == null ? 0 : fine(pump2.start, "start"),
+      curve: pump2.curve
+    }, rest = pump2.rest;
     const all = [...kicks, ...kicks.map((x) => ({ ...x, s: x.s - len })), ...kicks.map((x) => ({ ...x, s: x.s + len }))];
     return Array.from({ length: n }, (_, i) => {
       const t = i * dt;
       let down = 0;
       for (const x of all) {
-        const g = duck(t - x.s, rel, dt);
+        const g = duck(t - x.s, o, dt);
         if (g) down = Math.max(down, g * depth * Math.min(1, x.v / 100));
       }
       return Math.max(0, Math.min(127, Math.round(rest * (1 - down))));
@@ -36960,15 +37017,16 @@ body[data-mode='scene'] #scene {
       notes: p.notes.map((n) => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
     };
   }
-  function pumpMotion(t, k2, p = clipAt(t, k2) && clipPattern(clipAt(t, k2))) {
+  function pumpMotion(t, k2, p = clipAt(t, k2) && clipPattern(clipAt(t, k2)), pump2 = null) {
     const c = clipAt(t, k2);
-    if (!c || !c.pump || !p) return null;
+    pump2 = pump2 || c && c.pump;
+    if (!c || !pump2 || !p) return null;
     const enc = encodePattern(p, p.type);
     if (enc.error) return null;
     const kk = STEP_SIZES[enc.size], src = pumpSource(S.scn, S.patterns, t, k2), kicks = kicksUnder(pumpKicks(S.scn, S.patterns, src), enc.steps * kk);
     return {
-      lane: PUMP_LANE[c.pump.mode],
-      vals: pumpValues(c.pump, kicks, enc.steps, kk),
+      lane: PUMP_LANE[pump2.mode],
+      vals: pumpValues(pump2, kicks, enc.steps, kk),
       src,
       kicks,
       steps: enc.steps,
@@ -37121,30 +37179,56 @@ body[data-mode='scene'] #scene {
   // src/scene/pump.js
   var DEPTH_NAMES = { light: "Light", medium: "Medium", heavy: "Heavy" };
   var REL_TIPS = { "1/16": "Tight and fast", "1/8": "The classic pump", "1/4": "Slow and breathing" };
-  function drawing(t, k2) {
-    const pm = pumpMotion(t, k2);
-    const W = 640, H = 120, pad3 = 6;
-    if (!pm) return el("div", { class: "pmEmpty hint" }, "Pump is off for this clip.");
-    const len = pm.steps * pm.k, x = (s) => pad3 + (W - 2 * pad3) * s / len, y = (v) => pad3 + (H - 2 * pad3) * (1 - v / 127), dt = pm.k / 8;
-    const pts = pm.vals.map((v, i) => x(i * dt).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+  var EIGHTHS = ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"];
+  function timeText(v) {
+    const a = Math.abs(v), whole = Math.floor(a + 1e-9), part = Math.round((a - whole) * 8) % 8, n = (whole ? String(whole) : "") + EIGHTHS[part] || "0";
+    return n + (a > 0 && a <= 1 ? " 16th" : " 16ths") + " · " + Math.round(a * 15e3 / (S.bpm || 120)) + " ms";
+  }
+  var startText = (v) => Math.abs(v) < 1e-9 ? "on the kick" : timeText(v).replace(" · ", v < 0 ? " early · " : " late · ");
+  function drawing(pm, close = false) {
+    const W = 640, H = close ? 150 : 110, pad3 = 8, dt = pm.k / 8, len = pm.steps * pm.k, k0 = pm.kicks.length ? pm.kicks[0].s : 0, from = close ? k0 - 1 : 0, to = close ? Math.min(len + k0, k0 + Math.max(4, Math.ceil(TAIL(pm) + 1))) : len, x = (s) => pad3 + (W - 2 * pad3) * (s - from) / (to - from), y = (v) => pad3 + (H - 2 * pad3 - (close ? 14 : 0)) * (1 - v / 127);
     const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-    svg.setAttribute("class", "pmDraw");
+    svg.setAttribute("class", "pmDraw" + (close ? " pmClose" : ""));
     svg.setAttribute("role", "img");
     svg.setAttribute(
       "aria-label",
-      "The " + (pm.lane === 3 ? "volume" : "filter") + " over the clip, dipping on " + pm.kicks.length + " kicks"
+      close ? "Close up on the first kick: the " + (pm.lane === 3 ? "volume" : "filter") + " point by point" : "The " + (pm.lane === 3 ? "volume" : "filter") + " over the clip, dipping on " + pm.kicks.length + " kicks"
     );
-    const add = (tag, at2) => {
+    const add = (tag, at3, text) => {
       const n = document.createElementNS(ns, tag);
-      for (const a in at2) n.setAttribute(a, at2[a]);
+      for (const a in at3) n.setAttribute(a, at3[a]);
+      if (text) n.textContent = text;
       svg.append(n);
     };
-    for (let b = 0; b <= len; b += 16) add("line", { x1: x(b), x2: x(b), y1: pad3, y2: H - pad3, class: "pmBar" });
-    for (const kk of pm.kicks) add("line", { x1: x(kk.s), x2: x(kk.s), y1: H - pad3 - 10, y2: H - pad3, class: "pmKick" });
-    add("polyline", { points: pts, class: "pmLine" });
+    const at2 = (s) => pm.vals[(Math.round(s / dt) % pm.vals.length + pm.vals.length) % pm.vals.length];
+    if (close)
+      for (let s = Math.ceil(from); s <= to; s++) {
+        add("line", { x1: x(s), x2: x(s), y1: pad3, y2: H - pad3 - 14, class: "pmBar" });
+        if (x(s) < W - 24)
+          add("text", { x: x(s) + 3, y: H - 4, class: "pmTick" }, s === k0 ? "kick" : (s > k0 ? "+" : "") + (s - k0));
+      }
+    else for (let b = 0; b <= len; b += 16) add("line", { x1: x(b), x2: x(b), y1: pad3, y2: H - pad3, class: "pmBar" });
+    for (const kk of pm.kicks)
+      if (kk.s >= from && kk.s <= to)
+        add("line", {
+          x1: x(kk.s),
+          x2: x(kk.s),
+          y1: close ? pad3 : H - pad3 - 10,
+          y2: H - pad3 - (close ? 14 : 0),
+          class: "pmKick"
+        });
+    const pts = [];
+    for (let s = Math.ceil(from / dt) * dt; s <= to + 1e-9; s += dt) pts.push([x(s), y(at2(s))]);
+    add("polyline", { points: pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" "), class: "pmLine" });
+    if (close)
+      for (const [px, py] of pts) add("circle", { cx: px.toFixed(1), cy: py.toFixed(1), r: 2.2, class: "pmDot" });
     return svg;
   }
+  var TAIL = (pm) => {
+    const p = pm.pump;
+    return (p.start > 0 ? p.start : 0) + p.hold + p.rel * (p.curve === "straight" ? 1 : 1.6);
+  };
   function pumpOpen(t, k2) {
     document.getElementById("pmOv")?.remove();
     const box = el("div", { class: "ptBox pmBox", style: "--tc:" + TRACK_COLORS[t] });
@@ -37173,6 +37257,58 @@ body[data-mode='scene'] #scene {
         )
       )
     );
+    const viewBox = el("div", { class: "pmViews" });
+    const showViews = (pump2) => {
+      const pm = pumpMotion(t, k2, void 0, pump2);
+      if (pm) pm.pump = { ...newPump(pump2.mode), ...pump2 };
+      viewBox.replaceChildren(
+        ...pm ? [
+          el("div", { class: "pmCap" }, "The whole clip"),
+          drawing(pm),
+          el("div", { class: "pmCap" }, "Close up on the first kick (each dot is one motion point)"),
+          drawing(pm, true)
+        ] : []
+      );
+    };
+    const views = () => (showViews(clipAt(t, k2).pump), viewBox);
+    const fineRow = (label2, which, pump2, set2, words, tip, extra = []) => {
+      const [lo, hi] = PUMP_TIME[which], val = el("span", { class: "pmVal" }, words(pump2[which]));
+      const slider = el("input", {
+        type: "range",
+        min: lo,
+        max: hi,
+        step: PUMP_FINE,
+        value: pump2[which],
+        title: tip,
+        "aria-label": label2 + " (in eighths of a 16th)",
+        oninput: (e) => {
+          const v = +e.target.value;
+          val.textContent = words(v);
+          showViews({ ...pump2, [which]: v });
+        },
+        onchange: (e) => set2({ [which]: +e.target.value })
+      });
+      const nudge = (d) => el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          title: (d < 0 ? "Less" : "More") + " by an eighth of a 16th",
+          onclick: () => set2({ [which]: Math.max(lo, Math.min(hi, pump2[which] + d * PUMP_FINE)) })
+        },
+        d < 0 ? "−" : "+"
+      );
+      return el(
+        "div",
+        { class: "pmRow", title: tip },
+        el("span", { class: "pmLab" }, label2),
+        nudge(-1),
+        slider,
+        nudge(1),
+        val,
+        ...extra
+      );
+    };
     const draw = () => {
       const c = clipAt(t, k2);
       if (!c) return close();
@@ -37212,11 +37348,44 @@ body[data-mode='scene'] #scene {
               pump2.depth,
               (v) => set2({ depth: v })
             ),
-            seg(
+            fineRow(
+              "Starts",
+              "start",
+              pump2,
+              set2,
+              startText,
+              "When the dip starts against the kick: a little late can let the kick through and push the groove"
+            ),
+            fineRow("Holds down", "hold", pump2, set2, timeText, "How long it stays all the way down"),
+            fineRow(
               "Comes back in",
-              Object.keys(PUMP_REL).map((v) => [v, v, REL_TIPS[v]]),
-              pump2.rel,
-              (v) => set2({ rel: v })
+              "rel",
+              pump2,
+              set2,
+              timeText,
+              "How long it takes to come back: the most groove-shaping setting",
+              Object.entries(PUMP_REL).map(
+                ([l, v]) => el(
+                  "button",
+                  {
+                    type: "button",
+                    class: "btn sm" + (pump2.rel === v ? " on" : ""),
+                    title: REL_TIPS[l],
+                    onclick: () => set2({ rel: v })
+                  },
+                  l
+                )
+              )
+            ),
+            seg(
+              "Comes back",
+              PUMP_CURVES.map(([v, l]) => [
+                v,
+                l,
+                v === "eased" ? "Fast at first, then easing in, like a compressor" : "At an even rate, all the way back by the time set (as in Ada’s tool)"
+              ]),
+              pump2.curve,
+              (v) => set2({ curve: v })
             ),
             el(
               "div",
@@ -37236,14 +37405,14 @@ body[data-mode='scene'] #scene {
                 pump2.mode === "level" ? "The part’s level between kicks (100 is a good start; 127 is full)." : "The filter between kicks (127 is fully open; lower if the sound is darker)."
               )
             ),
-            drawing(t, k2),
+            views(),
             from,
             el(
               "p",
               { class: "pmNote" },
               pump2.mode === "level" ? "On the MC-707, once per track: press KNOB ASSIGN with track " + devNum(t) + " selected and set SOUND (C4) to Level. The pump moves that knob; set to something else, it moves that instead." : "The pump moves the FILTER knob (cutoff, unless KNOB ASSIGN has it on something else on track " + devNum(t) + ")."
             )
-          ] : drawing(t, k2),
+          ] : el("div", { class: "pmEmpty hint" }, "Pump is off for this clip."),
           el(
             "div",
             { style: "display:flex;justify-content:flex-end;gap:8px" },

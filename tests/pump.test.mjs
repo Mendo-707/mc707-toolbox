@@ -114,6 +114,32 @@ test('Pump: the shape dips on the kick, eases back, wraps at the loop, and leave
   assert.deepEqual(errors, []);
 });
 
+test('Pump: start, hold and comeback are set in eighths of a 16th; straight or eased; older pumps convert', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const P = window.__app.pump;
+    const base = { mode: 'level', depth: 'medium', rel: 2, hold: 0.5, start: 0, curve: 'eased', rest: 100 },
+      kicks = [{ s: 4, v: 100 }],
+      v = o => P.pumpValues({ ...base, ...o }, kicks, 16, 1);
+    const late = v({ start: 0.25 }),
+      straight = v({ curve: 'straight', hold: 0 }),
+      long = v({ rel: 4 });
+    return {
+      lateAt: [late[31], late[32], late[33], late[34]],
+      straight: [straight[32], straight[40], straight[48], straight[49]],
+      longVsShort: [long[48], v({})[48]],
+      old: P.fixPump({ mode: 'filter', rel: '1/4' }),
+      odd: P.fixPump({ mode: 'level', rel: 3.3, hold: -2, start: 0.06 })
+    };
+  });
+  assert.deepEqual(r.lateAt, [100, 100, 70, 40], 'a ¼ 16th late: still up on the kick, down two points later');
+  assert.deepEqual(r.straight, [40, 70, 100, 100], 'straight: an even line back, all the way by 2 16ths');
+  assert.ok(r.longVsShort[0] < r.longVsShort[1], 'a longer comeback is still lower a 16th later');
+  assert.deepEqual(r.old, { mode: 'filter', depth: 'medium', rel: 4, hold: 0.5, start: 0, curve: 'eased', rest: 127 });
+  assert.deepEqual([r.odd.rel, r.odd.hold, r.odd.start], [3.25, 0, 0], 'kept on the eighths and in range');
+  assert.deepEqual(errors, []);
+});
+
 test('Pump: a clip with a pump writes it into its motion with the clip, and clears it when the pump goes', async () => {
   const { page, errors } = await openApp();
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
@@ -127,7 +153,7 @@ test('Pump: a clip with a pump writes it into its motion with the clip, and clea
   await page.click('.sbClip[data-t="3"][data-k="0"]', { button: 'right' });
   await page.getByText('Pump (sidechain)…').first().click();
   assert.match(await page.textContent('#pmOv'), /Follows the kicks in track 1 clip 1/);
-  assert.equal(await page.locator('#pmOv .pmKick').count(), 2, 'a kick in each of the 2 bars');
+  assert.equal(await page.locator('#pmOv .pmDraw:not(.pmClose) .pmKick').count(), 2, 'a kick in each of the 2 bars');
   await page.click('#pmOv button:has-text("Done")');
   const lane = (s, l) =>
     page.evaluate(
