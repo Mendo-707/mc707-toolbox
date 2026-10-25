@@ -82,18 +82,21 @@ async function readRun(l, n) {
 }
 /**
  * Write sections as scenes from scene `first` on: each track's clip, and each scene's LENGTH (the last
- * one OFF, so the chain stays on it), then read them back.
+ * one OFF, so the chain stays on it), then read them back. With only (row indexes), only those scenes'
+ * clips are written; the lengths always go, since each depends on where the chain ends.
  * @returns {Promise<{ok:boolean, checked:boolean, why?:string}>}
  */
-export async function writeScenes(list, first) {
+export async function writeScenes(list, first, only = null) {
   if (!list.length) return { ok: false, checked: false, why: 'the song has nothing to play' };
   if (first + list.length > SCENES) return { ok: false, checked: false, why: 'more scenes than the MC-707 has' };
   const want = new Map();
   for (const t of DEVS[DEV].tracks)
-    want.set(
-      sceneClipAddr(t, first),
-      list.map(x => x.clips[t] + 1)
-    );
+    if (only) for (const i of only) want.set(sceneClipAddr(t, first + i), [list[i].clips[t] + 1]);
+    else
+      want.set(
+        sceneClipAddr(t, first),
+        list.map(x => x.clips[t] + 1)
+      );
   want.set(
     sceneLenAddr(first),
     list.map((x, i) => (i === list.length - 1 ? 0 : x.bars))

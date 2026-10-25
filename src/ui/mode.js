@@ -9,7 +9,7 @@ import { liveRender } from '../live/panels.js';
 import { vizStart } from '../live/visualizer.js';
 import { liveGenrePick, livePickOnOpen } from '../live/genre-picker.js';
 import { synthEnter } from '../zen/zc-synth.js';
-import { sceneEnter } from '../scene/grid.js';
+import { sceneEnter } from '../scene/screen.js';
 
 /* ---- mode switch ---- */
 export function setMode(m) {

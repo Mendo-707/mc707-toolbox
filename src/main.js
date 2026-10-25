@@ -141,7 +141,7 @@ import { liveInit } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
 import * as sceneModel from './scene/model.js';
-import { scenesSend, sendPlan } from './scene/send.js';
+import { pending, writeAll, writeChanged, writeOneClip, writeOneScene, writeThese } from './scene/write.js';
 import { songToRows, scenesToSong } from './scene/convert.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
@@ -266,7 +266,18 @@ PROJ.t = projTitle;
       sections: songSections,
       scan: { once: scanOnce, diff: scanDiff, reset: scanReset, open: sceneFinderOpen }
     },
-    scene: { ...sceneModel, send: scenesSend, plan: sendPlan, fromSong: songToRows, toSong: scenesToSong, setMode },
+    scene: {
+      ...sceneModel,
+      pending,
+      write: writeThese,
+      writeAll,
+      writeChanged,
+      writeOneClip,
+      writeOneScene,
+      fromSong: songToRows,
+      toSong: scenesToSong,
+      setMode
+    },
     get S() {
       return S;
     },

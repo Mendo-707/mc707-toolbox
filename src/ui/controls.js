@@ -2,7 +2,7 @@
 // (renderAll).
 //
 // Reads: S, UI, ED, TR, MIDI, AUDREC, STAGE, CM, bw.
-import { sceneKeyDown } from '../scene/grid.js';
+import { sceneKeyDown } from '../scene/screen.js';
 import { songMixerOpen } from '../song/song-mixer.js';
 import { hooks } from '../core/hooks.js';
 import { $, clamp, el, toast } from '../core/dom.js';

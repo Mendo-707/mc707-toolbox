@@ -1,5 +1,6 @@
-/* Scene Mode (scene/): the scenes as a grid like the MC-707's, in Song Mode's own look (its colour tokens,
-   light and dark), the eight tracks across in their colours and the scenes down in chain order. */
+/* Scene Mode (scene/), in Song Mode's look (its colour tokens, light and dark): the toolbar with the four
+   steps, the scene chain down the left, the clips board (8 tracks of 16 clips in their colours) and the
+   clip editor under it. ✓ written · ● changed · + new show the same way everywhere. */
 body[data-mode='scene'] #menubar [data-m='song'],
 body[data-mode='scene'] #menubar [data-m='live'],
 body[data-mode='scene'] #menubar [data-m='synth'],
@@ -27,14 +28,18 @@ body[data-mode='scene'] #main {
   flex-direction: column;
   background: var(--bg);
   color: var(--ink);
+  --ok: #2e9e52;
+  --chg: #e8a21a;
 }
 body[data-mode='scene'] #scene {
   display: flex;
 }
+
+/* ---- toolbar ---- */
 .scnTop {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 8px 14px;
   align-items: center;
   padding: 8px 12px;
   background: var(--panel);
@@ -52,204 +57,504 @@ body[data-mode='scene'] #scene {
   color: var(--mute);
 }
 .scnTop input[type='number'] {
-  width: 64px;
+  width: 60px;
 }
 .scnTop .pos {
-  min-width: 150px;
+  min-width: 140px;
   font-variant-numeric: tabular-nums;
+}
+.stSteps {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+.stStep {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  align-items: center;
+  padding: 3px 10px 3px 4px;
+  font: inherit;
+  text-align: left;
+  color: var(--mute);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+}
+.stStep + .stStep::before {
+  content: '›';
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mute);
+}
+.stStep i {
+  grid-row: span 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 12px;
+  background: var(--panel2);
+  color: var(--mute);
+}
+.stStep b {
+  font-size: 13px;
+  line-height: 1.1;
+}
+.stStep span {
+  font-size: 11px;
+  line-height: 1.1;
+}
+.stStep.now {
+  border-color: var(--hot);
+  color: var(--ink);
+}
+.stStep.now i {
+  background: var(--hot);
+  color: #fff;
+}
+.stStep.done i {
+  background: var(--ok);
+  color: #fff;
+}
+.stStep.done {
+  color: var(--ink);
+}
+.stStep.later {
+  opacity: 0.6;
+}
+.scnConn {
+  color: var(--hot);
+  border-color: var(--hot);
+}
+.scAuto {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--ok);
+}
+.scWrite {
+  display: inline-flex;
+}
+.scWrite .btn:first-child {
+  border-radius: 5px 0 0 5px;
+}
+.scWrite .btn:last-child {
+  border-radius: 0 5px 5px 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 4px 7px;
+}
+.scCk {
+  max-width: 280px;
 }
 .scnNote {
   margin: 8px 12px 0;
   color: var(--mute);
 }
-.scnWrap {
+
+/* ---- the body: chain | board and editor ---- */
+.sBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.sRight {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sMain {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sBoardWrap {
+  overflow: auto;
+  padding: 10px 12px;
+  flex: 1;
+}
+.sMain.editing .sBoardWrap {
+  flex: 0 1 auto;
+  max-height: 44%;
+}
+.sMain.wide .sBoardWrap {
+  max-height: none;
+  flex: none;
+}
+.scnFoot {
+  margin: 0;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* ---- scene chain ---- */
+.sChain {
+  width: 330px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  min-height: 0;
+}
+.scHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.scHead .hint {
+  flex: 1;
+}
+.scFirst select {
+  font-size: 12px;
+  padding: 2px 4px;
+}
+.scList {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 12px;
-}
-.scnGrid {
-  display: grid;
-  grid-template-columns: 270px repeat(var(--n), minmax(112px, 1fr));
-  gap: 6px;
-  min-width: max-content;
-}
-.scnHead,
-.scnRow {
-  display: contents;
-}
-.scnCorner,
-.scnTrk {
-  position: sticky;
-  top: -12px;
-  z-index: 2;
-  background: var(--bg);
-  padding: 6px 8px 8px;
-  font-size: 13px;
-  color: var(--mute);
-}
-.scnTrk {
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  border-top: 3px solid var(--tc);
-  background: var(--panel);
-  border-radius: 6px 6px 0 0;
+  gap: 4px;
 }
-.scnTrk b {
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.scnLabel {
+.scRowC {
   position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: 6px;
-  align-items: center;
-  background: var(--panel);
+  padding: 5px 6px 6px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 6px 8px;
-  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
 }
-.scnNo {
-  min-width: 42px;
+.scRowC.sel {
+  border-color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+.scRowC.playing {
+  border-color: var(--hot);
+  box-shadow: inset 3px 0 0 var(--hot);
+}
+.scLine {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.scPlay {
+  font: inherit;
+  font-size: 11px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+.scPlay:hover {
+  border-color: var(--hot);
+  color: var(--hot);
+}
+.scNo {
+  min-width: 34px;
   text-align: center;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: var(--panel2);
   border-radius: 4px;
-  padding: 6px 4px;
+  padding: 2px 3px;
+  font-size: 13px;
 }
-.scnName {
+.scName {
+  flex: 1;
   min-width: 0;
   font: inherit;
   font-weight: 600;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 2px 4px;
+  padding: 1px 4px;
   color: var(--ink);
 }
-.scnName:hover,
-.scnName:focus {
+.scName:hover,
+.scName:focus {
   border-color: var(--line);
-  background: var(--bg);
+  background: var(--panel);
 }
-.scnLabel .btn.sm {
-  padding: 2px 8px;
-}
-.scnLen {
+.scBars {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
   color: var(--mute);
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
 }
-.scnBars {
-  width: 50px;
+.scBars input {
+  width: 44px;
+  padding: 1px 3px;
 }
-.scnProg {
+.scWr {
+  padding: 1px 6px;
+}
+.scChips {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  margin: 5px 0 0 27px;
+}
+.scChip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 0;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--tc) 22%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--tc) 60%, transparent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.scChip.none {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--mute);
+  font-weight: 400;
+}
+.scChip:hover {
+  border-color: var(--tc);
+}
+.scProg {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: 3px;
 }
-.scnProg i {
+.scProg i {
   display: block;
   height: 100%;
   width: 0;
   background: var(--hot);
 }
-.scnRow.cur .scnLabel {
-  border-color: var(--grid-c);
+.scAdd {
+  margin: 6px;
 }
-.scnRow.playing .scnLabel {
-  border-color: var(--hot);
-  box-shadow: inset 3px 0 0 var(--hot);
+/* ✓ ● + marks */
+.scMark,
+.sbMark {
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 14px;
+  text-align: center;
 }
-.scnRow.playing .scnCell:not(.empty) {
-  box-shadow: inset 0 -3px 0 var(--tc);
+.scMark.written,
+.sbClip.written .sbMark {
+  color: var(--ok);
 }
-.scnCell {
+.scMark.changed,
+.sbClip.changed .sbMark {
+  color: var(--chg);
+}
+.scMark.new,
+.sbClip.new .sbMark {
+  color: var(--hot);
+}
+
+/* ---- clips board ---- */
+.sBoard {
+  display: grid;
+  grid-template-columns: 118px repeat(16, minmax(50px, 1fr));
+  gap: 4px;
+  min-width: 960px;
+}
+.sbRow {
+  display: contents;
+}
+.sbHead .sbNum {
+  text-align: center;
+  font-size: 11px;
+  color: var(--mute);
+}
+.sbTrk {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-left: 4px solid var(--tc);
+  background: var(--panel);
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 0;
+}
+.sbHead .sbTrk {
+  border-left: 0;
+  background: transparent;
+}
+.sbTrk b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sbWr {
+  padding: 0 5px;
+}
+.sbClip {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   justify-content: center;
-  gap: 2px;
-  min-height: 64px;
-  padding: 6px 8px;
-  text-align: left;
+  gap: 1px;
+  min-height: 48px;
+  padding: 3px 4px;
   font: inherit;
+  text-align: left;
   color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--tc);
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--tc) 14%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--tc) 55%, var(--line));
+  border-radius: 5px;
   cursor: pointer;
   overflow: hidden;
+  min-width: 0;
 }
-.scnCell b {
-  max-width: 100%;
+.sbClip b {
+  font-size: 11px;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  padding-right: 9px;
+}
+.sbSub {
+  font-size: 10px;
+  color: var(--mute);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.scnCell .hint {
-  font-size: 12px;
+.sbMark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
 }
-.scnTone {
-  max-width: 100%;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.scnTone.none {
-  color: var(--mute);
-  font-style: italic;
-}
-.scnCell.same {
-  background: var(--panel2);
-  border-left-color: color-mix(in srgb, var(--tc) 45%, transparent);
-}
-.scnCell.same b,
-.scnCell.same .scnTone {
-  color: var(--mute);
-}
-.scnCell.empty {
+.sbClip.empty {
   align-items: center;
   background: transparent;
-  border-style: dashed;
-  border-left: 1px dashed var(--line);
+  border: 1px dashed var(--line);
 }
-.scnPlus {
+.sbPlus {
   color: var(--mute);
-  font-size: 20px;
 }
-.scnCell:hover {
+.sbClip:hover {
   border-color: var(--tc);
 }
-.scnCell.sel {
+.sbClip.unused {
+  opacity: 0.6;
+}
+.sbClip.inScene {
+  box-shadow: 0 0 0 2px var(--tc);
+  opacity: 1;
+}
+.sbClip.playing {
+  background: color-mix(in srgb, var(--tc) 45%, var(--panel));
+}
+.sbClip.sel {
   outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
-.scnCell.over {
-  opacity: 0.55;
-  border-style: dotted;
+.sbClip.busy::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 2px solid var(--hot);
+  border-radius: 4px;
+  pointer-events: none;
 }
-.scnFoot {
-  margin: 0;
-  padding: 8px 12px 12px;
-  border-top: 1px solid var(--line);
+.sMain.wide .sBoard {
+  grid-template-columns: 118px repeat(16, minmax(50px, 1fr));
+}
+
+/* ---- the clip editor ---- */
+.scnDock {
+  flex: 1 1 56%;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  border-top: 3px solid var(--tc);
   background: var(--panel);
 }
+.scnDockHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.scnDockHead .grp {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.scnDockHead .btn.off {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.scnTr span {
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.scnShared {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.scnTabs .btn {
+  min-width: 56px;
+}
+.scnDock #editor {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  border-top: 0;
+}
+/* a Scene Mode pattern is the song's own: Song Mode's place-and-keep buttons and its link note don't belong here */
+.scnDock .edView,
+.scnDock .bswarn {
+  display: none;
+}
+.scnZen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.scnZen .zcDock .zcBox {
+  height: 100%;
+  min-height: 520px;
+}
+
+/* ---- empty state ---- */
 .scnEmpty {
   margin: 48px auto;
-  max-width: 560px;
+  max-width: 600px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -262,9 +567,12 @@ body[data-mode='scene'] #scene {
 }
 .scnEmpty .grp {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
-/* the pattern and tone pickers */
+
+/* ---- the pattern and tone pickers ---- */
 .spBox {
   width: min(760px, 100%);
   max-height: 88vh;
@@ -316,249 +624,10 @@ body[data-mode='scene'] #scene {
   color: var(--mute);
   min-width: 70px;
 }
-@media (max-width: 700px) {
-  .scnGrid {
-    grid-template-columns: 170px repeat(var(--n), minmax(104px, 1fr));
-  }
-}
-/* the track editor: Song Mode's pattern editor docked under the grid, or expanded beside the track's column */
-.scnBody {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.scnBody .scnWrap {
-  flex: 1;
-}
-.scnBody.editing .scnWrap {
-  flex: 1 1 30%;
-  min-height: 120px;
-}
-.scnDock {
-  flex: 1 1 58%;
-  min-height: 260px;
-  display: flex;
-  flex-direction: column;
-  border-top: 3px solid var(--tc);
-  background: var(--panel);
-}
-.scnBody.wide {
-  flex-direction: row;
-}
-.scnBody.wide .scnDock {
-  flex: 1;
-  min-width: 0;
-  border-top: 0;
-  border-left: 3px solid var(--tc);
-}
-.scnDockHead {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  align-items: center;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--line);
-}
-.scnDockHead .grp {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-.scnDockHead .btn.off {
-  opacity: 0.35;
-  pointer-events: none;
-}
-.scnTr span {
-  min-width: 28px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.scnShared {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.scnDock #editor {
-  flex: 1;
-  height: auto;
-  min-height: 0;
-  border-top: 0;
-}
-/* a scene pattern is the song's own: Song Mode's place-and-keep buttons don't belong here */
-.scnDock .edView {
-  display: none;
-}
-.scnCell.editing {
-  outline: 2px solid var(--tc);
-}
-.scnCol {
-  width: 220px;
-  flex: none;
-  overflow: auto;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--bg);
-}
-.scnColHead {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 6px 8px;
-  border-top: 3px solid var(--tc);
-}
-.scnColCell {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 6px;
-  font: inherit;
-  text-align: left;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--tc);
-  border-radius: 6px;
-  cursor: pointer;
-}
-.scnColCell span:last-child {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.scnColCell.empty {
-  color: var(--mute);
-  border-style: dashed;
-}
-.scnColCell.sel {
-  outline: 2px solid var(--tc);
-}
-.scnColCell .scnNo {
-  min-width: 36px;
-  padding: 2px 4px;
-}
-/* the cell's own controls say what the pattern is shared with */
-.scnDock .bswarn {
-  display: none;
-}
-.scnColTrks {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 3px;
-  margin-bottom: 6px;
-}
-.scnColTrk {
-  font: inherit;
-  font-size: 12px;
-  padding: 3px 0;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-bottom: 3px solid var(--tc);
-  border-radius: 4px;
-  cursor: pointer;
-}
-.scnColTrk.on {
-  background: var(--tc);
-  color: #000;
-  font-weight: 700;
-}
-/* the Sound tab: the ZenCore editor (in its own look) filling the dock */
-.scnZen {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-.scnZen .zcDock .zcBox {
-  height: 100%;
-  min-height: 520px;
-}
-.scnZenNote {
-  padding: 16px;
-}
-.scnTabs .btn {
-  min-width: 56px;
-}
-/* ▦ Clips: each track's 16 MC-707 clips under its name, lit where the scenes use one */
-.scnClips {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 6px;
-}
-.scnPads {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 2px;
-}
-.scnPad {
-  font-size: 9px;
-  overflow: hidden;
-  line-height: 16px;
-  text-align: center;
-  border-radius: 3px;
-  color: var(--mute);
-  background: var(--bg);
-  border: 1px solid var(--line);
-}
-.scnPad.use {
-  background: var(--tc);
-  border-color: var(--tc);
-  color: #000;
-  font-weight: 700;
-}
-.scnPad.free::after {
-  content: '';
-}
-.scnPad.use.free {
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
-}
-.scnPad.busy {
-  outline: 2px solid #e8452a;
-  outline-offset: -1px;
-}
-.scnPad.busy:not(.use) {
-  background: color-mix(in srgb, #e8452a 18%, var(--bg));
-}
-.scnClips select {
-  width: 100%;
-  min-width: 0;
-  font-size: 12px;
-  padding: 2px 4px;
-}
-.scnTrk {
-  min-width: 0;
-}
-.scnClipSum {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-start;
-  color: var(--ink);
-}
-.scnClipSum .warn {
-  color: var(--hot);
-  font-weight: 600;
-}
-.scnSent {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  color: var(--mute);
-  white-space: nowrap;
-}
-.scnSent.sent {
-  color: #2e9e52;
-  border-color: #2e9e52;
-}
-.scnSent.changed {
-  color: var(--hot);
-  border-color: var(--hot);
-}
+
+/* ---- the guide ---- */
 .sgBox {
-  width: min(640px, 100%);
+  width: min(660px, 100%);
   max-height: 88vh;
   overflow: auto;
   line-height: 1.5;
@@ -569,11 +638,17 @@ body[data-mode='scene'] #scene {
 .sgPart ol {
   margin: 0;
   padding-left: 22px;
+  list-style: none;
 }
 .sgPart li {
-  margin: 3px 0;
+  margin: 4px 0;
 }
-.scnConn {
-  color: var(--hot);
-  border-color: var(--hot);
+
+@media (max-width: 1100px) {
+  .sChain {
+    width: 280px;
+  }
+  .stStep span {
+    display: none;
+  }
 }

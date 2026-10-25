@@ -25,10 +25,11 @@ import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { sceneFinderOpen } from '../zen/zc-scan.js';
-import { sceneToggle } from '../scene/grid.js';
+import { sceneToggle } from '../scene/screen.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
-import { scenesSendOpen } from '../scene/send.js';
+import { WO, setWO, writeAll, writeChanged } from '../scene/write.js';
+import { checkNew } from '../scene/check.js';
 import { sceneGuideOpen } from '../scene/guide.js';
 import {
   exitApp,
@@ -138,13 +139,17 @@ function initMenubar() {
         ['Play / stop', () => sceneToggle(), 'Space'],
         0,
         ['Add a scene', () => addRow(rows().length ? rows().length - 1 : null)],
-        ['Make scenes from the song', () => scenesFromSong()],
-        ['Lay the scenes out in Song Mode', () => scenesToSong()],
+        ['Make scenes and clips from the song…', () => scenesFromSong()],
+        ['Lay the scenes out in Song Mode…', () => scenesToSong()],
         0,
-        ['Send to MC-707…', () => scenesSendOpen()],
-        ['Play it on the MC-707: the steps…', () => sceneGuideOpen()],
+        ['Write what changed', () => writeChanged()],
+        ['Write everything', () => writeAll()],
+        ['Write the clips only', () => writeAll('clips')],
+        ['Write the scenes only', () => writeAll('scenes')],
+        ['Auto-write changes', () => setWO('auto', !WO.auto), '', () => WO.auto],
         0,
-        ['Your MC-707 clips…', () => clipMapOpen()]
+        ['Check the new clips on the MC-707', () => checkNew()],
+        ['How it plays on the MC-707…', () => sceneGuideOpen()]
       ]
     ],
     [
