@@ -18,7 +18,7 @@ import { toneGenres } from '../song/sound-suggestions.js';
 import { ZS, soundOf, soundsLoad } from '../zen/zc-sounds.js';
 import { soundFrom } from '../zen/zc-tone.js';
 import { sendSound } from '../zen/zc-tone.js';
-import { reselect, zeQuietly } from '../zen/zc-editor.js';
+import { reselect, WHOLE_SOUND, zeQuietly } from '../zen/zc-editor.js';
 import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxRead, zxWrite } from '../zen/zc-sysex.js';
 import { decodeParams, paramAddr, stepAddr, writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
@@ -478,7 +478,8 @@ export async function fillTonesOpen() {
         await zeQuietly(
           () => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k), new Set(Object.keys(j.r.snd.v))),
           j.t,
-          () => reselect(j.t, j.k)
+          () => reselect(j.t, j.k),
+          WHOLE_SOUND
         );
         /* the clips screen shows the sound's name */
         cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);

@@ -36895,15 +36895,17 @@ body[data-mode='scene'] #scene {
     QUIET.delete(ch);
     if (out2) out2.send([176 | ch, 11, exprBack(t)]);
   }
-  async function zeQuietly(send2, t = ZE.t, after = null) {
+  var WHOLE_SOUND = 3e4;
+  async function zeQuietly(send2, t = ZE.t, after = null, cap = 1500) {
     const ch = chOf(t), out2 = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
     if (!q.n++ && out2) out2.send([176 | ch, 11, 0]);
     QUIET.set(ch, q);
     try {
-      await Promise.race([send2(), pause4(1500)]);
-      await Promise.race([zxFlush(), pause4(1500)]);
-      await pause4(40);
+      await Promise.race([send2(), pause4(cap)]);
+      await Promise.race([zxFlush(), pause4(cap)]);
+      await pause4(cap > 1500 ? 250 : 40);
       if (after) await after();
+      if (after && cap > 1500) await pause4(250);
     } catch (e) {
     } finally {
       if (QUIET.get(ch) === q && --q.n <= 0) {
@@ -37302,7 +37304,8 @@ body[data-mode='scene'] #scene {
           await zeQuietly(
             () => sendSound(snd, slotAddr(snd.kind, t, k2), new Set(Object.keys(snd.v))),
             t,
-            () => reselect(t, k2)
+            () => reselect(t, k2),
+            WHOLE_SOUND
           );
         }
         const was = S.scn.done.p && S.scn.done.p[t + ":" + k2], pm = pumpMotion(t, k2, p);
@@ -57479,7 +57482,8 @@ body[data-mode='scene'] #scene {
           await zeQuietly(
             () => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k), new Set(Object.keys(j.r.snd.v))),
             j.t,
-            () => reselect(j.t, j.k)
+            () => reselect(j.t, j.k),
+            WHOLE_SOUND
           );
           cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);
           tracks3.add(j.t);
