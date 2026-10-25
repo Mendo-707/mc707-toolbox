@@ -855,3 +855,28 @@
   flex-wrap: wrap;
   margin: 8px 0 6px 30px;
 }
+/* MC-707 project templates (ui/templates.js) */
+.tplBox {
+  max-width: 640px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.tplBox h4 {
+  margin: 14px 0 4px;
+}
+.tplBox .hint {
+  line-height: 1.45;
+}
+.tplSteps {
+  margin: 4px 0;
+  padding-left: 22px;
+}
+.tplSteps li {
+  margin: 3px 0;
+}
+.tplPick {
+  background: var(--panel2);
+  border-left: 3px solid var(--hot);
+  padding: 8px 10px;
+  border-radius: 4px;
+}

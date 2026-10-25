@@ -4,6 +4,7 @@
 // Clips that no longer fit a track's type are removed (with undo).
 //
 // Reads: S, DEV.
+import { templatesOpen } from './templates.js';
 import { $, el, toast } from '../core/dom.js';
 import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
@@ -187,7 +188,13 @@ function render(ov) {
       el(
         'p',
         { class: 'hint' },
-        'On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings.'
+        'On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings. ',
+        el(
+          'button',
+          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templatesOpen()) },
+          'MC-707 project templates…'
+        ),
+        ' start a project with the tracks already set up.'
       )
     )
   );

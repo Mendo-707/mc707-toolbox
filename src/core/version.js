@@ -12,7 +12,9 @@ export const LINKS = {
   params: 'https://github.com/Mendo-707/mc707-toolbox/blob/main/docs/ZENCORE-PARAMETERS.md',
   diagnostics: 'https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html',
   web: 'https://mendo-707.github.io/mc707-toolbox/',
-  licence: 'https://github.com/Mendo-707/mc707-toolbox/blob/main/LICENSE.md'
+  licence: 'https://github.com/Mendo-707/mc707-toolbox/blob/main/LICENSE.md',
+  /* the MC-707 project templates (made by the author: an empty project per track layout) */
+  templates: 'https://github.com/Mendo-707/mc707-toolbox/raw/main/templates/MC707-Project-Templates.zip'
 };
 /** Open a web page in the browser (the Windows app hands it to the system browser). */
 export function openLink(url) {

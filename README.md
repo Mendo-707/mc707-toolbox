@@ -41,6 +41,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **Scene Mode** (new, experimental): arrange a song the way the MC-707 keeps one, as each track's 16 clips and a chain of scenes, then write it over USB so the MC-707 plays the whole song by itself. Make the clips and scenes from your Song Mode arrangement in one click, edit any clip's notes in the pattern editor and its sound in the ZenCore editor, and see every clip and scene marked written, changed or new. Write what changed, one clip, a track, a scene or everything, or let Auto-write do it. See [Scene Mode](#scene-mode). Thanks to Ada for the pointers on the scene chain.
 - **Your MC-707 clips**: read a clip's notes from the MC-707 into My patterns, write a pattern into a clip (read back to check), and send a whole song's patterns to the MC-707's clips. Patterns up to 8 bars go in 1/16 steps and 9–16 bars in 1/8; triplet patterns go in 1/16T or 1/8T steps so every note lands on a step; drum rolls and flams use the MC-707's sub steps (1/2, 1/3, 1/4, FLAM).
 - **1.5.1: Pump (sidechain), experimental**: in Scene Mode, right-click a bass, pad or chords clip › **Pump (sidechain)…** and the part ducks on every kick and comes back, written into the clip's motion so the MC-707 pumps it by itself. **Volume** (set SOUND (C4) to Level with KNOB ASSIGN on that track, once) or **Filter**; depth and rest level; when it starts, how long it holds and how long it comes back, set finely in eighths of a 16th, eased or straight; drawn over the clip and close up on a kick. Built on Ada Locriana's [mctools_sidechain](https://github.com/Locriana/mctools_sidechain), with her timing suggestion. **Help › For developers › Motion test** shows which knob each motion lane moves.
+- **1.5.2: MC-707 project templates**: an empty project for each track layout, with the steps to copy them onto the SD card in storage mode and start a song from one (see [MC-707 project templates](#mc-707-project-templates)); **Help › MC-707 project templates** names the one for your Track setup.
 - **1.5.2: Mixer knobs**: each strip in the Song and Live mixers has the track's four knobs, **Filter, Mod, FX and Sound** (C1–C4: the FILTER, MOD and FX knobs above each MC-707 fader, and SOUND, the fourth KNOB ASSIGN lists), sent as CC 80–83. Whatever KNOB ASSIGN has on a knob is what it moves. In Song Mode a knob is saved with the song and only sent once you have set it (greyed until then); in Live Mode a track's knob rests where you put it, or where Live's knob panel has it.
 - **Theme**: the app is now **dark** by default. **Settings › Theme** switches to Light, or Match the computer.
 
@@ -111,6 +112,15 @@ The Mac and Linux apps are new in 1.4 and haven't been tried on a real MC-707 ye
 ### In a browser
 
 Open the [web version](https://mendo-707.github.io/mc707-toolbox/), or download `index.html` and open it, in **Chrome or Edge**. Everything works except real folders and Save As dialogs, which need the desktop app. Firefox and Safari don't support Web MIDI.
+
+### MC-707 project templates
+
+Empty MC-707 projects with the tracks already set as drum or tone tracks, one per layout (8 drum tracks, 6 + 2, 4 + 4, 3 + 5, 2 + 6, 1 + 7, 8 tone tracks, and EMPTY), so the MC-707 matches the app's Track setup from the start: [MC707-Project-Templates.zip](templates/MC707-Project-Templates.zip). In the app, **Help › MC-707 project templates** says which one fits your Track setup.
+
+1. Unzip it (8 .mpj files).
+2. On the MC-707 (not connected to the computer), hold **SHIFT** and press **KNOB ASSIGN**, pick **STORAGE MODE** and press **ENTER**, then connect the USB cable: the SD card shows up as a drive.
+3. Copy the .mpj files into the folder with your other MC-707 projects (the .mpj files under ROLAND), eject the drive, and turn the MC-707 off and on.
+4. **PROJECT › LOAD** the template, then straight away **PROJECT › WRITE** it under a new name, so the template stays empty.
 
 ### Connect the MC-707
 

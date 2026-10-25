@@ -26,6 +26,7 @@ import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
+import { templatesOpen } from './templates.js';
 import { sceneToggle } from '../scene/screen.js';
 import { addRow, rows } from '../scene/model.js';
 import { scenesFromSong, scenesToSong } from '../scene/convert.js';
@@ -239,6 +240,7 @@ function initMenubar() {
         ['Shortcuts and tips', go('#bHelp'), '', null, null, 'song'],
         ['Guide', () => openLink(LINKS.guide)],
         ['Set up your MC-707…', go('#bSetup')],
+        ['MC-707 project templates…', () => templatesOpen()],
         0,
         [
           'For developers',
