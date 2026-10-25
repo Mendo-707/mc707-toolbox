@@ -2091,8 +2091,12 @@ input[type='range'] {
 }
 .ftHead {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 4px;
+}
+.ftHead .ftSel {
+  margin-left: auto;
 }
 .ftClip {
   display: grid;
@@ -57232,6 +57236,7 @@ body[data-mode='scene'] #scene {
         )
       )
     );
+    const tick = (ts, on3) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on3 && !!(c.item && resolve(c.item))));
     const draw = () => {
       const rows2 = DEVS[DEV].tracks.map((t) => {
         const clips = plan2[t].map((c, k2) => {
@@ -57300,7 +57305,31 @@ body[data-mode='scene'] #scene {
             "div",
             { class: "ftHead" },
             el("b", {}, devNum(t) + " " + S.tracks[t].name),
-            el("span", { class: "hint" }, plan2[t].length + " clip" + (plan2[t].length === 1 ? "" : "s"))
+            el("span", { class: "hint" }, plan2[t].length + " clip" + (plan2[t].length === 1 ? "" : "s")),
+            el(
+              "span",
+              { class: "grp ftSel" },
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "btn sm",
+                  title: "Send every clip of this track that has a sound",
+                  onclick: () => (tick([t], true), draw())
+                },
+                "All"
+              ),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "btn sm",
+                  title: "Send nothing to this track",
+                  onclick: () => (tick([t], false), draw())
+                },
+                "None"
+              )
+            )
           ),
           ...clips
         );
@@ -57330,6 +57359,30 @@ body[data-mode='scene'] #scene {
             "button",
             { type: "button", class: "btn sm", onclick: () => (plan2 = makePlan(gid), draw()) },
             "🎲 Shuffle all"
+          ),
+          el(
+            "span",
+            { class: "grp ftSel" },
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Send every clip that has a sound",
+                onclick: () => (tick(DEVS[DEV].tracks, true), draw())
+              },
+              "Select all"
+            ),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "Send nothing",
+                onclick: () => (tick(DEVS[DEV].tracks, false), draw())
+              },
+              "Select none"
+            )
           ),
           el(
             "button",

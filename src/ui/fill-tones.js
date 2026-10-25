@@ -219,6 +219,8 @@ export async function fillTonesOpen() {
             )
       )
     );
+  /* tick (or untick) every clip of these tracks that has something to send */
+  const tick = (ts, on) => ts.forEach(t => plan[t].forEach(c => (c.on = on && !!(c.item && resolve(c.item)))));
   const draw = () => {
     const rows = DEVS[DEV].tracks.map(t => {
       const clips = plan[t].map((c, k) => {
@@ -290,7 +292,31 @@ export async function fillTonesOpen() {
           'div',
           { class: 'ftHead' },
           el('b', {}, devNum(t) + ' ' + S.tracks[t].name),
-          el('span', { class: 'hint' }, plan[t].length + ' clip' + (plan[t].length === 1 ? '' : 's'))
+          el('span', { class: 'hint' }, plan[t].length + ' clip' + (plan[t].length === 1 ? '' : 's')),
+          el(
+            'span',
+            { class: 'grp ftSel' },
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'btn sm',
+                title: 'Send every clip of this track that has a sound',
+                onclick: () => (tick([t], true), draw())
+              },
+              'All'
+            ),
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'btn sm',
+                title: 'Send nothing to this track',
+                onclick: () => (tick([t], false), draw())
+              },
+              'None'
+            )
+          )
         ),
         ...clips
       );
@@ -319,6 +345,30 @@ export async function fillTonesOpen() {
           'button',
           { type: 'button', class: 'btn sm', onclick: () => ((plan = makePlan(gid)), draw()) },
           '🎲 Shuffle all'
+        ),
+        el(
+          'span',
+          { class: 'grp ftSel' },
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn sm',
+              title: 'Send every clip that has a sound',
+              onclick: () => (tick(DEVS[DEV].tracks, true), draw())
+            },
+            'Select all'
+          ),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn sm',
+              title: 'Send nothing',
+              onclick: () => (tick(DEVS[DEV].tracks, false), draw())
+            },
+            'Select none'
+          )
         ),
         el(
           'button',

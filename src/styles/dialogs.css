@@ -990,8 +990,12 @@
 }
 .ftHead {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 4px;
+}
+.ftHead .ftSel {
+  margin-left: auto;
 }
 .ftClip {
   display: grid;
