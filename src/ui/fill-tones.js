@@ -20,10 +20,9 @@ import { soundFrom } from '../zen/zc-tone.js';
 import { sendSound } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
 import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxRead, zxWrite } from '../zen/zc-sysex.js';
-import { clipHasNotes, writeSession } from '../zen/zc-seq.js';
+import { decodeParams, paramAddr, stepAddr, writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
 import { pickTone } from '../scene/pick-tone.js';
-import { askDlg } from './dialogs.js';
 import { catOf } from '../zen/zc-browse-data.js';
 import { GENRE_WORDS, POOL_MAX, fitScore } from './tone-pools.js';
 
@@ -327,7 +326,7 @@ export async function fillTonesOpen() {
       el(
         'p',
         { class: 'hint' },
-        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track that plays its own sound (Sound Source TRACK) with one clip set up here gets the new sound as that track sound. Otherwise each clip gets its own (Sound Source CLIP, which a different kit or tone per clip needs), and any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet. Clips that already have their own sound keep it.'
+        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different kit or tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it.'
       ),
       el(
         'div',
@@ -397,17 +396,6 @@ export async function fillTonesOpen() {
       el(
         'div',
         { class: 'ftActs' },
-        el(
-          'button',
-          {
-            type: 'button',
-            class: 'btn',
-            style: 'margin-right:auto',
-            title: 'If a track went quiet: put tracks back to their own sound (Sound Source TRACK) on the MC-707',
-            onclick: () => trackSound()
-          },
-          'Put tracks back to their own sound…'
-        ),
         el('button', { type: 'button', class: 'btn', onclick: close }, 'Close'),
         el(
           'button',
@@ -427,45 +415,19 @@ export async function fillTonesOpen() {
       },
       plan[t][k].item ? itemName(plan[t][k].item) : ''
     );
-  /* Sound Source back to TRACK on the tracks you pick */
-  const trackSound = async () => {
-    const picks = DEVS[DEV].tracks.map(t =>
-      el(
-        'label',
-        { class: 'ftPickTrk' },
-        el('input', { type: 'checkbox', value: t }),
-        ' ' + devNum(t) + ' ' + S.tracks[t].name
-      )
-    );
-    const ok = await askDlg({
-      title: 'Back to the track’s own sound',
-      text: 'The ticked tracks play their track sound again for every clip (Sound Source TRACK), instead of each clip’s own. Use it when a track went quiet after its clips got sounds.',
-      body: el('div', { class: 'ftPickList' }, ...picks),
-      ok: 'Do it'
-    });
-    if (!ok) return;
-    const ts = picks
-      .map(l => l.querySelector('input'))
-      .filter(i => i.checked)
-      .map(i => +i.value);
-    if (!ts.length) return;
-    if (!(await zxConnect()))
-      return toast('The ' + DEVS[DEV].name + ' is not connected (or MIDI with SysEx is not allowed)');
-    for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
-    await zxFlush();
-    toast(
-      'Track' +
-        (ts.length === 1 ? ' ' : 's ') +
-        ts.map(devNum).join(', ') +
-        (ts.length === 1 ? ' plays its' : ' play their') +
-        ' own sound again'
-    );
+  /* whether clip k of track t holds notes on the MC-707: a quick look at each step's first slot (a step
+     fills its slots from the first) */
+  const holdsNotes = async (t, k) => {
+    const b = await zxRead(paramAddr(t, k), 3, 400, true),
+      p = decodeParams(Array.isArray(b) ? b : null);
+    if (!p) return false;
+    for (let s = 0; s < p.steps; s++) {
+      const r = await zxRead(stepAddr(t, k, s) + 0x10, 2, 250, true);
+      if (Array.isArray(r) && r.length === 2 && !(r[0] === 15 && r[1] === 15)) return true;
+    }
+    return false;
   };
-  /* one byte, or a sound slot's name, read from the MC-707 (null: no answer) */
-  const readByte = async l => {
-    const r = await zxRead(l, 1, 400, true);
-    return Array.isArray(r) && r.length ? r[0] : null;
-  };
+  /* a sound slot's name, read from the MC-707 (null: no answer) */
   const ownName = async (kind, t, k) => {
     const r = await zxRead(slotAddr(kind, t, k), 16, 400, true);
     return Array.isArray(r) ? String.fromCharCode(...r.map(c => (c >= 32 && c < 127 ? c : 32))).trim() : null;
@@ -482,30 +444,21 @@ export async function fillTonesOpen() {
     let done = 0,
       extra = 0;
     const ran = await writeSession('Filling tones', async ui => {
-      const tracks = new Map();
-      /* How each track keeps its sound stays as it is on the MC-707, unless it has to change:
-         - a track on its own sound (Sound Source TRACK) with one clip set up here gets the new sound as
-           that track sound, which all its clips play;
-         - otherwise each clip set up here gets its own (Sound Source CLIP, which a track needs for a
-           different kit or tone per clip), and any other clip of it that holds notes but has no sound
-           of its own (blank or INIT) gets one of the track's new sounds, so none goes quiet. */
+      const tracks = new Set();
+      /* Every track written plays its clips' own sounds (Sound Source CLIP), so each clip can have a
+         different kit or tone. Any other clip of it that holds notes but has no sound of its own (blank
+         or INIT) gets one of the track's new sounds, so none goes quiet. */
       const lead = [...new Set(jobs.map(j => j.t))];
       for (const t of lead) {
         const mine = jobs.filter(j => j.t === t),
           n = plan[t].length,
           kind = mine[0].r.snd.kind;
-        ui.set('Track ' + devNum(t) + ': how does it keep its sound?', 0);
-        const src = await readByte(trackSetAddr(t) + 4);
-        if (n === 1 && src !== 1) {
-          mine.forEach(j => (j.k = 16));
-          continue;
-        }
         for (let k = n; k < 16 && !ui.cancelled; k++) {
           ui.set('Track ' + devNum(t) + ': does clip ' + (k + 1) + ' hold notes?', 0);
-          const r = await clipHasNotes(t, k);
-          if (!r.ok || !r.notes) continue;
+          /* a clip with a sound of its own keeps it; one without, that holds notes, gets one */
           const own = await ownName(kind, t, k);
           if (own && !/^init (tone|kit)$/i.test(own)) continue;
+          if (!(await holdsNotes(t, k))) continue;
           jobs.push({ t, k, r: mine[(k - n) % mine.length].r });
           extra++;
         }
@@ -518,14 +471,12 @@ export async function fillTonesOpen() {
         );
         await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
         /* the clips screen shows the sound's name */
-        const m = cmFix()[j.t];
-        if (j.k < 16) m.names[j.k] = j.r.name.slice(0, 16);
-        else m.names[0] = j.r.name.slice(0, 16);
-        tracks.set(j.t, j.k === 16 ? 0 : 1);
+        cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);
+        tracks.add(j.t);
         done++;
       }
-      /* the tracks play their own sound (0) or their clips' own sounds (1) */
-      for (const [t, src] of tracks) zxWrite(trackSetAddr(t) + 4, [src]);
+      /* the tracks play their clips' own sounds */
+      for (const t of tracks) zxWrite(trackSetAddr(t) + 4, [1]);
       await zxFlush();
     });
     if (ran === null) return;

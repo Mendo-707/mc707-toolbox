@@ -95,14 +95,17 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
       mem = window.__zcMem,
       put = (l, b) => b.forEach((x, i) => mem.set(l + i, x));
     /* the tone tracks' clips answer, empty, as a new project's do */
-    for (let t = 3; t < 4; t++)
+    for (let t = 3; t < 8; t++)
       for (let k = 0; k < 16; k++) {
         put(Q.paramAddr(t, k), [1, 1, 0]);
         put(Q.clipAddr(t, k), Array(16).fill(32));
+        [...'INIT TONE       '].forEach((c, i) =>
+          mem.set(window.__app.zen.slotAddr('tone', t, k) + i, c.charCodeAt(0))
+        );
         for (let st = 0; st < 16; st++) put(Q.stepAddr(t, k, st) + 0x10, Array(32).fill(15));
       }
     put(Q.paramAddr(3, 4), [1, 1, 0]);
-    /* track 6 already plays each clip's own sound: it stays that way */
+    /* track 6 already plays each clip's own sound */
     mem.set(((0x10 << 21) | (0x08 << 7)) + 5 * 0x100 + 4, 1);
     put(Q.stepAddr(3, 4, 0) + 0x10, [3, 12, ...Array(14).fill(15)]);
   });
@@ -118,8 +121,8 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
   const src = await page.evaluate(TRK => [3, 4, 5, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
   assert.deepEqual(
     src.slice(0, 3),
-    [1, 0, 1],
-    'track 4 (3 clips): its clips’ sounds; track 5 (1 clip, on its own sound): its own; track 6 (on clip sounds): stays'
+    [1, 1, 1],
+    'every track written plays its clips’ own sounds'
   );
   assert.notEqual(src[3], 1, 'a drum track with nothing sent is left alone');
   assert.equal(
@@ -127,16 +130,6 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
     'House Piano',
     'the clips screen shows the name'
   );
-  /* a quiet track goes back to its own sound */
-  await page.click('#cmOv button:has-text("Fill tones")');
-  await page.waitForSelector('#ftOv');
-  await page.click('#ftOv button:has-text("Put tracks back to their own sound")');
-  await page.locator('.ftPickList input').nth(3).check();
-  await page.getByRole('button', { name: 'Do it' }).click();
-  await page.waitForFunction(() =>
-    /Track 4 plays its own sound again/.test(document.getElementById('toast').textContent)
-  );
-  assert.equal(await page.evaluate(TRK => window.__zcMem.get(TRK + 3 * 0x100 + 4), TRK), 0);
   assert.deepEqual(errors, []);
 });
 

@@ -171,6 +171,7 @@ import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
 import * as motion from './zen/zc-motion.js';
 import * as pump from './core/pump.js';
+import { slotAddr } from './zen/zc-sysex.js';
 import { mpjOpen } from './ui/mpj-open.js';
 import { fillTonesOpen } from './ui/fill-tones.js';
 import { readMpj } from './core/mpj.js';
@@ -259,6 +260,7 @@ PROJ.t = projTitle;
       browse: browserOpen,
       ZS,
       libraryJSON,
+      slotAddr,
       fw: { FW_REC, fwFields, newSound },
       get ZE() {
         return ZE;

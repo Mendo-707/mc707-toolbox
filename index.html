@@ -57340,7 +57340,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track that plays its own sound (Sound Source TRACK) with one clip set up here gets the new sound as that track sound. Otherwise each clip gets its own (Sound Source CLIP, which a different kit or tone per clip needs), and any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet. Clips that already have their own sound keep it."
+          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each clip gets its own sound and every track written is set to play its clips’ own sounds (Sound Source CLIP), so each clip can have a different kit or tone. Any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet; clips that already have their own sound keep it."
         ),
         el(
           "div",
@@ -57409,17 +57409,6 @@ body[data-mode='scene'] #scene {
         el(
           "div",
           { class: "ftActs" },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "btn",
-              style: "margin-right:auto",
-              title: "If a track went quiet: put tracks back to their own sound (Sound Source TRACK) on the MC-707",
-              onclick: () => trackSound()
-            },
-            "Put tracks back to their own sound…"
-          ),
           el("button", { type: "button", class: "btn", onclick: close }, "Close"),
           el(
             "button",
@@ -57438,35 +57427,14 @@ body[data-mode='scene'] #scene {
       },
       plan2[t][k2].item ? itemName(plan2[t][k2].item) : ""
     );
-    const trackSound = async () => {
-      const picks = DEVS[DEV].tracks.map(
-        (t) => el(
-          "label",
-          { class: "ftPickTrk" },
-          el("input", { type: "checkbox", value: t }),
-          " " + devNum(t) + " " + S.tracks[t].name
-        )
-      );
-      const ok = await askDlg({
-        title: "Back to the track’s own sound",
-        text: "The ticked tracks play their track sound again for every clip (Sound Source TRACK), instead of each clip’s own. Use it when a track went quiet after its clips got sounds.",
-        body: el("div", { class: "ftPickList" }, ...picks),
-        ok: "Do it"
-      });
-      if (!ok) return;
-      const ts = picks.map((l) => l.querySelector("input")).filter((i) => i.checked).map((i) => +i.value);
-      if (!ts.length) return;
-      if (!await zxConnect())
-        return toast("The " + DEVS[DEV].name + " is not connected (or MIDI with SysEx is not allowed)");
-      for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
-      await zxFlush();
-      toast(
-        "Track" + (ts.length === 1 ? " " : "s ") + ts.map(devNum).join(", ") + (ts.length === 1 ? " plays its" : " play their") + " own sound again"
-      );
-    };
-    const readByte = async (l) => {
-      const r = await zxRead(l, 1, 400, true);
-      return Array.isArray(r) && r.length ? r[0] : null;
+    const holdsNotes = async (t, k2) => {
+      const b = await zxRead(paramAddr(t, k2), 3, 400, true), p = decodeParams(Array.isArray(b) ? b : null);
+      if (!p) return false;
+      for (let s = 0; s < p.steps; s++) {
+        const r = await zxRead(stepAddr(t, k2, s) + 16, 2, 250, true);
+        if (Array.isArray(r) && r.length === 2 && !(r[0] === 15 && r[1] === 15)) return true;
+      }
+      return false;
     };
     const ownName = async (kind, t, k2) => {
       const r = await zxRead(slotAddr(kind, t, k2), 16, 400, true);
@@ -57483,22 +57451,15 @@ body[data-mode='scene'] #scene {
         });
       let done2 = 0, extra = 0;
       const ran = await writeSession("Filling tones", async (ui) => {
-        const tracks3 = /* @__PURE__ */ new Map();
+        const tracks3 = /* @__PURE__ */ new Set();
         const lead2 = [...new Set(jobs.map((j) => j.t))];
         for (const t of lead2) {
           const mine = jobs.filter((j) => j.t === t), n = plan2[t].length, kind = mine[0].r.snd.kind;
-          ui.set("Track " + devNum(t) + ": how does it keep its sound?", 0);
-          const src = await readByte(trackSetAddr(t) + 4);
-          if (n === 1 && src !== 1) {
-            mine.forEach((j) => j.k = 16);
-            continue;
-          }
           for (let k2 = n; k2 < 16 && !ui.cancelled; k2++) {
             ui.set("Track " + devNum(t) + ": does clip " + (k2 + 1) + " hold notes?", 0);
-            const r = await clipHasNotes(t, k2);
-            if (!r.ok || !r.notes) continue;
             const own = await ownName(kind, t, k2);
             if (own && !/^init (tone|kit)$/i.test(own)) continue;
+            if (!await holdsNotes(t, k2)) continue;
             jobs.push({ t, k: k2, r: mine[(k2 - n) % mine.length].r });
             extra++;
           }
@@ -57510,13 +57471,11 @@ body[data-mode='scene'] #scene {
             i / jobs.length
           );
           await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
-          const m = cmFix()[j.t];
-          if (j.k < 16) m.names[j.k] = j.r.name.slice(0, 16);
-          else m.names[0] = j.r.name.slice(0, 16);
-          tracks3.set(j.t, j.k === 16 ? 0 : 1);
+          cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);
+          tracks3.add(j.t);
           done2++;
         }
-        for (const [t, src] of tracks3) zxWrite(trackSetAddr(t) + 4, [src]);
+        for (const t of tracks3) zxWrite(trackSetAddr(t) + 4, [1]);
         await zxFlush();
       });
       if (ran === null) return;
@@ -58893,6 +58852,7 @@ body[data-mode='scene'] #scene {
         browse: browserOpen,
         ZS,
         libraryJSON,
+        slotAddr,
         fw: { FW_REC, fwFields, newSound },
         get ZE() {
           return ZE;
