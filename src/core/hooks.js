@@ -40,4 +40,5 @@
 //   vizNote            src/live/visualizer.js
 //   wizCellAt          src/song/wizard-plan.js
 //   zenOpen            src/zen/zc-editor.js
+//   clipNotesToMine    src/zen/zc-seq.js
 export const hooks = {};

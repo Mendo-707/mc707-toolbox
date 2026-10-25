@@ -232,6 +232,8 @@ function cmScreen(map, kk) {
         clipMapRender();
       }),
       cmd('ZENCORE', () => hooks.zenOpen(CMAP.t, kk)),
+      /* the clip's notes from the MC-707 into My patterns (read only) */
+      cmd('READ NOTES', () => hooks.clipNotesToMine(CMAP.t, kk)),
       cmd('RENAME', () => {
         const i = $('.cmEdit input[type=text]');
         if (i) {

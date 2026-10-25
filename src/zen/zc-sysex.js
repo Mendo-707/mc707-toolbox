@@ -184,8 +184,11 @@ function onIn(e) {
     data = [...d.slice(12, d.length - 2)];
   /* a reply can come in more than one packet: each must carry the address where the last one ended.
      Anything else is a stray (a late reply to an earlier request) and is set aside. */
-  const want = replyBytes(w.l + w.buf.length);
-  if (!a.every((b, i) => b === want[i])) {
+  /* the tone and kit areas answer with the masked form; the plain form is accepted too (the clip
+     notes area, zc-seq.js, has not been seen answering) */
+  const want = replyBytes(w.l + w.buf.length),
+    plain = addrBytes(w.l + w.buf.length);
+  if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
     w.stray++;
     return;
   }

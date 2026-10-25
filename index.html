@@ -11943,9 +11943,9 @@ body.popFrameless .mxTop input {
           if (p && PR[p]) used.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
         }
       });
-      const pairs = pickN([...used.values()], 6);
+      const pairs2 = pickN([...used.values()], 6);
       const four = FOUR.has(g);
-      pairs.forEach(({ p, bars: bars2, keyName }) => {
+      pairs2.forEach(({ p, bars: bars2, keyName }) => {
         const kn2 = keyName && KEYS[keyName] ? keyName : /^[iv]/.test(p) ? "Am" : "C";
         const R4 = KEYS[kn2].root, prog = PR[p];
         const BR = four ? {
@@ -17988,6 +17988,8 @@ body.popFrameless .mxTop input {
           clipMapRender();
         }),
         cmd("ZENCORE", () => hooks.zenOpen(CMAP.t, kk)),
+        /* the clip's notes from the MC-707 into My patterns (read only) */
+        cmd("READ NOTES", () => hooks.clipNotesToMine(CMAP.t, kk)),
         cmd("RENAME", () => {
           const i = $(".cmEdit input[type=text]");
           if (i) {
@@ -25458,7 +25460,7 @@ body.popFrameless .mxTop input {
       const push = (o) => FAC.push(Object.assign({ id: "hx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
       const BUSY = ["pushed", "3+3+2", "speeds up", "long-short", "3 bars + 1", "sus resolves late"];
       for (const [P, keys2, scale] of plan2) {
-        const [title, pn, list, opt] = P, beats = list.reduce((a, c) => a + c[2], 0), bars2 = beats / 4, total = bars2 * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")", busy2 = BUSY.includes(opt.timing) || void 0;
+        const [title, pn, list, opt] = P, beats = list.reduce((a, c) => a + c[2], 0), bars2 = beats / 4, total = bars2 * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")", busy3 = BUSY.includes(opt.timing) || void 0;
         const segs = segsOf(P, R3, 62), beat = segsOf(P, R3, 62, false);
         const rhythms = [CR[0], cr[ci++ % cr.length], cr[ci++ % cr.length]].filter((c, i, a) => a.indexOf(c) === i);
         if (rhythms.length < 3) rhythms.push(cr[ci++ % cr.length]);
@@ -25472,7 +25474,7 @@ body.popFrameless .mxTop input {
             bars: bars2,
             notes,
             ...K,
-            busy: busy2,
+            busy: busy3,
             role: "Chords",
             pool: "chords",
             lively: c[0] !== "Hold"
@@ -25504,7 +25506,7 @@ body.popFrameless .mxTop input {
             bars: bars2,
             notes,
             ...K,
-            busy: busy2,
+            busy: busy3,
             role: "Bass",
             pool: "bass",
             lively: b[0] !== "Sustain"
@@ -25515,7 +25517,7 @@ body.popFrameless .mxTop input {
           pv.forEach(
             (sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 82 }))
           );
-          push({ name: "Pad: " + tag + how, bars: bars2, notes, ...K, busy: busy2, role: "Pad", pool: "pad" });
+          push({ name: "Pad: " + tag + how, bars: bars2, notes, ...K, busy: busy3, role: "Pad", pool: "pad" });
         }
         {
           const A = [
@@ -25541,7 +25543,7 @@ body.popFrameless .mxTop input {
             bars: bars2,
             notes,
             ...K,
-            busy: busy2,
+            busy: busy3,
             role: "Lead",
             pool: "pluck",
             lively: true
@@ -25554,7 +25556,7 @@ body.popFrameless .mxTop input {
             bars: bars2,
             notes: lead2(beat, total, R3, scale, m[1]),
             ...K,
-            busy: busy2,
+            busy: busy3,
             role: "Lead",
             pool: "lead",
             lively: true
@@ -27002,17 +27004,17 @@ body.popFrameless .mxTop input {
     if (f.type === "drum") return 0.5;
     const n = f.notes;
     let c = BRIGHT[f.key && f.key.scale || "minor"] ?? 0.3;
-    let clash = 0, pairs = 0;
+    let clash = 0, pairs2 = 0;
     const byS = /* @__PURE__ */ new Map();
     n.forEach((x) => byS.has(x.s) ? byS.get(x.s).push(x.n) : byS.set(x.s, [x.n]));
     for (const v of byS.values())
       for (let i = 0; i < v.length; i++)
         for (let j = i + 1; j < v.length; j++) {
           const d = Math.abs(v[i] - v[j]) % 12;
-          pairs++;
+          pairs2++;
           if (d === 1 || d === 6 || d === 11) clash++;
         }
-    if (pairs) c -= clash / pairs * 0.6;
+    if (pairs2) c -= clash / pairs2 * 0.6;
     const avg = n.reduce((a, x) => a + x.n, 0) / Math.max(1, n.length);
     c += Math.max(-0.15, Math.min(0.15, (avg - 60) / 80));
     if (DARK_WORDS.test(f.name)) c -= 0.25;
@@ -39914,8 +39916,8 @@ body.popFrameless .mxTop input {
     if (d[1] !== 65 || d[7] !== 18 || w.kind !== "rq") return;
     if (!MODELS.includes(d[6])) return;
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
-    const want = replyBytes(w.l + w.buf.length);
-    if (!a.every((b, i) => b === want[i])) {
+    const want = replyBytes(w.l + w.buf.length), plain = addrBytes(w.l + w.buf.length);
+    if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
       w.stray++;
       return;
     }
@@ -52594,6 +52596,158 @@ body.popFrameless .mxTop input {
     toast("Recording " + bars2 + (bars2 === 1 ? " bar" : " bars") + " of " + p.name + " on " + S.tracks[t].name);
   }
 
+  // src/zen/zc-seq.js
+  var CLIP1 = [536870912, 554172416, 571473920, 588775424, 606076928, 623378432, 640679936, 657981440];
+  var STEP_SIZES = [2, 1, 0.5, 8 / 3, 4 / 3, 2 / 3];
+  var STEP_NAMES = ["1/8", "1/16", "1/32", "1/4T", "1/8T", "1/16T"];
+  var EMPTY = 255;
+  var NONE = Array(16).fill(15);
+  function clipPacked(d, k2) {
+    let a = CLIP1[d];
+    for (let i = 0; i < k2; i++) {
+      a += 524288;
+      while (a & 2155905152) a += 524288;
+    }
+    return a;
+  }
+  var clipAddr = (t, k2) => lin(clipPacked(devTrack(t), k2));
+  var paramAddr = (t, k2) => lin(clipPacked(devTrack(t), k2) + 131072);
+  var stepAddr = (t, k2, s) => lin(clipPacked(devTrack(t), k2) + 196608 + s * 256);
+  var pairs = (b, signed) => {
+    const out2 = [];
+    for (let i = 0; i + 1 < b.length; i += 2) {
+      const v = (b[i] & 15) << 4 | b[i + 1] & 15;
+      out2.push(signed && v > 127 ? v - 256 : v);
+    }
+    return out2;
+  };
+  function decodeParams(b) {
+    if (!b || b.length < 3) return null;
+    const size = b[0], steps = (b[1] & 15) << 4 | b[2] & 15;
+    return size >= 0 && size < STEP_SIZES.length && steps >= 1 && steps <= 128 ? { size, steps } : null;
+  }
+  function decodeStep(f) {
+    const notes = [...pairs(f.lo || NONE), ...pairs(f.hi || NONE)];
+    const starts = [...pairs(f.startLo || NONE.map(() => 0), true), ...pairs(f.startHi || NONE.map(() => 0), true)];
+    const out2 = [];
+    notes.forEach((note, i) => {
+      if (note === EMPTY || note > 127) return;
+      out2.push({
+        note,
+        vel: f.vel && f.vel[i] || 80,
+        start: starts[i] || 0,
+        end: f.end && f.end[i] != null ? f.end[i] : 80,
+        sub: f.sub && f.sub[i] || 0
+      });
+    });
+    return out2;
+  }
+  function joinNotes(steps) {
+    const used = steps.map((s) => s.map(() => false)), out2 = [];
+    steps.forEach((slots, si) => {
+      slots.forEach((c, ci) => {
+        if (used[si][ci]) return;
+        used[si][ci] = true;
+        let len = c.end < 100 ? Math.max(1, c.end - c.start) : 100 - c.start;
+        let at2 = si + 1, on2 = c.end >= 100;
+        while (on2 && at2 < steps.length) {
+          const j = steps[at2].findIndex((x2, xi) => x2.note === c.note && !used[at2][xi]);
+          if (j < 0) break;
+          used[at2][j] = true;
+          const x = steps[at2][j];
+          if (x.end >= 100) len += 100;
+          else {
+            len += x.end;
+            on2 = false;
+          }
+          at2++;
+        }
+        out2.push({ step: si, note: c.note, vel: c.vel, start: c.start, len, sub: c.sub });
+      });
+    });
+    return out2;
+  }
+  var BARS = [1, 2, 4, 8, 16, 32];
+  function toPattern(notes, params, type, name) {
+    const k2 = STEP_SIZES[params.size], total = params.steps * k2, bars2 = BARS.find((b) => b * 16 >= total - 1e-6) || 32;
+    let dropped = 0;
+    const out2 = [];
+    for (const x of notes) {
+      const n = type === "drum" ? S.drumMap.indexOf(x.note) : x.note;
+      if (n < 0) {
+        dropped++;
+        continue;
+      }
+      const s = Math.round((x.step + x.start / 100) * k2 * 1e3) / 1e3;
+      if (s < 0 || s >= bars2 * 16) continue;
+      out2.push({
+        s,
+        l: Math.max(0.05, Math.round(x.len / 100 * k2 * 1e3) / 1e3),
+        n,
+        v: Math.max(1, Math.min(127, x.vel))
+      });
+    }
+    out2.sort((a, b) => a.s - b.s || a.n - b.n);
+    return {
+      pattern: { id: "", name, type, bars: bars2, notes: out2, role: type === "drum" ? "Full kit" : "" },
+      dropped
+    };
+  }
+  var read2 = async (l, n, ms) => {
+    const r = await zxRead(l, n, ms);
+    return Array.isArray(r) ? r : null;
+  };
+  async function readClip(t, k2, onStep) {
+    if (!await zxConnect())
+      return { ok: false, why: "The MC-707 is not connected (or MIDI with SysEx is not allowed)" };
+    const params = decodeParams(await read2(paramAddr(t, k2), 4, 600));
+    if (!params) return { ok: false, why: "The MC-707 did not answer for that clip" };
+    const nm = await read2(clipAddr(t, k2), 16, 400);
+    const name = nm ? String.fromCharCode(...nm.map((c) => c >= 32 && c < 127 ? c : 32)).trim() : "";
+    const steps = [];
+    for (let s = 0; s < params.steps; s++) {
+      const a = stepAddr(t, k2, s);
+      const lo = await read2(a + 16, 16, 300), hi = await read2(a + 32, 16, 200);
+      if (s === 0 && !lo) return { ok: false, why: "The MC-707 did not send the clip’s notes" };
+      const f = { lo, hi };
+      if ([...pairs(lo || NONE), ...pairs(hi || NONE)].some((n) => n !== EMPTY)) {
+        f.vel = await read2(a + 48, 16, 300);
+        f.startLo = await read2(a + 64, 16, 300);
+        f.startHi = await read2(a + 80, 16, 200);
+        f.end = await read2(a + 96, 16, 300);
+        f.sub = await read2(a + 112, 16, 300);
+      }
+      steps.push(decodeStep(f));
+      if (onStep) onStep(s + 1, params.steps);
+    }
+    return { ok: true, params, notes: joinNotes(steps), name: name || "Track " + devNum(t) + " clip " + (k2 + 1) };
+  }
+  var busy2 = false;
+  async function clipNotesToMine(t, k2) {
+    if (busy2) return;
+    busy2 = true;
+    const where = "track " + devNum(t) + " clip " + (k2 + 1);
+    toast("Reading the notes in " + where + "…");
+    try {
+      const r = await readClip(t, k2, (d, n) => {
+        if (d % 8 === 0 && d < n) toast("Reading the notes in " + where + "… step " + d + " of " + n);
+      });
+      if (!r.ok) return toast(r.why);
+      if (!r.notes.length) return toast("No notes in " + where);
+      const type = S.tracks[t].type === "drum" ? "drum" : "tone";
+      const { pattern, dropped } = toPattern(r.notes, r.params, type, r.name);
+      if (!pattern.notes.length)
+        return toast("None of the notes in " + where + " are on a drum lane here (see the drum map)");
+      if (!userSave(pattern)) return toast("Could not save: the browser storage is full");
+      hooks.renderAll();
+      toast(
+        "Read " + pattern.notes.length + " notes from " + where + " (" + r.params.steps + " steps of " + STEP_NAMES[r.params.size] + ") into My patterns as “" + pattern.name + "”" + (dropped ? ". " + dropped + " drum notes had no lane" : "")
+      );
+    } finally {
+      busy2 = false;
+    }
+  }
+
   // src/ui/hover-help.js
   var HELP = [
     /* Song Mode */
@@ -52699,7 +52853,8 @@ body.popFrameless .mxTop input {
     vizNote,
     wizCellAt,
     saveFile,
-    zenOpen
+    zenOpen,
+    clipNotesToMine
   });
   PROJ.t = projTitle;
   (function boot() {
@@ -52745,6 +52900,7 @@ body.popFrameless .mxTop input {
           return ZE;
         }
       },
+      seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine },
       get S() {
         return S;
       },

@@ -104,6 +104,34 @@ The track's own sound (Sound Source TRACK) is the same: changing it between A-00
 left every byte of the project area unchanged. Each track's settings start with `57 40 00` (bank select
 87, 64, as Roland numbers its preset bank), but those bytes stay put whatever the track plays.
 
+## Clip notes (the sequencer)
+
+Found by Ada Locriana on an MC-707 ([mctools_seq](https://github.com/Locriana/mctools_seq), MIT).
+Addresses here are packed, as Roland writes them; each byte must stay below `80`.
+
+| What | Address | Status |
+|---|---|---|
+| Clip descriptor, track 1 clip 1 (starts with the clip name) | `20 00 00 00` | Read by the Toolbox |
+| Next clip: `+08 00 00`, skipping any address with a byte of `80` or more. First clips of tracks 1-8: `20 00 00 00`, `21 08 00 00`, `22 10 00 00`, `23 18 00 00`, `24 20 00 00`, `25 28 00 00`, `26 30 00 00`, `27 38 00 00` | | |
+| Step settings: step size (0 1/8, 1 1/16, 2 1/32, 3 1/4T, 4 1/8T, 5 1/16T), then the number of steps (1-128) as two half-bytes | descriptor `+02 00 00` | Read by the Toolbox |
+| Step *s* (0-127) | descriptor `+03 00 00` + *s* × `01 00` | Read by the Toolbox |
+| Motion, pitch bend | descriptor `+04 00 00`, `+05 00 00` | Not used |
+
+Each step has 16 note slots. Values marked ½ are two half-bytes (`06 03` = `0x63`):
+
+| Step offset | 16 slots of |
+|---|---|
+| `00`-`0F` | not decoded |
+| `10`, `20` | pitch, ½ (slots 1-8, then 9-16); `FF` = empty |
+| `30` | velocity |
+| `40`, `50` | start in hundredths of a step, ½, signed (-50 to 99) |
+| `60` | end in hundredths; 100 = the note carries on in the next step |
+| `70` | substep (0-4) |
+
+A note longer than a step is stored again, with the same pitch, in each step it covers. Some steps
+answer for slots 1-8 only; the rest are then empty. The Toolbox reads clips (Your MC-707 clips ›
+READ NOTES, into My patterns) and does not write them yet.
+
 ## Checking a device
 
 The [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html)
