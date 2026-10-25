@@ -2142,6 +2142,12 @@ input[type='range'] {
 .ftItem.off span:first-child {
   opacity: 0.6;
 }
+
+.ftPickList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -19698,6 +19704,7 @@ body[data-mode='scene'] #scene {
           o.text
         ) : null
       );
+      if (o.body) box.append(o.body);
       if (o.input) {
         inp = el("input", { type: "text", value: o.def || "", maxlength: 80, style: "width:100%" });
         box.append(inp);
@@ -57193,7 +57200,7 @@ body[data-mode='scene'] #scene {
         const u = used.get(role) || { at: Math.floor(Math.random() * from.length), n: 0 };
         const item = from[(u.at + u.n++) % from.length];
         used.set(role, u);
-        return { role, item, on: !!resolve(item) };
+        return { role, item, on: role !== "drums" && !!resolve(item) };
       });
     }
     return plan2;
@@ -57349,6 +57356,17 @@ body[data-mode='scene'] #scene {
         el(
           "div",
           { class: "ftActs" },
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              style: "margin-right:auto",
+              title: "If a track went quiet: put tracks back to their own sound (Sound Source TRACK) on the MC-707",
+              onclick: () => trackSound()
+            },
+            "Put tracks back to their own sound…"
+          ),
           el("button", { type: "button", class: "btn", onclick: close }, "Close"),
           el(
             "button",
@@ -57367,6 +57385,30 @@ body[data-mode='scene'] #scene {
       },
       plan2[t][k2].item ? itemName(plan2[t][k2].item) : ""
     );
+    const trackSound = async () => {
+      const picks = DEVS[DEV].tracks.map(
+        (t) => el(
+          "label",
+          { class: "ftPickTrk" },
+          el("input", { type: "checkbox", value: t }),
+          " " + devNum(t) + " " + S.tracks[t].name
+        )
+      );
+      const ok = await askDlg({
+        title: "Back to the track’s own sound",
+        text: "The ticked tracks play their track sound again for every clip (Sound Source TRACK), instead of each clip’s own. Use it when a track went quiet after its clips got sounds.",
+        body: el("div", { class: "ftPickList" }, ...picks),
+        ok: "Do it"
+      });
+      if (!ok) return;
+      const ts = picks.map((l) => l.querySelector("input")).filter((i) => i.checked).map((i) => +i.value);
+      if (!ts.length) return;
+      if (!await zxConnect())
+        return toast("The " + DEVS[DEV].name + " is not connected (or MIDI with SysEx is not allowed)");
+      for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
+      await zxFlush();
+      toast("Track" + (ts.length === 1 ? " " : "s ") + ts.map(devNum).join(", ") + (ts.length === 1 ? " plays its" : " play their") + " own sound again");
+    };
     const send2 = async () => {
       if (!await zxConnect())
         return toast("The " + DEVS[DEV].name + " is not connected (or MIDI with SysEx is not allowed)");

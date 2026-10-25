@@ -1041,3 +1041,9 @@
 .ftItem.off span:first-child {
   opacity: 0.6;
 }
+
+.ftPickList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}

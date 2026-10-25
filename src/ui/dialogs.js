@@ -3,7 +3,7 @@ import { el } from '../core/dom.js';
 
 /**
  * Ask a question in a small dialog. With input: true it shows a text box.
- * @param {{title: string, text?: string, ok?: string, cancel?: string, input?: boolean, def?: string}} o
+ * @param {{title: string, text?: string, ok?: string, cancel?: string, input?: boolean, def?: string, body?: Node}} o  body: more to show under the text
  * @returns {Promise<boolean|string|null>}  true/false, or the text (null when cancelled)
  */
 export function askDlg(o) {
@@ -41,6 +41,7 @@ export function askDlg(o) {
           )
         : null
     );
+    if (o.body) box.append(o.body);
     if (o.input) {
       inp = el('input', { type: 'text', value: o.def || '', maxlength: 80, style: 'width:100%' });
       box.append(inp);

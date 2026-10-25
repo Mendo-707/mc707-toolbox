@@ -23,6 +23,7 @@ import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-s
 import { writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
 import { pickTone } from '../scene/pick-tone.js';
+import { askDlg } from './dialogs.js';
 import { catOf } from '../zen/zc-browse-data.js';
 import { GENRE_WORDS, POOL_MAX, fitScore } from './tone-pools.js';
 
@@ -175,7 +176,8 @@ function makePlan(gid) {
       const u = used.get(role) || { at: Math.floor(Math.random() * from.length), n: 0 };
       const item = from[(u.at + u.n++) % from.length];
       used.set(role, u);
-      return { role, item, on: !!resolve(item) };
+      /* a kit only goes when you tick it: a drum track's own kit is usually what you want */
+      return { role, item, on: role !== 'drums' && !!resolve(item) };
     });
   }
   return plan;
@@ -345,6 +347,17 @@ export async function fillTonesOpen() {
       el(
         'div',
         { class: 'ftActs' },
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'btn',
+            style: 'margin-right:auto',
+            title: 'If a track went quiet: put tracks back to their own sound (Sound Source TRACK) on the MC-707',
+            onclick: () => trackSound()
+          },
+          'Put tracks back to their own sound…'
+        ),
         el('button', { type: 'button', class: 'btn', onclick: close }, 'Close'),
         el(
           'button',
@@ -364,6 +377,34 @@ export async function fillTonesOpen() {
       },
       plan[t][k].item ? itemName(plan[t][k].item) : ''
     );
+  /* Sound Source back to TRACK on the tracks you pick */
+  const trackSound = async () => {
+    const picks = DEVS[DEV].tracks.map(t =>
+      el(
+        'label',
+        { class: 'ftPickTrk' },
+        el('input', { type: 'checkbox', value: t }),
+        ' ' + devNum(t) + ' ' + S.tracks[t].name
+      )
+    );
+    const ok = await askDlg({
+      title: 'Back to the track’s own sound',
+      text: 'The ticked tracks play their track sound again for every clip (Sound Source TRACK), instead of each clip’s own. Use it when a track went quiet after its clips got sounds.',
+      body: el('div', { class: 'ftPickList' }, ...picks),
+      ok: 'Do it'
+    });
+    if (!ok) return;
+    const ts = picks
+      .map(l => l.querySelector('input'))
+      .filter(i => i.checked)
+      .map(i => +i.value);
+    if (!ts.length) return;
+    if (!(await zxConnect()))
+      return toast('The ' + DEVS[DEV].name + ' is not connected (or MIDI with SysEx is not allowed)');
+    for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
+    await zxFlush();
+    toast('Track' + (ts.length === 1 ? ' ' : 's ') + ts.map(devNum).join(', ') + (ts.length === 1 ? ' plays its' : ' play their') + ' own sound again');
+  };
   const send = async () => {
     if (!(await zxConnect()))
       return toast('The ' + DEVS[DEV].name + ' is not connected (or MIDI with SysEx is not allowed)');

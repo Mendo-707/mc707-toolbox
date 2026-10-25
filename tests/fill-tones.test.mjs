@@ -93,6 +93,16 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
     'House Piano',
     'the clips screen shows the name'
   );
+  /* a quiet track goes back to its own sound */
+  await page.click('#cmOv button:has-text("Fill tones")');
+  await page.waitForSelector('#ftOv');
+  await page.click('#ftOv button:has-text("Put tracks back to their own sound")');
+  await page.locator('.ftPickList input').nth(3).check();
+  await page.getByRole('button', { name: 'Do it' }).click();
+  await page.waitForFunction(() =>
+    /Track 4 plays its own sound again/.test(document.getElementById('toast').textContent)
+  );
+  assert.equal(await page.evaluate(TRK => window.__zcMem.get(TRK + 3 * 0x100 + 4), TRK), 0);
   assert.deepEqual(errors, []);
 });
 
