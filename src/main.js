@@ -170,6 +170,7 @@ import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
 import { STYLES } from './library/styles.js';
 import * as motion from './zen/zc-motion.js';
+import * as pump from './core/pump.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
@@ -286,6 +287,7 @@ PROJ.t = projTitle;
       setMode
     },
     motion,
+    pump,
     get S() {
       return S;
     },

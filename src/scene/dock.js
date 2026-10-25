@@ -17,6 +17,7 @@ import { sceneLabel } from './names.js';
 import { closeSound, soundHost, soundNote } from './sound-tab.js';
 import { writeOneClip } from './write.js';
 import { MARK, MARK_TIP } from './board.js';
+import { pumpOpen } from './pump.js';
 
 let EDITOR = null,
   shown = '';
@@ -122,6 +123,12 @@ function head(t, k, c) {
     b('▶', () => editClip(t, next), 'The track’s clip after', next == null ? 'off' : ''),
     b('Pattern…', () => choosePattern(t, k), 'Choose another pattern for this clip'),
     b(tn ? '♪ ' + tn.name : '♪ Clip’s own sound', () => chooseTone(t, k), 'The tone this clip gets on the MC-707'),
+    b(
+      c.pump ? '∿ Pump: ' + (c.pump.mode === 'level' ? 'Volume' : 'Filter') : '∿ Pump',
+      () => pumpOpen(t, k),
+      'Duck this part on every kick (sidechain pump), written into the clip so the MC-707 pumps by itself',
+      c.pump ? 'on' : ''
+    ),
     S.tracks[t].type === 'tone'
       ? el(
           'span',

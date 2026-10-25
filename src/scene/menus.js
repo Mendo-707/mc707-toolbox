@@ -5,6 +5,7 @@
 //
 // Reads: S, SC.
 // Calls up the layers through hooks (core/hooks.js).
+import { pumpOpen } from './pump.js';
 import { toast } from '../core/dom.js';
 import { ED, S, pushUndo, redo, undo } from '../core/state.js';
 import { devNum } from '../core/device.js';
@@ -91,6 +92,12 @@ export function clipMenu(t, k, x, y, onEdit) {
         }
       : null,
     c ? { label: 'Play it on its own', action: () => playClip(t, k) } : null,
+    c
+      ? {
+          label: 'Pump (sidechain)…' + (c.pump ? ' · ' + (c.pump.mode === 'level' ? 'Volume' : 'Filter') : ''),
+          action: () => pumpOpen(t, k)
+        }
+      : null,
     '-',
     c && r
       ? r.pick[t] === k

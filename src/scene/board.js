@@ -90,6 +90,7 @@ function slot(t, k, sel, act) {
       p.name +
       (c.tr ? ' (' + (c.tr > 0 ? '+' : '') + c.tr + ')' : '') +
       (tn ? ', tone ' + tn.name : ', the clip’s own sound') +
+      (c.pump ? ', pumps its ' + (c.pump.mode === 'level' ? 'volume' : 'filter') + ' on the kicks' : '') +
       '. ' +
       MARK_TIP[st] +
       '. ' +
@@ -129,7 +130,8 @@ function slot(t, k, sel, act) {
           el(
             'span',
             { class: 'sbSub' },
-            (c.tr ? (c.tr > 0 ? '+' : '') + c.tr + ' · ' : '') +
+            (c.pump ? '∿ ' : '') +
+              (c.tr ? (c.tr > 0 ? '+' : '') + c.tr + ' · ' : '') +
               (tn ? '♪ ' + tn.name : p.bars + (p.bars === 1 ? ' bar' : ' bars'))
           )
         ]
