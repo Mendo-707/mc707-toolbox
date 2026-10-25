@@ -8609,9 +8609,9 @@ body.popFrameless .mxTop input {
     const seen = new Set(FAC.map((f) => f.type + JSON.stringify(f.notes.map((n) => [n.s, n.l, n.n, n.v]))));
     let uid = 1;
     const add = (o) => {
-      const sig3 = o.type + JSON.stringify(o.notes.map((n) => [n.s, n.l, n.n, n.v]));
-      if (!o.notes.length || seen.has(sig3)) return false;
-      seen.add(sig3);
+      const sig4 = o.type + JSON.stringify(o.notes.map((n) => [n.s, n.l, n.n, n.v]));
+      if (!o.notes.length || seen.has(sig4)) return false;
+      seen.add(sig4);
       FAC.push({
         id: "g" + uid++,
         name: o.name,
@@ -18659,8 +18659,8 @@ body.popFrameless .mxTop input {
         break;
       }
     }
-    const p0 = patOf(run2[0]), sig3 = glueSig(body);
-    const match = [...new Set(run2.map((c) => c.pat))].map((id) => S.patterns[id]).find((p) => p && p.bars === bars2 && glueSig(p.notes) === sig3);
+    const p0 = patOf(run2[0]), sig4 = glueSig(body);
+    const match = [...new Set(run2.map((c) => c.pat))].map((id) => S.patterns[id]).find((p) => p && p.bars === bars2 && glueSig(p.notes) === sig4);
     const names = [...new Set(run2.map((c) => glueBase(patOf(c).name)))];
     const pid = match ? match.id : addPattern(
       p0.type,
@@ -21756,7 +21756,7 @@ body.popFrameless .mxTop input {
       );
       return;
     }
-    const sig3 = JSON.stringify([
+    const sig4 = JSON.stringify([
       UI.libTab,
       UI.libType,
       UI.libGenre,
@@ -21769,8 +21769,8 @@ body.popFrameless .mxTop input {
       UI.libFav,
       UI.q
     ]);
-    if (UI._sig !== sig3) {
-      UI._sig = sig3;
+    if (UI._sig !== sig4) {
+      UI._sig = sig4;
       UI.libLimit = 60;
     }
     for (const it of items.slice(0, UI.libLimit)) {
@@ -23252,6 +23252,11 @@ body.popFrameless .mxTop input {
       ...recordSample(c, p),
       ...c.view ? [] : [
         act("Save to My patterns", () => saveToMine(c), "Keep this pattern in your own library, for every song"),
+        act(
+          "→ MC-707 clip",
+          () => hooks.clipWriteAsk(p, c.t),
+          "Write this pattern into an empty clip on the MC-707 (experimental)"
+        ),
         act("Duplicate clip", dupClip, "Place a linked copy right after this clip (Ctrl/Cmd+D)"),
         act("Delete clip", deleteClip, "Remove this clip from the arrangement (Delete)")
       ]
@@ -23303,6 +23308,11 @@ body.popFrameless .mxTop input {
       b("Place at playhead", placeView, "Put this pattern in the song at the playhead", true),
       c.kind === "user" ? b("Update My pattern", () => saveToMine(c, true), "Save your changes over this pattern in My patterns") : null,
       b("Save to My patterns", () => saveToMine(c), "Keep a copy in your own library, for every song"),
+      b(
+        "→ MC-707 clip",
+        () => hooks.clipWriteAsk(patOf(c), c.t),
+        "Write this pattern into an empty clip on the MC-707 (experimental)"
+      ),
       b("Close", closeView, "Close the pattern without placing it")
     );
   }
@@ -25985,9 +25995,9 @@ body.popFrameless .mxTop input {
       const on2 = f.notes.filter((n) => n.s <= s + 0.01 && n.s + n.l > s + 0.01).map((n) => n.n);
       const v = on2.length >= 3 ? [...new Set(on2)].sort((a, b) => a - b) : last3;
       if (!v) continue;
-      const sig3 = v.join(",");
-      if (segs.length && segs[segs.length - 1].sig === sig3) segs[segs.length - 1].e = s + 1;
-      else segs.push({ s, e: s + 1, v, sig: sig3 });
+      const sig4 = v.join(",");
+      if (segs.length && segs[segs.length - 1].sig === sig4) segs[segs.length - 1].e = s + 1;
+      else segs.push({ s, e: s + 1, v, sig: sig4 });
       last3 = v;
     }
     if (!segs.length) return null;
@@ -52762,13 +52772,182 @@ body.popFrameless .mxTop input {
       const { pattern, dropped } = toPattern(r.notes, r.params, type, r.name);
       if (!pattern.notes.length)
         return toast("None of the notes in " + where + " are on a drum lane here (see the drum map)");
-      if (!userSave(pattern)) return toast("Could not save: the browser storage is full");
+      const reads = readsMap(), before = reads[t + ":" + k2] && userById(reads[t + ":" + k2]) ? reads[t + ":" + k2] : void 0;
+      const id = userSave(pattern, before);
+      if (!id) return toast("Could not save: the browser storage is full");
+      reads[t + ":" + k2] = id;
+      keepReads(reads);
       hooks.renderAll();
       toast(
         "Read " + pattern.notes.length + " notes from " + where + " (" + r.params.steps + " steps of " + STEP_NAMES[r.params.size] + ") into My patterns as “" + pattern.name + "”" + (dropped ? ". " + dropped + " drum notes had no lane" : "")
       );
     } finally {
       busy2 = false;
+    }
+  }
+  function readsMap() {
+    try {
+      return JSON.parse(localStorage.getItem("mc707-clip-reads") || "{}") || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function keepReads(m) {
+    try {
+      localStorage.setItem("mc707-clip-reads", JSON.stringify(m));
+    } catch (e) {
+    }
+  }
+  var MAX_STEPS = 128;
+  function encodePattern(p, type) {
+    const steps = Math.round(p.bars * 16);
+    if (steps > MAX_STEPS) return { error: "An MC-707 clip holds up to 8 bars of 16ths; this pattern is " + p.bars };
+    const slots = Array.from({ length: steps }, () => []);
+    let skipped = 0;
+    const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
+    for (const x of notes) {
+      const note = type === "drum" ? S.drumMap[x.n] : x.n;
+      if (!(note >= 0 && note <= 127)) {
+        skipped++;
+        continue;
+      }
+      let at2 = Math.floor(x.s + 1e-6), start = Math.round((x.s - at2) * 100);
+      if (start >= 100) at2++, start = 0;
+      if (at2 < 0 || at2 >= steps) {
+        skipped++;
+        continue;
+      }
+      const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
+      let left = Math.max(1, Math.round((x.l || 0.8) * 100)), first = true, prev = null;
+      while (left > 0 && at2 < steps) {
+        const room = 100 - start, tie = left > room;
+        const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: 0 };
+        const s = slots[at2];
+        if (s.length >= 16 || s.some((y) => y.note === note)) {
+          if (first) skipped++;
+          if (prev) prev.end = 99;
+          prev = null;
+          break;
+        }
+        s.push(c);
+        prev = c;
+        first = false;
+        left -= room;
+        start = 0;
+        at2++;
+      }
+      if (prev && prev.end >= 100) prev.end = 99;
+    }
+    return { steps, slots, skipped };
+  }
+  var nib = (v) => [(v & 255) >> 4 & 15, v & 15];
+  function stepWrites(slots) {
+    const f = Array.from({ length: 16 }, (_, i) => slots[i] || null);
+    return [
+      [16, f.slice(0, 8).flatMap((c) => nib(c ? c.note : EMPTY))],
+      [32, f.slice(8).flatMap((c) => nib(c ? c.note : EMPTY))],
+      [48, f.map((c) => c ? c.vel : 80)],
+      [64, f.slice(0, 8).flatMap((c) => nib(c ? c.start : 0))],
+      [80, f.slice(8).flatMap((c) => nib(c ? c.start : 0))],
+      [96, f.map((c) => c ? c.end : 80)],
+      [112, f.map((c) => c ? c.sub : 0)]
+    ];
+  }
+  var sig3 = (notes) => notes.map((x) => [x.step, x.note, x.start, x.len, x.vel].join(",")).sort().join(" ");
+  async function writeClip(t, k2, p, onStep) {
+    const type = S.tracks[t].type === "drum" ? "drum" : "tone";
+    if (p.type !== type) return { ok: false, why: "That is a " + p.type + " pattern and this is a " + type + " track" };
+    const enc = encodePattern(p, type);
+    if (enc.error) return { ok: false, why: enc.error };
+    const before = await readClip(t, k2);
+    if (!before.ok) return before;
+    if (before.notes.length)
+      return {
+        ok: false,
+        why: "Clip " + (k2 + 1) + " already has notes. Clear it on the MC-707 first (writing over notes comes later)"
+      };
+    zxWrite(paramAddr(t, k2), [1, enc.steps >> 4 & 15, enc.steps & 15]);
+    for (let s = 0; s < enc.steps; s++) {
+      const a = stepAddr(t, k2, s);
+      for (const [off, data] of stepWrites(enc.slots[s])) zxWrite(a + off, data);
+      if (onStep && s % 8 === 7) {
+        await zxFlush();
+        onStep(s + 1, enc.steps);
+      }
+    }
+    await zxFlush();
+    const want = joinNotes(enc.slots);
+    const after = await readClip(t, k2);
+    const checked = after.ok && after.params.steps === enc.steps && sig3(after.notes) === sig3(want);
+    return { ok: true, notes: want.length, skipped: enc.skipped, checked };
+  }
+  var wbusy = false;
+  function clipWriteAsk(p, t) {
+    if (wbusy || $("#cwOv")) return;
+    const tracks2 = DEVS[DEV].tracks.filter((i) => (S.tracks[i].type === "drum" ? "drum" : "tone") === p.type);
+    if (!tracks2.length) return toast("No " + p.type + " track to send it to");
+    const trk = el(
+      "select",
+      { "aria-label": "Track" },
+      ...tracks2.map((i) => el("option", { value: i, selected: i === t }, "Track " + devNum(i) + " · " + S.tracks[i].name))
+    );
+    const clip = el(
+      "select",
+      { "aria-label": "Clip" },
+      ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2 }, "Clip " + (k2 + 1)))
+    );
+    const close = () => ov.remove();
+    const go = el(
+      "button",
+      {
+        type: "button",
+        class: "btn on",
+        onclick: () => {
+          close();
+          clipWriteNow(p, +trk.value, +clip.value);
+        }
+      },
+      "Write"
+    );
+    const ov = el(
+      "div",
+      { id: "cwOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Send to an MC-707 clip" },
+      el(
+        "div",
+        { class: "ptBox", style: "max-width:460px" },
+        el("h3", {}, "Send “" + (p.name || "this pattern") + "” to an MC-707 clip"),
+        el(
+          "p",
+          { class: "hint", style: "line-height:1.45" },
+          "Experimental. The clip must be empty: the app reads it first and stops if it holds notes. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the " + DEVS[DEV].name + "; use a project you can lose while trying this."
+        ),
+        el("div", { style: "display:flex;gap:8px;margin:12px 0" }, trk, clip),
+        el(
+          "div",
+          { style: "display:flex;gap:8px;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Cancel"),
+          go
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    document.body.append(ov);
+    setTimeout(() => go.focus(), 30);
+  }
+  async function clipWriteNow(p, t, k2) {
+    if (wbusy) return;
+    wbusy = true;
+    const where = "track " + devNum(t) + " clip " + (k2 + 1);
+    toast("Checking " + where + " is empty…");
+    try {
+      if (!await zxConnect()) return toast("The MC-707 is not connected (or MIDI with SysEx is not allowed)");
+      const r = await writeClip(t, k2, p, (d, n) => toast("Writing " + where + "… step " + d + " of " + n));
+      if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k2) : toast(r.why);
+      toast(
+        "Wrote " + r.notes + " notes to " + where + (r.checked ? ", read back and checked" : ". The read-back did not match: check the clip on the MC-707") + (r.skipped ? ". " + r.skipped + " notes could not go in (no drum note, past the end, or a full step)" : "")
+      );
+    } finally {
+      wbusy = false;
     }
   }
 
@@ -52878,7 +53057,8 @@ body.popFrameless .mxTop input {
     wizCellAt,
     saveFile,
     zenOpen,
-    clipNotesToMine
+    clipNotesToMine,
+    clipWriteAsk
   });
   PROJ.t = projTitle;
   (function boot() {
@@ -52924,7 +53104,7 @@ body.popFrameless .mxTop input {
           return ZE;
         }
       },
-      seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine },
+      seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine, write: clipWriteNow },
       get S() {
         return S;
       },

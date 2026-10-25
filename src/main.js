@@ -143,7 +143,15 @@ import { setMode } from './ui/mode.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
-import { clipNotesToMine, clipPacked, stepAddr, paramAddr, clipAddr } from './zen/zc-seq.js';
+import {
+  clipNotesToMine,
+  clipPacked,
+  clipWriteAsk,
+  clipWriteNow,
+  stepAddr,
+  paramAddr,
+  clipAddr
+} from './zen/zc-seq.js';
 import { browserOpen } from './zen/zc-browser.js';
 import { ZS, libraryJSON } from './zen/zc-sounds.js';
 import { FW_REC, fwFields } from './zen/zc-factory.js';
@@ -188,7 +196,8 @@ Object.assign(hooks, {
   wizCellAt,
   saveFile,
   zenOpen,
-  clipNotesToMine
+  clipNotesToMine,
+  clipWriteAsk
 });
 
 PROJ.t = projTitle;
@@ -235,7 +244,7 @@ PROJ.t = projTitle;
         return ZE;
       }
     },
-    seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine },
+    seq: { clipPacked, stepAddr, paramAddr, clipAddr, read: clipNotesToMine, write: clipWriteNow },
     get S() {
       return S;
     },

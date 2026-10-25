@@ -128,9 +128,18 @@ Each step has 16 note slots. Values marked ½ are two half-bytes (`06 03` = `0x6
 | `60` | end in hundredths; 100 = the note carries on in the next step |
 | `70` | substep (0-4) |
 
-A note longer than a step is stored again, with the same pitch, in each step it covers. Some steps
-answer for slots 1-8 only; the rest are then empty. The Toolbox reads clips (Your MC-707 clips ›
-READ NOTES, into My patterns) and does not write them yet.
+A note longer than a step is stored again, with the same pitch, in each step it covers (end `100` in
+every step but the last). A step's notes sit in its lowest slots, each pitch once. Empty slots read
+`FF` for pitch, `50` for velocity and end, `00` for start and substep.
+
+Replies, as seen on an MC-707: the step settings answer with **3 bytes** (`01 01 00` = 16 steps of
+1/16) even when 4 are asked for, from the masked linear address like the tone area (asking at
+`23 4A 00 00` was answered from `04 72 00 00`). Some steps answer for slots 1-8 only; the rest are
+then empty. So read this area accepting short replies.
+
+The Toolbox reads clips (Your MC-707 clips › READ NOTES, into My patterns) and writes a pattern into an
+empty clip (the pattern editor's → MC-707 clip): the step settings, then all 7 fields of every step in
+the clip's length, then a read-back to check.
 
 ## Checking a device
 

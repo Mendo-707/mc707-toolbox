@@ -10,16 +10,22 @@
 //                    +40/+50 start in hundredths of a step (two half-bytes, signed, -50..99),
 //                    +60 end in hundredths (100 = it carries on into the next step), +70 substep (0-4)
 //
-// A note longer than a step is stored again in each step it covers. This module only reads.
+// A note longer than a step is stored again in each step it covers (end 100 in every step but the
+// last), and a step's notes sit in its lowest slots, each pitch once.
 //
+// Reading puts a clip in My patterns. Writing puts a pattern into an EMPTY clip only (it reads the clip
+// first and refuses one with notes), then reads it back to check. Nothing is kept on the MC-707 until
+// its project is saved there.
+//
+// Owns: localStorage 'mc707-clip-reads' (which My pattern each clip was last read into).
 // Reads: S (the drum map), DEV.
-import { toast } from '../core/dom.js';
+import { $, el, toast } from '../core/dom.js';
 import { askDlg } from '../ui/dialogs.js';
 import { hooks } from '../core/hooks.js';
 import { S } from '../core/state.js';
-import { devNum } from '../core/device.js';
-import { userSave } from '../library/user-lib.js';
-import { ZX, devTrack, hexAddr, lin, zxConnect, zxRead } from './zc-sysex.js';
+import { DEVS, DEV, devNum } from '../core/device.js';
+import { userById, userSave } from '../library/user-lib.js';
+import { ZX, devTrack, hexAddr, lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
 
 /* the first clip of each device track, packed as Roland writes addresses */
 const CLIP1 = [0x20000000, 0x21080000, 0x22100000, 0x23180000, 0x24200000, 0x25280000, 0x26300000, 0x27380000];
@@ -228,7 +234,13 @@ export async function clipNotesToMine(t, k) {
     const { pattern, dropped } = toPattern(r.notes, r.params, type, r.name);
     if (!pattern.notes.length)
       return toast('None of the notes in ' + where + ' are on a drum lane here (see the drum map)');
-    if (!userSave(pattern)) return toast('Could not save: the browser storage is full');
+    /* a clip read again replaces the copy it was read into before (if that is still in My patterns) */
+    const reads = readsMap(),
+      before = reads[t + ':' + k] && userById(reads[t + ':' + k]) ? reads[t + ':' + k] : undefined;
+    const id = userSave(pattern, before);
+    if (!id) return toast('Could not save: the browser storage is full');
+    reads[t + ':' + k] = id;
+    keepReads(reads);
     hooks.renderAll();
     toast(
       'Read ' +
@@ -246,5 +258,206 @@ export async function clipNotesToMine(t, k) {
     );
   } finally {
     busy = false;
+  }
+}
+
+/* which My pattern each clip was last read into, by 't:k' */
+function readsMap() {
+  try {
+    return JSON.parse(localStorage.getItem('mc707-clip-reads') || '{}') || {};
+  } catch (e) {
+    return {};
+  }
+}
+function keepReads(m) {
+  try {
+    localStorage.setItem('mc707-clip-reads', JSON.stringify(m));
+  } catch (e) {}
+}
+
+/* ---- writing ---- */
+/** The most steps a clip holds (8 bars of 16ths). */
+export const MAX_STEPS = 128;
+/**
+ * A pattern as clip steps of 1/16: the step slots the MC-707 keeps (lowest slots first, each pitch once
+ * per step, long notes tied across steps). Drum lanes become notes through the song's drum map.
+ * @returns {{steps:number, slots:{note,vel,start,end,sub}[][], skipped:number} | {error:string}}
+ */
+export function encodePattern(p, type) {
+  const steps = Math.round(p.bars * 16);
+  if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 8 bars of 16ths; this pattern is ' + p.bars };
+  const slots = Array.from({ length: steps }, () => []);
+  let skipped = 0;
+  const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
+  for (const x of notes) {
+    const note = type === 'drum' ? S.drumMap[x.n] : x.n;
+    if (!(note >= 0 && note <= 127)) {
+      skipped++;
+      continue;
+    }
+    let at = Math.floor(x.s + 1e-6),
+      start = Math.round((x.s - at) * 100);
+    if (start >= 100) (at++, (start = 0));
+    if (at < 0 || at >= steps) {
+      skipped++;
+      continue;
+    }
+    const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
+    let left = Math.max(1, Math.round((x.l || 0.8) * 100)),
+      first = true,
+      prev = null;
+    while (left > 0 && at < steps) {
+      const room = 100 - start,
+        tie = left > room;
+      const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: 0 };
+      const s = slots[at];
+      /* a full step, or this pitch already in it: the note is cut here */
+      if (s.length >= 16 || s.some(y => y.note === note)) {
+        if (first) skipped++;
+        if (prev) prev.end = 99;
+        prev = null;
+        break;
+      }
+      s.push(c);
+      prev = c;
+      first = false;
+      left -= room;
+      start = 0;
+      at++;
+    }
+    /* a note running past the clip's end stops on its last step */
+    if (prev && prev.end >= 100) prev.end = 99;
+  }
+  return { steps, slots, skipped };
+}
+const nib = v => [((v & 0xff) >> 4) & 15, v & 15];
+/** The 7 writes (offset, 16 bytes) that set one step's slots; empty slots as the MC-707 keeps them. */
+export function stepWrites(slots) {
+  const f = Array.from({ length: 16 }, (_, i) => slots[i] || null);
+  return [
+    [0x10, f.slice(0, 8).flatMap(c => nib(c ? c.note : EMPTY))],
+    [0x20, f.slice(8).flatMap(c => nib(c ? c.note : EMPTY))],
+    [0x30, f.map(c => (c ? c.vel : 0x50))],
+    [0x40, f.slice(0, 8).flatMap(c => nib(c ? c.start : 0))],
+    [0x50, f.slice(8).flatMap(c => nib(c ? c.start : 0))],
+    [0x60, f.map(c => (c ? c.end : 0x50))],
+    [0x70, f.map(c => (c ? c.sub : 0))]
+  ];
+}
+/* the notes as the read gives them back, to compare */
+const sig = notes =>
+  notes
+    .map(x => [x.step, x.note, x.start, x.len, x.vel].join(','))
+    .sort()
+    .join(' ');
+/**
+ * Write pattern p into clip k of app track t, only if the clip has no notes, then read it back.
+ * @returns {Promise<{ok:boolean, why?:string, notes?:number, skipped?:number, checked?:boolean}>}
+ */
+export async function writeClip(t, k, p, onStep) {
+  const type = S.tracks[t].type === 'drum' ? 'drum' : 'tone';
+  if (p.type !== type) return { ok: false, why: 'That is a ' + p.type + ' pattern and this is a ' + type + ' track' };
+  const enc = encodePattern(p, type);
+  if (enc.error) return { ok: false, why: enc.error };
+  const before = await readClip(t, k);
+  if (!before.ok) return before;
+  if (before.notes.length)
+    return {
+      ok: false,
+      why: 'Clip ' + (k + 1) + ' already has notes. Clear it on the MC-707 first (writing over notes comes later)'
+    };
+  zxWrite(paramAddr(t, k), [1, (enc.steps >> 4) & 15, enc.steps & 15]);
+  for (let s = 0; s < enc.steps; s++) {
+    const a = stepAddr(t, k, s);
+    for (const [off, data] of stepWrites(enc.slots[s])) zxWrite(a + off, data);
+    if (onStep && s % 8 === 7) {
+      await zxFlush();
+      onStep(s + 1, enc.steps);
+    }
+  }
+  await zxFlush();
+  const want = joinNotes(enc.slots);
+  const after = await readClip(t, k);
+  const checked = after.ok && after.params.steps === enc.steps && sig(after.notes) === sig(want);
+  return { ok: true, notes: want.length, skipped: enc.skipped, checked };
+}
+
+/* the picker: which track (of the pattern's type) and which clip */
+let wbusy = false;
+/** Ask where to send pattern p (from app track t, if any), then write it (the editor's → MC-707 clip). */
+export function clipWriteAsk(p, t) {
+  if (wbusy || $('#cwOv')) return;
+  const tracks = DEVS[DEV].tracks.filter(i => (S.tracks[i].type === 'drum' ? 'drum' : 'tone') === p.type);
+  if (!tracks.length) return toast('No ' + p.type + ' track to send it to');
+  const trk = el(
+    'select',
+    { 'aria-label': 'Track' },
+    ...tracks.map(i => el('option', { value: i, selected: i === t }, 'Track ' + devNum(i) + ' · ' + S.tracks[i].name))
+  );
+  const clip = el(
+    'select',
+    { 'aria-label': 'Clip' },
+    ...Array.from({ length: 16 }, (_, k) => el('option', { value: k }, 'Clip ' + (k + 1)))
+  );
+  const close = () => ov.remove();
+  const go = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn on',
+      onclick: () => {
+        close();
+        clipWriteNow(p, +trk.value, +clip.value);
+      }
+    },
+    'Write'
+  );
+  const ov = el(
+    'div',
+    { id: 'cwOv', class: 'ptOv', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Send to an MC-707 clip' },
+    el(
+      'div',
+      { class: 'ptBox', style: 'max-width:460px' },
+      el('h3', {}, 'Send “' + (p.name || 'this pattern') + '” to an MC-707 clip'),
+      el(
+        'p',
+        { class: 'hint', style: 'line-height:1.45' },
+        'Experimental. The clip must be empty: the app reads it first and stops if it holds notes. Up to 8 bars, in 1/16 steps. Nothing is kept until you save the project on the ' +
+          DEVS[DEV].name +
+          '; use a project you can lose while trying this.'
+      ),
+      el('div', { style: 'display:flex;gap:8px;margin:12px 0' }, trk, clip),
+      el(
+        'div',
+        { style: 'display:flex;gap:8px;justify-content:flex-end' },
+        el('button', { type: 'button', class: 'btn', onclick: close }, 'Cancel'),
+        go
+      )
+    )
+  );
+  ov.addEventListener('keydown', e => e.key === 'Escape' && close());
+  document.body.append(ov);
+  setTimeout(() => go.focus(), 30);
+}
+/** Write pattern p into clip k of app track t now, with progress and the result as messages. */
+export async function clipWriteNow(p, t, k) {
+  if (wbusy) return;
+  wbusy = true;
+  const where = 'track ' + devNum(t) + ' clip ' + (k + 1);
+  toast('Checking ' + where + ' is empty…');
+  try {
+    if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
+    const r = await writeClip(t, k, p, (d, n) => toast('Writing ' + where + '… step ' + d + ' of ' + n));
+    if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k) : toast(r.why);
+    toast(
+      'Wrote ' +
+        r.notes +
+        ' notes to ' +
+        where +
+        (r.checked ? ', read back and checked' : '. The read-back did not match: check the clip on the MC-707') +
+        (r.skipped ? '. ' + r.skipped + ' notes could not go in (no drum note, past the end, or a full step)' : '')
+    );
+  } finally {
+    wbusy = false;
   }
 }
