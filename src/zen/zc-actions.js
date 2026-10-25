@@ -191,10 +191,14 @@ export function headerBar() {
             ])
           )
         : btn('Init kit', () => zeLoad(newSound('kit'), 'Reset the kit')),
-      btn('Sounds', () => browserOpen(), {
-        title:
-          'The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites'
-      }),
+      /* tones only: a kit's drum sounds can't be changed over MIDI, so loading a kit from the browser
+         would only rename it */
+      ZE.kind === 'tone'
+        ? btn('Sounds', () => browserOpen(), {
+            title:
+              'The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites'
+          })
+        : null,
       btn('File ▾', e => menuAt(e, fileMenu())),
       ZE.kind === 'tone' ? btn('Partial ▾', e => menuAt(e, partMenu())) : null,
       btn('Copy to ▾', e => menuAt(e, copyMenu()), { title: 'Send this sound to another clip' }),

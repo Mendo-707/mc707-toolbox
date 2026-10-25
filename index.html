@@ -35928,6 +35928,7 @@ body[data-mode='scene'] #scene {
   var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind);
   var shown2 = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
   async function browserOpen() {
+    if (ZE.kind === "kit") return;
     await soundsLoad();
     let ov = $("#zbOv");
     if (!ov) {
@@ -36469,6 +36470,7 @@ body[data-mode='scene'] #scene {
   function render() {
     const ov = $("#zbOv");
     if (!ov) return;
+    if (ZE.kind === "kit") return browserClose();
     const all = entries(), list2 = shown2();
     const old = $(".zbList", ov), scroll = old ? old.scrollTop : 0;
     ov.textContent = "";
@@ -36687,9 +36689,11 @@ body[data-mode='scene'] #scene {
             }))
           ])
         ) : btn("Init kit", () => zeLoad(newSound("kit"), "Reset the kit")),
-        btn("Sounds", () => browserOpen(), {
+        /* tones only: a kit's drum sounds can't be changed over MIDI, so loading a kit from the browser
+           would only rename it */
+        ZE.kind === "tone" ? btn("Sounds", () => browserOpen(), {
           title: "The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites"
-        }),
+        }) : null,
         btn("File ▾", (e) => menuAt(e, fileMenu())),
         ZE.kind === "tone" ? btn("Partial ▾", (e) => menuAt(e, partMenu())) : null,
         btn("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
