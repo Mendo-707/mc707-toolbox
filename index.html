@@ -47071,6 +47071,7 @@ body[data-mode='scene'] #scene {
     if (S.sendCC === false) return;
     for (let t = 0; t < 8; t++)
       for (const k2 in MIX_CC) {
+        if (MIX_KNOBS.includes(k2) && LV.mix[k2][t] == null) continue;
         const v = lvMixRest(t, MIX_CC[k2]);
         LV.ccLast[t + ":" + MIX_CC[k2]] = v;
         sendMidi([176 | S.tracks[t].ch - 1, MIX_CC[k2], v], nt);

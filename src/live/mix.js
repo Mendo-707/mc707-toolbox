@@ -43,6 +43,8 @@ export function lvMixSendAll(nt) {
   if (S.sendCC === false) return;
   for (let t = 0; t < 8; t++)
     for (const k in MIX_CC) {
+      /* a knob the mixer has not set is Live's knob panel's, which Start sends already */
+      if (MIX_KNOBS.includes(k) && LV.mix[k][t] == null) continue;
       const v = lvMixRest(t, MIX_CC[k]);
       LV.ccLast[t + ':' + MIX_CC[k]] = v;
       sendMidi([0xb0 | (S.tracks[t].ch - 1), MIX_CC[k], v], nt);
