@@ -285,7 +285,13 @@ const FAM_LABEL = {
  * @returns {{id:string, label:string, group:string, roles:object}[]}
  */
 export function toneGenres() {
-  const out = Object.keys(SND_G).map(id => ({ id, label: FAM_LABEL[id] || id, group: '', roles: { ...SND_G[id] } }));
+  const out = Object.keys(SND_G).map(id => ({
+    id,
+    label: FAM_LABEL[id] || id,
+    group: '',
+    fam: id,
+    roles: { ...SND_G[id] }
+  }));
   for (const id in SND_S) {
     const st = STYLES.find(x => x.id === id);
     if (!st) continue;
@@ -294,6 +300,7 @@ export function toneGenres() {
       id,
       label: st.name,
       group: FAM_LABEL[fam] || fam,
+      fam,
       roles: { ...(SND_G[fam] || SND_G.pop), ...SND_S[id] }
     });
   }

@@ -23,6 +23,8 @@ import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-s
 import { writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
 import { pickTone } from '../scene/pick-tone.js';
+import { catOf } from '../zen/zc-browse-data.js';
+import { GENRE_WORDS, POOL_MAX, fitScore } from './tone-pools.js';
 
 const KEY = 'mc707-tone-pools',
   GKEY = 'mc707-fill-genre';
@@ -77,8 +79,18 @@ function resolve(it) {
     : ZS.list.find(x => x.name === it);
   return e ? { name: e.name, snd: soundOf(e) } : null;
 }
+/* the made pools, until the library changes */
+const MADE = new Map();
+let madeFor = '';
 /** The suggested items for a genre and job (before any edits). */
 function defaults(gid, role) {
+  const sig = ZS.list.length + ':' + (ZS.list[0] && ZS.list[0].id);
+  if (sig !== madeFor) (MADE.clear(), (madeFor = sig));
+  const key = gid + ':' + role;
+  if (!MADE.has(key)) MADE.set(key, makeDefaults(gid, role));
+  return MADE.get(key);
+}
+function makeDefaults(gid, role) {
   const g = genreOf(gid),
     list = role === 'drums' ? [] : Array.isArray(g.roles[role]) ? g.roles[role] : EXTRA[role] || [];
   /* your own sounds tagged with the genre and of the right type join in */
@@ -102,7 +114,31 @@ function defaults(gid, role) {
         (role === 'drums' ? e.kind === 'kit' : e.kind === 'tone' && (!typeFor[role] || e.type === typeFor[role]))
     )
     .map(e => ({ name: e.name, kind: e.kind, d: e.d }));
-  return [...list, ...mine];
+  /* then the sounds you have that fit the job and the genre (rules in tone-pools.js) */
+  const words = [GENRE_WORDS[g.id], g.fam !== g.id ? GENRE_WORDS[g.fam] : null],
+    hits = [];
+  for (const e of ZS.list) {
+    const n = fitScore({ name: e.name, cat: catOf(e), kind: e.kind }, role, words);
+    if (n != null) hits.push([n, e]);
+  }
+  hits.sort(
+    (a, b) => b[0] - a[0] || (a[1].bank || '').localeCompare(b[1].bank || '') || (a[1].no || 0) - (b[1].no || 0)
+  );
+  const base = role === 'drums' ? 1 : 3,
+    fit = hits.filter(([n]) => n > base + 1),
+    take = (fit.length >= 12 ? fit : hits.slice(0, Math.max(12, fit.length))).map(([, e]) => e);
+  const out = [...list, ...mine],
+    seen = new Set(out.map(itemKey));
+  for (const e of take) {
+    if (out.length >= POOL_MAX) break;
+    const it =
+      e.src === 'factory' && e.bank ? e.bank + '-' + e.no + ' ' + e.name : { name: e.name, kind: e.kind, d: e.d };
+    const k = itemKey(it);
+    if (seen.has(k) || out.some(x => itemName(x) === e.name)) continue;
+    seen.add(k);
+    out.push(it);
+  }
+  return out;
 }
 /** The pool for a genre and job: your edited one, else the suggestions. */
 export function poolOf(gid, role) {
