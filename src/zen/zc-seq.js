@@ -315,8 +315,8 @@ export const MAX_STEPS = 128;
  * @returns {{steps:number, size:number, slots:{note,vel,start,end,sub}[][], skipped:number} | {error:string}}
  */
 export function encodePattern(p, type) {
-  /* up to 8 bars in 1/16 steps; 9-16 bars in 1/8 steps, a note's place inside its step kept by its
-     start (50 = the second 16th); longer does not fit a clip */
+  /* up to 8 bars in 1/16 steps; 9-16 bars in 1/8 steps, a note's place off the step kept by its start
+     (-50 = the 16th before a step); longer does not fit a clip */
   const size = p.bars * 16 <= MAX_STEPS ? 1 : 0,
     k = STEP_SIZES[size],
     steps = Math.round((p.bars * 16) / k);
@@ -330,9 +330,12 @@ export function encodePattern(p, type) {
       skipped++;
       continue;
     }
+    /* a note goes in its nearest step, moved early or late by its start (-50 to 49 hundredths), the
+       way the MC-707 keeps a note off the grid; past the last step it stays in the last one, late */
     const pos = x.s / k;
-    let at = Math.floor(pos + 1e-6),
-      start = Math.round((pos - at) * 100);
+    let at = Math.round(pos + 1e-6);
+    if (at >= steps) at = Math.floor(pos + 1e-6);
+    let start = Math.round((pos - at) * 100);
     if (start >= 100) (at++, (start = 0));
     if (at < 0 || at >= steps) {
       skipped++;

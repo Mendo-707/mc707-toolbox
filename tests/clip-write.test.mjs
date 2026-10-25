@@ -274,9 +274,9 @@ test('Clip write: a 16-bar pattern goes in 1/8 steps, 16ths kept as half-step st
   };
   await page.evaluate(([p]) => window.__app.seq.write(p, 6, 0), [p]);
   await toastHas(page, 'Wrote 4 notes to track 7 clip 1, read back and checked');
-  const [pa, s0, s127] = await page.evaluate(() => [
+  const [pa, s1, s127] = await page.evaluate(() => [
     window.__app.seq.paramAddr(6, 0),
-    window.__app.seq.stepAddr(6, 0, 0),
+    window.__app.seq.stepAddr(6, 0, 1),
     window.__app.seq.stepAddr(6, 0, 127)
   ]);
   assert.deepEqual(
@@ -284,15 +284,15 @@ test('Clip write: a 16-bar pattern goes in 1/8 steps, 16ths kept as half-step st
     [0, 8, 0],
     '128 steps of 1/8'
   );
-  /* step 1 holds C4 at 0 and D4 half way (start 50 = 32 32) */
+  /* the second 16th, D4, goes in its nearest step (step 2), half a step early (start -50 = CE) */
   assert.deepEqual(
     [
-      await byte(page, s0 + 0x12),
-      await byte(page, s0 + 0x13),
-      await byte(page, s0 + 0x42),
-      await byte(page, s0 + 0x43)
+      await byte(page, s1 + 0x10),
+      await byte(page, s1 + 0x11),
+      await byte(page, s1 + 0x40),
+      await byte(page, s1 + 0x41)
     ],
-    [3, 14, 3, 2]
+    [3, 14, 12, 14]
   );
   assert.deepEqual([await byte(page, s127 + 0x40), await byte(page, s127 + 0x41)], [3, 2], 'the last 16th');
   assert.deepEqual(errors, []);

@@ -8,23 +8,24 @@
 import { el, toast } from '../core/dom.js';
 import { DEVS, DEV } from '../core/device.js';
 import { ZX, hexAddr, lin, zxConnect, zxRead } from './zc-sysex.js';
-import { clipPacked } from './zc-seq.js';
 import { hooks } from '../core/hooks.js';
 
 const BLOCK = 128;
-/* the project block, all of it (it answers up to 10 00 3A 7F; scenes may sit past that) */
-const PROJECT = { from: lin(0x10000000), blocks: 128, label: 'project' };
-/* other places to try once: the rest of the 0x10 area, the areas either side, and each track's 17th
-   sequencer slot (after its 16 clips) with its sub-blocks */
+/* read whole: the project block (scenes, chain lengths, tempo) and the system block at 00 00 00 00, each
+   00 00 00 00 to .. 7F 7F (the scene chain's switch is not in the project block; Ada Locriana expects it
+   low, in one of these two areas) */
+const WHOLE = [
+  { from: lin(0x10000000), blocks: 128, label: 'project' },
+  { from: lin(0x00000000), blocks: 128, label: 'system' }
+];
+/* other places to try once, 16 bytes each: every 00 xx 00 00 and 10 xx 00 00, and the areas 01-1F */
 function probes() {
   const p = [];
-  for (const a of [0x10010000, 0x10020000, 0x10040000, 0x10080000, 0x10100000, 0x10200000, 0x10400000])
-    p.push({ at: a, label: 'project+' });
-  for (let h = 0x00; h <= 0x1f; h++) if (h !== 0x10) p.push({ at: h << 24, label: 'area ' + h.toString(16) });
-  for (const a of [0x28400000, 0x29000000, 0x2a000000, 0x2b000000, 0x2c000000, 0x2d000000, 0x2e000000, 0x2f000000])
-    p.push({ at: a, label: 'after the clips' });
-  for (let d = 0; d < 8; d++)
-    for (let s = 0; s < 6; s++) p.push({ at: clipPacked(d, 16) + s * 0x10000, label: 'track ' + (d + 1) + ' slot 17' });
+  for (let x = 1; x < 0x80; x++) {
+    p.push({ at: x << 16, label: 'system ' + hexAddr(lin(x << 16)) });
+    p.push({ at: 0x10000000 + (x << 16), label: 'project ' + hexAddr(lin(0x10000000 + (x << 16))) });
+  }
+  for (let h = 0x01; h <= 0x1f; h++) if (h !== 0x10) p.push({ at: h << 24, label: 'area ' + h.toString(16) });
   return p;
 }
 const hx = b => (b == null ? '--' : b.toString(16).padStart(2, '0').toUpperCase());
@@ -40,13 +41,13 @@ const scans = [];
 export async function scanOnce(onStep, ms = 300) {
   if (!(await zxConnect())) return new Map();
   if (!regions) {
-    regions = [PROJECT];
+    regions = [...WHOLE];
     const p = probes();
     for (let i = 0; i < p.length; i++) {
       if (onStep) onStep('Looking for other areas: ' + p[i].label, i / p.length);
-      const r = await zxRead(lin(p[i].at), 16, ms, true);
-      if (Array.isArray(r) && r.length)
-        regions.push({ from: lin(p[i].at), blocks: p[i].at === 0 ? 64 : 8, label: p[i].label });
+      /* a strict read: only a reply for this very address counts, so a late packet is not taken for one */
+      const r = await zxRead(lin(p[i].at), 16, ms);
+      if (Array.isArray(r) && r.length) regions.push({ from: lin(p[i].at), blocks: 8, label: p[i].label });
     }
   }
   const mem = new Map(),
@@ -186,7 +187,7 @@ export function sceneFinderOpen() {
         { class: 'hint', style: 'line-height:1.45' },
         'Read-only: this only asks the ' +
           name +
-          ' for data, it changes nothing. Stop playback first. The first scan takes about two minutes, later ones about one.'
+          ' for data, it changes nothing. Stop playback first. The first scan takes about five minutes (it looks through the whole low address range), later ones one or two.'
       ),
       el(
         'ol',
