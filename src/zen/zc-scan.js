@@ -45,7 +45,8 @@ export async function scanOnce(onStep, ms = 300) {
     for (let i = 0; i < p.length; i++) {
       if (onStep) onStep('Looking for other areas: ' + p[i].label, i / p.length);
       const r = await zxRead(lin(p[i].at), 16, ms, true);
-      if (Array.isArray(r) && r.length) regions.push({ from: lin(p[i].at), blocks: 8, label: p[i].label });
+      if (Array.isArray(r) && r.length)
+        regions.push({ from: lin(p[i].at), blocks: p[i].at === 0 ? 64 : 8, label: p[i].label });
     }
   }
   const mem = new Map(),
@@ -190,15 +191,10 @@ export function sceneFinderOpen() {
       el(
         'ol',
         { class: 'hint sfSteps' },
-        el('li', {}, 'Call up scene 1-1. Press Scan.'),
-        el('li', {}, 'Call up scene 1-2 (store nothing). Press Scan.'),
-        el(
-          'li',
-          {},
-          'Call up scene 1-1, change track 3 to clip 7 and store it into scene 1-1 (check the display says it was stored). Press Scan.'
-        ),
-        el('li', {}, 'Call up scene 1-2, then 1-1 again: track 3 should go to clip 7. Press Scan.'),
-        el('li', {}, 'In the SCENE CHAIN screen, set scene 1-2’s LENGTH to 3. Press Scan.'),
+        el('li', {}, 'Open the SCENE CHAIN screen (MUTE, then SHIFT + a step button) with CHAIN off. Press Scan.'),
+        el('li', {}, 'Turn CHAIN on (C1). Press Scan.'),
+        el('li', {}, 'Turn CHAIN off. Press Scan.'),
+        el('li', {}, 'Turn CHAIN on again. Press Scan. Stay on that screen and touch nothing else between scans.'),
         el('li', {}, 'Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.')
       ),
       el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, scan, copy, save),
