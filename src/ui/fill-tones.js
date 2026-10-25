@@ -20,7 +20,7 @@ import { soundFrom } from '../zen/zc-tone.js';
 import { sendSound } from '../zen/zc-tone.js';
 import { zeQuietly } from '../zen/zc-editor.js';
 import { slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
-import { writeSession } from '../zen/zc-seq.js';
+import { clipHasNotes, writeSession } from '../zen/zc-seq.js';
 import { factoryImport } from '../zen/zc-factory-ui.js';
 import { pickTone } from '../scene/pick-tone.js';
 import { askDlg } from './dialogs.js';
@@ -301,7 +301,7 @@ export async function fillTonesOpen() {
       el(
         'p',
         { class: 'hint' },
-        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each goes into its MC-707 clip, and those tracks play their clips’ own sounds (Sound Source CLIP).'
+        'Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track with one clip set up gets its sound as the track’s own, which all its clips play (Sound Source TRACK). A track with more gets a sound in each clip (Sound Source CLIP), and any other clip of it that holds notes gets one of its sounds too, so none goes quiet.'
       ),
       el(
         'div',
@@ -403,7 +403,13 @@ export async function fillTonesOpen() {
       return toast('The ' + DEVS[DEV].name + ' is not connected (or MIDI with SysEx is not allowed)');
     for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
     await zxFlush();
-    toast('Track' + (ts.length === 1 ? ' ' : 's ') + ts.map(devNum).join(', ') + (ts.length === 1 ? ' plays its' : ' play their') + ' own sound again');
+    toast(
+      'Track' +
+        (ts.length === 1 ? ' ' : 's ') +
+        ts.map(devNum).join(', ') +
+        (ts.length === 1 ? ' plays its' : ' play their') +
+        ' own sound again'
+    );
   };
   const send = async () => {
     if (!(await zxConnect()))
@@ -414,9 +420,30 @@ export async function fillTonesOpen() {
         const r = c.on && c.item && resolve(c.item);
         if (r) jobs.push({ t, k, r });
       });
-    let done = 0;
+    let done = 0,
+      extra = 0;
     const ran = await writeSession('Filling tones', async ui => {
-      const tracks = new Set();
+      const tracks = new Map();
+      /* a track with one clip set up gets the sound as its own track sound, which every clip plays
+         (Sound Source TRACK): no clip can go quiet. A track with more needs each clip's own sound
+         (Sound Source CLIP), and then any other clip that holds notes gets one of its sounds too */
+      const lead = [...new Set(jobs.map(j => j.t))];
+      for (const t of lead) {
+        const mine = jobs.filter(j => j.t === t),
+          n = plan[t].length;
+        if (n === 1) {
+          mine.forEach(j => (j.k = 16));
+          continue;
+        }
+        for (let k = n; k < 16 && !ui.cancelled; k++) {
+          ui.set('Track ' + devNum(t) + ': does clip ' + (k + 1) + ' hold notes?', 0);
+          const r = await clipHasNotes(t, k);
+          if (r.ok && r.notes) {
+            jobs.push({ t, k, r: mine[(k - n) % mine.length].r });
+            extra++;
+          }
+        }
+      }
       for (const [i, j] of jobs.entries()) {
         if (ui.cancelled) break;
         ui.set(
@@ -426,12 +453,13 @@ export async function fillTonesOpen() {
         await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
         /* the clips screen shows the sound's name */
         const m = cmFix()[j.t];
-        m.names[j.k] = j.r.name.slice(0, 16);
-        tracks.add(j.t);
+        if (j.k < 16) m.names[j.k] = j.r.name.slice(0, 16);
+        else m.names[0] = j.r.name.slice(0, 16);
+        tracks.set(j.t, j.k === 16 ? 0 : 1);
         done++;
       }
-      /* the tracks play their clips' own sounds */
-      for (const t of tracks) zxWrite(trackSetAddr(t) + 4, [1]);
+      /* the tracks play their own sound (0) or their clips' own sounds (1) */
+      for (const [t, src] of tracks) zxWrite(trackSetAddr(t) + 4, [src]);
       await zxFlush();
     });
     if (ran === null) return;
@@ -442,6 +470,7 @@ export async function fillTonesOpen() {
         done +
         ' sound' +
         (done === 1 ? '' : 's') +
+        (extra ? ' (' + extra + ' to more clips that hold notes, so none goes quiet)' : '') +
         '. Save the project on the ' +
         DEVS[DEV].name +
         ' to keep them.'

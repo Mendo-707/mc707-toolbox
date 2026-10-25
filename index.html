@@ -57311,7 +57311,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. Each goes into its MC-707 clip, and those tracks play their clips’ own sounds (Sound Source CLIP)."
+          "Every clip set up on the Your MC-707 clips screen gets a sound for its job, from the genre’s pool. Change any, shuffle with 🎲, or pick from the library; then send them all. A track with one clip set up gets its sound as the track’s own, which all its clips play (Sound Source TRACK). A track with more gets a sound in each clip (Sound Source CLIP), and any other clip of it that holds notes gets one of its sounds too, so none goes quiet."
         ),
         el(
           "div",
@@ -57407,7 +57407,9 @@ body[data-mode='scene'] #scene {
         return toast("The " + DEVS[DEV].name + " is not connected (or MIDI with SysEx is not allowed)");
       for (const t of ts) zxWrite(trackSetAddr(t) + 4, [0]);
       await zxFlush();
-      toast("Track" + (ts.length === 1 ? " " : "s ") + ts.map(devNum).join(", ") + (ts.length === 1 ? " plays its" : " play their") + " own sound again");
+      toast(
+        "Track" + (ts.length === 1 ? " " : "s ") + ts.map(devNum).join(", ") + (ts.length === 1 ? " plays its" : " play their") + " own sound again"
+      );
     };
     const send2 = async () => {
       if (!await zxConnect())
@@ -57418,9 +57420,25 @@ body[data-mode='scene'] #scene {
           const r = c.on && c.item && resolve(c.item);
           if (r) jobs.push({ t, k: k2, r });
         });
-      let done2 = 0;
+      let done2 = 0, extra = 0;
       const ran = await writeSession("Filling tones", async (ui) => {
-        const tracks3 = /* @__PURE__ */ new Set();
+        const tracks3 = /* @__PURE__ */ new Map();
+        const lead2 = [...new Set(jobs.map((j) => j.t))];
+        for (const t of lead2) {
+          const mine = jobs.filter((j) => j.t === t), n = plan2[t].length;
+          if (n === 1) {
+            mine.forEach((j) => j.k = 16);
+            continue;
+          }
+          for (let k2 = n; k2 < 16 && !ui.cancelled; k2++) {
+            ui.set("Track " + devNum(t) + ": does clip " + (k2 + 1) + " hold notes?", 0);
+            const r = await clipHasNotes(t, k2);
+            if (r.ok && r.notes) {
+              jobs.push({ t, k: k2, r: mine[(k2 - n) % mine.length].r });
+              extra++;
+            }
+          }
+        }
         for (const [i, j] of jobs.entries()) {
           if (ui.cancelled) break;
           ui.set(
@@ -57429,18 +57447,19 @@ body[data-mode='scene'] #scene {
           );
           await zeQuietly(() => sendSound(j.r.snd, slotAddr(j.r.snd.kind, j.t, j.k)), j.t);
           const m = cmFix()[j.t];
-          m.names[j.k] = j.r.name.slice(0, 16);
-          tracks3.add(j.t);
+          if (j.k < 16) m.names[j.k] = j.r.name.slice(0, 16);
+          else m.names[0] = j.r.name.slice(0, 16);
+          tracks3.set(j.t, j.k === 16 ? 0 : 1);
           done2++;
         }
-        for (const t of tracks3) zxWrite(trackSetAddr(t) + 4, [1]);
+        for (const [t, src] of tracks3) zxWrite(trackSetAddr(t) + 4, [src]);
         await zxFlush();
       });
       if (ran === null) return;
       scheduleSave();
       close();
       toast(
-        "Sent " + done2 + " sound" + (done2 === 1 ? "" : "s") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
+        "Sent " + done2 + " sound" + (done2 === 1 ? "" : "s") + (extra ? " (" + extra + " to more clips that hold notes, so none goes quiet)" : "") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
       );
     };
     draw();

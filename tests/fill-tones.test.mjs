@@ -80,13 +80,32 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
   assert.equal(p[4][0][1], 'House Piano', 'the only chords sound there is');
   assert.match(await page.textContent('#ftOv .ftActs .btn.on'), /Send 7 sounds/);
   assert.equal(await page.locator('#ftOv .ftWarn').count(), 0, 'no factory tones warning when they are in');
+  /* track 4's clip 5 holds notes on the MC-707: past the 3 set up, it gets a sound too */
+  await page.evaluate(() => {
+    const Q = window.__app.seq,
+      mem = window.__zcMem,
+      put = (l, b) => b.forEach((x, i) => mem.set(l + i, x));
+    /* the tone tracks' clips answer, empty, as a new project's do */
+    for (let t = 3; t < 4; t++)
+      for (let k = 0; k < 16; k++) {
+        put(Q.paramAddr(t, k), [1, 1, 0]);
+        put(Q.clipAddr(t, k), Array(16).fill(32));
+        for (let st = 0; st < 16; st++) put(Q.stepAddr(t, k, st) + 0x10, Array(32).fill(15));
+      }
+    put(Q.paramAddr(3, 4), [1, 1, 0]);
+    put(Q.stepAddr(3, 4, 0) + 0x10, [3, 12, ...Array(14).fill(15)]);
+  });
   /* send */
   await page.click('#ftOv .ftActs .btn.on');
-  await page.waitForFunction(() => /Sent 7 sounds/.test(document.getElementById('toast').textContent), null, {
-    timeout: 60000
-  });
+  await page.waitForFunction(
+    () => /Sent 8 sounds \(1 to more clips that hold notes/.test(document.getElementById('toast').textContent),
+    null,
+    {
+      timeout: 60000
+    }
+  );
   const src = await page.evaluate(TRK => [3, 4, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
-  assert.deepEqual(src.slice(0, 2), [1, 1], 'tone tracks play their clips’ sounds');
+  assert.deepEqual(src.slice(0, 2), [1, 0], 'track 4 (3 clips) plays its clips’ sounds; track 5 (1 clip) its own');
   assert.notEqual(src[2], 1, 'a drum track with nothing sent is left alone');
   assert.equal(
     await page.evaluate(() => window.__app.S.clipMap[4].names[0]),
