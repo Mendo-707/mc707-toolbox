@@ -177,7 +177,7 @@ export async function scenesSend(o = {}) {
         where +
         ': ' +
         p.name +
-        (r.ok ? (r.checked ? '' : ' (read-back did not match)') : ' (notes not sent: ' + r.why + ')');
+        (r.ok ? (r.checked ? '' : ' (read-back did not match: ' + r.diff + ')') : ' (notes not sent: ' + r.why + ')');
       if (!r.ok || !r.checked) bad++;
       const tn = toneOf(it.cell),
         snd = o.tones !== false && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
@@ -225,7 +225,7 @@ export async function scenesSend(o = {}) {
             ' and press PLAY.\n3. Save the project on the MC-707, or it is gone when you load another.\n') +
       (bad ? '\n' + bad + ' clips need a look (see below).' : '') +
       '\n\n' +
-      lines.join('\n'),
+      [...lines.filter(x => /\((read-back|notes not sent)/.test(x)), ...lines.filter(x => !/\((read-back|notes not sent)/.test(x))].join('\n'),
     ok: ok ? 'Show every step' : 'OK',
     cancel: 'Close'
   });

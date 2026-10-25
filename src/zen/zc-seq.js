@@ -431,7 +431,50 @@ export async function writeClip(t, k, p, o = {}) {
   const after = await readClip(t, k);
   const checked =
     after.ok && after.params.steps === enc.steps && after.params.size === enc.size && sig(after.notes) === sig(want);
-  return { ok: true, notes: want.length, skipped: enc.skipped, checked, replaced };
+  return {
+    ok: true,
+    notes: want.length,
+    skipped: enc.skipped,
+    checked,
+    replaced,
+    diff: checked ? '' : diffText(enc, want, after)
+  };
+}
+/* what differed when a clip did not read back the same, in a few words, for the report */
+function diffText(enc, want, after) {
+  if (!after.ok) return 'it did not read back (' + after.why + ')';
+  if (after.params.steps !== enc.steps || after.params.size !== enc.size)
+    return (
+      'its length read back as ' +
+      after.params.steps +
+      ' steps of ' +
+      STEP_NAMES[after.params.size] +
+      ', not ' +
+      enc.steps +
+      ' of ' +
+      STEP_NAMES[enc.size]
+    );
+  const one = x => [x.step, x.note, x.start, x.len, x.vel].join(',');
+  const w = want.map(one),
+    g = after.notes.map(one),
+    miss = w.filter(x => !g.includes(x)),
+    extra = g.filter(x => !w.includes(x));
+  const say = s => {
+    const [step, note, start, len, vel] = s.split(',');
+    return 'step ' + (+step + 1) + ' note ' + note + ' (start ' + start + ', length ' + len + ', velocity ' + vel + ')';
+  };
+  return (
+    'wrote ' +
+    w.length +
+    ' notes, read back ' +
+    g.length +
+    (miss.length
+      ? '; not found: ' + say(miss[0]) + (miss.length > 1 ? ' and ' + (miss.length - 1) + ' more' : '')
+      : '') +
+    (extra.length
+      ? '; read instead: ' + say(extra[0]) + (extra.length > 1 ? ' and ' + (extra.length - 1) + ' more' : '')
+      : '')
+  );
 }
 
 /* ---- while writing: playback held, a slower pace, and a panel that shows it ---- */
@@ -819,7 +862,7 @@ export async function songToClipsNow(plan, o = {}) {
         if (r.ok) {
           done++;
           if (!r.checked) bad++;
-          lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match)'));
+          lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match: ' + r.diff + ')'));
         } else {
           if (r.cancelled) stopped = true;
           left++;
