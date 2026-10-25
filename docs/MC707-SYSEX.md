@@ -155,7 +155,9 @@ Found with the Toolbox's read-only scene finder (Song › Find MC-707 scene data
 |---|---|---|
 | The clip track *t* plays in scene *s* (0-127): clip number 1-16, 0 = none | track settings (`10 00 08 00` + *t* × `00 00 02 00`) + `3E` + *s* | Confirmed (store) |
 | How long scene *s* plays before the chain moves on, in bars (0 = OFF: it stays) | `10 00 00 4C` + *s* | Confirmed |
-| The CHAIN switch | not found | |
+| The CHAIN switch | not found | Not in any area that answers a read (see below) |
+
+Looking for the CHAIN switch (as Ada Locriana suggested, in the low addresses): with CHAIN turned on, off and on again, read-only scans of `00 00 00 00`-`00 00 7F 7F` and `10 00 00 00`-`10 00 7F 7F`, and a 16-byte read at every `00 xx 00 00`, `10 xx 00 00` and `01 00 00 00`-`1F 00 00 00`, found no byte that follows the switch. Only `10 00 00 00` (the project) and the first 29 bytes of `00 00 00 00` answer at all. Byte +`05` of each track's settings changed in some of these scans but not with the switch. So CHAIN is set on the MC-707 (MUTE, SHIFT + a step button, C1).
 
 Calling up a scene changes none of these bytes; storing one writes all 8 tracks' clips. With CHAIN on,
 LENGTH 4 played 4 bars at 128 BPM, and the chain moved from scene to scene in order and stayed on the
