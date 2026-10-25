@@ -135,6 +135,9 @@ function afterReplace() {
   scheduleSave();
 }
 export const HOST = window.toolbox || null;
+/** Work that must not overlap playback: while BUSY.write is a message (the MC-707's clips being
+ * written, zen/zc-seq.js), Play, patterns and Live Mode's Start show it instead of starting. */
+export const BUSY = { write: '' };
 /** What the desktop app is called here: 'Windows app', 'Mac app' or 'Linux app' (null in a browser). */
 export const APP_NAME = HOST ? { darwin: 'Mac app', linux: 'Linux app' }[HOST.platform] || 'Windows app' : null;
 export const PROJ = { name: '', path: '', dirty: false, t: null };

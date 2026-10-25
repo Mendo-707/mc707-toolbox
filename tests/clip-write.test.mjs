@@ -224,3 +224,35 @@ test('Clip write: Song › Send patterns to MC-707 clips puts each track’s pat
   await dlg.locator('button', { hasText: 'OK' }).click();
   assert.deepEqual(errors, []);
 });
+
+test('Clip write: while writing, a panel shows it, playback stops and cannot start, and Cancel stops it', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  await seed(page, 3, 9, 16, [{ step: 1, note: 60 }]);
+  /* the song is playing when the write starts: it stops */
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => window.__app.TR.playing);
+  const p = { name: 'Slow one', type: 'tone', bars: 1, notes: [{ s: 0, l: 1, n: 60, v: 100 }] };
+  await page.evaluate(
+    ([p]) => {
+      window.__app.seq.write(p, 3, 9, { replace: true });
+    },
+    [p]
+  );
+  await page.waitForSelector('#wpPanel');
+  assert.equal(await page.evaluate(() => window.__app.TR.playing), false, 'playback stopped for the write');
+  /* Play is refused while it writes */
+  await page.keyboard.press('Space');
+  await toastHas(page, 'Still writing to the MC-707');
+  assert.equal(await page.evaluate(() => window.__app.TR.playing), false);
+  /* Cancel stops it part-way (replacing writes all 128 steps, so it is still going) */
+  await page.waitForFunction(() => /Step \d+ of 128/.test(document.querySelector('#wpPanel')?.textContent || ''));
+  await page.locator('#wpPanel button', { hasText: 'Cancel' }).click();
+  await toastHas(page, 'Stopped part-way: clip 10 is only partly written');
+  await page.waitForFunction(() => !document.querySelector('#wpPanel'));
+  /* and playback works again */
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => window.__app.TR.playing);
+  await page.keyboard.press('Space');
+  assert.deepEqual(errors, []);
+});

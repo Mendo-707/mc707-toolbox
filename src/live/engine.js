@@ -5,10 +5,10 @@
 // Calls up the layers through hooks (core/hooks.js).
 import { lvHumApply } from './humanize-ui.js';
 import { lvMoodApply } from './mood-ui.js';
-import { clamp } from '../core/dom.js';
+import { clamp, toast } from '../core/dom.js';
 import { SCALES } from '../core/theory.js';
 import { devOn, oneKit } from '../core/device.js';
-import { S } from '../core/state.js';
+import { BUSY, S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
 import { kitTrack, poolOf, slotOf, toneTracksAll, trackOf, tracksFor, tracksOf } from '../core/tracks.js';
 import { patIndex, subTick } from '../core/song-model.js';
@@ -665,6 +665,7 @@ export function liveTick(tick, nt, td) {
   LV.lastTick = tick;
 }
 export function liveStart(idx) {
+  if (BUSY.write) return void toast(BUSY.write);
   if (REC.on) hooks.recStop();
   stopAll();
   ensureAudio();

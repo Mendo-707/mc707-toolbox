@@ -22,7 +22,8 @@
 import { $, el, toast } from '../core/dom.js';
 import { askDlg } from '../ui/dialogs.js';
 import { hooks } from '../core/hooks.js';
-import { S } from '../core/state.js';
+import { BUSY, S } from '../core/state.js';
+import { TR, stopAll } from '../services/transport.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { userById, userSave } from '../library/user-lib.js';
 import { ZX, devTrack, hexAddr, lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
@@ -367,7 +368,7 @@ export const nameBytes = (s, n) =>
  * Write pattern p into clip k of app track t, then read it back. A clip that holds notes is left alone
  * unless o.replace; replacing writes all 128 steps, so nothing of the old notes stays past the end.
  * With o.name, the clip is named after the pattern (as many characters as its name field holds).
- * @param {{replace?:boolean, name?:boolean, onStep?:(done:number, of:number)=>void}} [o]
+ * @param {{replace?:boolean, name?:boolean, onStep?:(done:number, of:number)=>void, cancel?:()=>boolean}} [o]
  * @returns {Promise<{ok:boolean, why?:string, notes?:number, skipped?:number, checked?:boolean, replaced?:boolean}>}
  */
 export async function writeClip(t, k, p, o = {}) {
@@ -388,13 +389,14 @@ export async function writeClip(t, k, p, o = {}) {
   if (o.name && before.nameLen) zxWrite(clipAddr(t, k), nameBytes(p.name, before.nameLen));
   /* every step a replaced clip may have used, so none of its notes stays behind */
   const count = o.replace ? MAX_STEPS : enc.steps;
+  /* step by step, each sent before the next is queued, so the MC-707 is never handed a long burst */
   for (let s = 0; s < count; s++) {
     const a = stepAddr(t, k, s);
     for (const [off, data] of stepWrites(enc.slots[s] || [])) zxWrite(a + off, data);
-    if (onStep && s % 8 === 7) {
-      await zxFlush();
-      onStep(s + 1, count);
-    }
+    await zxFlush();
+    if (onStep) onStep(s + 1, count);
+    if (o.cancel && o.cancel())
+      return { ok: false, cancelled: true, why: 'Stopped part-way: clip ' + (k + 1) + ' is only partly written' };
   }
   await zxFlush();
   const want = joinNotes(enc.slots);
@@ -403,8 +405,69 @@ export async function writeClip(t, k, p, o = {}) {
   return { ok: true, notes: want.length, skipped: enc.skipped, checked, replaced };
 }
 
-/* the picker: which track (of the pattern's type) and which clip */
+/* ---- while writing: playback held, a slower pace, and a panel that shows it ---- */
 let wbusy = false;
+/* ms between writes to the sequencer (the sound editor's 6 ms was too much for it, alongside playback) */
+const SEQ_PACE = 12;
+const pause = ms => new Promise(r => setTimeout(r, ms));
+/* the panel that stays up while the MC-707 is written: what is going on, how far, and Cancel */
+function writePanel(title) {
+  const line = el('div', { class: 'wpLine' }, 'Starting…'),
+    fill = el('i', {}),
+    st = { cancelled: false };
+  const cancel = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn',
+      onclick: () => {
+        st.cancelled = true;
+        cancel.disabled = true;
+        cancel.textContent = 'Stopping…';
+      }
+    },
+    'Cancel'
+  );
+  const box = el(
+    'div',
+    { id: 'wpPanel', class: 'wpPanel', role: 'status', 'aria-live': 'polite' },
+    el('b', {}, title),
+    el('div', { class: 'hint' }, 'Don’t play the song or the ' + DEVS[DEV].name + ' until this is done.'),
+    line,
+    el('div', { class: 'wpBar' }, fill),
+    el('div', { style: 'display:flex;justify-content:flex-end' }, cancel)
+  );
+  document.body.append(box);
+  return {
+    set: (text, f) => {
+      line.textContent = text;
+      fill.style.width = Math.round(Math.max(0, Math.min(1, f)) * 100) + '%';
+    },
+    get cancelled() {
+      return st.cancelled;
+    },
+    close: () => box.remove()
+  };
+}
+/* one writing job: playback stopped and held, the slower pace, the panel; fn(panel) does the work */
+async function writeSession(title, fn) {
+  if (wbusy) return null;
+  wbusy = true;
+  if (TR.playing) stopAll();
+  BUSY.write = 'Still writing to the ' + DEVS[DEV].name + ': wait until it is done, or press Cancel';
+  ZX.pace = SEQ_PACE;
+  const ui = writePanel(title);
+  try {
+    return await fn(ui);
+  } finally {
+    ZX.pace = 0;
+    BUSY.write = '';
+    ui.close();
+    wbusy = false;
+  }
+}
+
+/* the picker: which track (of the pattern's type) and which clip */
 /** Ask where to send pattern p (from app track t, if any), then write it (the editor's → MC-707 clip). */
 export function clipWriteAsk(p, t) {
   if (wbusy || $('#cwOv')) return;
@@ -468,29 +531,28 @@ export function clipWriteAsk(p, t) {
   document.body.append(ov);
   setTimeout(() => go.focus(), 30);
 }
-/** Write pattern p into clip k of app track t now, with progress and the result as messages. */
+/** Write pattern p into clip k of app track t now, with progress, then say how it went. */
 export async function clipWriteNow(p, t, k, o = {}) {
   if (wbusy) return;
-  wbusy = true;
   const where = 'track ' + devNum(t) + ' clip ' + (k + 1);
-  toast('Checking ' + where + ' is empty…');
-  try {
-    if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
-    const r = await writeClip(t, k, p, {
+  if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
+  const r = await writeSession('Writing “' + (p.name || 'pattern') + '” to ' + where, ui => {
+    ui.set('Reading ' + where + ' first…', 0);
+    return writeClip(t, k, p, {
       ...o,
-      onStep: (d, n) => toast('Writing ' + where + '… step ' + d + ' of ' + n)
+      onStep: (d, n) => ui.set('Step ' + d + ' of ' + n, d / n),
+      cancel: () => ui.cancelled
     });
-    if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k) : toast(r.why);
-    toast(
-      (r.replaced ? 'Replaced the notes in ' + where + ' with ' : 'Wrote ') +
-        r.notes +
-        (r.replaced ? ' notes' : ' notes to ' + where) +
-        (r.checked ? ', read back and checked' : '. The read-back did not match: check the clip on the MC-707') +
-        (r.skipped ? '. ' + r.skipped + ' notes could not go in (no drum note, past the end, or a full step)' : '')
-    );
-  } finally {
-    wbusy = false;
-  }
+  });
+  if (!r) return;
+  if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k) : toast(r.why);
+  toast(
+    (r.replaced ? 'Replaced the notes in ' + where + ' with ' : 'Wrote ') +
+      r.notes +
+      (r.replaced ? ' notes' : ' notes to ' + where) +
+      (r.checked ? ', read back and checked' : '. The read-back did not match: check the clip on the MC-707') +
+      (r.skipped ? '. ' + r.skipped + ' notes could not go in (no drum note, past the end, or a full step)' : '')
+  );
 }
 
 /* ---- a whole song into clips ---- */
@@ -624,43 +686,57 @@ export function songToClipsOpen() {
 /** Write a song plan (songPlan) clip by clip, then show what went where. */
 export async function songToClipsNow(plan, o = {}) {
   if (wbusy) return;
-  wbusy = true;
+  if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
+  const todo = plan.flatMap(r => r.items.filter(i => !i.skip).map(i => ({ t: r.t, ...i })));
   const lines = [];
   let done = 0,
     left = 0,
-    bad = 0;
-  try {
-    if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
-    const todo = plan.flatMap(r => r.items.filter(i => !i.skip).map(i => ({ t: r.t, ...i })));
+    bad = 0,
+    stopped = false;
+  const ran = await writeSession('Sending the song’s patterns to MC-707 clips', async ui => {
     for (const [n, it] of todo.entries()) {
-      const where = 'track ' + devNum(it.t) + ' clip ' + (it.k + 1);
-      toast('Sending ' + (n + 1) + ' of ' + todo.length + ': ' + it.label + ' → ' + where);
-      const r = await writeClip(it.t, it.k, it.p, { replace: o.replace, name: o.name });
+      if (ui.cancelled) {
+        stopped = true;
+        break;
+      }
+      const where = 'track ' + devNum(it.t) + ' clip ' + (it.k + 1),
+        head = 'Clip ' + (n + 1) + ' of ' + todo.length + ': ' + it.label + ' → ' + where;
+      ui.set(head + ' (reading it first)', n / todo.length);
+      const r = await writeClip(it.t, it.k, it.p, {
+        replace: o.replace,
+        name: o.name,
+        onStep: (d, c) => ui.set(head + ' · step ' + d + ' of ' + c, (n + d / c) / todo.length),
+        cancel: () => ui.cancelled
+      });
       if (r.ok) {
         done++;
         if (!r.checked) bad++;
         lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match)'));
       } else {
+        if (r.cancelled) stopped = true;
         left++;
         lines.push(where + ': ' + it.label + ' (not sent: ' + r.why + ')');
+        if (r.cancelled) break;
       }
+      /* a breather between clips */
+      await pause(400);
     }
-    for (const r of plan)
-      for (const i of r.items)
-        if (i.skip) lines.push('track ' + devNum(r.t) + ': ' + i.label + ' (skipped: ' + i.skip + ')');
-    await askDlg({
-      title: 'Sent ' + done + ' pattern' + (done === 1 ? '' : 's') + ' to MC-707 clips',
-      text:
-        (bad ? bad + ' did not read back the same; check those clips. ' : '') +
-        (left ? left + ' were not sent. ' : '') +
-        'Save the project on the ' +
-        DEVS[DEV].name +
-        ' to keep them.\n\n' +
-        lines.join('\n'),
-      ok: 'OK',
-      cancel: 'Close'
-    });
-  } finally {
-    wbusy = false;
-  }
+    return true;
+  });
+  if (!ran) return;
+  for (const r of plan)
+    for (const i of r.items)
+      if (i.skip) lines.push('track ' + devNum(r.t) + ': ' + i.label + ' (skipped: ' + i.skip + ')');
+  await askDlg({
+    title: (stopped ? 'Stopped after ' : 'Sent ') + done + ' pattern' + (done === 1 ? '' : 's') + ' to MC-707 clips',
+    text:
+      (bad ? bad + ' did not read back the same; check those clips. ' : '') +
+      (left ? left + ' were not sent. ' : '') +
+      'Save the project on the ' +
+      DEVS[DEV].name +
+      ' to keep them.\n\n' +
+      lines.join('\n'),
+    ok: 'OK',
+    cancel: 'Close'
+  });
 }

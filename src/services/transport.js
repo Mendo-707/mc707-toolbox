@@ -7,7 +7,7 @@
 // Calls up the layers through hooks (core/hooks.js).
 import { clamp, toast } from '../core/dom.js';
 import { devOn } from '../core/device.js';
-import { S } from '../core/state.js';
+import { BUSY, S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
 import { patIndex, songEnd, subTick } from '../core/song-model.js';
 import { AU, DRUMS, click, ensureAudio, voice } from './synth.js';
@@ -350,6 +350,7 @@ export const TICKER = (() => {
 })();
 /** Play the song from the playhead. rec: {endTick} to stop at a tick (used by audio recording). */
 export function startSong(rec) {
+  if (BUSY.write) return void toast(BUSY.write);
   if (REC.on) hooks.recStop();
   stopAll();
   ensureAudio();
@@ -391,6 +392,7 @@ export function startSong(rec) {
  * @param {number} [swing]
  */
 export function startPat(p, ti, range, shift, bpm, swing) {
+  if (BUSY.write) return void toast(BUSY.write);
   stopAll();
   ensureAudio();
   Object.assign(TR, {

@@ -733,3 +733,41 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* the panel that stays up while the MC-707's clips are written (zen/zc-seq.js) */
+.wpPanel {
+  position: fixed;
+  z-index: 9700;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--hot);
+  box-shadow:
+    var(--shadow),
+    0 0 0 3px color-mix(in srgb, var(--hot) 25%, transparent);
+}
+.wpLine {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.wpBar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--raise);
+  overflow: hidden;
+}
+.wpBar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--hot);
+  transition: width 0.2s;
+}

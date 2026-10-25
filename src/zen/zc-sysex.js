@@ -80,7 +80,8 @@ export const ZX = {
   log: [] /* the last messages, for the editor's details view */,
   model: 0 /* the model byte the device answered to (0 = not known yet) */,
   modelFor: '' /* the device setting and port it was learnt for */,
-  onIdle: null /* called each time the write queue empties */
+  onIdle: null /* called each time the write queue empties */,
+  pace: 0 /* ms between queued writes when set (the clip notes write slower), else PACE */
 };
 const setState = s => {
   ZX.state = s;
@@ -156,7 +157,7 @@ function pump() {
   const [l, data] = it.value;
   ZX.q.delete(l);
   rawSend(dt1(l, data));
-  if (ZX.q.size) ZX.timer = setTimeout(pump, PACE);
+  if (ZX.q.size) ZX.timer = setTimeout(pump, ZX.pace || PACE);
   else if (ZX.onIdle) ZX.onIdle();
 }
 /** Resolves once every queued write has gone out. */
