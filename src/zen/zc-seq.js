@@ -27,6 +27,7 @@ import { TR, stopAll } from '../services/transport.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { userById, userSave } from '../library/user-lib.js';
 import { ZX, devTrack, hexAddr, lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
+import { SCENES, sceneName, songSections, writeScenes } from './zc-scenes.js';
 
 /* the first clip of each device track, packed as Roland writes addresses */
 const CLIP1 = [0x20000000, 0x21080000, 0x22100000, 0x23180000, 0x24200000, 0x25280000, 0x26300000, 0x27380000];
@@ -586,42 +587,43 @@ export function songPlan(starts = {}) {
             notes: p.notes.map(n => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
           }
         : p;
-      seen.set(key, q);
+      seen.set(key, { ...q, key });
     }
     if (!seen.size) continue;
     let k = starts[t] || 0;
     const items = [];
-    for (const p of seen.values()) {
+    for (const { key, ...p } of seen.values()) {
       const skip = p.bars * 8 > MAX_STEPS ? 'longer than 16 bars' : k > 15 ? 'no clip left on this track' : '';
-      items.push({ k: skip ? -1 : k, p, label: p.name, ...(skip ? { skip } : {}) });
+      items.push({ k: skip ? -1 : k, key, p, label: p.name, ...(skip ? { skip } : {}) });
       if (!skip) k++;
     }
     out.push({ t, items });
   }
   return out;
 }
-/** The Song menu's Send patterns to MC-707 clips: pick each track's first clip, then write them all. */
-export function songToClipsOpen() {
+/**
+ * The Song menu's Send patterns to MC-707 clips (or, with scenes, Send song to MC-707 scenes): pick each
+ * track's first clip (and the first scene), then write them all.
+ * @param {boolean} [scenes] also write the song's sections into scenes, chained so it plays through
+ */
+export function songToClipsOpen(scenes = false) {
   if (wbusy || $('#scOv')) return;
+  if (scenes && DEV !== '707') return toast('Scenes are only mapped on the MC-707 so far');
   const starts = {};
+  let first = 0;
   const plan0 = songPlan();
   if (!plan0.length) return toast('The song has no patterns to send');
-  const body = el('div', { class: 'scRows' });
-  const repl = el(
-      'label',
-      { class: 'cwOpt' },
-      el('input', { type: 'checkbox' }),
-      ' Replace the notes in clips that have some'
-    ),
-    named = el(
-      'label',
-      { class: 'cwOpt' },
-      el('input', { type: 'checkbox', checked: true }),
-      ' Name each clip after its pattern'
-    );
+  const body = el('div', { class: 'scRows' }),
+    scBody = el('div', { class: 'scScenes' });
+  const tick = (text, on) =>
+    el('label', { class: 'cwOpt' }, el('input', { type: 'checkbox', checked: on }), ' ' + text);
+  const repl = tick('Replace the notes in clips that have some', false),
+    named = tick('Name each clip after its pattern', true),
+    clipsToo = tick('Send the clips too (untick when they are already on the MC-707)', true);
   const draw = () => {
     body.textContent = '';
-    for (const row of songPlan(starts)) {
+    const plan = songPlan(starts);
+    for (const row of plan) {
       const sel = el(
         'select',
         {
@@ -648,8 +650,40 @@ export function songToClipsOpen() {
         )
       );
     }
+    if (!scenes) return;
+    scBody.textContent = '';
+    const secs = songSections(plan),
+      over = first + secs.length > SCENES;
+    secs.forEach((x, i) =>
+      scBody.append(
+        el(
+          'div',
+          { class: 'scRow' },
+          el('b', {}, 'Scene ' + (first + i < SCENES ? sceneName(first + i) : '—')),
+          el(
+            'span',
+            {},
+            (x.bars === 1 ? 'bar ' + (x.a + 1) : 'bars ' + (x.a + 1) + '–' + (x.a + x.bars)) +
+              (i === secs.length - 1 ? ', then stays' : ' · ' + x.bars + (x.bars === 1 ? ' bar' : ' bars'))
+          ),
+          el(
+            'span',
+            { class: 'hint' },
+            plan
+              .map(r => (x.clips[r.t] >= 0 ? 'T' + devNum(r.t) + ' clip ' + (x.clips[r.t] + 1) : ''))
+              .filter(Boolean)
+              .join(' · ') || 'nothing plays'
+          )
+        )
+      )
+    );
+    if (!secs.length) scBody.append(el('p', { class: 'hint' }, 'The song has nothing to play.'));
+    if (over)
+      scBody.append(
+        el('p', { class: 'hint warn' }, 'That is more scenes than the MC-707 has: start from an earlier scene.')
+      );
+    go.disabled = !secs.length || over;
   };
-  draw();
   const close = () => ov.remove();
   const go = el(
     'button',
@@ -658,27 +692,65 @@ export function songToClipsOpen() {
       class: 'btn on',
       onclick: () => {
         close();
-        songToClipsNow(songPlan(starts), { replace: repl.firstChild.checked, name: named.firstChild.checked });
+        songToClipsNow(songPlan(starts), {
+          replace: repl.firstChild.checked,
+          name: named.firstChild.checked,
+          clips: !scenes || clipsToo.firstChild.checked,
+          scenes: scenes ? { first } : null
+        });
       }
     },
     'Send'
   );
+  const firstSel = el(
+    'select',
+    { 'aria-label': 'First scene', onchange: e => ((first = +e.target.value), draw()) },
+    ...Array.from({ length: SCENES }, (_, s) => el('option', { value: s }, 'from scene ' + sceneName(s)))
+  );
+  draw();
+  const name = DEVS[DEV].name;
   const ov = el(
     'div',
-    { id: 'scOv', class: 'ptOv', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Send patterns to MC-707 clips' },
+    {
+      id: 'scOv',
+      class: 'ptOv',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': scenes ? 'Send song to MC-707 scenes' : 'Send patterns to MC-707 clips'
+    },
     el(
       'div',
-      { class: 'ptBox', style: 'max-width:720px' },
-      el('h3', {}, 'Send the song’s patterns to MC-707 clips'),
+      { class: 'ptBox', style: 'max-width:760px' },
+      el('h3', {}, scenes ? 'Send the song to ' + name + ' scenes' : 'Send the song’s patterns to ' + name + ' clips'),
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
         'Experimental. Each track’s patterns go into its clips in the order they play, from the clip you pick (a pattern with a transpose counts as its own). Up to 8 bars each go in 1/16 steps, up to 16 in 1/8 steps. Clips that hold notes are left alone unless you tick Replace. Nothing is kept until you save the project on the ' +
-          DEVS[DEV].name +
+          name +
           '.'
       ),
       body,
-      el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin:12px 0' }, repl, named),
+      scenes
+        ? el(
+            'div',
+            { class: 'scSceneBox' },
+            el('h4', {}, 'Scenes'),
+            el(
+              'p',
+              { class: 'hint', style: 'line-height:1.45' },
+              'Each part of the song where the patterns change becomes a scene, with its LENGTH in bars so the scene chain moves on by itself; the last scene stays. Scenes are numbered as Call Scene TYPE2 shows them (8 banks of 16). Afterwards, turn CHAIN on in the SCENE CHAIN screen (MUTE, then SHIFT + a step button) and press play on the first scene.'
+            ),
+            el('div', { style: 'margin:6px 0' }, firstSel),
+            scBody
+          )
+        : null,
+      el(
+        'div',
+        { style: 'display:flex;flex-direction:column;gap:6px;margin:12px 0' },
+        scenes ? clipsToo : null,
+        repl,
+        named
+      ),
       el(
         'div',
         { style: 'display:flex;gap:8px;justify-content:flex-end' },
@@ -690,58 +762,93 @@ export function songToClipsOpen() {
   ov.addEventListener('keydown', e => e.key === 'Escape' && close());
   document.body.append(ov);
 }
-/** Write a song plan (songPlan) clip by clip, then show what went where. */
+/**
+ * Write a song plan (songPlan) clip by clip, and with o.scenes the song's sections into scenes, then
+ * show what went where.
+ * @param {{replace?:boolean, name?:boolean, clips?:boolean, scenes?:{first:number}|null}} [o]
+ */
 export async function songToClipsNow(plan, o = {}) {
   if (wbusy) return;
   if (!(await zxConnect())) return toast('The MC-707 is not connected (or MIDI with SysEx is not allowed)');
-  const todo = plan.flatMap(r => r.items.filter(i => !i.skip).map(i => ({ t: r.t, ...i })));
+  const todo = o.clips === false ? [] : plan.flatMap(r => r.items.filter(i => !i.skip).map(i => ({ t: r.t, ...i })));
+  const secs = o.scenes ? songSections(plan) : [];
   const lines = [];
   let done = 0,
     left = 0,
     bad = 0,
-    stopped = false;
-  const ran = await writeSession('Sending the song’s patterns to MC-707 clips', async ui => {
-    for (const [n, it] of todo.entries()) {
-      if (ui.cancelled) {
-        stopped = true;
-        break;
+    stopped = false,
+    sc = null;
+  const ran = await writeSession(
+    o.scenes ? 'Sending the song to MC-707 scenes' : 'Sending the song’s patterns to MC-707 clips',
+    async ui => {
+      for (const [n, it] of todo.entries()) {
+        if (ui.cancelled) {
+          stopped = true;
+          break;
+        }
+        const where = 'track ' + devNum(it.t) + ' clip ' + (it.k + 1),
+          head = 'Clip ' + (n + 1) + ' of ' + todo.length + ': ' + it.label + ' → ' + where;
+        ui.set(head + ' (reading it first)', n / (todo.length + 1));
+        const r = await writeClip(it.t, it.k, it.p, {
+          replace: o.replace,
+          name: o.name,
+          onStep: (d, c) => ui.set(head + ' · step ' + d + ' of ' + c, (n + d / c) / (todo.length + 1)),
+          cancel: () => ui.cancelled
+        });
+        if (r.ok) {
+          done++;
+          if (!r.checked) bad++;
+          lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match)'));
+        } else {
+          if (r.cancelled) stopped = true;
+          left++;
+          lines.push(where + ': ' + it.label + ' (not sent: ' + r.why + ')');
+          if (r.cancelled) break;
+        }
+        /* a breather between clips */
+        await pause(400);
       }
-      const where = 'track ' + devNum(it.t) + ' clip ' + (it.k + 1),
-        head = 'Clip ' + (n + 1) + ' of ' + todo.length + ': ' + it.label + ' → ' + where;
-      ui.set(head + ' (reading it first)', n / todo.length);
-      const r = await writeClip(it.t, it.k, it.p, {
-        replace: o.replace,
-        name: o.name,
-        onStep: (d, c) => ui.set(head + ' · step ' + d + ' of ' + c, (n + d / c) / todo.length),
-        cancel: () => ui.cancelled
-      });
-      if (r.ok) {
-        done++;
-        if (!r.checked) bad++;
-        lines.push(where + ': ' + it.label + (r.checked ? '' : ' (read-back did not match)'));
-      } else {
-        if (r.cancelled) stopped = true;
-        left++;
-        lines.push(where + ': ' + it.label + ' (not sent: ' + r.why + ')');
-        if (r.cancelled) break;
+      if (o.scenes && !stopped) {
+        ui.set('Writing ' + secs.length + ' scenes', todo.length / (todo.length + 1));
+        sc = await writeScenes(secs, o.scenes.first);
       }
-      /* a breather between clips */
-      await pause(400);
+      return true;
     }
-    return true;
-  });
+  );
   if (!ran) return;
   for (const r of plan)
     for (const i of r.items)
       if (i.skip) lines.push('track ' + devNum(r.t) + ': ' + i.label + ' (skipped: ' + i.skip + ')');
+  const f = o.scenes ? o.scenes.first : 0,
+    last = f + secs.length - 1;
+  const scLine = !o.scenes
+    ? ''
+    : stopped
+      ? 'Scenes not written (stopped).\n'
+      : !sc.ok
+        ? 'Scenes not written: ' + sc.why + '.\n'
+        : 'Scenes ' +
+          sceneName(f) +
+          ' to ' +
+          sceneName(last) +
+          ' written' +
+          (sc.checked ? ', read back and checked' : ' (the read-back did not match: check them on the MC-707)') +
+          '. Turn CHAIN on in the SCENE CHAIN screen, then play from scene ' +
+          sceneName(f) +
+          '.\n';
   await askDlg({
-    title: (stopped ? 'Stopped after ' : 'Sent ') + done + ' pattern' + (done === 1 ? '' : 's') + ' to MC-707 clips',
+    title: o.scenes
+      ? stopped
+        ? 'Stopped after ' + done + ' clips'
+        : 'Sent the song to MC-707 scenes'
+      : (stopped ? 'Stopped after ' : 'Sent ') + done + ' pattern' + (done === 1 ? '' : 's') + ' to MC-707 clips',
     text:
-      (bad ? bad + ' did not read back the same; check those clips. ' : '') +
+      scLine +
+      (bad ? bad + ' clips did not read back the same; check those clips. ' : '') +
       (left ? left + ' were not sent. ' : '') +
       'Save the project on the ' +
       DEVS[DEV].name +
-      ' to keep them.\n\n' +
+      ' to keep it.\n\n' +
       lines.join('\n'),
     ok: 'OK',
     cancel: 'Close'

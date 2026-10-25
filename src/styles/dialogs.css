@@ -793,3 +793,17 @@
   white-space: pre-wrap;
   user-select: text;
 }
+
+/* Send song to MC-707 scenes: the scenes list */
+.scSceneBox {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.scSceneBox h4 {
+  margin: 0 0 4px;
+}
+.scScenes {
+  max-height: 30vh;
+  overflow: auto;
+}

@@ -149,11 +149,14 @@ import {
   clipWriteAsk,
   clipWriteNow,
   songToClipsOpen,
+  songToClipsNow,
+  songPlan,
   stepAddr,
   paramAddr,
   clipAddr
 } from './zen/zc-seq.js';
 import { browserOpen } from './zen/zc-browser.js';
+import { songSections } from './zen/zc-scenes.js';
 import { scanOnce, scanDiff, scanReset, sceneFinderOpen } from './zen/zc-scan.js';
 import { ZS, libraryJSON } from './zen/zc-sounds.js';
 import { FW_REC, fwFields } from './zen/zc-factory.js';
@@ -254,6 +257,9 @@ PROJ.t = projTitle;
       read: clipNotesToMine,
       write: clipWriteNow,
       song: songToClipsOpen,
+      sendSong: songToClipsNow,
+      songPlan,
+      sections: songSections,
       scan: { once: scanOnce, diff: scanDiff, reset: scanReset, open: sceneFinderOpen }
     },
     get S() {

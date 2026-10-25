@@ -119,6 +119,7 @@ function initMenubar() {
         ['Tap tempo', go('#bTap')],
         ['Mixer…', () => songMixerOpen()],
         ['Send patterns to MC-707 clips…', () => songToClipsOpen()],
+        ['Send song to MC-707 scenes…', () => songToClipsOpen(true)],
         ['Find MC-707 scene data (read-only)…', () => sceneFinderOpen()],
         0,
         ['Record audio', go('#bAudRec'), 'R'],

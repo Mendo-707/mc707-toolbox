@@ -144,6 +144,27 @@ check. Up to 8 bars go in 1/16 steps; 9-16 bars in 1/8 steps, with a 16th that f
 step kept as start `50`. Writes are paced and playback is held until they finish: starting the clip
 sequencer during a write crashed an MC-707 (it recovered after a restart).
 
+## Scenes and the scene chain
+
+Found with the Toolbox's read-only scene finder (Song › Find MC-707 scene data) on an MC-707 (system
+1.71 or later), storing scenes and setting the chain one thing at a time. The MC-707 has 128 scenes
+(since 1.50) and a scene chain (since 1.71) that plays them in order.
+
+| What | Address | Status |
+|---|---|---|
+| The clip track *t* plays in scene *s* (0-127): clip number 1-16, 0 = none | track settings (`10 00 08 00` + *t* × `00 00 02 00`) + `3E` + *s* | Confirmed (store) |
+| How long scene *s* plays before the chain moves on, in bars (0 = OFF: it stays) | `10 00 00 4C` + *s* | Confirmed |
+| The CHAIN switch | not found | |
+
+Calling up a scene changes none of these bytes; storing one writes all 8 tracks' clips. With CHAIN on,
+LENGTH 4 played 4 bars at 128 BPM, and the chain moved from scene to scene in order and stayed on the
+first scene whose LENGTH is OFF. Scene *s* is shown as bank-scene with Call Scene TYPE2 (8 banks of 16:
+*s* = 0 is 1-1, 16 is 2-1). The track settings blocks answer 190 bytes, so the 128 scenes fill them to
+the end; the MC-707's track blocks are twice the MV-1's for this list.
+
+The Toolbox's Send song to MC-707 scenes writes the song's patterns into clips, then one scene per part
+of the song where the patterns change, each with its LENGTH, the last one OFF.
+
 ## Checking a device
 
 The [diagnostics page](https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html)
