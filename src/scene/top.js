@@ -8,7 +8,7 @@ import { S, scheduleSave } from '../core/state.js';
 import { MIDI, connectMidi } from '../services/midi.js';
 import { showMenu } from '../ui/menu.js';
 import { SC, forgetWritten, rows } from './model.js';
-import { WO, pending, setWO, writeAll, writeChanged } from './write.js';
+import { WO, pending, setWO, showReport, writeAll, writeChanged } from './write.js';
 import { sceneGuideOpen } from './guide.js';
 import { checkNew } from './check.js';
 import { CK } from './check.js';
@@ -31,6 +31,7 @@ export function writeMenu(x, y) {
     tick('Set the MC-707’s tempo with the scenes', 'tempo'),
     '-',
     { label: 'Check the new clips on the MC-707 (read-only)', action: checkNew },
+    { label: 'Show the last write report', action: showReport },
     { label: 'Forget what was written (another project on the MC-707)', action: forgetWritten }
   ]);
 }

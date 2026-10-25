@@ -141,12 +141,18 @@ export function toPattern(notes, params, type, name) {
     }
     const s = Math.round((x.step + x.start / 100) * k * 1000) / 1000;
     if (s < 0 || s >= bars * 16) continue;
-    out.push({
-      s,
-      l: Math.max(0.05, Math.round((x.len / 100) * k * 1000) / 1000),
-      n,
-      v: Math.max(1, Math.min(127, x.vel))
-    });
+    const l = Math.max(0.05, Math.round((x.len / 100) * k * 1000) / 1000),
+      v = Math.max(1, Math.min(127, x.vel)),
+      hits = SUB_HITS[x.sub];
+    /* a roll's hits, or a flam's grace note, back as notes */
+    if (hits)
+      for (let j = 0; j < hits; j++)
+        out.push({ s: Math.round((s + (j * k) / hits) * 1000) / 1000, l: Math.min(l, k / hits), n, v });
+    else {
+      if (x.sub === SUB.flam && s - 0.1 * k >= 0)
+        out.push({ s: Math.round((s - 0.1 * k) * 1000) / 1000, l: 0.1 * k, n, v: Math.max(1, Math.round(v * 0.6)) });
+      out.push({ s, l, n, v });
+    }
   }
   out.sort((a, b) => a.s - b.s || a.n - b.n);
   return {
@@ -314,6 +320,49 @@ export const MAX_STEPS = 128;
  * the song's drum map. In 1/8 steps two notes of one pitch in the same step cannot both go in.
  * @returns {{steps:number, size:number, slots:{note,vel,start,end,sub}[][], skipped:number} | {error:string}}
  */
+/* the MC-707's sub steps (+70 in a step), from Roland's MV-1 database: 1/2, 1/3 and 1/4 play the note two,
+   three or four times across its step; FLAM puts a grace note just before it */
+export const SUB = { half: 1, third: 2, quarter: 3, flam: 4 };
+const SUB_HITS = { 1: 2, 2: 3, 3: 4 };
+/**
+ * A step holds each pitch once, so a roll (the same note two, three or four times, evenly, inside one
+ * step) becomes one note with a sub step, and a grace note just before a hit becomes the hit's FLAM.
+ * k is the step size in 16ths. Returns the notes, with sub on the ones that stand for a roll or flam.
+ */
+function ratchets(notes, k) {
+  const near = (a, b) => Math.abs(a - b) < 0.06;
+  const groups = new Map();
+  for (const x of notes) {
+    const key = x.n + ':' + Math.floor(x.s / k + 1e-6);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(x);
+  }
+  const out = [],
+    gone = new Set();
+  for (const g of groups.values()) {
+    if (g.length < 2 || g.length > 4) continue;
+    const f = Math.floor(g[0].s / k + 1e-6),
+      offs = g.map(x => x.s / k - f),
+      n = g.length;
+    if (!offs.every((o, i) => near(o, i / n))) continue;
+    g.forEach(x => gone.add(x));
+    out.push({ s: f * k, l: Math.min(...g.map(x => x.l)), n: g[0].n, v: Math.max(...g.map(x => x.v)), sub: n - 1 });
+  }
+  const rest = notes.filter(x => !gone.has(x));
+  /* a flam: the same note a fifth of a step or less before another */
+  const grace = new Set(),
+    hit = new Set();
+  rest.forEach((x, i) => {
+    const y = rest.slice(i + 1).find(z => z.n === x.n && z.s > x.s);
+    if (y && (y.s - x.s) / k <= 0.2 && !grace.has(x) && !hit.has(x)) {
+      grace.add(x);
+      hit.add(y);
+    }
+  });
+  return [...out, ...rest.filter(x => !grace.has(x)).map(x => (hit.has(x) ? { ...x, sub: SUB.flam } : x))].sort(
+    (a, b) => a.s - b.s || a.n - b.n
+  );
+}
 export function encodePattern(p, type) {
   /* up to 8 bars in 1/16 steps; 9-16 bars in 1/8 steps, a note's place off the step kept by its start
      (-50 = the 16th before a step); longer does not fit a clip */
@@ -323,7 +372,10 @@ export function encodePattern(p, type) {
   if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 16 bars; this pattern is ' + p.bars };
   const slots = Array.from({ length: steps }, () => []);
   let skipped = 0;
-  const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
+  const notes = ratchets(
+    [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n),
+    k
+  );
   for (const x of notes) {
     const note = type === 'drum' ? S.drumMap[x.n] : x.n;
     if (!(note >= 0 && note <= 127)) {
@@ -348,7 +400,7 @@ export function encodePattern(p, type) {
     while (left > 0 && at < steps) {
       const room = 100 - start,
         tie = left > room;
-      const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: 0 };
+      const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0 };
       const s = slots[at];
       /* a full step, or this pitch already in it: the note is cut here */
       if (s.length >= 16 || s.some(y => y.note === note)) {
@@ -386,7 +438,7 @@ export function stepWrites(slots) {
 /* the notes as the read gives them back, to compare */
 const sig = notes =>
   notes
-    .map(x => [x.step, x.note, x.start, x.len, x.vel].join(','))
+    .map(x => [x.step, x.note, x.start, x.len, x.vel, x.sub || 0].join(','))
     .sort()
     .join(' ');
 /** The clip name bytes for a pattern name: printable ASCII, padded with spaces to the field's length. */

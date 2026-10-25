@@ -33,6 +33,7 @@ body[data-mode='scene'] #main {
 }
 body[data-mode='scene'] #scene {
   display: flex;
+  overflow: hidden;
 }
 
 /* ---- toolbar ---- */
@@ -166,7 +167,9 @@ body[data-mode='scene'] #scene {
 .sBody {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
+  overflow: hidden;
 }
 .sRight {
   flex: 1;
@@ -371,7 +374,9 @@ body[data-mode='scene'] #scene {
   color: var(--chg);
 }
 .scMark.new,
-.sbClip.new .sbMark {
+.sbClip.new .sbMark,
+.scMark.odd,
+.sbClip.odd .sbMark {
   color: var(--hot);
 }
 

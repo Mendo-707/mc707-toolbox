@@ -48,18 +48,19 @@ export function clipMark(clip, pats, tones) {
 /** What scene row i would put on the MC-707: its clips, and its LENGTH (OFF when it is the last). */
 export const sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
 
-/** Clip k of track t: 'empty', 'new' (never written), 'written' or 'changed' (since it was written). */
+/* a mark starting with ! was written, but the MC-707 read it back differently */
+const stateOf = (was, now) => (!was ? 'new' : was === now ? 'written' : was === '!' + now ? 'odd' : 'changed');
+/**
+ * Clip k of track t: 'empty', 'new' (never written), 'written', 'odd' (written, but read back differently)
+ * or 'changed' (since it was written).
+ */
 export function clipState(q, pats, t, k) {
   const c = q.clips[t][k];
   if (!c) return 'empty';
-  const was = q.done && q.done.c[t + ':' + k];
-  return !was ? 'new' : was === clipMark(c, pats, q.tones) ? 'written' : 'changed';
+  return stateOf(q.done && q.done.c[t + ':' + k], clipMark(c, pats, q.tones));
 }
-/** Scene row i: 'new', 'written' or 'changed'. */
-export function sceneState(q, i) {
-  const was = q.done && q.done.s[q.first + i];
-  return !was ? 'new' : was === sceneMark(q, i) ? 'written' : 'changed';
-}
+/** Scene row i: 'new', 'written', 'odd' or 'changed'. */
+export const sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
 
 /* the first Scene Mode's rows (a pattern per cell) as clips and picks */
 function fromCells(q) {

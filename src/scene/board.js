@@ -12,9 +12,10 @@ import { clipState, clipUses } from '../core/scene-model.js';
 import { SC, rows, toneOf } from './model.js';
 import { checked } from './check.js';
 
-export const MARK = { written: '✓', changed: '●', new: '+' };
+export const MARK = { written: '✓', changed: '●', new: '+', odd: '!' };
 export const MARK_TIP = {
   written: 'Written to the MC-707, and not changed since',
+  odd: 'Written, but the MC-707 read it back differently: Write ▾ › Show the last write report',
   changed: 'Changed since it was written: write it again',
   new: 'Not written to the MC-707 yet'
 };

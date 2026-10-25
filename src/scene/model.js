@@ -153,16 +153,16 @@ export const freeClip = t => (S.scn ? S.scn.clips[t].findIndex(c => !c) : 0);
 export const toneOf = c => (c && c.tone && S.scn && S.scn.tones[c.tone]) || null;
 
 /* ---- what was written ---- */
-/** Mark clip k of track t as written as it is now. */
-export function markClip(t, k) {
+/** Mark clip k of track t as written as it is now (odd: the MC-707 read it back differently). */
+export function markClip(t, k, odd = false) {
   const q = S.scn,
     c = q && q.clips[t][k];
-  if (c) q.done.c[t + ':' + k] = clipMark(c, S.patterns, q.tones);
+  if (c) q.done.c[t + ':' + k] = (odd ? '!' : '') + clipMark(c, S.patterns, q.tones);
 }
-/** Mark scene row i as written as it is now. */
-export function markScene(i) {
+/** Mark scene row i as written as it is now (odd: read back differently). */
+export function markScene(i, odd = false) {
   const q = S.scn;
-  if (q && q.rows[i]) q.done.s[q.first + i] = sceneMark(q, i);
+  if (q && q.rows[i]) q.done.s[q.first + i] = (odd ? '!' : '') + sceneMark(q, i);
 }
 /** Forget what was written (after loading another project on the MC-707). */
 export function forgetWritten() {

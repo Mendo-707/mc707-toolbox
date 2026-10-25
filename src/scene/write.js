@@ -102,6 +102,15 @@ export async function writeThese(what, quiet = false) {
         continue;
       }
       if (!r.checked) bad.push(where + ': read-back did not match (' + r.diff + ')');
+      if (r.skipped)
+        bad.push(
+          where +
+            ': ' +
+            r.skipped +
+            ' note' +
+            (r.skipped === 1 ? '' : 's') +
+            ' could not go in (no drum note for its lane, past the end, or two of the same note in one step)'
+        );
       const tn = toneOf(c),
         snd = WO.tones && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
       if (snd) {
@@ -110,7 +119,7 @@ export async function writeThese(what, quiet = false) {
         /* the track plays its clips' sounds (Sound Source CLIP) */
         zxWrite(trackSetAddr(t) + 4, [1]);
       }
-      if (r.checked) markClip(t, k);
+      markClip(t, k, !r.checked);
       uncheck(t, k);
       wrote++;
       await pause(250);
@@ -125,7 +134,7 @@ export async function writeThese(what, quiet = false) {
       ui.set('Writing ' + scenes.length + ' scene' + (scenes.length === 1 ? '' : 's'), (N - 1) / N);
       const list = rows().map(r => ({ bars: r.bars, clips: Object.fromEntries(on().map(t => [t, r.pick[t]])) }));
       sc = await writeScenes(list, firstScene(), what.scenes === 'all' ? null : scenes);
-      if (sc.ok && sc.checked) for (const i of scenes) markScene(i);
+      if (sc.ok) for (const i of scenes) markScene(i, !sc.checked);
       if (!sc.ok) bad.push('Scenes: not written (' + sc.why + ')');
       else if (!sc.checked) bad.push('Scenes: the read-back did not match; check them on the MC-707');
     }
@@ -141,16 +150,34 @@ export async function writeThese(what, quiet = false) {
       .filter(Boolean)
       .join(' and ') || 'nothing';
   if (stopped) return toast('Stopped: wrote ' + did);
-  if (bad.length)
-    return void askDlg({
-      title: 'Wrote ' + did + '; ' + bad.length + ' need a look',
-      text: bad.join('\n') + '\n\nSave the project on the MC-707 to keep what was written.',
-      ok: 'OK',
-      cancel: 'Close'
-    });
+  if (bad.length) {
+    LAST = { title: 'Wrote ' + did + '; ' + bad.length + ' need a look', text: bad.join('\n') };
+    return void showReport();
+  }
+  LAST = { title: 'Wrote ' + did, text: 'Everything read back as written.' };
   if (!quiet) toast('Wrote ' + did + ' to the MC-707. Save the project there to keep it.');
 }
 
+/* the last write's report */
+let LAST = null;
+/** Show the last write's report (what needs a look, and what was different). */
+export function showReport() {
+  if (!LAST) return toast('Nothing written yet in this session');
+  askDlg({
+    title: LAST.title,
+    text: LAST.text + '\n\nSave the project on the MC-707 to keep what was written.',
+    ok: 'Copy',
+    cancel: 'Close'
+  }).then(
+    copy =>
+      copy &&
+      navigator.clipboard &&
+      navigator.clipboard.writeText(LAST.title + '\n' + LAST.text).then(
+        () => toast('Copied: paste it into a report'),
+        () => {}
+      )
+  );
+}
 /** Write one clip. */
 export const writeOneClip = (t, k) => writeThese({ clips: [[t, k]] });
 /** Write a track's clips (the changed and new ones, or all). */

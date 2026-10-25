@@ -149,6 +149,7 @@ import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
 import {
   clipNotesToMine,
   clipPacked,
+  encodePattern,
   clipWriteAsk,
   clipWriteNow,
   songToClipsOpen,
@@ -255,6 +256,7 @@ PROJ.t = projTitle;
     },
     seq: {
       clipPacked,
+      encode: encodePattern,
       stepAddr,
       paramAddr,
       clipAddr,

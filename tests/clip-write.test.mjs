@@ -297,3 +297,40 @@ test('Clip write: a 16-bar pattern goes in 1/8 steps, 16ths kept as half-step st
   assert.deepEqual([await byte(page, s127 + 0x40), await byte(page, s127 + 0x41)], [3, 2], 'the last 16th');
   assert.deepEqual(errors, []);
 });
+
+test('Clip write: a roll becomes one note with a sub step, a grace note a flam, and they read back as notes', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const Q = window.__app.seq;
+    const p = {
+      name: 'Rolls',
+      type: 'drum',
+      bars: 1,
+      notes: [
+        /* a 32nd roll on the snare (two in a step), a triplet roll (three), a 64th roll (four) */
+        { s: 4, l: 0.5, n: 2, v: 90 },
+        { s: 4.5, l: 0.5, n: 2, v: 100 },
+        { s: 8, l: 0.3, n: 2, v: 90 },
+        { s: 8 + 1 / 3, l: 0.3, n: 2, v: 90 },
+        { s: 8 + 2 / 3, l: 0.3, n: 2, v: 90 },
+        { s: 10, l: 0.25, n: 2, v: 80 },
+        { s: 10.25, l: 0.25, n: 2, v: 80 },
+        { s: 10.5, l: 0.25, n: 2, v: 80 },
+        { s: 10.75, l: 0.25, n: 2, v: 80 },
+        /* a grace note just before a snare */
+        { s: 11.9, l: 0.1, n: 2, v: 50 },
+        { s: 12, l: 1, n: 2, v: 110 }
+      ]
+    };
+    const e = Q.encode(p, 'drum');
+    const at = s => e.slots[s].map(c => [c.start, c.sub, c.vel]);
+    return { skipped: e.skipped, s4: at(4), s8: at(8), s10: at(10), s12: at(12), notes: p.notes.length };
+  });
+  assert.equal(r.skipped, 0, 'nothing dropped');
+  assert.deepEqual(r.s4, [[0, 1, 100]], '1/2');
+  assert.deepEqual(r.s8, [[0, 2, 90]], '1/3');
+  assert.deepEqual(r.s10, [[0, 3, 80]], '1/4');
+  assert.deepEqual(r.s12, [[0, 4, 110]], 'FLAM');
+  assert.equal(r.notes, 11, 'the pattern itself is not changed');
+  assert.deepEqual(errors, []);
+});

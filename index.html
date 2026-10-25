@@ -6575,6 +6575,7 @@ body[data-mode='scene'] #main {
 }
 body[data-mode='scene'] #scene {
   display: flex;
+  overflow: hidden;
 }
 
 /* ---- toolbar ---- */
@@ -6708,7 +6709,9 @@ body[data-mode='scene'] #scene {
 .sBody {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
+  overflow: hidden;
 }
 .sRight {
   flex: 1;
@@ -6913,7 +6916,9 @@ body[data-mode='scene'] #scene {
   color: var(--chg);
 }
 .scMark.new,
-.sbClip.new .sbMark {
+.sbClip.new .sbMark,
+.scMark.odd,
+.sbClip.odd .sbMark {
   color: var(--hot);
 }
 
@@ -11918,16 +11923,13 @@ body[data-mode='scene'] #scene {
     return fnv(JSON.stringify([p.type, p.bars, p.notes, clip.tr || 0, tn ? [tn.kind, tn.d] : 0]));
   }
   var sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
+  var stateOf = (was, now) => !was ? "new" : was === now ? "written" : was === "!" + now ? "odd" : "changed";
   function clipState(q, pats, t, k2) {
     const c = q.clips[t][k2];
     if (!c) return "empty";
-    const was = q.done && q.done.c[t + ":" + k2];
-    return !was ? "new" : was === clipMark(c, pats, q.tones) ? "written" : "changed";
+    return stateOf(q.done && q.done.c[t + ":" + k2], clipMark(c, pats, q.tones));
   }
-  function sceneState(q, i) {
-    const was = q.done && q.done.s[q.first + i];
-    return !was ? "new" : was === sceneMark(q, i) ? "written" : "changed";
-  }
+  var sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
   function fromCells(q) {
     const clips = emptyClips(), start = Array.isArray(q.start) ? q.start : [];
     const rows2 = q.rows.map((r) => ({ ...r, pick: Array(8).fill(-1) }));
@@ -29280,13 +29282,13 @@ body[data-mode='scene'] #scene {
   }
   var freeClip = (t) => S.scn ? S.scn.clips[t].findIndex((c) => !c) : 0;
   var toneOf = (c) => c && c.tone && S.scn && S.scn.tones[c.tone] || null;
-  function markClip(t, k2) {
+  function markClip(t, k2, odd = false) {
     const q = S.scn, c = q && q.clips[t][k2];
-    if (c) q.done.c[t + ":" + k2] = clipMark(c, S.patterns, q.tones);
+    if (c) q.done.c[t + ":" + k2] = (odd ? "!" : "") + clipMark(c, S.patterns, q.tones);
   }
-  function markScene(i) {
+  function markScene(i, odd = false) {
     const q = S.scn;
-    if (q && q.rows[i]) q.done.s[q.first + i] = sceneMark(q, i);
+    if (q && q.rows[i]) q.done.s[q.first + i] = (odd ? "!" : "") + sceneMark(q, i);
   }
   function forgetWritten() {
     edit((q) => q.done = { c: {}, s: {} });
@@ -29449,12 +29451,15 @@ body[data-mode='scene'] #scene {
       }
       const s = Math.round((x.step + x.start / 100) * k2 * 1e3) / 1e3;
       if (s < 0 || s >= bars2 * 16) continue;
-      out2.push({
-        s,
-        l: Math.max(0.05, Math.round(x.len / 100 * k2 * 1e3) / 1e3),
-        n,
-        v: Math.max(1, Math.min(127, x.vel))
-      });
+      const l = Math.max(0.05, Math.round(x.len / 100 * k2 * 1e3) / 1e3), v = Math.max(1, Math.min(127, x.vel)), hits = SUB_HITS[x.sub];
+      if (hits)
+        for (let j = 0; j < hits; j++)
+          out2.push({ s: Math.round((s + j * k2 / hits) * 1e3) / 1e3, l: Math.min(l, k2 / hits), n, v });
+      else {
+        if (x.sub === SUB.flam && s - 0.1 * k2 >= 0)
+          out2.push({ s: Math.round((s - 0.1 * k2) * 1e3) / 1e3, l: 0.1 * k2, n, v: Math.max(1, Math.round(v * 0.6)) });
+        out2.push({ s, l, n, v });
+      }
     }
     out2.sort((a, b) => a.s - b.s || a.n - b.n);
     return {
@@ -29564,12 +29569,46 @@ body[data-mode='scene'] #scene {
     }
   }
   var MAX_STEPS = 128;
+  var SUB = { half: 1, third: 2, quarter: 3, flam: 4 };
+  var SUB_HITS = { 1: 2, 2: 3, 3: 4 };
+  function ratchets(notes, k2) {
+    const near = (a, b) => Math.abs(a - b) < 0.06;
+    const groups = /* @__PURE__ */ new Map();
+    for (const x of notes) {
+      const key = x.n + ":" + Math.floor(x.s / k2 + 1e-6);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(x);
+    }
+    const out2 = [], gone = /* @__PURE__ */ new Set();
+    for (const g of groups.values()) {
+      if (g.length < 2 || g.length > 4) continue;
+      const f = Math.floor(g[0].s / k2 + 1e-6), offs = g.map((x) => x.s / k2 - f), n = g.length;
+      if (!offs.every((o, i) => near(o, i / n))) continue;
+      g.forEach((x) => gone.add(x));
+      out2.push({ s: f * k2, l: Math.min(...g.map((x) => x.l)), n: g[0].n, v: Math.max(...g.map((x) => x.v)), sub: n - 1 });
+    }
+    const rest = notes.filter((x) => !gone.has(x));
+    const grace = /* @__PURE__ */ new Set(), hit = /* @__PURE__ */ new Set();
+    rest.forEach((x, i) => {
+      const y = rest.slice(i + 1).find((z) => z.n === x.n && z.s > x.s);
+      if (y && (y.s - x.s) / k2 <= 0.2 && !grace.has(x) && !hit.has(x)) {
+        grace.add(x);
+        hit.add(y);
+      }
+    });
+    return [...out2, ...rest.filter((x) => !grace.has(x)).map((x) => hit.has(x) ? { ...x, sub: SUB.flam } : x)].sort(
+      (a, b) => a.s - b.s || a.n - b.n
+    );
+  }
   function encodePattern(p, type) {
     const size = p.bars * 16 <= MAX_STEPS ? 1 : 0, k2 = STEP_SIZES[size], steps2 = Math.round(p.bars * 16 / k2);
     if (steps2 > MAX_STEPS) return { error: "An MC-707 clip holds up to 16 bars; this pattern is " + p.bars };
     const slots = Array.from({ length: steps2 }, () => []);
     let skipped = 0;
-    const notes = [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n);
+    const notes = ratchets(
+      [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n),
+      k2
+    );
     for (const x of notes) {
       const note = type === "drum" ? S.drumMap[x.n] : x.n;
       if (!(note >= 0 && note <= 127)) {
@@ -29589,7 +29628,7 @@ body[data-mode='scene'] #scene {
       let left = Math.max(1, Math.round((x.l || 0.8) / k2 * 100)), first = true, prev = null;
       while (left > 0 && at2 < steps2) {
         const room = 100 - start, tie = left > room;
-        const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: 0 };
+        const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0 };
         const s = slots[at2];
         if (s.length >= 16 || s.some((y) => y.note === note)) {
           if (first) skipped++;
@@ -29621,7 +29660,7 @@ body[data-mode='scene'] #scene {
       [112, f.map((c) => c ? c.sub : 0)]
     ];
   }
-  var sig = (notes) => notes.map((x) => [x.step, x.note, x.start, x.len, x.vel].join(",")).sort().join(" ");
+  var sig = (notes) => notes.map((x) => [x.step, x.note, x.start, x.len, x.vel, x.sub || 0].join(",")).sort().join(" ");
   var nameBytes = (s, n) => Array.from({ length: n }, (_, i) => {
     const c = String(s || "").charCodeAt(i);
     return c >= 32 && c < 127 ? c : 32;
@@ -36644,13 +36683,17 @@ body[data-mode='scene'] #scene {
           continue;
         }
         if (!r.checked) bad.push(where2 + ": read-back did not match (" + r.diff + ")");
+        if (r.skipped)
+          bad.push(
+            where2 + ": " + r.skipped + " note" + (r.skipped === 1 ? "" : "s") + " could not go in (no drum note for its lane, past the end, or two of the same note in one step)"
+          );
         const tn = toneOf(c), snd = WO.tones && tn && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
         if (snd) {
           ui.set(head2 + " · tone " + tn.name, (n + 0.9) / N);
           await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k2)), t);
           zxWrite(trackSetAddr(t) + 4, [1]);
         }
-        if (r.checked) markClip(t, k2);
+        markClip(t, k2, !r.checked);
         uncheck(t, k2);
         wrote++;
         await pause5(250);
@@ -36664,7 +36707,7 @@ body[data-mode='scene'] #scene {
         ui.set("Writing " + scenes.length + " scene" + (scenes.length === 1 ? "" : "s"), (N - 1) / N);
         const list2 = rows().map((r) => ({ bars: r.bars, clips: Object.fromEntries(on().map((t) => [t, r.pick[t]])) }));
         sc = await writeScenes(list2, firstScene(), what.scenes === "all" ? null : scenes);
-        if (sc.ok && sc.checked) for (const i of scenes) markScene(i);
+        if (sc.ok) for (const i of scenes) markScene(i, !sc.checked);
         if (!sc.ok) bad.push("Scenes: not written (" + sc.why + ")");
         else if (!sc.checked) bad.push("Scenes: the read-back did not match; check them on the MC-707");
       }
@@ -36677,14 +36720,28 @@ body[data-mode='scene'] #scene {
       sc && sc.ok ? scenes.length + " scene" + (scenes.length === 1 ? "" : "s") : ""
     ].filter(Boolean).join(" and ") || "nothing";
     if (stopped) return toast("Stopped: wrote " + did);
-    if (bad.length)
-      return void askDlg({
-        title: "Wrote " + did + "; " + bad.length + " need a look",
-        text: bad.join("\n") + "\n\nSave the project on the MC-707 to keep what was written.",
-        ok: "OK",
-        cancel: "Close"
-      });
+    if (bad.length) {
+      LAST = { title: "Wrote " + did + "; " + bad.length + " need a look", text: bad.join("\n") };
+      return void showReport();
+    }
+    LAST = { title: "Wrote " + did, text: "Everything read back as written." };
     if (!quiet) toast("Wrote " + did + " to the MC-707. Save the project there to keep it.");
+  }
+  var LAST = null;
+  function showReport() {
+    if (!LAST) return toast("Nothing written yet in this session");
+    askDlg({
+      title: LAST.title,
+      text: LAST.text + "\n\nSave the project on the MC-707 to keep what was written.",
+      ok: "Copy",
+      cancel: "Close"
+    }).then(
+      (copy) => copy && navigator.clipboard && navigator.clipboard.writeText(LAST.title + "\n" + LAST.text).then(
+        () => toast("Copied: paste it into a report"),
+        () => {
+        }
+      )
+    );
   }
   var writeOneClip = (t, k2) => writeThese({ clips: [[t, k2]] });
   function writeTrack(t, all = false) {
@@ -37063,6 +37120,7 @@ body[data-mode='scene'] #scene {
       tick("Set the MC-707’s tempo with the scenes", "tempo"),
       "-",
       { label: "Check the new clips on the MC-707 (read-only)", action: checkNew },
+      { label: "Show the last write report", action: showReport },
       { label: "Forget what was written (another project on the MC-707)", action: forgetWritten }
     ]);
   }
@@ -37201,9 +37259,10 @@ body[data-mode='scene'] #scene {
   }
 
   // src/scene/board.js
-  var MARK = { written: "✓", changed: "●", new: "+" };
+  var MARK = { written: "✓", changed: "●", new: "+", odd: "!" };
   var MARK_TIP = {
     written: "Written to the MC-707, and not changed since",
+    odd: "Written, but the MC-707 read it back differently: Write ▾ › Show the last write report",
     changed: "Changed since it was written: write it again",
     new: "Not written to the MC-707 yet"
   };
@@ -56348,6 +56407,7 @@ body[data-mode='scene'] #scene {
       },
       seq: {
         clipPacked,
+        encode: encodePattern,
         stepAddr,
         paramAddr,
         clipAddr,
