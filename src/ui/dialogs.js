@@ -33,7 +33,13 @@ export function askDlg(o) {
           'background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px'
       },
       el('b', { style: 'font-size:16px' }, o.title),
-      o.text ? el('div', { class: 'hint', style: 'line-height:1.4' }, o.text) : null
+      o.text
+        ? el(
+            'div',
+            { class: 'hint', style: 'line-height:1.4;white-space:pre-wrap;max-height:55vh;overflow:auto' },
+            o.text
+          )
+        : null
     );
     if (o.input) {
       inp = el('input', { type: 'text', value: o.def || '', maxlength: 80, style: 'width:100%' });

@@ -18261,7 +18261,11 @@ body.popFrameless .mxTop input {
           style: "background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px"
         },
         el("b", { style: "font-size:16px" }, o.title),
-        o.text ? el("div", { class: "hint", style: "line-height:1.4" }, o.text) : null
+        o.text ? el(
+          "div",
+          { class: "hint", style: "line-height:1.4;white-space:pre-wrap;max-height:55vh;overflow:auto" },
+          o.text
+        ) : null
       );
       if (o.input) {
         inp = el("input", { type: "text", value: o.def || "", maxlength: 80, style: "width:100%" });
@@ -39790,6 +39794,7 @@ body.popFrameless .mxTop input {
   var lin = (a) => (a >>> 24 & 127) << 21 | (a >>> 16 & 127) << 14 | (a >>> 8 & 127) << 7 | a & 127;
   var addrBytes = (l) => [l >>> 21 & 127, l >>> 14 & 127, l >>> 7 & 127, l & 127];
   var replyBytes = (l) => [l >>> 24 & 127, l >>> 16 & 127, l >>> 8 & 127, l & 127];
+  var hexAddr = (l) => addrBytes(l).map((b) => b.toString(16).padStart(2, "0").toUpperCase()).join(" ");
   var TONE0 = lin(805306368);
   var KIT0 = lin(839909376);
   var TONE_SLOT = lin(131072);
@@ -39918,20 +39923,24 @@ body.popFrameless .mxTop input {
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
     const want = replyBytes(w.l + w.buf.length), plain = addrBytes(w.l + w.buf.length);
     if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
-      w.stray++;
-      return;
+      if (!(w.loose && !w.buf.length)) {
+        w.stray++;
+        return;
+      }
+      w.from = a;
     }
     ZX.model = d[6];
     ZX.modelFor = DEV + ":" + (ZX.out && ZX.out.name);
     w.buf.push(...data);
     if (w.buf.length >= w.n) w.done();
   }
-  function askRq(msg, l, n, ms) {
+  function askRq(msg, l, n, ms, loose) {
     return new Promise((res) => {
       const w = {
         kind: "rq",
         l,
         n,
+        loose,
         buf: [],
         stray: 0,
         done: () => {
@@ -39948,7 +39957,7 @@ body.popFrameless .mxTop input {
   var pause = (ms) => new Promise((r) => setTimeout(r, ms));
   var chain = Promise.resolve();
   var serial = (fn) => chain = chain.then(() => zxFlush()).then(fn, fn);
-  function zxRead(l, n, ms = 450) {
+  function zxRead(l, n, ms = 450, loose = false) {
     return serial(async () => {
       if (!ZX.inp) return void 0;
       for (let tries = 0; tries < 3; tries++) {
@@ -39956,7 +39965,7 @@ body.popFrameless .mxTop input {
         if (tries === 2 && !guess) break;
         const msg = rq1(l, n);
         if (guess) msg[6] = guess;
-        const r = await askRq(msg, l, n, ms);
+        const r = await askRq(msg, l, n, ms, loose);
         if (!r.buf.length && !r.stray) continue;
         await pause(SETTLE);
         return r.buf.length === n ? r.buf : null;
@@ -52694,9 +52703,19 @@ body.popFrameless .mxTop input {
     };
   }
   var read2 = async (l, n, ms) => {
-    const r = await zxRead(l, n, ms);
+    const r = await zxRead(l, n, ms, true);
     return Array.isArray(r) ? r : null;
   };
+  async function showWhy(why, t, k2) {
+    const lines = ZX.log.slice(0, 12).reverse();
+    const text = why + ". Asked for track " + devNum(t) + " clip " + (k2 + 1) + " at " + hexAddr(paramAddr(t, k2)) + " (step settings) and " + hexAddr(stepAddr(t, k2, 0)) + " (step 1). The last SysEx messages (→ sent, ← received):\n" + (lines.length ? lines.join("\n") : "(none)");
+    if (await askDlg({ title: "Reading the clip’s notes did not work", text, ok: "Copy and close", cancel: "Close" }))
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copied: paste it into a problem report");
+      } catch (e) {
+      }
+  }
   async function readClip(t, k2, onStep) {
     if (!await zxConnect())
       return { ok: false, why: "The MC-707 is not connected (or MIDI with SysEx is not allowed)" };
@@ -52732,7 +52751,7 @@ body.popFrameless .mxTop input {
       const r = await readClip(t, k2, (d, n) => {
         if (d % 8 === 0 && d < n) toast("Reading the notes in " + where + "… step " + d + " of " + n);
       });
-      if (!r.ok) return toast(r.why);
+      if (!r.ok) return showWhy(r.why, t, k2);
       if (!r.notes.length) return toast("No notes in " + where);
       const type = S.tracks[t].type === "drum" ? "drum" : "tone";
       const { pattern, dropped } = toPattern(r.notes, r.params, type, r.name);

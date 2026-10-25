@@ -130,3 +130,35 @@ test('Clip notes: a drum clip uses the drum map, 1/8 steps double up, and a note
   );
   assert.deepEqual(errors, []);
 });
+
+test('Clip notes: a reply from an unexpected address still counts, and a silent MC-707 shows what was sent', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
+  const steps = Array.from({ length: 4 }, () => []);
+  steps[1] = [{ note: 62, vel: 99, start: 0, end: 80 }];
+  await seedClip(page, 4, 1, 1, steps);
+  /* replies whose address is not the one asked for, as the MC-707 may send for this area */
+  await page.evaluate(() => (window.__zcOdd = true));
+  await page.evaluate(() => window.__app.seq.read(4, 1));
+  await page.waitForFunction(() => (localStorage.getItem('mc707-user-patterns') || '').includes('MY CLIP'), null, {
+    timeout: 20000
+  });
+  const [p] = await mine(page);
+  assert.deepEqual(
+    p.notes.map(x => [x.s, x.n, x.v]),
+    [[1, 62, 99]]
+  );
+  /* nothing answers: the dialog shows the messages that went out, to report */
+  await page.evaluate(() => ((window.__zcOdd = false), (window.__zcMute = true)));
+  /* not awaited: the read waits for the dialog to close */
+  await page.evaluate(() => {
+    window.__app.seq.read(5, 3);
+  });
+  const dlg = page.locator('[role=dialog][aria-modal]', { hasText: 'Reading the clip’s notes did not work' });
+  await dlg.waitFor({ timeout: 20000 });
+  const text = await dlg.textContent();
+  assert.match(text, /→ f0 41 10 00 00 00 5d 11/, 'the read requests are listed');
+  assert.match(text, /track 6 clip 4/);
+  await dlg.locator('button', { hasText: 'Close' }).last().click();
+  assert.deepEqual(errors, []);
+});

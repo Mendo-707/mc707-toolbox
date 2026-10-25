@@ -14,11 +14,12 @@
 //
 // Reads: S (the drum map), DEV.
 import { toast } from '../core/dom.js';
+import { askDlg } from '../ui/dialogs.js';
 import { hooks } from '../core/hooks.js';
 import { S } from '../core/state.js';
 import { devNum } from '../core/device.js';
 import { userSave } from '../library/user-lib.js';
-import { devTrack, lin, zxConnect, zxRead } from './zc-sysex.js';
+import { ZX, devTrack, hexAddr, lin, zxConnect, zxRead } from './zc-sysex.js';
 
 /* the first clip of each device track, packed as Roland writes addresses */
 const CLIP1 = [0x20000000, 0x21080000, 0x22100000, 0x23180000, 0x24200000, 0x25280000, 0x26300000, 0x27380000];
@@ -148,9 +149,31 @@ export function toPattern(notes, params, type, name) {
 
 /* a read: the bytes, or null when the MC-707 sent nothing usable */
 const read = async (l, n, ms) => {
-  const r = await zxRead(l, n, ms);
+  const r = await zxRead(l, n, ms, true);
   return Array.isArray(r) ? r : null;
 };
+/* when a read fails: the messages that went back and forth, to see what the MC-707 answered (and
+   copied, to paste into a problem report) */
+async function showWhy(why, t, k) {
+  const lines = ZX.log.slice(0, 12).reverse();
+  const text =
+    why +
+    '. Asked for track ' +
+    devNum(t) +
+    ' clip ' +
+    (k + 1) +
+    ' at ' +
+    hexAddr(paramAddr(t, k)) +
+    ' (step settings) and ' +
+    hexAddr(stepAddr(t, k, 0)) +
+    ' (step 1). The last SysEx messages (→ sent, ← received):\n' +
+    (lines.length ? lines.join('\n') : '(none)');
+  if (await askDlg({ title: 'Reading the clip’s notes did not work', text, ok: 'Copy and close', cancel: 'Close' }))
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Copied: paste it into a problem report');
+    } catch (e) {}
+}
 /**
  * Read clip k of app track t from the MC-707 (read-only).
  * @param {(done:number, of:number) => void} [onStep] progress
@@ -198,7 +221,7 @@ export async function clipNotesToMine(t, k) {
     const r = await readClip(t, k, (d, n) => {
       if (d % 8 === 0 && d < n) toast('Reading the notes in ' + where + '… step ' + d + ' of ' + n);
     });
-    if (!r.ok) return toast(r.why);
+    if (!r.ok) return showWhy(r.why, t, k);
     if (!r.notes.length) return toast('No notes in ' + where);
     const type = S.tracks[t].type === 'drum' ? 'drum' : 'tone';
     const { pattern, dropped } = toPattern(r.notes, r.params, type, r.name);

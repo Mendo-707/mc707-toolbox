@@ -42,7 +42,8 @@ window.__out=[];
     if(b[7]!==0x11||window.__zcMute)return;
     const n=lin(b.slice(12,16)),data=[];
     for(let i=0;i<n;i++){if(!mem.has(l+i))return;data.push(mem.get(l+i));}
-    const pkt=(l,data)=>{const a=[(l>>>24)&127,(l>>>16)&127,(l>>>8)&127,l&127],body=[...a,...data];
+    /* window.__zcOdd: the reply carries an address of its own (an area whose reply form is not known) */
+    const pkt=(l,data)=>{const a=window.__zcOdd?[1,2,3,4]:[(l>>>24)&127,(l>>>16)&127,(l>>>8)&127,l&127],body=[...a,...data];
       const cs=(128-(body.reduce((x,y)=>x+y,0)&127))&127; return [0xf0,0x41,0x10,0,0,0,b[6],0x12,...body,cs,0xf7];};
     /* window.__zcReal: answer like the real MC-707 does (seen in a dump): a reply that crosses a 128-byte
        block boundary comes in two packets, and a late stray copy of the last packet follows */
