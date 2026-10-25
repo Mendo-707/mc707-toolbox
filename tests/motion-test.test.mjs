@@ -70,6 +70,11 @@ test('Motion test: reads which lanes hold motion, writes the test shape to C4 an
     return M.decodeMotion(Array.from({ length: 16 }, (_, i) => mem.get(M.motionAddr(3, 1, 0, 3) + i)));
   });
   assert.equal(got[0], 0, 'starts at 0');
+  /* what was heard goes into the results */
+  await page.selectOption('#mtOv select[aria-label="What did you hear?"]', { index: 1 });
+  await page.fill('#mtOv input[type=text]', 'LEVEL');
+  await page.click('#mtOv button:has-text("Add to results")');
+  assert.match(await page.textContent('#mtOv .sfOut'), /Heard on C4 \(track 4 clip 2\): Volume: fades in and out; LEVEL/);
   /* C2 is left alone */
   const c2 = await page.evaluate(() => {
     const M = window.__app.motion,

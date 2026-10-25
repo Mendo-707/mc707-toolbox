@@ -231,9 +231,7 @@ export function motionTestOpen() {
               (same
                 ? 'read back the same.'
                 : 'read back differently (' + (back ? motionSummary(back) : 'no answer') + ').'),
-            'Now play the clip on the ' +
-              name +
-              ' and watch the knobs: which one moves (C1-C4), and what do you hear change?'
+            'Now go to step 4: play the clip on the ' + name + ' and listen to what changes over each loop.'
           );
         })
     },
@@ -292,47 +290,139 @@ export function motionTestOpen() {
   );
   const btns = [readAll, write, clear];
   const close = () => !busy && ov.remove();
+  /* what was heard, noted into the results */
+  const heard = el(
+    'select',
+    { 'aria-label': 'What did you hear?' },
+    el('option', { value: '' }, 'What did you hear?'),
+    el('option', {}, 'Volume: fades in and out'),
+    el('option', {}, 'Filter: muffled, bright, muffled'),
+    el('option', {}, 'Something else (say what below)'),
+    el('option', {}, 'No change')
+  );
+  const knob = el('input', {
+    type: 'text',
+    'aria-label': 'What the knob is called on the screen, or what else you heard',
+    placeholder: 'Knob name on the screen, or what you heard',
+    style: 'flex:1;min-width:220px'
+  });
+  const note = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn',
+      onclick: () => {
+        if (!heard.value && !knob.value.trim()) return toast('Pick what you heard first');
+        say(
+          '',
+          'Heard on ' +
+            MOTION_LANES[+lane.value] +
+            ' (' +
+            where() +
+            '): ' +
+            (heard.value || '-') +
+            (knob.value.trim() ? '; ' + knob.value.trim() : '')
+        );
+        heard.value = '';
+        knob.value = '';
+        toast('Added to the results');
+      }
+    },
+    'Add to results'
+  );
+  const row = (...kids) => el('div', { class: 'mtRow' }, ...kids);
+  const step = (n, title, text, ...kids) =>
+    el(
+      'section',
+      { class: 'mtStep' },
+      el('b', {}, el('span', { class: 'mtNum' }, String(n)), title),
+      ...(Array.isArray(text) ? text : [text]).map(t => (typeof t === 'string' ? el('p', { class: 'hint' }, t) : t)),
+      ...kids
+    );
   const ov = el(
     'div',
     { id: 'mtOv', class: 'ptOv', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Motion test' },
     el(
       'div',
-      { class: 'ptBox', style: 'max-width:680px' },
-      el('h3', {}, 'Motion test: which lane moves what'),
+      { class: 'ptBox mtBox' },
+      el('h3', {}, 'Motion test: find which knob lane changes what'),
       el(
         'p',
-        { class: 'hint', style: 'line-height:1.45' },
-        'A clip’s motion is the knob moves it plays back. This finds which of its 8 lanes moves which knob on your ' +
+        { class: 'hint' },
+        'Each ' +
           name +
-          '. Use a clip that holds notes in a project you can lose, and stop playback first. Thanks to Ada Locriana for finding where motion is kept.'
+          ' clip can play back knob moves, called motion, in 8 lanes: one for each of the knobs C1 to C4, and four more. This test writes a slow move into one lane of one clip so you can hear what that lane changes. It only touches that lane: the notes and the other lanes stay as they are. Use a project you can lose. Thanks to Ada Locriana for finding where motion is kept.'
       ),
-      el(
-        'ol',
-        { class: 'hint sfSteps' },
-        el('li', {}, 'Pick the track and clip. Read every lane (read-only) to see which lanes hold motion already.'),
-        el(
-          'li',
-          {},
-          'Pick lane C4 and Write test shape. Play the clip on the ' + name + ': which knob moves, and what changes?'
-        ),
-        el('li', {}, 'Try C1-C3 the same way if you like. Clear lane takes the shape out again.'),
-        el(
-          'li',
-          {},
-          'Optional: record a knob move on the ' + name + ' (motion rec), then Read every lane to see where it went.'
-        ),
-        el('li', {}, 'Copy results into the chat, with what moved.')
+      step(
+        1,
+        'Choose a clip',
+        [
+          'Pick a track and a clip that already plays notes on the ' +
+            name +
+            '. A pad, chords or a bass with long held notes is best, so a slow change is easy to hear. A 2 or 4-bar clip is better than 1 bar: the move is slower.',
+          'Stop playback on the ' + name + ' and in the app before you go on.'
+        ],
+        row(trk, clip)
       ),
-      el(
-        'div',
-        { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' },
-        trk,
-        clip,
-        readAll,
-        lane,
-        write,
-        clear,
-        copy
+      step(
+        2,
+        'Look first (read only)',
+        'Press Read every lane. It lists which lanes of that clip already hold knob moves (C1 to C4, then Lane 5 to 8). Nothing is changed. If it says the ' +
+          name +
+          ' did not answer, check the track and clip, and that the ' +
+          name +
+          ' is connected.',
+        row(readAll)
+      ),
+      step(
+        3,
+        'Write the test shape',
+        'Leave the lane on C4 (or pick another) and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
+        row(lane, write)
+      ),
+      step(
+        4,
+        'Listen on the ' + name,
+        [
+          'Start that clip on the ' +
+            name +
+            ' and let it loop a few times. The knobs are not motorised, so they will not move: listen instead.',
+          el(
+            'ul',
+            { class: 'hint mtList' },
+            el(
+              'li',
+              {},
+              el('b', {}, 'Volume: '),
+              'the part fades in, is loudest halfway, then fades out. This is the one for the sidechain pump.'
+            ),
+            el('li', {}, el('b', {}, 'Filter: '), 'the part goes from dull and muffled to bright, and back.'),
+            el('li', {}, el('b', {}, 'Something else: '), 'reverb, an effect, pitch… say what.'),
+            el(
+              'li',
+              {},
+              el('b', {}, 'No change: '),
+              'that lane may move something this sound does not use. Try C1 in step 5.'
+            )
+          ),
+          'To see what that knob is set to, turn the knob for the lane you wrote (C4 for lane C4) a little while the clip plays: its name shows on the ' +
+            name +
+            '’s screen. Turning it can take over from the motion for a moment, which is fine.',
+          'Then pick what you heard, type the knob name, and press Add to results.'
+        ],
+        row(heard, knob, note)
+      ),
+      step(
+        5,
+        'Try another lane (optional)',
+        'Clear lane takes the test shape out of the lane picked in step 3. To compare, pick C1 (usually the filter, easy to hear), write the test shape again and listen. Clear each lane when you are done with it.',
+        row(clear)
+      ),
+      step(
+        6,
+        'Send the results',
+        'Press Copy results and paste it into the chat. It has what was read, what was written, and what you heard.',
+        row(copy)
       ),
       status,
       out,
