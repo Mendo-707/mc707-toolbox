@@ -8,7 +8,7 @@ import { el, toast } from '../core/dom.js';
 import { S, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { DEVS, DEV, TRACK_COLORS } from '../core/device.js';
 import { hooks } from '../core/hooks.js';
-import { emptyClips } from '../core/scene-model.js';
+import { emptyClips, newRow } from '../core/scene-model.js';
 import { readMpj, sampleAudio, wavBytes } from '../core/mpj.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { userSave } from '../library/user-lib.js';
@@ -76,6 +76,31 @@ export function mpjOpen(u8, file) {
     playing = src;
   };
   const wavName = (s, i) => String(i + 1).padStart(2, '0') + ' ' + s.name.replace(/\.wav$/i, '') + '.wav';
+  /* the project's first 8 scenes that play a clip with notes: [{n, pick}] */
+  const scenes = m.scenes
+    .map((pick, n) => ({
+      n,
+      pick: pick.map((k, t) => (k >= 0 && full(t, k) && m.tracks[t].kind !== 'looper' ? k : -1))
+    }))
+    .filter(x => x.pick.some(k => k >= 0));
+  const sceneRows = scenes.map(x =>
+    el(
+      'div',
+      { class: 'mpjScn' },
+      el('b', {}, '1-' + (x.n + 1)),
+      ...x.pick.map((k, t) =>
+        el(
+          'span',
+          {
+            class: 'mpjClip' + (k < 0 ? ' empty' : ''),
+            style: '--tc:' + TRACK_COLORS[t],
+            title: 'Track ' + (t + 1) + (k < 0 ? ': nothing' : ': clip ' + (k + 1))
+          },
+          k < 0 ? '–' : String(k + 1)
+        )
+      )
+    )
+  );
   const trackRows = m.tracks.map((tr, t) =>
     el(
       'div',
@@ -162,8 +187,11 @@ export function mpjOpen(u8, file) {
     if (
       S.scn &&
       !(await askDlg({
-        title: 'Replace Scene Mode’s clips?',
-        text: 'Scene Mode’s clips are replaced by the project’s (its scenes are kept, Undo brings the clips back).',
+        title: 'Replace Scene Mode’s clips and scenes?',
+        text:
+          'Scene Mode’s clips' +
+          (scenes.length ? ' and scenes are' : ' are') +
+          ' replaced by the project’s (Undo brings them back).',
         ok: 'Replace'
       }))
     )
@@ -189,7 +217,17 @@ export function mpjOpen(u8, file) {
       }
     S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
     S.scn.clips = clips;
-    S.scn.rows.forEach(r => (r.pick = r.pick.map((k, t) => (k >= 0 && clips[t][k] ? k : -1))));
+    if (scenes.length) {
+      /* its scenes, in order from 1-1; each as long as its longest clip (the chain lengths are not read yet) */
+      S.scn.first = 0;
+      S.scn.rows = scenes.map(x => {
+        const pick = x.pick.map((k, t) => (k >= 0 && clips[t][k] ? k : -1)),
+          bars = Math.max(1, ...pick.map((k, t) => (k >= 0 ? S.patterns[clips[t][k].pat].bars : 1)));
+        const r = newRow('r' + S.nextId++, 'Scene 1-' + (x.n + 1), bars);
+        r.pick = pick;
+        return r;
+      });
+    } else S.scn.rows.forEach(r => (r.pick = r.pick.map((k, t) => (k >= 0 && clips[t][k] ? k : -1))));
     S.scn.done = { c: {}, s: {}, p: {} };
     if (m.bpm >= 20 && m.bpm <= 300) S.bpm = m.bpm;
     /* the tracks take the names of their sounds on the MC-707 */
@@ -202,6 +240,7 @@ export function mpjOpen(u8, file) {
     toast(
       'Brought in ' +
         plural(put, 'clip') +
+        (scenes.length ? ' and ' + plural(scenes.length, 'scene') : '') +
         ' from ' +
         title +
         (m.bpm ? ' at ' + m.bpm + ' BPM' : '') +
@@ -245,6 +284,19 @@ export function mpjOpen(u8, file) {
           '. Read only: the file is not changed.'
       ),
       el('div', { class: 'mpjTracks' }, ...trackRows),
+      scenes.length
+        ? el(
+            'div',
+            { class: 'mpjScenes' },
+            el('h4', {}, 'Scenes 1-1 to 1-8'),
+            el(
+              'p',
+              { class: 'hint' },
+              'The clip each track plays in the project’s first 8 scenes (the ones that play anything). They come into Scene Mode with the clips, each as long as its longest clip: the chain lengths and scenes past 1-8 are not read yet.'
+            ),
+            ...sceneRows
+          )
+        : null,
       el(
         'div',
         { class: 'mpjActs' },
@@ -258,7 +310,7 @@ export function mpjOpen(u8, file) {
       el(
         'p',
         { class: 'hint' },
-        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), the scenes, motion, and looper recordings.'
+        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), scenes past 1-8 and chain lengths, motion, and looper recordings.'
       ),
       m.samples.length
         ? el(

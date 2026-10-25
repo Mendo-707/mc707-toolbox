@@ -946,3 +946,13 @@
   align-items: center;
   margin: 4px 0;
 }
+
+.mpjScn {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin: 3px 0;
+}
+.mpjScn b {
+  width: 42px;
+}

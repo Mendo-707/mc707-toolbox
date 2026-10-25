@@ -28,6 +28,9 @@ function makeProject() {
   put(48, 'DUMYMC77');
   put(at + 0x10, 'Test Song       ');
   dv.setUint16(at + 0x20, 9500, true);
+  /* scenes as a new project has them (scene n plays clip n), but scene 1 plays clip 2 on track 1 */
+  for (let sc = 0; sc < 8; sc++) for (let t = 0; t < 8; t++) u8[at + 0xd0 + sc * 8 + t] = sc;
+  u8[at + 0xd0] = 1;
   const kinds = [1, 1, 1, 0, 2, 0, 0, 0];
   kinds.forEach((k, t) => (u8[at + 0x214 + t * 0x100] = k));
   const clip = (t, k) => at + 0x10f0 + (t * 17 + k) * 0x5c40;
@@ -83,6 +86,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
       ],
       kick: m.tracks[0].clips[1].slots[8],
       samples: m.samples.map(s => [s.name, s.channels, s.count, s.rate]),
+      scenes: m.scenes.slice(0, 2),
       bad: window.__app.mpj.read(new Uint8Array(100)).error
     };
   }, makeProject.toString());
@@ -93,6 +97,10 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.deepEqual(r.clip, ['SUB BASS 1', 32, 3]);
   assert.deepEqual(r.kick, [{ note: 36, vel: 90, start: 0, end: 50, sub: 0 }]);
   assert.deepEqual(r.samples, [['Hit.wav', 1, 64, 44100]]);
+  assert.deepEqual(r.scenes, [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1]
+  ]);
   assert.match(r.bad, /not an MC-707 project/);
   /* the window */
   await page.evaluate(() => window.__app.mpj.open(window.__mpj, 'Test.mpj'));
@@ -100,6 +108,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.match(text, /MC-707 project: Test Song/);
   assert.match(text, /95 BPM · 2 clips with notes · 1 sample/);
   assert.match(text, /Looper track/);
+  assert.equal(await page.locator('#mpjOv .mpjScn').count(), 2, 'the scenes that play a clip with notes: 1-1 and 1-2');
   /* the sample saves as a WAV */
   const [dl] = await Promise.all([
     page.waitForEvent('download'),
@@ -109,7 +118,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   /* into Scene Mode */
   await page.click('#mpjOv button:has-text("Bring the clips into Scene Mode")');
   await page.waitForFunction(() =>
-    /Brought in 2 clips from Test Song at 95 BPM/.test(document.getElementById('toast').textContent)
+    /Brought in 2 clips and 2 scenes from Test Song at 95 BPM/.test(document.getElementById('toast').textContent)
   );
   const got = await page.evaluate(() => {
     const S = window.__app.S,
@@ -119,6 +128,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
       kick: p([0, 1]).notes.map(n => [n.s, n.n, n.v]),
       bass: [p([3, 0]).bars, p([3, 0]).notes.map(n => [n.s, n.n, Math.round(n.l * 100) / 100])],
       name: S.tracks[0].name,
+      rows: S.scn.rows.map(r => [r.name, r.bars, r.pick.join()]),
       mode: document.body.dataset.mode
     };
   });
@@ -133,6 +143,10 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   );
   assert.deepEqual(got.bass, [2, [[0, 60, 2.1]]], 'one C4 tied over two steps and a bit, in a 2-bar clip');
   assert.equal(got.name, 'TEST KIT');
+  assert.deepEqual(got.rows, [
+    ['Scene 1-1', 2, '1,-1,-1,0,-1,-1,-1,-1'],
+    ['Scene 1-2', 1, '1,-1,-1,-1,-1,-1,-1,-1']
+  ]);
   assert.equal(got.mode, 'scene');
   assert.deepEqual(errors, []);
 });

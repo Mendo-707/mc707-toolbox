@@ -2047,6 +2047,16 @@ input[type='range'] {
   align-items: center;
   margin: 4px 0;
 }
+
+.mpjScn {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin: 3px 0;
+}
+.mpjScn b {
+  width: 42px;
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -56501,8 +56511,16 @@ body[data-mode='scene'] #scene {
         loops.push({ track: e >> 4, clip: e & 15, at: D2 + off, bytes });
       }
     }
+    const scenes = Array.from(
+      { length: 8 },
+      (_, s) => Array.from({ length: 8 }, (_2, t) => {
+        const k2 = u8[P2 + 208 + s * 8 + t];
+        return k2 < 16 ? k2 : -1;
+      })
+    );
     return {
       name: text(u8, P2 + 16, 16),
+      scenes,
       bpm: dv.getUint16(P2 + 32, true) / 100,
       tracks: tracks3,
       samples,
@@ -56600,6 +56618,28 @@ body[data-mode='scene'] #scene {
       playing2 = src;
     };
     const wavName = (s, i) => String(i + 1).padStart(2, "0") + " " + s.name.replace(/\.wav$/i, "") + ".wav";
+    const scenes = m.scenes.map((pick3, n) => ({
+      n,
+      pick: pick3.map((k2, t) => k2 >= 0 && full(t, k2) && m.tracks[t].kind !== "looper" ? k2 : -1)
+    })).filter((x) => x.pick.some((k2) => k2 >= 0));
+    const sceneRows = scenes.map(
+      (x) => el(
+        "div",
+        { class: "mpjScn" },
+        el("b", {}, "1-" + (x.n + 1)),
+        ...x.pick.map(
+          (k2, t) => el(
+            "span",
+            {
+              class: "mpjClip" + (k2 < 0 ? " empty" : ""),
+              style: "--tc:" + TRACK_COLORS[t],
+              title: "Track " + (t + 1) + (k2 < 0 ? ": nothing" : ": clip " + (k2 + 1))
+            },
+            k2 < 0 ? "–" : String(k2 + 1)
+          )
+        )
+      )
+    );
     const trackRows = m.tracks.map(
       (tr, t) => el(
         "div",
@@ -56660,8 +56700,8 @@ body[data-mode='scene'] #scene {
         if (ok && !await matchTypes(types)) return;
       }
       if (S.scn && !await askDlg({
-        title: "Replace Scene Mode’s clips?",
-        text: "Scene Mode’s clips are replaced by the project’s (its scenes are kept, Undo brings the clips back).",
+        title: "Replace Scene Mode’s clips and scenes?",
+        text: "Scene Mode’s clips" + (scenes.length ? " and scenes are" : " are") + " replaced by the project’s (Undo brings them back).",
         ok: "Replace"
       }))
         return;
@@ -56684,7 +56724,15 @@ body[data-mode='scene'] #scene {
         }
       S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
       S.scn.clips = clips;
-      S.scn.rows.forEach((r) => r.pick = r.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1));
+      if (scenes.length) {
+        S.scn.first = 0;
+        S.scn.rows = scenes.map((x) => {
+          const pick3 = x.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1), bars2 = Math.max(1, ...pick3.map((k2, t) => k2 >= 0 ? S.patterns[clips[t][k2].pat].bars : 1));
+          const r = newRow("r" + S.nextId++, "Scene 1-" + (x.n + 1), bars2);
+          r.pick = pick3;
+          return r;
+        });
+      } else S.scn.rows.forEach((r) => r.pick = r.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1));
       S.scn.done = { c: {}, s: {}, p: {} };
       if (m.bpm >= 20 && m.bpm <= 300) S.bpm = m.bpm;
       for (const t of DEVS[DEV].tracks)
@@ -56694,7 +56742,7 @@ body[data-mode='scene'] #scene {
       hooks.setMode("scene");
       hooks.renderAll();
       toast(
-        "Brought in " + plural3(put, "clip") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+        "Brought in " + plural3(put, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
     };
     const toMine = () => {
@@ -56726,6 +56774,17 @@ body[data-mode='scene'] #scene {
           file + " · " + (m.bpm ? m.bpm + " BPM · " : "") + plural3(clipCount, "clip") + " with notes · " + plural3(m.samples.length, "sample") + ". Read only: the file is not changed."
         ),
         el("div", { class: "mpjTracks" }, ...trackRows),
+        scenes.length ? el(
+          "div",
+          { class: "mpjScenes" },
+          el("h4", {}, "Scenes 1-1 to 1-8"),
+          el(
+            "p",
+            { class: "hint" },
+            "The clip each track plays in the project’s first 8 scenes (the ones that play anything). They come into Scene Mode with the clips, each as long as its longest clip: the chain lengths and scenes past 1-8 are not read yet."
+          ),
+          ...sceneRows
+        ) : null,
         el(
           "div",
           { class: "mpjActs" },
@@ -56739,7 +56798,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), the scenes, motion, and looper recordings."
+          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), scenes past 1-8 and chain lengths, motion, and looper recordings."
         ),
         m.samples.length ? el(
           "div",

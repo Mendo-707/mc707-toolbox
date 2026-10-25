@@ -3,7 +3,8 @@
 // the app never writes one.
 //
 //   header      2 bytes, "PRJ5", then at 16 a table of sections: 4-letter tag, "MC77", offset, size (LE)
-//   PRJa        the project: name (16 chars) at +10, tempo (BPM × 100, 16 bits) at +20; per track t a
+//   PRJa        the project: name (16 chars) at +10, tempo (BPM × 100, 16 bits) at +20; the first 8
+//               scenes at +D0, 8 bytes each: the clip (0-15) each track plays; per track t a
 //               block at +200 + t × 100 with its kind at +14 (0 tone, 1 drum, 2 looper); then 8 tracks ×
 //               17 clip blocks of 5C40 bytes from +10F0 (clip 17 of a track is the track's own sound)
 //   clip block  sound name (16 chars) at +0; at +300 the step size (0-5: 1/8, 1/16, 1/32, 1/4T, 1/8T,
@@ -140,8 +141,16 @@ export function readMpj(u8) {
       loops.push({ track: e >> 4, clip: e & 15, at: D + off, bytes });
     }
   }
+  /* the first 8 scenes: the clip each track plays (an empty template has scene n playing clip n) */
+  const scenes = Array.from({ length: 8 }, (_, s) =>
+    Array.from({ length: 8 }, (_, t) => {
+      const k = u8[P + 0xd0 + s * 8 + t];
+      return k < 16 ? k : -1;
+    })
+  );
   return {
     name: text(u8, P + 0x10, 16),
+    scenes,
     bpm: dv.getUint16(P + 0x20, true) / 100,
     tracks,
     samples,
