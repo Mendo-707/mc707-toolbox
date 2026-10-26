@@ -39312,7 +39312,7 @@ body[data-mode='scene'] #scene {
   ];
   function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false, assign = null) {
     const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
-    const paint = (inp2, x) => {
+    const paint2 = (inp2, x) => {
       const p = x / 127 * 100;
       inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
       inp2.style.setProperty("--hi", (centre ? Math.max(p, 50) : p) + "%");
@@ -39327,7 +39327,7 @@ body[data-mode='scene'] #scene {
       onpointerdown: () => o.grab && o.grab(),
       oninput: (e) => {
         const x = +e.target.value;
-        paint(e.target, x);
+        paint2(e.target, x);
         out2.textContent = centre ? panText(x) : String(x);
         row2.classList.remove("unset");
         o.set(key, x);
@@ -39341,7 +39341,7 @@ body[data-mode='scene'] #scene {
         e.target.dispatchEvent(new Event("change"));
       }
     });
-    paint(inp, v);
+    paint2(inp, v);
     const row2 = el(
       "label",
       {
@@ -39614,6 +39614,11 @@ body[data-mode='scene'] #scene {
 
   // src/services/mixer-panel.js
   var PANEL = { sec: null };
+  var paint = (inp, v) => {
+    const span = +inp.max - +inp.min || 1;
+    inp.style.setProperty("--lo", "0%");
+    inp.style.setProperty("--hi", (v - +inp.min) / span * 100 + "%");
+  };
   function row(c, sec, T3) {
     const show = (v) => v == null ? "—" : c.list ? (c.list[v] ?? String(v)) + (c.unit ? " " + c.unit : "") : c.text ? c.text(v) : String(v);
     const out2 = el("b", {}, show(c.v));
@@ -39639,9 +39644,11 @@ body[data-mode='scene'] #scene {
       oninput: (e) => {
         const v = +e.target.value;
         out2.textContent = show(v);
+        paint(e.target, v);
         send2(v);
       }
     });
+    if (!c.list) paint(ctl2, c.v ?? Math.round((c.min + c.max) / 2));
     return el(
       "label",
       { class: "mxRow mpRow" + (c.v == null ? " unset" : "") },
@@ -55360,7 +55367,7 @@ body[data-mode='scene'] #scene {
       );
     if (ref === "MFX.mfxType")
       return el("label", { class: "syQ", title }, el("span", {}, label2), el("b", {}, mfxNames()[v] || "–"));
-    const paint = (inp2, x) => inp2.style.setProperty("--hi", (x - p[3]) / (p[4] - p[3]) * 100 + "%");
+    const paint2 = (inp2, x) => inp2.style.setProperty("--hi", (x - p[3]) / (p[4] - p[3]) * 100 + "%");
     const inp = el("input", {
       type: "range",
       class: "syFader",
@@ -55369,14 +55376,14 @@ body[data-mode='scene'] #scene {
       value: v,
       disabled: !known2,
       "aria-label": label2,
-      oninput: (e) => (apply3(+e.target.value), paint(e.target, +e.target.value)),
+      oninput: (e) => (apply3(+e.target.value), paint2(e.target, +e.target.value)),
       ondblclick: (e) => {
         e.target.value = p[5];
         e.target.dispatchEvent(new Event("input"));
       }
     });
     inp.style.setProperty("--lo", "0%");
-    paint(inp, v);
+    paint2(inp, v);
     return el(
       "label",
       { class: "syRange syQ", title: title + " Double-click for the start value." },
@@ -55461,7 +55468,7 @@ body[data-mode='scene'] #scene {
   var panText2 = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
   function fader(label2, v, set2, title, t, centre) {
     const out2 = el("b", {}, centre ? panText2(v) : String(v));
-    const paint = (inp2, x) => {
+    const paint2 = (inp2, x) => {
       const p = x / 127 * 100;
       inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
       inp2.style.setProperty("--hi", (centre ? Math.max(p, 50) : p) + "%");
@@ -55476,7 +55483,7 @@ body[data-mode='scene'] #scene {
       oninput: (e) => {
         const x = +e.target.value;
         set2(x);
-        paint(e.target, x);
+        paint2(e.target, x);
         out2.textContent = centre ? panText2(x) : String(x);
       },
       /* double-click back to the middle (pan) or the default level */
@@ -55486,7 +55493,7 @@ body[data-mode='scene'] #scene {
         e.target.dispatchEvent(new Event("input"));
       }
     });
-    paint(inp, v);
+    paint2(inp, v);
     return el("label", { class: "syRange", title: title + " · double-click to reset" }, el("span", {}, label2), inp, out2);
   }
   function stripMenu(t, act, x, y) {
@@ -57947,7 +57954,8 @@ body[data-mode='scene'] #scene {
             "Edit the pools…"
           )
         ),
-        hasFactory() ? null : el(
+        /* '' not null: replaceChildren writes null out as the word "null" */
+        hasFactory() ? "" : el(
           "p",
           { class: "ftWarn" },
           "The suggestions are MC-707 factory tones: add them once from the MC-707 system update file (MC707_UPA_up.bin) to send them. ",
