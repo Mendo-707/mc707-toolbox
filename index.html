@@ -6875,9 +6875,10 @@ body.popFrameless .mxTop input {
 .mpBox {
   position: fixed;
   top: 64px;
-  right: 10px;
+  /* beside the Master FX strip, not over it: its buttons stay in reach */
+  right: 160px;
   z-index: 30;
-  width: min(320px, calc(100vw - 20px));
+  width: min(320px, calc(100vw - 180px));
   max-height: calc(100vh - 66px);
   overflow: auto;
   padding: 10px 12px 12px;
@@ -59345,10 +59346,19 @@ body[data-mode='scene'] #scene {
         return false;
       }
       const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
-      const jobs = Array.from({ length: 17 }, (_, k2) => ({ kind, base: slotAddr(kind, t, k2) }));
-      const r = await Promise.race([sendMfx(jobs, resolve2(id)).then(() => true), pause6(2e4).then(() => "slow")]);
-      if (r === true) await refreshClip(t);
-      return r;
+      const jobs = Array.from({ length: 17 }, (_, k2) => ({ kind, k: k2, base: slotAddr(kind, t, k2) })), r = resolve2(id);
+      const k0 = PCLAST[t], heard = k0 == null ? jobs : jobs.filter((j) => j.k === k0 || j.k === 16), rest = jobs.filter((j) => !heard.includes(j));
+      const run2 = async () => {
+        await zeQuietly(
+          () => sendMfx(heard, r),
+          t,
+          () => refreshClip(t),
+          WHOLE_SOUND
+        );
+        if (rest.length) await sendMfx(rest, r);
+        return true;
+      };
+      return await Promise.race([run2(), pause6(2e4).then(() => "slow")]);
     } finally {
       now.busy = false;
     }

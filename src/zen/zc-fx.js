@@ -11,7 +11,7 @@
 import { S } from '../core/state.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR } from '../services/transport.js';
-import { reselect } from './zc-editor.js';
+import { WHOLE_SOUND, reselect, zeQuietly } from './zc-editor.js';
 import { DEV } from '../core/device.js';
 import { MFX_PARAMS, MFX_RESET_MS, readSound, sendSound } from './zc-tone.js';
 import { lin, slotAddr, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
@@ -121,12 +121,27 @@ export async function trackFx(t, id) {
       return false;
     }
     const kind = S.tracks[t].type === 'drum' ? 'kit' : 'tone';
-    const jobs = Array.from({ length: 17 }, (_, k) => ({ kind, base: slotAddr(kind, t, k) }));
+    const jobs = Array.from({ length: 17 }, (_, k) => ({ kind, k, base: slotAddr(kind, t, k) })),
+      r = resolve(id);
+    /* The MC-707 plays a new type with the wrong settings for a moment (it resets them after the type
+       changes): the track is muted while the sound it plays takes the effect, and selected again so it
+       plays it. That is the clip the app last chose and the track's own sound; when the app does not know
+       the clip, all of them. The other clips take it afterwards, unheard. */
+    const k0 = PCLAST[t],
+      heard = k0 == null ? jobs : jobs.filter(j => j.k === k0 || j.k === 16),
+      rest = jobs.filter(j => !heard.includes(j));
+    const run = async () => {
+      await zeQuietly(
+        () => sendMfx(heard, r),
+        t,
+        () => refreshClip(t),
+        WHOLE_SOUND
+      );
+      if (rest.length) await sendMfx(rest, r);
+      return true;
+    };
     /* never stuck on "sending": the writes take a few seconds; past 20 the strip lets go */
-    const r = await Promise.race([sendMfx(jobs, resolve(id)).then(() => true), pause(20000).then(() => 'slow')]);
-    /* the MC-707 shows (and plays) the new effect once the clip is selected again */
-    if (r === true) await refreshClip(t);
-    return r;
+    return await Promise.race([run(), pause(20000).then(() => 'slow')]);
   } finally {
     now.busy = false;
   }

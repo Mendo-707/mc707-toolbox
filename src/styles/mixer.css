@@ -505,9 +505,10 @@ body.popFrameless .mxTop input {
 .mpBox {
   position: fixed;
   top: 64px;
-  right: 10px;
+  /* beside the Master FX strip, not over it: its buttons stay in reach */
+  right: 160px;
   z-index: 30;
-  width: min(320px, calc(100vw - 20px));
+  width: min(320px, calc(100vw - 180px));
   max-height: calc(100vh - 66px);
   overflow: auto;
   padding: 10px 12px 12px;
