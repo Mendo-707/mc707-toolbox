@@ -11,10 +11,15 @@ const panText = v => (v === 64 ? 'C' : v < 64 ? 'L' + (64 - v) : 'R' + (v - 64))
 const DEF = { lvl: 100, pan: 64, rev: 0, cho: 0 };
 /** The track's knobs: key, label, CC, and what the tooltip says. */
 export const STRIP_KNOBS = [
-  ['flt', 'Filter', 80, 'C1 · the track’s FILTER knob (CC 80): cutoff, or what KNOB ASSIGN has on it'],
-  ['mod', 'Mod', 81, 'C2 · the track’s MOD knob (CC 81): what KNOB ASSIGN has on it'],
-  ['fx', 'FX', 82, 'C3 · the track’s FX knob (CC 82): what KNOB ASSIGN has on it'],
-  ['snd', 'Sound', 83, 'C4 · the SOUND knob (CC 83), which KNOB ASSIGN lists with the others: Decay, Level…']
+  [
+    'flt',
+    'Filter',
+    80,
+    'C1 · the track’s FILTER knob (CC 80): the slider turns it, the name above chooses what it controls'
+  ],
+  ['mod', 'Mod', 81, 'C2 · the track’s MOD knob (CC 81): the slider turns it, the name above chooses what it controls'],
+  ['fx', 'FX', 82, 'C3 · the track’s FX knob (CC 82): the slider turns it, the name above chooses what it controls'],
+  ['snd', 'Sound', 83, 'C4 · the SOUND knob (CC 83): the slider turns it, the name above chooses what it controls']
 ];
 
 /* a small horizontal control: pan from the centre, sends from the left */

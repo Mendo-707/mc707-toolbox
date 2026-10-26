@@ -166,7 +166,11 @@ function build(root, h) {
         'div',
         { class: 'mxTop' },
         el('b', { class: 'mxTitle' }, 'Song mixer'),
-        el('span', { class: 'hint' }, 'Saved with the song and sent to the MC-707 when it starts.'),
+        el(
+          'span',
+          { class: 'hint' },
+          'Levels, sends and knob positions are saved with the song and sent when it starts; effects and what the knobs control go straight into the MC-707 (press KNOB ASSIGN there to see them).'
+        ),
         el(
           'div',
           { class: 'mxActs' },
