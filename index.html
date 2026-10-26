@@ -6950,6 +6950,57 @@ body[data-mode='synth'] #synth {
 .lgChip:hover {
   border-color: var(--zc-acc);
 }
+/* blends: the guide in the Learn panel */
+.lbBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lbRow.cur {
+  background: #07110a;
+  box-shadow: inset 2px 0 0 var(--zc-acc);
+  padding-left: 6px;
+}
+.llAbout {
+  color: #e6ffee;
+}
+.lgSteps {
+  margin: 6px 0;
+  padding-left: 22px;
+  font-size: 12px;
+}
+.lgSteps li {
+  color: var(--zc-dim);
+  padding: 1px 0;
+}
+.lgSteps li::marker {
+  color: var(--ic, var(--zc-dim));
+}
+.lgSteps li.done {
+  color: #c9f7d5;
+}
+.lgSteps li.done::after {
+  content: ' ✓';
+  color: var(--zc-acc);
+}
+.lgSteps li.next,
+.lgSteps li.now {
+  color: #fff;
+  font-weight: 600;
+}
+.llStep {
+  border-top: 1px solid var(--zc-line);
+  padding-top: 6px;
+}
+.llStep p {
+  margin: 4px 0;
+}
+.llGo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
 </style>
     <style>
 /* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
@@ -11570,9 +11621,9 @@ body[data-mode='scene'] #scene {
         ]
       ]
     ];
-    const L2 = (on3, gh, ac) => {
+    const L2 = (on4, gh, ac) => {
       const a = Array(16).fill(".");
-      (on3 || []).forEach((i) => {
+      (on4 || []).forEach((i) => {
         a[i] = "x";
       });
       (gh || []).forEach((i) => {
@@ -18163,11 +18214,11 @@ body[data-mode='scene'] #scene {
     return 0;
   }
   function bar(r, base, density) {
-    const on3 = [], out2 = [];
-    for (let s = 0; s < 16; s++) on3.push(s === 0 || r() < density);
+    const on4 = [], out2 = [];
+    for (let s = 0; s < 16; s++) on4.push(s === 0 || r() < density);
     for (let s = 0; s < 16; s++) {
-      if (!on3[s]) continue;
-      const next = on3[(s + 1) % 16] && s < 15, slide = next && r() < 0.28, acc = s % 4 === 0 ? r() < 0.5 : r() < 0.25;
+      if (!on4[s]) continue;
+      const next = on4[(s + 1) % 16] && s < 15, slide = next && r() < 0.28, acc = s % 4 === 0 ? r() < 0.5 : r() < 0.25;
       out2.push({ s, l: slide ? 1.25 : r() < 0.5 ? 0.5 : 0.75, n: base + weighted(r), v: acc ? 122 : 86 });
     }
     return out2;
@@ -18265,10 +18316,10 @@ body[data-mode='scene'] #scene {
   // src/library/index.js
   for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === "rock") FAC.splice(i, 1);
   function instFactory(f) {
-    const found2 = Object.keys(S.patterns).find(
+    const found = Object.keys(S.patterns).find(
       (k2) => S.patterns[k2].src === f.id && !S.patterns[k2].mod && !S.patterns[k2].shift
     );
-    if (found2) return found2;
+    if (found) return found;
     return addPattern(f.type, f.name, f.bars, f.notes, {
       src: f.id,
       genre: f.genre,
@@ -19177,10 +19228,10 @@ body[data-mode='scene'] #scene {
     }
   }
   var TICKER = (() => {
-    let w = null, fb = null, on3 = false;
+    let w = null, fb = null, on4 = false;
     const fallback = () => {
       w = null;
-      if (on3) {
+      if (on4) {
         clearInterval(fb);
         fb = setInterval(sched, 25);
       }
@@ -19189,7 +19240,7 @@ body[data-mode='scene'] #scene {
       const src = "let t=null;onmessage=e=>{clearInterval(t);t=null;if(e.data)t=setInterval(()=>postMessage(0),25);};";
       w = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
       w.onmessage = () => {
-        if (on3 && TR.playing) sched();
+        if (on4 && TR.playing) sched();
       };
       w.onerror = (e) => {
         try {
@@ -19203,13 +19254,13 @@ body[data-mode='scene'] #scene {
     }
     return {
       start() {
-        on3 = true;
+        on4 = true;
         clearInterval(fb);
         if (w) w.postMessage(1);
         else fb = setInterval(sched, 25);
       },
       stop() {
-        on3 = false;
+        on4 = false;
         clearInterval(fb);
         if (w) w.postMessage(0);
       }
@@ -20105,7 +20156,7 @@ body[data-mode='scene'] #scene {
     }
     at2(el("span", { class: "lcdScroll" }, el("i", { style: "top:" + page * 50 + "%" })), 2, 10);
     tracks3.forEach((t, i) => at2(el("span", { class: "lcdMeter" + (PCLAST[t] != null ? " on" : "") }), C0 + i, 10));
-    const cmd = (lab, fn, on3) => el("span", { class: "lcdCmdI" + (on3 ? " on" : ""), onclick: fn }, lab);
+    const cmd = (lab, fn, on4) => el("span", { class: "lcdCmdI" + (on4 ? " on" : ""), onclick: fn }, lab);
     at2(
       el(
         "div",
@@ -20205,15 +20256,15 @@ body[data-mode='scene'] #scene {
     });
     const pads = el("div", { class: "cmPads" });
     for (let k2 = 0; k2 < 16; k2++) {
-      const on3 = k2 < m.n, ty = ctInfo(m.types[k2]);
+      const on4 = k2 < m.n, ty = ctInfo(m.types[k2]);
       pads.append(
         el(
           "button",
           {
             "data-k": k2,
-            class: "cmPad" + (on3 ? " lit" : "") + (k2 === CMAP.k && on3 ? " cur" : ""),
-            style: "--c:" + (on3 ? ty[2] : "#555"),
-            title: on3 ? "Clip " + (k2 + 1) + ": " + ty[1] : "Clip " + (k2 + 1) + " is not used. Click to use clips up to here.",
+            class: "cmPad" + (on4 ? " lit" : "") + (k2 === CMAP.k && on4 ? " cur" : ""),
+            style: "--c:" + (on4 ? ty[2] : "#555"),
+            title: on4 ? "Clip " + (k2 + 1) + ": " + ty[1] : "Clip " + (k2 + 1) + " is not used. Click to use clips up to here.",
             onclick: () => {
               if (k2 >= m.n) {
                 m.n = k2 + 1;
@@ -20223,7 +20274,7 @@ body[data-mode='scene'] #scene {
             }
           },
           el("b", {}, String(k2 + 1)),
-          on3 ? el("span", {}, m.names[k2] || ty[1]) : el("span", { class: "off" }, "—")
+          on4 ? el("span", {}, m.names[k2] || ty[1]) : el("span", { class: "off" }, "—")
         )
       );
     }
@@ -20547,11 +20598,11 @@ body[data-mode='scene'] #scene {
     });
   }
   function cmChipFill(e, t, k2) {
-    const m = cmFix()[t], on3 = k2 != null && k2 >= 0;
-    e.textContent = on3 ? "C" + (k2 + 1) + " " + (m.names[k2] ? m.names[k2].slice(0, 7) : CM_ABBR[m.types[k2]]) : "Clip";
-    e.style.setProperty("--k", on3 ? ctInfo(m.types[k2])[2] : "transparent");
-    e.classList.toggle("on", on3);
-    e.title = (on3 ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k2) : "No clip chosen yet") + ". Click to change.";
+    const m = cmFix()[t], on4 = k2 != null && k2 >= 0;
+    e.textContent = on4 ? "C" + (k2 + 1) + " " + (m.names[k2] ? m.names[k2].slice(0, 7) : CM_ABBR[m.types[k2]]) : "Clip";
+    e.style.setProperty("--k", on4 ? ctInfo(m.types[k2])[2] : "transparent");
+    e.classList.toggle("on", on4);
+    e.title = (on4 ? devNm() + " track " + devNum(t) + " is on " + cmLabel(t, k2) : "No clip chosen yet") + ". Click to change.";
   }
   var cmLabel = (t, k2) => {
     if (k2 < 0) return "Automatic";
@@ -24208,10 +24259,10 @@ body[data-mode='scene'] #scene {
     if (g.trim != null) {
       const nd = Math.min(g.trim, c.len - MINLEN);
       const ns = Math.max(0, c.start + nd);
-      const real = ns - c.start;
+      const real2 = ns - c.start;
       start = qBar(ns);
-      len = qBar(c.len - real);
-      off = c.off + real;
+      len = qBar(c.len - real2);
+      off = c.off + real2;
     }
     carve(c.t, start, start + len, c.id);
     c.start = start;
@@ -25457,7 +25508,7 @@ body[data-mode='scene'] #scene {
     return [b, sel];
   }
   function viewGroup(c) {
-    const b = (label2, fn, title, on3) => el("button", { class: "btn sm" + (on3 ? " on" : ""), title: title || label2, onclick: fn }, label2);
+    const b = (label2, fn, title, on4) => el("button", { class: "btn sm" + (on4 ? " on" : ""), title: title || label2, onclick: fn }, label2);
     return el(
       "div",
       { class: "grp edView" },
@@ -26651,8 +26702,8 @@ body[data-mode='scene'] #scene {
   }
   function toggleFull() {
     if (FULLHOST) {
-      FULLHOST.toggleFullScreen().then((on3) => {
-        STAGE.full = on3;
+      FULLHOST.toggleFullScreen().then((on4) => {
+        STAGE.full = on4;
         syncFullBtn();
       }).catch(() => {
       });
@@ -26673,25 +26724,25 @@ body[data-mode='scene'] #scene {
   }
   if (FULLHOST) {
     if (FULLHOST.onFullScreen)
-      FULLHOST.onFullScreen((on3) => {
-        STAGE.full = on3;
+      FULLHOST.onFullScreen((on4) => {
+        STAGE.full = on4;
         syncFullBtn();
       });
     if (FULLHOST.isFullScreen)
-      FULLHOST.isFullScreen().then((on3) => {
-        STAGE.full = on3;
+      FULLHOST.isFullScreen().then((on4) => {
+        STAGE.full = on4;
         syncFullBtn();
       }).catch(() => {
       });
   }
-  function setAwake(on3) {
-    STAGE.awake = on3;
+  function setAwake(on4) {
+    STAGE.awake = on4;
     try {
-      localStorage.setItem("mc707-awake", on3 ? "1" : "0");
+      localStorage.setItem("mc707-awake", on4 ? "1" : "0");
     } catch (e) {
     }
     syncAwake();
-    toast(on3 ? "The screen stays on while music is playing" : "Screen can sleep as normal");
+    toast(on4 ? "The screen stays on while music is playing" : "Screen can sleep as normal");
   }
   async function syncAwake() {
     const want = STAGE.awake && TR.playing && !document.hidden;
@@ -29828,8 +29879,8 @@ body[data-mode='scene'] #scene {
       chk();
     });
   }
-  function zxNote(ch, n, on3) {
-    rawSend(on3 ? [144 | ch - 1, n, 100] : [128 | ch - 1, n, 0]);
+  function zxNote(ch, n, on4) {
+    rawSend(on4 ? [144 | ch - 1, n, 100] : [128 | ch - 1, n, 0]);
   }
   function onIn(e) {
     const d = e.data;
@@ -30682,8 +30733,8 @@ body[data-mode='scene'] #scene {
         if (used[si][ci]) return;
         used[si][ci] = true;
         let len = c.end < 100 ? Math.max(1, c.end - c.start) : 100 - c.start;
-        let at2 = si + 1, on3 = c.end >= 100;
-        while (on3 && at2 < steps2.length) {
+        let at2 = si + 1, on4 = c.end >= 100;
+        while (on4 && at2 < steps2.length) {
           const j = steps2[at2].findIndex((x2, xi) => x2.note === c.note && !used[at2][xi]);
           if (j < 0) break;
           used[at2][j] = true;
@@ -30691,7 +30742,7 @@ body[data-mode='scene'] #scene {
           if (x.end >= 100) len += 100;
           else {
             len += x.end;
-            on3 = false;
+            on4 = false;
           }
           at2++;
         }
@@ -30864,10 +30915,10 @@ body[data-mode='scene'] #scene {
   }
   var GRIDS = [1, 5, 0, 4];
   function stepSize(p) {
-    const on3 = (k2) => p.notes.every((x) => Math.abs(x.s / k2 - Math.round(x.s / k2)) < 0.02);
+    const on4 = (k2) => p.notes.every((x) => Math.abs(x.s / k2 - Math.round(x.s / k2)) < 0.02);
     for (const size of GRIDS) {
       const k2 = STEP_SIZES[size], steps2 = p.bars * 16 / k2;
-      if (Math.abs(steps2 - Math.round(steps2)) < 1e-6 && steps2 <= MAX_STEPS && on3(k2)) return size;
+      if (Math.abs(steps2 - Math.round(steps2)) < 1e-6 && steps2 <= MAX_STEPS && on4(k2)) return size;
     }
     return p.bars * 16 <= MAX_STEPS ? 1 : 0;
   }
@@ -31059,7 +31110,7 @@ body[data-mode='scene'] #scene {
       { "aria-label": "Clip" },
       ...Array.from({ length: 16 }, (_, k2) => el("option", { value: k2 }, "Clip " + (k2 + 1)))
     );
-    const box = (label2, on3, title) => el("label", { class: "cwOpt", title }, el("input", { type: "checkbox", checked: on3 }), " " + label2);
+    const box = (label2, on4, title) => el("label", { class: "cwOpt", title }, el("input", { type: "checkbox", checked: on4 }), " " + label2);
     const repl = box("Replace the notes if the clip has some", false, "Otherwise a clip that holds notes is left alone"), named = box("Name the clip after the pattern", true, "The clip’s name on the MC-707");
     const close = () => ov.remove();
     const go = el(
@@ -31157,7 +31208,7 @@ body[data-mode='scene'] #scene {
     const plan0 = songPlan();
     if (!plan0.length) return toast("The song has no patterns to send");
     const body = el("div", { class: "scRows" }), scBody = el("div", { class: "scScenes" });
-    const tick = (text2, on3) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on3 }), " " + text2);
+    const tick = (text2, on4) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on4 }), " " + text2);
     const repl = tick("Replace the notes in clips that have some", false), named = tick("Name each clip after its pattern", true), clipsToo = tick("Send the clips too (untick when they are already on the MC-707)", true);
     const draw2 = () => {
       body.textContent = "";
@@ -34585,13 +34636,13 @@ body[data-mode='scene'] #scene {
     );
   }
   function seqTools(ctx2) {
-    const pick3 = (label2, opts, cur2, on3) => el(
+    const pick3 = (label2, opts, cur2, on4) => el(
       "label",
       { class: "zcC" },
       el("span", { class: "zcL" }, label2),
       el(
         "select",
-        { onchange: (e) => on3(e.target.value) },
+        { onchange: (e) => on4(e.target.value) },
         ...opts.map(([t, v]) => el("option", { value: v, selected: String(v) === String(cur2) }, t))
       )
     );
@@ -36704,7 +36755,7 @@ body[data-mode='scene'] #scene {
     removeEventListener("pointerup", u);
     if (!up) audition2(e.type === "bass" || /bass/i.test(catOf(e)) ? 36 : 60);
   }
-  var chip = (label2, on3, fn, title) => el("button", { type: "button", class: "zbChip" + (on3 ? " on" : ""), title: title || "", onclick: fn }, label2);
+  var chip = (label2, on4, fn, title) => el("button", { type: "button", class: "zbChip" + (on4 ? " on" : ""), title: title || "", onclick: fn }, label2);
   function form(e, done2) {
     const name = el("input", { class: "zbName", value: e.name, "aria-label": "Name", maxlength: 40 });
     const type = el(
@@ -36776,9 +36827,9 @@ body[data-mode='scene'] #scene {
     const ov = $("#zbOv");
     if (!ov) return;
     ov.querySelectorAll(".zbItem").forEach((r) => {
-      const on3 = B.sel.has(r.dataset.id);
-      r.classList.toggle("sel", on3);
-      r.setAttribute("aria-selected", String(on3));
+      const on4 = B.sel.has(r.dataset.id);
+      r.classList.toggle("sel", on4);
+      r.setAttribute("aria-selected", String(on4));
     });
     const bar2 = $(".zbSelBar", ov);
     if (bar2) bar2.replaceWith(selBar());
@@ -37150,9 +37201,9 @@ body[data-mode='scene'] #scene {
   }
   function catsPane(inBank) {
     const c = catCounts(inBank);
-    const item = (label2, count, on3, fn, cls) => el(
+    const item = (label2, count, on4, fn, cls) => el(
       "button",
-      { type: "button", class: "zbCt" + (cls ? " " + cls : "") + (on3 ? " on" : ""), onclick: fn },
+      { type: "button", class: "zbCt" + (cls ? " " + cls : "") + (on4 ? " on" : ""), onclick: fn },
       el("span", {}, label2),
       el("i", {}, String(count))
     );
@@ -37174,9 +37225,9 @@ body[data-mode='scene'] #scene {
   function tagsPart(inBank) {
     const all = entries(), base = filterList(all, { ...B, tag: "", q: "" }), tags = [...new Set(all.flatMap((e) => e.tags || []))].sort((a, b) => a.localeCompare(b));
     const n = (t) => base.filter((e) => (e.tags || []).includes(t)).length;
-    const item = (label2, count, on3, fn, title) => el(
+    const item = (label2, count, on4, fn, title) => el(
       "button",
-      { type: "button", class: "zbCt zbTagF" + (on3 ? " on" : ""), title, onclick: fn },
+      { type: "button", class: "zbCt zbTagF" + (on4 ? " on" : ""), title, onclick: fn },
       el("span", {}, label2),
       el("i", {}, String(count))
     );
@@ -37264,8 +37315,523 @@ body[data-mode='scene'] #scene {
     status();
   }
 
+  // src/zen/zc-lab-blends.js
+  function mfx(type, set2 = {}) {
+    const d = mfxDefaults(type);
+    for (const i in set2) d[i] = set2[i];
+    return { "MFX.mfxType": type, "MFX.mfxSwitch": 1, ...Object.fromEntries(MFX_PARAMS.map((k2, i) => [k2, d[i]])) };
+  }
+  function on(parts4, vals) {
+    const out2 = {};
+    for (const i of parts4)
+      for (const k2 in vals) {
+        const [b, id] = k2.split(".");
+        out2[b + i + "." + id] = vals[k2];
+      }
+    return out2;
+  }
+  var partials = (...ps) => Object.fromEntries([0, 1, 2, 3].map((i) => ["PMT.PMT" + (i + 1) + "_PTL_SW", ps.includes(i) ? 1 : 0]));
+  var AMP = { overdrive: 29, distortion: 30, chorus: 23, bitcrush: 46, tapeEcho: 44, phaser: 11 };
+  var BLENDS = [
+    {
+      id: "acid",
+      name: "Acid Bass",
+      note: 36,
+      slate: 0,
+      about: "The TB-303: one sawtooth voice, sliding between notes, through a resonant filter that snaps shut.",
+      steps: [
+        [
+          "wolf",
+          "One voice, with slides",
+          "The 303 is monophonic. Legato glide means only notes you overlap slide into each other, so the slides are part of how you play the line.",
+          {
+            "CMN.MONO_POLY": 0,
+            "CMN.LEGATO_SW": 1,
+            "CMN.PORTA_SW": 1,
+            "CMN.PORTA_MODE": 1,
+            "CMN.PORTA_TIME": 90,
+            "CMN.OCTAVE": -1
+          }
+        ],
+        [
+          "squelch",
+          "Low cutoff, high resonance",
+          "The cutoff starts low so the envelope has room to sweep it, and the resonance is high enough to whistle without self-oscillating. The analog filter model at -18 dB per octave is closer to the 303’s own slope than a standard -24 dB filter.",
+          on([0], {
+            "SPTL.FILTER_TYPE": 1,
+            "SPTL.VCF_TYPE": 1,
+            "SPTL.FILTER_SLOPE": 1,
+            "PTL.CUTOFF": 280,
+            "PTL.RESO": 800
+          })
+        ],
+        [
+          "pluck",
+          "A short filter envelope",
+          "Each note opens the filter at once and closes it in a fraction of a second: the “squelch”. Velocity deepens the sweep, standing in for the 303’s accent: play some notes harder.",
+          on([0], {
+            "FENV.DEPTH": 44,
+            "FENV.VSENS": 45,
+            "FENV.T1": 0,
+            "FENV.L1": 1023,
+            "FENV.T2": 190,
+            "FENV.L2": 160,
+            "FENV.L3": 110,
+            "FENV.T4": 120
+          })
+        ],
+        [
+          "punch",
+          "Gated amp",
+          "The level jumps straight to full and cuts off quickly on release, so the line stays tight and rhythmic.",
+          on([0], { "AENV.T1": 0, "AENV.L1": 1023, "AENV.L2": 1023, "AENV.L3": 1023, "AENV.T4": 70 })
+        ],
+        [
+          "grit",
+          "Overdrive",
+          "Acid is almost always driven. Overdrive after the filter makes the resonant peak scream and adds harmonics a small speaker can play.",
+          mfx(AMP.overdrive, { 0: 72, 1: 70, 7: 96 })
+        ]
+      ]
+    },
+    {
+      id: "reese",
+      name: "Reese Bass",
+      note: 36,
+      slate: 0,
+      about: "Two detuned saws beating against each other: the moving, growling bass of drum and bass.",
+      steps: [
+        [
+          "shimmer",
+          "A second saw, detuned",
+          "The two saws are a few cents apart, so they drift in and out of phase. That slow beating is the whole character of a Reese.",
+          {
+            ...partials(0, 1),
+            "SPTL1.OSC_TYPE": 1,
+            "SPTL1.VA_FORM": 0,
+            "PTL0.PIT_FINE": -14,
+            "PTL1.PIT_FINE": 14
+          }
+        ],
+        [
+          "wolf",
+          "Mono, an octave down",
+          "One note at a time keeps the low end clean; an octave down puts it in bass territory.",
+          { "CMN.MONO_POLY": 0, "CMN.LEGATO_SW": 1, "CMN.OCTAVE": -1 }
+        ],
+        [
+          "moon",
+          "Darker filter",
+          "Taking off the top makes the beating felt more than heard, and leaves room for the drums.",
+          on([0, 1], { "PTL.CUTOFF": 500, "PTL.RESO": 140, "AENV.T4": 140 })
+        ],
+        [
+          "wobble",
+          "Slow filter movement",
+          "A slow LFO on the cutoff, about one cycle a bar, makes it breathe. Synced to the tempo it moves with the track.",
+          on([0, 1], {
+            "LFO.LFO1_FORM": 1,
+            "LFO.LFO1_RATE_SYNC": 1,
+            "LFO.LFO1_RATE_NOTE": 18,
+            "LFO.LFO1_TVF_DEPTH": 18
+          })
+        ],
+        [
+          "grit",
+          "Distortion",
+          "Distortion thickens the beating and gives the growl.",
+          mfx(AMP.distortion, { 0: 50, 1: 56, 7: 90 })
+        ]
+      ]
+    },
+    {
+      id: "wob",
+      name: "Wobble Bass",
+      note: 36,
+      slate: 0,
+      about: "A saw with a filter wobbling in time with the track, over a steady sine sub.",
+      steps: [
+        [
+          "wolf",
+          "Mono, an octave down",
+          "Wobble basses are single notes, low.",
+          { "CMN.MONO_POLY": 0, "CMN.OCTAVE": -1 }
+        ],
+        [
+          "squelch",
+          "Resonant low-pass",
+          "A low cutoff with some resonance gives the wobble a vowel-like “wow”.",
+          on([0], { "PTL.CUTOFF": 300, "PTL.RESO": 440, "AENV.T4": 120 })
+        ],
+        [
+          "wobble",
+          "An LFO on the filter, synced",
+          "The LFO is locked to the tempo at 1/8 notes, so the wobble is part of the rhythm. Change the note value (LFO page) to change the groove: 1/4, 1/8, 1/8 triplet.",
+          on([0], {
+            "LFO.LFO1_FORM": 0,
+            "LFO.LFO1_RATE_SYNC": 1,
+            "LFO.LFO1_RATE_NOTE": 9,
+            "LFO.LFO1_TVF_DEPTH": 70
+          })
+        ],
+        [
+          "abyss",
+          "A sine sub that doesn’t wobble",
+          "A second partial plays a clean sine an octave lower with no filter movement. The wobble happens above it while the low end stays solid, which is how these basses hit hard on a big system.",
+          {
+            ...partials(0, 1),
+            "SPTL1.OSC_TYPE": 1,
+            "SPTL1.VA_FORM": 3,
+            "PTL1.PIT_CRS": -12,
+            "PTL1.LEVEL": 110,
+            "PTL1.CUTOFF": 1023,
+            "PTL1.RESO": 0,
+            "LFO1.LFO1_TVF_DEPTH": 0,
+            "AENV1.T4": 120
+          }
+        ],
+        [
+          "grit",
+          "Distortion",
+          "Distortion turns the wobble from a wah into a growl.",
+          mfx(AMP.distortion, { 0: 70, 1: 60, 7: 86 })
+        ]
+      ]
+    },
+    {
+      id: "trance",
+      name: "Supersaw Lead",
+      note: 60,
+      slate: "supersaw",
+      about: "The Roland JP-8000’s SuperSAW: seven detuned saws in one oscillator, bright and huge.",
+      steps: [
+        [
+          "swarm",
+          "SuperSAW detune",
+          "The SuperSAW oscillator stacks seven saws in one; Detune spreads them. Around two thirds is the classic trance setting: wide, but still in tune.",
+          on([0], { "SPTL.SSAW_DETUNE": 92 })
+        ],
+        [
+          "sun",
+          "Mostly open filter",
+          "The filter is nearly open (a supersaw is about its brightness), with a little envelope so each note has a bite at the start.",
+          on([0], {
+            "PTL.CUTOFF": 860,
+            "PTL.RESO": 80,
+            "FENV.DEPTH": 14,
+            "FENV.T2": 320,
+            "FENV.L2": 700,
+            "FENV.L3": 650
+          })
+        ],
+        [
+          "mist",
+          "Full sustain, medium release",
+          "The notes hold at full level and ring on a little after release, so chords and fast lines blur slightly together.",
+          on([0], { "AENV.T1": 10, "AENV.L3": 1023, "AENV.T4": 320 })
+        ],
+        [
+          "space",
+          "Delay and reverb",
+          "Trance leads live in big spaces: a delay for the echoes between notes, reverb for the room.",
+          on([0], { "PTL.CHO_SEND": 50, "PTL.REV_SEND": 64 })
+        ]
+      ]
+    },
+    {
+      id: "pad",
+      name: "Dream Pad",
+      note: 60,
+      slate: 0,
+      about: "Two detuned layers fading slowly in and out, darkened and gently moving, far away in a chorus and reverb.",
+      steps: [
+        [
+          "shimmer",
+          "A second layer, detuned",
+          "A triangle under the saw, each a few cents off: the layers drift against each other and the pad shimmers.",
+          {
+            ...partials(0, 1),
+            "SPTL1.OSC_TYPE": 1,
+            "SPTL1.VA_FORM": 2,
+            "PTL0.PIT_FINE": -8,
+            "PTL1.PIT_FINE": 8
+          }
+        ],
+        [
+          "moon",
+          "Darker",
+          "Pads sit behind everything, so the top is taken off.",
+          on([0, 1], { "PTL.CUTOFF": 560, "PTL.RESO": 60 })
+        ],
+        [
+          "swell",
+          "Slow in, slow out",
+          "A slow attack and a long release turn notes into a wash. Play the chords a little early.",
+          on([0, 1], { "AENV.T1": 620, "AENV.L3": 1023, "AENV.T4": 640 })
+        ],
+        [
+          "sloth",
+          "Slow movement",
+          "A slow LFO moves the cutoff slightly, so the pad never sits still.",
+          on([0, 1], { "LFO.LFO1_FORM": 0, "LFO.LFO1_RATE": 380, "LFO.LFO1_TVF_DEPTH": 12 })
+        ],
+        [
+          "space",
+          "Chorus and reverb",
+          "A chorus effect widens it, and plenty of reverb sends it into the distance.",
+          { ...mfx(AMP.chorus, {}), ...on([0, 1], { "PTL.REV_SEND": 84, "PTL.CHO_SEND": 40 }) }
+        ]
+      ]
+    },
+    {
+      id: "brass",
+      name: "Brass Stab",
+      note: 60,
+      slate: 0,
+      about: "Two saws with a filter that blooms on each note and opens wider the harder you play: 80s synth brass.",
+      steps: [
+        [
+          "shimmer",
+          "Two saws, slightly apart",
+          "Brass sections are many players slightly out of tune with each other; two saws a few cents apart give that richness.",
+          {
+            ...partials(0, 1),
+            "SPTL1.OSC_TYPE": 1,
+            "SPTL1.VA_FORM": 0,
+            "PTL0.PIT_FINE": -6,
+            "PTL1.PIT_FINE": 6
+          }
+        ],
+        [
+          "bloom",
+          "A filter that blooms",
+          "The cutoff starts low and the envelope opens it over a short moment, like the air building in a horn.",
+          on([0, 1], {
+            "PTL.CUTOFF": 500,
+            "FENV.DEPTH": 32,
+            "FENV.T1": 130,
+            "FENV.L1": 1023,
+            "FENV.T2": 330,
+            "FENV.L2": 700,
+            "FENV.L3": 600
+          })
+        ],
+        [
+          "punch",
+          "Velocity opens the filter",
+          "Harder hits open the filter further, so the stab responds to how you play.",
+          on([0, 1], { "PTL.CUTOFF_VSENS": 50, "FENV.VSENS": 40 })
+        ],
+        [
+          "pluck",
+          "A quick start and short end",
+          "A tiny attack softens the click, and a short release keeps stabs punchy.",
+          on([0, 1], { "AENV.T1": 50, "AENV.L3": 1023, "AENV.T4": 190, "PTL.REV_SEND": 40 })
+        ]
+      ]
+    },
+    {
+      id: "pluck",
+      name: "House Pluck",
+      note: 60,
+      slate: 1,
+      about: "A square wave with an instant attack and a fast-closing filter: the plucked riff of house and tropical house.",
+      steps: [
+        [
+          "pluck",
+          "Filter envelope pluck",
+          "The filter opens fully on each note and closes completely within a moment: the tone starts bright and dies dull, like a plucked string.",
+          on([0], {
+            "PTL.CUTOFF": 360,
+            "PTL.RESO": 170,
+            "FENV.DEPTH": 50,
+            "FENV.T1": 0,
+            "FENV.L1": 1023,
+            "FENV.T2": 360,
+            "FENV.L2": 0,
+            "FENV.L3": 0
+          })
+        ],
+        [
+          "mist",
+          "Decay to silence",
+          "The level decays to nothing even while the key is held, so the notes are short however you play them; the release lets them ring a moment.",
+          on([0], { "AENV.T1": 0, "AENV.T2": 420, "AENV.L2": 0, "AENV.L3": 0, "AENV.T4": 300 })
+        ],
+        [
+          "space",
+          "Delay and a little reverb",
+          "Plucks leave gaps; a delay fills them with echoes that become part of the riff.",
+          on([0], { "PTL.CHO_SEND": 56, "PTL.REV_SEND": 40 })
+        ]
+      ]
+    },
+    {
+      id: "sub808",
+      name: "808 Bass",
+      note: 36,
+      slate: 3,
+      about: "A sine with a pitch drop at the start and a long decay, gliding between notes, driven so it cuts through.",
+      steps: [
+        [
+          "wolf",
+          "Mono glide, an octave down",
+          "808 basses slide between notes. Legato glide only slides overlapping notes, so you choose the slides as you play.",
+          {
+            "CMN.MONO_POLY": 0,
+            "CMN.LEGATO_SW": 1,
+            "CMN.PORTA_SW": 1,
+            "CMN.PORTA_MODE": 1,
+            "CMN.PORTA_TIME": 260,
+            "CMN.OCTAVE": -1
+          }
+        ],
+        [
+          "punch",
+          "A pitch drop at the start",
+          "Each note starts a little higher and drops to pitch in a moment: heard as the knock at the start of an 808.",
+          on([0], {
+            "PENV.DEPTH": 12,
+            "PENV.L0": 300,
+            "PENV.T1": 120,
+            "PENV.L1": 0,
+            "PENV.L2": 0,
+            "PENV.L3": 0,
+            "PENV.L4": 0,
+            "PTL.CUTOFF": 1023
+          })
+        ],
+        [
+          "mist",
+          "A long decay",
+          "The 808 rings and slowly decays, so it is a bass line and a kick in one.",
+          on([0], { "AENV.T1": 0, "AENV.T2": 760, "AENV.L2": 700, "AENV.T3": 760, "AENV.L3": 0, "AENV.T4": 300 })
+        ],
+        [
+          "grit",
+          "Drive",
+          "A pure sine is almost silent on phones and laptops. Overdrive adds harmonics that suggest the bass even where the speaker can’t play it.",
+          mfx(AMP.overdrive, { 0: 56, 1: 52, 7: 100 })
+        ]
+      ]
+    },
+    {
+      id: "keys",
+      name: "Lo-fi Keys",
+      note: 60,
+      slate: 2,
+      about: "A soft electric piano: triangle with a bell-like sine above, decaying, wavering in pitch, gently pulsing.",
+      steps: [
+        [
+          "feather",
+          "A bell partial above",
+          "A quiet sine two octaves up gives the tine-like ring of an electric piano. It decays faster than the body, as the real thing does.",
+          {
+            ...partials(0, 1),
+            "SPTL1.OSC_TYPE": 1,
+            "SPTL1.VA_FORM": 3,
+            "PTL1.PIT_CRS": 24,
+            "PTL1.LEVEL": 60,
+            "AENV1.T1": 0,
+            "AENV1.T2": 360,
+            "AENV1.L2": 0,
+            "AENV1.L3": 0,
+            "AENV1.T4": 200
+          }
+        ],
+        [
+          "pluck",
+          "A piano-like decay",
+          "The body fades while the key is held, like a struck note, and stops quickly when released.",
+          on([0], {
+            "AENV.T1": 0,
+            "AENV.T2": 600,
+            "AENV.L2": 520,
+            "AENV.T3": 900,
+            "AENV.L3": 0,
+            "AENV.T4": 260,
+            "PTL.CUTOFF": 520
+          })
+        ],
+        [
+          "drift",
+          "Wobbly, worn pitch",
+          "Analog feel and a little random pitch imitate a worn tape: every note lands slightly differently.",
+          { "CMN.ANALOG_FEEL": 60, ...on([0, 1], { "PTL.PIT_RND": 8 }) }
+        ],
+        [
+          "tremolo",
+          "Tremolo",
+          "The level pulses gently in time with the track (1/8 notes), like an electric piano’s tremolo.",
+          on([0, 1], {
+            "LFO.LFO1_FORM": 1,
+            "LFO.LFO1_RATE_SYNC": 1,
+            "LFO.LFO1_RATE_NOTE": 9,
+            "LFO.LFO1_TVA_DEPTH": 22
+          })
+        ],
+        [
+          "moon",
+          "Warm and soft",
+          "A low-gain overdrive with the tone turned down warms it like an old amp; a bit of reverb puts it in a room.",
+          { ...mfx(AMP.overdrive, { 0: 24, 1: 36, 7: 110 }), ...on([0, 1], { "PTL.REV_SEND": 46 }) }
+        ]
+      ]
+    },
+    {
+      id: "sync",
+      name: "Sync Lead",
+      note: 60,
+      slate: 0,
+      about: "Hard sync: one oscillator forced to restart with another, swept by a pitch envelope for that tearing, vocal lead.",
+      steps: [
+        [
+          "wolf",
+          "Mono",
+          "Sync leads are single-note lines.",
+          { "CMN.MONO_POLY": 0, "CMN.LEGATO_SW": 1, "CMN.PORTA_SW": 1, "CMN.PORTA_TIME": 60 }
+        ],
+        [
+          "grit",
+          "Hard sync",
+          "Partial 2 is synced to partial 1: it restarts every time partial 1 does, so it always plays partial 1’s pitch, but its own tuning changes the harmonics. Tuned up 19 semitones, it sounds bright and cutting.",
+          { ...partials(0, 1), "SPTL1.OSC_TYPE": 1, "SPTL1.VA_FORM": 0, "SPMT.STRUCT12": 1, "PTL1.PIT_CRS": 19 }
+        ],
+        [
+          "punch",
+          "Sweep the synced oscillator",
+          "A pitch envelope on the synced partial sweeps its tuning down at the start of each note. With sync, a pitch sweep is heard as the tone tearing through its harmonics: the classic sync sound.",
+          {
+            "PENV1.DEPTH": 40,
+            "PENV1.L0": 400,
+            "PENV1.T1": 360,
+            "PENV1.L1": 0,
+            "PENV1.L2": 0,
+            "PENV1.L3": 0,
+            "PENV1.L4": 0
+          }
+        ],
+        [
+          "space",
+          "Open filter, some space",
+          "The filter stays mostly open so the sync harmonics come through, with a little delay and reverb.",
+          on([0, 1], { "PTL.CUTOFF": 860, "AENV.T4": 200, "PTL.CHO_SEND": 30, "PTL.REV_SEND": 30 })
+        ]
+      ]
+    }
+  ];
+
   // src/zen/zc-lab.js
-  var LAB = { sel: "sun", drops: 4, log: [], found: /* @__PURE__ */ new Set(), chain: Promise.resolve(), start: 0, latch: false };
+  var LAB = {
+    sel: "sun",
+    drops: 4,
+    log: [],
+    found: /* @__PURE__ */ new Set(),
+    chain: Promise.resolve(),
+    start: 0,
+    latch: false,
+    guide: null
+  };
   var STORE2 = "mc707-lab";
   try {
     const s = JSON.parse(localStorage.getItem(STORE2) || "null");
@@ -37284,8 +37850,8 @@ body[data-mode='scene'] #scene {
   var still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   var wait = (ms) => new Promise((r) => setTimeout(r, ms));
   function parts2() {
-    const on3 = [0, 1, 2, 3].filter((i) => ZE.snd.v["PMT.PMT" + (i + 1) + "_PTL_SW"] === 1);
-    return on3.length ? on3 : [0];
+    const on4 = [0, 1, 2, 3].filter((i) => ZE.snd.v["PMT.PMT" + (i + 1) + "_PTL_SW"] === 1);
+    return on4.length ? on4 : [0];
   }
   function brewer() {
     const out2 = {};
@@ -37741,122 +38307,6 @@ body[data-mode='scene'] #scene {
   };
   var ING = GROUPS.flatMap(([, ps]) => ps);
   var ing = (id) => ING.find((p) => p.id === id);
-  var RECIPES = [
-    {
-      id: "acid",
-      name: "Acid Bass",
-      steps: [
-        ["wolf", 5],
-        ["glide", 3],
-        ["moon", 4],
-        ["squelch", 8],
-        ["pluck", 5]
-      ],
-      about: "The TB-303 sound: one sliding voice, with a resonant filter that snaps shut on every note."
-    },
-    {
-      id: "pad",
-      name: "Dream Pad",
-      steps: [
-        ["swell", 7],
-        ["mist", 6],
-        ["shimmer", 5],
-        ["giant", 6],
-        ["space", 6],
-        ["moon", 3]
-      ],
-      about: "Slow in, slow out, detuned, wide and far away: the pad that holds a track together."
-    },
-    {
-      id: "trance",
-      name: "Trance Lead",
-      steps: [
-        ["swarm", 8],
-        ["sun", 5],
-        ["giant", 4],
-        ["space", 4],
-        ["glide", 2]
-      ],
-      about: "A supersaw, opened up, wide and wet, with a touch of glide."
-    },
-    {
-      id: "wob",
-      name: "Wobble Bass",
-      steps: [
-        ["wolf", 5],
-        ["abyss", 4],
-        ["wobble", 8],
-        ["grit", 4]
-      ],
-      about: "An octave down, mono, a filter LFO and grit. Sync the LFO to the tempo for the real thing."
-    },
-    {
-      id: "kalimba",
-      name: "Kalimba Pluck",
-      steps: [
-        ["pluck", 8],
-        ["sun", 3],
-        ["feather", 4],
-        ["space", 3]
-      ],
-      about: "Instant attack, fast decay and a little room: a sound for busy, bouncy melodies."
-    },
-    {
-      id: "lofi",
-      name: "Lo-fi Keys",
-      steps: [
-        ["moon", 5],
-        ["drift", 6],
-        ["tremolo", 4],
-        ["mist", 3]
-      ],
-      about: "Dark, wandering in pitch and gently pulsing: a worn tape of an electric piano."
-    },
-    {
-      id: "brass",
-      name: "Brass Stab",
-      steps: [
-        ["bloom", 7],
-        ["punch", 3],
-        ["swarm", 3]
-      ],
-      about: "A filter that blooms on each note, a punchy start and a few voices: 80s synth brass."
-    },
-    {
-      id: "choir",
-      name: "Ghost Choir",
-      steps: [
-        ["ghost", 4],
-        ["vibrato", 6],
-        ["swell", 5],
-        ["space", 8]
-      ],
-      about: "Thin, breathy, wavering and far away."
-    },
-    {
-      id: "thump",
-      name: "Sub Thump",
-      steps: [
-        ["abyss", 7],
-        ["punch", 8],
-        ["pluck", 6],
-        ["moon", 6]
-      ],
-      about: "An octave down, a pitch blip, a short decay and the highs taken off: an 808-style hit."
-    },
-    {
-      id: "siren",
-      name: "Siren Lead",
-      steps: [
-        ["wolf", 5],
-        ["glide", 6],
-        ["vibrato", 7],
-        ["sun", 4],
-        ["grit", 3]
-      ],
-      about: "Mono, gliding, with a wide vibrato and some bite: a lead that screams over a track."
-    }
-  ];
   function traits() {
     const v = ZE.snd.v, ps = parts2(), n = (k2) => typeof v[k2] === "number" ? v[k2] : 0;
     const avg = (f) => ps.reduce((s, i) => s + f(i), 0) / ps.length;
@@ -38175,7 +38625,7 @@ body[data-mode='scene'] #scene {
     const list2 = d && d[0][8] && d[0][8].v;
     return String(list2 ? list2[v] ?? v : v);
   };
-  var btn = (label2, fn, title, on3) => el("button", { type: "button", class: "btn sm" + (on3 ? " on" : ""), title: title || "", onclick: fn }, label2);
+  var btn = (label2, fn, title, on4) => el("button", { type: "button", class: "btn sm" + (on4 ? " on" : ""), title: title || "", onclick: fn }, label2);
   var blob = (c) => {
     const s = svgEl("svg", { viewBox: "0 0 32 32", class: "liBlob", "aria-hidden": "true" });
     s.innerHTML = '<path d="M16 4c7 0 12 5 12 12c0 6-3 10-6 11c-2 .7-3-1-6-1s-4 1.7-6 1c-3-1-6-5-6-11C4 9 9 4 16 4z" fill="' + c + '"/><ellipse cx="11.5" cy="10.5" rx="4" ry="2" transform="rotate(-25 11.5 10.5)" fill="#fff" opacity=".55"/>';
@@ -38440,6 +38890,7 @@ body[data-mode='scene'] #scene {
   }
   function select(id) {
     LAB.sel = id;
+    if (LAB.guide) LAB.guide.away = true;
     document.querySelectorAll("#labOv .liBtn").forEach((b) => b.classList.toggle("sel", b.dataset.id === id));
     drawAmount();
     drawLearn();
@@ -38447,10 +38898,13 @@ body[data-mode='scene'] #scene {
   function drawLearn() {
     const box = $("#labLearn"), p = ing(LAB.sel);
     if (!box || !p) return;
+    if (LAB.guide && !LAB.guide.away) return drawGuide(box);
+    const back = LAB.guide ? btn("◂ Back to " + LAB.guide.r.name, () => (LAB.guide.away = false, drawLearn()), "Back to the blend") : null;
     const last3 = [...LAB.log].reverse().find((x) => x.id === p.id);
     box.style.setProperty("--ic", p.c);
     box.replaceChildren(
       el("legend", {}, "Learn"),
+      back,
       el("div", { class: "llTop" }, blob(p.c), el("b", {}, p.name), el("small", {}, p.tag)),
       el("p", {}, p.what),
       el("p", {}, el("span", { class: "llK" }, "Hear it in"), p.hear),
@@ -38496,17 +38950,17 @@ body[data-mode='scene'] #scene {
     );
     $("#labRead").textContent = reading(tr);
     $("#labBlends").replaceChildren(
-      el("legend", {}, "Blends · " + LAB.found.size + "/" + RECIPES.length + " found"),
+      el("legend", {}, "Blends"),
       el(
         "p",
         { class: "hint" },
-        "Classic sounds. Mix in all of one’s ingredients yourself to find it, or mix it in one go."
+        "Classic sounds built from scratch, step by step. Guide walks you through each step with the reason for it; Make builds it in one go. Both start from a clean slate, replacing this tone (Undo brings it back)."
       ),
-      ...RECIPES.map((r) => {
-        const got = LAB.found.has(r.id);
+      ...BLENDS.map((r) => {
+        const got = LAB.found.has(r.id), cur2 = LAB.guide && LAB.guide.r === r;
         return el(
           "div",
-          { class: "lbRow" + (got ? " got" : "") },
+          { class: "lbRow" + (got ? " got" : "") + (cur2 ? " cur" : "") },
           el(
             "div",
             {},
@@ -38514,11 +38968,16 @@ body[data-mode='scene'] #scene {
             el(
               "div",
               { class: "lbDots" },
-              ...r.steps.map(([id, n]) => el("i", { style: "--ic:" + ing(id).c, title: ing(id).name + " " + n + "/10" }))
+              ...r.steps.map(([id, t]) => el("i", { style: "--ic:" + ing(id).c, title: t }))
             ),
-            el("small", {}, got ? r.about : r.steps.map(([id]) => ing(id).name).join(" · "))
+            el("small", {}, r.about)
           ),
-          btn("Mix", () => blend(r), r.about)
+          el(
+            "div",
+            { class: "lbBtns" },
+            btn("Guide", () => blendStart(r, false), "Build " + r.name + " one step at a time, tasting as you go"),
+            btn("Make", () => blendStart(r, true), "Build " + r.name + " in one go")
+          )
         );
       })
     );
@@ -38537,7 +38996,7 @@ body[data-mode='scene'] #scene {
               title: x.ch.length + " settings changed: click to see them",
               onclick: () => select(x.id)
             },
-            ing(x.id).name + " " + x.drops
+            x.label || ing(x.id).name + " " + x.drops
           )
         )
       ) : el("p", { class: "hint" }, "Nothing yet: pick an ingredient and mix it in, then hold a Taste key.")
@@ -38566,7 +39025,6 @@ body[data-mode='scene'] #scene {
       else LAB.log.push({ id, drops, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
       draw();
       if (LAB.sel === id) drawLearn();
-      discover();
       if (NOTE && LAB.latch) retrigger();
     });
   }
@@ -38576,7 +39034,11 @@ body[data-mode='scene'] #scene {
       if (!ZE.undo.length) return;
       zeUndo();
       const x = LAB.log.pop();
-      if (x) toast("Took out " + ing(x.id).name);
+      if (x && x.guide && LAB.guide) {
+        if (x.slate) LAB.guide = null;
+        else LAB.guide.i = LAB.guide.done = Math.max(0, LAB.guide.done - 1);
+      }
+      if (x) toast("Took out " + (x.label || ing(x.id).name));
       SL.kick = 0.6;
       SL.rip = 0;
       draw();
@@ -38597,6 +39059,7 @@ body[data-mode='scene'] #scene {
       if (n <= 0) return toast("Nothing mixed in yet");
       for (let i = 0; i < n; i++) zeUndo();
       LAB.log = [];
+      LAB.guide = null;
       SL.kick = 1;
       SL.rip = 0;
       draw();
@@ -38613,33 +39076,140 @@ body[data-mode='scene'] #scene {
     await LAB.chain;
     toast("Mixed in " + pick3.map((p) => p.name).join(", ") + ": have a taste");
   }
-  async function blend(r) {
-    for (const [id, n] of r.steps) {
-      mixIn(id, n);
-      await wait(still() ? 0 : 220);
-    }
-    await LAB.chain;
-    select(r.steps[r.steps.length - 1][0]);
-    if (!LAB.found.has(r.id)) found(r);
-    else toast(r.name + " mixed: have a taste");
+  var real = (vals) => Object.fromEntries(Object.entries(vals).filter(([k2]) => paramOf("tone", k2)));
+  function blendStart(r, auto) {
+    noteOffIfHeld();
+    LAB.guide = { r, i: 0, done: 0, auto, away: false };
+    const name = r.name.toUpperCase().slice(0, 16);
+    const snd = tone(name, (set2) => {
+      if (r.slate === "supersaw") set2("SPTL.OSC_TYPE", 3);
+      else set2("SPTL.VA_FORM", r.slate);
+    });
+    const p = ing("ghost");
+    const landed = dropIn(p);
+    later(async () => {
+      await landed;
+      if (!$("#labOv")) return;
+      await zeLoad(snd);
+      LAB.log.push({ id: "ghost", label: "Clean slate", guide: true, slate: true, ch: [] });
+      draw();
+      drawLearn();
+    });
+    drawLearn();
+    if (auto) runSteps(r, 0);
+    return LAB.chain;
   }
-  function discover() {
-    const have = new Set(LAB.log.map((x) => x.id));
-    for (const r of RECIPES) if (!LAB.found.has(r.id) && r.steps.every(([id]) => have.has(id))) found(r);
+  function blendStep(r, i) {
+    const g = LAB.guide;
+    if (!g || g.r !== r || i !== g.i || i >= r.steps.length) return Promise.resolve();
+    const [id, label2, , vals] = r.steps[i];
+    g.i = i + 1;
+    g.away = false;
+    drawLearn();
+    const landed = dropIn(ing(id));
+    return later(async () => {
+      await landed;
+      if (!$("#labOv")) return;
+      const v = real(vals);
+      const before = Object.fromEntries(Object.keys(v).map((k2) => [k2, ZE.snd.v[k2]]));
+      const keys2 = zeBrew(v);
+      LAB.log.push({ id, label: label2, guide: true, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
+      g.done = i + 1;
+      if (g.done >= r.steps.length) made(r);
+      draw();
+      drawLearn();
+      if (NOTE && LAB.latch) retrigger();
+    });
   }
-  function found(r) {
+  function made(r) {
     LAB.found.add(r.id);
     save3();
-    draw();
-    SL.kick = 1;
     const f = $("#lsFound");
     if (!f) return;
-    f.replaceChildren(el("span", { class: "llK" }, "Blend found"), el("b", {}, r.name), el("small", {}, r.about));
+    f.replaceChildren(
+      el("span", { class: "llK" }, "Blend made"),
+      el("b", {}, r.name),
+      el("small", {}, "Taste it on " + noteName3(r.note) + ", then shape it further with the ingredients.")
+    );
     f.classList.remove("show");
     void f.offsetWidth;
     f.classList.add("show");
-    clearTimeout(found.t);
-    found.t = setTimeout(() => f.classList.remove("show"), 3800);
+    clearTimeout(made.t);
+    made.t = setTimeout(() => f.classList.remove("show"), 4200);
+  }
+  var noteName3 = (n) => "C" + (n / 12 - 1);
+  function drawGuide(box) {
+    const g = LAB.guide, r = g.r, done2 = g.done >= r.steps.length, busy4 = g.i > g.done;
+    const shownStep = Math.max(0, g.done - 1);
+    const last3 = [...LAB.log].reverse().find((x) => x.guide && !x.slate);
+    const step = g.done ? r.steps[shownStep] : null;
+    box.style.setProperty("--ic", step ? ing(step[0]).c : "#dfe9ff");
+    box.replaceChildren(
+      el("legend", {}, "Blend · " + r.name),
+      el("p", { class: "llAbout" }, r.about),
+      el(
+        "ol",
+        { class: "lgSteps" },
+        el("li", { class: LAB.log.some((x) => x.slate) ? "done" : "now" }, "Clean slate: " + slateName(r)),
+        ...r.steps.map(
+          ([id, t2], i) => el("li", { class: i < g.done ? "done" : i === g.done ? "next" : "", style: "--ic:" + ing(id).c }, t2)
+        )
+      ),
+      step ? el(
+        "div",
+        { class: "llStep" },
+        el("span", { class: "llK" }, "Step " + g.done + " of " + r.steps.length + " · " + step[1]),
+        el("p", {}, step[2]),
+        last3 && last3.ch.length ? el(
+          "div",
+          { class: "llDid" },
+          ...last3.ch.slice(0, 10).map(
+            ([k2, a, b]) => el(
+              "div",
+              { class: "llCh" },
+              el("span", {}, keyName(k2)),
+              el("s", {}, shown3(k2, a)),
+              el("b", {}, shown3(k2, b))
+            )
+          ),
+          last3.ch.length > 10 ? el("small", { class: "hint" }, "…and " + (last3.ch.length - 10) + " more") : null
+        ) : null
+      ) : el(
+        "p",
+        { class: "hint" },
+        "A fresh tone on the " + slateName(r) + " oscillator, with nothing else set: every blend starts from the same place, so it sounds right whatever was loaded. Taste it, then take the first step."
+      ),
+      el(
+        "div",
+        { class: "llGo" },
+        btn("Taste " + noteName3(r.note), () => {
+        }, "Hold to hear it"),
+        done2 ? btn("Done", () => (LAB.guide = null, draw(), drawLearn()), "Close the guide", true) : g.auto || busy4 ? el("span", { class: "hint" }, "Mixing…") : btn("Next: " + r.steps[g.i][1], () => blendStep(r, g.i), "Take the next step", true),
+        done2 || g.auto ? null : btn("Finish", () => finish(r), "Do the remaining steps in one go")
+      )
+    );
+    const t = box.querySelector(".llGo .btn");
+    t.addEventListener("pointerdown", (e) => keyDown(r.note, e.currentTarget));
+  }
+  var slateName = (r) => r.slate === "supersaw" ? "SuperSAW" : ["saw", "square", "triangle", "sine"][r.slate] + " wave";
+  function finish(r) {
+    const g = LAB.guide;
+    if (!g) return;
+    g.auto = true;
+    g.away = false;
+    drawLearn();
+    runSteps(r, g.i);
+  }
+  async function runSteps(r, from) {
+    await LAB.chain;
+    for (let i = from; i < r.steps.length; i++) {
+      if (!LAB.guide || LAB.guide.r !== r || !$("#labOv")) return;
+      await wait(still() ? 0 : 260);
+      await blendStep(r, i);
+    }
+  }
+  function noteOffIfHeld() {
+    if (NOTE && !LAB.latch) noteOff();
   }
   var NOTE = null;
   function noteOn(n, key) {
@@ -38892,13 +39462,13 @@ body[data-mode='scene'] #scene {
       { class: "zcParts" },
       el("span", { class: "zcL" }, "Partial"),
       ...[0, 1, 2, 3].map((i) => {
-        const on3 = ze.snd.v[swKey(i)];
+        const on4 = ze.snd.v[swKey(i)];
         return el(
           "button",
           {
             type: "button",
-            class: "zcPart" + (i === ze.part ? " on" : "") + (on3 ? " lit" : "") + (linked[i] ? " linked" : ""),
-            title: on3 ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
+            class: "zcPart" + (i === ze.part ? " on" : "") + (on4 ? " lit" : "") + (linked[i] ? " linked" : ""),
+            title: on4 ? "Partial " + (i + 1) : "Partial " + (i + 1) + " is switched off (Partials page)",
             onclick: () => {
               ze.part = i;
               redraw();
@@ -38912,15 +39482,15 @@ body[data-mode='scene'] #scene {
         { class: "zcOns", title: "Switch a partial on or off (the Partials page has the same switch)" },
         el("span", { class: "zcL" }, "On"),
         ...[0, 1, 2, 3].map((i) => {
-          const on3 = !!ze.snd.v[swKey(i)];
+          const on4 = !!ze.snd.v[swKey(i)];
           return el(
             "button",
             {
               type: "button",
-              class: "zcOnSw" + (on3 ? " on" : ""),
-              "aria-pressed": String(on3),
-              title: "Partial " + (i + 1) + (on3 ? " is on: click to switch it off" : " is off: click to switch it on"),
-              onclick: () => set2(swKey(i), on3 ? 0 : 1)
+              class: "zcOnSw" + (on4 ? " on" : ""),
+              "aria-pressed": String(on4),
+              title: "Partial " + (i + 1) + (on4 ? " is on: click to switch it off" : " is off: click to switch it on"),
+              onclick: () => set2(swKey(i), on4 ? 0 : 1)
             },
             "⏻ " + (i + 1)
           );
@@ -38998,9 +39568,9 @@ body[data-mode='scene'] #scene {
       return true;
     }
   }
-  function zeSetRefresh(on3) {
+  function zeSetRefresh(on4) {
     try {
-      localStorage.setItem(REFRESH_KEY, on3 ? "1" : "0");
+      localStorage.setItem(REFRESH_KEY, on4 ? "1" : "0");
     } catch (e) {
     }
   }
@@ -39268,16 +39838,16 @@ body[data-mode='scene'] #scene {
     };
   }
   var HELD = /* @__PURE__ */ new Map();
-  var noteOut = (ch, b, on3) => {
-    if (ZX.out) zxNote(ch, b, on3);
-    else if (MIDI.out) MIDI.out.send(on3 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
+  var noteOut = (ch, b, on4) => {
+    if (ZX.out) zxNote(ch, b, on4);
+    else if (MIDI.out) MIDI.out.send(on4 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
   };
   function audition2(n, manual = false) {
     if (TR.playing && TR.mode === "pat") stopAll();
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
-    const send2 = (b, on3) => {
-      noteOut(ch, b, on3);
-      if (on3) HELD.set(ch + ":" + b, [ch, b]);
+    const send2 = (b, on4) => {
+      noteOut(ch, b, on4);
+      if (on4) HELD.set(ch + ":" + b, [ch, b]);
       else HELD.delete(ch + ":" + b);
     };
     send2(n, true);
@@ -39415,7 +39985,7 @@ body[data-mode='scene'] #scene {
     SC.draw();
   }
   var pause5 = (ms) => new Promise((r) => setTimeout(r, ms));
-  var on = () => DEVS[DEV].tracks;
+  var on2 = () => DEVS[DEV].tracks;
   function clipPattern(c) {
     const p = S.patterns[c.pat], tr = p.type === "tone" ? c.tr || 0 : 0;
     if (!tr) return p;
@@ -39445,12 +40015,12 @@ body[data-mode='scene'] #scene {
     const q = S.scn;
     if (!q) return { clips: [], scenes: [] };
     const clips = [];
-    for (const t of on())
+    for (const t of on2())
       for (let k2 = 0; k2 < 16; k2++) if (["new", "changed"].includes(clipState(q, S.patterns, t, k2))) clips.push([t, k2]);
     const scenes = q.rows.map((r, i) => i).filter((i) => sceneState(q, i) !== "written");
     return { clips, scenes };
   }
-  var unwrittenIn = (i) => on().filter((t) => rows()[i].pick[t] >= 0).map((t) => [t, rows()[i].pick[t]]).filter(([t, k2]) => clipState(S.scn, S.patterns, t, k2) !== "written");
+  var unwrittenIn = (i) => on2().filter((t) => rows()[i].pick[t] >= 0).map((t) => [t, rows()[i].pick[t]]).filter(([t, k2]) => clipState(S.scn, S.patterns, t, k2) !== "written");
   async function writeThese(what, quiet = false) {
     if (DEV !== "707") return toast("Scenes are only mapped on the MC-707 so far");
     if (!S.scn) return;
@@ -39517,7 +40087,7 @@ body[data-mode='scene'] #scene {
           zxWrite(lin(268435472), [v >> 12 & 15, v >> 8 & 15, v >> 4 & 15, v & 15]);
         }
         ui.set("Writing " + scenes.length + " scene" + (scenes.length === 1 ? "" : "s"), (N - 1) / N);
-        const list2 = rows().map((r) => ({ bars: r.bars, clips: Object.fromEntries(on().map((t) => [t, r.pick[t]])) }));
+        const list2 = rows().map((r) => ({ bars: r.bars, clips: Object.fromEntries(on2().map((t) => [t, r.pick[t]])) }));
         sc = await writeScenes(list2, firstScene(), what.scenes === "all" ? null : scenes);
         if (sc.ok) for (const i of scenes) markScene(i, !sc.checked);
         if (!sc.ok) bad.push("Scenes: not written (" + sc.why + ")");
@@ -39574,7 +40144,7 @@ body[data-mode='scene'] #scene {
   function writeAll(which = "both") {
     const clips = [];
     if (which !== "scenes") {
-      for (const t of on()) for (let k2 = 0; k2 < 16; k2++) if (clipAt(t, k2)) clips.push([t, k2]);
+      for (const t of on2()) for (let k2 = 0; k2 < 16; k2++) if (clipAt(t, k2)) clips.push([t, k2]);
     }
     writeThese({ clips, scenes: which === "clips" ? [] : "all" });
   }
@@ -40361,7 +40931,7 @@ body[data-mode='scene'] #scene {
     return { clips, rows: out2, over };
   }
   async function scenesFromSong() {
-    const made2 = songToRows(), list2 = made2.rows;
+    const made3 = songToRows(), list2 = made3.rows;
     if (!list2.length) return toast("The song has nothing to make scenes from");
     if (list2.length > SCN_MAX) return toast("That would be " + list2.length + " scenes; the MC-707 holds 128");
     if (S.scn && !await askDlg({
@@ -40372,11 +40942,11 @@ body[data-mode='scene'] #scene {
       return;
     edit((q) => {
       q.rows = list2;
-      q.clips = made2.clips;
+      q.clips = made3.clips;
       SC.row = 0;
     });
     toast(
-      "Made " + made2.clips.flat().filter(Boolean).length + " clips and " + list2.length + " scenes from the song" + (made2.over ? " (some patterns left out: a track holds 16 clips)" : "")
+      "Made " + made3.clips.flat().filter(Boolean).length + " clips and " + list2.length + " scenes from the song" + (made3.over ? " (some patterns left out: a track holds 16 clips)" : "")
     );
   }
   async function scenesToSong() {
@@ -40522,12 +41092,12 @@ body[data-mode='scene'] #scene {
     fader2.style.setProperty("--hi", s.lvl / 127 * 100 + "%");
     const meter = el("i", { class: "mxMeterFill" });
     const light = el("i", { class: "mxLight", title: "Lights with the notes going out" });
-    const tg = (lab, cls, on3, fn, title, pend) => el(
+    const tg = (lab, cls, on4, fn, title, pend) => el(
       "button",
       {
         type: "button",
-        class: "mxTg " + cls + (on3 ? " on" : "") + (pend ? " pend" : ""),
-        "aria-pressed": String(on3),
+        class: "mxTg " + cls + (on4 ? " on" : "") + (pend ? " pend" : ""),
+        "aria-pressed": String(on4),
         title,
         onclick: fn
       },
@@ -40595,12 +41165,12 @@ body[data-mode='scene'] #scene {
     node.meter = meter;
     return node;
   }
-  function fxSelect(choices, cur2, on3, label2, title) {
+  function fxSelect(choices, cur2, on4, label2, title) {
     const now = choices.find((c) => c.id === cur2);
     const opt = (c) => el("option", { value: c.id, selected: c.id === cur2 }, c.label);
     const sel = el(
       "select",
-      { class: "mxSel", "aria-label": label2, title, onchange: (e) => e.target.value && on3(e.target.value) },
+      { class: "mxSel", "aria-label": label2, title, onchange: (e) => e.target.value && on4(e.target.value) },
       now ? opt(now) : el("option", { value: "", selected: true }, "—")
     );
     const fill2 = () => {
@@ -40617,7 +41187,7 @@ body[data-mode='scene'] #scene {
     for (const ev of ["pointerdown", "focus", "keydown"]) sel.addEventListener(ev, fill2);
     return sel;
   }
-  function fxRow(fx, on3, name) {
+  function fxRow(fx, on4, name) {
     return el(
       "label",
       {
@@ -40625,7 +41195,7 @@ body[data-mode='scene'] #scene {
         title: "The track’s effect (MFX): sent to every clip’s sound and the track’s own, so it stays whichever clip plays. Shape it further in the ZenCore editor."
       },
       el("span", {}, fx.busy ? "Effect · sending…" : "Effect"),
-      fxSelect(fx.choices, fx.cur, on3, "Effect, " + name, "")
+      fxSelect(fx.choices, fx.cur, on4, "Effect, " + name, "")
     );
   }
   function masterStrip(s, o) {
@@ -40651,14 +41221,14 @@ body[data-mode='scene'] #scene {
       inp.style.setProperty("--hi", (v ?? 64) / 127 * 100 + "%");
       return el("label", { class: "mxRow" + (v == null ? " unset" : ""), title: tip }, el("span", {}, label2), inp, out2);
     };
-    const tg = (lab, what, on3, title) => el(
+    const tg = (lab, what, on4, title) => el(
       "button",
       {
         type: "button",
-        class: "mxTg" + (on3 ? " on" : ""),
-        "aria-pressed": String(!!on3),
+        class: "mxTg" + (on4 ? " on" : ""),
+        "aria-pressed": String(!!on4),
         title,
-        onclick: () => o.set(what, on3 ? 0 : 1)
+        onclick: () => o.set(what, on4 ? 0 : 1)
       },
       lab
     );
@@ -41906,8 +42476,8 @@ body[data-mode='scene'] #scene {
   // src/scene/screen.js
   var tracks = () => DEVS[DEV].tracks;
   var raf = 0;
-  function sceneEnter(on3) {
-    if (!on3) {
+  function sceneEnter(on4) {
+    if (!on4) {
       cancelAnimationFrame(raf);
       removeEventListener("pointerdown", where, true);
       undock();
@@ -41944,7 +42514,7 @@ body[data-mode='scene'] #scene {
   function watch2() {
     cancelAnimationFrame(raf);
     const step = () => {
-      const on3 = TR.playing && TR.mode === "scenes", i = on3 ? sceneRowAt(TR.tick) : -1, r = rows()[i];
+      const on4 = TR.playing && TR.mode === "scenes", i = on4 ? sceneRowAt(TR.tick) : -1, r = rows()[i];
       document.querySelectorAll("#scene .scRowC").forEach((x, j) => {
         x.classList.toggle("playing", j === i);
         const bar2 = x.querySelector(".scProg i");
@@ -41956,16 +42526,16 @@ body[data-mode='scene'] #scene {
       if (pos)
         pos.textContent = r ? "Scene " + sceneLabel(i) + " · bar " + (Math.floor((TR.tick - TR.scn.starts[i]) / 32) + 1) : "Stopped";
       drawPlay();
-      if (on3) raf = requestAnimationFrame(step);
+      if (on4) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   }
   function drawPlay() {
     const b = $("#scnPlay");
     if (!b) return;
-    const on3 = TR.playing && TR.mode === "scenes";
-    b.classList.toggle("on", on3);
-    b.textContent = on3 ? "■ Stop" : "▶ Play";
+    const on4 = TR.playing && TR.mode === "scenes";
+    b.classList.toggle("on", on4);
+    b.textContent = on4 ? "■ Stop" : "▶ Play";
   }
   var ACT = {
     pick: (t, k2) => (SC.t = t, SC.k = k2, choosePattern(t, k2, () => editClip(t, k2))),
@@ -42513,8 +43083,8 @@ body[data-mode='scene'] #scene {
       return segs.find((g) => s >= g.s && s < g.e) || segs[0];
     };
     const segNext2 = (segs, g) => {
-      const real = segs.filter((x) => !x.wrap);
-      return real[(real.indexOf(g.wrap ? real[0] : g) + 1) % real.length];
+      const real2 = segs.filter((x) => !x.wrap);
+      return real2[(real2.indexOf(g.wrap ? real2[0] : g) + 1) % real2.length];
     };
     function tile(total, hits, segs, emit, bass) {
       for (let base = 0; base < total; base += 16)
@@ -43159,8 +43729,8 @@ body[data-mode='scene'] #scene {
     const total = f.bars * 16, segs = [];
     let last3 = null;
     for (let s = 0; s < total; s++) {
-      const on3 = f.notes.filter((n) => n.s <= s + 0.01 && n.s + n.l > s + 0.01).map((n) => n.n);
-      const v = on3.length >= 3 ? [...new Set(on3)].sort((a, b) => a - b) : last3;
+      const on4 = f.notes.filter((n) => n.s <= s + 0.01 && n.s + n.l > s + 0.01).map((n) => n.n);
+      const v = on4.length >= 3 ? [...new Set(on4)].sort((a, b) => a - b) : last3;
       if (!v) continue;
       const sig4 = v.join(",");
       if (segs.length && segs[segs.length - 1].sig === sig4) segs[segs.length - 1].e = s + 1;
@@ -46312,11 +46882,11 @@ body[data-mode='scene'] #scene {
     return { id: c.id, off: 0 };
   }
   function instShift(f, sh, rootPc, scale) {
-    const found2 = Object.keys(S.patterns).find((k2) => {
+    const found = Object.keys(S.patterns).find((k2) => {
       const p = S.patterns[k2];
       return p.src === f.id && !p.mod && (p.shift || 0) === sh;
     });
-    if (found2) return found2;
+    if (found) return found;
     return addPattern(
       f.type,
       f.name,
@@ -46498,24 +47068,24 @@ body[data-mode='scene'] #scene {
     const wz = TR.playing && TR.mode === "wiz" ? TR.wz : null;
     const sb = $("#wzSong");
     if (sb) {
-      const on3 = !!wz && !wz.loop;
-      sb.textContent = on3 ? "■ Stop preview" : "▶ Preview the song";
-      sb.classList.toggle("on", on3);
+      const on4 = !!wz && !wz.loop;
+      sb.textContent = on4 ? "■ Stop preview" : "▶ Preview the song";
+      sb.classList.toggle("on", on4);
     }
     $$(".wzsec").forEach((b) => {
-      const on3 = !!wz && wz.secIdx === +b.dataset.si;
-      b.textContent = on3 ? "■" : "▶";
-      b.classList.toggle("on", on3);
+      const on4 = !!wz && wz.secIdx === +b.dataset.si;
+      b.textContent = on4 ? "■" : "▶";
+      b.classList.toggle("on", on4);
     });
     $$(".wzcell").forEach((b) => {
-      const on3 = TR.playing && TR.mode === "pat" && TR.pat === b._f && TR.patTrack === +b.dataset.t;
-      b.textContent = on3 ? "■" : "▶";
-      b.classList.toggle("on", on3);
+      const on4 = TR.playing && TR.mode === "pat" && TR.pat === b._f && TR.patTrack === +b.dataset.t;
+      b.textContent = on4 ? "■" : "▶";
+      b.classList.toggle("on", on4);
     });
     $$(".sdemo").forEach((b) => {
-      const on3 = !!wz && wz.demo === b.dataset.id;
-      b.textContent = on3 ? "■ Stop" : "▶ Hear it";
-      b.classList.toggle("on", on3);
+      const on4 = !!wz && wz.demo === b.dataset.id;
+      b.textContent = on4 ? "■ Stop" : "▶ Hear it";
+      b.classList.toggle("on", on4);
     });
     if (!wz) $$(".tlh.playing").forEach((e) => e.classList.remove("playing"));
   }
@@ -47101,13 +47671,13 @@ body[data-mode='scene'] #scene {
   }
 
   // src/live/pads.js
-  function scatter(i, on3) {
+  function scatter(i, on4) {
     if (!MIDI.out) {
-      if (on3) toast("Connect the MC-707 first");
+      if (on4) toast("Connect the MC-707 first");
       return;
     }
     const ch = (S.ctrlCh || 16) - 1;
-    if (on3) {
+    if (on4) {
       LV.held["sc" + i] = 1;
       lvSend([144 | ch, LV.scBase + i, 110]);
     } else {
@@ -47115,7 +47685,7 @@ body[data-mode='scene'] #scene {
       lvSend([128 | ch, LV.scBase + i, 0]);
     }
     const b = $("#lvSc" + i);
-    if (b) b.classList.toggle("on", on3);
+    if (b) b.classList.toggle("on", on4);
   }
   function sendKnob(i, val) {
     LV.knobs[i] = val;
@@ -47387,7 +47957,7 @@ body[data-mode='scene'] #scene {
   }
   function ravenSection(chSel, noteIn) {
     const c = LV.ctl, act = rvActive(), wrap = el("div", { class: "rvWrap" + (LV.perfOn ? "" : " off") });
-    const seg = (label2, val, opts, on3) => el(
+    const seg = (label2, val, opts, on4) => el(
       "div",
       { class: "rvSeg" },
       el("small", {}, label2),
@@ -47401,7 +47971,7 @@ body[data-mode='scene'] #scene {
               class: "btn sm" + (String(val) === String(v) ? " on" : ""),
               title: t || "",
               onclick: () => {
-                on3(v);
+                on4(v);
                 saveLive();
                 liveRenderSettings();
                 liveRenderPerf();
@@ -47580,7 +48150,7 @@ body[data-mode='scene'] #scene {
   // src/live/controller-settings.js
   function ctlRenderSettings(b, chSel) {
     const c = LV.ctl, ins = MIDI.access ? [...MIDI.access.inputs.values()].filter((i) => i !== MIDI.inp) : [], p = ctlPreset();
-    const sel = (id, label2, val, opts, on3) => el(
+    const sel = (id, label2, val, opts, on4) => el(
       "label",
       { class: "lvf" },
       label2,
@@ -47589,7 +48159,7 @@ body[data-mode='scene'] #scene {
         {
           id,
           onchange: (e) => {
-            on3(e.target.value);
+            on4(e.target.value);
             saveLive();
             liveRenderSettings();
             liveRenderCtlBar();
@@ -48066,11 +48636,11 @@ body[data-mode='scene'] #scene {
     lvPlayedHere(ch, n, true);
     return false;
   }
-  function lvPlayedHere(ch, n, on3) {
+  function lvPlayedHere(ch, n, on4) {
     if (!LV.perfOn || !ch) return;
-    if (on3 && sentRecently(ch, n)) return;
+    if (on4 && sentRecently(ch, n)) return;
     const t = S.tracks.findIndex((tr) => tr.ch === ch);
-    if (t >= 0) lvUserNote(t, on3);
+    if (t >= 0) lvUserNote(t, on4);
   }
   function lvFollowOctave(n) {
     const pc2 = (n % 12 + 12) % 12;
@@ -48124,14 +48694,14 @@ body[data-mode='scene'] #scene {
     const b = $("#lvSetBody");
     if (!b) return;
     b.textContent = "";
-    const chSel = (val, on3) => {
-      const s = el("select", { onchange: (e) => on3(+e.target.value) });
+    const chSel = (val, on4) => {
+      const s = el("select", { onchange: (e) => on4(+e.target.value) });
       s.append(el("option", { value: 0, selected: val === 0 }, "Any channel"));
       for (let c = 1; c <= 16; c++) s.append(el("option", { value: c, selected: val === c }, "Channel " + c));
       return s;
     };
-    const noteIn = (val, tip, on3) => {
-      if (typeof tip === "function") [on3, tip] = [tip, ""];
+    const noteIn = (val, tip, on4) => {
+      if (typeof tip === "function") [on4, tip] = [tip, ""];
       return el("input", {
         type: "number",
         min: 0,
@@ -48140,7 +48710,7 @@ body[data-mode='scene'] #scene {
         style: "width:64px",
         title: tip || null,
         "aria-label": tip || null,
-        onchange: (e) => on3(clamp(Math.round(+e.target.value) || 0, 0, 127))
+        onchange: (e) => on4(clamp(Math.round(+e.target.value) || 0, 0, 127))
       });
     };
     b.append(
@@ -48462,8 +49032,8 @@ body[data-mode='scene'] #scene {
     }
     const x = cv.getContext("2d");
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const on3 = lvOn(), actx = AU.ctx ? AU.ctx.currentTime : 0;
-    if (on3) {
+    const on4 = lvOn(), actx = AU.ctx ? AU.ctx.currentTime : 0;
+    if (on4) {
       while (VZ.ev.length && VZ.ev[0].time <= actx) vizSpawn(VZ.ev.shift());
     } else VZ.ev.length = 0;
     const dec = (k2) => Math.pow(0.5, dt / k2);
@@ -48476,7 +49046,7 @@ body[data-mode='scene'] #scene {
     const sc = LV.scenes[LV.cur];
     const hueT = sc ? lvHue(sc.e) : 215;
     VZ.hue += ((hueT - VZ.hue + 540) % 360 - 180) * Math.min(1, dt * 2);
-    const hue = VZ.hue, beat = on3 ? Math.pow(1 - tk2 % 8 / 8, 2.4) * (Math.floor(tk2 % 32 / 8) === 0 ? 1 : 0.55) : 0;
+    const hue = VZ.hue, beat = on4 ? Math.pow(1 - tk2 % 8 / 8, 2.4) * (Math.floor(tk2 % 32 / 8) === 0 ? 1 : 0.55) : 0;
     const hz = H * 0.58;
     let g = x.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "hsl(" + (hue + 250) % 360 + ",55%," + (6 + beat * 3) + "%)");
@@ -48505,13 +49075,13 @@ body[data-mode='scene'] #scene {
     x.fill();
     x.fillStyle = "hsl(" + (hue + 300) % 360 + ",60%," + (14 + VZ.kick * 10) + "%)";
     for (let i = 0; i < 6; i++) {
-      const yy = sy + sr * (0.05 + i * 0.17), hh = sr * (0.02 + i * 0.022) * (1 + (on3 ? tk2 / 32 % 1 : t % 1) * 0);
+      const yy = sy + sr * (0.05 + i * 0.17), hh = sr * (0.02 + i * 0.022) * (1 + (on4 ? tk2 / 32 % 1 : t % 1) * 0);
       x.fillRect(sx - sr, yy, sr * 2, hh);
     }
     x.restore();
     const bw2 = W / VZ.nb;
     for (let i = 0; i < VZ.nb; i++) {
-      if (!on3)
+      if (!on4)
         VZ.bars[i] = Math.max(
           VZ.bars[i] * 0.9,
           0.05 + 0.05 * Math.sin(t * 1.2 + i * 0.35) + 0.03 * Math.sin(t * 0.7 + i * 0.9)
@@ -48534,7 +49104,7 @@ body[data-mode='scene'] #scene {
     x.fillRect(0, hz, W, H - hz);
     x.strokeStyle = "hsl(" + (hue + 300) % 360 + ",90%,62%)";
     x.lineWidth = 1;
-    const ph = on3 ? tk2 / 32 % 1 : t * 0.12 % 1;
+    const ph = on4 ? tk2 / 32 % 1 : t * 0.12 % 1;
     x.globalAlpha = 0.35 + 0.4 * beat;
     x.beginPath();
     for (let i = -14; i <= 14; i++) {
@@ -48602,7 +49172,7 @@ body[data-mode='scene'] #scene {
     x.fillStyle = "#fff";
     x.globalAlpha = 0.55;
     x.font = "800 " + Math.max(14, Math.min(34, H * 0.1)) + 'px "Barlow Semi Condensed",system-ui,sans-serif';
-    x.fillText(on3 && sc ? sc.name.toUpperCase() : "READY", 14, H - 10);
+    x.fillText(on4 && sc ? sc.name.toUpperCase() : "READY", 14, H - 10);
     x.globalAlpha = 1;
   }
   function vizLoop(now) {
@@ -48749,17 +49319,17 @@ body[data-mode='scene'] #scene {
     if (!lvOn()) return 0;
     return w === "now" ? TR.tick : w === "bar" ? lvBoundary(1) : Math.ceil((TR.tick + 1) / 8) * 8;
   }
-  function ctlMute(tracks3, on3) {
+  function ctlMute(tracks3, on4) {
     if (!lvOn()) {
       tracks3.forEach((t) => {
-        LV.mute[t] = on3;
+        LV.mute[t] = on4;
       });
       LV.tg = Array.from({ length: 8 }, (_, t) => mkEnv(lvTarget(t), lvTarget(t), 0, 0));
       LV.ver++;
       return;
     }
     LV.cues = LV.cues.filter((c) => !(c.type === "mute" && c.tracks.some((t) => tracks3.includes(t))));
-    LV.cues.push({ type: "mute", tracks: tracks3, on: on3, tick: ctlWhen(LV.ctl.muteWhen) });
+    LV.cues.push({ type: "mute", tracks: tracks3, on: on4, tick: ctlWhen(LV.ctl.muteWhen) });
     lvSortCues();
     LV.ver++;
   }
@@ -48783,11 +49353,11 @@ body[data-mode='scene'] #scene {
     }
     return n;
   }
-  function ctlSolo(n, v, on3) {
+  function ctlSolo(n, v, on4) {
     const c = LV.ctl, t = c.soloT;
     if (t < 0) return;
     const tr = S.tracks[t], now = lvNow();
-    if (on3) {
+    if (on4) {
       let nn = clamp(n + 12 * c.soloOct, 0, 127);
       if (c.soloSnap) nn = ctlSnap(nn);
       if (CTL.held[n] != null) sendMidi([128 | tr.ch - 1, CTL.held[n], 0], now);
@@ -48814,12 +49384,12 @@ body[data-mode='scene'] #scene {
     CTL.held = {};
     CTL.trHeld = [];
   }
-  function ravenMuteKey(i, on3) {
+  function ravenMuteKey(i, on4) {
     const c = LV.ctl;
     if (i < 8) {
-      if (c.muteMode === "hold" || on3) ctlMute([i], !lvEffMute(i));
-      if (on3) CTL.lastAct = (lvEffMute(i) ? "Mute " : "Unmute ") + S.tracks[i].name;
-    } else if (on3) {
+      if (c.muteMode === "hold" || on4) ctlMute([i], !lvEffMute(i));
+      if (on4) CTL.lastAct = (lvEffMute(i) ? "Mute " : "Unmute ") + S.tracks[i].name;
+    } else if (on4) {
       if (i === 8) {
         ctlMute([0, 1, 2, 3, 4, 5, 6, 7], false);
         CTL.lastAct = "Unmute all";
@@ -48835,9 +49405,9 @@ body[data-mode='scene'] #scene {
       }
     }
   }
-  function ravenKeyKey(i, on3) {
+  function ravenKeyKey(i, on4) {
     const c = LV.ctl;
-    if (on3) {
+    if (on4) {
       if (LV.homeKey == null) LV.homeKey = LV.key;
       CTL.trHeld = CTL.trHeld.filter((x) => x !== i);
       CTL.trHeld.push(i);
@@ -48848,15 +49418,15 @@ body[data-mode='scene'] #scene {
       if (c.trHold) ctlTranspose(CTL.trHeld.length ? CTL.trHeld[CTL.trHeld.length - 1] : null);
     }
   }
-  function ctlKey(n, v, on3) {
+  function ctlKey(n, v, on4) {
     const [z, i] = ctlZoneOf(n);
-    if (z === "mute") ravenMuteKey(i, on3);
-    else if (z === "key") ravenKeyKey(i, on3);
-    else ctlSolo(n, v, on3);
+    if (z === "mute") ravenMuteKey(i, on4);
+    else if (z === "key") ravenKeyKey(i, on4);
+    else ctlSolo(n, v, on4);
     const k2 = $("#ctlK" + n);
-    if (k2) k2.classList.toggle("hit", on3);
+    if (k2) k2.classList.toggle("hit", on4);
     const a = $("#ctlAct");
-    if (a && on3 && CTL.lastAct) a.textContent = " → " + CTL.lastAct;
+    if (a && on4 && CTL.lastAct) a.textContent = " → " + CTL.lastAct;
   }
   function ctlDo(tg, val, press, release) {
     const now = lvNow(), k2 = tg[0], i = +tg.slice(1) - 1;
@@ -48912,8 +49482,8 @@ body[data-mode='scene'] #scene {
     }
     if (st >= 240 || d.length < 2) return;
     const typ = st & 240, ch = (st & 15) + 1, n = d[1], v = d.length > 2 ? d[2] : 0;
-    const on3 = typ === 144 && v > 0, off = typ === 128 || typ === 144 && v === 0;
-    if (CTL.learnLow && on3) {
+    const on4 = typ === 144 && v > 0, off = typ === 128 || typ === 144 && v === 0;
+    if (CTL.learnLow && on4) {
       const c = LV.ctl;
       c.low = n;
       c.base = n + (12 - n % 12) % 12;
@@ -48923,7 +49493,7 @@ body[data-mode='scene'] #scene {
       toast("Lowest key set: " + noteLbl(n) + ". Zones start at " + noteLbl(c.base));
       return;
     }
-    if (CTL.learn && (typ === 176 || on3)) {
+    if (CTL.learn && (typ === 176 || on4)) {
       const key = (typ === 176 ? "c" : "n") + ch + ":" + n, map = LV.ctl.map;
       for (const t2 in map) if (map[t2] === key) delete map[t2];
       map[CTL.learn] = key;
@@ -48942,10 +49512,10 @@ body[data-mode='scene'] #scene {
       hooks.recMidi(ev);
       return;
     }
-    if (typ === 176 || on3 || off) {
+    if (typ === 176 || on4 || off) {
       const tg = CTL.idx[(typ === 176 ? "c" : "n") + ch + ":" + n];
       if (tg) {
-        ctlDo(tg, v, typ === 176 ? v > 0 : on3, typ === 176 ? v === 0 : off);
+        ctlDo(tg, v, typ === 176 ? v > 0 : on4, typ === 176 ? v === 0 : off);
         return;
       }
     }
@@ -48968,9 +49538,9 @@ body[data-mode='scene'] #scene {
       if (tr && MIDI.out) sendMidi([176 | tr.ch - 1, 64, v], lvNow());
       return;
     }
-    if (on3 || off) {
+    if (on4 || off) {
       if (LV.ctl.keyCh && LV.ctl.keyCh !== ch) return;
-      ctlKey(n, v, on3);
+      ctlKey(n, v, on4);
     }
   }
   function ctlAttach() {
@@ -49093,9 +49663,9 @@ body[data-mode='scene'] #scene {
   function liveSync() {
     const b = $("#lvStart");
     if (!b) return;
-    const on3 = lvOn();
-    b.textContent = !on3 ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
-    b.classList.toggle("stopb", on3);
+    const on4 = lvOn();
+    b.textContent = !on4 ? "▶ Start Jam" : LV.jam && LV.jam.kind === "out" ? "■ Stop now" : "■ End Jam";
+    b.classList.toggle("stopb", on4);
     {
       const pb = $("#lvPumpB"), pn = $("#lvPanB");
       if (pb)
@@ -49123,7 +49693,7 @@ body[data-mode='scene'] #scene {
     }
     const pv = $("#lvPrev");
     if (pv) pv.checked = !!S.preview;
-    if (!on3) liveStatus(0);
+    if (!on4) liveStatus(0);
   }
   function liveRenderKeyRec() {
     const b = $("#lvKeyRec");
@@ -49133,9 +49703,9 @@ body[data-mode='scene'] #scene {
     b.append(el("small", {}, "Try"));
     st.keys.forEach(([pc2, why]) => {
       const m = lvModeFam(st.scale);
-      const on3 = LV.key === pc2 && LV.mode === m;
+      const on4 = LV.key === pc2 && LV.mode === m;
       b.append(
-        el("button", { class: "lvkr" + (on3 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
+        el("button", { class: "lvkr" + (on4 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
       );
     });
   }
@@ -49578,9 +50148,9 @@ body[data-mode='scene'] #scene {
   var EXPR = 11;
   var ends = () => LV.fadeEnds || (LV.fadeEnds = []);
   var low = () => LV.low || (LV.low = {});
-  var on2 = () => S.sendCC !== false;
+  var on3 = () => S.sendCC !== false;
   function lvFadeOut(t, tick, dur) {
-    if (!on2() || dur <= 0) return;
+    if (!on3() || dur <= 0) return;
     lvMove({
       id: "fade" + t,
       tag: "fade",
@@ -49599,7 +50169,7 @@ body[data-mode='scene'] #scene {
     ends().push({ t, at: tick + dur, back: tick + dur + 8 });
   }
   function lvFadeIn(t, tick, dur, nt) {
-    if (!on2()) return;
+    if (!on3()) return;
     LV.fadeEnds = ends().filter((e) => e.t !== t);
     if (dur <= 0) return lvLevelBack(t, nt);
     lvSendCC(t, EXPR, 0, nt);
@@ -49629,7 +50199,7 @@ body[data-mode='scene'] #scene {
     LV.fadeEnds = LV.fadeEnds.filter((e) => {
       if (!e.off && tick >= e.at) {
         e.off = true;
-        if (on2() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
+        if (on3() && !S.tracks[e.t].mute && !lvUserOwns(e.t)) sendMidi([176 | S.tracks[e.t].ch - 1, 123, 0], nt);
       }
       if (tick >= e.back) {
         lvLevelBack(e.t, nt);
@@ -49642,7 +50212,7 @@ body[data-mode='scene'] #scene {
     const l = LV.low || {};
     LV.fadeEnds = [];
     for (const t in l) {
-      if (on2()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
+      if (on3()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
       delete l[t];
     }
   }
@@ -49797,7 +50367,7 @@ body[data-mode='scene'] #scene {
     }
     return f.notes;
   }
-  function made(srcId, kind) {
+  function made2(srcId, kind) {
     const f = facById(srcId);
     if (!f) return null;
     if (kind === "full" && f.type === "tone") return srcId;
@@ -49822,7 +50392,7 @@ body[data-mode='scene'] #scene {
     for (const t in spec) {
       const c = cells[t];
       if (!c) continue;
-      const id = made(c.id, spec[t]);
+      const id = made2(c.id, spec[t]);
       if (id) ids[t] = id;
     }
     return ids;
@@ -51376,11 +51946,11 @@ body[data-mode='scene'] #scene {
       toast("Press Start Jam first");
       return;
     }
-    const on3 = !tracks3.every(lvEffMute);
+    const on4 = !tracks3.every(lvEffMute);
     LV.cues = LV.cues.filter(
       (c) => !(c.type === "mute" && c.tracks.length === tracks3.length && c.tracks.every((t) => tracks3.includes(t)))
     );
-    LV.cues.push({ type: "mute", tracks: tracks3, on: on3, tick: lvBoundary(1) });
+    LV.cues.push({ type: "mute", tracks: tracks3, on: on4, tick: lvBoundary(1) });
     lvSortCues();
     LV.ver++;
   }
@@ -51440,15 +52010,15 @@ body[data-mode='scene'] #scene {
     LV.rise = dir === "down" ? { start: t1, end, from: low2 ? 127 : r, to: low2 ? r : 0, cc: 80, target: "all" } : { start: t1, end, from: r, to: 127, cc: 80, target: "all" };
     LV.ver++;
   }
-  function liveStutter(len, on3) {
+  function liveStutter(len, on4) {
     if (!lvOn()) return;
-    if (on3) {
+    if (on4) {
       LV.stut = { press: TR.tick, len: Math.max(1, len) };
     } else LV.stut = null;
     LV.ver++;
   }
-  function liveLock(on3) {
-    LV.lock = on3 == null ? !LV.lock : !!on3;
+  function liveLock(on4) {
+    LV.lock = on4 == null ? !LV.lock : !!on4;
     if (LV.lock) {
       LV.cues = LV.cues.filter((c) => !c.gen && c.type !== "guestOut");
       toast("Loop locked: the parts playing now stay put until you unlock");
@@ -51489,8 +52059,8 @@ body[data-mode='scene'] #scene {
     liveRenderCards();
     liveRenderPads();
   }
-  function liveAuto(on3) {
-    LV.auto = on3 == null ? !LV.auto : on3;
+  function liveAuto(on4) {
+    LV.auto = on4 == null ? !LV.auto : on4;
     LV.ver++;
     liveSync();
   }
@@ -51564,11 +52134,11 @@ body[data-mode='scene'] #scene {
     if (LV.perfOn && TR.playing) toast("Back to the app: " + S.tracks[t].name);
     return false;
   }
-  function lvUserNote(t, on3) {
+  function lvUserNote(t, on4) {
     if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
     const all = LV.userPlay || (LV.userPlay = {}), fresh2 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
     u.last = TR.tick;
-    u.held = Math.max(0, u.held + (on3 ? 1 : -1));
+    u.held = Math.max(0, u.held + (on4 ? 1 : -1));
     if (!fresh2) return;
     const nt = AU.ctx ? AU.ctx.currentTime : 0, ccs = /* @__PURE__ */ new Set([11]);
     LV.autos.forEach((a) => a.tracks.includes(t) && ccs.add(a.cc));
@@ -51849,14 +52419,14 @@ body[data-mode='scene'] #scene {
   var held2 = false;
   var soloT = null;
   var soloMuted = [];
-  function muteNow(tracks3, on3) {
+  function muteNow(tracks3, on4) {
     if (!tracks3.length) return;
     if (!lvOn()) {
-      tracks3.forEach((t) => LV.mute[t] = on3);
+      tracks3.forEach((t) => LV.mute[t] = on4);
       LV.tg = Array.from({ length: 8 }, (_, t) => mkEnv(lvTarget(t), lvTarget(t), 0, 0));
     } else {
       LV.cues = LV.cues.filter((c) => !(c.type === "mute" && c.tracks.some((t) => tracks3.includes(t))));
-      LV.cues.push({ type: "mute", tracks: tracks3, on: on3, tick: Math.ceil((TR.tick + 1) / 8) * 8 });
+      LV.cues.push({ type: "mute", tracks: tracks3, on: on4, tick: Math.ceil((TR.tick + 1) / 8) * 8 });
       lvSortCues();
     }
     LV.ver++;
@@ -52600,7 +53170,7 @@ body[data-mode='scene'] #scene {
             ["Stutter 1/16", 2]
           ].map(([l, len]) => {
             const b = el("button", { class: "btn lvhold", title: "Hold to repeat the last slice" }, l);
-            const on3 = (ev) => {
+            const on4 = (ev) => {
               ev.preventDefault();
               try {
                 b.setPointerCapture(ev.pointerId);
@@ -52613,7 +53183,7 @@ body[data-mode='scene'] #scene {
               b.classList.remove("on");
               liveStutter(0, false);
             };
-            b.addEventListener("pointerdown", on3);
+            b.addEventListener("pointerdown", on4);
             b.addEventListener("pointerup", off);
             b.addEventListener("pointercancel", off);
             b.addEventListener("lostpointercapture", off);
@@ -53032,19 +53602,19 @@ body[data-mode='scene'] #scene {
   }
   function liveStatus(tickf) {
     liveTiming();
-    const on3 = lvOn(), sg = on3 ? lvSegs(tickf) : null;
+    const on4 = lvOn(), sg = on4 ? lvSegs(tickf) : null;
     let sc = LV.scenes[LV.cur], s0 = null;
-    if (on3 && sg) {
+    if (on4 && sg) {
       s0 = sg.filter((x) => x.tick <= tickf).pop() || sg[0];
       sc = LV.scenes[s0.idx];
     }
     const nm = $("#lvNowName");
     if (!nm) return;
-    nm.textContent = on3 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on3 && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on3 && sc ? sc.name : "Stopped";
+    nm.textContent = on4 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on4 && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on4 && sc ? sc.name : "Stopped";
     const root = $("#live");
     if (root && sc) root.style.setProperty("--acc", lvScCol(sc.e, 58));
-    const barNo = on3 && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
-    $("#lvNowBar").textContent = on3 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad";
+    const barNo = on4 && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
+    $("#lvNowBar").textContent = on4 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad";
     const pg = $("#lvProg");
     if (pg && sc) {
       if (pg.children.length !== sc.bars) {
@@ -53052,14 +53622,14 @@ body[data-mode='scene'] #scene {
         for (let i = 0; i < sc.bars; i++) pg.append(el("i", {}));
       }
       [...pg.children].forEach((x, i) => {
-        x.classList.toggle("done", on3 && i < barNo);
-        x.classList.toggle("now", on3 && i === barNo);
+        x.classList.toggle("done", on4 && i < barNo);
+        x.classList.toggle("now", on4 && i === barNo);
       });
     }
     const cue = LV.cues.filter((c) => c.type === "scene")[0], ns = cue ? LV.scenes[cue.idx] : null;
-    $("#lvNextName").textContent = on3 && ns ? ns.name : on3 && LV.auto ? "Auto" : "—";
+    $("#lvNextName").textContent = on4 && ns ? ns.name : on4 && LV.auto ? "Auto" : "—";
     const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-    $("#lvNextIn").textContent = on3 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "";
+    $("#lvNextIn").textContent = on4 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "";
     const kc = LV.cues.filter((c) => c.type === "key")[0];
     $("#lvKeyShow").textContent = NK(LV.key, LV.mode);
     const ks = $("#lvKey");
@@ -53083,11 +53653,11 @@ body[data-mode='scene'] #scene {
     LV.scenes.forEach((s, i) => {
       const c = $("#lvCard" + i);
       if (!c) return;
-      let isCur = on3 && sc === s && !(LV.flash && LV.flash.start <= tickf), isQ = on3 && cue && cue.idx === i, qn = nb;
+      let isCur = on4 && sc === s && !(LV.flash && LV.flash.start <= tickf), isQ = on4 && cue && cue.idx === i, qn = nb;
       if (lvIsFlash(s)) {
         const fc = LV.cues.find((x) => x.type === "flash" && x.idx === i);
-        isCur = !!(on3 && LV.flash && LV.flash.idx === i && LV.flash.start <= tickf);
-        isQ = !!(on3 && (fc || LV.flash && LV.flash.idx === i && LV.flash.start > tickf));
+        isCur = !!(on4 && LV.flash && LV.flash.idx === i && LV.flash.start <= tickf);
+        isQ = !!(on4 && (fc || LV.flash && LV.flash.idx === i && LV.flash.start > tickf));
         qn = fc ? Math.max(0, Math.ceil((fc.tick - tickf) / 32)) : 0;
       }
       c.classList.toggle("cur", !!isCur);
@@ -53103,19 +53673,19 @@ body[data-mode='scene'] #scene {
       if (/^s\d$/.test(a)) {
         const ix = +a.slice(1);
         if (lvIsFlash(LV.scenes[ix])) {
-          cur2 = !!(on3 && LV.flash && LV.flash.idx === ix && LV.flash.start <= tickf);
+          cur2 = !!(on4 && LV.flash && LV.flash.idx === ix && LV.flash.start <= tickf);
           q = !cur2 && LV.cues.some((c) => c.type === "flash" && c.idx === ix);
         } else {
-          cur2 = !!(on3 && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
-          q = !!(on3 && cue && cue.idx === ix);
+          cur2 = !!(on4 && sc === LV.scenes[ix] && !(LV.flash && LV.flash.start <= tickf));
+          q = !!(on4 && cue && cue.idx === ix);
         }
-      } else if (a.startsWith("mu:")) cur2 = on3 && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
-      else if (a.startsWith("mt:")) cur2 = on3 && lvEffMute(+a.slice(3));
+      } else if (a.startsWith("mu:")) cur2 = on4 && tracksFor(MUG[a.slice(3)]).every(lvEffMute);
+      else if (a.startsWith("mt:")) cur2 = on4 && lvEffMute(+a.slice(3));
       else if (a.startsWith("key:")) cur2 = LV.key === +a.slice(4);
       else if (a.startsWith("sw:")) q = LV.cues.some((c) => c.type === "swap" && c.group === a.slice(3));
       else if (a === "fill") q = LV.cues.some((c) => c.type === "fill" && !c.auto);
       else if (a === "brk") {
-        cur2 = !!(on3 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf);
+        cur2 = !!(on4 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf);
         q = !cur2 && LV.cues.some((c) => c.type === "brk");
       } else if (a === "stop") q = LV.cues.some((c) => c.type === "stop");
       else if (a === "auto") cur2 = LV.auto;
@@ -53176,9 +53746,9 @@ body[data-mode='scene'] #scene {
     if (typeof liveSync === "function") liveSync();
     if (typeof wizSyncPreview === "function" && !$("#wiz").hidden) wizSyncPreview();
     const pb = $("#bPlay");
-    const on3 = TR.playing && TR.mode === "song";
-    pb.innerHTML = on3 ? ICON.stop + " Stop" : ICON.play + " Play";
-    pb.classList.toggle("on", on3);
+    const on4 = TR.playing && TR.mode === "song";
+    pb.innerHTML = on4 ? ICON.stop + " Stop" : ICON.play + " Play";
+    pb.classList.toggle("on", on4);
     const a = $("#bAud");
     if (a) {
       const p = curPat();
@@ -54586,11 +55156,11 @@ body[data-mode='scene'] #scene {
           )
         )
       );
-      const devSel = (val, on3, first, extra) => {
+      const devSel = (val, on4, first, extra) => {
         const s2 = el("select", {
           disabled: rec,
           onchange: (e) => {
-            on3(e.target.value);
+            on4(e.target.value);
             saveAud();
             capCloseAll();
             AUDREC.metering = false;
@@ -54611,11 +55181,11 @@ body[data-mode='scene'] #scene {
         );
         return s2;
       };
-      const pairSel = (val, on3, n) => {
+      const pairSel = (val, on4, n) => {
         const s2 = el("select", {
           disabled: rec,
           onchange: (e) => {
-            on3(+e.target.value);
+            on4(+e.target.value);
             saveAud();
             capCloseAll();
             AUDREC.metering = false;
@@ -54909,12 +55479,12 @@ body[data-mode='scene'] #scene {
         )
       )
     );
-    const cb = (on3, lab, fn, c) => el(
+    const cb = (on4, lab, fn, c) => el(
       "label",
       { class: "audtk", style: c ? "--c:" + c : "" },
       el("input", {
         type: "checkbox",
-        checked: on3,
+        checked: on4,
         disabled: rec,
         onchange: (e) => {
           fn(e.target.checked);
@@ -56539,12 +57109,12 @@ body[data-mode='scene'] #scene {
       "Found " + (m === "101" ? "an MC-101" : "an MC-707") + " on MIDI, so the app switched to " + (m === "101" ? "MC-101 mode (4 tracks)" : "MC-707 mode (8 tracks)") + ". Settings › Device changes it back."
     );
   }
-  function setOneKit(on3) {
+  function setOneKit(on4) {
     if (DEV === "101") {
       toast("The MC-101 always plays full kits on its one drum track");
       return;
     }
-    S.oneKit = !!on3;
+    S.oneKit = !!on4;
     scheduleSave();
     if (typeof lvClearCustom === "function") {
       lvClearCustom();
@@ -56553,7 +57123,7 @@ body[data-mode='scene'] #scene {
       if (typeof liveRender === "function") liveRender();
     }
     toast(
-      on3 ? "Drums 1 now plays full kits (kick, snare, hats and percussion). Drums 2 is free, and Drums 3 keeps builds and impacts." : "Drums are spread over Drums 1, 2 and 3 again."
+      on4 ? "Drums 1 now plays full kits (kick, snare, hats and percussion). Drums 2 is free, and Drums 3 keeps builds and impacts." : "Drums are spread over Drums 1, 2 and 3 again."
     );
   }
 
@@ -57112,13 +57682,13 @@ body[data-mode='scene'] #scene {
     cc(t, 91, v);
     synthSave();
   }
-  function setMute(t, on3) {
-    SY.mute[t] = on3;
+  function setMute(t, on4) {
+    SY.mute[t] = on4;
     sendLevels();
     synthSave();
   }
-  function setSolo(t, on3) {
-    SY.solo[t] = on3;
+  function setSolo(t, on4) {
+    SY.solo[t] = on4;
     sendLevels();
     synthSave();
   }
@@ -57272,12 +57842,12 @@ body[data-mode='scene'] #scene {
     }
   };
   var thruInputs = () => MIDI.access ? [...MIDI.access.inputs.values()].filter((p) => !/MC-?(707|101)/i.test(p.name)) : [];
-  function thruSet(id, on3 = true) {
+  function thruSet(id, on4 = true) {
     if (thruIn) thruIn.removeEventListener("midimessage", pass);
     thruIn = null;
     SY.thru = id || "";
     synthSave();
-    if (!on3 || !id || !MIDI.access) return;
+    if (!on4 || !id || !MIDI.access) return;
     const p = MIDI.access.inputs.get(id);
     if (p) {
       p.addEventListener("midimessage", pass);
@@ -57407,13 +57977,13 @@ body[data-mode='scene'] #scene {
     }, 30);
   }
   function control(t, q, [ctlKey2, label2]) {
-    const kind = kindOf(t), keys2 = keysOf(ctlKey2), multi = keys2.length > 1, on3 = multi ? playing(t, q) : [0], ref = keys2[on3[0] ?? 0], p = paramOf(kind, ref)[0], known2 = keys2.every((k2, i) => !on3.includes(i) || q.has.has(k2));
+    const kind = kindOf(t), keys2 = keysOf(ctlKey2), multi = keys2.length > 1, on4 = multi ? playing(t, q) : [0], ref = keys2[on4[0] ?? 0], p = paramOf(kind, ref)[0], known2 = keys2.every((k2, i) => !on4.includes(i) || q.has.has(k2));
     const v = q.snd.v[ref];
     const out2 = el("b", {}, known2 ? valText(kind, ref, v) : "–");
     const apply3 = (x) => {
       const d = x - q.snd.v[ref], changed = [];
       keys2.forEach((k2, i) => {
-        if (multi && !on3.includes(i)) return;
+        if (multi && !on4.includes(i)) return;
         const [pp] = paramOf(kind, k2);
         const nv = multi ? Math.max(pp[3], Math.min(pp[4], q.snd.v[k2] + d)) : x;
         if (nv !== q.snd.v[k2]) q.snd.v[k2] = nv, changed.push(k2);
@@ -57623,14 +58193,14 @@ body[data-mode='scene'] #scene {
         (k2) => el("option", { value: k2, selected: SY.slot[t] === k2 }, slotName(k2))
       )
     );
-    const toggle = (lab, cls, on3, fn, title) => el(
+    const toggle = (lab, cls, on4, fn, title) => el(
       "button",
       {
         type: "button",
-        class: "syTg " + cls + (on3 ? " on" : ""),
-        "aria-pressed": String(on3),
+        class: "syTg " + cls + (on4 ? " on" : ""),
+        "aria-pressed": String(on4),
         title,
-        onclick: () => (fn(!on3), act.render())
+        onclick: () => (fn(!on4), act.render())
       },
       lab
     );
@@ -57731,11 +58301,11 @@ body[data-mode='scene'] #scene {
   var dock2 = el("div", { class: "syDock" });
   var docked = () => !!$("#zcOv") && dock2.contains($("#zcOv"));
   var dn = () => DEVS[DEV].name;
-  function synthEnter(on3) {
-    if (!on3 && docked()) zenClose();
-    thruSet(SY.thru, on3);
-    SYHOOK.activity = on3 ? flash : null;
-    if (on3) {
+  function synthEnter(on4) {
+    if (!on4 && docked()) zenClose();
+    thruSet(SY.thru, on4);
+    SYHOOK.activity = on4 ? flash : null;
+    if (on4) {
       synthRender();
       if (!MIDI.access)
         connectMidi().then(() => {
@@ -57930,7 +58500,7 @@ body[data-mode='scene'] #scene {
       el("option", { value: "own", selected: SY.kbd === "own" }, "Each track’s channel"),
       ...tracks2().map((t) => el("option", { value: t, selected: SY.kbd === t }, "Track " + devNum(t)))
     );
-    const on3 = ZX.state === "ready";
+    const on4 = ZX.state === "ready";
     const steps2 = [
       [
         "Audio",
@@ -57966,11 +58536,11 @@ body[data-mode='scene'] #scene {
         el(
           "div",
           {
-            class: "syLink" + (on3 ? " on" : ""),
-            title: on3 ? "Reading and writing sounds over SysEx" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
+            class: "syLink" + (on4 ? " on" : ""),
+            title: on4 ? "Reading and writing sounds over SysEx" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
           },
           el("i"),
-          on3 ? dn() + " connected" : dn() + " not connected"
+          on4 ? dn() + " connected" : dn() + " not connected"
         )
       ),
       el(
@@ -58147,9 +58717,9 @@ body[data-mode='scene'] #scene {
     const has2 = !!last3;
     const close = () => ov.remove();
     const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
-    let found2 = null;
+    let found = null;
     const show = (u, asked) => {
-      found2 = u;
+      found = u;
       upd.classList.toggle("new", !!(u && u.newer));
       upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
       updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
@@ -58161,7 +58731,7 @@ body[data-mode='scene'] #scene {
         class: "btn sm",
         title: "See whether a newer version is out",
         onclick: async () => {
-          if (found2 && found2.newer) return openLink(found2.url);
+          if (found && found.newer) return openLink(found.url);
           upd.textContent = "Checking…";
           show(await checkUpdate(true), true);
         }
@@ -58169,11 +58739,11 @@ body[data-mode='scene'] #scene {
       "Check for updates"
     );
     checkUpdate().then((u) => show(u, false));
-    const card = (icon, title, text2, fn, on3) => el(
+    const card = (icon, title, text2, fn, on4) => el(
       "button",
       {
         type: "button",
-        class: "stCard" + (on3 ? " on" : ""),
+        class: "stCard" + (on4 ? " on" : ""),
         onclick: () => {
           close();
           fn();
@@ -59964,9 +60534,9 @@ body[data-mode='scene'] #scene {
     );
     const close = () => ov.remove();
     const hasFactory = () => ZS.list.some((e) => e.src === "factory");
-    const genreSel = (cur2, on3) => el(
+    const genreSel = (cur2, on4) => el(
       "select",
-      { "aria-label": "Genre", onchange: (e) => on3(e.target.value) },
+      { "aria-label": "Genre", onchange: (e) => on4(e.target.value) },
       ...[...new Set(genres().map((g) => g.group))].map(
         (grp) => grp ? el(
           "optgroup",
@@ -59979,7 +60549,7 @@ body[data-mode='scene'] #scene {
         )
       )
     );
-    const tick = (ts, on3) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on3 && !!(c.item && resolve(c.item))));
+    const tick = (ts, on4) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on4 && !!(c.item && resolve(c.item))));
     const draw2 = () => {
       const rows2 = DEVS[DEV].tracks.filter((t) => S.tracks[t].type !== "drum").map((t) => {
         const clips = plan2[t].map((c, k2) => {
@@ -60373,7 +60943,7 @@ body[data-mode='scene'] #scene {
       const e = $(id);
       if (e) e.click();
     };
-    const on3 = (id) => () => {
+    const on4 = (id) => () => {
       const e = $(id);
       return !!(e && e.classList.contains("on"));
     };
@@ -60548,8 +61118,8 @@ body[data-mode='scene'] #scene {
           ["Keep the screen awake while playing", () => setAwake(!STAGE.awake), "", () => STAGE.awake],
           0,
           ["Pattern library", go("#bLibT"), "", null, null, "song"],
-          ["Follow the playhead", go("#bFollow"), "", on3("#bFollow"), null, "song"],
-          ["Metronome click", go("#bMetro"), "", on3("#bMetro"), null, "song"]
+          ["Follow the playhead", go("#bFollow"), "", on4("#bFollow"), null, "song"],
+          ["Metronome click", go("#bMetro"), "", on4("#bMetro"), null, "song"]
         ]
       ],
       [
@@ -60751,14 +61321,14 @@ body[data-mode='scene'] #scene {
 
   // src/ui/live-menus.js
   function lvTrackMenu(t) {
-    const tr = S.tracks[t], on3 = lvOn(), v = on3 ? lvTop(t) : null, sc = LV.scenes[LV.cur], cell = sc && sc.cells[t];
+    const tr = S.tracks[t], on4 = lvOn(), v = on4 ? lvTop(t) : null, sc = LV.scenes[LV.cur], cell = sc && sc.cells[t];
     const cur2 = v ? v.f.id : cell ? cell.id : null;
-    const ref = S.tracks[t].type === "tone" ? on3 && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0 ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4)) : null : null, prog = ref && lvProg(ref.f);
+    const ref = S.tracks[t].type === "tone" ? on4 && trackOf(slotOf(t) === 4 ? 3 : 4) >= 0 ? lvTop(trackOf(slotOf(t) === 4 ? 3 : 4)) : null : null, prog = ref && lvProg(ref.f);
     let ids = liveSwapIds(t).filter((id) => id !== cur2);
     if (prog)
       ids = [...ids.filter((id) => lvProg(facById(id)) === prog), ...ids.filter((id) => lvProg(facById(id)) !== prog)];
     const choose = (id) => {
-      if (on3) {
+      if (on4) {
         LV.cues = LV.cues.filter((c) => !(c.type === "swap" && c.ids[t] && Object.keys(c.ids).length === 1));
         const f = facById(id);
         if (!lvTop(t)) {
@@ -60786,10 +61356,10 @@ body[data-mode='scene'] #scene {
     };
     return [
       { label: tr.name + (cur2 ? " · " + facById(cur2).name : " · silent"), disabled: true },
-      { label: lvEffMute(t) ? "Unmute" : "Mute", disabled: !on3, action: () => liveMute([t]) },
+      { label: lvEffMute(t) ? "Unmute" : "Mute", disabled: !on4, action: () => liveMute([t]) },
       {
         label: "Mute everything else",
-        disabled: !on3,
+        disabled: !on4,
         action: () => {
           const others = DEVS[DEV].tracks.filter((i) => i !== t && !lvEffMute(i));
           if (lvEffMute(t)) liveMute([t]);
@@ -60798,7 +61368,7 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Unmute all",
-        disabled: !on3,
+        disabled: !on4,
         action: () => {
           const m = DEVS[DEV].tracks.filter(lvEffMute);
           if (m.length) liveMute(m);
@@ -60817,9 +61387,9 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Stop this part",
-        disabled: !(on3 ? v : cell),
+        disabled: !(on4 ? v : cell),
         action: () => {
-          if (on3) {
+          if (on4) {
             const tk2 = lvBoundary(1);
             LV.voices[t].forEach((x) => {
               x.env = mkEnv(envAt(x.env, tk2), 0, tk2, S.tracks[t].type === "tone" ? 16 : 2);
@@ -60857,7 +61427,7 @@ body[data-mode='scene'] #scene {
     ];
   }
   function lvSceneMenu(i) {
-    const sc = LV.scenes[i], on3 = lvOn();
+    const sc = LV.scenes[i], on4 = lvOn();
     if (!sc) return [];
     const move = (d) => {
       const j = i + d;
@@ -60871,10 +61441,10 @@ body[data-mode='scene'] #scene {
     };
     return [
       { label: i + 1 + ". " + sc.name, disabled: true },
-      { label: on3 ? "Launch (as set in Launch on)" : "Start from here", action: () => liveCue(i) },
+      { label: on4 ? "Launch (as set in Launch on)" : "Start from here", action: () => liveCue(i) },
       {
         label: "Launch on the next bar",
-        disabled: !on3 || lvIsFlash(sc),
+        disabled: !on4 || lvIsFlash(sc),
         action: () => {
           LV.cues = LV.cues.filter((c) => c.type !== "scene");
           LV.cues.push({ type: "scene", idx: i, tick: lvBoundary(1) });
@@ -60884,7 +61454,7 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Drop into it (hard cut)",
-        disabled: !on3 || lvIsFlash(sc),
+        disabled: !on4 || lvIsFlash(sc),
         action: () => {
           LV.cues = LV.cues.filter((c) => c.type !== "scene");
           LV.cues.push({ type: "scene", idx: i, tick: lvBoundary(1), hard: true });
@@ -60966,7 +61536,7 @@ body[data-mode='scene'] #scene {
       },
       {
         label: "Replace with the loop playing now",
-        disabled: !on3 || i === LV.cur,
+        disabled: !on4 || i === LV.cur,
         action: () => {
           const keep = LV.cur;
           LV.cur = i;
@@ -61558,12 +62128,12 @@ body[data-mode='scene'] #scene {
   var masterOk = () => DEV !== "101";
   async function readMaster() {
     if (!masterOk() || !await zxConnect()) return null;
-    const rev = await zxReadIn(PRJ.rev, 3), cho = await zxReadIn(PRJ.cho, 4), mfx = await zxReadIn(PRJ.mfx[0], 2), comp2 = await zxReadIn(PRJ.comp, 1), eq = await zxReadIn(PRJ.eq + 14, 1);
-    if (!rev && !cho && !mfx) return null;
+    const rev = await zxReadIn(PRJ.rev, 3), cho = await zxReadIn(PRJ.cho, 4), mfx2 = await zxReadIn(PRJ.mfx[0], 2), comp2 = await zxReadIn(PRJ.comp, 1), eq = await zxReadIn(PRJ.eq + 14, 1);
+    if (!rev && !cho && !mfx2) return null;
     FXN.master = {
       rev: rev ? { sw: rev[0], type: rev[1], level: rev[2] } : null,
       cho: cho ? { sw: cho[0], type: cho[1], level: cho[2], send: cho[3] } : null,
-      mfx: mfx ? { type: mfx[0], sw: mfx[1], id: mfx[1] ? "t" + mfx[0] : "off" } : null,
+      mfx: mfx2 ? { type: mfx2[0], sw: mfx2[1], id: mfx2[1] ? "t" + mfx2[0] : "off" } : null,
       comp: comp2 ? comp2[0] : null,
       eq: eq ? eq[0] : null
     };

@@ -555,3 +555,54 @@
 .lgChip:hover {
   border-color: var(--zc-acc);
 }
+/* blends: the guide in the Learn panel */
+.lbBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lbRow.cur {
+  background: #07110a;
+  box-shadow: inset 2px 0 0 var(--zc-acc);
+  padding-left: 6px;
+}
+.llAbout {
+  color: #e6ffee;
+}
+.lgSteps {
+  margin: 6px 0;
+  padding-left: 22px;
+  font-size: 12px;
+}
+.lgSteps li {
+  color: var(--zc-dim);
+  padding: 1px 0;
+}
+.lgSteps li::marker {
+  color: var(--ic, var(--zc-dim));
+}
+.lgSteps li.done {
+  color: #c9f7d5;
+}
+.lgSteps li.done::after {
+  content: ' ✓';
+  color: var(--zc-acc);
+}
+.lgSteps li.next,
+.lgSteps li.now {
+  color: #fff;
+  font-weight: 600;
+}
+.llStep {
+  border-top: 1px solid var(--zc-line);
+  padding-top: 6px;
+}
+.llStep p {
+  margin: 4px 0;
+}
+.llGo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}

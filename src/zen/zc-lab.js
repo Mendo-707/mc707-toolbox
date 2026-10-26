@@ -10,10 +10,21 @@
 // Every mix-in is one undo step in the editor's history. Reads and changes: ZE.snd (through zeBrew).
 // Owns: LAB (the lab's state), localStorage 'mc707-lab' (blends found, the last amount).
 import { $, el, toast } from '../core/dom.js';
-import { ZE, audition, zeBrew, zeLive, zeRender, zeUndo } from './zc-editor.js';
+import { ZE, audition, zeBrew, zeLive, zeLoad, zeRender, zeUndo } from './zc-editor.js';
 import { paramOf } from './zc-tone.js';
+import { tone } from './zc-starters.js';
+import { BLENDS } from './zc-lab-blends.js';
 
-const LAB = { sel: 'sun', drops: 4, log: [], found: new Set(), chain: Promise.resolve(), start: 0, latch: false };
+const LAB = {
+  sel: 'sun',
+  drops: 4,
+  log: [],
+  found: new Set(),
+  chain: Promise.resolve(),
+  start: 0,
+  latch: false,
+  guide: null
+};
 const STORE = 'mc707-lab';
 try {
   const s = JSON.parse(localStorage.getItem(STORE) || 'null');
@@ -511,124 +522,6 @@ const SUB = {
 };
 const ING = GROUPS.flatMap(([, ps]) => ps);
 const ing = id => ING.find(p => p.id === id);
-
-/* blends: classic sounds as ingredients and amounts (1-10) */
-const RECIPES = [
-  {
-    id: 'acid',
-    name: 'Acid Bass',
-    steps: [
-      ['wolf', 5],
-      ['glide', 3],
-      ['moon', 4],
-      ['squelch', 8],
-      ['pluck', 5]
-    ],
-    about: 'The TB-303 sound: one sliding voice, with a resonant filter that snaps shut on every note.'
-  },
-  {
-    id: 'pad',
-    name: 'Dream Pad',
-    steps: [
-      ['swell', 7],
-      ['mist', 6],
-      ['shimmer', 5],
-      ['giant', 6],
-      ['space', 6],
-      ['moon', 3]
-    ],
-    about: 'Slow in, slow out, detuned, wide and far away: the pad that holds a track together.'
-  },
-  {
-    id: 'trance',
-    name: 'Trance Lead',
-    steps: [
-      ['swarm', 8],
-      ['sun', 5],
-      ['giant', 4],
-      ['space', 4],
-      ['glide', 2]
-    ],
-    about: 'A supersaw, opened up, wide and wet, with a touch of glide.'
-  },
-  {
-    id: 'wob',
-    name: 'Wobble Bass',
-    steps: [
-      ['wolf', 5],
-      ['abyss', 4],
-      ['wobble', 8],
-      ['grit', 4]
-    ],
-    about: 'An octave down, mono, a filter LFO and grit. Sync the LFO to the tempo for the real thing.'
-  },
-  {
-    id: 'kalimba',
-    name: 'Kalimba Pluck',
-    steps: [
-      ['pluck', 8],
-      ['sun', 3],
-      ['feather', 4],
-      ['space', 3]
-    ],
-    about: 'Instant attack, fast decay and a little room: a sound for busy, bouncy melodies.'
-  },
-  {
-    id: 'lofi',
-    name: 'Lo-fi Keys',
-    steps: [
-      ['moon', 5],
-      ['drift', 6],
-      ['tremolo', 4],
-      ['mist', 3]
-    ],
-    about: 'Dark, wandering in pitch and gently pulsing: a worn tape of an electric piano.'
-  },
-  {
-    id: 'brass',
-    name: 'Brass Stab',
-    steps: [
-      ['bloom', 7],
-      ['punch', 3],
-      ['swarm', 3]
-    ],
-    about: 'A filter that blooms on each note, a punchy start and a few voices: 80s synth brass.'
-  },
-  {
-    id: 'choir',
-    name: 'Ghost Choir',
-    steps: [
-      ['ghost', 4],
-      ['vibrato', 6],
-      ['swell', 5],
-      ['space', 8]
-    ],
-    about: 'Thin, breathy, wavering and far away.'
-  },
-  {
-    id: 'thump',
-    name: 'Sub Thump',
-    steps: [
-      ['abyss', 7],
-      ['punch', 8],
-      ['pluck', 6],
-      ['moon', 6]
-    ],
-    about: 'An octave down, a pitch blip, a short decay and the highs taken off: an 808-style hit.'
-  },
-  {
-    id: 'siren',
-    name: 'Siren Lead',
-    steps: [
-      ['wolf', 5],
-      ['glide', 6],
-      ['vibrato', 7],
-      ['sun', 4],
-      ['grit', 3]
-    ],
-    about: 'Mono, gliding, with a wide vibrato and some bite: a lead that screams over a track.'
-  }
-];
 
 /* ---- what the tone is like: the cauldron's mood, and the meters ---- */
 function traits() {
@@ -1309,6 +1202,7 @@ function drawAmount() {
 }
 function select(id) {
   LAB.sel = id;
+  if (LAB.guide) LAB.guide.away = true;
   document.querySelectorAll('#labOv .liBtn').forEach(b => b.classList.toggle('sel', b.dataset.id === id));
   drawAmount();
   drawLearn();
@@ -1318,10 +1212,15 @@ function drawLearn() {
   const box = $('#labLearn'),
     p = ing(LAB.sel);
   if (!box || !p) return;
+  if (LAB.guide && !LAB.guide.away) return drawGuide(box);
+  const back = LAB.guide
+    ? btn('◂ Back to ' + LAB.guide.r.name, () => ((LAB.guide.away = false), drawLearn()), 'Back to the blend')
+    : null;
   const last = [...LAB.log].reverse().find(x => x.id === p.id);
   box.style.setProperty('--ic', p.c);
   box.replaceChildren(
     el('legend', {}, 'Learn'),
+    back,
     el('div', { class: 'llTop' }, blob(p.c), el('b', {}, p.name), el('small', {}, p.tag)),
     el('p', {}, p.what),
     el('p', {}, el('span', { class: 'llK' }, 'Hear it in'), p.hear),
@@ -1372,17 +1271,18 @@ function draw() {
   );
   $('#labRead').textContent = reading(tr);
   $('#labBlends').replaceChildren(
-    el('legend', {}, 'Blends · ' + LAB.found.size + '/' + RECIPES.length + ' found'),
+    el('legend', {}, 'Blends'),
     el(
       'p',
       { class: 'hint' },
-      'Classic sounds. Mix in all of one’s ingredients yourself to find it, or mix it in one go.'
+      'Classic sounds built from scratch, step by step. Guide walks you through each step with the reason for it; Make builds it in one go. Both start from a clean slate, replacing this tone (Undo brings it back).'
     ),
-    ...RECIPES.map(r => {
-      const got = LAB.found.has(r.id);
+    ...BLENDS.map(r => {
+      const got = LAB.found.has(r.id),
+        cur = LAB.guide && LAB.guide.r === r;
       return el(
         'div',
-        { class: 'lbRow' + (got ? ' got' : '') },
+        { class: 'lbRow' + (got ? ' got' : '') + (cur ? ' cur' : '') },
         el(
           'div',
           {},
@@ -1390,11 +1290,16 @@ function draw() {
           el(
             'div',
             { class: 'lbDots' },
-            ...r.steps.map(([id, n]) => el('i', { style: '--ic:' + ing(id).c, title: ing(id).name + ' ' + n + '/10' }))
+            ...r.steps.map(([id, t]) => el('i', { style: '--ic:' + ing(id).c, title: t }))
           ),
-          el('small', {}, got ? r.about : r.steps.map(([id]) => ing(id).name).join(' · '))
+          el('small', {}, r.about)
         ),
-        btn('Mix', () => blend(r), r.about)
+        el(
+          'div',
+          { class: 'lbBtns' },
+          btn('Guide', () => blendStart(r, false), 'Build ' + r.name + ' one step at a time, tasting as you go'),
+          btn('Make', () => blendStart(r, true), 'Build ' + r.name + ' in one go')
+        )
       );
     })
   );
@@ -1414,7 +1319,7 @@ function draw() {
                 title: x.ch.length + ' settings changed: click to see them',
                 onclick: () => select(x.id)
               },
-              ing(x.id).name + ' ' + x.drops
+              x.label || ing(x.id).name + ' ' + x.drops
             )
           )
         )
@@ -1446,7 +1351,6 @@ function mixIn(id, drops = LAB.drops) {
     else LAB.log.push({ id, drops, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
     draw();
     if (LAB.sel === id) drawLearn();
-    discover();
     /* a held note plays again, so envelope changes are heard */
     if (NOTE && LAB.latch) retrigger();
   });
@@ -1457,7 +1361,11 @@ function undo() {
     if (!ZE.undo.length) return;
     zeUndo();
     const x = LAB.log.pop();
-    if (x) toast('Took out ' + ing(x.id).name);
+    if (x && x.guide && LAB.guide) {
+      if (x.slate) LAB.guide = null;
+      else LAB.guide.i = LAB.guide.done = Math.max(0, LAB.guide.done - 1);
+    }
+    if (x) toast('Took out ' + (x.label || ing(x.id).name));
     SL.kick = 0.6;
     SL.rip = 0;
     draw();
@@ -1478,6 +1386,7 @@ function startOver() {
     if (n <= 0) return toast('Nothing mixed in yet');
     for (let i = 0; i < n; i++) zeUndo();
     LAB.log = [];
+    LAB.guide = null;
     SL.kick = 1;
     SL.rip = 0;
     draw();
@@ -1494,35 +1403,164 @@ async function random() {
   await LAB.chain;
   toast('Mixed in ' + pick.map(p => p.name).join(', ') + ': have a taste');
 }
-async function blend(r) {
-  for (const [id, n] of r.steps) {
-    mixIn(id, n);
-    await wait(still() ? 0 : 220);
-  }
-  await LAB.chain;
-  select(r.steps[r.steps.length - 1][0]);
-  if (!LAB.found.has(r.id)) found(r);
-  else toast(r.name + ' mixed: have a taste');
+/* ---- blends: a clean slate, then each step with its reason ---- */
+/* the values that exist in a tone (so a blend's typo can't send nonsense) */
+const real = vals => Object.fromEntries(Object.entries(vals).filter(([k]) => paramOf('tone', k)));
+/** Start a blend: the clean slate goes in, then (auto) every step, or (guided) one per Next. */
+function blendStart(r, auto) {
+  noteOffIfHeld();
+  /* i: the next step asked for; done: the steps in the tone */
+  LAB.guide = { r, i: 0, done: 0, auto, away: false };
+  const name = r.name.toUpperCase().slice(0, 16);
+  const snd = tone(name, set => {
+    if (r.slate === 'supersaw') set('SPTL.OSC_TYPE', 3);
+    else set('SPTL.VA_FORM', r.slate);
+  });
+  const p = ing('ghost');
+  const landed = dropIn(p);
+  later(async () => {
+    await landed;
+    if (!$('#labOv')) return;
+    await zeLoad(snd);
+    LAB.log.push({ id: 'ghost', label: 'Clean slate', guide: true, slate: true, ch: [] });
+    draw();
+    drawLearn();
+  });
+  drawLearn();
+  if (auto) runSteps(r, 0);
+  return LAB.chain;
 }
-/* a blend whose ingredients are all in the list is found */
-function discover() {
-  const have = new Set(LAB.log.map(x => x.id));
-  for (const r of RECIPES) if (!LAB.found.has(r.id) && r.steps.every(([id]) => have.has(id))) found(r);
+/* one step of a blend (resolves once it is in the tone) */
+function blendStep(r, i) {
+  const g = LAB.guide;
+  if (!g || g.r !== r || i !== g.i || i >= r.steps.length) return Promise.resolve();
+  const [id, label, , vals] = r.steps[i];
+  g.i = i + 1;
+  g.away = false;
+  drawLearn();
+  const landed = dropIn(ing(id));
+  return later(async () => {
+    await landed;
+    if (!$('#labOv')) return;
+    const v = real(vals);
+    const before = Object.fromEntries(Object.keys(v).map(k => [k, ZE.snd.v[k]]));
+    const keys = zeBrew(v);
+    LAB.log.push({ id, label, guide: true, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
+    g.done = i + 1;
+    if (g.done >= r.steps.length) made(r);
+    draw();
+    drawLearn();
+    if (NOTE && LAB.latch) retrigger();
+  });
 }
-function found(r) {
+function made(r) {
   LAB.found.add(r.id);
   save();
-  draw();
-  SL.kick = 1;
   const f = $('#lsFound');
   if (!f) return;
-  f.replaceChildren(el('span', { class: 'llK' }, 'Blend found'), el('b', {}, r.name), el('small', {}, r.about));
+  f.replaceChildren(
+    el('span', { class: 'llK' }, 'Blend made'),
+    el('b', {}, r.name),
+    el('small', {}, 'Taste it on ' + noteName(r.note) + ', then shape it further with the ingredients.')
+  );
   f.classList.remove('show');
   void f.offsetWidth;
   f.classList.add('show');
-  clearTimeout(found.t);
-  found.t = setTimeout(() => f.classList.remove('show'), 3800);
+  clearTimeout(made.t);
+  made.t = setTimeout(() => f.classList.remove('show'), 4200);
 }
+const noteName = n => 'C' + (n / 12 - 1);
+/* the Learn panel while a blend is being built: its steps, this step's reason and what it changed */
+function drawGuide(box) {
+  const g = LAB.guide,
+    r = g.r,
+    done = g.done >= r.steps.length,
+    busy = g.i > g.done;
+  const shownStep = Math.max(0, g.done - 1);
+  const last = [...LAB.log].reverse().find(x => x.guide && !x.slate);
+  const step = g.done ? r.steps[shownStep] : null;
+  box.style.setProperty('--ic', step ? ing(step[0]).c : '#dfe9ff');
+  box.replaceChildren(
+    el('legend', {}, 'Blend · ' + r.name),
+    el('p', { class: 'llAbout' }, r.about),
+    el(
+      'ol',
+      { class: 'lgSteps' },
+      el('li', { class: LAB.log.some(x => x.slate) ? 'done' : 'now' }, 'Clean slate: ' + slateName(r)),
+      ...r.steps.map(([id, t], i) =>
+        el('li', { class: i < g.done ? 'done' : i === g.done ? 'next' : '', style: '--ic:' + ing(id).c }, t)
+      )
+    ),
+    step
+      ? el(
+          'div',
+          { class: 'llStep' },
+          el('span', { class: 'llK' }, 'Step ' + g.done + ' of ' + r.steps.length + ' · ' + step[1]),
+          el('p', {}, step[2]),
+          last && last.ch.length
+            ? el(
+                'div',
+                { class: 'llDid' },
+                ...last.ch
+                  .slice(0, 10)
+                  .map(([k, a, b]) =>
+                    el(
+                      'div',
+                      { class: 'llCh' },
+                      el('span', {}, keyName(k)),
+                      el('s', {}, shown(k, a)),
+                      el('b', {}, shown(k, b))
+                    )
+                  ),
+                last.ch.length > 10 ? el('small', { class: 'hint' }, '…and ' + (last.ch.length - 10) + ' more') : null
+              )
+            : null
+        )
+      : el(
+          'p',
+          { class: 'hint' },
+          'A fresh tone on the ' +
+            slateName(r) +
+            ' oscillator, with nothing else set: every blend starts from the same place, so it sounds right whatever was loaded. Taste it, then take the first step.'
+        ),
+    el(
+      'div',
+      { class: 'llGo' },
+      btn('Taste ' + noteName(r.note), () => {}, 'Hold to hear it'),
+      done
+        ? btn('Done', () => ((LAB.guide = null), draw(), drawLearn()), 'Close the guide', true)
+        : g.auto || busy
+          ? el('span', { class: 'hint' }, 'Mixing…')
+          : btn('Next: ' + r.steps[g.i][1], () => blendStep(r, g.i), 'Take the next step', true),
+      done || g.auto ? null : btn('Finish', () => finish(r), 'Do the remaining steps in one go')
+    )
+  );
+  /* the Taste button plays while held, like the keys */
+  const t = box.querySelector('.llGo .btn');
+  t.addEventListener('pointerdown', e => keyDown(r.note, e.currentTarget));
+}
+const slateName = r => (r.slate === 'supersaw' ? 'SuperSAW' : ['saw', 'square', 'triangle', 'sine'][r.slate] + ' wave');
+function finish(r) {
+  const g = LAB.guide;
+  if (!g) return;
+  g.auto = true;
+  g.away = false;
+  drawLearn();
+  runSteps(r, g.i);
+}
+/* the steps from i on, one after another */
+async function runSteps(r, from) {
+  await LAB.chain;
+  for (let i = from; i < r.steps.length; i++) {
+    if (!LAB.guide || LAB.guide.r !== r || !$('#labOv')) return;
+    await wait(still() ? 0 : 260);
+    await blendStep(r, i);
+  }
+}
+function noteOffIfHeld() {
+  if (NOTE && !LAB.latch) noteOff();
+}
+
 /* ---- tasting: a note plays and the slime follows the amp envelope ---- */
 let NOTE = null; /* {n, off, key} */
 function noteOn(n, key) {
