@@ -30,6 +30,14 @@ test('Mixer effects: a track’s effect in all its sounds, and the master FX', a
     assert.equal(sw, 1, 'switched on');
   }
   assert.equal(await sel.inputValue(), label, 'the strip shows it');
+  /* the track was muted (CC 11 to 0) while it took the effect, and came back */
+  const ch = (await page.evaluate('window.__app.S.tracks[3].ch')) - 1;
+  const cc11 = await page.evaluate(
+    ch => window.__out.filter(b => b[0] === (0xb0 | ch) && b[1] === 11).map(b => b[2]),
+    ch
+  );
+  assert.equal(cc11[0], 0, 'muted first');
+  assert.ok(cc11[cc11.length - 1] > 0, 'and back');
   /* the master strip: reverb type, level, chorus off, Multi FX, comp */
   const M = win.locator('.mxMaster');
   await M.locator('select[aria-label="Reverb type"]').focus();
@@ -51,7 +59,7 @@ test('Mixer effects: a track’s effect in all its sounds, and the master FX', a
   await page.waitForTimeout(1500);
   const [mt, msw] = await mem(page, lin(0x10002000), 2);
   assert.ok(mt > 0 && msw === 1, 'master Multi FX set');
-  await win.locator('.mxMaster button', { hasText: 'Comp' }).click();
+  await win.locator('.mxMaster .mxBtns button', { hasText: 'Comp' }).click();
   await page.waitForTimeout(300);
   assert.equal((await mem(page, lin(0x10003a00)))[0], 1, 'compressor on');
   /* read back */

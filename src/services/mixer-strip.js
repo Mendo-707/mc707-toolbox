@@ -304,6 +304,7 @@ export function masterStrip(s, o) {
       el('span', { class: 'mxName' }, 'Master FX'),
       el('span', { class: 'mxSub' }, s.busy ? 'Sending…' : s.m ? 'The MC-707’s total effects' : 'Not read yet')
     ),
+    level('Master level', 'level', s.lvl, 'The MC-707’s master level (the project level)'),
     el(
       'label',
       { class: 'mxRow mxFx', title: 'The reverb every track’s Reverb send goes to' },
@@ -331,6 +332,25 @@ export function masterStrip(s, o) {
       tg('Comp', 'comp', m.comp, 'The master compressor on or off'),
       tg('EQ', 'eq', m.eq, 'The master EQ on or off')
     ),
+    o.edit
+      ? el(
+          'div',
+          { class: 'mxEdit', role: 'group', 'aria-label': 'Master effect settings' },
+          ...[
+            ['rev', 'Reverb', 'The reverb’s settings for its type'],
+            ['cho', 'Delay', 'The delay or chorus’s settings for its type'],
+            ['mfx', 'Multi FX', 'The master Multi FX’s settings'],
+            ['eq', 'EQ', 'The master EQ: input, low, three mids and high'],
+            ['comp', 'Comp', 'The master compressor: three bands']
+          ].map(([sec, lab, title]) =>
+            el(
+              'button',
+              { type: 'button', class: 'btn sm' + (s.open === sec ? ' on' : ''), title, onclick: () => o.edit(sec) },
+              lab + '…'
+            )
+          )
+        )
+      : null,
     el(
       'button',
       {

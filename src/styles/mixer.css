@@ -490,3 +490,57 @@ body.popFrameless .mxTop input {
   border-color: var(--line, #d6d1c4);
   background: var(--panel, #fff);
 }
+
+/* the Master FX strip's settings buttons, and the settings panel over the mixer */
+.mxEdit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mxEdit .btn {
+  flex: 1 1 auto;
+  padding: 2px 5px;
+  font-size: 11px;
+}
+.mpBox {
+  position: fixed;
+  top: 64px;
+  /* beside the Master FX strip, not over it: its buttons stay in reach */
+  right: 160px;
+  z-index: 30;
+  width: min(320px, calc(100vw - 180px));
+  max-height: calc(100vh - 66px);
+  overflow: auto;
+  padding: 10px 12px 12px;
+  background: var(--panel, #fff);
+  color: var(--ink, #1d1d1b);
+  border: 1px solid var(--line, #d6d1c4);
+  border-top: 3px solid var(--ink, #1d1d1b);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.mpHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.mpHead b {
+  flex: 1;
+  font-size: 13px;
+}
+.mpBox .hint {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.mpList {
+  display: grid;
+  gap: 6px;
+}
+.mpRow {
+  grid-template-columns: 1fr auto;
+}
+.mpRow .mxSel {
+  grid-column: 1 / -1;
+}

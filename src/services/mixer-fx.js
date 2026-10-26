@@ -5,6 +5,7 @@
 import { hooks } from '../core/hooks.js';
 import { toast } from '../core/dom.js';
 import { masterStrip } from './mixer-strip.js';
+import { PANEL, panelFor, panelToggle, panelTypeChanged } from './mixer-panel.js';
 import { DEVS, DEV } from '../core/device.js';
 
 const NOT = 'Connect the MC-707 (the ZenCore editor’s link) to change its effects';
@@ -58,10 +59,24 @@ let busy = false;
 export function masterFor(redraw) {
   const F = hooks.fx;
   if (!F) return null;
-  return masterStrip(
-    { choices: F.choices(), rev: F.REV_TYPES, cho: F.CHO_TYPES, m: F.now.master, busy },
+  const T = F.total;
+  const strip = masterStrip(
     {
+      choices: F.choices(),
+      rev: F.REV_TYPES,
+      cho: F.CHO_TYPES,
+      m: F.now.master,
+      busy,
+      lvl: T ? T.now.level : null,
+      open: PANEL.sec
+    },
+    {
+      edit: T ? sec => panelToggle(sec, redraw) : null,
       set: async (what, v) => {
+        if (what === 'level') {
+          if (T && !(await T.set('level', 0, v).catch(() => false))) toast(NOT);
+          return;
+        }
         busy = true;
         const run = F.setMaster(what, v);
         /* levels move as you drag: no redraw (it would drop the slider), the others show at once */
@@ -70,14 +85,28 @@ export function masterFor(redraw) {
         busy = false;
         if (!/Level|Send/.test(what)) redraw();
         if (!ok) toast(NOT);
+        /* a new type: the open panel shows that type's settings */
+        if (ok && T) {
+          const sec = { revType: 'rev', choType: 'cho', mfx: 'mfx' }[what];
+          if (sec) panelTypeChanged(sec, redraw);
+        }
       },
       read: async () => {
         const m = await F.readMaster().catch(() => null);
         if (!m) toast('The MC-707 did not answer: connect it (the ZenCore editor’s link) and try again');
         redraw();
+        if (m && T) {
+          await T.read('level').catch(() => false);
+          if (PANEL.sec) await T.read(PANEL.sec).catch(() => false);
+          redraw();
+        }
         /* then what each track's knobs control */
         if (m && hooks.knobs && (await hooks.knobs.read(DEVS[DEV].tracks).catch(() => false))) redraw();
       }
     }
   );
+  /* the settings panel, over the mixer while it is open */
+  const pn = panelFor(redraw);
+  if (pn) strip.append(pn);
+  return strip;
 }

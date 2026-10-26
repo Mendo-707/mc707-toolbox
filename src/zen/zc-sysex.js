@@ -285,6 +285,17 @@ export function zxRead(l, n, ms = 450, loose = false) {
     return undefined;
   });
 }
+/**
+ * Read n bytes at l from the 128-byte block that holds them: a loose read of the whole block, as the
+ * scan pages read the project area. Small exact reads there go unanswered on an MC-707; whole blocks
+ * answer (cut short where the block's data ends). Resolves to the bytes, or null.
+ */
+export async function zxReadIn(l, n) {
+  const from = l - (l & 127),
+    at = l & 127;
+  const b = await zxRead(from, 128, 600, true);
+  return Array.isArray(b) && b.length >= at + n ? b.slice(at, at + n) : null;
+}
 /* how long to wait after each reply for stray packets (ms) */
 const SETTLE = 30;
 /** Ask the device who it is (Universal Identity Request). Resolves to the model byte or null. */
