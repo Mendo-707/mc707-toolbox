@@ -6438,7 +6438,7 @@ body[data-mode='synth'] #synth {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(300px, 1fr) minmax(270px, 330px);
+  grid-template-columns: minmax(270px, 320px) minmax(300px, 1fr) minmax(270px, 330px);
   gap: 12px;
 }
 .labIng,
@@ -6863,6 +6863,92 @@ body[data-mode='synth'] #synth {
     animation: none !important;
     transition: none !important;
   }
+}
+/* pass 2: quick add, a squeeze on mix-in, hold, keyboard hints, taste rings */
+.liBtn {
+  position: relative;
+}
+.liAdd {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font:
+    700 14px/1 ui-monospace,
+    Consolas,
+    monospace;
+  color: #000;
+  background: var(--zc-acc);
+  box-shadow:
+    0 0 0 3px #0a1a0f,
+    0 0 8px var(--zc-glow);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.15s,
+    transform 0.2s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+.liBtn:hover .liAdd,
+.liBtn.sel .liAdd {
+  opacity: 1;
+  transform: none;
+}
+.liAdd:hover {
+  transform: scale(1.15) !important;
+}
+.liBtn.go .liBlob {
+  animation: labSqueeze 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes labSqueeze {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.35, 0.6) translateY(4px);
+  }
+  65% {
+    transform: scale(0.8, 1.3) translateY(-3px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.labKey {
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.labKey small {
+  font-size: 9px;
+  opacity: 0.55;
+}
+.labLatch {
+  margin-left: 6px;
+  align-self: stretch;
+}
+.labKeys {
+  margin: 0;
+  font-size: 11px;
+  text-align: center;
+}
+.lsRing {
+  fill: none;
+  stroke-width: 2;
+}
+.lgChip {
+  font: inherit;
+  font-size: 11.5px;
+  color: inherit;
+  cursor: pointer;
+}
+.lgChip:hover {
+  border-color: var(--zc-acc);
 }
 </style>
     <style>
@@ -29940,15 +30026,15 @@ body[data-mode='scene'] #scene {
       writeRuns(snd, base, keys2);
       return Promise.resolve();
     }
-    const later = MFX_PARAMS.filter(has2);
+    const later2 = MFX_PARAMS.filter(has2);
     writeRuns(
       snd,
       base,
       new Set(
-        allParams(snd.kind).map((x) => x[0]).filter((k2) => has2(k2) && !later.includes(k2))
+        allParams(snd.kind).map((x) => x[0]).filter((k2) => has2(k2) && !later2.includes(k2))
       )
     );
-    return later.length ? mfxAfterReset(snd, base, later) : Promise.resolve();
+    return later2.length ? mfxAfterReset(snd, base, later2) : Promise.resolve();
   }
   async function readSound(snd, base, keys2, progress) {
     const rs = runs(snd.kind, keys2);
@@ -37179,7 +37265,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/zen/zc-lab.js
-  var LAB = { sel: "sun", drops: 4, log: [], found: /* @__PURE__ */ new Set(), busy: false };
+  var LAB = { sel: "sun", drops: 4, log: [], found: /* @__PURE__ */ new Set(), chain: Promise.resolve(), start: 0, latch: false };
   var STORE2 = "mc707-lab";
   try {
     const s = JSON.parse(localStorage.getItem(STORE2) || "null");
@@ -37849,10 +37935,24 @@ body[data-mode='scene'] #scene {
     return [a1, b1, c1].map((x) => (x + o) * 255);
   }
   var LOBES = 9;
-  var SL = { raf: 0, t: 0, kick: 0, col: hex(BASE), to: hex(BASE), T: {}, drops: [], drips: [], hold: null, env: null };
+  var SL = {
+    raf: 0,
+    t: 0,
+    kick: 0,
+    col: hex(BASE),
+    to: hex(BASE),
+    T: {},
+    drops: [],
+    drips: [],
+    splats: [],
+    rings: [],
+    rip: 9,
+    hold: null,
+    env: null
+  };
   function slimeSvg() {
     const s = svgEl("svg", { viewBox: "0 0 400 300", class: "lsSvg", "aria-hidden": "true" });
-    s.innerHTML = '<defs><filter id="lsGoo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter><filter id="lsHaze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="26"/></filter><radialGradient id="lsShade" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><ellipse class="lsHaze" cx="200" cy="165" rx="120" ry="90" filter="url(#lsHaze)"/><ellipse class="lsShadow" cx="200" cy="262" rx="110" ry="12"/><g class="lsMotes"></g><g class="lsBody" filter="url(#lsGoo)"></g><ellipse class="lsShine" rx="30" ry="13"/><circle class="lsDot" r="5"/>';
+    s.innerHTML = '<defs><filter id="lsGoo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter><filter id="lsHaze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="26"/></filter><radialGradient id="lsShade" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><ellipse class="lsHaze" cx="200" cy="165" rx="120" ry="90" filter="url(#lsHaze)"/><ellipse class="lsShadow" cx="200" cy="262" rx="110" ry="12"/><g class="lsMotes"></g><g class="lsRings"></g><g class="lsBody" filter="url(#lsGoo)"></g><ellipse class="lsShine" rx="30" ry="13"/><circle class="lsDot" r="5"/>';
     const body = s.querySelector(".lsBody");
     body.append(svgEl("circle", { class: "lsCore", cx: 200, cy: 170, r: 60 }));
     for (let i = 0; i < LOBES; i++) body.append(svgEl("circle", { class: "lsLobe", cx: 200, cy: 170, r: 30 }));
@@ -37914,9 +38014,11 @@ body[data-mode='scene'] #scene {
     foot.setAttribute("cx", cx + Math.sin(SL.t * 0.7) * 4);
     foot.setAttribute("cy", 248 - R3 * 0.28);
     foot.setAttribute("r", R3 * 0.62 * sx);
+    SL.rip += dt;
+    const ripple = (a) => calm ? 0 : Math.sin(a * 3 - SL.rip * 14) * Math.exp(-SL.rip * 2.6) * R3 * 0.16;
     body.querySelectorAll(".lsLobe").forEach((c, i) => {
       const a = i / LOBES * Math.PI * 2 + Math.sin(SL.t * 0.4 + i) * 0.25;
-      const dist = R3 * (0.48 + snap * 0.12) + Math.sin(SL.t * 1.3 + i * 1.7) * wob * 0.7;
+      const dist = R3 * (0.48 + snap * 0.12) + Math.sin(SL.t * 1.3 + i * 1.7) * wob * 0.7 + ripple(a);
       const [x, y] = P2(cx + Math.cos(a) * dist + jit(), cy + Math.sin(a) * dist * 0.92 + jit());
       c.setAttribute("cx", x);
       c.setAttribute("cy", Math.min(y, 250));
@@ -37937,17 +38039,69 @@ body[data-mode='scene'] #scene {
       if (d.y > 262 || d.r <= 0) return d.c.remove(), false;
       return true;
     });
+    const top = ccy - R3 * 0.78 * sy;
     SL.drops = SL.drops.filter((d) => {
-      d.v += dt * 900;
-      d.y += d.v * dt;
-      if (d.y > ccy - R3 * 0.4) d.r -= dt * 120;
+      if (d.form < 1) {
+        d.form = Math.min(1, d.form + dt / 0.32);
+        d.r = 5 + 17 * d.form;
+        d.y = -14 + d.form * 26;
+        d.trail.unshift([d.x, -14]);
+        d.trail.length = Math.min(d.trail.length, 14);
+      } else if (!d.hit) {
+        d.v += dt * 760;
+        d.y += d.v * dt;
+        d.x += Math.sin(d.y / 30) * dt * 20;
+        d.trail.unshift([d.x, d.y]);
+        d.trail.length = Math.min(d.trail.length, 14);
+        if (d.y >= top) {
+          d.hit = true;
+          d.v = 0;
+          splat(body, d, top);
+        }
+      } else {
+        d.r -= dt * 42;
+        d.y += dt * 40;
+      }
+      d.c.setAttribute("cx", d.x);
       d.c.setAttribute("cy", d.y);
-      d.c.setAttribute("r", Math.max(0, d.r));
+      d.c.setAttribute("r", Math.max(0, d.r * (d.hit ? 1 : 1 + Math.sin(d.y / 14) * 0.08)));
+      d.tail.forEach((t, j) => {
+        const at2 = d.trail[Math.min(d.trail.length - 1, (j + 1) * 3)] || [d.x, d.y];
+        const k2 = d.hit ? Math.max(0, d.r / 22) : 1;
+        const str = d.form < 1 ? 0.5 + d.form * 0.4 : Math.min(1, 0.55 + d.v / 600);
+        t.setAttribute("cx", at2[0]);
+        t.setAttribute("cy", d.hit ? at2[1] + (d.y - at2[1]) * (1 - k2) : at2[1]);
+        t.setAttribute("r", Math.max(0, d.r * (0.66 - j * 0.17) * str * (d.hit ? k2 : 1)));
+      });
       if (d.r <= 0) {
         d.c.remove();
+        d.tail.forEach((t) => t.remove());
         d.done();
         return false;
       }
+      return true;
+    });
+    SL.splats = SL.splats.filter((d) => {
+      d.vy += dt * 900;
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      if (d.vy > 0 && Math.hypot((d.x - ccx) / sx, (d.y - ccy) / sy) < R3 * 0.85) d.r -= dt * 60;
+      d.c.setAttribute("cx", d.x);
+      d.c.setAttribute("cy", d.y);
+      d.c.setAttribute("r", Math.max(0, d.r));
+      if (d.r <= 0 || d.y > 262) return d.c.remove(), false;
+      return true;
+    });
+    const rings = svg.querySelector(".lsRings");
+    SL.rings = SL.rings.filter((rg) => {
+      const k2 = (now - rg.t0) / 1100;
+      if (k2 >= 1 || calm) return rg.c.remove(), false;
+      if (!rg.c.parentNode) rings.append(rg.c);
+      rg.c.setAttribute("cx", ccx);
+      rg.c.setAttribute("cy", ccy);
+      rg.c.setAttribute("rx", R3 * sx * (1 + k2 * 1.1));
+      rg.c.setAttribute("ry", R3 * sy * (0.9 + k2 * 0.9));
+      rg.c.style.opacity = ((1 - k2) * 0.7).toFixed(3);
       return true;
     });
     const [r0, g0, b0] = SL.col.map(Math.round);
@@ -37955,6 +38109,7 @@ body[data-mode='scene'] #scene {
     const lit = (k2, m) => Math.round(k2 + (255 - k2) * m);
     const fill2 = `rgb(${lit(r0, bri * 0.25)},${lit(g0, bri * 0.25)},${lit(b0, bri * 0.25)})`;
     body.style.fill = fill2;
+    rings.style.stroke = fill2;
     svg.querySelector(".lsHaze").style.fill = fill2;
     svg.querySelector(".lsHaze").style.opacity = (0.12 + g(T3.Space) * 0.45 + bri * 0.12 + E * 0.25).toFixed(3);
     const sh = svg.querySelector(".lsShine");
@@ -37982,11 +38137,30 @@ body[data-mode='scene'] #scene {
     const body = document.querySelector("#labOv .lsBody");
     if (!body || still()) return Promise.resolve();
     return new Promise((done2) => {
-      const x = 200 + (Math.random() - 0.5) * 50;
-      const c = svgEl("circle", { cx: x, cy: -20, r: 20, fill: p.c, style: "fill:" + p.c });
-      body.append(c);
-      SL.drops.push({ c, y: -20, v: 120, r: 20, done: done2 });
+      const x = 200 + (Math.random() - 0.5) * 60, st = "fill:" + p.c;
+      const c = svgEl("circle", { cx: x, cy: -24, r: 20, style: st });
+      const tail = [0, 1, 2].map(() => svgEl("circle", { cx: x, cy: -24, r: 0, style: st }));
+      body.append(...tail, c);
+      SL.drops.push({ c, tail, trail: [], x, y: -14, v: 40, r: 5, form: 0, p, done: done2 });
     });
+  }
+  function splat(body, d, top) {
+    SL.kick = 1;
+    SL.rip = 0;
+    SL.col = SL.col.map((c, i) => c + (hex(d.p.c)[i] - c) * 0.55);
+    for (let i = 0; i < 9; i++) {
+      const c = svgEl("circle", i % 2 ? { cx: d.x, cy: top, r: 6, style: "fill:" + d.p.c } : { cx: d.x, cy: top, r: 6 });
+      body.append(c);
+      const a = -Math.PI / 2 + (i / 8 - 0.5) * 2.4;
+      SL.splats.push({
+        c,
+        x: d.x,
+        y: top,
+        vx: Math.cos(a) * (140 + Math.random() * 140),
+        vy: Math.sin(a) * (300 + Math.random() * 200),
+        r: 5 + Math.random() * 7
+      });
+    }
   }
   var keyName = (k2) => {
     const d = paramOf("tone", k2);
@@ -38025,17 +38199,33 @@ body[data-mode='scene'] #scene {
         draggable: "true",
         "data-id": p.id,
         style: "--ic:" + p.c,
-        title: p.tag + " Double-click or drag onto the slime to mix it in.",
+        title: p.tag + " Click to learn about it; + , double-click or drag onto the slime to mix it in.",
         onclick: () => select(p.id),
         ondblclick: () => mixIn(p.id),
         ondragstart: (e) => {
           e.dataTransfer.setData("text/plain", p.id);
           e.dataTransfer.effectAllowed = "copy";
+          const b = e.currentTarget.querySelector(".liBlob");
+          if (b && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(b, 12, 12);
           select(p.id);
         }
       },
       blob(p.c),
-      el("span", {}, el("b", {}, p.name), el("small", {}, SUB2[p.id] || ""))
+      el("span", {}, el("b", {}, p.name), el("small", {}, SUB2[p.id] || "")),
+      el(
+        "span",
+        {
+          class: "liAdd",
+          title: "Mix in " + p.name,
+          onclick: (e) => {
+            e.stopPropagation();
+            select(p.id);
+            mixIn(p.id);
+          },
+          ondblclick: (e) => e.stopPropagation()
+        },
+        "+"
+      )
     );
     const stage = el("div", {
       class: "lsStage",
@@ -38081,7 +38271,7 @@ body[data-mode='scene'] #scene {
           { class: "labTools" },
           btn("Random", random, "Mix in three random ingredients"),
           btn("Undo", undo2, "Take back the last mix-in (Ctrl+Z)"),
-          btn("Clear list", fresh, "Start a new list of mix-ins (the sound stays as it is)"),
+          btn("Start over", startOver, "Take back everything mixed in since the lab opened"),
           btn("Back to editor", () => labClose(), "Back to the editor (Esc)", true)
         )
       ),
@@ -38135,12 +38325,30 @@ body[data-mode='scene'] #scene {
                 {
                   type: "button",
                   class: "labKey",
+                  "data-n": m,
                   title: "Hold to hear " + n + ": the slime follows the amp envelope",
-                  onpointerdown: (e) => taste(m, e.currentTarget)
+                  onpointerdown: (e) => keyDown(m, e.currentTarget)
                 },
-                n
+                el("span", {}, n),
+                el("small", {}, "ZXCVB"[[24, 36, 48, 60, 72].indexOf(m)])
               )
+            ),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm labLatch" + (LAB.latch ? " on" : ""),
+                id: "labLatch",
+                title: "Hold the note on: keep tasting while you mix in (each mix-in plays it again)",
+                onclick: latch
+              },
+              "Hold"
             )
+          ),
+          el(
+            "p",
+            { class: "hint labKeys" },
+            "Z X C V B taste · Enter mix in · arrows choose · 1–0 amount · Ctrl+Z undo · Esc back"
           )
         ),
         el(
@@ -38154,36 +38362,75 @@ body[data-mode='scene'] #scene {
       )
     );
     box.append(ov);
+    LAB.log = [];
+    LAB.start = ZE.undo.length;
     addEventListener("keydown", onKey, true);
+    addEventListener("keyup", onKeyUp, true);
     select(LAB.sel);
     draw();
     ov.focus();
     requestAnimationFrame(() => ov.classList.add("in"));
     if (!SL.raf) SL.raf = requestAnimationFrame(frame2);
   }
+  var KEYS2 = { z: 24, x: 36, c: 48, v: 60, b: 72 };
   function onKey(e) {
     if (!$("#labOv")) return removeEventListener("keydown", onKey, true);
+    const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== "range";
+    const k2 = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey || e.altKey;
+    const stop = () => (e.stopPropagation(), e.preventDefault());
     if (e.key === "Escape") {
-      e.stopPropagation();
-      e.preventDefault();
+      stop();
       labClose();
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
-      e.stopPropagation();
-      e.preventDefault();
-      undo2();
-    }
+    } else if ((e.ctrlKey || e.metaKey) && k2 === "z") {
+      stop();
+      if (e.shiftKey) redo2();
+      else undo2();
+    } else if (typing || mod) return;
+    else if (k2 in KEYS2) {
+      stop();
+      if (!e.repeat) keyDown(KEYS2[k2], $('#labOv .labKey[data-n="' + KEYS2[k2] + '"]'), true);
+    } else if (e.key === "Enter" && !/BUTTON/.test(e.target.tagName)) {
+      stop();
+      mixIn(LAB.sel);
+    } else if (/^Arrow/.test(e.key) && e.target.type !== "range") {
+      stop();
+      const i = ING.findIndex((p2) => p2.id === LAB.sel), d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -2, ArrowDown: 2 }[e.key];
+      const p = ING[Math.max(0, Math.min(ING.length - 1, i + d))];
+      select(p.id);
+      const b = $('#labOv .liBtn[data-id="' + p.id + '"]');
+      if (b) b.scrollIntoView({ block: "nearest" });
+    } else if (/^[0-9]$/.test(k2)) {
+      stop();
+      setAmount(+k2 || 10);
+    } else e.stopPropagation();
+  }
+  function onKeyUp(e) {
+    if (!$("#labOv")) return removeEventListener("keyup", onKeyUp, true);
+    const k2 = e.key.toLowerCase();
+    if (k2 in KEYS2 && !LAB.latch && NOTE && NOTE.n === KEYS2[k2]) noteOff();
   }
   function labClose(quiet) {
     const ov = $("#labOv");
     removeEventListener("keydown", onKey, true);
+    removeEventListener("keyup", onKeyUp, true);
     if (!ov) return;
+    noteOff();
     ov.remove();
     cancelAnimationFrame(SL.raf);
     SL.raf = 0;
     SL.drops.forEach((d) => d.done());
     SL.drops = [];
     SL.drips = [];
+    SL.splats = [];
+    SL.rings = [];
     if (!quiet) zeRender();
+  }
+  function setAmount(n) {
+    LAB.drops = n;
+    const r = $("#labOv .labAmt input");
+    if (r) r.value = n;
+    drawAmount();
+    save3();
   }
   function drawAmount() {
     const v = $("#labAmtV");
@@ -38282,69 +38529,99 @@ body[data-mode='scene'] #scene {
         { class: "lgList" },
         ...LAB.log.map(
           (x) => el(
-            "span",
-            { class: "lgChip", style: "--ic:" + ing(x.id).c, title: x.ch.length + " settings changed" },
+            "button",
+            {
+              type: "button",
+              class: "lgChip",
+              style: "--ic:" + ing(x.id).c,
+              title: x.ch.length + " settings changed: click to see them",
+              onclick: () => select(x.id)
+            },
             ing(x.id).name + " " + x.drops
           )
         )
       ) : el("p", { class: "hint" }, "Nothing yet: pick an ingredient and mix it in, then hold a Taste key.")
     );
   }
-  async function mixIn(id, drops = LAB.drops) {
+  var later = (fn) => LAB.chain = LAB.chain.then(fn).catch(() => {
+  });
+  function mixIn(id, drops = LAB.drops) {
     const p = ing(id);
-    if (!p || LAB.busy) return;
-    LAB.busy = true;
-    try {
-      await dropIn(p);
+    if (!p) return Promise.resolve();
+    const btn3 = $('#labOv .liBtn[data-id="' + id + '"]');
+    if (btn3) {
+      btn3.classList.remove("go");
+      void btn3.offsetWidth;
+      btn3.classList.add("go");
+    }
+    const landed = dropIn(p);
+    return later(async () => {
+      await landed;
+      if (!$("#labOv")) return;
       const b = brewer();
       p.brew(b, drops / 10);
       const before = Object.fromEntries(Object.keys(b.out).map((k2) => [k2, ZE.snd.v[k2]]));
       const keys2 = zeBrew(b.out);
       if (!keys2.length) toast(p.name + " changed nothing: those settings are already as far as they go");
-      else {
-        LAB.log.push({ id, drops, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
-        SL.kick = 1;
-      }
+      else LAB.log.push({ id, drops, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
       draw();
-      drawLearn();
+      if (LAB.sel === id) drawLearn();
       discover();
-    } finally {
-      LAB.busy = false;
-    }
+      if (NOTE && LAB.latch) retrigger();
+    });
   }
   function undo2() {
-    if (LAB.busy) return;
-    if (!ZE.undo.length) return toast("Nothing to undo");
-    zeUndo();
-    const x = LAB.log.pop();
-    if (x) toast("Took out " + ing(x.id).name);
-    SL.kick = 0.6;
-    draw();
-    drawLearn();
+    later(() => {
+      if (ZE.undo.length <= LAB.start && !LAB.log.length) return toast("Nothing to undo");
+      if (!ZE.undo.length) return;
+      zeUndo();
+      const x = LAB.log.pop();
+      if (x) toast("Took out " + ing(x.id).name);
+      SL.kick = 0.6;
+      SL.rip = 0;
+      draw();
+      drawLearn();
+    });
   }
-  function fresh() {
-    LAB.log = [];
-    draw();
-    drawLearn();
-    toast("The list starts again (the sound stays as it is)");
+  function redo2() {
+    later(() => {
+      if (!ZE.redo.length) return;
+      zeUndo(true);
+      SL.kick = 0.6;
+      draw();
+    });
+  }
+  function startOver() {
+    later(() => {
+      const n = ZE.undo.length - LAB.start;
+      if (n <= 0) return toast("Nothing mixed in yet");
+      for (let i = 0; i < n; i++) zeUndo();
+      LAB.log = [];
+      SL.kick = 1;
+      SL.rip = 0;
+      draw();
+      drawLearn();
+      toast("Back to the tone as it was when the lab opened");
+    });
   }
   async function random() {
     const pick3 = [...ING].sort(() => Math.random() - 0.5).slice(0, 3);
     for (const p of pick3) {
-      select(p.id);
-      await mixIn(p.id, 2 + Math.floor(Math.random() * 6));
+      mixIn(p.id, 2 + Math.floor(Math.random() * 6));
+      await wait(still() ? 0 : 200);
     }
-    toast("Mixed in " + pick3.map((p) => p.name).join(", ") + ": hold a Taste key");
+    await LAB.chain;
+    toast("Mixed in " + pick3.map((p) => p.name).join(", ") + ": have a taste");
   }
   async function blend(r) {
-    if (LAB.busy) return;
     for (const [id, n] of r.steps) {
-      select(id);
-      await mixIn(id, n);
-      await wait(still() ? 0 : 120);
+      mixIn(id, n);
+      await wait(still() ? 0 : 220);
     }
+    await LAB.chain;
+    select(r.steps[r.steps.length - 1][0]);
     if (!LAB.found.has(r.id)) found(r);
-    else toast(r.name + " mixed: hold a Taste key");
+    else toast(r.name + " mixed: have a taste");
   }
   function discover() {
     const have = new Set(LAB.log.map((x) => x.id));
@@ -38364,8 +38641,12 @@ body[data-mode='scene'] #scene {
     clearTimeout(found.t);
     found.t = setTimeout(() => f.classList.remove("show"), 3800);
   }
-  function taste(n, key) {
-    audition2(n);
+  var NOTE = null;
+  function noteOn(n, key) {
+    noteOff();
+    const off = audition2(n, true);
+    NOTE = { n, off, key };
+    if (key) key.classList.add("down");
     const p = parts2()[0], v = (k2) => {
       const x = ZE.snd.v["AENV" + p + "." + k2];
       return typeof x === "number" ? x : 0;
@@ -38379,15 +38660,40 @@ body[data-mode='scene'] #scene {
       l2: v("L2") / 1023,
       l3: v("L3") / 1023
     };
-    const hold = { t0: performance.now(), up: null };
-    SL.hold = hold;
-    key.classList.add("down");
+    SL.hold = { t0: performance.now(), up: null };
+    SL.rings.push({ c: svgEl("ellipse", { class: "lsRing" }), t0: performance.now() });
+  }
+  function noteOff() {
+    if (!NOTE) return;
+    const x = NOTE;
+    NOTE = null;
+    try {
+      x.off();
+    } catch (e) {
+    }
+    if (x.key) x.key.classList.remove("down");
+    if (SL.hold) SL.hold.up = performance.now();
+  }
+  function retrigger() {
+    const { n, key } = NOTE;
+    noteOn(n, key);
+  }
+  function keyDown(n, key, fromKeyboard) {
+    if (LAB.latch && NOTE && NOTE.n === n) return noteOff();
+    noteOn(n, key);
+    if (LAB.latch || fromKeyboard) return;
     const up = () => {
-      hold.up = performance.now();
-      key.classList.remove("down");
+      if (NOTE && NOTE.n === n && !LAB.latch) noteOff();
       for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
     };
     for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
+  }
+  function latch() {
+    LAB.latch = !LAB.latch;
+    const b = $("#labLatch");
+    if (b) b.classList.toggle("on", LAB.latch);
+    if (!LAB.latch) noteOff();
+    else if (!NOTE) noteOn(48, $('#labOv .labKey[data-n="48"]'));
   }
 
   // src/zen/zc-actions.js
@@ -38741,8 +39047,8 @@ body[data-mode='scene'] #scene {
     remember();
     return keys2;
   }
-  function zeUndo(redo2) {
-    const from = redo2 ? ZE.redo : ZE.undo, to = redo2 ? ZE.undo : ZE.redo;
+  function zeUndo(redo3) {
+    const from = redo3 ? ZE.redo : ZE.undo, to = redo3 ? ZE.undo : ZE.redo;
     const step = from.pop();
     if (!step) return;
     to.push(Object.fromEntries(Object.keys(step).map((k2) => [k2, ZE.snd.v[k2]])));
@@ -38966,7 +39272,7 @@ body[data-mode='scene'] #scene {
     if (ZX.out) zxNote(ch, b, on3);
     else if (MIDI.out) MIDI.out.send(on3 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
   };
-  function audition2(n) {
+  function audition2(n, manual = false) {
     if (TR.playing && TR.mode === "pat") stopAll();
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
     const send2 = (b, on3) => {
@@ -38975,11 +39281,13 @@ body[data-mode='scene'] #scene {
       else HELD.delete(ch + ":" + b);
     };
     send2(n, true);
+    if (manual) return () => send2(n, false);
     const up = () => {
       send2(n, false);
       for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
     };
     for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
+    return up;
   }
   function keyboard() {
     const box = el("div", { class: "zcKb", "aria-label": "Play notes" });
@@ -41397,16 +41705,16 @@ body[data-mode='scene'] #scene {
     });
     watch.observe(host(), { childList: true });
   }
-  function keepSound(later = false) {
+  function keepSound(later2 = false) {
     if (!open || !ZE.snd || ZE.undo.length <= open.undo) return;
     const v = ZE.snd.v, { t, k: k2 } = open, tone2 = { name: String(v["CMN.NAME"] || v["KCMN.NAME"] || "Tone").trim(), kind: ZE.snd.kind, d: diffOf(ZE.snd) };
     open.undo = ZE.undo.length;
-    if (later) setTimeout(() => setTone(t, k2, tone2));
+    if (later2) setTimeout(() => setTone(t, k2, tone2));
     else setTone(t, k2, tone2);
   }
-  function closeSound(later = false) {
+  function closeSound(later2 = false) {
     if (!open) return;
-    keepSound(later);
+    keepSound(later2);
     if (!host().isConnected) document.body.append(host());
     zenClose();
     host().remove();
@@ -41456,8 +41764,8 @@ body[data-mode='scene'] #scene {
     undock();
     SC.draw();
   }
-  function undock(later = false) {
-    closeSound(later);
+  function undock(later2 = false) {
+    closeSound(later2);
     const ed = editorEl(), work = document.getElementById("work");
     if (ed && work && ed.parentNode !== work) work.append(ed);
     if (UI.view && UI.view.scene) {
@@ -41584,10 +41892,10 @@ body[data-mode='scene'] #scene {
       shown4 = key;
     }
     let tm = 0;
-    const later = () => (clearTimeout(tm), tm = setTimeout(changed, 150));
+    const later2 = () => (clearTimeout(tm), tm = setTimeout(changed, 150));
     const box = el(
       "div",
-      { class: "scnDock", style: "--tc:" + TRACK_COLORS[t], onchange: later, onpointerup: later },
+      { class: "scnDock", style: "--tc:" + TRACK_COLORS[t], onchange: later2, onpointerup: later2 },
       head(t, k2, c),
       editorEl()
     );
@@ -51258,10 +51566,10 @@ body[data-mode='scene'] #scene {
   }
   function lvUserNote(t, on3) {
     if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
-    const all = LV.userPlay || (LV.userPlay = {}), fresh3 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
+    const all = LV.userPlay || (LV.userPlay = {}), fresh2 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
     u.last = TR.tick;
     u.held = Math.max(0, u.held + (on3 ? 1 : -1));
-    if (!fresh3) return;
+    if (!fresh2) return;
     const nt = AU.ctx ? AU.ctx.currentTime : 0, ccs = /* @__PURE__ */ new Set([11]);
     LV.autos.forEach((a) => a.tracks.includes(t) && ccs.add(a.cc));
     if (LV.rise) [80].forEach((c) => ccs.add(c));
@@ -57822,7 +58130,7 @@ body[data-mode='scene'] #scene {
     [48, "Drop 2"],
     [56, "Outro"]
   ];
-  function fresh2(template) {
+  function fresh(template) {
     pushUndo();
     const m = S.midiOut;
     replaceState(newState());
@@ -57901,12 +58209,12 @@ body[data-mode='scene'] #scene {
             },
             true
           ) : null,
-          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh2(false), !has2),
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
           card(
             "▤",
             "Empty template",
             "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
-            () => fresh2(true)
+            () => fresh(true)
           ),
           card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
           card(

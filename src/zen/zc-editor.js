@@ -428,7 +428,11 @@ const noteOut = (ch, b, on) => {
   else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
 };
 /** Play note n on the edited track while the pointer is held (the keyboard and the Sound browser). */
-export function audition(n) {
+/**
+ * Play note n on the track while the pointer is held. manual: the caller releases it, with the function
+ * returned (a key held on the computer keyboard, a latched note).
+ */
+export function audition(n, manual = false) {
   /* a pattern preview looping elsewhere stops, so the note is heard on its own (a song or Live set plays on) */
   if (TR.playing && TR.mode === 'pat') stopAll();
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
@@ -438,12 +442,14 @@ export function audition(n) {
     else HELD.delete(ch + ':' + b);
   };
   send(n, true);
+  if (manual) return () => send(n, false);
   /* release on pointer up, a cancelled touch or the window losing focus, so no note is left hanging */
   const up = () => {
     send(n, false);
     for (const ev of ['pointerup', 'pointercancel', 'blur']) removeEventListener(ev, up);
   };
   for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, up);
+  return up;
 }
 /* two octaves from C3 to play the sound: white keys side by side, black keys on top */
 function keyboard() {

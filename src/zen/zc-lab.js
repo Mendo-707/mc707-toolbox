@@ -13,7 +13,7 @@ import { $, el, toast } from '../core/dom.js';
 import { ZE, audition, zeBrew, zeLive, zeRender, zeUndo } from './zc-editor.js';
 import { paramOf } from './zc-tone.js';
 
-const LAB = { sel: 'sun', drops: 4, log: [], found: new Set(), busy: false };
+const LAB = { sel: 'sun', drops: 4, log: [], found: new Set(), chain: Promise.resolve(), start: 0, latch: false };
 const STORE = 'mc707-lab';
 try {
   const s = JSON.parse(localStorage.getItem(STORE) || 'null');
@@ -753,7 +753,21 @@ function tint(cols) {
   return [a1, b1, c1].map(x => (x + o) * 255);
 }
 const LOBES = 9;
-const SL = { raf: 0, t: 0, kick: 0, col: hex(BASE), to: hex(BASE), T: {}, drops: [], drips: [], hold: null, env: null };
+const SL = {
+  raf: 0,
+  t: 0,
+  kick: 0,
+  col: hex(BASE),
+  to: hex(BASE),
+  T: {},
+  drops: [],
+  drips: [],
+  splats: [],
+  rings: [],
+  rip: 9,
+  hold: null,
+  env: null
+};
 
 function slimeSvg() {
   const s = svgEl('svg', { viewBox: '0 0 400 300', class: 'lsSvg', 'aria-hidden': 'true' });
@@ -767,7 +781,7 @@ function slimeSvg() {
     '<stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs>' +
     '<ellipse class="lsHaze" cx="200" cy="165" rx="120" ry="90" filter="url(#lsHaze)"/>' +
     '<ellipse class="lsShadow" cx="200" cy="262" rx="110" ry="12"/>' +
-    '<g class="lsMotes"></g>' +
+    '<g class="lsMotes"></g><g class="lsRings"></g>' +
     '<g class="lsBody" filter="url(#lsGoo)"></g>' +
     '<ellipse class="lsShine" rx="30" ry="13"/><circle class="lsDot" r="5"/>';
   const body = s.querySelector('.lsBody');
@@ -839,9 +853,11 @@ function frame(now) {
   foot.setAttribute('cx', cx + Math.sin(SL.t * 0.7) * 4);
   foot.setAttribute('cy', 248 - R * 0.28);
   foot.setAttribute('r', R * 0.62 * sx);
+  SL.rip += dt;
+  const ripple = a => (calm ? 0 : Math.sin(a * 3 - SL.rip * 14) * Math.exp(-SL.rip * 2.6) * R * 0.16);
   body.querySelectorAll('.lsLobe').forEach((c, i) => {
     const a = (i / LOBES) * Math.PI * 2 + Math.sin(SL.t * 0.4 + i) * 0.25;
-    const dist = R * (0.48 + snap * 0.12) + Math.sin(SL.t * 1.3 + i * 1.7) * wob * 0.7;
+    const dist = R * (0.48 + snap * 0.12) + Math.sin(SL.t * 1.3 + i * 1.7) * wob * 0.7 + ripple(a);
     const [x, y] = P(cx + Math.cos(a) * dist + jit(), cy + Math.sin(a) * dist * 0.92 + jit());
     c.setAttribute('cx', x);
     c.setAttribute('cy', Math.min(y, 250));
@@ -868,18 +884,75 @@ function frame(now) {
     if (d.y > 262 || d.r <= 0) return (d.c.remove(), false);
     return true;
   });
-  /* ingredients falling in */
+  /* ingredients falling in: a gloop with a stretchy tail, that splats into the slime */
+  const top = ccy - R * 0.78 * sy;
   SL.drops = SL.drops.filter(d => {
-    d.v += dt * 900;
-    d.y += d.v * dt;
-    if (d.y > ccy - R * 0.4) d.r -= dt * 120;
+    if (d.form < 1) {
+      /* a gloop gathers at the top and stretches before it lets go */
+      d.form = Math.min(1, d.form + dt / 0.32);
+      d.r = 5 + 17 * d.form;
+      d.y = -14 + d.form * 26;
+      d.trail.unshift([d.x, -14]);
+      d.trail.length = Math.min(d.trail.length, 14);
+    } else if (!d.hit) {
+      d.v += dt * 760;
+      d.y += d.v * dt;
+      d.x += Math.sin(d.y / 30) * dt * 20;
+      d.trail.unshift([d.x, d.y]);
+      d.trail.length = Math.min(d.trail.length, 14);
+      if (d.y >= top) {
+        d.hit = true;
+        d.v = 0;
+        splat(body, d, top);
+      }
+    } else {
+      /* sinks in as it melts into the slime */
+      d.r -= dt * 42;
+      d.y += dt * 40;
+    }
+    d.c.setAttribute('cx', d.x);
     d.c.setAttribute('cy', d.y);
-    d.c.setAttribute('r', Math.max(0, d.r));
+    d.c.setAttribute('r', Math.max(0, d.r * (d.hit ? 1 : 1 + Math.sin(d.y / 14) * 0.08)));
+    /* the tail: smaller blobs where the drop was a moment ago, so it stretches as it falls */
+    d.tail.forEach((t, j) => {
+      const at = d.trail[Math.min(d.trail.length - 1, (j + 1) * 3)] || [d.x, d.y];
+      const k = d.hit ? Math.max(0, d.r / 22) : 1;
+      const str = d.form < 1 ? 0.5 + d.form * 0.4 : Math.min(1, 0.55 + d.v / 600);
+      t.setAttribute('cx', at[0]);
+      t.setAttribute('cy', d.hit ? at[1] + (d.y - at[1]) * (1 - k) : at[1]);
+      t.setAttribute('r', Math.max(0, d.r * (0.66 - j * 0.17) * str * (d.hit ? k : 1)));
+    });
     if (d.r <= 0) {
       d.c.remove();
+      d.tail.forEach(t => t.remove());
       d.done();
       return false;
     }
+    return true;
+  });
+  /* splash droplets thrown up by a splat fall back and are swallowed */
+  SL.splats = SL.splats.filter(d => {
+    d.vy += dt * 900;
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    if (d.vy > 0 && Math.hypot((d.x - ccx) / sx, (d.y - ccy) / sy) < R * 0.85) d.r -= dt * 60;
+    d.c.setAttribute('cx', d.x);
+    d.c.setAttribute('cy', d.y);
+    d.c.setAttribute('r', Math.max(0, d.r));
+    if (d.r <= 0 || d.y > 262) return (d.c.remove(), false);
+    return true;
+  });
+  /* a tasted note sends rings out of the slime */
+  const rings = svg.querySelector('.lsRings');
+  SL.rings = SL.rings.filter(rg => {
+    const k = (now - rg.t0) / 1100;
+    if (k >= 1 || calm) return (rg.c.remove(), false);
+    if (!rg.c.parentNode) rings.append(rg.c);
+    rg.c.setAttribute('cx', ccx);
+    rg.c.setAttribute('cy', ccy);
+    rg.c.setAttribute('rx', R * sx * (1 + k * 1.1));
+    rg.c.setAttribute('ry', R * sy * (0.9 + k * 0.9));
+    rg.c.style.opacity = ((1 - k) * 0.7).toFixed(3);
     return true;
   });
   /* colour, shine, haze and motes */
@@ -888,6 +961,7 @@ function frame(now) {
   const lit = (k, m) => Math.round(k + (255 - k) * m);
   const fill = `rgb(${lit(r0, bri * 0.25)},${lit(g0, bri * 0.25)},${lit(b0, bri * 0.25)})`;
   body.style.fill = fill;
+  rings.style.stroke = fill;
   svg.querySelector('.lsHaze').style.fill = fill;
   svg.querySelector('.lsHaze').style.opacity = (0.12 + g(T.Space) * 0.45 + bri * 0.12 + E * 0.25).toFixed(3);
   const sh = svg.querySelector('.lsShine');
@@ -916,11 +990,32 @@ function dropIn(p) {
   const body = document.querySelector('#labOv .lsBody');
   if (!body || still()) return Promise.resolve();
   return new Promise(done => {
-    const x = 200 + (Math.random() - 0.5) * 50;
-    const c = svgEl('circle', { cx: x, cy: -20, r: 20, fill: p.c, style: 'fill:' + p.c });
-    body.append(c);
-    SL.drops.push({ c, y: -20, v: 120, r: 20, done });
+    const x = 200 + (Math.random() - 0.5) * 60,
+      st = 'fill:' + p.c;
+    const c = svgEl('circle', { cx: x, cy: -24, r: 20, style: st });
+    const tail = [0, 1, 2].map(() => svgEl('circle', { cx: x, cy: -24, r: 0, style: st }));
+    body.append(...tail, c);
+    SL.drops.push({ c, tail, trail: [], x, y: -14, v: 40, r: 5, form: 0, p, done });
   });
+}
+/* the splat: the slime squashes, a ripple runs round it, droplets fly, and its colour flashes the drop's */
+function splat(body, d, top) {
+  SL.kick = 1;
+  SL.rip = 0;
+  SL.col = SL.col.map((c, i) => c + (hex(d.p.c)[i] - c) * 0.55);
+  for (let i = 0; i < 9; i++) {
+    const c = svgEl('circle', i % 2 ? { cx: d.x, cy: top, r: 6, style: 'fill:' + d.p.c } : { cx: d.x, cy: top, r: 6 });
+    body.append(c);
+    const a = -Math.PI / 2 + (i / 8 - 0.5) * 2.4;
+    SL.splats.push({
+      c,
+      x: d.x,
+      y: top,
+      vx: Math.cos(a) * (140 + Math.random() * 140),
+      vy: Math.sin(a) * (300 + Math.random() * 200),
+      r: 5 + Math.random() * 7
+    });
+  }
 }
 
 /* ---- the lab ---- */
@@ -968,17 +1063,33 @@ export function labOpen() {
         draggable: 'true',
         'data-id': p.id,
         style: '--ic:' + p.c,
-        title: p.tag + ' Double-click or drag onto the slime to mix it in.',
+        title: p.tag + ' Click to learn about it; + , double-click or drag onto the slime to mix it in.',
         onclick: () => select(p.id),
         ondblclick: () => mixIn(p.id),
         ondragstart: e => {
           e.dataTransfer.setData('text/plain', p.id);
           e.dataTransfer.effectAllowed = 'copy';
+          const b = e.currentTarget.querySelector('.liBlob');
+          if (b && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(b, 12, 12);
           select(p.id);
         }
       },
       blob(p.c),
-      el('span', {}, el('b', {}, p.name), el('small', {}, SUB[p.id] || ''))
+      el('span', {}, el('b', {}, p.name), el('small', {}, SUB[p.id] || '')),
+      el(
+        'span',
+        {
+          class: 'liAdd',
+          title: 'Mix in ' + p.name,
+          onclick: e => {
+            e.stopPropagation();
+            select(p.id);
+            mixIn(p.id);
+          },
+          ondblclick: e => e.stopPropagation()
+        },
+        '+'
+      )
     );
   const stage = el('div', {
     class: 'lsStage',
@@ -1024,7 +1135,7 @@ export function labOpen() {
         { class: 'labTools' },
         btn('Random', random, 'Mix in three random ingredients'),
         btn('Undo', undo, 'Take back the last mix-in (Ctrl+Z)'),
-        btn('Clear list', fresh, 'Start a new list of mix-ins (the sound stays as it is)'),
+        btn('Start over', startOver, 'Take back everything mixed in since the lab opened'),
         btn('Back to editor', () => labClose(), 'Back to the editor (Esc)', true)
       )
     ),
@@ -1078,12 +1189,30 @@ export function labOpen() {
               {
                 type: 'button',
                 class: 'labKey',
+                'data-n': m,
                 title: 'Hold to hear ' + n + ': the slime follows the amp envelope',
-                onpointerdown: e => taste(m, e.currentTarget)
+                onpointerdown: e => keyDown(m, e.currentTarget)
               },
-              n
+              el('span', {}, n),
+              el('small', {}, 'ZXCVB'[[24, 36, 48, 60, 72].indexOf(m)])
             )
+          ),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn sm labLatch' + (LAB.latch ? ' on' : ''),
+              id: 'labLatch',
+              title: 'Hold the note on: keep tasting while you mix in (each mix-in plays it again)',
+              onclick: latch
+            },
+            'Hold'
           )
+        ),
+        el(
+          'p',
+          { class: 'hint labKeys' },
+          'Z X C V B taste · Enter mix in · arrows choose · 1–0 amount · Ctrl+Z undo · Esc back'
         )
       ),
       el(
@@ -1097,37 +1226,78 @@ export function labOpen() {
     )
   );
   box.append(ov);
+  LAB.log = [];
+  LAB.start = ZE.undo.length;
   addEventListener('keydown', onKey, true);
+  addEventListener('keyup', onKeyUp, true);
   select(LAB.sel);
   draw();
   ov.focus();
   requestAnimationFrame(() => ov.classList.add('in'));
   if (!SL.raf) SL.raf = requestAnimationFrame(frame);
 }
+const KEYS = { z: 24, x: 36, c: 48, v: 60, b: 72 };
 function onKey(e) {
   if (!$('#labOv')) return removeEventListener('keydown', onKey, true);
+  const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range';
+  const k = e.key.toLowerCase(),
+    mod = e.ctrlKey || e.metaKey || e.altKey;
+  const stop = () => (e.stopPropagation(), e.preventDefault());
   if (e.key === 'Escape') {
-    e.stopPropagation();
-    e.preventDefault();
+    stop();
     labClose();
-  } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
-    e.stopPropagation();
-    e.preventDefault();
-    undo();
-  }
+  } else if ((e.ctrlKey || e.metaKey) && k === 'z') {
+    stop();
+    if (e.shiftKey) redo();
+    else undo();
+  } else if (typing || mod) return;
+  else if (k in KEYS) {
+    stop();
+    if (!e.repeat) keyDown(KEYS[k], $('#labOv .labKey[data-n="' + KEYS[k] + '"]'), true);
+  } else if (e.key === 'Enter' && !/BUTTON/.test(e.target.tagName)) {
+    stop();
+    mixIn(LAB.sel);
+  } else if (/^Arrow/.test(e.key) && e.target.type !== 'range') {
+    stop();
+    const i = ING.findIndex(p => p.id === LAB.sel),
+      d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -2, ArrowDown: 2 }[e.key];
+    const p = ING[Math.max(0, Math.min(ING.length - 1, i + d))];
+    select(p.id);
+    const b = $('#labOv .liBtn[data-id="' + p.id + '"]');
+    if (b) b.scrollIntoView({ block: 'nearest' });
+  } else if (/^[0-9]$/.test(k)) {
+    stop();
+    setAmount(+k || 10);
+  } else e.stopPropagation();
+}
+function onKeyUp(e) {
+  if (!$('#labOv')) return removeEventListener('keyup', onKeyUp, true);
+  const k = e.key.toLowerCase();
+  if (k in KEYS && !LAB.latch && NOTE && NOTE.n === KEYS[k]) noteOff();
 }
 /** Close the lab and show the editor with the changes. */
 export function labClose(quiet) {
   const ov = $('#labOv');
   removeEventListener('keydown', onKey, true);
+  removeEventListener('keyup', onKeyUp, true);
   if (!ov) return;
+  noteOff();
   ov.remove();
   cancelAnimationFrame(SL.raf);
   SL.raf = 0;
   SL.drops.forEach(d => d.done());
   SL.drops = [];
   SL.drips = [];
+  SL.splats = [];
+  SL.rings = [];
   if (!quiet) zeRender();
+}
+function setAmount(n) {
+  LAB.drops = n;
+  const r = $('#labOv .labAmt input');
+  if (r) r.value = n;
+  drawAmount();
+  save();
 }
 
 function drawAmount() {
@@ -1236,8 +1406,14 @@ function draw() {
           { class: 'lgList' },
           ...LAB.log.map(x =>
             el(
-              'span',
-              { class: 'lgChip', style: '--ic:' + ing(x.id).c, title: x.ch.length + ' settings changed' },
+              'button',
+              {
+                type: 'button',
+                class: 'lgChip',
+                style: '--ic:' + ing(x.id).c,
+                title: x.ch.length + ' settings changed: click to see them',
+                onclick: () => select(x.id)
+              },
               ing(x.id).name + ' ' + x.drops
             )
           )
@@ -1247,61 +1423,86 @@ function draw() {
 }
 
 /* ---- mixing ---- */
-async function mixIn(id, drops = LAB.drops) {
+/* Mix-ins fall at once but go into the tone in order, each as it lands (one undo step each). */
+const later = fn => (LAB.chain = LAB.chain.then(fn).catch(() => {}));
+function mixIn(id, drops = LAB.drops) {
   const p = ing(id);
-  if (!p || LAB.busy) return;
-  LAB.busy = true;
-  try {
-    await dropIn(p);
+  if (!p) return Promise.resolve();
+  const btn = $('#labOv .liBtn[data-id="' + id + '"]');
+  if (btn) {
+    btn.classList.remove('go');
+    void btn.offsetWidth;
+    btn.classList.add('go');
+  }
+  const landed = dropIn(p);
+  return later(async () => {
+    await landed;
+    if (!$('#labOv')) return;
     const b = brewer();
     p.brew(b, drops / 10);
     const before = Object.fromEntries(Object.keys(b.out).map(k => [k, ZE.snd.v[k]]));
     const keys = zeBrew(b.out);
     if (!keys.length) toast(p.name + ' changed nothing: those settings are already as far as they go');
-    else {
-      LAB.log.push({ id, drops, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
-      SL.kick = 1;
-    }
+    else LAB.log.push({ id, drops, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
     draw();
-    drawLearn();
+    if (LAB.sel === id) drawLearn();
     discover();
-  } finally {
-    LAB.busy = false;
-  }
+    /* a held note plays again, so envelope changes are heard */
+    if (NOTE && LAB.latch) retrigger();
+  });
 }
 function undo() {
-  if (LAB.busy) return;
-  if (!ZE.undo.length) return toast('Nothing to undo');
-  zeUndo();
-  const x = LAB.log.pop();
-  if (x) toast('Took out ' + ing(x.id).name);
-  SL.kick = 0.6;
-  draw();
-  drawLearn();
+  later(() => {
+    if (ZE.undo.length <= LAB.start && !LAB.log.length) return toast('Nothing to undo');
+    if (!ZE.undo.length) return;
+    zeUndo();
+    const x = LAB.log.pop();
+    if (x) toast('Took out ' + ing(x.id).name);
+    SL.kick = 0.6;
+    SL.rip = 0;
+    draw();
+    drawLearn();
+  });
 }
-function fresh() {
-  LAB.log = [];
-  draw();
-  drawLearn();
-  toast('The list starts again (the sound stays as it is)');
+function redo() {
+  later(() => {
+    if (!ZE.redo.length) return;
+    zeUndo(true);
+    SL.kick = 0.6;
+    draw();
+  });
+}
+function startOver() {
+  later(() => {
+    const n = ZE.undo.length - LAB.start;
+    if (n <= 0) return toast('Nothing mixed in yet');
+    for (let i = 0; i < n; i++) zeUndo();
+    LAB.log = [];
+    SL.kick = 1;
+    SL.rip = 0;
+    draw();
+    drawLearn();
+    toast('Back to the tone as it was when the lab opened');
+  });
 }
 async function random() {
   const pick = [...ING].sort(() => Math.random() - 0.5).slice(0, 3);
   for (const p of pick) {
-    select(p.id);
-    await mixIn(p.id, 2 + Math.floor(Math.random() * 6));
+    mixIn(p.id, 2 + Math.floor(Math.random() * 6));
+    await wait(still() ? 0 : 200);
   }
-  toast('Mixed in ' + pick.map(p => p.name).join(', ') + ': hold a Taste key');
+  await LAB.chain;
+  toast('Mixed in ' + pick.map(p => p.name).join(', ') + ': have a taste');
 }
 async function blend(r) {
-  if (LAB.busy) return;
   for (const [id, n] of r.steps) {
-    select(id);
-    await mixIn(id, n);
-    await wait(still() ? 0 : 120);
+    mixIn(id, n);
+    await wait(still() ? 0 : 220);
   }
+  await LAB.chain;
+  select(r.steps[r.steps.length - 1][0]);
   if (!LAB.found.has(r.id)) found(r);
-  else toast(r.name + ' mixed: hold a Taste key');
+  else toast(r.name + ' mixed: have a taste');
 }
 /* a blend whose ingredients are all in the list is found */
 function discover() {
@@ -1322,9 +1523,13 @@ function found(r) {
   clearTimeout(found.t);
   found.t = setTimeout(() => f.classList.remove('show'), 3800);
 }
-/* hold a key: the note plays and the slime follows the amp envelope */
-function taste(n, key) {
-  audition(n);
+/* ---- tasting: a note plays and the slime follows the amp envelope ---- */
+let NOTE = null; /* {n, off, key} */
+function noteOn(n, key) {
+  noteOff();
+  const off = audition(n, true);
+  NOTE = { n, off, key };
+  if (key) key.classList.add('down');
   const p = parts()[0],
     v = k => {
       const x = ZE.snd.v['AENV' + p + '.' + k];
@@ -1339,13 +1544,38 @@ function taste(n, key) {
     l2: v('L2') / 1023,
     l3: v('L3') / 1023
   };
-  const hold = { t0: performance.now(), up: null };
-  SL.hold = hold;
-  key.classList.add('down');
+  SL.hold = { t0: performance.now(), up: null };
+  SL.rings.push({ c: svgEl('ellipse', { class: 'lsRing' }), t0: performance.now() });
+}
+function noteOff() {
+  if (!NOTE) return;
+  const x = NOTE;
+  NOTE = null;
+  try {
+    x.off();
+  } catch (e) {}
+  if (x.key) x.key.classList.remove('down');
+  if (SL.hold) SL.hold.up = performance.now();
+}
+function retrigger() {
+  const { n, key } = NOTE;
+  noteOn(n, key);
+}
+/* a Taste key (pointer, or Z-B on the keyboard): held, or with Hold on, on until pressed again */
+function keyDown(n, key, fromKeyboard) {
+  if (LAB.latch && NOTE && NOTE.n === n) return noteOff();
+  noteOn(n, key);
+  if (LAB.latch || fromKeyboard) return;
   const up = () => {
-    hold.up = performance.now();
-    key.classList.remove('down');
+    if (NOTE && NOTE.n === n && !LAB.latch) noteOff();
     for (const ev of ['pointerup', 'pointercancel', 'blur']) removeEventListener(ev, up);
   };
   for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, up);
+}
+function latch() {
+  LAB.latch = !LAB.latch;
+  const b = $('#labLatch');
+  if (b) b.classList.toggle('on', LAB.latch);
+  if (!LAB.latch) noteOff();
+  else if (!NOTE) noteOn(48, $('#labOv .labKey[data-n="48"]'));
 }
