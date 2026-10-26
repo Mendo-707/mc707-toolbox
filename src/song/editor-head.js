@@ -32,8 +32,10 @@ export function renderEdHead() {
   h.textContent = '';
   const seg = (opts, cur, fn) => {
     const d = el('div', { class: 'seg' });
-    opts.forEach(([v, l]) =>
-      d.append(el('button', { class: 'btn sm' + (v === cur ? ' on' : ''), onclick: () => fn(v) }, l))
+    opts.forEach(([v, l, tip]) =>
+      d.append(
+        el('button', { class: 'btn sm' + (v === cur ? ' on' : ''), title: tip || null, onclick: () => fn(v) }, l)
+      )
     );
     return d;
   };
@@ -68,10 +70,10 @@ export function renderEdHead() {
       el('span', { class: 'hint' }, 'Length'),
       seg(
         [
-          [1, '1'],
-          [2, '2'],
-          [4, '4'],
-          [8, '8']
+          [1, '1', 'Length: 1 bar'],
+          [2, '2', 'Length: 2 bars'],
+          [4, '4', 'Length: 4 bars'],
+          [8, '8', 'Length: 8 bars']
         ],
         p.bars,
         setBars

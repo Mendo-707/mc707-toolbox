@@ -11,6 +11,8 @@ import { openWiz } from '../song/wizard-ui.js';
 import { setMode } from './mode.js';
 import { DEVS, DEV } from '../core/device.js';
 import { zenOpen } from '../zen/zc-editor.js';
+import { VERSION, openLink } from '../core/version.js';
+import { checkUpdate } from './update-check.js';
 
 const KEY = 'mc707-start';
 /** True unless the start screen was turned off. */
@@ -52,6 +54,38 @@ export function startOpen(last = true) {
   if ($('#startOv')) return;
   const has = !!last;
   const close = () => ov.remove();
+  /* the version, and whether a newer one is out (asked once a session, quietly) */
+  const upd = el('span', { class: 'stUpd', role: 'status', 'aria-live': 'polite' }, '');
+  let found = null;
+  const show = (u, asked) => {
+    found = u;
+    upd.classList.toggle('new', !!(u && u.newer));
+    upd.textContent = !u
+      ? asked
+        ? 'Could not reach GitHub to check'
+        : ''
+      : u.newer
+        ? 'Version ' + u.latest + ' is out'
+        : asked
+          ? 'Up to date'
+          : '';
+    updBtn.textContent = u && u.newer ? 'Get ' + u.latest : 'Check for updates';
+  };
+  const updBtn = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn sm',
+      title: 'See whether a newer version is out',
+      onclick: async () => {
+        if (found && found.newer) return openLink(found.url);
+        upd.textContent = 'Checking…';
+        show(await checkUpdate(true), true);
+      }
+    },
+    'Check for updates'
+  );
+  checkUpdate().then(u => show(u, false));
   const card = (icon, title, text, fn, on) =>
     el(
       'button',
@@ -73,7 +107,14 @@ export function startOpen(last = true) {
     el(
       'div',
       { class: 'ptBox stBox' },
-      el('h2', {}, 'MC-707 Toolbox'),
+      el(
+        'div',
+        { class: 'stHead' },
+        el('h2', {}, 'MC-707 Toolbox'),
+        el('span', { class: 'stVer' }, 'Version ' + VERSION),
+        upd,
+        updBtn
+      ),
       el('p', { class: 'hint' }, 'What would you like to do?'),
       el(
         'div',

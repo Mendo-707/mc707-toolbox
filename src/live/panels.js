@@ -6,6 +6,7 @@ import { lvMoodApply, moodSync } from './mood-ui.js';
 import { $, el } from '../core/dom.js';
 import { DEV, DEVS, TRACK_COLORS, devOn } from '../core/device.js';
 import { hooks } from '../core/hooks.js';
+import { showMenu } from '../ui/menu.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
 import { FLASH_RH } from '../library/flash.js';
@@ -264,6 +265,18 @@ export function liveRenderPads() {
           b.setPointerCapture(ev.pointerId);
         } catch (_) {}
         livePadDown(i);
+      });
+      /* right-click a scene pad: play it now, or edit it */
+      b.addEventListener('contextmenu', ev => {
+        if (!/^s\d+$/.test(a)) return;
+        ev.preventDefault();
+        const idx = +a.slice(1),
+          sc = LV.scenes[idx];
+        if (!sc) return;
+        showMenu(ev.clientX, ev.clientY, [
+          { label: (lvOn() ? 'Cue ' : 'Start with ') + (sc.name || 'scene ' + (idx + 1)), action: () => liveCue(idx) },
+          { label: 'Edit this scene…', action: () => liveEditScene(idx) }
+        ]);
       });
       b.addEventListener('pointerup', () => livePadUp(i));
       b.addEventListener('pointercancel', () => livePadUp(i));

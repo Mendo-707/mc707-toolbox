@@ -27,6 +27,7 @@ import { songToClipsOpen } from '../zen/zc-seq.js';
 import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
+import { checkUpdateNow } from './update-check.js';
 import { mpjPick } from './mpj-open.js';
 import { fillTonesOpen } from './fill-tones.js';
 import { sceneToggle } from '../scene/screen.js';
@@ -282,7 +283,7 @@ function initMenubar() {
           ]
         ],
         0,
-        ['Check for updates', () => openLink(LINKS.releases)],
+        ['Check for updates', () => checkUpdateNow()],
         ['Report a problem', () => openLink(LINKS.issues)],
         ['About MC-707 Toolbox', () => aboutOpen()]
       ]

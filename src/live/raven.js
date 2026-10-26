@@ -311,7 +311,7 @@ export function ravenSection(chSel, noteIn) {
           { class: 'rvMapH' },
           el('b', {}, 'Mute octave'),
           el('span', {}, 'MC-707 from'),
-          noteIn(LV.muteBase, v => {
+          noteIn(LV.muteBase, 'The MIDI note the mute octave starts on (its 8 keys mute and unmute parts)', v => {
             LV.muteBase = v;
             saveLive();
             liveRenderPerf();
@@ -329,7 +329,7 @@ export function ravenSection(chSel, noteIn) {
           { class: 'rvMapH' },
           el('b', {}, 'Key octave'),
           el('span', {}, 'MC-707 from'),
-          noteIn(LV.keyBase, v => {
+          noteIn(LV.keyBase, 'The MIDI note the key octave starts on (its 12 keys change the key)', v => {
             LV.keyBase = v;
             saveLive();
             liveRenderPerf();

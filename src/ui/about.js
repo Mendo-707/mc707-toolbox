@@ -8,6 +8,7 @@ import { DEVS, DEV } from '../core/device.js';
 import { APP_NAME } from '../core/state.js';
 import { LINKS, VERSION, openLink } from '../core/version.js';
 import { MIDI } from '../services/midi.js';
+import { checkUpdateNow } from './update-check.js';
 
 const link = (label, url) => el('a', { href: url, onclick: e => (e.preventDefault(), openLink(url)) }, label);
 
@@ -67,14 +68,14 @@ export function aboutOpen() {
         el(
           'dd',
           {},
-          'mc-programmer and mctools_basic (how the MC-707 answers SysEx), Roland-Zen-Decode-XML (the ZEN-Core parameter list) and Benedetto Schiavone (the STEP LFO step sequencer).'
+          'Ada Locriana (mctools_basic, mctools_seq and mctools_sidechain: how the MC-707 answers SysEx, where clip notes and knob motion live, and the ideas behind the Pump), mc-programmer, Roland-Zen-Decode-XML (the ZEN-Core parameter list) and Benedetto Schiavone (the STEP LFO step sequencer).'
         )
       ),
       el(
         'div',
         { class: 'abLinks' },
         link('Guide', LINKS.guide),
-        link('Check for updates', LINKS.releases),
+        el('a', { href: LINKS.releases, onclick: e => (e.preventDefault(), checkUpdateNow()) }, 'Check for updates'),
         link('Report a problem', LINKS.issues),
         link('Source code', LINKS.home)
       ),

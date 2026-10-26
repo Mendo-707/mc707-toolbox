@@ -116,6 +116,8 @@ export function liveInit() {
   const bpm = el('input', {
     type: 'number',
     id: 'lvBpm',
+    title: 'Tempo in BPM (40-240)',
+    'aria-label': 'Tempo',
     min: 40,
     max: 240,
     step: 1,

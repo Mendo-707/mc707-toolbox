@@ -453,6 +453,26 @@
   margin: 0 0 2px;
   font-size: 26px;
 }
+/* the name, the version and the update check on one line */
+.stHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.stVer {
+  font-size: 13px;
+  color: var(--mute);
+}
+.stUpd {
+  font-size: 13px;
+  color: var(--mute);
+  margin-left: auto;
+}
+.stUpd.new {
+  color: var(--hot, #ff5a36);
+  font-weight: 700;
+}
 .stGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

@@ -400,6 +400,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/tone-pools.js` | What Fill tones' pools are made of beyond the hand-picked suggestions: for each clip job, the ZenCore categories that suit it, and for each genre (and style) words in a tone's name that suit it or do not. Matched against the sounds you have (the factory tones you added from the MC-707 update file, your own sounds), so a pool fills with dozens of fitting tones without the app keeping Roland's list. |  |
 | `ui/track-setup.js` | Track setup: choose what each of the 8 tracks is for, anywhere from 8 drum tracks to 8 tone tracks. Each track gets a role (kit, hats, perc, bass, chords, pad, lead, pluck or acid); the role sets whether it is a drum or tone track, what the song wizard and Live Mode play on it, and its name. Clips that no longer fit a track's type are removed (with undo). |  |
 | `ui/transport-view.js` | The transport display: position, play state, and moving the playhead in Song Mode, the editor and the wizard. |  |
+| `ui/update-check.js` | Checking for a newer version: asks GitHub for the latest release and compares it with this one. Used by the start screen (once a session, quietly), Help › Check for updates and the About window. Nothing is sent but the request itself; without a connection it says it could not check. |  |
 
 ### main.js (layer: app)
 
