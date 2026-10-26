@@ -38,7 +38,7 @@ import {
 } from './cues.js';
 import { knobsRest, sendKnob } from './pads.js';
 import { ctlFix } from './controller.js';
-import { liveRender } from './panels.js';
+import { liveRender, liveRenderKnobs } from './panels.js';
 import { vizStart } from './visualizer.js';
 import { hooks } from '../core/hooks.js';
 
@@ -116,6 +116,8 @@ export function liveInit() {
   const bpm = el('input', {
     type: 'number',
     id: 'lvBpm',
+    title: 'Tempo in BPM (40-240)',
+    'aria-label': 'Tempo',
     min: 40,
     max: 240,
     step: 1,
@@ -684,6 +686,8 @@ export function liveInit() {
             onchange: e => {
               LV.ktarget = e.target.value;
               saveLive();
+              /* one track: the knobs show what they control there */
+              liveRenderKnobs();
             }
           })
         )

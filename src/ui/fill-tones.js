@@ -380,8 +380,9 @@ export async function fillTonesOpen() {
           'Edit the pools…'
         )
       ),
+      /* '' not null: replaceChildren writes null out as the word "null" */
       hasFactory()
-        ? null
+        ? ''
         : el(
             'p',
             { class: 'ftWarn' },

@@ -120,7 +120,7 @@ Addresses here are packed, as Roland writes them; each byte must stay below `80`
 | Step settings: step size (0 1/8, 1 1/16, 2 1/32, 3 1/4T, 4 1/8T, 5 1/16T), then the number of steps (1-128) as two half-bytes | descriptor `+02 00 00` | Read by the Toolbox |
 | Step *s* (0-127) | descriptor `+03 00 00` + *s* × `01 00` | Read by the Toolbox |
 | Motion | descriptor `+04 00 00` + step × `01 00` + lane × `10` | 8 lanes: the track's FILTER, MOD, FX and SOUND (C4) knobs as KNOB ASSIGN sets them (tested: cutoff, Sys-Ctrl1, reverb send, decay; SOUND can be set to Level), then 4 more that changed nothing, 8 values a step as half-byte pairs, 0-127 or `FF` for no change (from Ada Locriana's mctools_sidechain). Used by Scene Mode's Pump (SOUND lane set to Level, or FILTER) and Help › For developers › Motion test |
-| Knob assignments (KNOB ASSIGN: what C1-C4 control) | descriptor `+01 00 00` + `29` + knob × `3C` (linear; 4 half-bytes, a 16-bit value) | Found on an MC-707 by scanning while KNOB ASSIGN changed: the live settings are in the track's own structure (the 17th after its 16 clips, track 1 at `21 00 00 00`); each clip has its own copy, which a project file saves. The low byte is the choice, the high byte reads `20`. Seen: `01` Level, `02` Pan, `08` Portamento, `0A` Cutoff, `0B` Resonance, `0C` Attack, `0D` Decay, `15` Reverb Send, `A1` SYS-Ctrl1 (the project file stores each one lower). The others are taken in the manual's order. Set by the mixers' knob choosers, into the track's structure and its 16 clips |
+| Knob assignments (KNOB ASSIGN: what C1-C4 control) | descriptor `+01 00 00` + `29` + knob × `3C` (linear; 4 half-bytes, a 16-bit value) | Found on an MC-707 by scanning while KNOB ASSIGN changed: the live settings are in the track's own structure (the 17th after its 16 clips, track 1 at `21 00 00 00`); each clip has its own copy, which a project file saves. The low byte is the choice, the high byte reads `20`. Seen: `00` No Assign, `01` Level, `02` Pan, `08` Portamento, `0A` Cutoff, `0B` Resonance, `0C` Attack, `0D` Decay, `0E` Release, `12` Oct Shift, `14` Delay Send, `15` Reverb Send, `A1` SYS-Ctrl1 (the project file stores each one lower; all set from the app and checked on the MC-707's KNOB ASSIGN screen). The others are taken in the manual's order. Set by the mixers' knob choosers, into the track's structure and its 16 clips |
 | Pitch bend | descriptor `+05 00 00` | Not used |
 
 Each step has 16 note slots. Values marked ½ are two half-bytes (`06 03` = `0x63`):
@@ -208,10 +208,12 @@ The MC-707 saves a project on its SD card as one .mpj file. It is not SysEx, but
 | 10 | Sections, 16 bytes each until "DUMY": tag (PRJa, STPa, SYSa, USRa, LPPa, LPDa, USDa, DIFa), "MC77", offset, size |
 | PRJa + 10 | Project name, 16 characters |
 | PRJa + 20 | Tempo, BPM × 100 (16 bits) |
-| PRJa + D0 | The first 8 scenes, 8 bytes each: the clip (0-15) each track plays (a new project: scene n plays clip n). Scenes past 8 and the chain lengths are not found yet |
+| PRJa + 50 | Each scene's chain length in bars, one byte per scene (0 = OFF), as `10 00 00 4C` + scene over SysEx. Read from a 17-scene project with CHAIN on |
+| PRJa + 200 + track × 100 + 90 | The clip the track plays in each of the 128 scenes, one byte per scene: 1-16, 0 = none (a new project: scene n plays clip n), as the track settings + `3E` + scene over SysEx |
+| PRJa + D0 | 8 scenes of 8 bytes where the MV-1 keeps its scenes; the MC-707 leaves them as a new project has them (scene n plays clip n) and uses the track blocks above |
 | PRJa + 200 + track × 100, + 14 | Track kind: 0 tone, 1 drum, 2 looper (FF in an empty template) |
 | PRJa + 10F0 + (track × 17 + clip) × 5C40 | Clip block (clip 17 of each track is the track's own sound): sound name (16 characters) at + 0; step size (0-5 as SysEx) at + 300, steps (1-128) at + 301; 128 steps of 60 bytes from + 3D0: 16 note numbers (FF none), 16 velocities, 16 starts (signed), 16 ends (100 ties), 16 sub steps, 16 unused; motion after the steps (not mapped yet) |
 | USDa | Samples: "SMPh", then per sample "SMPd": header size (30), channels, data size (to 1 KB), sample count (all channels), name (16), number, rate, then 16-bit PCM |
-| LPDa | Looper recordings: "DIK0" and 256 entries (size, offset); the sample format is not worked out yet |
+| LPDa | Looper recordings: "DIK0", then 256 entries of 16 bytes from +10 (size, offset from "DIK0"; entry = track × 16 + clip). Each recording is 32-bit little-endian mono PCM at 44.1 kHz: a 2-bar loop at 128 BPM was 661504 bytes, 165376 samples, 3.75 s |
 
 Worked out from empty template projects with known track layouts and a full project (2026).

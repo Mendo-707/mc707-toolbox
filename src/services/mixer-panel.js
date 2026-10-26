@@ -9,6 +9,11 @@ import { hooks } from '../core/hooks.js';
 /** The panel open now (null: none). */
 export const PANEL = { sec: null };
 
+const paint = (inp, v) => {
+  const span = +inp.max - +inp.min || 1;
+  inp.style.setProperty('--lo', '0%');
+  inp.style.setProperty('--hi', ((v - +inp.min) / span) * 100 + '%');
+};
 /* one control: a chooser for a list, a slider otherwise */
 function row(c, sec, T) {
   const show = v =>
@@ -38,9 +43,12 @@ function row(c, sec, T) {
         oninput: e => {
           const v = +e.target.value;
           out.textContent = show(v);
+          paint(e.target, v);
           send(v);
         }
       });
+  /* the slider's track fills up to its value, as the strips' do */
+  if (!c.list) paint(ctl, c.v ?? Math.round((c.min + c.max) / 2));
   return el(
     'label',
     { class: 'mxRow mpRow' + (c.v == null ? ' unset' : '') },

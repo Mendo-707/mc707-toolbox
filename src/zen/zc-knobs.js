@@ -21,7 +21,7 @@ import { refreshClip } from './zc-fx.js';
  * seen on an MC-707 (directly or in a project file); the rest follow the manual's list in between.
  */
 export const KNOB_ASSIGN = [
-  [0, 'No Assign', 'all', false],
+  [0, 'No Assign', 'all', true],
   [1, 'Level', 'all', true],
   [2, 'Pan', 'all', true],
   [3, 'Coarse Tune', 'td', false],
@@ -32,12 +32,12 @@ export const KNOB_ASSIGN = [
   [11, 'Resonance', 'td', true],
   [12, 'Attack', 'td', true],
   [13, 'Decay', 'td', true],
-  [14, 'Release', 'td', false],
+  [14, 'Release', 'td', true],
   [15, 'Vib Rate', 'tone', false],
   [16, 'Vib Depth', 'tone', false],
   [17, 'Vib Delay', 'tone', false],
-  [18, 'Oct Shift', 'tone', false],
-  [20, 'Delay Send', 'all', false],
+  [18, 'Oct Shift', 'tone', true],
+  [20, 'Delay Send', 'all', true],
   [21, 'Reverb Send', 'all', true],
   [0xa1, 'SYS-Ctrl1', 'td', true],
   [0xa2, 'SYS-Ctrl2', 'td', false],

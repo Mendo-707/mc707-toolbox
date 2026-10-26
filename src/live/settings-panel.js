@@ -32,15 +32,20 @@ export function liveRenderSettings() {
     for (let c = 1; c <= 16; c++) s.append(el('option', { value: c, selected: val === c }, 'Channel ' + c));
     return s;
   };
-  const noteIn = (val, on) =>
-    el('input', {
+  /* noteIn(value, on) or noteIn(value, tooltip, on) */
+  const noteIn = (val, tip, on) => {
+    if (typeof tip === 'function') [on, tip] = [tip, ''];
+    return el('input', {
       type: 'number',
       min: 0,
       max: 127,
       value: val,
       style: 'width:64px',
+      title: tip || null,
+      'aria-label': tip || null,
       onchange: e => on(clamp(Math.round(+e.target.value) || 0, 0, 127))
     });
+  };
   b.append(
     el(
       'p',

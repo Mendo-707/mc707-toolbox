@@ -177,7 +177,7 @@ import { fillTonesOpen } from './ui/fill-tones.js';
 import { CHO_TYPES, FXN, REV_TYPES, fxChoices, readMaster, setMaster, trackFx } from './zen/zc-fx.js';
 import { knobName, knobNow, readAllKnobs, setKnob } from './zen/zc-knobs.js';
 import { TV, totalPanel, totalRead, totalSet } from './zen/zc-total.js';
-import { readMpj } from './core/mpj.js';
+import { loopAudio, readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
@@ -308,7 +308,7 @@ PROJ.t = projTitle;
     },
     motion,
     pump,
-    mpj: { open: mpjOpen, read: readMpj },
+    mpj: { open: mpjOpen, read: readMpj, loopAudio },
     get S() {
       return S;
     },
