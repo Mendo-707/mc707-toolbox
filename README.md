@@ -9,7 +9,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 - **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen, with every track's FILTER, MOD, FX and SOUND (C4) knobs.
 
-> **Version 1.5.3.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.5.4.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
