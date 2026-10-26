@@ -12,6 +12,7 @@ import { slotAddr, zxConnect } from './zc-sysex.js';
 import { copySound, newSound, sendSound, soundFrom, soundJSON } from './zc-tone.js';
 import { rememberClip } from './zc-library.js';
 import { browserOpen } from './zc-browser.js';
+import { labOpen } from './zc-lab.js';
 import { starterMenu } from './zc-starters-more.js';
 import {
   ZE,
@@ -197,6 +198,12 @@ export function headerBar() {
         ? btn('Sounds', () => browserOpen(), {
             title:
               'The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites'
+          })
+        : null,
+      ZE.kind === 'tone'
+        ? btn('Slime Lab', () => labOpen(), {
+            title:
+              'Experiment: shape this tone by mixing ingredients into a slime, and learn the sound design behind each one'
           })
         : null,
       btn('File ▾', e => menuAt(e, fileMenu())),

@@ -120,11 +120,33 @@ function commit() {
   ZE.redo = [];
   remember();
 }
+/** True when changes go to the MC-707 as they are made (Live on and connected). */
+export const zeLive = () => sending();
+/**
+ * Change several values as one undo step (the Sound Lab's potions): {key: value}. Sent together when live.
+ * Resolves to the keys that changed.
+ */
+export function zeBrew(vals, tag = null) {
+  const keys = Object.keys(vals).filter(k => vals[k] !== ZE.snd.v[k]);
+  if (!keys.length) return [];
+  /* the same tag as the last brew (one slider being dragged): it joins that undo step */
+  const last = ZE.undo[ZE.undo.length - 1];
+  if (tag && ZE.brewTag === tag && last) for (const k of keys) k in last || (last[k] = ZE.snd.v[k]);
+  else ZE.undo.push(Object.fromEntries(keys.map(k => [k, ZE.snd.v[k]])));
+  ZE.brewTag = tag;
+  ZE.undo.length = Math.min(ZE.undo.length, 200);
+  ZE.redo = [];
+  for (const k of keys) setVal(ZE.snd, k, vals[k], null);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys));
+  remember();
+  return keys;
+}
 /** Undo (or redo) the last change. */
 export function zeUndo(redo) {
   const from = redo ? ZE.redo : ZE.undo,
     to = redo ? ZE.undo : ZE.redo;
   const step = from.pop();
+  ZE.brewTag = null;
   if (!step) return;
   to.push(Object.fromEntries(Object.keys(step).map(k => [k, ZE.snd.v[k]])));
   for (const k in step) setVal(ZE.snd, k, step[k], null);
@@ -360,7 +382,8 @@ export function zenClose() {
 /* while the editor is open it takes undo, redo and Escape (and keeps Space and the app's other
    shortcuts from reaching the song behind it) */
 function keys(e) {
-  if (!$('#zcOv') || $('[role=dialog][aria-modal]:not([hidden])') || $('.cmenu')) return;
+  /* the Slime Lab (zc-lab.js) has its own keys while it is open */
+  if (!$('#zcOv') || $('#labOv') || $('[role=dialog][aria-modal]:not([hidden])') || $('.cmenu')) return;
   const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range';
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) {
     e.preventDefault();
@@ -410,7 +433,11 @@ const noteOut = (ch, b, on) => {
   else if (MIDI.out) MIDI.out.send(on ? [0x90 | (ch - 1), b, 100] : [0x80 | (ch - 1), b, 0]);
 };
 /** Play note n on the edited track while the pointer is held (the keyboard and the Sound browser). */
-export function audition(n) {
+/**
+ * Play note n on the track while the pointer is held. manual: the caller releases it, with the function
+ * returned (a key held on the computer keyboard, a latched note).
+ */
+export function audition(n, manual = false) {
   /* a pattern preview looping elsewhere stops, so the note is heard on its own (a song or Live set plays on) */
   if (TR.playing && TR.mode === 'pat') stopAll();
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
@@ -420,12 +447,14 @@ export function audition(n) {
     else HELD.delete(ch + ':' + b);
   };
   send(n, true);
+  if (manual) return () => send(n, false);
   /* release on pointer up, a cancelled touch or the window losing focus, so no note is left hanging */
   const up = () => {
     send(n, false);
     for (const ev of ['pointerup', 'pointercancel', 'blur']) removeEventListener(ev, up);
   };
   for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, up);
+  return up;
 }
 /* two octaves from C3 to play the sound: white keys side by side, black keys on top */
 function keyboard() {
@@ -475,6 +504,8 @@ export function zeRender() {
     tabs = TABS[ZE.kind],
     cur = tabs.find(x => x[0] === ZE.tab) || tabs[0];
   const scroll = $('.zcPage', ov) ? $('.zcPage', ov).scrollTop : 0;
+  /* the Slime Lab, open over the editor, stays open through a redraw */
+  const lab = $('#labOv', ov);
   ov.textContent = '';
   const nav = el(
     'nav',
@@ -502,5 +533,6 @@ export function zeRender() {
     )
   );
   page.scrollTop = scroll;
+  if (lab) $('.zcBox', ov).append(lab);
   status();
 }
