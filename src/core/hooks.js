@@ -44,4 +44,5 @@
 //   clipNotesToMine    src/zen/zc-seq.js
 //   clipWriteAsk       src/zen/zc-seq.js
 //   fillTones          src/ui/fill-tones.js
+//   fx                 src/zen/zc-fx.js (the mixers' effects)
 export const hooks = {};

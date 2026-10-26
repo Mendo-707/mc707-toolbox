@@ -490,8 +490,20 @@ function scenesTick(tick, nt, td) {
       );
   });
 }
+/* sound played outside the transport (a project's samples, a grabbed recording): each registers its stop,
+   so stopping or starting anything else silences it */
+const PREVIEWS = new Set();
+/** Register a stop function for a preview played outside the transport; returns a function to unregister. */
+export function onStopAll(stop) {
+  PREVIEWS.add(stop);
+  return () => PREVIEWS.delete(stop);
+}
 /** Stop whatever is playing, send all notes off, and update the transport display. */
 export function stopAll() {
+  for (const f of [...PREVIEWS])
+    try {
+      f();
+    } catch (e) {}
   if (!TR.playing) return;
   TICKER.stop();
   TR.playing = false;

@@ -174,6 +174,7 @@ import * as pump from './core/pump.js';
 import { slotAddr } from './zen/zc-sysex.js';
 import { mpjOpen } from './ui/mpj-open.js';
 import { fillTonesOpen } from './ui/fill-tones.js';
+import { CHO_TYPES, FXN, REV_TYPES, fxChoices, readMaster, setMaster, trackFx } from './zen/zc-fx.js';
 import { readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
@@ -183,6 +184,7 @@ applyTheme();
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
   fillTones: fillTonesOpen,
+  fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
   applyDevice,
   audRender,
   closePops,

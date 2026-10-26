@@ -13,6 +13,7 @@ import { midiAct } from '../services/midi.js';
 import { TR } from '../services/transport.js';
 import { popTheme, popout, popoutOf, themeSig } from '../services/popout.js';
 import { mixLight, mixStrip } from '../services/mixer-strip.js';
+import { masterFor, trackFxFor } from '../services/mixer-fx.js';
 import { showMenu } from '../ui/menu.js';
 import { LV, mkEnv } from './state.js';
 import { lvNow } from './themes.js';
@@ -65,8 +66,10 @@ function stripFor(t) {
     eff = lvEffMute(t),
     pend = lvOn() && eff !== !!LV.mute[t] ? (eff ? 'mute' : 'unmute') : '';
   const dim = lvUserOwns(t) ? 'You’re playing it' : lvEmute(t) ? 'Out (energy)' : '';
+  const [fx, onFx] = trackFxFor(t, refresh);
   return mixStrip(
     {
+      fx,
       num: devNum(t),
       name: tr.name,
       color: TRACK_COLORS[t],
@@ -82,6 +85,7 @@ function stripFor(t) {
       knobs: MIX_KNOBS.map(key => ({ key, v: lvMixNow(t, key), def: LV.rest[MIX_CC[key] - 80] }))
     },
     {
+      fx: onFx,
       title: 'Right-click for more',
       grab: () => (held = true),
       done: () => (held = false),
@@ -178,7 +182,7 @@ function build(root, h) {
         ),
         h.winBtns()
       ),
-      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]))
+      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]), masterFor(refresh))
     )
   );
   const tick = now => {
@@ -200,5 +204,5 @@ function refresh() {
 
 /** Open Live Mode's mixer (or bring it forward). */
 export function liveMixerOpen() {
-  popout({ id: ID, title: 'Live mixer', w: 760, h: 700, build });
+  popout({ id: ID, title: 'Live mixer', w: 980, h: 760, build });
 }

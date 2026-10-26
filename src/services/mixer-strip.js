@@ -142,6 +142,7 @@ export function mixStrip(s, o) {
     knob('Reverb', 'rev', s.rev, s, o),
     knob('Chorus', 'cho', s.cho, s, o),
     ...(s.extra || []),
+    s.fx && o.fx ? fxRow(s.fx, o.fx, s.name) : null,
     s.knobs
       ? el(
           'div',
@@ -175,6 +176,141 @@ export function mixStrip(s, o) {
   node.light = light;
   node.meter = meter;
   return node;
+}
+
+/* a drop-down of effect choices, grouped: {id, label, group}[]. Only the current one is drawn until the
+   list is opened (a mixer redraws often while Live plays; a hundred options per strip would slow it) */
+function fxSelect(choices, cur, on, label, title) {
+  const now = choices.find(c => c.id === cur);
+  const opt = c => el('option', { value: c.id, selected: c.id === cur }, c.label);
+  const sel = el(
+    'select',
+    { class: 'mxSel', 'aria-label': label, title, onchange: e => e.target.value && on(e.target.value) },
+    now ? opt(now) : el('option', { value: '', selected: true }, '—')
+  );
+  const fill = () => {
+    if (sel.dataset.full) return;
+    sel.dataset.full = '1';
+    const groups = [...new Set(choices.map(c => c.group))];
+    sel.replaceChildren(
+      ...(now ? [] : [el('option', { value: '', selected: true }, '—')]),
+      ...groups.flatMap(g =>
+        g
+          ? [el('optgroup', { label: g }, ...choices.filter(c => c.group === g).map(opt))]
+          : choices.filter(c => !c.group).map(opt)
+      )
+    );
+  };
+  for (const ev of ['pointerdown', 'focus', 'keydown']) sel.addEventListener(ev, fill);
+  return sel;
+}
+/* the track's effect: {choices, cur, busy} */
+function fxRow(fx, on, name) {
+  return el(
+    'label',
+    {
+      class: 'mxRow mxFx' + (fx.busy ? ' busy' : ''),
+      title:
+        'The track’s effect (MFX): sent to every clip’s sound and the track’s own, so it stays whichever clip plays. Shape it further in the ZenCore editor.'
+    },
+    el('span', {}, fx.busy ? 'Effect · sending…' : 'Effect'),
+    fxSelect(fx.choices, fx.cur, on, 'Effect, ' + name, '')
+  );
+}
+
+/**
+ * The master strip: the MC-707's total effects.
+ * @param {{choices:{id,label,group}[], rev:string[], cho:string[], m:object|null, busy?:boolean}} s
+ *   m: as zen/zc-fx.js FXN.master (null: not read yet)
+ * @param {{set:(what:string, v:number|string)=>void, read:()=>void}} o
+ */
+export function masterStrip(s, o) {
+  const m = s.m || {},
+    list = (names, cur, what, label) =>
+      fxSelect(
+        names.map((n, i) => ({ id: String(i), label: n, group: '' })),
+        cur == null ? null : String(cur),
+        v => o.set(what, +v),
+        label,
+        ''
+      );
+  const level = (label, what, v, tip) => {
+    const out = el('b', {}, v == null ? '—' : String(v));
+    const inp = el('input', {
+      type: 'range',
+      min: 0,
+      max: 127,
+      value: v ?? 64,
+      class: 'mxKnob',
+      'aria-label': label,
+      oninput: e => ((out.textContent = e.target.value), o.set(what, +e.target.value))
+    });
+    inp.style.setProperty('--lo', '0%');
+    inp.style.setProperty('--hi', ((v ?? 64) / 127) * 100 + '%');
+    return el('label', { class: 'mxRow' + (v == null ? ' unset' : ''), title: tip }, el('span', {}, label), inp, out);
+  };
+  const tg = (lab, what, on, title) =>
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'mxTg' + (on ? ' on' : ''),
+        'aria-pressed': String(!!on),
+        title,
+        onclick: () => o.set(what, on ? 0 : 1)
+      },
+      lab
+    );
+  const rev = m.rev || {},
+    cho = m.cho || {};
+  return el(
+    'section',
+    { class: 'mxStrip mxMaster', style: '--tc:#e8e4d8', 'aria-label': 'Master effects' },
+    el(
+      'div',
+      { class: 'mxHead' },
+      el('span', { class: 'mxNum' }, 'M'),
+      el('span', { class: 'mxName' }, 'Master FX'),
+      el('span', { class: 'mxSub' }, s.busy ? 'Sending…' : s.m ? 'The MC-707’s total effects' : 'Not read yet')
+    ),
+    el(
+      'label',
+      { class: 'mxRow mxFx', title: 'The reverb every track’s Reverb send goes to' },
+      el('span', {}, 'Reverb'),
+      list(s.rev, rev.sw === 0 ? 0 : rev.type, 'revType', 'Reverb type')
+    ),
+    level('Reverb level', 'revLevel', rev.level, 'How loud the reverb is'),
+    el(
+      'label',
+      { class: 'mxRow mxFx', title: 'The chorus or delay every track’s Chorus send goes to' },
+      el('span', {}, 'Chorus / delay'),
+      list(s.cho, cho.sw === 0 ? 0 : cho.type, 'choType', 'Chorus or delay type')
+    ),
+    level('Chorus level', 'choLevel', cho.level, 'How loud the chorus or delay is'),
+    level('Chorus → reverb', 'choSend', cho.send, 'How much of the chorus or delay goes on to the reverb'),
+    el(
+      'label',
+      { class: 'mxRow mxFx', title: 'The master Multi FX, on the whole mix (the MULTI button on the MC-707)' },
+      el('span', {}, 'Multi FX'),
+      fxSelect(s.choices, m.mfx ? m.mfx.id : null, v => o.set('mfx', v), 'Master Multi FX', '')
+    ),
+    el(
+      'div',
+      { class: 'mxBtns' },
+      tg('Comp', 'comp', m.comp, 'The master compressor on or off'),
+      tg('EQ', 'eq', m.eq, 'The master EQ on or off')
+    ),
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn sm',
+        title: 'Read the total effects from the MC-707, to show what it has now',
+        onclick: () => o.read()
+      },
+      'Read from MC-707'
+    )
+  );
 }
 
 /** Light a strip's activity light and meter: a = 0-1. */

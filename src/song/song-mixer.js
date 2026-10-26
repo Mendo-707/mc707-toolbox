@@ -12,6 +12,7 @@ import { MIDI, midiAct } from '../services/midi.js';
 import { sendCC } from '../services/mc-controls.js';
 import { popTheme, popout, popoutOf, themeSig } from '../services/popout.js';
 import { mixLight, mixStrip } from '../services/mixer-strip.js';
+import { masterFor, trackFxFor } from '../services/mixer-fx.js';
 import { showMenu } from '../ui/menu.js';
 import { renderArr } from './arrangement.js';
 
@@ -81,8 +82,10 @@ function stripFor(t) {
   });
   vel.style.setProperty('--lo', '0%');
   vel.style.setProperty('--hi', (tr.vol / 127) * 100 + '%');
+  const [fx, onFx] = trackFxFor(t, refresh);
   return mixStrip(
     {
+      fx,
       num: devNum(t),
       name: tr.name,
       color: TRACK_COLORS[t],
@@ -105,6 +108,7 @@ function stripFor(t) {
       ]
     },
     {
+      fx: onFx,
       grab,
       done,
       set: (key, v) => set(t, key, v),
@@ -187,7 +191,7 @@ function build(root, h) {
         ),
         h.winBtns()
       ),
-      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]))
+      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]), masterFor(refresh))
     )
   );
   const tick = now => {
@@ -209,7 +213,7 @@ function refresh() {
 
 /** Open Song Mode's mixer (or bring it forward). */
 export function songMixerOpen() {
-  popout({ id: ID, title: 'Song mixer', w: 760, h: 700, build });
+  popout({ id: ID, title: 'Song mixer', w: 980, h: 760, build });
 }
 /** Close it (when leaving Song Mode). */
 export function songMixerClose() {

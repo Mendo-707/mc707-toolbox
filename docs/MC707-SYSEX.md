@@ -87,9 +87,11 @@ reading the MC-707 with the read-only scan pages and changing one setting at a t
 | Project tempo: BPM × 100 as four half-bytes (`03 02 00 00` = 128.00) | `10 00 00 10` | Read on an MC-707 at 128 BPM; written by Scene Mode |
 | Track settings, track *t* (0-7): bank select at +0/+1, Sound Source at +4 (0 TRACK, 1 CLIP) | `10 00 08 00` + *t* × `00 00 02 00` | Confirmed |
 | Track EQs, track *t* | `10 00 18 00` + *t* × `00 00 01 00` | Very likely |
-| Three project MFX | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |
-| Delay / chorus (on, type, level…) | `10 00 26 00` | Likely |
-| Reverb (on at +0, type at +1, level at +2) | `10 00 27 00` | Confirmed: level |
+| Three project MFX (same layout as a tone's MFX block; the first is taken as the master Multi FX) | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |
+| Delay / chorus (on at +0, type at +1 (0-9), level at +2, reverb send at +3) | `10 00 26 00` | Likely; written by the mixers' Master FX |
+| Reverb (on at +0, type at +1 (0-7), level at +2) | `10 00 27 00` | Confirmed: level; type written by the Master FX strip |
+| Master EQ (input, low, mid 1-3, high gains, then frequencies and Qs; on/off at +0E) | `10 00 39 00` | Likely (MV-1 map) |
+| Master compressor (on/off at +0, then 3 bands) | `10 00 3A 00` | Likely (MV-1 map) |
 
 The track faders are not stored in the project; use MIDI volume (CC 7) for track level.
 

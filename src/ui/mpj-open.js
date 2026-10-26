@@ -11,6 +11,7 @@ import { hooks } from '../core/hooks.js';
 import { emptyClips, newRow } from '../core/scene-model.js';
 import { readMpj, sampleAudio, wavBytes } from '../core/mpj.js';
 import { AU, ensureAudio } from '../services/synth.js';
+import { onStopAll, stopAll } from '../services/transport.js';
 import { userSave } from '../library/user-lib.js';
 import { makeZip, saveFile } from '../song/export.js';
 import { STEP_NAMES, joinNotes, toPattern } from '../zen/zc-seq.js';
@@ -51,21 +52,25 @@ export function mpjOpen(u8, file) {
   const m = readMpj(u8);
   if (m.error) return toast(m.error);
   document.getElementById('mpjOv')?.remove();
-  const close = () => ov.remove();
+  const close = () => (stop(), ov.remove());
   const title = m.name || file.replace(/\.mpj$/i, '');
   const full = (t, k) => {
     const c = m.tracks[t].clips[k];
     return c && c.notes ? c : null;
   };
   const clipCount = m.tracks.reduce((n, tr, t) => n + tr.clips.filter((c, k) => full(t, k)).length, 0);
-  let playing = null;
+  let playing = null,
+    unhook = null;
   const stop = () => {
     if (playing) playing.stop();
     playing = null;
+    if (unhook) unhook();
+    unhook = null;
   };
   const play = s => {
     ensureAudio();
-    stop();
+    /* anything playing stops: the song, a preview, another sample */
+    stopAll();
     const ch = sampleAudio(u8, s),
       buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate);
     ch.forEach((d, i) => buf.copyToChannel(d, i));
@@ -74,6 +79,7 @@ export function mpjOpen(u8, file) {
     src.connect(AU.ctx.destination);
     src.start();
     playing = src;
+    unhook = onStopAll(stop);
   };
   const wavName = (s, i) => String(i + 1).padStart(2, '0') + ' ' + s.name.replace(/\.wav$/i, '') + '.wav';
   /* the project's first 8 scenes that play a clip with notes: [{n, pick}] */

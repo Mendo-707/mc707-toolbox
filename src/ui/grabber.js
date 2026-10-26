@@ -8,7 +8,7 @@ import { DEV, DEVS, devNum } from '../core/device.js';
 import { HOST, S } from '../core/state.js';
 import { renderArr } from '../song/arrangement.js';
 import { AU, ensureAudio } from '../services/synth.js';
-import { TR, startSong, stopPlay, tickDur } from '../services/transport.js';
+import { TR, onStopAll, startSong, stopAll, stopPlay, tickDur } from '../services/transport.js';
 import { syncControls } from './controls.js';
 import { DL } from '../song/export.js';
 import { AUD, AUDREC, audMode, capAttachOne, capDetach, capOpen } from '../services/audio-capture.js';
@@ -455,7 +455,11 @@ export function grabRenderPop() {
                 title: 'Play',
                 onclick: () => {
                   if (au.paused) {
+                    /* anything playing stops first: the song, a preview, another recording */
+                    stopAll();
                     $$('#grabPop audio').forEach(a => a.pause());
+                    const un = onStopAll(() => au.pause());
+                    au.addEventListener('pause', un, { once: true });
                     au.currentTime = 0;
                     au.play();
                     pl.textContent = '■';

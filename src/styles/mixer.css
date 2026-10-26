@@ -69,10 +69,12 @@ body.popWin {
   margin-left: auto;
 }
 .mxStrips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  display: flex;
+  /* one row: the tracks and the master strip side by side, scrolling sideways in a narrow window
+     (strips wrapping into a second row overlapped the first) */
   gap: 6px;
   flex: 1;
+  overflow-x: auto;
 }
 .mxStrip {
   display: flex;
@@ -262,11 +264,6 @@ body.popWin {
     opacity: 0.35;
   }
 }
-@media (max-width: 560px) {
-  .mxStrips {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
 
 /* Live Mode's window: its own glow from the Live theme, on the strips and the title */
 .popLive .mxStrip {
@@ -305,8 +302,7 @@ body.popWin .mxWrap {
   min-height: 0;
 }
 .mxStrips {
-  grid-auto-rows: minmax(300px, 1fr);
-  min-height: 0;
+  min-height: 300px;
 }
 .mxStrip {
   min-height: 0;
@@ -428,4 +424,46 @@ body.popFrameless .mxTop input {
 }
 .mxRow.unset .mxKnob {
   opacity: 0.6;
+}
+
+/* the track's effect and the master strip's choosers */
+.mxSel {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel, #fff);
+  color: var(--ink, #1d1d1b);
+}
+.mxFx.busy span {
+  color: var(--acc, var(--hot, #39ff7a));
+}
+.mxStrips > .mxStrip {
+  flex: 1 1 0;
+  min-width: 84px;
+}
+.mxStrips > .mxMaster {
+  flex: 1.35 1 0;
+  min-width: 118px;
+}
+.mxMaster {
+  border-top-color: var(--ink, #1d1d1b);
+  overflow-y: auto;
+}
+.mxMaster .mxNum {
+  background: var(--ink, #1d1d1b);
+  color: var(--panel, #fff);
+}
+.mxMaster .mxBtns {
+  margin-top: auto;
+}
+.mxTg.on:not(.mute):not(.solo) {
+  background: var(--acc, var(--hot, #39ff7a));
+  color: #000;
+}
+.mxMaster .btn {
+  white-space: normal;
 }
