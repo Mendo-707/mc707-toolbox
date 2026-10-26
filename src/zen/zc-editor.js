@@ -120,6 +120,23 @@ function commit() {
   ZE.redo = [];
   remember();
 }
+/** True when changes go to the MC-707 as they are made (Live on and connected). */
+export const zeLive = () => sending();
+/**
+ * Change several values as one undo step (the Sound Lab's potions): {key: value}. Sent together when live.
+ * Resolves to the keys that changed.
+ */
+export function zeBrew(vals) {
+  const keys = Object.keys(vals).filter(k => vals[k] !== ZE.snd.v[k]);
+  if (!keys.length) return [];
+  ZE.undo.push(Object.fromEntries(keys.map(k => [k, ZE.snd.v[k]])));
+  ZE.undo.length = Math.min(ZE.undo.length, 200);
+  ZE.redo = [];
+  for (const k of keys) setVal(ZE.snd, k, vals[k], null);
+  if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys));
+  remember();
+  return keys;
+}
 /** Undo (or redo) the last change. */
 export function zeUndo(redo) {
   const from = redo ? ZE.redo : ZE.undo,
@@ -360,7 +377,8 @@ export function zenClose() {
 /* while the editor is open it takes undo, redo and Escape (and keeps Space and the app's other
    shortcuts from reaching the song behind it) */
 function keys(e) {
-  if (!$('#zcOv') || $('[role=dialog][aria-modal]:not([hidden])') || $('.cmenu')) return;
+  /* the Slime Lab (zc-lab.js) has its own keys while it is open */
+  if (!$('#zcOv') || $('#labOv') || $('[role=dialog][aria-modal]:not([hidden])') || $('.cmenu')) return;
   const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range';
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) {
     e.preventDefault();
@@ -475,6 +493,8 @@ export function zeRender() {
     tabs = TABS[ZE.kind],
     cur = tabs.find(x => x[0] === ZE.tab) || tabs[0];
   const scroll = $('.zcPage', ov) ? $('.zcPage', ov).scrollTop : 0;
+  /* the Slime Lab, open over the editor, stays open through a redraw */
+  const lab = $('#labOv', ov);
   ov.textContent = '';
   const nav = el(
     'nav',
@@ -502,5 +522,6 @@ export function zeRender() {
     )
   );
   page.scrollTop = scroll;
+  if (lab) $('.zcBox', ov).append(lab);
   status();
 }

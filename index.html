@@ -6393,6 +6393,479 @@ body[data-mode='synth'] #synth {
 }
 </style>
     <style>
+/* The Slime Lab (zen/zc-lab.js): a view inside the ZenCore editor's box, in its look (black, green, monospace
+   values, outlined groups). Builds on zen.css (.zcG, .zcC, .zcHead). */
+.zcBox {
+  position: relative;
+}
+#labOv {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  background: #000;
+  border-radius: inherit;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#labOv.in {
+  opacity: 1;
+}
+.labHead {
+  justify-content: space-between;
+}
+.labLive {
+  font-size: 12px;
+  color: var(--zc-dim);
+  margin-right: auto;
+}
+.labLive.on {
+  color: var(--zc-acc);
+}
+.labLive.on::before {
+  content: '● ';
+}
+.labTools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.labBody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(250px, 300px) minmax(300px, 1fr) minmax(270px, 330px);
+  gap: 12px;
+}
+.labIng,
+.labSide {
+  overflow: auto;
+  min-height: 0;
+  padding: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zc-line) transparent;
+}
+#labOv .zcG {
+  display: block;
+}
+/* the ingredients */
+.labG {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.liBtn {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 6px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  cursor: grab;
+  min-width: 0;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.liBtn:hover {
+  border-color: var(--zc-line);
+  background: #07110a;
+}
+.liBtn:focus-visible {
+  outline: 1px solid var(--zc-acc);
+}
+.liBtn.sel {
+  border-color: var(--zc-acc);
+  background: #0a1a0f;
+  box-shadow: 0 0 8px var(--zc-glow);
+}
+.liBtn > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.liBtn b {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e6ffee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.liBtn small {
+  font-size: 10.5px;
+  color: var(--zc-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.liBlob {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ic, #39ff7a) 60%, transparent));
+  transition: transform 0.3s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+.liBtn:hover .liBlob {
+  transform: scale(1.15, 0.9) translateY(1px);
+}
+.liBtn.sel .liBlob {
+  animation: labJig 1.6s ease-in-out infinite;
+}
+/* the slime */
+.labMid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.labStageG {
+  flex: 1;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column;
+  margin: 0;
+}
+.lsStage {
+  position: relative;
+  flex: 1;
+  min-height: 200px;
+  border: 1px solid var(--zc-line);
+  border-radius: 6px;
+  background:
+    linear-gradient(#0f2316 1px, transparent 1px) 0 0 / 100% 40px,
+    linear-gradient(90deg, #0f2316 1px, transparent 1px) 0 0 / 40px 100%,
+    radial-gradient(ellipse at 50% 80%, #06180c, var(--zc-well) 70%);
+  overflow: hidden;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.lsStage.drop {
+  border-color: var(--zc-acc);
+  box-shadow: inset 0 0 30px var(--zc-glow);
+}
+.lsSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lsShadow {
+  fill: #000;
+  opacity: 0.6;
+}
+.lsShine,
+.lsDot {
+  fill: #fff;
+  pointer-events: none;
+}
+.lsMotes circle {
+  filter: blur(1px);
+}
+.labRead {
+  margin: 6px 0 0;
+  font:
+    600 12px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--zc-acc);
+  min-height: 1.3em;
+}
+.lsFound {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  right: 12px;
+  max-width: 360px;
+  padding: 8px 12px;
+  border: 1px solid var(--zc-acc);
+  border-radius: 6px;
+  background: #000d;
+  box-shadow: 0 0 14px var(--zc-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.3s,
+    transform 0.3s;
+  pointer-events: none;
+}
+.lsFound.show {
+  opacity: 1;
+  transform: none;
+}
+.lsFound b {
+  font:
+    700 16px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--zc-acc);
+}
+.lsFound small {
+  color: #c9f7d5;
+  font-size: 12px;
+}
+.labCtl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.labAmt {
+  flex: 1;
+}
+.labMix {
+  white-space: nowrap;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.labTaste {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.labTaste .zcL {
+  color: #a9d9b5;
+  margin-right: 6px;
+}
+.labKey {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  max-width: 64px;
+  height: 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  box-sizing: border-box;
+  border-radius: 0 0 4px 4px;
+  background: #d5ddd7;
+  color: #1b2a20;
+  font:
+    700 10px ui-monospace,
+    Consolas,
+    monospace;
+  touch-action: none;
+  user-select: none;
+}
+.labKey:hover {
+  background: #e8f0ea;
+}
+.labKey.down {
+  background: var(--zc-acc);
+  box-shadow: 0 0 10px var(--zc-glow);
+}
+/* the side panels */
+.labSide .zcG {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #c9f7d5;
+}
+.labLearn p {
+  margin: 6px 0;
+}
+.llTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.llTop b {
+  font-size: 15px;
+  color: #fff;
+}
+.llTop small {
+  color: var(--zc-dim);
+  flex-basis: 100%;
+  margin-left: 32px;
+  margin-top: -6px;
+}
+.llK {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--zc-acc);
+}
+.llDid {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--zc-line);
+}
+.llCh {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  font-size: 11.5px;
+}
+.llCh span {
+  color: #a9d9b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.llCh s,
+.llCh b {
+  font-family: ui-monospace, Consolas, monospace;
+}
+.llCh s {
+  color: var(--zc-dim);
+}
+.llCh b {
+  color: var(--zc-acc);
+}
+.lmRow {
+  display: grid;
+  grid-template-columns: 74px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+}
+.lmRow span {
+  color: #a9d9b5;
+}
+.lmRow i {
+  height: 8px;
+  background: #0b1a10;
+  border: 1px solid var(--zc-line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.lmRow em {
+  display: block;
+  height: 100%;
+  background: var(--zc-acc);
+  box-shadow: 0 0 6px var(--zc-glow);
+  transition: width 0.6s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.lmRow b {
+  font:
+    600 11px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--zc-acc);
+  text-align: right;
+}
+.labBlends .hint,
+.labLog .hint {
+  margin: 2px 0 6px;
+  font-size: 11.5px;
+}
+.lbRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid #0f2316;
+}
+.lbRow b {
+  color: #e6ffee;
+}
+.lbRow.got b {
+  color: var(--zc-acc);
+}
+.lbRow.got b::after {
+  content: ' ✓';
+}
+.lbRow small {
+  display: block;
+  color: var(--zc-dim);
+  font-size: 11px;
+}
+.lbDots {
+  display: flex;
+  gap: 3px;
+  margin: 3px 0 2px;
+}
+.lbDots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50% 50% 45% 45%;
+  background: var(--ic);
+}
+.lgList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lgChip {
+  font-size: 11.5px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 99px;
+  border: 1px solid var(--zc-line);
+  background: #050906;
+  animation: labIn 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.lgChip::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ic);
+  margin-right: 5px;
+}
+@keyframes labJig {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.12, 0.9);
+  }
+  60% {
+    transform: scale(0.94, 1.08);
+  }
+}
+@keyframes labIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+@media (max-width: 1050px) {
+  .labBody {
+    grid-template-columns: 1fr 1fr;
+    overflow: auto;
+  }
+  .labSide {
+    grid-column: 1 / -1;
+    overflow: visible;
+  }
+  .labIng {
+    overflow: visible;
+  }
+}
+@media (max-width: 700px) {
+  .labBody {
+    grid-template-columns: 1fr;
+  }
+  .labMid {
+    order: -1;
+    min-height: 420px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #labOv,
+  #labOv * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+</style>
+    <style>
 /* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
    they open in (services/popout.js): a window of its own, or a panel over the app. The colours are the
    tokens of the mode the mixer belongs to, copied onto the window by popTheme(): Song Mode's own (light or
@@ -8645,7 +9118,7 @@ body[data-mode='scene'] #scene {
     const root = el("div", { class: "popRoot" });
     doc.body.append(root);
     forwardKeys(win);
-    const save3 = () => {
+    const save4 = () => {
       try {
         if (!win.closed)
           keepPlace(o.id, {
@@ -8661,9 +9134,9 @@ body[data-mode='scene'] #scene {
     };
     const watch4 = setInterval(() => {
       if (win.closed) h.close(true);
-      else save3();
+      else save4();
     }, 1e3);
-    win.addEventListener("beforeunload", save3);
+    win.addEventListener("beforeunload", save4);
     Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch4) });
     return true;
   }
@@ -13456,8 +13929,8 @@ body[data-mode='scene'] #scene {
       });
       const pairs2 = pickN([...used.values()], 6);
       const four = FOUR.has(g);
-      pairs2.forEach(({ p, bars: bars2, keyName }) => {
-        const kn2 = keyName && KEYS[keyName] ? keyName : /^[iv]/.test(p) ? "Am" : "C";
+      pairs2.forEach(({ p, bars: bars2, keyName: keyName2 }) => {
+        const kn2 = keyName2 && KEYS[keyName2] ? keyName2 : /^[iv]/.test(p) ? "Am" : "C";
         const R4 = KEYS[kn2].root, prog = PR[p];
         const BR = four ? {
           A: [
@@ -15775,8 +16248,8 @@ body[data-mode='scene'] #scene {
     return out2;
   }
   function parts(P2, o) {
-    const { tag, keyName, bpm, styles } = o;
-    const key = KEYS[keyName], R3 = key.root;
+    const { tag, keyName: keyName2, bpm, styles } = o;
+    const key = KEYS[keyName2], R3 = key.root;
     P2.forEach(([prog, chords], pi) => {
       const ix = o.ix(pi);
       const pcOf = ([d]) => (R3 + d) % 12;
@@ -15790,7 +16263,7 @@ body[data-mode='scene'] #scene {
         bars: 4,
         notes: notes.map((n) => ({ ...n, s: r42(n.s), l: r42(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n),
         key: { ...key },
-        keyName,
+        keyName: keyName2,
         role,
         styles,
         pool,
@@ -17476,7 +17949,7 @@ body[data-mode='scene'] #scene {
       ...o
     });
     GPROGS.filter((p) => p[4].split(" ").includes(g)).forEach((p, pi) => {
-      const [name, bars2, , mode] = p, R3 = set2.keys[pi % set2.keys.length][0], sg = lay(p, R3), keyName = NOTE_NAMES[R3] + " " + SCALE_OF(mode), K = { key: { root: R3, scale: SCALE_OF(mode) }, keyName }, tag = set2.tag + " ", suf = bars2 === 2 ? " 2-bar" : "", notes = (list2) => list2.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
+      const [name, bars2, , mode] = p, R3 = set2.keys[pi % set2.keys.length][0], sg = lay(p, R3), keyName2 = NOTE_NAMES[R3] + " " + SCALE_OF(mode), K = { key: { root: R3, scale: SCALE_OF(mode) }, keyName: keyName2 }, tag = set2.tag + " ", suf = bars2 === 2 ? " 2-bar" : "", notes = (list2) => list2.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
       const rh = CH_RH[set2.ch];
       ["Groove", "Push"].forEach(
         (lab, v) => push({
@@ -17706,10 +18179,10 @@ body[data-mode='scene'] #scene {
   // src/library/index.js
   for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === "rock") FAC.splice(i, 1);
   function instFactory(f) {
-    const found = Object.keys(S.patterns).find(
+    const found2 = Object.keys(S.patterns).find(
       (k2) => S.patterns[k2].src === f.id && !S.patterns[k2].mod && !S.patterns[k2].shift
     );
-    if (found) return found;
+    if (found2) return found2;
     return addPattern(f.type, f.name, f.bars, f.notes, {
       src: f.id,
       genre: f.genre,
@@ -20571,7 +21044,7 @@ body[data-mode='scene'] #scene {
           bad++;
           continue;
         }
-        const parts3 = gs.map((g, i) => {
+        const parts4 = gs.map((g, i) => {
           const drum = g.ch === 9 || /drum|kit|perc|beat/i.test(g.name);
           return {
             name: (gs.length === 1 ? base : g.name || base + " " + (i + 1)).slice(0, 40),
@@ -20581,7 +21054,7 @@ body[data-mode='scene'] #scene {
             on: true
           };
         });
-        items.push({ file: f.name, ppq: m.ppq, tempo: m.tempo, parts: parts3 });
+        items.push({ file: f.name, ppq: m.ppq, tempo: m.tempo, parts: parts4 });
       } catch (e) {
         bad++;
       }
@@ -23161,7 +23634,7 @@ body[data-mode='scene'] #scene {
   function libHay(it) {
     const m = it.m;
     const k2 = keyLabel(m);
-    const parts3 = [
+    const parts4 = [
       m.name,
       m.role || "",
       m.type === "drum" ? "drums drum beat kit" : "tone melodic synth",
@@ -23171,7 +23644,7 @@ body[data-mode='scene'] #scene {
       m.bpm ? m.bpm + " bpm" : "",
       m.bars + (m.bars === 1 ? " bar" : " bars")
     ];
-    return parts3.join(" ").toLowerCase();
+    return parts4.join(" ").toLowerCase();
   }
   var FAVS = /* @__PURE__ */ new Set();
   try {
@@ -25913,15 +26386,15 @@ body[data-mode='scene'] #scene {
     e.preventDefault();
     e.stopPropagation();
     const b = e.currentTarget, host2 = b.parentNode, x0 = e.clientX, bar0 = mk.bar;
-    let moved = false, undo2 = false;
+    let moved = false, undo3 = false;
     b.setPointerCapture(e.pointerId);
     const mv = (ev) => {
       const nb = Math.max(0, Math.min(S.bars - 1, bar0 + Math.round((ev.clientX - x0) / bw)));
       if (Math.abs(ev.clientX - x0) > 3) moved = true;
       if (moved && nb !== mk.bar && !cmMarks().some((m) => m !== mk && m.t === mk.t && m.bar === nb)) {
-        if (!undo2) {
+        if (!undo3) {
           pushUndo();
-          undo2 = true;
+          undo3 = true;
         }
         mk.bar = nb;
         host2.style.left = nb * bw + "px";
@@ -30600,7 +31073,7 @@ body[data-mode='scene'] #scene {
     const body = el("div", { class: "scRows" }), scBody = el("div", { class: "scScenes" });
     const tick = (text2, on3) => el("label", { class: "cwOpt" }, el("input", { type: "checkbox", checked: on3 }), " " + text2);
     const repl = tick("Replace the notes in clips that have some", false), named = tick("Name each clip after its pattern", true), clipsToo = tick("Send the clips too (untick when they are already on the MC-707)", true);
-    const draw = () => {
+    const draw2 = () => {
       body.textContent = "";
       const plan2 = songPlan(starts);
       for (const row2 of plan2) {
@@ -30608,7 +31081,7 @@ body[data-mode='scene'] #scene {
           "select",
           {
             "aria-label": "First clip for track " + devNum(row2.t),
-            onchange: (e) => (starts[row2.t] = +e.target.value, draw())
+            onchange: (e) => (starts[row2.t] = +e.target.value, draw2())
           },
           ...Array.from(
             { length: 16 },
@@ -30678,10 +31151,10 @@ body[data-mode='scene'] #scene {
     );
     const firstSel = el(
       "select",
-      { "aria-label": "First scene", onchange: (e) => (first = +e.target.value, draw()) },
+      { "aria-label": "First scene", onchange: (e) => (first = +e.target.value, draw2()) },
       ...Array.from({ length: SCENES }, (_, s) => el("option", { value: s }, "from scene " + sceneName(s)))
     );
-    draw();
+    draw2();
     const name = DEVS[DEV].name;
     const ov = el(
       "div",
@@ -34141,7 +34614,7 @@ body[data-mode='scene'] #scene {
     const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv", role: "img", "aria-label": "Envelope" });
     const nums = [];
     const sync = () => nums.forEach(([inp, id]) => document.activeElement !== inp && (inp.value = ctx2.get(K(id))));
-    const draw = () => {
+    const draw2 = () => {
       svg.textContent = "";
       const T3 = [1, 2, 3, 4].map((i) => ctx2.get(K("T" + i)));
       const L2 = levels.map((id) => id ? ctx2.get(K(id)) : 0);
@@ -34196,7 +34669,7 @@ body[data-mode='scene'] #scene {
           const d = -(ev.clientY - y0) * ky * (hi - lo) / (H - 2 * P2);
           ctx2.set(K(levels[li]), Math.round(Math.max(lo, Math.min(hi, l0 + d))), false);
         }
-        draw();
+        draw2();
       };
       const up = () => {
         removeEventListener("pointermove", move);
@@ -34277,8 +34750,8 @@ body[data-mode='scene'] #scene {
       el("option", { value: "parts" }, "to the other 3 partials"),
       ...others.map((e) => el("option", { value: e }, "to the " + KIND[e] + " envelope (this partial)"))
     );
-    draw();
-    ctx2.watch((k2) => k2.startsWith(blk + ".") && draw());
+    draw2();
+    ctx2.watch((k2) => k2.startsWith(blk + ".") && draw2());
     return el(
       "div",
       { class: "zcEnvBox" },
@@ -34296,7 +34769,7 @@ body[data-mode='scene'] #scene {
     const W = 420, H = 110;
     const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcSteps", role: "img", "aria-label": "LFO steps" });
     const key = (i) => pre + "STEP_" + (i + 1);
-    const draw = () => {
+    const draw2 = () => {
       svg.textContent = "";
       svg.append(sv("line", { x1: 0, x2: W, y1: H / 2, y2: H / 2, class: "zero" }));
       const n = ctx2.get(pre + "STEP_MAX") ?? 15;
@@ -34316,7 +34789,7 @@ body[data-mode='scene'] #scene {
     const at2 = (ev) => {
       const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(15, Math.floor((ev.clientX - r.left) / r.width * 16))), y = (ev.clientY - r.top) / r.height * H, v = Math.round(Math.max(-72, Math.min(72, (H / 2 - y) / (H / 2 - 4) * 72)));
       ctx2.set(key(i), v, false);
-      draw();
+      draw2();
     };
     svg.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -34329,7 +34802,7 @@ body[data-mode='scene'] #scene {
       addEventListener("pointermove", at2);
       addEventListener("pointerup", up);
     });
-    draw();
+    draw2();
     return svg;
   }
 
@@ -34358,7 +34831,7 @@ body[data-mode='scene'] #scene {
     const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "Wave preview" });
     const cap = el("small", { class: "hint" });
     const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P2 = (id) => ctx2.get(pk("PTL", ctx2.part, id));
-    const draw = () => {
+    const draw2 = () => {
       svg.textContent = "";
       svg.append(sv2("line", { x1: 0, x2: W, y1: M2, y2: M2, class: "zero" }));
       const ty = S2("OSC_TYPE"), inv = S2("VA_INVERT_SW") ? -1 : 1, line = (f, cls = "line") => {
@@ -34394,9 +34867,9 @@ body[data-mode='scene'] #scene {
         cap.textContent = "PCM waves are recordings inside the MC-707, so there is no picture of them. Play a note to hear it.";
       }
     };
-    draw();
+    draw2();
     ctx2.watch(
-      (k2) => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k2) && draw()
+      (k2) => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k2) && draw2()
     );
     return el("div", { class: "zcEnvBox" }, svg, cap);
   }
@@ -34407,7 +34880,7 @@ body[data-mode='scene'] #scene {
     const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P2 = (id) => ctx2.get(pk("PTL", ctx2.part, id));
     const fx = (x) => 20 * Math.pow(1e3, x / W);
     const yOf = (db2) => (TOP - Math.max(LO, Math.min(TOP, db2))) / (TOP - LO) * (H - 8) + 4;
-    const draw = () => {
+    const draw2 = () => {
       svg.textContent = "";
       [100, 1e3, 1e4].forEach((f) => {
         const x = Math.log(f / 20) / Math.log(1e3) * W;
@@ -34438,8 +34911,8 @@ body[data-mode='scene'] #scene {
       const hz = fc >= 1e3 ? (fc / 1e3).toFixed(1) + " kHz" : Math.round(fc) + " Hz";
       cap.textContent = (type === "OFF" ? "Filter off" : (vcf ? "VCF " : "TVF ") + type + " · about " + hz) + (vcf ? " · " + ["-12", "-18", "-24"][S2("FILTER_SLOPE")] + " dB" : "") + " · drawn from the settings, so the shape is approximate";
     };
-    draw();
-    ctx2.watch((k2) => /\.(FILTER_TYPE|VCF_TYPE|FILTER_SLOPE|CUTOFF|RESO|HPF_CUTOFF)$/.test(k2) && draw());
+    draw2();
+    ctx2.watch((k2) => /\.(FILTER_TYPE|VCF_TYPE|FILTER_SLOPE|CUTOFF|RESO|HPF_CUTOFF)$/.test(k2) && draw2());
     return el("div", { class: "zcEnvBox" }, svg, cap);
   }
   var LFO_F = {
@@ -34457,7 +34930,7 @@ body[data-mode='scene'] #scene {
     const pre = pk("LFO", ctx2.part, "LFO" + n + "_");
     const G = (id) => ctx2.get(pre + id);
     const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "LFO preview" });
-    const draw = () => {
+    const draw2 = () => {
       svg.textContent = "";
       svg.append(sv2("line", { x1: 0, x2: W, y1: M2, y2: M2, class: "zero" }));
       const form2 = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps2 = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
@@ -34485,8 +34958,8 @@ body[data-mode='scene'] #scene {
       }
       svg.append(sv2("path", { d: path(pts), class: "line" }));
     };
-    draw();
-    ctx2.watch((k2) => k2.startsWith(pre) && draw());
+    draw2();
+    ctx2.watch((k2) => k2.startsWith(pre) && draw2());
     return svg;
   }
 
@@ -36336,14 +36809,14 @@ body[data-mode='scene'] #scene {
         { class: "zbSelBar hint" },
         "Ctrl-click or Shift-click sounds to pick several: tag them, set their category, or copy them to a folder."
       );
-    const btn2 = (label2, title, onclick, cls) => el("button", { type: "button", class: "btn sm" + (cls || ""), title, onclick }, label2);
+    const btn3 = (label2, title, onclick, cls) => el("button", { type: "button", class: "btn sm" + (cls || ""), title, onclick }, label2);
     return el(
       "div",
       { class: "zbSelBar on", role: "toolbar", "aria-label": "Picked sounds" },
       el("b", {}, list2.length + " picked"),
-      btn2("Tag ▾", "Add a tag to the picked sounds, or take one off", (x) => menuFrom(x, tagItems(list2))),
-      ZE.kind === "tone" ? btn2("Category ▾", "Set the ZenCore category of the picked sounds", (x) => menuFrom(x, catItems(list2))) : null,
-      btn2(
+      btn3("Tag ▾", "Add a tag to the picked sounds, or take one off", (x) => menuFrom(x, tagItems(list2))),
+      ZE.kind === "tone" ? btn3("Category ▾", "Set the ZenCore category of the picked sounds", (x) => menuFrom(x, catItems(list2))) : null,
+      btn3(
         "Copy to ▾",
         "Copy them into My sounds or a folder",
         (x) => menuFrom(
@@ -36351,7 +36824,7 @@ body[data-mode='scene'] #scene {
           targets((f) => copyTo(list2, f))
         )
       ),
-      btn2(
+      btn3(
         "Move to ▾",
         "Move your own sounds into My sounds or a folder",
         (x) => menuFrom(
@@ -36359,10 +36832,10 @@ body[data-mode='scene'] #scene {
           targets((f) => moveTo(list2, f))
         )
       ),
-      btn2("Delete", "Delete the picked sounds of your own", () => deleteMany(list2), " zbDanger"),
+      btn3("Delete", "Delete the picked sounds of your own", () => deleteMany(list2), " zbDanger"),
       el("span", { class: "zbGap" }),
-      btn2("Pick all shown", "Pick every sound in the list", () => (shown2().forEach((e) => B.sel.add(e.id)), paintSel())),
-      btn2("Clear", "Let go of the picked sounds", () => (B.sel.clear(), paintSel()))
+      btn3("Pick all shown", "Pick every sound in the list", () => (shown2().forEach((e) => B.sel.add(e.id)), paintSel())),
+      btn3("Clear", "Let go of the picked sounds", () => (B.sel.clear(), paintSel()))
     );
   }
   function rowMenu(e, x, y) {
@@ -36705,12 +37178,1224 @@ body[data-mode='scene'] #scene {
     status();
   }
 
+  // src/zen/zc-lab.js
+  var LAB = { sel: "sun", drops: 4, log: [], found: /* @__PURE__ */ new Set(), busy: false };
+  var STORE2 = "mc707-lab";
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE2) || "null");
+    if (s) {
+      LAB.found = new Set(s.found || []);
+      if (s.drops >= 1 && s.drops <= 10) LAB.drops = s.drops;
+    }
+  } catch (e) {
+  }
+  var save3 = () => {
+    try {
+      localStorage.setItem(STORE2, JSON.stringify({ found: [...LAB.found], drops: LAB.drops }));
+    } catch (e) {
+    }
+  };
+  var still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  function parts2() {
+    const on3 = [0, 1, 2, 3].filter((i) => ZE.snd.v["PMT.PMT" + (i + 1) + "_PTL_SW"] === 1);
+    return on3.length ? on3 : [0];
+  }
+  function brewer() {
+    const out2 = {};
+    const def = (k2) => paramOf("tone", k2);
+    const get = (k2) => {
+      if (k2 in out2) return out2[k2];
+      const v = ZE.snd.v[k2];
+      if (typeof v === "number") return v;
+      const d = def(k2);
+      return d ? d[0][5] : 0;
+    };
+    const set2 = (k2, v) => {
+      const d = def(k2);
+      if (!d) return;
+      const p = d[0];
+      out2[k2] = Math.round(Math.max(p[3], Math.min(p[4], v)));
+    };
+    const add = (k2, dv) => set2(k2, get(k2) + dv);
+    const toward = (k2, target, amt) => set2(k2, get(k2) + (target - get(k2)) * Math.min(1, amt));
+    const ps = parts2();
+    const each = (fn) => ps.forEach((i, n) => fn((b) => b + i, n));
+    return { get, set: set2, add, toward, each, out: out2, n: ps.length };
+  }
+  var GROUPS = [
+    [
+      "Filter",
+      [
+        {
+          id: "sun",
+          name: "Brighten",
+          c: "#ffd23f",
+          tag: "Brighter. Opens the filter.",
+          brew: (b, d) => b.each((p) => b.add(p("PTL") + ".CUTOFF", 340 * d)),
+          what: "A filter decides which harmonics get through. Every note is a stack of overtones above its root pitch; a low-pass filter’s cutoff is the point above which they fade. Raise it and more overtones pass: the sound gets brighter, closer and more aggressive.",
+          hear: "Every filter sweep in dance music, the “opening up” before a drop.",
+          tip: "Bright sounds grab attention but tire the ear. In a busy mix keep only one or two parts really bright, and let the rest sit darker behind them."
+        },
+        {
+          id: "moon",
+          name: "Darken",
+          c: "#5b6cff",
+          tag: "Darker and warmer.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("PTL") + ".CUTOFF", -300 * d);
+            b.toward(p("PTL") + ".CUTOFF_KF", 100, d * 0.5);
+          }),
+          what: "Lowering the cutoff removes the upper harmonics: the sound turns warm, soft and further away. It also adds a little key follow, so higher notes open the filter a bit more and don’t go dull at the top of the keyboard, the way real instruments behave.",
+          hear: "Muffled “through the wall” intros, warm basses, mellow pads behind a vocal.",
+          tip: "Darkening a part is the easiest way to make room for something else. If two sounds fight, darken the less important one before turning it down."
+        },
+        {
+          id: "squelch",
+          name: "Resonance",
+          c: "#9dff3a",
+          tag: "Resonance and a filter snap.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("PTL") + ".RESO", 300 * d);
+            b.add(p("FENV") + ".DEPTH", 22 * d);
+            b.toward(p("FENV") + ".T1", 0, 1);
+            b.toward(p("FENV") + ".L1", 1023, d);
+            b.toward(p("FENV") + ".T2", 260, d);
+            b.toward(p("FENV") + ".L3", 160, d);
+          }),
+          what: "Resonance feeds the filter’s output back into itself, so the harmonics right at the cutoff ring out in a whistling peak. Add a filter envelope that opens the cutoff on each note and snaps it shut, and the peak sweeps down: the “squelch”.",
+          hear: "The Roland TB-303 and every acid line since 1987.",
+          tip: "Resonance sounds biggest when the cutoff moves. Add Darken first so the sweep starts lower, and Mono legato + Glide for slides."
+        },
+        {
+          id: "bloom",
+          name: "Filter bloom",
+          c: "#e8b04a",
+          tag: "The filter blooms on each note.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("PTL") + ".CUTOFF", -160 * d);
+            b.add(p("FENV") + ".DEPTH", 24 * d);
+            b.toward(p("FENV") + ".T1", 190, d);
+            b.toward(p("FENV") + ".L1", 1023, d);
+            b.toward(p("FENV") + ".T2", 460, d);
+            b.toward(p("FENV") + ".L2", 620, d);
+            b.toward(p("FENV") + ".L3", 540, d);
+          }),
+          what: "A filter envelope moves the cutoff over the life of a note. Here it rises over a short moment, then settles: the note starts soft and blooms brighter, the way a horn player’s note does as the air builds.",
+          hear: "Synth brass (the Oberheim and Jupiter stabs of the 80s), swelling leads.",
+          tip: "Filter envelope plus velocity is how synths imitate playing harder: louder hits open the filter more. Try it with Punch for brass stabs."
+        },
+        {
+          id: "ghost",
+          name: "High-pass",
+          c: "#dfe9ff",
+          tag: "High-pass: thin and airy.",
+          brew: (b, d) => b.each((p) => {
+            b.set(p("PTL") + ".FILTER_TYPE", 3);
+            b.set(p("PTL") + ".CUTOFF", 180 + 520 * d);
+            b.toward(p("PTL") + ".RESO", 120, 0.5);
+          }),
+          what: "A high-pass filter does the opposite of a low-pass: it removes the lows and keeps the highs. The body of the sound disappears and what is left is airy, thin, like a voice on a telephone.",
+          hear: "Risers, “radio” breakdowns, hi-hat-like noises, background textures.",
+          tip: "Mixing engineers high-pass almost everything except the kick and the bass, a little, so the low end stays clean. Brighten and Darken move the cutoff afterwards."
+        },
+        {
+          id: "hush",
+          name: "Smooth",
+          c: "#c9a7e8",
+          tag: "Smooths away the harshness.",
+          brew: (b, d) => {
+            b.add("CMN.ANALOG_FEEL", -40 * d);
+            b.each((p) => {
+              b.add(p("PTL") + ".RESO", -280 * d);
+              b.add(p("PTL") + ".FXM_DEPTH", -6 * d);
+              b.add(p("SPTL") + ".FAT", -40 * d);
+            });
+          },
+          what: "Sound design is as much taking away as adding. This lowers resonance, cross-modulation and fat, the things that make a tone ring, buzz and bite, and leaves it smooth.",
+          hear: "Clean pads, soft keys, the background parts that support a track without being noticed.",
+          tip: "When a sound “annoys” you after a few minutes, it is often a resonant peak. Try taking things away before adding more."
+        }
+      ]
+    ],
+    [
+      "Shape",
+      [
+        {
+          id: "pluck",
+          name: "Pluck",
+          c: "#ff7ad9",
+          tag: "Short, plucked notes.",
+          brew: (b, d) => b.each((p) => {
+            const a = p("AENV"), f = p("FENV");
+            b.set(a + ".T1", 0);
+            b.toward(a + ".T2", 180, d);
+            b.toward(a + ".L2", 320, d);
+            b.toward(a + ".T3", 360, d);
+            b.toward(a + ".L3", 0, d);
+            b.toward(a + ".T4", 220, d);
+            b.add(f + ".DEPTH", 10 * d);
+            b.toward(f + ".T2", 260, d);
+            b.toward(f + ".L3", 140, d);
+          }),
+          what: "The amp envelope is a note’s life: attack (how fast it starts), decay (how fast it falls), sustain (the level it holds while the key is down) and release (how long it rings after). A pluck starts instantly, decays fast and holds nothing. The filter closes as it dies, like a real string losing its brightness.",
+          hear: "Harps, kalimbas, marimbas, the plucked synth riffs of tropical house.",
+          tip: "Plucks leave gaps between notes, so they can play busy patterns without crowding a mix. Add Space to fill the gaps."
+        },
+        {
+          id: "swell",
+          name: "Swell",
+          c: "#ffa65c",
+          tag: "Slow attack: notes fade in.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("AENV") + ".T1", 380 * d);
+            b.add(p("AENV") + ".T4", 240 * d);
+            b.toward(p("AENV") + ".L3", 1023, d * 0.6);
+          }),
+          what: "A slow attack makes each note fade in instead of starting at once. The sharp start of a sound (its transient) is what tells the ear where the note is, so without it notes blur together into a wash.",
+          hear: "String sections, pads, “reverse” swells, bowed sounds.",
+          tip: "Slow attacks sound late. Play the chords a little early, or keep the attack short enough to follow the rhythm."
+        },
+        {
+          id: "mist",
+          name: "Long release",
+          c: "#b9c7d9",
+          tag: "Longer release: notes ring on.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("AENV") + ".T4", 340 * d);
+            b.add(p("FENV") + ".T4", 200 * d);
+          }),
+          what: "Release is the time a note takes to fade after you let go of the key. Long releases let notes overlap and blend into each other; short ones keep a part tight and rhythmic.",
+          hear: "Ambient keys, pianos with the sustain pedal down, dreamy arpeggios.",
+          tip: "Long releases on fast or low notes turn to mud. Keep basses short and let the high parts ring."
+        },
+        {
+          id: "punch",
+          name: "Punch",
+          c: "#ff4b3e",
+          tag: "A punchy pitch blip on every hit.",
+          brew: (b, d) => b.each((p) => {
+            const e = p("PENV");
+            b.set(p("AENV") + ".T1", 0);
+            b.toward(e + ".DEPTH", 40, d);
+            b.set(e + ".T1", Math.round(40 + 60 * d));
+            b.set(e + ".L0", Math.round(511 * d));
+            for (const l of ["L1", "L2", "L3", "L4"]) b.set(e + "." + l, 0);
+            b.set(e + ".T2", 0);
+          }),
+          what: "A pitch envelope bends the pitch at the start of a note. A very fast drop from high to the real pitch is heard as a click or a thump, not as a bend: punch. It is how an 808 kick is made (a sine wave with a fast pitch drop).",
+          hear: "808 kicks and toms, zappy basses, laser sounds (a big amount).",
+          tip: "Punch is about the first few milliseconds. A tiny dose makes a bass cut through; a big one is a sound effect."
+        }
+      ]
+    ],
+    [
+      "Motion",
+      [
+        {
+          id: "wobble",
+          name: "Filter wobble",
+          c: "#36e0c8",
+          tag: "An LFO wobbles the filter.",
+          brew: (b, d) => b.each((p) => {
+            const l = p("LFO");
+            if (!b.get(l + ".LFO2_TVF_DEPTH")) b.set(l + ".LFO2_FORM", 0);
+            b.add(l + ".LFO2_TVF_DEPTH", 45 * d);
+            b.add(p("PTL") + ".CUTOFF", -120 * d);
+            b.add(p("PTL") + ".RESO", 90 * d);
+          }),
+          what: "An LFO (low frequency oscillator) is a slow wave, too slow to hear, that moves something else. Pointed at the filter cutoff it opens and closes the filter over and over: wah-wah, wobble. This uses LFO 2.",
+          hear: "Dubstep wobble bass, funky auto-wah, slowly breathing pads.",
+          tip: "Set the LFO’s Rate Sync on (LFO page) to lock the wobble to the tempo: 1/8 and 1/16 are the classic wobble speeds. Faster LFO and Slower LFO change the speed."
+        },
+        {
+          id: "vibrato",
+          name: "Vibrato",
+          c: "#b06bff",
+          tag: "A singer’s vibrato that fades in.",
+          brew: (b, d) => b.each((p) => {
+            const l = p("LFO");
+            b.set(l + ".LFO1_FORM", 0);
+            b.add(l + ".LFO1_PIT_DEPTH", 8 * d);
+            b.toward(l + ".LFO1_DELAY", 360, 0.8);
+            b.toward(l + ".LFO1_FADE", 420, 0.8);
+          }),
+          what: "Vibrato is a small, quick wobble in pitch. Singers and violinists don’t start a note with it: they hold the note straight, then let the vibrato bloom. The LFO’s delay and fade times do the same here. This uses LFO 1.",
+          hear: "Expressive leads, flutes, strings, the classic Minimoog solo.",
+          tip: "Real vibrato is around 5–7 wobbles a second and only a few cents deep. More than that sounds like a siren (which can be fun)."
+        },
+        {
+          id: "tremolo",
+          name: "Tremolo",
+          c: "#ff5fa2",
+          tag: "The volume pulses.",
+          brew: (b, d) => b.each((p) => {
+            const l = p("LFO");
+            if (!b.get(l + ".LFO1_TVA_DEPTH")) b.set(l + ".LFO1_FORM", 1);
+            b.add(l + ".LFO1_TVA_DEPTH", 40 * d);
+          }),
+          what: "Tremolo is an LFO on the volume: the sound pulses louder and quieter. Guitar amps and electric pianos have it built in. It shares LFO 1’s speed with Vibrato.",
+          hear: "Rhodes and Wurlitzer pianos, surf guitar, “helicopter” chops (a big amount, fast).",
+          tip: "A square LFO wave (LFO page) turns tremolo into a rhythmic gate, chopping the sound on and off."
+        },
+        {
+          id: "swirl",
+          name: "Auto-pan",
+          c: "#6fd6ff",
+          tag: "The sound circles left and right.",
+          brew: (b, d) => b.each((p, n) => b.add(p("LFO") + ".LFO2_PAN_DEPTH", (n % 2 ? -1 : 1) * 36 * d)),
+          what: "Auto-pan: an LFO moves the sound between the left and right speakers. With more than one partial, it swings them in opposite directions, so they chase each other around your head. Uses LFO 2.",
+          hear: "Psychedelic organs, ambient textures, headphone tricks.",
+          tip: "Auto-pan is best felt on headphones and on sustained sounds. On a bass it just sounds unsteady."
+        },
+        {
+          id: "quick",
+          name: "Faster LFO",
+          c: "#d8e3ec",
+          tag: "Faster LFOs.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("LFO") + ".LFO1_RATE", 150 * d);
+            b.add(p("LFO") + ".LFO2_RATE", 150 * d);
+          }),
+          what: "The LFO rate is how fast the movement is. Slow rates make gentle, evolving changes; fast ones become a texture: flutter, shimmer, buzz. At audio speeds an LFO stops being movement and starts changing the tone itself.",
+          hear: "Fast wobbles, fluttering pads, trills.",
+          tip: "Change the speed of a wobble between sections of a song: slow in the verse, fast in the drop."
+        },
+        {
+          id: "sloth",
+          name: "Slower LFO",
+          c: "#8a9a46",
+          tag: "Slower LFOs.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("LFO") + ".LFO1_RATE", -150 * d);
+            b.add(p("LFO") + ".LFO2_RATE", -150 * d);
+          }),
+          what: "A very slow LFO, one wave every few seconds or bars, is heard as the sound evolving rather than wobbling. It is how pads seem alive.",
+          hear: "Slowly breathing pads, drones, film textures.",
+          tip: "Slow movement on a few parameters at different speeds makes a sound that never quite repeats."
+        }
+      ]
+    ],
+    [
+      "Pitch",
+      [
+        {
+          id: "abyss",
+          name: "Octave down",
+          c: "#2b3fa8",
+          tag: "An octave down.",
+          brew: (b, d) => b.add("CMN.OCTAVE", d > 0.65 ? -2 : -1),
+          what: "An octave is a doubling of the frequency: the same note, higher or lower. One octave down puts a sound into bass territory, where the fundamental (the root frequency) carries the weight and you feel it as much as hear it.",
+          hear: "Sub basses, deep drones, “the drop”.",
+          tip: "Below about 60 Hz, small speakers can’t play the fundamental. Some Drive adds harmonics that suggest the bass even on a phone."
+        },
+        {
+          id: "feather",
+          name: "Octave up",
+          c: "#f1f7ff",
+          tag: "An octave up.",
+          brew: (b, d) => b.add("CMN.OCTAVE", d > 0.65 ? 2 : 1),
+          what: "One octave up. Higher sounds take less room in a mix and read as lighter, sparklier and further forward.",
+          hear: "Bells, glockenspiel parts, arpeggios over a busy track.",
+          tip: "Doubling a melody an octave up, quietly, makes it bigger without making it louder."
+        },
+        {
+          id: "wolf",
+          name: "Mono legato",
+          c: "#7d7da6",
+          tag: "Mono and legato: one note at a time.",
+          brew: (b) => {
+            b.set("CMN.MONO_POLY", 0);
+            b.set("CMN.LEGATO_SW", 1);
+          },
+          what: "A mono sound plays one note at a time: a new key takes over from the last. With legato on, overlapping notes don’t restart the envelope, so a line sounds connected, like one breath on a horn.",
+          hear: "Basslines, the Minimoog and TB-303, expressive leads.",
+          tip: "Mono is perfect for basses: chords in the low end turn to mush anyway. Add Glide too for slides."
+        },
+        {
+          id: "glide",
+          name: "Glide",
+          c: "#7cff6b",
+          tag: "Notes glide into each other.",
+          brew: (b, d) => {
+            b.set("CMN.PORTA_SW", 1);
+            b.toward("CMN.PORTA_TIME", 120 + 520 * d, 1);
+          },
+          what: "Portamento (glide) slides the pitch from one note to the next instead of jumping. The glide time is how long the slide takes.",
+          hear: "Acid slides, G-funk whistle leads, trance lead swoops, 808 basses.",
+          tip: "With Mono legato on, only overlapping notes slide: you choose where the slides are by how you play."
+        },
+        {
+          id: "drift",
+          name: "Analog drift",
+          c: "#b7b08a",
+          tag: "Old-analog wobble and wander.",
+          brew: (b, d) => {
+            b.add("CMN.ANALOG_FEEL", 45 * d);
+            b.each((p, n) => {
+              b.add(p("PTL") + ".PIT_RND", 12 * d);
+              b.add(p("PTL") + ".PIT_FINE", (n % 2 ? -1 : 1) * 3 * d);
+            });
+          },
+          what: "Old analog synths never stayed perfectly in tune: their oscillators drifted with heat. That small instability makes a sound feel alive and warm. Analog Feel adds slow random drift; random pitch makes each note land slightly differently.",
+          hear: "Vintage polysynths, lo-fi hip hop keys, tape-worn sounds.",
+          tip: "A little is magic, a lot is seasick. Combine with Tremolo and Darken for a worn tape sound."
+        }
+      ]
+    ],
+    [
+      "Space and texture",
+      [
+        {
+          id: "swarm",
+          name: "Unison",
+          c: "#ff9f1c",
+          tag: "Unison: many detuned voices.",
+          brew: (b, d) => {
+            b.set("SCMN.UNISON_SW", 1);
+            b.toward("SCMN.UNISON_SIZE", 8, d);
+            b.add("SCMN.UNISON_DETN", 25 * d);
+          },
+          what: "Unison plays several copies of every note, each slightly out of tune with the others. The copies beat against each other (a slow phasing), and the sound becomes huge and shimmering. With saw waves this is the famous supersaw.",
+          hear: "Trance leads, big EDM chords, the Roland JP-8000.",
+          tip: "Too much detune sounds out of tune. And unison eats voices: the MC-707 can play fewer notes at once."
+        },
+        {
+          id: "giant",
+          name: "Width",
+          c: "#8fe388",
+          tag: "Wider stereo.",
+          brew: (b, d) => {
+            const spread = b.n > 1;
+            b.each((p, n) => {
+              b.toward(p("PTL") + ".STEREO_WIDTH", 100, 1);
+              b.add(p("PTL") + ".PAN_RND", 10 * d);
+              if (spread) b.toward(p("PTL") + ".PAN", (n % 2 ? -1 : 1) * 44, d);
+            });
+          },
+          what: "Width is how far a sound spreads between the left and right speakers. Partials panned apart, a little random pan per note and full stereo width make a sound wrap around you.",
+          hear: "Wide pads and chords that frame a track.",
+          tip: "Keep the kick, the bass and the lead vocal in the middle, and spread the rest. Width is relative: something has to be narrow for something else to sound wide."
+        },
+        {
+          id: "shimmer",
+          name: "Detune",
+          c: "#a5f3fc",
+          tag: "Detuned layers: a chorus shimmer.",
+          brew: (b, d) => {
+            b.each((p, n) => {
+              b.add(p("PTL") + ".STEREO_DETN", 8 * d);
+              b.add(p("PTL") + ".PIT_FINE", (n % 2 ? -1 : 1) * 6 * d);
+            });
+          },
+          what: "Detuning two layers by a few cents makes them drift in and out of phase: a chorus effect, built into the sound. Stereo detune does it between the left and right sides, so the sound also gets wider.",
+          hear: "Juno strings, chorused electric pianos, 80s pads.",
+          tip: "A few cents is enough. Detune has more effect on sustained sounds than on short ones."
+        },
+        {
+          id: "grit",
+          name: "Drive",
+          c: "#e8551c",
+          tag: "Grit, buzz and fat.",
+          brew: (b, d) => {
+            b.add("CMN.ANALOG_FEEL", 18 * d);
+            b.each((p) => {
+              b.set(p("PTL") + ".FXM_SW", 1);
+              b.add(p("PTL") + ".FXM_DEPTH", Math.max(1, Math.round(4 * d)));
+              b.add(p("SPTL") + ".FAT", 40 * d);
+            });
+          },
+          what: "Grit is extra harmonics. FXM (frequency cross modulation) lets one wave bend another, adding metallic, inharmonic edges; Fat thickens the virtual analog oscillators. More harmonics means more presence and aggression.",
+          hear: "Distorted basses, growls, industrial textures.",
+          tip: "Grit helps a bass on small speakers: the harmonics let you hear the note even when the speaker can’t play it. Smooth takes it back."
+        },
+        {
+          id: "space",
+          name: "Space",
+          c: "#7fa7c9",
+          tag: "Reverb and delay sends.",
+          brew: (b, d) => b.each((p) => {
+            b.add(p("PTL") + ".REV_SEND", 46 * d);
+            b.add(p("PTL") + ".CHO_SEND", 26 * d);
+          }),
+          what: "Reverb is the sound of a room: thousands of echoes blurring together. Delay is distinct echoes. Sounds don’t each get their own: they send some of themselves to the project’s shared reverb and delay (Mixer › Master FX chooses their types).",
+          hear: "Everything. Lots of it: ambient and shoegaze; little: tight funk and hip hop.",
+          tip: "More reverb pushes a sound further back. Keep kick and bass mostly dry, and use space to put parts in front of or behind each other."
+        }
+      ]
+    ]
+  ];
+  var SUB2 = {
+    sun: "Cutoff up",
+    moon: "Cutoff down",
+    squelch: "Resonance + filter env",
+    bloom: "Filter envelope",
+    ghost: "High-pass filter",
+    hush: "Less reso, drive, fat",
+    pluck: "Amp + filter envelopes",
+    swell: "Slow attack",
+    mist: "Release time",
+    punch: "Pitch envelope",
+    wobble: "LFO 2 → cutoff",
+    vibrato: "LFO 1 → pitch",
+    tremolo: "LFO 1 → level",
+    swirl: "LFO 2 → pan",
+    quick: "LFO rates up",
+    sloth: "LFO rates down",
+    abyss: "Octave −1",
+    feather: "Octave +1",
+    wolf: "Mono, legato",
+    glide: "Portamento",
+    drift: "Analog feel, random pitch",
+    swarm: "Unison voices",
+    giant: "Pan spread, width",
+    shimmer: "Fine tune, stereo detune",
+    grit: "FXM, fat, analog feel",
+    space: "Reverb + delay sends"
+  };
+  var ING = GROUPS.flatMap(([, ps]) => ps);
+  var ing = (id) => ING.find((p) => p.id === id);
+  var RECIPES = [
+    {
+      id: "acid",
+      name: "Acid Bass",
+      steps: [
+        ["wolf", 5],
+        ["glide", 3],
+        ["moon", 4],
+        ["squelch", 8],
+        ["pluck", 5]
+      ],
+      about: "The TB-303 sound: one sliding voice, with a resonant filter that snaps shut on every note."
+    },
+    {
+      id: "pad",
+      name: "Dream Pad",
+      steps: [
+        ["swell", 7],
+        ["mist", 6],
+        ["shimmer", 5],
+        ["giant", 6],
+        ["space", 6],
+        ["moon", 3]
+      ],
+      about: "Slow in, slow out, detuned, wide and far away: the pad that holds a track together."
+    },
+    {
+      id: "trance",
+      name: "Trance Lead",
+      steps: [
+        ["swarm", 8],
+        ["sun", 5],
+        ["giant", 4],
+        ["space", 4],
+        ["glide", 2]
+      ],
+      about: "A supersaw, opened up, wide and wet, with a touch of glide."
+    },
+    {
+      id: "wob",
+      name: "Wobble Bass",
+      steps: [
+        ["wolf", 5],
+        ["abyss", 4],
+        ["wobble", 8],
+        ["grit", 4]
+      ],
+      about: "An octave down, mono, a filter LFO and grit. Sync the LFO to the tempo for the real thing."
+    },
+    {
+      id: "kalimba",
+      name: "Kalimba Pluck",
+      steps: [
+        ["pluck", 8],
+        ["sun", 3],
+        ["feather", 4],
+        ["space", 3]
+      ],
+      about: "Instant attack, fast decay and a little room: a sound for busy, bouncy melodies."
+    },
+    {
+      id: "lofi",
+      name: "Lo-fi Keys",
+      steps: [
+        ["moon", 5],
+        ["drift", 6],
+        ["tremolo", 4],
+        ["mist", 3]
+      ],
+      about: "Dark, wandering in pitch and gently pulsing: a worn tape of an electric piano."
+    },
+    {
+      id: "brass",
+      name: "Brass Stab",
+      steps: [
+        ["bloom", 7],
+        ["punch", 3],
+        ["swarm", 3]
+      ],
+      about: "A filter that blooms on each note, a punchy start and a few voices: 80s synth brass."
+    },
+    {
+      id: "choir",
+      name: "Ghost Choir",
+      steps: [
+        ["ghost", 4],
+        ["vibrato", 6],
+        ["swell", 5],
+        ["space", 8]
+      ],
+      about: "Thin, breathy, wavering and far away."
+    },
+    {
+      id: "thump",
+      name: "Sub Thump",
+      steps: [
+        ["abyss", 7],
+        ["punch", 8],
+        ["pluck", 6],
+        ["moon", 6]
+      ],
+      about: "An octave down, a pitch blip, a short decay and the highs taken off: an 808-style hit."
+    },
+    {
+      id: "siren",
+      name: "Siren Lead",
+      steps: [
+        ["wolf", 5],
+        ["glide", 6],
+        ["vibrato", 7],
+        ["sun", 4],
+        ["grit", 3]
+      ],
+      about: "Mono, gliding, with a wide vibrato and some bite: a lead that screams over a track."
+    }
+  ];
+  function traits() {
+    const v = ZE.snd.v, ps = parts2(), n = (k2) => typeof v[k2] === "number" ? v[k2] : 0;
+    const avg = (f) => ps.reduce((s, i) => s + f(i), 0) / ps.length;
+    const lfo = (i) => Math.max(
+      ...[
+        "LFO1_PIT_DEPTH",
+        "LFO1_TVF_DEPTH",
+        "LFO1_TVA_DEPTH",
+        "LFO2_PIT_DEPTH",
+        "LFO2_TVF_DEPTH",
+        "LFO2_TVA_DEPTH"
+      ].map((k2) => Math.abs(n("LFO" + i + "." + k2)) / 60),
+      ...["LFO1_PAN_DEPTH", "LFO2_PAN_DEPTH"].map((k2) => Math.abs(n("LFO" + i + "." + k2)) / 50)
+    );
+    const pan = ps.length > 1 ? Math.max(...ps.map((i) => n("PTL" + i + ".PAN"))) - Math.min(...ps.map((i) => n("PTL" + i + ".PAN"))) : 0;
+    const c = (x) => Math.max(0, Math.min(1, x));
+    return [
+      ["Brightness", c(avg((i) => n("PTL" + i + ".FILTER_TYPE") === 0 ? 1 : n("PTL" + i + ".CUTOFF") / 1023)), "#ffd23f"],
+      ["Bite", c(avg((i) => n("PTL" + i + ".RESO") / 800)), "#9dff3a"],
+      ["Snap", c(avg((i) => 1 - Math.sqrt(n("AENV" + i + ".T1") / 1023))), "#ff4b3e"],
+      ["Sustain", c(avg((i) => n("AENV" + i + ".L3") / 1023)), "#ffa65c"],
+      ["Tail", c(avg((i) => n("AENV" + i + ".T4") / 800)), "#b9c7d9"],
+      ["Motion", c(avg(lfo)), "#36e0c8"],
+      [
+        "Width",
+        c(
+          n("SCMN.UNISON_SW") * 0.35 + pan / 90 + avg((i) => n("PTL" + i + ".PAN_RND") / 40 + Math.abs(n("PTL" + i + ".STEREO_DETN")) / 25)
+        ),
+        "#8fe388"
+      ],
+      [
+        "Grit",
+        c(
+          n("CMN.ANALOG_FEEL") / 160 + avg((i) => n("PTL" + i + ".FXM_SW") * (n("PTL" + i + ".FXM_DEPTH") / 10) + (n("SPTL" + i + ".FAT") - 64) / 200)
+        ),
+        "#e8551c"
+      ],
+      ["Space", c(avg((i) => (n("PTL" + i + ".REV_SEND") + n("PTL" + i + ".CHO_SEND") * 0.7) / 140)), "#7fa7c9"]
+    ];
+  }
+  function reading(tr) {
+    const t = Object.fromEntries(tr.map(([k2, v2]) => [k2, v2]));
+    const v = ZE.snd.v;
+    const role = v["CMN.OCTAVE"] < 0 ? t.Snap > 0.7 && t.Sustain < 0.3 ? "a punchy bass or drum hit" : "a bass" : t.Snap < 0.45 ? "a pad or a swell" : t.Sustain < 0.25 ? "a pluck or a stab" : v["CMN.MONO_POLY"] === 0 ? "a lead line" : "keys or chords";
+    const words = [];
+    if (t.Brightness > 0.8) words.push("bright");
+    else if (t.Brightness < 0.4) words.push("dark");
+    if (t.Bite > 0.45) words.push("squelchy");
+    if (t.Grit > 0.45) words.push("gritty");
+    if (t.Motion > 0.3) words.push("moving");
+    if (t.Width > 0.45) words.push("wide");
+    if (t.Space > 0.5) words.push("distant");
+    else if (t.Space < 0.1) words.push("dry");
+    if (t.Tail > 0.6) words.push("ringing");
+    const desc = words.length ? words.slice(0, 4).join(", ") : "plain";
+    return "Reads as " + desc + ": " + role + ".";
+  }
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var svgEl = (tag, at2 = {}) => {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k2 in at2) e.setAttribute(k2, at2[k2]);
+    return e;
+  };
+  var hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  var BASE = "#39ff7a";
+  function tint(cols) {
+    const all = [BASE, BASE, ...cols];
+    const w = all.map((_, i) => i < 2 ? 1.5 : i), tot = w.reduce((a, b2) => a + b2, 0);
+    const m = [0, 1, 2].map((j) => all.reduce((s, c, i) => s + hex(c)[j] * w[i], 0) / tot);
+    const [r, g, b] = m.map((x) => x / 255), hi = Math.max(r, g, b), lo = Math.min(r, g, b), d = hi - lo;
+    let h = 0;
+    if (d) h = hi === r ? (g - b) / d % 6 : hi === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    const S2 = 0.85, L2 = 0.58, C = (1 - Math.abs(2 * L2 - 1)) * S2, X = C * (1 - Math.abs(h / 60 % 2 - 1)), o = L2 - C / 2;
+    const [a1, b1, c1] = h < 60 ? [C, X, 0] : h < 120 ? [X, C, 0] : h < 180 ? [0, C, X] : h < 240 ? [0, X, C] : h < 300 ? [X, 0, C] : [C, 0, X];
+    return [a1, b1, c1].map((x) => (x + o) * 255);
+  }
+  var LOBES = 9;
+  var SL = { raf: 0, t: 0, kick: 0, col: hex(BASE), to: hex(BASE), T: {}, drops: [], drips: [], hold: null, env: null };
+  function slimeSvg() {
+    const s = svgEl("svg", { viewBox: "0 0 400 300", class: "lsSvg", "aria-hidden": "true" });
+    s.innerHTML = '<defs><filter id="lsGoo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter><filter id="lsHaze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="26"/></filter><radialGradient id="lsShade" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><ellipse class="lsHaze" cx="200" cy="165" rx="120" ry="90" filter="url(#lsHaze)"/><ellipse class="lsShadow" cx="200" cy="262" rx="110" ry="12"/><g class="lsMotes"></g><g class="lsBody" filter="url(#lsGoo)"></g><ellipse class="lsShine" rx="30" ry="13"/><circle class="lsDot" r="5"/>';
+    const body = s.querySelector(".lsBody");
+    body.append(svgEl("circle", { class: "lsCore", cx: 200, cy: 170, r: 60 }));
+    for (let i = 0; i < LOBES; i++) body.append(svgEl("circle", { class: "lsLobe", cx: 200, cy: 170, r: 30 }));
+    body.append(svgEl("circle", { class: "lsFoot", cx: 200, cy: 230, r: 40 }));
+    const motes = s.querySelector(".lsMotes");
+    for (let i = 0; i < 12; i++) motes.append(svgEl("circle", { r: 2 + i % 3 }));
+    return s;
+  }
+  var envSec = (v) => Math.pow(Math.max(0, v) / 1023, 2.2) * 7;
+  function envLevel(e, t, r) {
+    const seg = [
+      [envSec(e.t1), 0, e.l1],
+      [envSec(e.t2), e.l1, e.l2],
+      [envSec(e.t3), e.l2, e.l3]
+    ];
+    const at2 = (tt) => {
+      for (const [d2, a, b] of seg) {
+        if (tt < d2) return a + (b - a) * (tt / Math.max(d2, 1e-4));
+        tt -= d2;
+      }
+      return e.l3;
+    };
+    if (r == null) return at2(t);
+    const from = at2(t - r), d = envSec(e.t4);
+    return r >= d ? 0 : from * (1 - r / Math.max(d, 1e-4));
+  }
+  function frame2(now) {
+    const svg = document.querySelector("#labOv .lsSvg");
+    if (!svg) return SL.raf = 0;
+    SL.raf = requestAnimationFrame(frame2);
+    const calm = still();
+    const dt = Math.min(0.05, (now - (SL.last || now)) / 1e3);
+    SL.last = now;
+    const T3 = SL.T;
+    SL.t += dt * (calm ? 0 : 0.6 + (T3.Motion || 0) * 2.6);
+    SL.kick *= Math.pow(0.04, dt);
+    SL.col = SL.col.map((c, i) => c + (SL.to[i] - c) * Math.min(1, dt * 3));
+    let E = 0;
+    if (SL.hold && SL.env) {
+      const t = (now - SL.hold.t0) / 1e3, r = SL.hold.up == null ? null : (now - SL.hold.up) / 1e3;
+      E = envLevel(SL.env, t, r);
+      if (r != null && r > envSec(SL.env.t4) + 0.1) SL.hold = null;
+    }
+    const g = (x) => typeof x === "number" ? x : 0;
+    const R3 = (58 + g(T3.Sustain) * 12 + g(T3.Tail) * 8) * (1 + E * 0.22);
+    const sq = Math.sin(SL.kick * 9) * SL.kick;
+    const sx = (1 + g(T3.Width) * 0.42) * (1 + sq * 0.18), sy = (1 - g(T3.Width) * 0.1) * (1 - sq * 0.16);
+    const cx = 200, cy = 252 - R3 * 1.2 * sy;
+    const wob = 3 + g(T3.Motion) * 14 + SL.kick * 16, snap = g(T3.Snap), grit = g(T3.Grit) * 3.5;
+    const jit = () => calm ? 0 : (Math.random() - 0.5) * grit;
+    const P2 = (x, y) => [cx + (x - cx) * sx, cy + (y - cy) * sy];
+    const body = svg.querySelector(".lsBody");
+    const core = body.querySelector(".lsCore");
+    const [ccx, ccy] = P2(cx, cy);
+    core.setAttribute("cx", ccx);
+    core.setAttribute("cy", ccy);
+    core.setAttribute("r", R3 * 0.9);
+    const foot = body.querySelector(".lsFoot");
+    foot.setAttribute("cx", cx + Math.sin(SL.t * 0.7) * 4);
+    foot.setAttribute("cy", 248 - R3 * 0.28);
+    foot.setAttribute("r", R3 * 0.62 * sx);
+    body.querySelectorAll(".lsLobe").forEach((c, i) => {
+      const a = i / LOBES * Math.PI * 2 + Math.sin(SL.t * 0.4 + i) * 0.25;
+      const dist = R3 * (0.48 + snap * 0.12) + Math.sin(SL.t * 1.3 + i * 1.7) * wob * 0.7;
+      const [x, y] = P2(cx + Math.cos(a) * dist + jit(), cy + Math.sin(a) * dist * 0.92 + jit());
+      c.setAttribute("cx", x);
+      c.setAttribute("cy", Math.min(y, 250));
+      c.setAttribute("r", Math.max(6, R3 * (0.5 - snap * 0.06) + Math.sin(SL.t * 1.1 + i * 2.3) * wob * 0.35));
+    });
+    if (!calm && g(T3.Tail) + g(T3.Space) > 0.55 && Math.random() < dt * (g(T3.Tail) + g(T3.Space)) * 0.5 && SL.drips.length < 4) {
+      const x = cx + (Math.random() - 0.5) * R3 * 1.4 * sx;
+      const c = svgEl("circle", { class: "lsDrip", cx: x, cy: cy + R3 * 0.3, r: 9 });
+      body.append(c);
+      SL.drips.push({ c, x, y: cy + R3 * 0.3, v: 0, r: 9 });
+    }
+    SL.drips = SL.drips.filter((d) => {
+      d.v += dt * 260;
+      d.y += d.v * dt;
+      d.r = Math.max(0, d.r - dt * 5);
+      d.c.setAttribute("cy", d.y);
+      d.c.setAttribute("r", d.r);
+      if (d.y > 262 || d.r <= 0) return d.c.remove(), false;
+      return true;
+    });
+    SL.drops = SL.drops.filter((d) => {
+      d.v += dt * 900;
+      d.y += d.v * dt;
+      if (d.y > ccy - R3 * 0.4) d.r -= dt * 120;
+      d.c.setAttribute("cy", d.y);
+      d.c.setAttribute("r", Math.max(0, d.r));
+      if (d.r <= 0) {
+        d.c.remove();
+        d.done();
+        return false;
+      }
+      return true;
+    });
+    const [r0, g0, b0] = SL.col.map(Math.round);
+    const bri = g(T3.Brightness);
+    const lit = (k2, m) => Math.round(k2 + (255 - k2) * m);
+    const fill2 = `rgb(${lit(r0, bri * 0.25)},${lit(g0, bri * 0.25)},${lit(b0, bri * 0.25)})`;
+    body.style.fill = fill2;
+    svg.querySelector(".lsHaze").style.fill = fill2;
+    svg.querySelector(".lsHaze").style.opacity = (0.12 + g(T3.Space) * 0.45 + bri * 0.12 + E * 0.25).toFixed(3);
+    const sh = svg.querySelector(".lsShine");
+    sh.setAttribute("cx", ccx - R3 * 0.38 * sx);
+    sh.setAttribute("cy", ccy - R3 * 0.5 * sy);
+    sh.setAttribute("rx", R3 * 0.3);
+    sh.setAttribute("ry", R3 * 0.13);
+    sh.setAttribute("transform", `rotate(-22 ${ccx - R3 * 0.38 * sx} ${ccy - R3 * 0.5 * sy})`);
+    sh.style.opacity = (0.25 + bri * 0.35 + g(T3.Bite) * 0.3).toFixed(3);
+    const dot = svg.querySelector(".lsDot");
+    dot.setAttribute("cx", ccx - R3 * 0.08 * sx);
+    dot.setAttribute("cy", ccy - R3 * 0.62 * sy);
+    dot.style.opacity = (0.3 + g(T3.Bite) * 0.6).toFixed(3);
+    svg.querySelector(".lsShadow").setAttribute("rx", R3 * 1.05 * sx);
+    svg.querySelectorAll(".lsMotes circle").forEach((m, i) => {
+      const a = i / 12 * Math.PI * 2 + SL.t * 0.18 * (i % 2 ? 1 : -1);
+      const d = R3 * (1.35 + i % 4 * 0.18) + Math.sin(SL.t + i) * 8;
+      m.setAttribute("cx", cx + Math.cos(a) * d * sx);
+      m.setAttribute("cy", cy + Math.sin(a) * d * 0.7);
+      m.style.fill = fill2;
+      m.style.opacity = (g(T3.Space) * 0.8).toFixed(3);
+    });
+  }
+  function dropIn(p) {
+    const body = document.querySelector("#labOv .lsBody");
+    if (!body || still()) return Promise.resolve();
+    return new Promise((done2) => {
+      const x = 200 + (Math.random() - 0.5) * 50;
+      const c = svgEl("circle", { cx: x, cy: -20, r: 20, fill: p.c, style: "fill:" + p.c });
+      body.append(c);
+      SL.drops.push({ c, y: -20, v: 120, r: 20, done: done2 });
+    });
+  }
+  var keyName = (k2) => {
+    const d = paramOf("tone", k2);
+    const m = /^([A-Z]+)(\d)?\./.exec(k2);
+    const part = m && m[2] != null ? " · P" + (+m[2] + 1) : "";
+    const blk = m ? { AENV: "Amp env ", FENV: "Filter env ", PENV: "Pitch env ", LFO: "" }[m[1]] || "" : "";
+    const name = (d ? d[0][7] : k2).replace(/^(TVA|TVF|Pitch) Env /, "");
+    return blk + name + part;
+  };
+  var shown3 = (k2, v) => {
+    const d = paramOf("tone", k2);
+    const list2 = d && d[0][8] && d[0][8].v;
+    return String(list2 ? list2[v] ?? v : v);
+  };
+  var btn = (label2, fn, title, on3) => el("button", { type: "button", class: "btn sm" + (on3 ? " on" : ""), title: title || "", onclick: fn }, label2);
+  var blob = (c) => {
+    const s = svgEl("svg", { viewBox: "0 0 32 32", class: "liBlob", "aria-hidden": "true" });
+    s.innerHTML = '<path d="M16 4c7 0 12 5 12 12c0 6-3 10-6 11c-2 .7-3-1-6-1s-4 1.7-6 1c-3-1-6-5-6-11C4 9 9 4 16 4z" fill="' + c + '"/><ellipse cx="11.5" cy="10.5" rx="4" ry="2" transform="rotate(-25 11.5 10.5)" fill="#fff" opacity=".55"/>';
+    return s;
+  };
+  function labOpen() {
+    const box = $("#zcOv .zcBox");
+    if (!ZE.snd || ZE.kind !== "tone" || !box) return toast("The Slime Lab works on tones: pick a tone track");
+    labClose(true);
+    const ov = el("div", {
+      id: "labOv",
+      role: "dialog",
+      "aria-label": "Slime Lab",
+      tabindex: "-1"
+    });
+    const ingBtn = (p) => el(
+      "button",
+      {
+        type: "button",
+        class: "liBtn",
+        draggable: "true",
+        "data-id": p.id,
+        style: "--ic:" + p.c,
+        title: p.tag + " Double-click or drag onto the slime to mix it in.",
+        onclick: () => select(p.id),
+        ondblclick: () => mixIn(p.id),
+        ondragstart: (e) => {
+          e.dataTransfer.setData("text/plain", p.id);
+          e.dataTransfer.effectAllowed = "copy";
+          select(p.id);
+        }
+      },
+      blob(p.c),
+      el("span", {}, el("b", {}, p.name), el("small", {}, SUB2[p.id] || ""))
+    );
+    const stage = el("div", {
+      class: "lsStage",
+      id: "lsStage",
+      ondragover: (e) => {
+        e.preventDefault();
+        e.currentTarget.classList.add("drop");
+      },
+      ondragleave: (e) => e.currentTarget.classList.remove("drop"),
+      ondrop: (e) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove("drop");
+        const id = e.dataTransfer.getData("text/plain");
+        if (ing(id)) mixIn(id);
+      }
+    });
+    stage.append(slimeSvg(), el("div", { class: "lsFound", id: "lsFound" }));
+    const amount = el("input", {
+      type: "range",
+      min: 1,
+      max: 10,
+      value: LAB.drops,
+      "aria-label": "Amount",
+      oninput: (e) => {
+        LAB.drops = +e.target.value;
+        drawAmount();
+        save3();
+      }
+    });
+    ov.append(
+      el(
+        "div",
+        { class: "zcHead labHead" },
+        el(
+          "div",
+          { class: "zcTitle" },
+          el("b", {}, "Slime Lab · experiment"),
+          el("span", { class: "zcSnd", id: "labName" })
+        ),
+        el("span", { class: "labLive", id: "labLive" }),
+        el(
+          "div",
+          { class: "labTools" },
+          btn("Random", random, "Mix in three random ingredients"),
+          btn("Undo", undo2, "Take back the last mix-in (Ctrl+Z)"),
+          btn("Clear list", fresh, "Start a new list of mix-ins (the sound stays as it is)"),
+          btn("Back to editor", () => labClose(), "Back to the editor (Esc)", true)
+        )
+      ),
+      el(
+        "div",
+        { class: "labBody" },
+        el(
+          "div",
+          { class: "labIng" },
+          ...GROUPS.map(([name, ps]) => el("fieldset", { class: "zcG labG" }, el("legend", {}, name), ...ps.map(ingBtn)))
+        ),
+        el(
+          "div",
+          { class: "labMid" },
+          el(
+            "fieldset",
+            { class: "zcG labStageG" },
+            el("legend", {}, "Your tone"),
+            stage,
+            el("p", { class: "labRead", id: "labRead" })
+          ),
+          el(
+            "div",
+            { class: "labCtl" },
+            el(
+              "label",
+              { class: "zcC labAmt" },
+              el("span", { class: "zcL" }, "Amount"),
+              el("span", { class: "zcV", id: "labAmtV" }),
+              amount
+            ),
+            el(
+              "button",
+              { type: "button", class: "btn on labMix", id: "labMix", onclick: () => mixIn(LAB.sel) },
+              "Mix in"
+            )
+          ),
+          el(
+            "div",
+            { class: "labTaste" },
+            el("span", { class: "zcL" }, "Taste"),
+            ...[
+              ["C1", 24],
+              ["C2", 36],
+              ["C3", 48],
+              ["C4", 60],
+              ["C5", 72]
+            ].map(
+              ([n, m]) => el(
+                "button",
+                {
+                  type: "button",
+                  class: "labKey",
+                  title: "Hold to hear " + n + ": the slime follows the amp envelope",
+                  onpointerdown: (e) => taste(m, e.currentTarget)
+                },
+                n
+              )
+            )
+          )
+        ),
+        el(
+          "div",
+          { class: "labSide" },
+          el("fieldset", { class: "zcG labLearn", id: "labLearn" }, el("legend", {}, "Learn")),
+          el("fieldset", { class: "zcG labMeters", id: "labMeters" }, el("legend", {}, "Character")),
+          el("fieldset", { class: "zcG labBlends", id: "labBlends" }, el("legend", {}, "Blends")),
+          el("fieldset", { class: "zcG labLog", id: "labLog" }, el("legend", {}, "Mixed in"))
+        )
+      )
+    );
+    box.append(ov);
+    addEventListener("keydown", onKey, true);
+    select(LAB.sel);
+    draw();
+    ov.focus();
+    requestAnimationFrame(() => ov.classList.add("in"));
+    if (!SL.raf) SL.raf = requestAnimationFrame(frame2);
+  }
+  function onKey(e) {
+    if (!$("#labOv")) return removeEventListener("keydown", onKey, true);
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      e.preventDefault();
+      labClose();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      e.stopPropagation();
+      e.preventDefault();
+      undo2();
+    }
+  }
+  function labClose(quiet) {
+    const ov = $("#labOv");
+    removeEventListener("keydown", onKey, true);
+    if (!ov) return;
+    ov.remove();
+    cancelAnimationFrame(SL.raf);
+    SL.raf = 0;
+    SL.drops.forEach((d) => d.done());
+    SL.drops = [];
+    SL.drips = [];
+    if (!quiet) zeRender();
+  }
+  function drawAmount() {
+    const v = $("#labAmtV");
+    if (v) v.textContent = LAB.drops + " / 10";
+    const b = $("#labMix"), p = ing(LAB.sel);
+    if (b && p) b.textContent = "Mix in " + p.name;
+  }
+  function select(id) {
+    LAB.sel = id;
+    document.querySelectorAll("#labOv .liBtn").forEach((b) => b.classList.toggle("sel", b.dataset.id === id));
+    drawAmount();
+    drawLearn();
+  }
+  function drawLearn() {
+    const box = $("#labLearn"), p = ing(LAB.sel);
+    if (!box || !p) return;
+    const last3 = [...LAB.log].reverse().find((x) => x.id === p.id);
+    box.style.setProperty("--ic", p.c);
+    box.replaceChildren(
+      el("legend", {}, "Learn"),
+      el("div", { class: "llTop" }, blob(p.c), el("b", {}, p.name), el("small", {}, p.tag)),
+      el("p", {}, p.what),
+      el("p", {}, el("span", { class: "llK" }, "Hear it in"), p.hear),
+      el("p", {}, el("span", { class: "llK" }, "Tip"), p.tip),
+      last3 ? el(
+        "div",
+        { class: "llDid" },
+        el("span", { class: "llK" }, "Last time it changed"),
+        ...last3.ch.slice(0, 12).map(
+          ([k2, a, b]) => el(
+            "div",
+            { class: "llCh" },
+            el("span", {}, keyName(k2)),
+            el("s", {}, shown3(k2, a)),
+            el("b", {}, shown3(k2, b))
+          )
+        ),
+        last3.ch.length > 12 ? el("small", { class: "hint" }, "…and " + (last3.ch.length - 12) + " more") : null
+      ) : el("p", { class: "hint" }, "Mix it in to see exactly which settings it changes.")
+    );
+  }
+  function draw() {
+    if (!$("#labOv")) return;
+    $("#labName").textContent = ZE.snd.v["CMN.NAME"] || "INIT TONE";
+    const live3 = zeLive();
+    const lv = $("#labLive");
+    lv.textContent = live3 ? "Live: changes go to the MC-707" : "Not live: changes stay in the editor";
+    lv.classList.toggle("on", live3);
+    const tr = traits();
+    SL.T = Object.fromEntries(tr.map(([k2, v]) => [k2, v]));
+    SL.to = tint(LAB.log.slice(-4).map((x) => ing(x.id).c));
+    $("#labMeters").replaceChildren(
+      el("legend", {}, "Character"),
+      ...tr.map(
+        ([n, v]) => el(
+          "div",
+          { class: "lmRow" },
+          el("span", {}, n),
+          el("i", {}, el("em", { style: "width:" + Math.round(v * 100) + "%" })),
+          el("b", {}, String(Math.round(v * 100)))
+        )
+      )
+    );
+    $("#labRead").textContent = reading(tr);
+    $("#labBlends").replaceChildren(
+      el("legend", {}, "Blends · " + LAB.found.size + "/" + RECIPES.length + " found"),
+      el(
+        "p",
+        { class: "hint" },
+        "Classic sounds. Mix in all of one’s ingredients yourself to find it, or mix it in one go."
+      ),
+      ...RECIPES.map((r) => {
+        const got = LAB.found.has(r.id);
+        return el(
+          "div",
+          { class: "lbRow" + (got ? " got" : "") },
+          el(
+            "div",
+            {},
+            el("b", {}, r.name),
+            el(
+              "div",
+              { class: "lbDots" },
+              ...r.steps.map(([id, n]) => el("i", { style: "--ic:" + ing(id).c, title: ing(id).name + " " + n + "/10" }))
+            ),
+            el("small", {}, got ? r.about : r.steps.map(([id]) => ing(id).name).join(" · "))
+          ),
+          btn("Mix", () => blend(r), r.about)
+        );
+      })
+    );
+    $("#labLog").replaceChildren(
+      el("legend", {}, "Mixed in"),
+      LAB.log.length ? el(
+        "div",
+        { class: "lgList" },
+        ...LAB.log.map(
+          (x) => el(
+            "span",
+            { class: "lgChip", style: "--ic:" + ing(x.id).c, title: x.ch.length + " settings changed" },
+            ing(x.id).name + " " + x.drops
+          )
+        )
+      ) : el("p", { class: "hint" }, "Nothing yet: pick an ingredient and mix it in, then hold a Taste key.")
+    );
+  }
+  async function mixIn(id, drops = LAB.drops) {
+    const p = ing(id);
+    if (!p || LAB.busy) return;
+    LAB.busy = true;
+    try {
+      await dropIn(p);
+      const b = brewer();
+      p.brew(b, drops / 10);
+      const before = Object.fromEntries(Object.keys(b.out).map((k2) => [k2, ZE.snd.v[k2]]));
+      const keys2 = zeBrew(b.out);
+      if (!keys2.length) toast(p.name + " changed nothing: those settings are already as far as they go");
+      else {
+        LAB.log.push({ id, drops, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
+        SL.kick = 1;
+      }
+      draw();
+      drawLearn();
+      discover();
+    } finally {
+      LAB.busy = false;
+    }
+  }
+  function undo2() {
+    if (LAB.busy) return;
+    if (!ZE.undo.length) return toast("Nothing to undo");
+    zeUndo();
+    const x = LAB.log.pop();
+    if (x) toast("Took out " + ing(x.id).name);
+    SL.kick = 0.6;
+    draw();
+    drawLearn();
+  }
+  function fresh() {
+    LAB.log = [];
+    draw();
+    drawLearn();
+    toast("The list starts again (the sound stays as it is)");
+  }
+  async function random() {
+    const pick3 = [...ING].sort(() => Math.random() - 0.5).slice(0, 3);
+    for (const p of pick3) {
+      select(p.id);
+      await mixIn(p.id, 2 + Math.floor(Math.random() * 6));
+    }
+    toast("Mixed in " + pick3.map((p) => p.name).join(", ") + ": hold a Taste key");
+  }
+  async function blend(r) {
+    if (LAB.busy) return;
+    for (const [id, n] of r.steps) {
+      select(id);
+      await mixIn(id, n);
+      await wait(still() ? 0 : 120);
+    }
+    if (!LAB.found.has(r.id)) found(r);
+    else toast(r.name + " mixed: hold a Taste key");
+  }
+  function discover() {
+    const have = new Set(LAB.log.map((x) => x.id));
+    for (const r of RECIPES) if (!LAB.found.has(r.id) && r.steps.every(([id]) => have.has(id))) found(r);
+  }
+  function found(r) {
+    LAB.found.add(r.id);
+    save3();
+    draw();
+    SL.kick = 1;
+    const f = $("#lsFound");
+    if (!f) return;
+    f.replaceChildren(el("span", { class: "llK" }, "Blend found"), el("b", {}, r.name), el("small", {}, r.about));
+    f.classList.remove("show");
+    void f.offsetWidth;
+    f.classList.add("show");
+    clearTimeout(found.t);
+    found.t = setTimeout(() => f.classList.remove("show"), 3800);
+  }
+  function taste(n, key) {
+    audition2(n);
+    const p = parts2()[0], v = (k2) => {
+      const x = ZE.snd.v["AENV" + p + "." + k2];
+      return typeof x === "number" ? x : 0;
+    };
+    SL.env = {
+      t1: v("T1"),
+      t2: v("T2"),
+      t3: v("T3"),
+      t4: v("T4"),
+      l1: v("L1") / 1023,
+      l2: v("L2") / 1023,
+      l3: v("L3") / 1023
+    };
+    const hold = { t0: performance.now(), up: null };
+    SL.hold = hold;
+    key.classList.add("down");
+    const up = () => {
+      hold.up = performance.now();
+      key.classList.remove("down");
+      for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
+    };
+    for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
+  }
+
   // src/zen/zc-actions.js
   var menuAt = (e, items) => {
     const r = e.currentTarget.getBoundingClientRect();
     showMenu(r.left, r.bottom + 4, items);
   };
-  var btn = (lab, fn, o = {}) => el(
+  var btn2 = (lab, fn, o = {}) => el(
     "button",
     { type: "button", class: "btn sm" + (o.on ? " on" : ""), title: o.title || "", disabled: !!o.off, onclick: fn },
     lab
@@ -36824,9 +38509,9 @@ body[data-mode='scene'] #scene {
       el(
         "div",
         { class: "zcActs" },
-        btn("Read from " + dn2, () => zeRead(), { title: "Read this sound from the " + dn2 }),
-        btn("Send all", () => zeSendAll(), { title: "Send every parameter to the " + dn2 }),
-        btn(
+        btn2("Read from " + dn2, () => zeRead(), { title: "Read this sound from the " + dn2 }),
+        btn2("Send all", () => zeSendAll(), { title: "Send every parameter to the " + dn2 }),
+        btn2(
           ZE.live ? "● Live" : "○ Live",
           () => {
             ZE.live = !ZE.live;
@@ -36834,7 +38519,7 @@ body[data-mode='scene'] #scene {
           },
           { on: ZE.live, title: "Send each change to the " + dn2 + " as you make it" }
         ),
-        btn(
+        btn2(
           zeRefreshOn() ? "● Screen" : "○ Screen",
           () => {
             zeSetRefresh(!zeRefreshOn());
@@ -36845,9 +38530,9 @@ body[data-mode='scene'] #scene {
             title: "Refresh the " + dn2 + "'s screen after each change, by selecting this clip again (the " + dn2 + " only redraws when a clip is selected)"
           }
         ),
-        btn("↶", () => zeUndo(false), { off: !ZE.undo.length, title: "Undo (Ctrl+Z)" }),
-        btn("↷", () => zeUndo(true), { off: !ZE.redo.length, title: "Redo (Ctrl+Shift+Z)" }),
-        ZE.kind === "tone" ? btn(
+        btn2("↶", () => zeUndo(false), { off: !ZE.undo.length, title: "Undo (Ctrl+Z)" }),
+        btn2("↷", () => zeUndo(true), { off: !ZE.redo.length, title: "Redo (Ctrl+Shift+Z)" }),
+        ZE.kind === "tone" ? btn2(
           "Starters ▾",
           (e) => menuAt(e, [
             { label: "Browse all sounds…", action: browserOpen },
@@ -36857,16 +38542,19 @@ body[data-mode='scene'] #scene {
               sub: list2.map(([n, f]) => ({ label: n, action: () => zeLoad(f(), "Loaded " + n) }))
             }))
           ])
-        ) : btn("Init kit", () => zeLoad(newSound("kit"), "Reset the kit")),
+        ) : btn2("Init kit", () => zeLoad(newSound("kit"), "Reset the kit")),
         /* tones only: a kit's drum sounds can't be changed over MIDI, so loading a kit from the browser
            would only rename it */
-        ZE.kind === "tone" ? btn("Sounds", () => browserOpen(), {
+        ZE.kind === "tone" ? btn2("Sounds", () => browserOpen(), {
           title: "The Sound browser: starters and the sounds you saved or grabbed from the MC-707, with search, types, tags and favourites"
         }) : null,
-        btn("File ▾", (e) => menuAt(e, fileMenu())),
-        ZE.kind === "tone" ? btn("Partial ▾", (e) => menuAt(e, partMenu())) : null,
-        btn("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
-        btn("Done", () => zenClose(), { on: true })
+        ZE.kind === "tone" ? btn2("Slime Lab", () => labOpen(), {
+          title: "Experiment: shape this tone by mixing ingredients into a slime, and learn the sound design behind each one"
+        }) : null,
+        btn2("File ▾", (e) => menuAt(e, fileMenu())),
+        ZE.kind === "tone" ? btn2("Partial ▾", (e) => menuAt(e, partMenu())) : null,
+        btn2("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
+        btn2("Done", () => zenClose(), { on: true })
       )
     );
   }
@@ -37040,6 +38728,18 @@ body[data-mode='scene'] #scene {
     ZE.undo.length = Math.min(ZE.undo.length, 200);
     ZE.redo = [];
     remember();
+  }
+  var zeLive = () => sending();
+  function zeBrew(vals) {
+    const keys2 = Object.keys(vals).filter((k2) => vals[k2] !== ZE.snd.v[k2]);
+    if (!keys2.length) return [];
+    ZE.undo.push(Object.fromEntries(keys2.map((k2) => [k2, ZE.snd.v[k2]])));
+    ZE.undo.length = Math.min(ZE.undo.length, 200);
+    ZE.redo = [];
+    for (const k2 of keys2) setVal(ZE.snd, k2, vals[k2], null);
+    if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys2));
+    remember();
+    return keys2;
   }
   function zeUndo(redo2) {
     const from = redo2 ? ZE.redo : ZE.undo, to = redo2 ? ZE.undo : ZE.redo;
@@ -37221,7 +38921,7 @@ body[data-mode='scene'] #scene {
     clearTimeout(nudgeT);
   }
   function keys(e) {
-    if (!$("#zcOv") || $("[role=dialog][aria-modal]:not([hidden])") || $(".cmenu")) return;
+    if (!$("#zcOv") || $("#labOv") || $("[role=dialog][aria-modal]:not([hidden])") || $(".cmenu")) return;
     const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== "range";
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) {
       e.preventDefault();
@@ -37323,19 +39023,20 @@ body[data-mode='scene'] #scene {
     WATCH = [];
     const c = ctx(), tabs = TABS[ZE.kind], cur2 = tabs.find((x) => x[0] === ZE.tab) || tabs[0];
     const scroll = $(".zcPage", ov) ? $(".zcPage", ov).scrollTop : 0;
+    const lab = $("#labOv", ov);
     ov.textContent = "";
     const nav = el(
       "nav",
       { class: "zcTabs" },
       ...tabs.map(
-        ([id, lab]) => el(
+        ([id, lab2]) => el(
           "button",
           { type: "button", class: "zcTab" + (id === cur2[0] ? " on" : ""), onclick: () => (ZE.tab = id, zeRender()) },
-          lab
+          lab2
         )
       )
     );
-    const parts3 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender, (k2, v) => c.set(k2, v, true)) : null;
+    const parts4 = ZE.kind === "tone" && PART_TABS.includes(cur2[0]) ? partialBar(ZE, zeRender, (k2, v) => c.set(k2, v, true)) : null;
     const page = el("div", { class: "zcPage" }, cur2[2](c));
     ov.append(
       el(
@@ -37343,12 +39044,13 @@ body[data-mode='scene'] #scene {
         { class: "ptBox zcBox" },
         headerBar(),
         el("div", { id: "zcStat", class: "zcStat" }),
-        el("div", { class: "zcBar" }, nav, parts3),
+        el("div", { class: "zcBar" }, nav, parts4),
         page,
         ZE.kind === "tone" ? keyboard() : null
       )
     );
     page.scrollTop = scroll;
+    if (lab) $(".zcBox", ov).append(lab);
     status2();
   }
 
@@ -37712,7 +39414,7 @@ body[data-mode='scene'] #scene {
         ...extra
       );
     };
-    const draw = () => {
+    const draw2 = () => {
       const c = clipAt(t, k2);
       if (!c) return close();
       const p = S.patterns[c.pat], pump2 = c.pump, set2 = (ch) => setPump(t, k2, { ...pump2, ...ch }), pm = pumpMotion(t, k2);
@@ -37829,8 +39531,8 @@ body[data-mode='scene'] #scene {
         ].flat()
       );
     };
-    SC.pumpDraw = draw;
-    draw();
+    SC.pumpDraw = draw2;
+    draw2();
     ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
     ov.addEventListener("click", (e) => e.target === ov && close());
     document.body.append(ov);
@@ -37872,9 +39574,9 @@ body[data-mode='scene'] #scene {
   ].filter(Boolean).join(" · ");
   function pickPattern(t, title, done2, cur2) {
     if ($("#spOv")) return;
-    const type = S.tracks[t].type, parts3 = PARTS[type];
-    if (!P.part || P.part !== "all" && !parts3.some((x) => x[0] === P.part))
-      P.part = parts3.some((x) => x[0] === poolOf(t)) ? poolOf(t) : "all";
+    const type = S.tracks[t].type, parts4 = PARTS[type];
+    if (!P.part || P.part !== "all" && !parts4.some((x) => x[0] === P.part))
+      P.part = parts4.some((x) => x[0] === poolOf(t)) ? poolOf(t) : "all";
     const body = el("div", { class: "spList", role: "listbox", "aria-label": "Patterns" }), count = el("span", { class: "hint" });
     const close = () => {
       if (TR.playing && TR.mode === "pat") stopAll();
@@ -37884,7 +39586,7 @@ body[data-mode='scene'] #scene {
       close();
       done2(P.src === "proj" ? m.id : instFactory(m));
     };
-    const draw = () => {
+    const draw2 = () => {
       const all = list(type);
       body.textContent = "";
       count.textContent = all.length > SHOW ? "First " + SHOW + " of " + all.length : all.length + " patterns";
@@ -37924,7 +39626,7 @@ body[data-mode='scene'] #scene {
     };
     const sel = (label2, opts, val, set2) => el(
       "select",
-      { "aria-label": label2, onchange: (e) => (set2(e.target.value), draw()) },
+      { "aria-label": label2, onchange: (e) => (set2(e.target.value), draw2()) },
       ...opts.map(([v, l]) => el("option", { value: v, selected: v === val }, l))
     );
     const tabs = el("div", { class: "spTabs", role: "tablist" });
@@ -37944,7 +39646,7 @@ body[data-mode='scene'] #scene {
               role: "tab",
               class: "btn" + (P.src === v ? " on" : ""),
               "aria-selected": String(P.src === v),
-              onclick: () => (P.src = v, drawTop(), draw())
+              onclick: () => (P.src = v, drawTop(), draw2())
             },
             l
           )
@@ -37954,7 +39656,7 @@ body[data-mode='scene'] #scene {
       if (P.src === "fac")
         filt2.append(
           sel("Genre", [["all", "All genres"], ...Object.entries(GENRE_LABELS)], P.genre, (v) => P.genre = v),
-          sel("Part", [["all", "Any part"], ...parts3], P.part, (v) => P.part = v)
+          sel("Part", [["all", "Any part"], ...parts4], P.part, (v) => P.part = v)
         );
       filt2.append(count);
     };
@@ -37963,7 +39665,7 @@ body[data-mode='scene'] #scene {
       placeholder: "Search",
       "aria-label": "Search patterns",
       value: P.q,
-      oninput: (e) => (P.q = e.target.value, draw())
+      oninput: (e) => (P.q = e.target.value, draw2())
     });
     const ov = el(
       "div",
@@ -37991,7 +39693,7 @@ body[data-mode='scene'] #scene {
       )
     );
     drawTop();
-    draw();
+    draw2();
     document.body.append(ov);
     search.focus();
   }
@@ -38032,7 +39734,7 @@ body[data-mode='scene'] #scene {
     const body = el("div", { class: "spList", role: "listbox", "aria-label": "Sounds" }), count = el("span", { class: "hint" }), filt2 = el("div", { class: "spFilt" });
     const close = () => ov.remove();
     const choose = (e) => (close(), done2(toneOf2(e)));
-    const draw = () => {
+    const draw2 = () => {
       const list2 = sortList(filterList(all(), { ...T2, cat: "", tag: "" }), "bank", 1);
       body.textContent = "";
       count.textContent = list2.length > SHOW2 ? "First " + SHOW2 + " of " + list2.length : list2.length + " sounds";
@@ -38061,14 +39763,14 @@ body[data-mode='scene'] #scene {
         search,
         el(
           "select",
-          { "aria-label": "Bank", onchange: (e) => (T2.bank = e.target.value, draw()) },
+          { "aria-label": "Bank", onchange: (e) => (T2.bank = e.target.value, draw2()) },
           el("option", { value: "all" }, "All banks"),
           hasFac ? el("option", { value: "factory", selected: T2.bank === "factory" }, "All factory tones") : null,
           ...banks.map((b) => el("option", { value: b, selected: T2.bank === b }, bankName(b)))
         ),
         kind === "tone" ? el(
           "select",
-          { "aria-label": "Category", onchange: (e) => (T2.group = e.target.value, draw()) },
+          { "aria-label": "Category", onchange: (e) => (T2.group = e.target.value, draw2()) },
           el("option", { value: "" }, "Any category"),
           ...CAT_GROUPS.map(([g]) => el("option", { value: g, selected: T2.group === g }, g))
         ) : null,
@@ -38082,7 +39784,7 @@ body[data-mode='scene'] #scene {
               type: "button",
               class: "btn sm",
               title: "Read the preset tones from the MC-707 system update file on your computer",
-              onclick: () => factoryImport(() => (drawFilt(), draw()))
+              onclick: () => factoryImport(() => (drawFilt(), draw2()))
             },
             "Add the factory tones…"
           )
@@ -38094,7 +39796,7 @@ body[data-mode='scene'] #scene {
       placeholder: "Search",
       "aria-label": "Search sounds",
       value: T2.q,
-      oninput: (e) => (T2.q = e.target.value, draw())
+      oninput: (e) => (T2.q = e.target.value, draw2())
     });
     const ov = el(
       "div",
@@ -38140,7 +39842,7 @@ body[data-mode='scene'] #scene {
       )
     );
     drawFilt();
-    draw();
+    draw2();
     document.body.append(ov);
     search.focus();
   }
@@ -39732,7 +41434,7 @@ body[data-mode='scene'] #scene {
 
   // src/scene/dock.js
   var EDITOR = null;
-  var shown3 = "";
+  var shown4 = "";
   var editorEl = () => EDITOR || (EDITOR = document.getElementById("editor"));
   function editClip(t, k2, tab) {
     SC.t = t;
@@ -39762,7 +41464,7 @@ body[data-mode='scene'] #scene {
       UI.view = null;
       renderEditor();
     }
-    shown3 = "";
+    shown4 = "";
   }
   var uses = (pid, t, k2) => [
     S.scn.clips.reduce((n, l, tt) => n + l.filter((c, kk) => c && c.pat === pid && !(tt === t && kk === k2)).length, 0),
@@ -39874,12 +41576,12 @@ body[data-mode='scene'] #scene {
       SC.tab = "notes";
     } else closeSound(true);
     const key = t + ":" + k2 + ":" + c.pat;
-    if (key !== shown3 || !UI.view || !UI.view.scene) {
+    if (key !== shown4 || !UI.view || !UI.view.scene) {
       UI.sel = null;
       UI.view = null;
       openView({ kind: "proj", id: c.pat }, t);
       UI.view.scene = true;
-      shown3 = key;
+      shown4 = key;
     }
     let tm = 0;
     const later = () => (clearTimeout(tm), tm = setTimeout(changed, 150));
@@ -41929,10 +43631,10 @@ body[data-mode='scene'] #scene {
       intro(name + " kick", { k: L2.k, h: "..x...x...x...x...x...x...x...x." });
     }
   }
-  function addTones(push, [prog, chords], keyName, root, scale) {
+  function addTones(push, [prog, chords], keyName2, root, scale) {
     const key = { root, scale };
     for (const per of [16, 32]) {
-      const total = per * 4, base = { type: "tone", bars: total / 16, key, keyName }, tag = " " + prog;
+      const total = per * 4, base = { type: "tone", bars: total / 16, key, keyName: keyName2 }, tag = " " + prog;
       const each = (fn) => {
         const out2 = [];
         chords.forEach(([off, q], ci) => {
@@ -42054,10 +43756,10 @@ body[data-mode='scene'] #scene {
       const key = k2.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
       if (seen.has(key)) continue;
       seen.add(key);
-      const parts3 = [k2, h, p].filter(Boolean), L2 = Math.max(...parts3.map((x) => x.bars));
-      if (parts3.some((x) => L2 % x.bars)) continue;
+      const parts4 = [k2, h, p].filter(Boolean), L2 = Math.max(...parts4.map((x) => x.bars));
+      if (parts4.some((x) => L2 % x.bars)) continue;
       const kitLanes = new Set(k2.notes.map((n) => n.n)), m = /* @__PURE__ */ new Map();
-      parts3.forEach((x, pi) => {
+      parts4.forEach((x, pi) => {
         for (let rep2 = 0; rep2 < L2 / x.bars; rep2++)
           for (const n of x.notes) {
             if (pi > 0 && kitLanes.has(n.n)) continue;
@@ -44302,11 +46004,11 @@ body[data-mode='scene'] #scene {
     return { id: c.id, off: 0 };
   }
   function instShift(f, sh, rootPc, scale) {
-    const found = Object.keys(S.patterns).find((k2) => {
+    const found2 = Object.keys(S.patterns).find((k2) => {
       const p = S.patterns[k2];
       return p.src === f.id && !p.mod && (p.shift || 0) === sh;
     });
-    if (found) return found;
+    if (found2) return found2;
     return addPattern(
       f.type,
       f.name,
@@ -45029,10 +46731,10 @@ body[data-mode='scene'] #scene {
     };
     const sets = { A: mkSet(), B: mkSet() }, scenes = [];
     const MOVE = ["h2", "alt", "rest", "odd"];
-    for (const [name, kind, bars2, e, fx, parts3] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
+    for (const [name, kind, bars2, e, fx, parts4] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
       const cells = {};
       for (let t = 0; t < 8; t++) {
-        const spec = parts3[slotOf(t)];
+        const spec = parts4[slotOf(t)];
         if (!spec) continue;
         const [set2, play0] = spec.split(":");
         let id, pool = poolOf(t);
@@ -46998,16 +48700,16 @@ body[data-mode='scene'] #scene {
     }
     bar2.hidden = false;
     const c = LV.ctl, b = c.base, z = c.zones, solo2 = c.soloT >= 0 ? S.tracks[c.soloT].name : "off";
-    const parts3 = [ctlPreset()[1]];
+    const parts4 = [ctlPreset()[1]];
     if (z === "raven")
-      parts3.push(
+      parts4.push(
         "mutes " + noteLbl(b) + "–" + noteLbl(b + 11),
         "key " + noteLbl(b + 12) + "–" + noteLbl(b + 23),
         "solo on " + solo2 + " from " + noteLbl(b + 24)
       );
-    else if (z === "keysolo") parts3.push("key " + noteLbl(b) + "–" + noteLbl(b + 11), "solo on " + solo2 + " elsewhere");
-    else parts3.push("solo on " + solo2);
-    bar2.append(el("b", {}, "🎹 "), parts3.join(" · "), el("span", { class: "ctlAct", id: "ctlAct" }, ""));
+    else if (z === "keysolo") parts4.push("key " + noteLbl(b) + "–" + noteLbl(b + 11), "solo on " + solo2 + " elsewhere");
+    else parts4.push("solo on " + solo2);
+    bar2.append(el("b", {}, "🎹 "), parts4.join(" · "), el("span", { class: "ctlAct", id: "ctlAct" }, ""));
   }
   function ctlKeyboard() {
     const c = LV.ctl, wrap = el("div", { class: "ctlKb" }), lo = c.low, hi = c.low + c.keys - 1, blk = [1, 3, 6, 8, 10];
@@ -48896,7 +50598,7 @@ body[data-mode='scene'] #scene {
       return;
     }
     host2.hidden = false;
-    const st = lvStyle(), save3 = () => {
+    const st = lvStyle(), save4 = () => {
       lvSaveScenes();
       liveRenderCards();
       LV.ver++;
@@ -48908,7 +50610,7 @@ body[data-mode='scene'] #scene {
       "aria-label": "Scene name",
       onchange: (e) => {
         sc.name = e.target.value.trim() || sc.name;
-        save3();
+        save4();
       }
     });
     const isF = lvIsFlash(sc);
@@ -48918,7 +50620,7 @@ body[data-mode='scene'] #scene {
         "aria-label": "Scene length",
         onchange: (e) => {
           sc.bars = +e.target.value;
-          save3();
+          save4();
         }
       },
       ...(isF ? [1, 2] : [1, 2, 4, 6, 8, 12, 16, 24, 32]).map(
@@ -48935,7 +50637,7 @@ body[data-mode='scene'] #scene {
         sc.e = +e.target.value;
         $("#lvScEdE").textContent = sc.e;
       },
-      onchange: () => save3()
+      onchange: () => save4()
     });
     const rh = isF ? el(
       "select",
@@ -48946,7 +50648,7 @@ body[data-mode='scene'] #scene {
           sc.rh = R3[0];
           sc.bars = R3[2];
           sc.cells = lvFlashIds(st, R3[0], LV.mode);
-          save3();
+          save4();
           liveRenderSceneEd();
         }
       },
@@ -48960,7 +50662,7 @@ body[data-mode='scene'] #scene {
         "aria-label": "Scene move",
         onchange: (e) => {
           sc.fx = e.target.value;
-          save3();
+          save4();
           if (lvOn() && LV.cur === i) lvSceneFx(sc, Math.ceil(TR.tick / 32) * 32);
         }
       },
@@ -48968,7 +50670,7 @@ body[data-mode='scene'] #scene {
         ([v, l]) => el("option", { value: v, selected: (sc.fx || (sc.kind === "build" ? "build" : "none")) === v }, l)
       )
     );
-    const parts3 = el("div", { class: "lvScParts" });
+    const parts4 = el("div", { class: "lvScParts" });
     S.tracks.forEach((t, ti) => {
       const c = sc.cells[ti], pool = isF ? FLPOOL[slotOf(ti)] : ti === trackOf(0) && oneKit() ? "full" : poolOf(ti);
       const s = el("select", {
@@ -48981,7 +50683,7 @@ body[data-mode='scene'] #scene {
             sc.cells[ti] = { id: v, pool: c && c.pool || pool };
             if (c && c.play) sc.cells[ti].play = c.play;
           }
-          save3();
+          save4();
           liveRenderSceneEd();
           if (lvOn() && LV.cur === i) {
             if (v)
@@ -49042,7 +50744,7 @@ body[data-mode='scene'] #scene {
             if (!cc2) return;
             if (e.target.value === "all") delete cc2.play;
             else cc2.play = e.target.value;
-            save3();
+            save4();
           }
         },
         ...LV_PLAY.map(([v, l]) => el("option", { value: v, selected: (c && c.play || "all") === v }, l))
@@ -49059,7 +50761,7 @@ body[data-mode='scene'] #scene {
             if (!cc2) return;
             if (e.target.value === "") delete cc2.clip;
             else cc2.clip = e.target.value === "random" ? "random" : +e.target.value;
-            save3();
+            save4();
             if (lvOn() && LV.cur === i) lvCellClip(ti, cc2, AU.ctx.currentTime + 0.05);
           }
         },
@@ -49067,7 +50769,7 @@ body[data-mode='scene'] #scene {
         el("option", { value: "random", selected: !!c && c.clip === "random" }, "Clip: random")
       );
       for (let k2 = 0; k2 < mm.n; k2++) cl.append(el("option", { value: k2, selected: c && c.clip === k2 }, cmLabel(ti, k2)));
-      parts3.append(
+      parts4.append(
         el(
           "label",
           { class: "lvf" + (devOn(ti) ? "" : " devoff") },
@@ -49084,7 +50786,7 @@ body[data-mode='scene'] #scene {
       if (LV.cur === i) LV.cur = j;
       else if (LV.cur === j) LV.cur = i;
       LV.edIdx = j;
-      save3();
+      save4();
       liveRenderSceneEd();
     };
     host2.append(
@@ -49123,7 +50825,7 @@ body[data-mode='scene'] #scene {
         { class: "hint" },
         isF ? "A flash is a quick break: every part hits the same rhythm with silence in between, a roll or run pulls you back, and the loop that was playing slams back in on the downbeat. Pick a rhythm to set all the parts at once, or change any part below. Parts left off stay silent during the flash." : "Under each part, choose which bars it plays, so parts can come and go inside the loop. Energy decides how the next scene lands: a jump of 4 or more is treated as a drop. Changes to the playing scene take effect on the next bar."
       ),
-      parts3,
+      parts4,
       el(
         "div",
         { class: "lvBtns" },
@@ -49138,7 +50840,7 @@ body[data-mode='scene'] #scene {
             onclick: () => {
               LV.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify({ ...sc, name: (sc.name + " copy").slice(0, 24) })));
               LV.edIdx = i + 1;
-              save3();
+              save4();
               liveRenderSceneEd();
             }
           },
@@ -49154,7 +50856,7 @@ body[data-mode='scene'] #scene {
               if (LV.cur >= LV.scenes.length) LV.cur = LV.scenes.length - 1;
               LV.edIdx = -1;
               LV.cues = LV.cues.filter((c) => c.type !== "scene");
-              save3();
+              save4();
               liveRenderSceneEd();
             }
           },
@@ -49556,10 +51258,10 @@ body[data-mode='scene'] #scene {
   }
   function lvUserNote(t, on3) {
     if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
-    const all = LV.userPlay || (LV.userPlay = {}), fresh2 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
+    const all = LV.userPlay || (LV.userPlay = {}), fresh3 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
     u.last = TR.tick;
     u.held = Math.max(0, u.held + (on3 ? 1 : -1));
-    if (!fresh2) return;
+    if (!fresh3) return;
     const nt = AU.ctx ? AU.ctx.currentTime : 0, ccs = /* @__PURE__ */ new Set([11]);
     LV.autos.forEach((a) => a.tracks.includes(t) && ccs.add(a.cc));
     if (LV.rise) [80].forEach((c) => ccs.add(c));
@@ -51180,8 +52882,8 @@ body[data-mode='scene'] #scene {
       b.textContent = on22 ? "■" : "▶";
     });
   }
-  function frame2() {
-    requestAnimationFrame(frame2);
+  function frame3() {
+    requestAnimationFrame(frame3);
     if (!TR.playing) return;
     const now = AU.ctx.currentTime;
     while (TR.vis.length > 1 && TR.vis[1].time <= now) TR.vis.shift();
@@ -51240,9 +52942,9 @@ body[data-mode='scene'] #scene {
   async function saveFile(name, data) {
     if (!DL) {
       try {
-        const blob = data instanceof Blob ? data : new Blob([data]);
+        const blob2 = data instanceof Blob ? data : new Blob([data]);
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
+        a.href = URL.createObjectURL(blob2);
         a.download = name;
         document.body.append(a);
         a.click();
@@ -51384,7 +53086,7 @@ body[data-mode='scene'] #scene {
   };
   function makeZip(files) {
     const enc = new TextEncoder();
-    const parts3 = [], central = [];
+    const parts4 = [], central = [];
     let offset = 0;
     const d = /* @__PURE__ */ new Date();
     const dt = (d.getFullYear() - 1980 << 9 | d.getMonth() + 1 << 5 | d.getDate()) & 65535;
@@ -51406,7 +53108,7 @@ body[data-mode='scene'] #scene {
       w32(lh, len);
       w16(lh, name.length);
       w16(lh, 0);
-      parts3.push(new Uint8Array(lh), name, f.data);
+      parts4.push(new Uint8Array(lh), name, f.data);
       const ch = [];
       w32(ch, 33639248);
       w16(ch, 20);
@@ -51438,7 +53140,7 @@ body[data-mode='scene'] #scene {
     w32(end, csize);
     w32(end, offset);
     w16(end, 0);
-    return new Blob([...parts3, ...central, new Uint8Array(end)]);
+    return new Blob([...parts4, ...central, new Uint8Array(end)]);
   }
 
   // src/services/audio-capture.js
@@ -51723,7 +53425,7 @@ body[data-mode='scene'] #scene {
     return c;
   };
   function wavEncoder(sr, bits) {
-    const parts3 = [];
+    const parts4 = [];
     let frames = 0;
     return {
       push(L2, R3, a, b) {
@@ -51738,7 +53440,7 @@ body[data-mode='scene'] #scene {
             x = x < -1 ? -1 : x > 1 ? 1 : x;
             o[2 * i + 1] = x < 0 ? x * 32768 : x * 32767;
           }
-          parts3.push(new Uint8Array(o.buffer));
+          parts4.push(new Uint8Array(o.buffer));
         } else {
           const o = new Uint8Array(n * 6);
           let p = 0;
@@ -51752,7 +53454,7 @@ body[data-mode='scene'] #scene {
               o[p++] = v >> 16 & 255;
             }
           }
-          parts3.push(o);
+          parts4.push(o);
         }
         frames += n;
       },
@@ -51778,12 +53480,12 @@ body[data-mode='scene'] #scene {
         dv.setUint32(40, bytes, true);
         const hb = new Uint8Array(h);
         let crc = crcAdd(4294967295, hb);
-        parts3.forEach((p) => {
+        parts4.forEach((p) => {
           crc = crcAdd(crc, p);
         });
         crc = (crc ^ 4294967295) >>> 0;
         return {
-          blob: new Blob([hb, ...parts3], { type: "audio/wav" }),
+          blob: new Blob([hb, ...parts4], { type: "audio/wav" }),
           size: 44 + bytes,
           crc,
           ext: "wav",
@@ -51794,13 +53496,13 @@ body[data-mode='scene'] #scene {
   }
   function mp3Encoder(sr, kbps) {
     const e = new lamejs.Mp3Encoder(2, sr, kbps);
-    const parts3 = [];
+    const parts4 = [];
     let frames = 0;
     const keep = (out2) => {
       if (out2 && out2.length) {
         const u = new Uint8Array(out2.length);
         for (let i = 0; i < out2.length; i++) u[i] = out2[i];
-        parts3.push(u);
+        parts4.push(u);
       }
     };
     return {
@@ -51821,12 +53523,12 @@ body[data-mode='scene'] #scene {
       finish() {
         keep(e.flush());
         let size = 0, crc = 4294967295;
-        parts3.forEach((p) => {
+        parts4.forEach((p) => {
           size += p.length;
           crc = crcAdd(crc, p);
         });
         crc = (crc ^ 4294967295) >>> 0;
-        return { blob: new Blob(parts3, { type: "audio/mpeg" }), size, crc, ext: "mp3", frames };
+        return { blob: new Blob(parts4, { type: "audio/mpeg" }), size, crc, ext: "mp3", frames };
       }
     };
   }
@@ -51859,7 +53561,7 @@ body[data-mode='scene'] #scene {
   }
   function makeZip2(entries2) {
     const enc = new TextEncoder();
-    const parts3 = [], central = [];
+    const parts4 = [], central = [];
     let offset = 0;
     const d = /* @__PURE__ */ new Date();
     const dt = (d.getFullYear() - 1980 << 9 | d.getMonth() + 1 << 5 | d.getDate()) & 65535;
@@ -51879,7 +53581,7 @@ body[data-mode='scene'] #scene {
       w32(lh, f.size);
       w16(lh, name.length);
       w16(lh, 0);
-      parts3.push(new Uint8Array(lh), name, f.blob);
+      parts4.push(new Uint8Array(lh), name, f.blob);
       const ch = [];
       w32(ch, 33639248);
       w16(ch, 20);
@@ -51911,7 +53613,7 @@ body[data-mode='scene'] #scene {
     w32(end, csize);
     w32(end, offset);
     w16(end, 0);
-    return new Blob([...parts3, ...central, new Uint8Array(end)], { type: "application/zip" });
+    return new Blob([...parts4, ...central, new Uint8Array(end)], { type: "application/zip" });
   }
 
   // src/song/audio-record.js
@@ -52128,9 +53830,9 @@ body[data-mode='scene'] #scene {
   }
 
   // src/song/audio-save.js
-  function anchorSave(name, blob) {
+  function anchorSave(name, blob2) {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(blob2);
     a.download = name;
     document.body.append(a);
     a.click();
@@ -54285,7 +55987,7 @@ body[data-mode='scene'] #scene {
       });
       saveFile("mc707-song-midi.zip", makeZip(files));
     });
-    addEventListener("keydown", onKey);
+    addEventListener("keydown", onKey2);
     addEventListener("keyup", liveKeyUp);
     addEventListener("keyup", (e) => {
       if (e.code === "Space" && e.target.tagName === "BUTTON") e.preventDefault();
@@ -54315,7 +56017,7 @@ body[data-mode='scene'] #scene {
     renderAll();
     scheduleSave();
   }
-  function onKey(e) {
+  function onKey2(e) {
     if (e.key === "F11") {
       if (canFull()) {
         e.preventDefault();
@@ -55745,7 +57447,7 @@ body[data-mode='scene'] #scene {
     if (!ok && !quiet) toast("The " + dn() + " did not answer. Connect it by USB and allow MIDI with SysEx.");
   }
   var edT = 0;
-  var wait = 0;
+  var wait2 = 0;
   function openEditor(t, browse) {
     if (exp != null) return expand(t, browse);
     edT = t;
@@ -55770,8 +57472,8 @@ body[data-mode='scene'] #scene {
     }
   }
   function watch3() {
-    clearInterval(wait);
-    wait = setInterval(() => {
+    clearInterval(wait2);
+    wait2 = setInterval(() => {
       if ($("#zcOv")) {
         if (exp != null && ZE.t !== exp && tracks2().includes(ZE.t)) {
           quickForget(edT);
@@ -55780,7 +57482,7 @@ body[data-mode='scene'] #scene {
         }
         return;
       }
-      clearInterval(wait);
+      clearInterval(wait2);
       quickForget(edT);
       exp = null;
       refresh3(true);
@@ -56061,9 +57763,9 @@ body[data-mode='scene'] #scene {
   // src/ui/update-check.js
   var API = "https://api.github.com/repos/Mendo-707/mc707-toolbox/releases/latest";
   var KEY7 = "mc707-update";
-  var parts2 = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
+  var parts3 = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
   function newer(a, b) {
-    const x = parts2(a), y = parts2(b);
+    const x = parts3(a), y = parts3(b);
     for (let i = 0; i < Math.max(x.length, y.length); i++)
       if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
     return false;
@@ -56120,7 +57822,7 @@ body[data-mode='scene'] #scene {
     [48, "Drop 2"],
     [56, "Outro"]
   ];
-  function fresh(template) {
+  function fresh2(template) {
     pushUndo();
     const m = S.midiOut;
     replaceState(newState());
@@ -56137,9 +57839,9 @@ body[data-mode='scene'] #scene {
     const has2 = !!last3;
     const close = () => ov.remove();
     const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
-    let found = null;
+    let found2 = null;
     const show = (u, asked) => {
-      found = u;
+      found2 = u;
       upd.classList.toggle("new", !!(u && u.newer));
       upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
       updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
@@ -56151,7 +57853,7 @@ body[data-mode='scene'] #scene {
         class: "btn sm",
         title: "See whether a newer version is out",
         onclick: async () => {
-          if (found && found.newer) return openLink(found.url);
+          if (found2 && found2.newer) return openLink(found2.url);
           upd.textContent = "Checking…";
           show(await checkUpdate(true), true);
         }
@@ -56199,12 +57901,12 @@ body[data-mode='scene'] #scene {
             },
             true
           ) : null,
-          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh2(false), !has2),
           card(
             "▤",
             "Empty template",
             "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
-            () => fresh(true)
+            () => fresh2(true)
           ),
           card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
           card(
@@ -56349,14 +58051,14 @@ body[data-mode='scene'] #scene {
   }
   function render2(ov) {
     ov.textContent = "";
-    const roles = S.tracks.map((x, t) => roleOf(t)), shown4 = DEVS[DEV].tracks, nD = shown4.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
+    const roles = S.tracks.map((x, t) => roleOf(t)), shown5 = DEVS[DEV].tracks, nD = shown5.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
     const set2 = async (r) => {
       if (await applyRoles(r)) {
         toast("Track setup changed");
         render2(ov);
       }
     };
-    const rows2 = shown4.map((t) => {
+    const rows2 = shown5.map((t) => {
       const sel = el("select", {
         "aria-label": "Track " + devNum(t) + " role",
         onchange: (e) => set2(roles.map((r, i) => i === t ? e.target.value : r))
@@ -56405,7 +58107,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown4.length - nD) + " tone tracks."
+          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown5.length - nD) + " tone tracks."
         ),
         el(
           "div",
@@ -57203,7 +58905,7 @@ body[data-mode='scene'] #scene {
       },
       "Copy results"
     );
-    const save3 = el(
+    const save4 = el(
       "button",
       {
         type: "button",
@@ -57242,7 +58944,7 @@ body[data-mode='scene'] #scene {
           el("li", {}, "Turn CHAIN on again. Press Scan. Stay on that screen and touch nothing else between scans."),
           el("li", {}, "Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.")
         ),
-        el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, scan, copy, save3),
+        el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, scan, copy, save4),
         status3,
         bar2,
         out2,
@@ -57970,7 +59672,7 @@ body[data-mode='scene'] #scene {
       )
     );
     const tick = (ts, on3) => ts.forEach((t) => plan2[t].forEach((c) => c.on = on3 && !!(c.item && resolve(c.item))));
-    const draw = () => {
+    const draw2 = () => {
       const rows2 = DEVS[DEV].tracks.filter((t) => S.tracks[t].type !== "drum").map((t) => {
         const clips = plan2[t].map((c, k2) => {
           const pool = poolOf2(gid, c.role), r = c.item && resolve(c.item);
@@ -57983,7 +59685,7 @@ body[data-mode='scene'] #scene {
                 if (v === "__lib") return chooseLib(t, k2);
                 c.item = pool.find((it) => itemKey(it) === v) || c.item;
                 c.on = !!resolve(c.item);
-                draw();
+                draw2();
               }
             },
             ...c.item && !pool.some((it) => itemKey(it) === itemKey(c.item)) ? [el("option", { value: itemKey(c.item), selected: true }, itemName(c.item))] : [],
@@ -58007,7 +59709,7 @@ body[data-mode='scene'] #scene {
               disabled: !r,
               "aria-label": "Send clip " + (k2 + 1),
               title: r ? "Send this one" : "Nothing to send",
-              onchange: (e) => (c.on = e.target.checked, draw())
+              onchange: (e) => (c.on = e.target.checked, draw2())
             }),
             el("b", {}, String(k2 + 1)),
             el("span", { class: "ftRole", style: "--rc:" + ctInfo(c.role)[2] }, ctInfo(c.role)[1]),
@@ -58024,7 +59726,7 @@ body[data-mode='scene'] #scene {
                   const others = ok.filter((it) => !c.item || itemKey(it) !== itemKey(c.item));
                   c.item = (others.length ? others : ok)[Math.floor(Math.random() * (others.length || ok.length))];
                   c.on = true;
-                  draw();
+                  draw2();
                 }
               },
               "🎲"
@@ -58048,7 +59750,7 @@ body[data-mode='scene'] #scene {
                   type: "button",
                   class: "btn sm",
                   title: "Send every clip of this track that has a sound",
-                  onclick: () => (tick([t], true), draw())
+                  onclick: () => (tick([t], true), draw2())
                 },
                 "All"
               ),
@@ -58058,7 +59760,7 @@ body[data-mode='scene'] #scene {
                   type: "button",
                   class: "btn sm",
                   title: "Send nothing to this track",
-                  onclick: () => (tick([t], false), draw())
+                  onclick: () => (tick([t], false), draw2())
                 },
                 "None"
               )
@@ -58086,11 +59788,11 @@ body[data-mode='scene'] #scene {
             } catch (e) {
             }
             plan2 = makePlan(gid);
-            draw();
+            draw2();
           }),
           el(
             "button",
-            { type: "button", class: "btn sm", onclick: () => (plan2 = makePlan(gid), draw()) },
+            { type: "button", class: "btn sm", onclick: () => (plan2 = makePlan(gid), draw2()) },
             "🎲 Shuffle all"
           ),
           el(
@@ -58102,7 +59804,7 @@ body[data-mode='scene'] #scene {
                 type: "button",
                 class: "btn sm",
                 title: "Send every clip that has a sound",
-                onclick: () => (tick(DEVS[DEV].tracks, true), draw())
+                onclick: () => (tick(DEVS[DEV].tracks, true), draw2())
               },
               "Select all"
             ),
@@ -58112,14 +59814,14 @@ body[data-mode='scene'] #scene {
                 type: "button",
                 class: "btn sm",
                 title: "Send nothing",
-                onclick: () => (tick(DEVS[DEV].tracks, false), draw())
+                onclick: () => (tick(DEVS[DEV].tracks, false), draw2())
               },
               "Select none"
             )
           ),
           el(
             "button",
-            { type: "button", class: "btn sm", onclick: () => poolsOpen(gid, () => (plan2 = makePlan(gid), draw())) },
+            { type: "button", class: "btn sm", onclick: () => poolsOpen(gid, () => (plan2 = makePlan(gid), draw2())) },
             "Edit the pools…"
           )
         ),
@@ -58130,7 +59832,7 @@ body[data-mode='scene'] #scene {
           "The suggestions are MC-707 factory tones: add them once from the MC-707 system update file (MC707_UPA_up.bin) to send them. ",
           el(
             "button",
-            { type: "button", class: "btn sm", onclick: () => factoryImport(() => (plan2 = makePlan(gid), draw())) },
+            { type: "button", class: "btn sm", onclick: () => factoryImport(() => (plan2 = makePlan(gid), draw2())) },
             "Add the factory tones…"
           )
         ),
@@ -58157,7 +59859,7 @@ body[data-mode='scene'] #scene {
       "Track " + devNum(t) + " clip " + (k2 + 1),
       (tone2) => {
         if (tone2) plan2[t][k2] = { ...plan2[t][k2], item: { name: tone2.name, kind: tone2.kind, d: tone2.d }, on: true };
-        draw();
+        draw2();
       },
       plan2[t][k2].item ? itemName(plan2[t][k2].item) : ""
     );
@@ -58226,7 +59928,7 @@ body[data-mode='scene'] #scene {
         "Sent " + done2 + " sound" + (done2 === 1 ? "" : "s") + (extra ? " (" + extra + " to more clips that hold notes, so none goes quiet)" : "") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
       );
     };
-    draw();
+    draw2();
     ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
     document.body.append(ov);
   }
@@ -58241,7 +59943,7 @@ body[data-mode='scene'] #scene {
     );
     const close = () => (ov.remove(), after && after());
     const trackFor2 = (r) => DEVS[DEV].tracks.find((t) => S.tracks[t].type === "drum" === (r === "drums")) ?? DEVS[DEV].tracks[0];
-    const draw = () => {
+    const draw2 = () => {
       const list2 = poolOf2(gid, role), edited = !!(pools()[gid] && pools()[gid][role]);
       box.replaceChildren(
         el("h3", {}, "Tone pools"),
@@ -58256,7 +59958,7 @@ body[data-mode='scene'] #scene {
           el("span", {}, "Genre "),
           el(
             "select",
-            { "aria-label": "Genre", onchange: (e) => (gid = e.target.value, draw()) },
+            { "aria-label": "Genre", onchange: (e) => (gid = e.target.value, draw2()) },
             ...genres().map(
               (g) => el("option", { value: g.id, selected: g.id === gid }, (g.group ? g.group + " › " : "") + g.label)
             )
@@ -58273,7 +59975,7 @@ body[data-mode='scene'] #scene {
                 role: "tab",
                 "aria-selected": String(r === role),
                 class: "btn sm" + (r === role ? " on" : ""),
-                onclick: () => (role = r, draw())
+                onclick: () => (role = r, draw2())
               },
               ctInfo(r)[1]
             )
@@ -58302,7 +60004,7 @@ body[data-mode='scene'] #scene {
                     gid,
                     role,
                     list2.filter((x, j) => j !== i)
-                  ), draw())
+                  ), draw2())
                 },
                 "✕"
               )
@@ -58327,21 +60029,21 @@ body[data-mode='scene'] #scene {
                 if (!tone2) return;
                 const it = { name: tone2.name, kind: tone2.kind, d: tone2.d };
                 if (!list2.some((x) => itemKey(x) === itemKey(it))) setPool(gid, role, [...list2, it]);
-                draw();
+                draw2();
               })
             },
             "+ Add a sound…"
           ),
           el(
             "button",
-            { type: "button", class: "btn sm", disabled: !edited, onclick: () => (resetPool(gid, role), draw()) },
+            { type: "button", class: "btn sm", disabled: !edited, onclick: () => (resetPool(gid, role), draw2()) },
             "Back to the suggestions"
           ),
           el("button", { type: "button", class: "btn on", style: "margin-left:auto", onclick: close }, "Done")
         )
       );
     };
-    draw();
+    draw2();
     ov.addEventListener("keydown", (e) => e.key === "Escape" && (e.stopPropagation(), close()));
     document.body.append(ov);
   }
@@ -60265,7 +61967,7 @@ body[data-mode='scene'] #scene {
     renderAll();
     projTitle();
     if (startOnOpen()) startOpen(!!saved);
-    requestAnimationFrame(frame2);
+    requestAnimationFrame(frame3);
     (async () => {
       try {
         if (window.claude && typeof claude.use === "function") {
