@@ -35,7 +35,8 @@ function makeProject() {
   put(lpd + 16, 'DIK0');
   dv.setUint32(lpd + 16 + 16 + 65 * 16, 64 * 4, true);
   dv.setUint32(lpd + 16 + 16 + 65 * 16 + 4, 4112, true);
-  for (let i = 0; i < 64; i++) dv.setInt32(lpd + 16 + 4112 + i * 4, (i - 32) * 0x2000000, true);
+  for (let i = 0; i < 64; i++)
+    dv.setUint32(lpd + 16 + 4112 + i * 4, (i < 32 ? 0x80000000 : 0) + Math.abs(i - 32) * 0x2000000, true);
   put(at + 0x10, 'Test Song       ');
   dv.setUint16(at + 0x20, 9500, true);
   /* scenes as a new project has them (scene n plays clip n, kept 1-16 in each track's block at +90),
@@ -117,7 +118,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.deepEqual(r.kick, [{ note: 36, vel: 90, start: 0, end: 50, sub: 0 }]);
   assert.deepEqual(r.samples, [['Hit.wav', 1, 64, 44100]]);
   assert.deepEqual(r.loops, [[4, 1, 256]], 'the looper recording in track 5 clip 2');
-  assert.deepEqual(r.loop, [-0.03125, -0.015625, 0, 0.015625], '32-bit mono samples');
+  assert.deepEqual(r.loop, [-0.03125, -0.015625, 0, 0.015625], '32-bit mono samples, sign and magnitude');
   assert.deepEqual(r.scenes, [
     { pick: [1, 0, 0, 0, 0, 0, 0, 0], bars: 4 },
     { pick: [1, 1, 1, 1, 1, 1, 1, 1], bars: 0 }

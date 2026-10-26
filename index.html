@@ -57259,7 +57259,10 @@ body[data-mode='scene'] #scene {
   }
   function loopAudio(u8, l) {
     const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), frames = Math.floor(l.bytes / 4), M2 = new Float32Array(frames);
-    for (let i = 0; i < frames; i++) M2[i] = dv.getInt32(l.at + i * 4, true) / 2147483648;
+    for (let i = 0; i < frames; i++) {
+      const w = dv.getUint32(l.at + i * 4, true), mag = (w & 2147483647) / 2147483648;
+      M2[i] = w & 2147483648 ? -mag : mag;
+    }
     return [M2];
   }
   function wavBytes(chs, rate, bits = 16) {

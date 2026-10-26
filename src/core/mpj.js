@@ -16,8 +16,8 @@
 //               (padded to 1 KB), sample count (all channels), file name (16), number, sample rate, then
 //               16-bit PCM
 //   LPDa        looper recordings: "DIK0", then 256 entries (size, offset from "DIK0", 2 unused); entry
-//               track × 16 + clip; 32-bit mono PCM at 44.1 kHz (checked: a 2-bar recording at 128 BPM
-//               is 165376 samples, 3.75 s, and plays back as recorded)
+//               track × 16 + clip; 32-bit mono at 44.1 kHz in sign and magnitude (top bit the sign; a
+//               2-bar recording at 128 BPM is 165376 samples, 3.75 s)
 //
 // Plain data only. Reads: nothing.
 
@@ -177,7 +177,13 @@ export function loopAudio(u8, l) {
   const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength),
     frames = Math.floor(l.bytes / 4),
     M = new Float32Array(frames);
-  for (let i = 0; i < frames; i++) M[i] = dv.getInt32(l.at + i * 4, true) / 2147483648;
+  /* sign and magnitude, not two's complement: the top bit is the sign, the other 31 the size (read as two's
+     complement, every quiet negative sample became a full-scale one, and the loop played as static) */
+  for (let i = 0; i < frames; i++) {
+    const w = dv.getUint32(l.at + i * 4, true),
+      mag = (w & 0x7fffffff) / 2147483648;
+    M[i] = w & 0x80000000 ? -mag : mag;
+  }
   return [M];
 }
 /** Float32 channels as a WAV file (16 or 24-bit). */
