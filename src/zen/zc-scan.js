@@ -105,19 +105,19 @@ const areaList = () =>
 /* the knob finder's areas: the head and the sound control settings of track 1's clips 1 and 2 (the
    KNOB ASSIGN choices are kept per clip in a project file, next to the clip's sound control settings) */
 function knobAreas() {
-  const out = [];
-  for (const k of [0, 1]) {
-    out.push({ from: clipAddr(0, k), blocks: 2, label: 'track 1 clip ' + (k + 1) + ' head' });
-    out.push({ from: clipAddr(0, k) + lin(0x10000), blocks: 8, label: 'track 1 clip ' + (k + 1) + ' sound control' });
+  const out = [{ from: lin(0x10000800), blocks: 4, label: 'track 1 settings' }];
+  /* every clip of track 1 and the 17th structure after them (the track's own) */
+  for (let k = 0; k < 17; k++) {
+    out.push({ from: clipAddr(0, k), blocks: 1, label: 'track 1 clip ' + (k + 1) + ' head' });
+    out.push({ from: clipAddr(0, k) + lin(0x10000), blocks: 5, label: 'track 1 clip ' + (k + 1) + ' sound control' });
   }
   out.only = true;
   return out;
 }
 const KNOB_STEPS = [
-  'Stop playback. On the MC-707 select track 1, clip 1. Press Scan.',
-  'Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Press Scan.',
-  'Set C1 to Level. Press Scan.',
-  'Set C1 back to Cutoff, and SOUND (C4) to Pan. Press Scan.',
+  'Stop playback. On the MC-707 select track 1, clip 1. Press Scan (about half a minute).',
+  'Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Then press clip 2’s pad and clip 1’s pad again (so the MC-707 stores it), and press Scan.',
+  'Set C1 to Level, press clip 2 and clip 1 again, and press Scan.',
   'Press Copy results and paste them into the chat.'
 ];
 /** Help › For developers › Find the knob settings: the same scan, over the clip areas only (a few seconds). */

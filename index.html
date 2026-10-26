@@ -56693,19 +56693,18 @@ body[data-mode='scene'] #scene {
   }
   var areaList = () => regions.map((r) => r.label + " " + hexAddr(r.from) + " (" + r.blocks * BLOCK + " bytes)").join("\n");
   function knobAreas() {
-    const out2 = [];
-    for (const k2 of [0, 1]) {
-      out2.push({ from: clipAddr(0, k2), blocks: 2, label: "track 1 clip " + (k2 + 1) + " head" });
-      out2.push({ from: clipAddr(0, k2) + lin(65536), blocks: 8, label: "track 1 clip " + (k2 + 1) + " sound control" });
+    const out2 = [{ from: lin(268437504), blocks: 4, label: "track 1 settings" }];
+    for (let k2 = 0; k2 < 17; k2++) {
+      out2.push({ from: clipAddr(0, k2), blocks: 1, label: "track 1 clip " + (k2 + 1) + " head" });
+      out2.push({ from: clipAddr(0, k2) + lin(65536), blocks: 5, label: "track 1 clip " + (k2 + 1) + " sound control" });
     }
     out2.only = true;
     return out2;
   }
   var KNOB_STEPS = [
-    "Stop playback. On the MC-707 select track 1, clip 1. Press Scan.",
-    "Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Press Scan.",
-    "Set C1 to Level. Press Scan.",
-    "Set C1 back to Cutoff, and SOUND (C4) to Pan. Press Scan.",
+    "Stop playback. On the MC-707 select track 1, clip 1. Press Scan (about half a minute).",
+    "Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Then press clip 2’s pad and clip 1’s pad again (so the MC-707 stores it), and press Scan.",
+    "Set C1 to Level, press clip 2 and clip 1 again, and press Scan.",
     "Press Copy results and paste them into the chat."
   ];
   var knobFinderOpen = () => sceneFinderOpen(true);
