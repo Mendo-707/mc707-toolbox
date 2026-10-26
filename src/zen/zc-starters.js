@@ -4,13 +4,36 @@
 //
 // Reads: nothing (builds new sounds).
 import { newSound, pk } from './zc-tone.js';
+import { ZC_CATEGORIES } from './zc-data.js';
 
 /* ---- starter tones: a clean init, then a few classic shapes on the VA oscillators ---- */
 /** A new one-partial VA tone named `name`; fn gets s(id, value, partial) to set parameters. */
+/* the ZenCore category a sound's name suggests, so starters (and the Slime Lab's blends) sort and search
+   by category in the Sound browser and show it on the MC-707 */
+const CATS = [
+  [/init/, 'None'],
+  [/^seq:/, 'Synth Seq/Pop'],
+  [/electric piano|e\.piano|keys/, 'E.Piano1'],
+  [/organ/, 'E.Organ'],
+  [/bell/, 'Bell'],
+  [/bass|808|sub\b/, 'Synth Bass'],
+  [/brass/, 'Synth Brass'],
+  [/string|pad/, 'Synth Pad/Str'],
+  [/lead|hoover|sync|supersaw/, 'Synth Lead'],
+  [/stab|chord|pluck/, 'Synth PolyKey'],
+  [/kick|drum|snare|hat/, 'Percussion'],
+  [/noise|sweep|fx|riser/, 'Synth FX']
+];
+export function categoryFor(name) {
+  const n = String(name).toLowerCase(),
+    hit = CATS.find(([re]) => re.test(n));
+  return hit ? Math.max(0, ZC_CATEGORIES.indexOf(hit[1])) : 0;
+}
 export function tone(name, fn) {
   const s = newSound('tone');
   const set = (key, i, id, v) => (s.v[pk(key, i, id)] = v);
   s.v['CMN.NAME'] = name;
+  s.v['CMN.CATEGORY'] = categoryFor(name);
   for (let i = 0; i < 4; i++) set('PMT', null, 'PMT' + (i + 1) + '_PTL_SW', i === 0 ? 1 : 0);
   set('SPTL', 0, 'OSC_TYPE', 1);
   fn((id, v, i = 0) =>

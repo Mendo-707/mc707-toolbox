@@ -7446,6 +7446,9 @@ body[data-mode='synth'] #synth {
 .lsFound small {
   font-size: 11px;
 }
+.lbKid {
+  cursor: grab;
+}
 </style>
     <style>
 /* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
@@ -11175,7 +11178,7 @@ body[data-mode='scene'] #scene {
       const all = Object.keys(F.styles);
       const bpm = F.styles[all[0]].bpm;
       const tag = (F.tag || GTAG[F.genre] || F.genre) + " ";
-      const put = (name, role, pool, lanes, bars2) => add({
+      const put2 = (name, role, pool, lanes, bars2) => add({
         name: tag + name,
         type: "drum",
         genre: F.genre,
@@ -11187,20 +11190,20 @@ body[data-mode='scene'] #scene {
         pool
       });
       F.K.forEach(([n, d]) => {
-        put("Kick: " + n, "Kick", "", d, 1);
+        put2("Kick: " + n, "Kick", "", d, 1);
         [0, 1].forEach(
-          (i) => put("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
+          (i) => put2("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
         );
       });
       F.S.forEach(([n, d]) => {
-        put("Snare: " + n, "Snare", "", d, 1);
-        put("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
+        put2("Snare: " + n, "Snare", "", d, 1);
+        put2("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
       });
-      F.H.forEach(([n, d]) => put("Hats: " + n, "Hats", "hats", d, 1));
+      F.H.forEach(([n, d]) => put2("Hats: " + n, "Hats", "hats", d, 1));
       F.H.forEach(([n, d], i) => {
-        if (i % 2 === 0) put("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
+        if (i % 2 === 0) put2("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
       });
-      F.perc.forEach(([n, d]) => put("Perc: " + n, "Perc", "perc", d, 1));
+      F.perc.forEach(([n, d]) => put2("Perc: " + n, "Perc", "perc", d, 1));
     }
     function genFills(F) {
       const all = Object.keys(F.styles);
@@ -14781,12 +14784,12 @@ body[data-mode='scene'] #scene {
       MOT.forEach(([mn, mot]) => {
         const notes = [];
         const deg = (d) => 60 + R3 + SC2[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
-        const put = (bar2, shift, vel) => mot.forEach(
+        const put2 = (bar2, shift, vel) => mot.forEach(
           ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
-        put(0, 0, 104);
-        put(1, 2, 98);
-        put(2, 0, 104);
+        put2(0, 0, 104);
+        put2(1, 2, 98);
+        put2(2, 0, 104);
         [
           [0, 2, 4],
           [2, 2, 3],
@@ -18778,20 +18781,20 @@ body[data-mode='scene'] #scene {
     S.loop = { on: true, start: 0, end: 8 };
     S.key = 5;
     S.scale = "minor";
-    const put = (t, start, len, fid) => {
+    const put2 = (t, start, len, fid) => {
       const pid = instFactory(FAC.find((x) => x.id === fid));
       S.clips.push({ id: "c" + S.nextId++, t, start, len, off: 0, pat: pid });
     };
-    put(0, 0, 7, "dnb-twostep");
-    put(0, 7, 1, "dnb-fill");
-    put(0, 8, 8, "dnb-neuro");
-    put(3, 0, 8, "dnb-sub");
-    put(3, 8, 8, "dnb-reese");
-    put(4, 4, 4, "dnb-stabs");
-    put(4, 8, 8, "dnb-liquid-ch");
-    put(5, 0, 8, "dnb-pad");
-    put(6, 12, 4, "dnb-arp");
-    put(7, 8, 8, "dnb-pluck");
+    put2(0, 0, 7, "dnb-twostep");
+    put2(0, 7, 1, "dnb-fill");
+    put2(0, 8, 8, "dnb-neuro");
+    put2(3, 0, 8, "dnb-sub");
+    put2(3, 8, 8, "dnb-reese");
+    put2(4, 4, 4, "dnb-stabs");
+    put2(4, 8, 8, "dnb-liquid-ch");
+    put2(5, 0, 8, "dnb-pad");
+    put2(6, 12, 4, "dnb-arp");
+    put2(7, 8, 8, "dnb-pluck");
   }
   var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
@@ -30337,8 +30340,8 @@ body[data-mode='scene'] #scene {
     if (d[1] !== 65 || d[7] !== 18 || w.kind !== "rq") return;
     if (!MODELS.includes(d[6])) return;
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
-    const want = replyBytes(w.l + w.buf.length), plain = addrBytes(w.l + w.buf.length);
-    if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
+    const want = replyBytes(w.l + w.buf.length), plain2 = addrBytes(w.l + w.buf.length);
+    if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain2[i])) {
       if (!(w.loose && !w.buf.length)) {
         w.stray++;
         return;
@@ -35280,7 +35283,7 @@ body[data-mode='scene'] #scene {
       ...[1, 2, 3, 4].map((i) => num2("T" + i, "Time " + i)),
       ...levels.map((id, i) => id ? num2(id, "Level " + i) : null).filter(Boolean)
     );
-    const put = (e, pt, T3, Lf) => {
+    const put2 = (e, pt, T3, Lf) => {
       const k2 = (id) => e + pt + "." + id, ls = LEVELS2[e];
       T3.forEach((t, i) => ctx2.set(k2("T" + (i + 1)), t, false));
       ls.forEach((id, i) => {
@@ -35306,7 +35309,7 @@ body[data-mode='scene'] #scene {
           const s = SHAPES2[KIND[env]][+e.target.value];
           e.target.value = "";
           if (!s) return;
-          put(env, part, s[1], s[2]);
+          put2(env, part, s[1], s[2]);
           ctx2.commit();
         }
       },
@@ -35322,8 +35325,8 @@ body[data-mode='scene'] #scene {
           const v = e.target.value;
           e.target.value = "";
           const [T3, L2] = shape();
-          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put(env, i, T3, L2));
-          else if (KIND[v]) put(v, part, T3, L2);
+          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put2(env, i, T3, L2));
+          else if (KIND[v]) put2(v, part, T3, L2);
           else return;
           ctx2.commit();
         }
@@ -36111,10 +36114,29 @@ body[data-mode='scene'] #scene {
   }
 
   // src/zen/zc-starters.js
+  var CATS = [
+    [/init/, "None"],
+    [/^seq:/, "Synth Seq/Pop"],
+    [/electric piano|e\.piano|keys/, "E.Piano1"],
+    [/organ/, "E.Organ"],
+    [/bell/, "Bell"],
+    [/bass|808|sub\b/, "Synth Bass"],
+    [/brass/, "Synth Brass"],
+    [/string|pad/, "Synth Pad/Str"],
+    [/lead|hoover|sync|supersaw/, "Synth Lead"],
+    [/stab|chord|pluck/, "Synth PolyKey"],
+    [/kick|drum|snare|hat/, "Percussion"],
+    [/noise|sweep|fx|riser/, "Synth FX"]
+  ];
+  function categoryFor(name) {
+    const n = String(name).toLowerCase(), hit = CATS.find(([re]) => re.test(n));
+    return hit ? Math.max(0, ZC_CATEGORIES.indexOf(hit[1])) : 0;
+  }
   function tone(name, fn) {
     const s = newSound("tone");
     const set2 = (key, i, id, v) => s.v[pk(key, i, id)] = v;
     s.v["CMN.NAME"] = name;
+    s.v["CMN.CATEGORY"] = categoryFor(name);
     for (let i = 0; i < 4; i++) set2("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
     set2("SPTL", 0, "OSC_TYPE", 1);
     fn(
@@ -36911,23 +36933,41 @@ body[data-mode='scene'] #scene {
       ...have.has("starter") ? ["starter"] : []
     ];
   }
+  var plain = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  var compact = (t) => plain(t).replace(/[^a-z0-9]+/g, "");
+  var SRC_WORDS = { starter: "starter", factory: "factory", mine: "mine my", mc707: "grabbed mc-707", file: "file" };
+  function searchText(e) {
+    const hay = plain(
+      [
+        e.name,
+        catLabel(catOf(e)),
+        groupOf(e),
+        ...e.tags || [],
+        e.group || "",
+        e.type || "",
+        e.folder || "",
+        e.bank ? "bank " + e.bank : "",
+        SRC_WORDS[e.src] || "",
+        e.no ? String(e.no).padStart(4, "0") + " " + e.no : ""
+      ].join(" ")
+    );
+    return [hay, compact(hay)];
+  }
+  function searchHit(e, q) {
+    const words = plain(q).split(/\s+/).filter(Boolean);
+    if (!words.length) return true;
+    const [hay, flat] = searchText(e);
+    return words.every((w) => hay.includes(w) || compact(w) && flat.includes(compact(w)));
+  }
   function filterList(list2, f) {
-    const q = f.q.trim().toLowerCase();
+    const q = (f.q || "").trim();
     return list2.filter((e) => {
       const b = bankOf(e);
       if (f.bank === "fav" ? !ratingOf(e.id) : f.bank === "factory" ? e.src !== "factory" : f.bank !== "all" && b !== f.bank)
         return false;
       if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
       if (f.tag && !(e.tags || []).includes(f.tag)) return false;
-      if (!q) return true;
-      const hay = [
-        e.name,
-        catLabel(catOf(e)),
-        ...e.tags || [],
-        e.group || "",
-        e.no ? String(e.no).padStart(4, "0") : ""
-      ];
-      return hay.join(" ").toLowerCase().includes(q);
+      return !q || searchHit(e, q);
     });
   }
   function catCounts(list2) {
@@ -37689,7 +37729,12 @@ body[data-mode='scene'] #scene {
       return "Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).";
     if (B.bank === "mc707" && !all.some((e) => e.src === "mc707"))
       return "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab.";
-    return "Nothing matches.";
+    if (B.q.trim() && (B.bank !== "all" || B.cat || B.group || B.tag)) {
+      const n = filterList(all, { ...B, bank: "all", cat: "", group: "", tag: "" }).length;
+      if (n)
+        return "Nothing here matches “" + B.q.trim() + "”, but " + n + " sound" + (n === 1 ? "" : "s") + " elsewhere do.";
+    }
+    return B.q.trim() ? "Nothing matches “" + B.q.trim() + "”. Try fewer words, or part of a name." : "Nothing here yet.";
   }
   function render() {
     const ov = $("#zbOv");
@@ -37705,7 +37750,29 @@ body[data-mode='scene'] #scene {
       count.textContent = l.length + " shown";
       box.textContent = "";
       box.scrollTop = 0;
-      if (!l.length) box.append(el("p", { class: "hint zbEmpty" }, emptyText(all)));
+      if (!l.length) {
+        const msg = emptyText(all);
+        box.append(
+          el(
+            "p",
+            { class: "hint zbEmpty" },
+            msg,
+            / elsewhere do\.$/.test(msg) ? el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                style: "margin-left:8px",
+                onclick: () => {
+                  Object.assign(B, { bank: "all", cat: "", group: "", tag: "" });
+                  render();
+                }
+              },
+              "Search all sounds"
+            ) : null
+          )
+        );
+      }
       fillTable(box, l, { cur: B.cur, sel: B.sel, click: click2, load: load3, play, menu: rowMenu, more, redraw: render }, editRow);
     };
     const q = el("input", {
@@ -37718,6 +37785,19 @@ body[data-mode='scene'] #scene {
       oninput: (e) => {
         B.q = e.target.value;
         drawList();
+      },
+      /* Esc clears a search first (a second Esc closes the browser); Enter or Down goes to the results */
+      onkeydown: (e) => {
+        if (e.key === "Escape" && e.target.value) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.target.value = B.q = "";
+          drawList();
+        } else if ((e.key === "ArrowDown" || e.key === "Enter") && box.querySelector(".zbItem")) {
+          e.preventDefault();
+          box.focus();
+          box.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: false }));
+        }
       }
     });
     const inBank = filterList(all, { ...B, group: "", cat: "" });
@@ -38714,6 +38794,24 @@ body[data-mode='scene'] #scene {
       body
     );
   }
+  function pickKid(ctx2, i) {
+    const tag = "mutate:" + BENCH.gen;
+    const back = Object.fromEntries(
+      [...new Set(BENCH.kids.flatMap((k2) => Object.keys(k2.vals)))].map((k2) => [k2, num(BENCH.parent, k2)])
+    );
+    const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
+    ctx2.apply(tag, vals, "drift", i < 0 ? "Mutate: back to the parent" : "Mutate: variation " + (i + 1));
+    BENCH.pick = i;
+    ctx2.redraw();
+  }
+  async function benchDrop(ctx2, data) {
+    const m = /^kid:(-?\d)$/.exec(data || "");
+    if (!m || !BENCH.kids.length) return false;
+    const i = +m[1];
+    await ctx2.gloop(i < 0 ? "#9aa59e" : BENCH.kids[i].col);
+    pickKid(ctx2, i);
+    return true;
+  }
   function mutateBox(ctx2) {
     const sprout = () => {
       BENCH.parent = { ...ZE.snd.v };
@@ -38725,16 +38823,7 @@ body[data-mode='scene'] #scene {
       });
       ctx2.redraw();
     };
-    const pick3 = (i) => {
-      const tag = "mutate:" + BENCH.gen;
-      const back = Object.fromEntries(
-        [...new Set(BENCH.kids.flatMap((k2) => Object.keys(k2.vals)))].map((k2) => [k2, num(BENCH.parent, k2)])
-      );
-      const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
-      ctx2.apply(tag, vals, "drift", i < 0 ? "Mutate: back to the parent" : "Mutate: variation " + (i + 1));
-      BENCH.pick = i;
-      ctx2.redraw();
-    };
+    const pick3 = (i) => pickKid(ctx2, i);
     const lock = (g) => el(
       "button",
       {
@@ -38777,8 +38866,15 @@ body[data-mode='scene'] #scene {
         {
           type: "button",
           class: "lbKid" + (BENCH.pick === i ? " on" : ""),
-          title: i < 0 ? "Back to the tone you sprouted from" : "Hear this variation: " + what,
-          onclick: () => pick3(i)
+          draggable: "true",
+          title: (i < 0 ? "Back to the tone you sprouted from" : "Hear this variation: " + what) + ". Click, or drag it onto the slime.",
+          onclick: () => pick3(i),
+          ondragstart: (e) => {
+            e.dataTransfer.setData("text/plain", "kid:" + i);
+            e.dataTransfer.effectAllowed = "copy";
+            const m = e.currentTarget.querySelector(".lbMiniW");
+            if (m && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(m, 23, 21);
+          }
         },
         el("span", { class: "lbMiniW" }),
         el("b", {}, name),
@@ -39059,6 +39155,7 @@ body[data-mode='scene'] #scene {
     } catch (e) {
     }
   };
+  var put = (box, ...kids) => box.replaceChildren(...kids.flat().filter((k2) => k2 != null && k2 !== false));
   var still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   var wait = (ms) => new Promise((r) => setTimeout(r, ms));
   var onParts = () => {
@@ -39983,6 +40080,7 @@ body[data-mode='scene'] #scene {
         e.currentTarget.classList.remove("drop");
         const id = e.dataTransfer.getData("text/plain");
         if (ing(id)) mixIn(id);
+        else benchDrop(CTX, id);
       }
     });
     stage.append(slimeSvg(), el("div", { class: "lsFound", id: "lsFound" }));
@@ -40218,7 +40316,8 @@ body[data-mode='scene'] #scene {
     const back = LAB.guide ? btn("◂ Back to " + LAB.guide.r.name, () => (LAB.guide.away = false, drawLearn()), "Back to the blend") : null;
     const last3 = [...LAB.log].reverse().find((x) => x.id === p.id);
     box.style.setProperty("--ic", p.c);
-    box.replaceChildren(
+    put(
+      box,
       el("legend", {}, "Learn"),
       back,
       el("div", { class: "llTop" }, blob(p.c), el("b", {}, p.name), el("small", {}, p.tag)),
@@ -40257,7 +40356,8 @@ body[data-mode='scene'] #scene {
     drawTarget();
     drawScope();
     $("#labRead").textContent = reading(tr);
-    $("#labBlends").replaceChildren(
+    put(
+      $("#labBlends"),
       el("legend", {}, "Blends"),
       el(
         "p",
@@ -40289,7 +40389,8 @@ body[data-mode='scene'] #scene {
         );
       })
     );
-    $("#labLog").replaceChildren(
+    put(
+      $("#labLog"),
       el("legend", {}, "Mixed in"),
       LAB.log.length ? el(
         "div",
@@ -40336,6 +40437,8 @@ body[data-mode='scene'] #scene {
     dragN: () => LAB.dragN,
     dragged: (tag, fn) => dragged(tag, fn),
     dragDone: () => LAB.dragN++,
+    /* a blob of this colour gloops into the slime (resolves as it lands) */
+    gloop: (c) => dropIn({ c }),
     /* the ear test's hidden ingredient: mixed in with no name and no colour */
     mixQuiet(id, amt, tag) {
       const b = brewer();
@@ -40354,7 +40457,7 @@ body[data-mode='scene'] #scene {
   };
   function drawBench() {
     const box = $("#labBench");
-    if (box) box.replaceChildren(benchBox(CTX));
+    if (box) put(box, benchBox(CTX));
   }
   var SCOPE = { W: 400, H: 46, x: null };
   function drawScope() {
@@ -40479,7 +40582,8 @@ body[data-mode='scene'] #scene {
     const box = $("#labMeters");
     if (!box) return;
     if (!box.querySelector(".lmRow")) {
-      box.replaceChildren(
+      put(
+        box,
         el("legend", {}, "Character"),
         el("p", { class: "hint" }, "Drag a bar to set it directly."),
         ...tr.map(([n]) => {
@@ -40542,7 +40646,8 @@ body[data-mode='scene'] #scene {
       },
       label2
     );
-    box.replaceChildren(
+    put(
+      box,
       el("span", { class: "zcL" }, "Works on"),
       b("All partials", null, "Every partial that is on"),
       ...[0, 1, 2, 3].map(
@@ -40773,7 +40878,7 @@ body[data-mode='scene'] #scene {
       if (!$("#labOv")) return;
       LAB.target = st.on ?? null;
       const tag = "blend:" + r.id + ":" + i + ":" + LAB.dragN++, ch = [];
-      const put = (vals) => {
+      const put2 = (vals) => {
         const before = Object.fromEntries(Object.keys(vals).map((k2) => [k2, ZE.snd.v[k2]]));
         for (const k2 of zeBrew(vals, tag)) {
           const c = ch.find((x) => x[0] === k2);
@@ -40784,9 +40889,9 @@ body[data-mode='scene'] #scene {
       if (st.amt) {
         const b = brewer();
         p.brew(b, st.amt / 10);
-        put(b.out);
+        put2(b.out);
       }
-      put(dialVals(st.dial));
+      put2(dialVals(st.dial));
       LAB.log.push({ id: st.ing, label: st.title, guide: true, ch, tag });
       g.done = i + 1;
       if (g.done >= r.steps.length) made(r);
@@ -40800,7 +40905,8 @@ body[data-mode='scene'] #scene {
     save3();
     const f = $("#lsFound");
     if (!f) return;
-    f.replaceChildren(
+    put(
+      f,
       el("span", { class: "llK" }, "Blend made"),
       el("b", {}, r.name),
       el("small", {}, "Taste it on " + noteName3(r.note) + ", then shape it further with the ingredients.")
@@ -40818,7 +40924,8 @@ body[data-mode='scene'] #scene {
     const last3 = [...LAB.log].reverse().find((x) => x.guide && !x.slate);
     const step = g.done ? r.steps[shownStep] : null;
     box.style.setProperty("--ic", step ? ing(step.ing).c : "#dfe9ff");
-    box.replaceChildren(
+    put(
+      box,
       el("legend", {}, "Blend · " + r.name),
       el("p", { class: "llAbout" }, r.about),
       el(
@@ -61839,7 +61946,7 @@ body[data-mode='scene'] #scene {
       }))
         return;
       pushUndo();
-      let dropped = 0, put = 0, skipped = 0;
+      let dropped = 0, put2 = 0, skipped = 0;
       const clips = emptyClips();
       for (const t of DEVS[DEV].tracks)
         for (let k2 = 0; k2 < 16; k2++) {
@@ -61853,7 +61960,7 @@ body[data-mode='scene'] #scene {
           if (!r.pattern.notes.length) continue;
           const p = r.pattern;
           clips[t][k2] = { pat: addPattern(p.type, p.name, p.bars, p.notes, { role: p.role || "" }) };
-          put++;
+          put2++;
         }
       S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
       S.scn.clips = clips;
@@ -61875,7 +61982,7 @@ body[data-mode='scene'] #scene {
       hooks.setMode("scene");
       hooks.renderAll();
       toast(
-        "Brought in " + plural3(put, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+        "Brought in " + plural3(put2, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
     };
     const toMine = () => {

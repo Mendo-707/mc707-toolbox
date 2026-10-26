@@ -212,6 +212,30 @@ export function benchBox(ctx) {
   );
 }
 
+/* hear a variation: the tone becomes it (one undo step for the whole generation); -1 is the parent */
+function pickKid(ctx, i) {
+  const tag = 'mutate:' + BENCH.gen;
+  const back = Object.fromEntries(
+    [...new Set(BENCH.kids.flatMap(k => Object.keys(k.vals)))].map(k => [k, num(BENCH.parent, k)])
+  );
+  const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
+  ctx.apply(tag, vals, 'drift', i < 0 ? 'Mutate: back to the parent' : 'Mutate: variation ' + (i + 1));
+  BENCH.pick = i;
+  ctx.redraw();
+}
+/**
+ * Something dropped on the slime from the bench: a variation ('kid:n') gloops in and the tone becomes it.
+ * Resolves true when it was the bench's.
+ */
+export async function benchDrop(ctx, data) {
+  const m = /^kid:(-?\d)$/.exec(data || '');
+  if (!m || !BENCH.kids.length) return false;
+  const i = +m[1];
+  await ctx.gloop(i < 0 ? '#9aa59e' : BENCH.kids[i].col);
+  pickKid(ctx, i);
+  return true;
+}
+
 /* Mutate: four variations, each a small step from the parent */
 function mutateBox(ctx) {
   const sprout = () => {
@@ -224,17 +248,7 @@ function mutateBox(ctx) {
     });
     ctx.redraw();
   };
-  /* hear a variation: the tone becomes it (one undo step for the whole generation) */
-  const pick = i => {
-    const tag = 'mutate:' + BENCH.gen;
-    const back = Object.fromEntries(
-      [...new Set(BENCH.kids.flatMap(k => Object.keys(k.vals)))].map(k => [k, num(BENCH.parent, k)])
-    );
-    const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
-    ctx.apply(tag, vals, 'drift', i < 0 ? 'Mutate: back to the parent' : 'Mutate: variation ' + (i + 1));
-    BENCH.pick = i;
-    ctx.redraw();
-  };
+  const pick = i => pickKid(ctx, i);
   const lock = g =>
     el(
       'button',
@@ -280,8 +294,17 @@ function mutateBox(ctx) {
       {
         type: 'button',
         class: 'lbKid' + (BENCH.pick === i ? ' on' : ''),
-        title: i < 0 ? 'Back to the tone you sprouted from' : 'Hear this variation: ' + what,
-        onclick: () => pick(i)
+        draggable: 'true',
+        title:
+          (i < 0 ? 'Back to the tone you sprouted from' : 'Hear this variation: ' + what) +
+          '. Click, or drag it onto the slime.',
+        onclick: () => pick(i),
+        ondragstart: e => {
+          e.dataTransfer.setData('text/plain', 'kid:' + i);
+          e.dataTransfer.effectAllowed = 'copy';
+          const m = e.currentTarget.querySelector('.lbMiniW');
+          if (m && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(m, 23, 21);
+        }
       },
       el('span', { class: 'lbMiniW' }),
       el('b', {}, name),

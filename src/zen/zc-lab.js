@@ -16,7 +16,7 @@ import { MFX_PARAMS, paramOf } from './zc-tone.js';
 import { DIALS, FX_GROUP, OSC_GROUP, fxOf, fxParam } from './zc-lab-more.js';
 import { tone } from './zc-starters.js';
 import { BLENDS } from './zc-lab-blends.js';
-import { benchBox } from './zc-lab-bench.js';
+import { benchBox, benchDrop } from './zc-lab-bench.js';
 
 const LAB = {
   sel: 'sun',
@@ -43,6 +43,8 @@ const save = () => {
     localStorage.setItem(STORE, JSON.stringify({ found: [...LAB.found], drops: LAB.drops }));
   } catch (e) {}
 };
+/* replaceChildren writes null out as text: skip the missing parts */
+const put = (box, ...kids) => box.replaceChildren(...kids.flat().filter(k => k != null && k !== false));
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1091,6 +1093,7 @@ export function labOpen() {
       e.currentTarget.classList.remove('drop');
       const id = e.dataTransfer.getData('text/plain');
       if (ing(id)) mixIn(id);
+      else benchDrop(CTX, id);
     }
   });
   stage.append(slimeSvg(), el('div', { class: 'lsFound', id: 'lsFound' }));
@@ -1335,7 +1338,8 @@ function drawLearn() {
     : null;
   const last = [...LAB.log].reverse().find(x => x.id === p.id);
   box.style.setProperty('--ic', p.c);
-  box.replaceChildren(
+  put(
+    box,
     el('legend', {}, 'Learn'),
     back,
     el('div', { class: 'llTop' }, blob(p.c), el('b', {}, p.name), el('small', {}, p.tag)),
@@ -1379,7 +1383,8 @@ function draw() {
   drawTarget();
   drawScope();
   $('#labRead').textContent = reading(tr);
-  $('#labBlends').replaceChildren(
+  put(
+    $('#labBlends'),
     el('legend', {}, 'Blends'),
     el(
       'p',
@@ -1412,7 +1417,8 @@ function draw() {
       );
     })
   );
-  $('#labLog').replaceChildren(
+  put(
+    $('#labLog'),
     el('legend', {}, 'Mixed in'),
     LAB.log.length
       ? el(
@@ -1465,6 +1471,8 @@ const CTX = {
   dragN: () => LAB.dragN,
   dragged: (tag, fn) => dragged(tag, fn),
   dragDone: () => LAB.dragN++,
+  /* a blob of this colour gloops into the slime (resolves as it lands) */
+  gloop: c => dropIn({ c }),
   /* the ear test's hidden ingredient: mixed in with no name and no colour */
   mixQuiet(id, amt, tag) {
     const b = brewer();
@@ -1483,7 +1491,7 @@ const CTX = {
 };
 function drawBench() {
   const box = $('#labBench');
-  if (box) box.replaceChildren(benchBox(CTX));
+  if (box) put(box, benchBox(CTX));
 }
 
 /* ---- the scope under the slime: the amp and filter envelopes of the partial the lab works on ---- */
@@ -1638,7 +1646,8 @@ function drawMeters(tr) {
   const box = $('#labMeters');
   if (!box) return;
   if (!box.querySelector('.lmRow')) {
-    box.replaceChildren(
+    put(
+      box,
       el('legend', {}, 'Character'),
       el('p', { class: 'hint' }, 'Drag a bar to set it directly.'),
       ...tr.map(([n]) => {
@@ -1705,7 +1714,8 @@ function drawTarget() {
       },
       label
     );
-  box.replaceChildren(
+  put(
+    box,
     el('span', { class: 'zcL' }, 'Works on'),
     b('All partials', null, 'Every partial that is on'),
     ...[0, 1, 2, 3].map(i =>
@@ -1986,7 +1996,8 @@ function made(r) {
   save();
   const f = $('#lsFound');
   if (!f) return;
-  f.replaceChildren(
+  put(
+    f,
     el('span', { class: 'llK' }, 'Blend made'),
     el('b', {}, r.name),
     el('small', {}, 'Taste it on ' + noteName(r.note) + ', then shape it further with the ingredients.')
@@ -2008,7 +2019,8 @@ function drawGuide(box) {
   const last = [...LAB.log].reverse().find(x => x.guide && !x.slate);
   const step = g.done ? r.steps[shownStep] : null;
   box.style.setProperty('--ic', step ? ing(step.ing).c : '#dfe9ff');
-  box.replaceChildren(
+  put(
+    box,
     el('legend', {}, 'Blend · ' + r.name),
     el('p', { class: 'llAbout' }, r.about),
     el(

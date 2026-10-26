@@ -1051,3 +1051,6 @@
 .lsFound small {
   font-size: 11px;
 }
+.lbKid {
+  cursor: grab;
+}
