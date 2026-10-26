@@ -8,6 +8,7 @@
 import { el, toast } from '../core/dom.js';
 import { DEVS, DEV } from '../core/device.js';
 import { ZX, hexAddr, lin, zxConnect, zxRead } from './zc-sysex.js';
+import { clipAddr } from './zc-seq.js';
 import { hooks } from '../core/hooks.js';
 
 const BLOCK = 128;
@@ -38,10 +39,12 @@ const scans = [];
  * @param {(text:string, f:number) => void} [onStep]
  * @returns {Promise<Map<number, number>>} linear address → byte, for everything that answered
  */
-export async function scanOnce(onStep, ms = 300) {
+export async function scanOnce(onStep, ms = 300, only = null) {
   if (!(await zxConnect())) return new Map();
-  if (!regions) {
+  if (only) regions = only;
+  else if (!regions || regions.only) {
     regions = [...WHOLE];
+    regions.only = false;
     const p = probes();
     for (let i = 0; i < p.length; i++) {
       if (onStep) onStep('Looking for other areas: ' + p[i].label, i / p.length);
@@ -99,10 +102,33 @@ export function scanRuns(mem) {
 const areaList = () =>
   regions.map(r => r.label + ' ' + hexAddr(r.from) + ' (' + r.blocks * BLOCK + ' bytes)').join('\n');
 
+/* the knob finder's areas: the head and the sound control settings of track 1's clips 1 and 2 (the
+   KNOB ASSIGN choices are kept per clip in a project file, next to the clip's sound control settings) */
+function knobAreas() {
+  const out = [];
+  for (const k of [0, 1]) {
+    out.push({ from: clipAddr(0, k), blocks: 2, label: 'track 1 clip ' + (k + 1) + ' head' });
+    out.push({ from: clipAddr(0, k) + lin(0x10000), blocks: 8, label: 'track 1 clip ' + (k + 1) + ' sound control' });
+  }
+  out.only = true;
+  return out;
+}
+const KNOB_STEPS = [
+  'Stop playback. On the MC-707 select track 1, clip 1. Press Scan.',
+  'Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Press Scan.',
+  'Set C1 to Level. Press Scan.',
+  'Set C1 back to Cutoff, and SOUND (C4) to Pan. Press Scan.',
+  'Press Copy results and paste them into the chat.'
+];
+/** Help › For developers › Find the knob settings: the same scan, over the clip areas only (a few seconds). */
+export const knobFinderOpen = () => sceneFinderOpen(true);
+
 /** The Song menu's Find scene data: the steps to follow, Scan, and the changes found. */
-export function sceneFinderOpen() {
+export function sceneFinderOpen(knobs = false) {
   if (document.getElementById('sfOv')) return;
   const name = DEVS[DEV].name;
+  if (knobs !== true) knobs = false;
+  scans.length = 0;
   const out = el('pre', { class: 'sfOut' }, 'No scans yet.'),
     status = el('div', { class: 'hint', role: 'status', 'aria-live': 'polite' }, ''),
     fill = el('i', {}),
@@ -119,10 +145,14 @@ export function sceneFinderOpen() {
         scan.disabled = true;
         const n = scans.length + 1;
         try {
-          const mem = await scanOnce((t, f) => {
-            status.textContent = 'Scan ' + n + ': ' + t;
-            fill.style.width = Math.round(f * 100) + '%';
-          });
+          const mem = await scanOnce(
+            (t, f) => {
+              status.textContent = 'Scan ' + n + ': ' + t;
+              fill.style.width = Math.round(f * 100) + '%';
+            },
+            300,
+            knobs ? knobAreas() : null
+          );
           scans.push(mem);
           if (n === 1) log.push('Scan 1: ' + mem.size + ' bytes read from:\n' + areaList());
           else {
@@ -181,23 +211,31 @@ export function sceneFinderOpen() {
     el(
       'div',
       { class: 'ptBox', style: 'max-width:720px' },
-      el('h3', {}, 'Find where the ' + name + ' keeps its scenes'),
+      el(
+        'h3',
+        {},
+        knobs ? 'Find where the ' + name + ' keeps the knob settings' : 'Find where the ' + name + ' keeps its scenes'
+      ),
       el(
         'p',
         { class: 'hint', style: 'line-height:1.45' },
         'Read-only: this only asks the ' +
           name +
-          ' for data, it changes nothing. Stop playback first. The first scan takes about five minutes (it looks through the whole low address range), later ones one or two.'
+          (knobs
+            ? ' for data, it changes nothing. Each scan takes a few seconds.'
+            : ' for data, it changes nothing. Stop playback first. The first scan takes about five minutes (it looks through the whole low address range), later ones one or two.')
       ),
-      el(
-        'ol',
-        { class: 'hint sfSteps' },
-        el('li', {}, 'Open the SCENE CHAIN screen (MUTE, then SHIFT + a step button) with CHAIN off. Press Scan.'),
-        el('li', {}, 'Turn CHAIN on (C1). Press Scan.'),
-        el('li', {}, 'Turn CHAIN off. Press Scan.'),
-        el('li', {}, 'Turn CHAIN on again. Press Scan. Stay on that screen and touch nothing else between scans.'),
-        el('li', {}, 'Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.')
-      ),
+      knobs
+        ? el('ol', { class: 'hint sfSteps' }, ...KNOB_STEPS.map(s => el('li', {}, s)))
+        : el(
+            'ol',
+            { class: 'hint sfSteps' },
+            el('li', {}, 'Open the SCENE CHAIN screen (MUTE, then SHIFT + a step button) with CHAIN off. Press Scan.'),
+            el('li', {}, 'Turn CHAIN on (C1). Press Scan.'),
+            el('li', {}, 'Turn CHAIN off. Press Scan.'),
+            el('li', {}, 'Turn CHAIN on again. Press Scan. Stay on that screen and touch nothing else between scans.'),
+            el('li', {}, 'Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.')
+          ),
       el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, scan, copy, save),
       status,
       bar,

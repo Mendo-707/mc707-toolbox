@@ -24,7 +24,7 @@ import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
-import { sceneFinderOpen } from '../zen/zc-scan.js';
+import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
 import { mpjPick } from './mpj-open.js';
@@ -265,6 +265,7 @@ function initMenubar() {
             { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
             { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) },
             { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() },
+            { label: 'Find the knob settings (read-only scan)…', action: () => knobFinderOpen() },
             { label: 'Motion test (which lane moves what)…', action: () => motionTestOpen() }
           ]
         ],
