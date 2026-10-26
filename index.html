@@ -39374,7 +39374,15 @@ body[data-mode='scene'] #scene {
       ),
       knob("Pan", "pan", s.pan, s, o),
       knob("Reverb", "rev", s.rev, s, o),
-      knob("Chorus", "cho", s.cho, s, o),
+      knob(
+        "Delay",
+        "cho",
+        s.cho,
+        s,
+        o,
+        DEF2.cho,
+        "Delay send (CC 92): how much goes to the MC-707’s chorus/delay effect, set on the Master FX strip"
+      ),
       ...s.extra || [],
       s.fx && o.fx ? fxRow(s.fx, o.fx, s.name) : null,
       s.knobs ? el(
@@ -39493,11 +39501,11 @@ body[data-mode='scene'] #scene {
       el(
         "label",
         { class: "mxRow mxFx", title: "The chorus or delay every track’s Chorus send goes to" },
-        el("span", {}, "Chorus / delay"),
+        el("span", {}, "Delay / chorus"),
         list2(s.cho, cho.sw === 0 ? 0 : cho.type, "choType", "Chorus or delay type")
       ),
-      level("Chorus level", "choLevel", cho.level, "How loud the chorus or delay is"),
-      level("Chorus → reverb", "choSend", cho.send, "How much of the chorus or delay goes on to the reverb"),
+      level("Delay level", "choLevel", cho.level, "How loud the delay or chorus is"),
+      level("Delay → reverb", "choSend", cho.send, "How much of the delay or chorus goes on to the reverb"),
       el(
         "label",
         { class: "mxRow mxFx", title: "The master Multi FX, on the whole mix (the MULTI button on the MC-707)" },
