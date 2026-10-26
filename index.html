@@ -6860,6 +6860,59 @@ body.popFrameless .mxTop input {
   border-color: var(--line, #d6d1c4);
   background: var(--panel, #fff);
 }
+
+/* the Master FX strip's settings buttons, and the settings panel over the mixer */
+.mxEdit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mxEdit .btn {
+  flex: 1 1 auto;
+  padding: 2px 5px;
+  font-size: 11px;
+}
+.mpBox {
+  position: fixed;
+  top: 64px;
+  right: 10px;
+  z-index: 30;
+  width: min(320px, calc(100vw - 20px));
+  max-height: calc(100vh - 66px);
+  overflow: auto;
+  padding: 10px 12px 12px;
+  background: var(--panel, #fff);
+  color: var(--ink, #1d1d1b);
+  border: 1px solid var(--line, #d6d1c4);
+  border-top: 3px solid var(--ink, #1d1d1b);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.mpHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.mpHead b {
+  flex: 1;
+  font-size: 13px;
+}
+.mpBox .hint {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.mpList {
+  display: grid;
+  gap: 6px;
+}
+.mpRow {
+  grid-template-columns: 1fr auto;
+}
+.mpRow .mxSel {
+  grid-column: 1 / -1;
+}
 </style>
     <style>
 /* Scene Mode (scene/), in Song Mode's look (its colour tokens, light and dark): the toolbar with the four
@@ -19272,13 +19325,13 @@ body[data-mode='scene'] #scene {
             if (r2.top - dy < 6) dy = r2.top - 6;
             sm.style.top = -5 - dy + "px";
           });
-          const row = el(
+          const row2 = el(
             "div",
             {
               class: "cmi sub",
               onclick: (e) => {
                 e.stopPropagation();
-                row.classList.toggle("open");
+                row2.classList.toggle("open");
                 fit();
               },
               onmouseenter: () => fit()
@@ -19288,8 +19341,8 @@ body[data-mode='scene'] #scene {
           );
           const sm = el("div", { class: "cmenu subm" });
           build3(it.sub, sm);
-          row.append(sm);
-          host2.append(row);
+          row2.append(sm);
+          host2.append(row2);
           return;
         }
         host2.append(
@@ -19370,9 +19423,9 @@ body[data-mode='scene'] #scene {
   function cmScreen(map, kk) {
     const tracks3 = DEVS[DEV].tracks, N = tracks3.length, page = kk >= 8 ? 1 : 0, m = map[CMAP.t], tr = S.tracks[CMAP.t], ty = m.types[kk];
     const g = el("div", { class: "cmLcd", style: "--cols:" + N });
-    const at2 = (node, col, row, cs, rs) => {
+    const at2 = (node, col, row2, cs, rs) => {
       node.style.gridColumn = col + (cs ? " / span " + cs : "");
-      node.style.gridRow = row + (rs ? " / span " + rs : "");
+      node.style.gridRow = row2 + (rs ? " / span " + rs : "");
       g.append(node);
       return node;
     };
@@ -22197,12 +22250,12 @@ body[data-mode='scene'] #scene {
           t.cc = t.cc || {};
           t.cc[m.n] = v;
           out2.textContent = String(v);
-          row.classList.add("set");
+          row2.classList.add("set");
           sendCC(MCT.t, m.n, v);
           scheduleSave();
         }
       });
-      const row = el(
+      const row2 = el(
         "div",
         { class: "mrow" + (set2 ? " set" : "") },
         el("span", { class: "mn" }, m.name, el("small", {}, "CC " + m.n)),
@@ -22225,7 +22278,7 @@ body[data-mode='scene'] #scene {
           "↺"
         )
       );
-      g.append(row);
+      g.append(row2);
     });
     b.append(g);
     b.append(
@@ -23387,7 +23440,7 @@ body[data-mode='scene'] #scene {
         ),
         star
       );
-      const row = el(
+      const row2 = el(
         "div",
         {
           class: "li" + (UI.arm && UI.arm.id === it.id && UI.arm.kind === it.kind ? " armed" : "") + (UI.view && UI.view.srcId === it.id && UI.view.kind === it.kind ? " viewing" : ""),
@@ -23424,7 +23477,7 @@ body[data-mode='scene'] #scene {
         el("div", { class: "t" }, el("b", {}, m.name), el("small", {}, meta2), tags),
         acts
       );
-      list2.append(row);
+      list2.append(row2);
     }
     if (items.length > UI.libLimit)
       list2.append(
@@ -23759,8 +23812,8 @@ body[data-mode='scene'] #scene {
       if (UI.arm && !CDRAG && e.target.closest(".lane")) {
         const meta2 = metaOf(UI.arm);
         if (!meta2) return;
-        const row = rowFromY(e.clientY);
-        showGhost(row, Math.max(0, barFromX(e.clientX)), meta2.bars, S.tracks[row].type === meta2.type);
+        const row2 = rowFromY(e.clientY);
+        showGhost(row2, Math.max(0, barFromX(e.clientX)), meta2.bars, S.tracks[row2].type === meta2.type);
       }
     });
     inner.addEventListener("pointerleave", () => {
@@ -23771,9 +23824,9 @@ body[data-mode='scene'] #scene {
       e.preventDefault();
       const meta2 = metaOf(DRAG);
       if (!meta2) return;
-      const row = rowFromY(e.clientY);
-      const ok = S.tracks[row].type === meta2.type;
-      showGhost(row, Math.max(0, barFromX(e.clientX)), meta2.bars, ok);
+      const row2 = rowFromY(e.clientY);
+      const ok = S.tracks[row2].type === meta2.type;
+      showGhost(row2, Math.max(0, barFromX(e.clientX)), meta2.bars, ok);
       e.dataTransfer.dropEffect = ok ? "copy" : "none";
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
       if (e.clientX > ar.right - 60) ae.scrollLeft += 28;
@@ -23895,8 +23948,8 @@ body[data-mode='scene'] #scene {
       } else {
         d.ns = Math.max(0, qBar(sb(d.start + dx / bw)));
         d.nl = d.len;
-        const row = rowFromY(ev.clientY);
-        d.nt = S.tracks[row].type === S.tracks[d.t].type ? row : d.t;
+        const row2 = rowFromY(ev.clientY);
+        d.nt = S.tracks[row2].type === S.tracks[d.t].type ? row2 : d.t;
       }
       showGhost(d.nt, d.ns, d.nl, true);
       const ae = $("#arr"), ar = ae.getBoundingClientRect();
@@ -23966,7 +24019,7 @@ body[data-mode='scene'] #scene {
   function clipOptionsEl(c, p, isDrum) {
     const clipOpt = el("details", { class: "clipopt" }, el("summary", { class: "btn sm" }, "Clip options"));
     const panel = el("div", { class: "clippanel" });
-    const row = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
+    const row2 = (label2, ctl2) => el("label", { class: "cprow" }, el("span", {}, label2), ctl2);
     const muteBtn = el(
       "button",
       {
@@ -23981,8 +24034,8 @@ body[data-mode='scene'] #scene {
       },
       c.mute ? "Muted" : "Mute clip"
     );
-    panel.append(row("Mute", muteBtn));
-    const stepIn = (label2, val, min, fn, title) => row(
+    panel.append(row2("Mute", muteBtn));
+    const stepIn = (label2, val, min, fn, title) => row2(
       label2,
       el("input", {
         type: "number",
@@ -24034,7 +24087,7 @@ body[data-mode='scene'] #scene {
       });
       for (let v = -12; v <= 12; v++)
         ts.append(el("option", { value: v, selected: (c.tr || 0) === v }, (v > 0 ? "+" : "") + v + " semitones"));
-      panel.append(row("Transpose (this clip only)", ts));
+      panel.append(row2("Transpose (this clip only)", ts));
     }
     {
       const mm = cmFix()[c.t], ps = el(
@@ -24061,10 +24114,10 @@ body[data-mode='scene'] #scene {
               k2 < mm.n ? cmLabel(c.t, k2) : "Clip " + (k2 + 1) + " (not set up)"
             )
           );
-      panel.append(row("Launch " + devNm() + " clip", ps));
+      panel.append(row2("Launch " + devNm() + " clip", ps));
     }
     panel.append(
-      row(
+      row2(
         "Velocity %",
         el("input", {
           type: "number",
@@ -24115,7 +24168,7 @@ body[data-mode='scene'] #scene {
               "Bars " + (i + 1) + "–" + (i + 2)
             )
           );
-      panel.append(row("Pattern preview loop", ar));
+      panel.append(row2("Pattern preview loop", ar));
     }
     panel.append(
       el(
@@ -25968,13 +26021,13 @@ body[data-mode='scene'] #scene {
     const r = $("#rows").getBoundingClientRect();
     return clamp(Math.floor((clientY - r.top) / ROWH), 0, 7);
   }
-  function showGhost(row, bar2, len, ok) {
+  function showGhost(row2, bar2, len, ok) {
     const g = $("#ghost");
     if (!g) return;
     g.style.display = "block";
     g.style.left = HEAD + bar2 * bw + "px";
     g.style.width = len * bw - 2 + "px";
-    g.style.top = row * ROWH + 4 + (row >= 3 ? 3 : 0) + "px";
+    g.style.top = row2 * ROWH + 4 + (row2 >= 3 ? 3 : 0) + "px";
     g.style.height = ROWH - 8 + "px";
     g.classList.toggle("bad", !ok);
   }
@@ -30517,28 +30570,28 @@ body[data-mode='scene'] #scene {
     const draw = () => {
       body.textContent = "";
       const plan2 = songPlan(starts);
-      for (const row of plan2) {
+      for (const row2 of plan2) {
         const sel = el(
           "select",
           {
-            "aria-label": "First clip for track " + devNum(row.t),
-            onchange: (e) => (starts[row.t] = +e.target.value, draw())
+            "aria-label": "First clip for track " + devNum(row2.t),
+            onchange: (e) => (starts[row2.t] = +e.target.value, draw())
           },
           ...Array.from(
             { length: 16 },
-            (_, k2) => el("option", { value: k2, selected: (starts[row.t] || 0) === k2 }, "from clip " + (k2 + 1))
+            (_, k2) => el("option", { value: k2, selected: (starts[row2.t] || 0) === k2 }, "from clip " + (k2 + 1))
           )
         );
         body.append(
           el(
             "div",
             { class: "scRow" },
-            el("b", {}, "Track " + devNum(row.t) + " · " + S.tracks[row.t].name),
+            el("b", {}, "Track " + devNum(row2.t) + " · " + S.tracks[row2.t].name),
             sel,
             el(
               "span",
               { class: "hint" },
-              row.items.map((i) => i.skip ? i.label + " (skipped: " + i.skip + ")" : "clip " + (i.k + 1) + ": " + i.label).join(" · ")
+              row2.items.map((i) => i.skip ? i.label + " (skipped: " + i.skip + ")" : "clip " + (i.k + 1) + ": " + i.label).join(" · ")
             )
           )
         );
@@ -30965,7 +31018,7 @@ body[data-mode='scene'] #scene {
       },
       "Add to results"
     );
-    const row = (...kids) => el("div", { class: "mtRow" }, ...kids);
+    const row2 = (...kids) => el("div", { class: "mtRow" }, ...kids);
     const step = (n, title, text2, ...kids) => el(
       "section",
       { class: "mtStep" },
@@ -30992,19 +31045,19 @@ body[data-mode='scene'] #scene {
             "Pick a track and a clip that already plays notes on the " + name + ". A pad, chords or a bass with long held notes is best, so a slow change is easy to hear. A 2 or 4-bar clip is better than 1 bar: the move is slower.",
             "Stop playback on the " + name + " and in the app before you go on."
           ],
-          row(trk, clip)
+          row2(trk, clip)
         ),
         step(
           2,
           "Look first (read only)",
           "Press Read every lane. It lists which lanes of that clip already hold knob moves (FILTER, MOD, FX, SOUND, then Lane 5 to 8). Nothing is changed. If it says the " + name + " did not answer, check the track and clip, and that the " + name + " is connected.",
-          row(readAll)
+          row2(readAll)
         ),
         step(
           3,
           "Write the test shape",
           'Pick a lane and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
-          row(lane, write)
+          row2(lane, write)
         ),
         step(
           4,
@@ -31032,19 +31085,19 @@ body[data-mode='scene'] #scene {
             "To see what each knob is set to, press KNOB ASSIGN on the " + name + ": it lists what each track’s FILTER, MOD, FX and SOUND (C4) knobs control (the C1-C4 knobs are something else: they change with the screen).",
             "Then pick what you heard, type what KNOB ASSIGN shows for that knob, and press Add to results."
           ],
-          row(heard, knob2, note)
+          row2(heard, knob2, note)
         ),
         step(
           5,
           "Try another lane (optional)",
           "Clear lane takes the test shape out of the lane picked in step 3. To compare, pick FILTER (easy to hear), write the test shape again and listen. Clear each lane when you are done with it.",
-          row(clear)
+          row2(clear)
         ),
         step(
           6,
           "Send the results",
           "Press Copy results and paste it into the chat. It has what was read, what was written, and what you heard.",
-          row(copy)
+          row2(copy)
         ),
         status3,
         out2,
@@ -34133,7 +34186,7 @@ body[data-mode='scene'] #scene {
       nums.push([inp, id]);
       return el("label", { class: "zcEnvN" }, el("span", {}, label2), inp);
     };
-    const row = el(
+    const row2 = el(
       "div",
       { class: "zcEnvNums" },
       ...[1, 2, 3, 4].map((i) => num("T" + i, "Time " + i)),
@@ -34197,7 +34250,7 @@ body[data-mode='scene'] #scene {
       "div",
       { class: "zcEnvBox" },
       svg,
-      row,
+      row2,
       el("div", { class: "zcEnvTools" }, presets, copy),
       el(
         "small",
@@ -39270,7 +39323,7 @@ body[data-mode='scene'] #scene {
         const x = +e.target.value;
         paint(e.target, x);
         out2.textContent = centre ? panText(x) : String(x);
-        row.classList.remove("unset");
+        row2.classList.remove("unset");
         o.set(key, x);
       },
       onchange: () => o.done && o.done(key),
@@ -39283,7 +39336,7 @@ body[data-mode='scene'] #scene {
       }
     });
     paint(inp, v);
-    const row = el(
+    const row2 = el(
       "label",
       {
         class: "mxRow" + (unset ? " unset" : ""),
@@ -39293,7 +39346,7 @@ body[data-mode='scene'] #scene {
       inp,
       out2
     );
-    return row;
+    return row2;
   }
   function assignSelect(label2, a, name) {
     const known2 = a.cur == null || a.choices.some((c) => c[0] === a.cur);
@@ -39491,6 +39544,7 @@ body[data-mode='scene'] #scene {
         el("span", { class: "mxName" }, "Master FX"),
         el("span", { class: "mxSub" }, s.busy ? "Sending…" : s.m ? "The MC-707’s total effects" : "Not read yet")
       ),
+      level("Master level", "level", s.lvl, "The MC-707’s master level (the project level)"),
       el(
         "label",
         { class: "mxRow mxFx", title: "The reverb every track’s Reverb send goes to" },
@@ -39518,6 +39572,23 @@ body[data-mode='scene'] #scene {
         tg("Comp", "comp", m.comp, "The master compressor on or off"),
         tg("EQ", "eq", m.eq, "The master EQ on or off")
       ),
+      o.edit ? el(
+        "div",
+        { class: "mxEdit", role: "group", "aria-label": "Master effect settings" },
+        ...[
+          ["rev", "Reverb", "The reverb’s settings for its type"],
+          ["cho", "Delay", "The delay or chorus’s settings for its type"],
+          ["mfx", "Multi FX", "The master Multi FX’s settings"],
+          ["eq", "EQ", "The master EQ: input, low, three mids and high"],
+          ["comp", "Comp", "The master compressor: three bands"]
+        ].map(
+          ([sec, lab, title]) => el(
+            "button",
+            { type: "button", class: "btn sm" + (s.open === sec ? " on" : ""), title, onclick: () => o.edit(sec) },
+            lab + "…"
+          )
+        )
+      ) : null,
       el(
         "button",
         {
@@ -39533,6 +39604,94 @@ body[data-mode='scene'] #scene {
   function mixLight(node, a) {
     node.light.style.opacity = String(0.15 + 0.85 * a);
     node.meter.style.height = Math.round(a * 100) + "%";
+  }
+
+  // src/services/mixer-panel.js
+  var PANEL = { sec: null };
+  function row(c, sec, T3) {
+    const show = (v) => v == null ? "—" : c.list ? (c.list[v] ?? String(v)) + (c.unit ? " " + c.unit : "") : c.text ? c.text(v) : String(v);
+    const out2 = el("b", {}, show(c.v));
+    const send2 = (v) => {
+      T3.set(sec, c.key, v).then(
+        (ok) => ok || toast("Connect the MC-707 (the ZenCore editor’s link) to change its effects")
+      );
+    };
+    const ctl2 = c.list ? el(
+      "select",
+      { class: "mxSel", "aria-label": c.name, onchange: (e) => send2(+e.target.value) },
+      c.v == null ? el("option", { value: "", selected: true }, "—") : null,
+      ...c.list.map(
+        (n, i) => el("option", { value: i, selected: i === c.v }, n + (c.unit && /\d$/.test(n) ? " " + c.unit : ""))
+      )
+    ) : el("input", {
+      type: "range",
+      class: "mxKnob",
+      min: c.min,
+      max: c.max,
+      value: c.v ?? Math.round((c.min + c.max) / 2),
+      "aria-label": c.name,
+      oninput: (e) => {
+        const v = +e.target.value;
+        out2.textContent = show(v);
+        send2(v);
+      }
+    });
+    return el(
+      "label",
+      { class: "mxRow mpRow" + (c.v == null ? " unset" : "") },
+      el("span", {}, c.name),
+      ctl2,
+      c.list ? null : out2
+    );
+  }
+  function panelFor(redraw) {
+    const T3 = hooks.fx && hooks.fx.total;
+    if (!T3 || !PANEL.sec) return null;
+    const sec = PANEL.sec, p = T3.panel(sec);
+    const close = () => (PANEL.sec = null, redraw());
+    const read3 = async () => {
+      const ok = await T3.read(sec).catch(() => false);
+      if (!ok) toast("The MC-707 did not answer: connect it (the ZenCore editor’s link) and try again");
+      redraw();
+    };
+    return el(
+      "div",
+      {
+        class: "mpBox",
+        role: "dialog",
+        "aria-label": p.title,
+        onkeydown: (e) => e.key === "Escape" && close()
+      },
+      el(
+        "div",
+        { class: "mpHead" },
+        el("b", {}, p.title),
+        el(
+          "button",
+          { type: "button", class: "btn sm", onclick: read3, title: "Read these settings from the MC-707" },
+          "Read"
+        ),
+        el("button", { type: "button", class: "btn sm", onclick: close, "aria-label": "Close" }, "×")
+      ),
+      p.note ? el("p", { class: "hint" }, p.note) : null,
+      el("div", { class: "mpList" }, ...p.controls.map((c) => row(c, sec, T3)))
+    );
+  }
+  async function panelToggle(sec, redraw) {
+    const T3 = hooks.fx && hooks.fx.total;
+    if (!T3) return;
+    if (PANEL.sec === sec) {
+      PANEL.sec = null;
+      return redraw();
+    }
+    PANEL.sec = sec;
+    redraw();
+    if (await T3.read(sec).catch(() => false)) redraw();
+  }
+  async function panelTypeChanged(sec, redraw) {
+    const T3 = hooks.fx && hooks.fx.total;
+    if (!T3 || PANEL.sec !== sec) return;
+    if (await T3.read(sec).catch(() => false)) redraw();
   }
 
   // src/services/mixer-fx.js
@@ -39577,10 +39736,24 @@ body[data-mode='scene'] #scene {
   function masterFor(redraw) {
     const F = hooks.fx;
     if (!F) return null;
-    return masterStrip(
-      { choices: F.choices(), rev: F.REV_TYPES, cho: F.CHO_TYPES, m: F.now.master, busy: busy2 },
+    const T3 = F.total;
+    const strip2 = masterStrip(
       {
+        choices: F.choices(),
+        rev: F.REV_TYPES,
+        cho: F.CHO_TYPES,
+        m: F.now.master,
+        busy: busy2,
+        lvl: T3 ? T3.now.level : null,
+        open: PANEL.sec
+      },
+      {
+        edit: T3 ? (sec) => panelToggle(sec, redraw) : null,
         set: async (what, v) => {
+          if (what === "level") {
+            if (T3 && !await T3.set("level", 0, v).catch(() => false)) toast(NOT);
+            return;
+          }
           busy2 = true;
           const run2 = F.setMaster(what, v);
           if (!/Level|Send/.test(what)) redraw();
@@ -39588,15 +39761,27 @@ body[data-mode='scene'] #scene {
           busy2 = false;
           if (!/Level|Send/.test(what)) redraw();
           if (!ok) toast(NOT);
+          if (ok && T3) {
+            const sec = { revType: "rev", choType: "cho", mfx: "mfx" }[what];
+            if (sec) panelTypeChanged(sec, redraw);
+          }
         },
         read: async () => {
           const m = await F.readMaster().catch(() => null);
           if (!m) toast("The MC-707 did not answer: connect it (the ZenCore editor’s link) and try again");
           redraw();
+          if (m && T3) {
+            await T3.read("level").catch(() => false);
+            if (PANEL.sec) await T3.read(PANEL.sec).catch(() => false);
+            redraw();
+          }
           if (m && hooks.knobs && await hooks.knobs.read(DEVS[DEV].tracks).catch(() => false)) redraw();
         }
       }
     );
+    const pn = panelFor(redraw);
+    if (pn) strip2.append(pn);
+    return strip2;
   }
 
   // src/song/song-mixer.js
@@ -39745,7 +39930,7 @@ body[data-mode='scene'] #scene {
           el(
             "span",
             { class: "hint" },
-            "Levels, sends and knob positions are saved with the song and sent when it starts; effects and what the knobs control go straight into the MC-707 (press KNOB ASSIGN there to see them)."
+            "Levels, sends and knobs are saved with the song; effects and knob choices go straight to the MC-707."
           ),
           el(
             "div",
@@ -42642,7 +42827,7 @@ body[data-mode='scene'] #scene {
       const K = kinds[sec.kind];
       const cells = {};
       for (let t = 0; t < 8; t++) {
-        const sl = slotOf(t), row = K.rows[sl], spec = row && poolOf(t) === "acid" ? row.replace(/^[a-z]+/, "acid") : row;
+        const sl = slotOf(t), row2 = K.rows[sl], spec = row2 && poolOf(t) === "acid" ? row2.replace(/^[a-z]+/, "acid") : row2;
         if (!spec || !w.layers[t]) continue;
         if (w.complexity === 1 && (sl === 2 || sl === 7)) continue;
         const pk2 = pickFrom(spec, occ[sec.kind]);
@@ -43452,10 +43637,10 @@ body[data-mode='scene'] #scene {
     ["drums", "bass", "chords", "pad", "lead", "pluck"].forEach((k2) => o[k2] = s[k2] || g[k2]);
     return o;
   }
-  function customRows(st, r, row) {
+  function customRows(st, r, row2) {
     const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY9 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
-      row(
+      row2(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
         r.drums,
         TRACK_COLORS[drums2[0]]
@@ -43463,13 +43648,13 @@ body[data-mode='scene'] #scene {
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
       const k2 = poolOf(t) === "acid" ? "bass" : KEY9[slotOf(t)];
-      out2.push(row(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
+      out2.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
   }
   function soundCard(st) {
     const r = soundRecs(st), is101 = DEV === "101";
-    const row = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
+    const row2 = (lab, txt, c) => el("li", {}, el("b", { style: c ? "color:" + c : "" }, lab + ": "), txt);
     return el(
       "div",
       { class: "wcard" },
@@ -43482,23 +43667,23 @@ body[data-mode='scene'] #scene {
       is101 ? el(
         "ul",
         {},
-        row("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
-        row(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
-        row(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
-        row(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
-      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row)) : el(
+        row2("Drum kit (track 1)", r.drums, TRACK_COLORS[0]),
+        row2(trackLabel(st, 3) + " (track 2)", r.bass.join(" · "), TRACK_COLORS[3]),
+        row2(trackLabel(st, 4) + " (track 3)", r.chords.join(" · "), TRACK_COLORS[4]),
+        row2(trackLabel(st, 6) + " (track 4)", r.lead.join(" · "), TRACK_COLORS[6])
+      ) : DEF_ROLES.some((r2, t) => roleOf(t) !== r2) ? el("ul", {}, ...customRows(st, r, row2)) : el(
         "ul",
         {},
-        row(
+        row2(
           oneKit() ? "Drum kit (track 1, full kit) and Drums 3 (builds)" : "Drum kits (tracks 1–3)",
           r.drums,
           TRACK_COLORS[0]
         ),
-        row(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
-        row(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
-        row(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
-        row(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
-        row(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
+        row2(trackLabel(st, 3), r.bass.join(" · "), TRACK_COLORS[3]),
+        row2(trackLabel(st, 4), r.chords.join(" · "), TRACK_COLORS[4]),
+        row2(trackLabel(st, 5), r.pad.join(" · "), TRACK_COLORS[5]),
+        row2(trackLabel(st, 6), r.lead.join(" · "), TRACK_COLORS[6]),
+        row2(trackLabel(st, 7), r.pluck.join(" · "), TRACK_COLORS[7])
       )
     );
   }
@@ -45843,7 +46028,7 @@ body[data-mode='scene'] #scene {
     return true;
   }
   var LV_KEYROWS = ["qwertyui", "asdfghjk"];
-  var lvPadIndex = (row, col) => LV.padFlip ? (1 - row) * 8 + col : row * 8 + col;
+  var lvPadIndex = (row2, col) => LV.padFlip ? (1 - row2) * 8 + col : row2 * 8 + col;
   function lvKeyPad(e) {
     const k2 = e.key.toLowerCase();
     for (let r = 0; r < 2; r++) {
@@ -50654,7 +50839,7 @@ body[data-mode='scene'] #scene {
     }
     const pendFill = LV.cues.filter((c) => c.type === "fill"), pendSw = LV.cues.filter((c) => c.type === "swap");
     S.tracks.forEach((t, ti) => {
-      const row = el("div", {
+      const row2 = el("div", {
         class: "lvRow" + (devOn(ti) ? "" : " devoff"),
         style: "width:" + (W + 2) * bw2 + "px;--c:" + TRACK_COLORS[ti]
       });
@@ -50666,7 +50851,7 @@ body[data-mode='scene'] #scene {
           const c = snap[ti], sf = c && (facById(c.id) || (c.k === "roll" ? { name: "Break roll" } : null));
           if (sf) {
             const lab = { fill: "Fill", bov: "Build", brk: "Break", imp: "Impact", roll: "Roll" }[c.k];
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -50684,7 +50869,7 @@ body[data-mode='scene'] #scene {
         const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32), id = s.ids[ti];
         if (!id) {
           if (ovFill)
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -50705,7 +50890,7 @@ body[data-mode='scene'] #scene {
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
         const label2 = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
-        row.append(
+        row2.append(
           el(
             "div",
             {
@@ -50723,7 +50908,7 @@ body[data-mode='scene'] #scene {
           const k2 = Math.floor(c.tick / 32) - b0;
           if (k2 >= 0 && k2 < W + 2) {
             const nf = facById(c.ids[ti]);
-            row.append(
+            row2.append(
               el(
                 "div",
                 {
@@ -50737,7 +50922,7 @@ body[data-mode='scene'] #scene {
           }
         }
       });
-      inner.append(row);
+      inner.append(row2);
     });
     const cue = LV.cues.filter((c) => c.type === "scene")[0];
     if (cue) {
@@ -52518,9 +52703,9 @@ body[data-mode='scene'] #scene {
           el("option", { value: "mc707", selected: AUD.mixFrom !== "other" }, "the MC-707 (row above)"),
           el("option", { value: "other", selected: AUD.mixFrom === "other" }, "another audio interface")
         );
-        const row = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
+        const row2 = el("div", { class: "xrow", style: "margin-top:8px" }, el("label", {}, "Take the mix from", mf));
         if (AUD.mixFrom === "other") {
-          row.append(
+          row2.append(
             el(
               "label",
               {},
@@ -52536,7 +52721,7 @@ body[data-mode='scene'] #scene {
           );
           const mc2 = AUDREC.caps.mix;
           if (mc2 && mc2.ch > 2)
-            row.append(
+            row2.append(
               el(
                 "label",
                 {},
@@ -52551,7 +52736,7 @@ body[data-mode='scene'] #scene {
               )
             );
         }
-        cn.append(row);
+        cn.append(row2);
       } else {
         cn.append(
           el(
@@ -59288,6 +59473,334 @@ body[data-mode='scene'] #scene {
     };
   }
 
+  // src/zen/zc-total-data.js
+  var HFD = (() => {
+    for (const [, ps] of MFX_TYPES) for (const p of ps) if (p[0] === "HF Damp" && p[1] === "L") return p[2];
+    return ["BYPASS"];
+  })();
+  var DELAY = (ms = 1300) => [
+    ["Delay (sync)", "S"],
+    ["Delay", "R", 1, ms, "msec"],
+    ["Delay (note)", "N"]
+  ];
+  var DAMP = ["HF Damp", "L", HFD, "Hz"];
+  var REV_PARAMS = [
+    ["Off", []],
+    [
+      "Integra",
+      [
+        ["Type", "L", ["ROOM1", "ROOM2", "HALL1", "HALL2", "PLATE"]],
+        ["Pre Delay", "R", 0, 100, "msec"],
+        ["Time", "D", 0.1, 10, 1, "sec"],
+        ["Density", "R", 0, 127],
+        ["Diffusion", "R", 0, 127],
+        ["LF Damp", "R", 0, 100],
+        ["HF Damp", "R", 0, 100],
+        ["Spread", "R", 0, 127],
+        ["Tone", "R", 0, 127]
+      ]
+    ],
+    [
+      "Warm Hall",
+      [
+        ["Pre Delay", "R", 0, 100, "msec"],
+        ["Time", "D", 0.3, 30, 1, "sec"]
+      ]
+    ],
+    [
+      "Hall",
+      [
+        ["Pre Delay", "D", 0, 100, 1, "msec"],
+        ["Time", "R", 0, 127],
+        ["Size", "R", 1, 8]
+      ]
+    ],
+    [
+      "GS",
+      [
+        ["Character", "L", ["ROOM1", "ROOM2", "ROOM3", "HALL1", "HALL2", "PLATE", "DELAY", "PAN-DELAY"]],
+        ["Pre-LPF", "R", 0, 7],
+        ["Time", "R", 0, 127],
+        ["Delay Feedback", "R", 0, 127]
+      ]
+    ],
+    ["SRV2000", []],
+    [
+      "SRV2000 Non-linear",
+      [
+        ["Pre Delay", "R", 0, 160],
+        ["Reverb Time", "R", 1, 990, "msec"],
+        ["Gate Time", "R", 10, 450, "msec"]
+      ]
+    ],
+    [
+      "GM2 Reverb",
+      [
+        ["Character", "R", 0, 5],
+        ["Time", "R", 0, 127]
+      ]
+    ]
+  ];
+  var CHO_PARAMS = [
+    ["Off", []],
+    [
+      "Chorus",
+      [
+        ["Rate", "R", 0, 127],
+        ["Depth", "R", 0, 127],
+        ["Feedback", "R", 0, 127]
+      ]
+    ],
+    ["CE-1", [["Intensity", "R", 0, 127]]],
+    ["SDD-320", [["Mode", "L", ["1", "2", "3", "4", "1+4", "2+4", "3+4"]]]],
+    [
+      "JUNO-106 Chorus",
+      [
+        ["Mode", "L", ["I", "II", "I+II", "JX I", "JX II"]],
+        ["Noise Level", "R", 0, 127]
+      ]
+    ],
+    ["Delay", [...DELAY(), ["Feedback", "R", -98, 98, "%"], DAMP]],
+    ["T-Ctrl Delay", [...DELAY(), ["Acceleration", "R", 0, 15], ["Feedback", "R", -98, 98, "%"], DAMP]],
+    [
+      "Delay + Tremolo",
+      [
+        ["Input Mode", "L", ["MONAURAL", "STEREO"]],
+        ...DELAY(),
+        ["Feedback", "R", -98, 98, "%"],
+        DAMP,
+        ["Tremolo", "S"],
+        ["Tremolo Wave", "L", ["TRI", "SQR", "SIN", "SAW1", "SAW2", "TRP"]],
+        ["Tremolo Rate (sync)", "S"],
+        ["Tremolo Rate", "D", 0.05, 10, 2, "Hz"],
+        ["Tremolo Rate (note)", "N"],
+        ["Tremolo Depth", "R", 0, 127]
+      ]
+    ],
+    [
+      "2Tap Pan Delay",
+      [
+        ...DELAY(),
+        ["Feedback", "R", -98, 98, "%"],
+        DAMP,
+        ["Delay 1 Pan", "R", -64, 63, "pan"],
+        ["Delay 2 Pan", "R", -64, 63, "pan"],
+        ["Delay 1 Level", "R", 0, 127],
+        ["Delay 2 Level", "R", 0, 127]
+      ]
+    ],
+    [
+      "3Tap Pan Delay",
+      [
+        ...DELAY(2600),
+        ["Feedback", "R", -98, 98, "%"],
+        DAMP,
+        ["Delay 1 Pan", "R", -64, 63, "pan"],
+        ["Delay 2 Pan", "R", -64, 63, "pan"],
+        ["Delay 3 Pan", "R", -64, 63, "pan"],
+        ["Delay 1 Level", "R", 0, 127],
+        ["Delay 2 Level", "R", 0, 127],
+        ["Delay 3 Level", "R", 0, 127]
+      ]
+    ]
+  ];
+  var FREQS = "20 25 31 40 50 63 80 100 125 160 200 250 315 400 500 630 800 1000 1250 1600 2000 2500 3150 4000 5000 6300 8000 10000 12600 16000".split(
+    " "
+  );
+  var QS2 = ["0.5", "1.0", "2.0", "4.0", "8.0", "16.0"];
+  var SPLIT = "16 20 25 31 40 50 63 80 100 125 160 200 250 315 400 500 630 800 1000 1250 1600 2000 2500 3150 4000 5000 6300 8000 10000 12500 16000".split(
+    " "
+  );
+  var RATIOS = ["1:1", "2:1", "3:1", "4:1", "8:1", "16:1", "32:1", "INF:1"];
+  var ATTACK = ["0.1", ...Array.from({ length: 100 }, (_, i) => String(i + 1))];
+  var SYNC = ["OFF", "1/16", "1/8T", "1/16.", "1/8", "1/4T", "1/8.", "1/4"];
+  var MASTER_EQ = [
+    ["EQ", 14, "S"],
+    ["Input", 0, "G", -24, 24],
+    ["Low", 1, "G", -24, 24],
+    ["Low freq", 6, "L", FREQS, "Hz"],
+    ["Mid 1", 2, "G", -24, 24],
+    ["Mid 1 freq", 7, "L", FREQS, "Hz"],
+    ["Mid 1 Q", 11, "L", QS2],
+    ["Mid 2", 3, "G", -24, 24],
+    ["Mid 2 freq", 8, "L", FREQS, "Hz"],
+    ["Mid 2 Q", 12, "L", QS2],
+    ["Mid 3", 4, "G", -24, 24],
+    ["Mid 3 freq", 9, "L", FREQS, "Hz"],
+    ["Mid 3 Q", 13, "L", QS2],
+    ["High", 5, "G", -24, 24],
+    ["High freq", 10, "L", FREQS, "Hz"]
+  ];
+  var band = (name, at2) => [
+    [name + " threshold", at2 + 2, "G", -60, 0],
+    [name + " ratio", at2 + 3, "L", RATIOS],
+    [name + " attack", at2, "L", ATTACK, "ms"],
+    [name + " release", at2 + 1, "M"],
+    [name + " knee", at2 + 4, "R", 0, 30, "dB"],
+    [name + " gain", at2 + 5, "H", -48, 48]
+  ];
+  var MASTER_COMP = [
+    ["Compressor", 0, "S"],
+    ["Low/mid split", 19, "L", SPLIT, "Hz"],
+    ["Mid/high split", 20, "L", SPLIT, "Hz"],
+    ...band("Low", 1),
+    ["Low release sync", 21, "L", SYNC],
+    ...band("Mid", 7),
+    ["Mid release sync", 22, "L", SYNC],
+    ...band("High", 13),
+    ["High release sync", 23, "L", SYNC]
+  ];
+
+  // src/zen/zc-total.js
+  var AT = {
+    level: lin(268435476),
+    rev: lin(268445440) + 3,
+    cho: lin(268445184) + 4,
+    mfx: lin(268443648),
+    eq: lin(268450048),
+    comp: lin(268450304)
+  };
+  var MFX_AT2 = 128;
+  var TV = {};
+  var panText3 = (v) => v === 0 ? "C" : v < 0 ? "L" + -v : v + "R";
+  function slotControl(p, i) {
+    const [name, kind, a, b, c, d] = p;
+    const base = { key: i, name };
+    if (kind === "S") return { ...base, min: 0, max: 1, list: ["OFF", "ON"] };
+    if (kind === "N") return { ...base, min: 0, max: NOTES.length - 1, list: NOTES };
+    if (kind === "L") return { ...base, min: 0, max: a.length - 1, list: a, unit: b || "" };
+    if (kind === "D") {
+      const f = 10 ** c;
+      return {
+        ...base,
+        min: Math.round(a * f),
+        max: Math.round(b * f),
+        text: (v) => (v / f).toFixed(c) + (d ? " " + d : "")
+      };
+    }
+    return { ...base, min: a, max: b, text: (v) => c === "pan" ? panText3(v) : v + (c ? " " + c : "") };
+  }
+  function mfxControls(type) {
+    return mfxParams(type).map((sp, i) => {
+      if (sp.kind === "L")
+        return { key: i, name: sp.name, min: 0, max: sp.list.length - 1, list: sp.list, unit: sp.unit };
+      if (sp.kind === "D") {
+        const f = 10 ** sp.dec;
+        return {
+          key: i,
+          name: sp.name,
+          min: Math.round(sp.lo * f),
+          max: Math.round(sp.hi * f),
+          text: (v) => (v / f).toFixed(sp.dec) + (sp.unit ? " " + sp.unit : "")
+        };
+      }
+      return {
+        key: i,
+        name: sp.name,
+        min: sp.lo,
+        max: sp.hi,
+        text: (v) => sp.unit === "pan" ? panText3(v) : sp.unit === "bal" ? "D" + (100 - v) + ":" + v + "W" : v + (sp.unit ? " " + sp.unit : "")
+      };
+    });
+  }
+  function byteControl([name, at2, kind, a, b, c]) {
+    const base = { key: at2, name };
+    if (kind === "S") return { ...base, min: 0, max: 1, list: ["OFF", "ON"] };
+    if (kind === "L") return { ...base, min: 0, max: a.length - 1, list: a, unit: b || "" };
+    if (kind === "G") return { ...base, min: a, max: b, off: 64, text: (v) => (v > 0 ? "+" : "") + v + " dB" };
+    if (kind === "H")
+      return { ...base, min: a, max: b, off: 64, text: (v) => (v > 0 ? "+" : "") + (v / 2).toFixed(1) + " dB" };
+    if (kind === "M") return { ...base, min: 0, max: 99, text: (v) => 10 + v * 10 + " ms" };
+    return { ...base, min: a, max: b, text: (v) => v + (c ? " " + c : "") };
+  }
+  var typeOf2 = (sec) => {
+    const m = FXN.master || {};
+    if (sec === "rev") return m.rev && m.rev.sw !== 0 ? m.rev.type : 0;
+    if (sec === "cho") return m.cho && m.cho.sw !== 0 ? m.cho.type : 0;
+    if (sec === "mfx") return m.mfx ? m.mfx.type : null;
+    return null;
+  };
+  function totalPanel(sec) {
+    const t = typeOf2(sec);
+    let title = "", controls = [], note = "";
+    if (sec === "rev" || sec === "cho") {
+      const [name, ps] = (sec === "rev" ? REV_PARAMS : CHO_PARAMS)[t] || ["", []];
+      title = (sec === "rev" ? "Reverb" : "Delay / chorus") + (t ? ": " + name : "");
+      controls = ps.map(slotControl);
+      note = !t ? "Choose a type on the strip first (or Read from MC-707)." : !ps.length ? "This type’s settings are not mapped yet: shape it on the MC-707." : "New: the settings follow the manual’s order for this type. If one does not do what it says, tell us.";
+    } else if (sec === "mfx") {
+      title = "Multi FX" + (FXN.master && FXN.master.mfx && FXN.master.mfx.label ? ": " + FXN.master.mfx.label : "");
+      controls = t == null ? [] : mfxControls(t);
+      note = t == null ? "Choose a Multi FX on the strip first (or Read from MC-707)." : "";
+    } else if (sec === "eq") {
+      title = "Master EQ";
+      controls = MASTER_EQ.map(byteControl);
+    } else if (sec === "comp") {
+      title = "Master compressor";
+      controls = MASTER_COMP.map(byteControl);
+      note = "Three bands, split at the two frequencies.";
+    }
+    const vals = TV[sec] || [];
+    return { title, note, controls: controls.map((c) => ({ ...c, v: vals[c.key] ?? null })) };
+  }
+  var nib2 = (v) => {
+    const x = v + 32768 & 65535;
+    return [x >> 12 & 15, x >> 8 & 15, x >> 4 & 15, x & 15];
+  };
+  var unNib = (b) => ((b[0] & 15) << 12 | (b[1] & 15) << 8 | (b[2] & 15) << 4 | b[3] & 15) - 32768;
+  async function totalRead(sec) {
+    if (!await zxConnect()) return false;
+    if (sec === "level") {
+      const b2 = await zxRead(AT.level, 1);
+      if (!Array.isArray(b2)) return false;
+      TV.level = b2[0];
+      return true;
+    }
+    if (sec === "eq" || sec === "comp") {
+      const n2 = sec === "eq" ? 15 : 24, b2 = await zxRead(AT[sec], n2);
+      if (!Array.isArray(b2) || b2.length < n2) return false;
+      const list2 = sec === "eq" ? MASTER_EQ : MASTER_COMP, out2 = [];
+      for (const p of list2) {
+        const c = byteControl(p);
+        out2[c.key] = b2[c.key] - (c.off || 0);
+      }
+      TV[sec] = out2;
+      return true;
+    }
+    if (sec === "mfx") {
+      const copy = { kind: "tone", v: {}, known: /* @__PURE__ */ new Set() };
+      const r = await readSound(copy, AT.mfx - MFX_AT2, new Set(MFX_PARAMS));
+      if (!r || !r.ok) return false;
+      TV.mfx = MFX_PARAMS.map((k2) => copy.v[k2] ?? 0);
+      return true;
+    }
+    const n = totalPanel(sec).controls.length;
+    if (!n) return true;
+    const b = await zxRead(AT[sec], n * 4);
+    if (!Array.isArray(b) || b.length < n * 4) return false;
+    TV[sec] = Array.from({ length: n }, (_, i) => unNib(b.slice(i * 4, i * 4 + 4)));
+    return true;
+  }
+  async function totalSet(sec, key, v) {
+    if (!await zxConnect()) return false;
+    if (sec === "level") {
+      TV.level = v;
+      zxWrite(AT.level, [v]);
+    } else if (sec === "eq" || sec === "comp") {
+      const c = byteControl((sec === "eq" ? MASTER_EQ : MASTER_COMP).find((p) => p[1] === key));
+      (TV[sec] = TV[sec] || [])[key] = v;
+      zxWrite(AT[sec] + key, [v + (c.off || 0) & 127]);
+    } else if (sec === "mfx") {
+      (TV.mfx = TV.mfx || [])[key] = v;
+      const k2 = MFX_PARAMS[key];
+      await sendSound({ kind: "tone", v: { [k2]: v }, known: /* @__PURE__ */ new Set() }, AT.mfx - MFX_AT2, /* @__PURE__ */ new Set([k2]));
+    } else {
+      (TV[sec] = TV[sec] || [])[key] = v;
+      zxWrite(AT[sec] + key * 4, nib2(v));
+    }
+    return true;
+  }
+
   // src/ui/hover-help.js
   var HELP = [
     /* Song Mode */
@@ -59363,7 +59876,16 @@ body[data-mode='scene'] #scene {
   applyTheme();
   Object.assign(hooks, {
     fillTones: fillTonesOpen,
-    fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
+    fx: {
+      choices: fxChoices,
+      now: FXN,
+      trackFx,
+      readMaster,
+      setMaster,
+      REV_TYPES,
+      CHO_TYPES,
+      total: { now: TV, panel: totalPanel, read: totalRead, set: totalSet }
+    },
     knobs: { now: knobNow, name: knobName, read: readAllKnobs, set: setKnob },
     applyDevice,
     audRender,

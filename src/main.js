@@ -176,6 +176,7 @@ import { mpjOpen } from './ui/mpj-open.js';
 import { fillTonesOpen } from './ui/fill-tones.js';
 import { CHO_TYPES, FXN, REV_TYPES, fxChoices, readMaster, setMaster, trackFx } from './zen/zc-fx.js';
 import { knobName, knobNow, readAllKnobs, setKnob } from './zen/zc-knobs.js';
+import { TV, totalPanel, totalRead, totalSet } from './zen/zc-total.js';
 import { readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
@@ -185,7 +186,16 @@ applyTheme();
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
   fillTones: fillTonesOpen,
-  fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
+  fx: {
+    choices: fxChoices,
+    now: FXN,
+    trackFx,
+    readMaster,
+    setMaster,
+    REV_TYPES,
+    CHO_TYPES,
+    total: { now: TV, panel: totalPanel, read: totalRead, set: totalSet }
+  },
   knobs: { now: knobNow, name: knobName, read: readAllKnobs, set: setKnob },
   applyDevice,
   audRender,

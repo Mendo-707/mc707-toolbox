@@ -169,7 +169,7 @@ function build(root, h) {
         el(
           'span',
           { class: 'hint' },
-          'Levels, sends and knob positions are saved with the song and sent when it starts; effects and what the knobs control go straight into the MC-707 (press KNOB ASSIGN there to see them).'
+          'Levels, sends and knobs are saved with the song; effects and knob choices go straight to the MC-707.'
         ),
         el(
           'div',

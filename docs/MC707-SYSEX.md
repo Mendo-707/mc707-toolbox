@@ -88,10 +88,11 @@ reading the MC-707 with the read-only scan pages and changing one setting at a t
 | Track settings, track *t* (0-7): bank select at +0/+1, Sound Source at +4 (0 TRACK, 1 CLIP) | `10 00 08 00` + *t* × `00 00 02 00` | Confirmed |
 | Track EQs, track *t* | `10 00 18 00` + *t* × `00 00 01 00` | Very likely |
 | Three project MFX (same layout as a tone's MFX block; the first is taken as the master Multi FX) | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |
-| Delay / chorus (on at +0, type at +1 (0-9), level at +2, reverb send at +3) | `10 00 26 00` | Likely; written by the mixers' Master FX |
-| Reverb (on at +0, type at +1 (0-7), level at +2) | `10 00 27 00` | Confirmed: level; type written by the Master FX strip |
-| Master EQ (input, low, mid 1-3, high gains, then frequencies and Qs; on/off at +0E) | `10 00 39 00` | Likely (MV-1 map) |
-| Master compressor (on/off at +0, then 3 bands) | `10 00 3A 00` | Likely (MV-1 map) |
+| Delay / chorus (on at +0, type at +1 (0-9), level at +2, reverb send at +3, then 20 parameters from +4, four half-bytes each as value + `8000`) | `10 00 26 00` | Likely; written by the mixers' Master FX and its Delay panel (parameters in the manual's order for the type) |
+| Reverb (on at +0, type at +1 (0-7), level at +2, then 20 parameters from +3 as value + `8000` in four half-bytes) | `10 00 27 00` | Confirmed: level; the Integra type's 9 parameters read back in the manual's order (Hall 1, 26, 2.6 s, 127, 127, 50, 50, 127, 64); written by the Master FX strip and its Reverb panel |
+| Master EQ: input, low, mid 1-3 and high gains (64 + dB, -24 to +24) at +0 to +5, low, mid 1-3 and high frequencies (a list, 20 Hz to 16 kHz) at +6 to +0A, mid Qs at +0B to +0D, on/off at +0E | `10 00 39 00` | Likely (MV-1 map; the flat bytes read back as 40); written by the Master FX EQ panel |
+| Master compressor: on/off at +0; per band (low +1, mid +7, high +0D) attack, release (0-99 for 10-1000 ms), threshold (64 + dB, -60 to 0), ratio, knee, gain (64 + half dB); split frequencies at +13 and +14, release syncs at +15 to +17 | `10 00 3A 00` | Likely (MV-1 map); written by the Master FX Comp panel |
+| Master level | `10 00 00 14` | Confirmed (read 100); the Master FX strip's Master level |
 
 The track faders are not stored in the project; use MIDI volume (CC 7) for track level.
 
