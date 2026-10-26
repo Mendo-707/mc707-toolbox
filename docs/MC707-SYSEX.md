@@ -208,7 +208,9 @@ The MC-707 saves a project on its SD card as one .mpj file. It is not SysEx, but
 | 10 | Sections, 16 bytes each until "DUMY": tag (PRJa, STPa, SYSa, USRa, LPPa, LPDa, USDa, DIFa), "MC77", offset, size |
 | PRJa + 10 | Project name, 16 characters |
 | PRJa + 20 | Tempo, BPM × 100 (16 bits) |
-| PRJa + D0 | The first 8 scenes, 8 bytes each: the clip (0-15) each track plays (a new project: scene n plays clip n). Scenes past 8 and the chain lengths are not found yet |
+| PRJa + 50 | Each scene's chain length in bars, one byte per scene (0 = OFF), as `10 00 00 4C` + scene over SysEx. Read from a 17-scene project with CHAIN on |
+| PRJa + 200 + track × 100 + 90 | The clip the track plays in each of the 128 scenes, one byte per scene: 1-16, 0 = none (a new project: scene n plays clip n), as the track settings + `3E` + scene over SysEx |
+| PRJa + D0 | 8 scenes of 8 bytes where the MV-1 keeps its scenes; the MC-707 leaves them as a new project has them (scene n plays clip n) and uses the track blocks above |
 | PRJa + 200 + track × 100, + 14 | Track kind: 0 tone, 1 drum, 2 looper (FF in an empty template) |
 | PRJa + 10F0 + (track × 17 + clip) × 5C40 | Clip block (clip 17 of each track is the track's own sound): sound name (16 characters) at + 0; step size (0-5 as SysEx) at + 300, steps (1-128) at + 301; 128 steps of 60 bytes from + 3D0: 16 note numbers (FF none), 16 velocities, 16 starts (signed), 16 ends (100 ties), 16 sub steps, 16 unused; motion after the steps (not mapped yet) |
 | USDa | Samples: "SMPh", then per sample "SMPd": header size (30), channels, data size (to 1 KB), sample count (all channels), name (16), number, rate, then 16-bit PCM |

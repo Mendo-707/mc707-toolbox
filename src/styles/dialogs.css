@@ -956,6 +956,11 @@
 .mpjScn b {
   width: 42px;
 }
+.mpjLen {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--mute);
+}
 
 /* Fill tones (ui/fill-tones.js) */
 .ftBox {

@@ -15,6 +15,7 @@ import { onStopAll, stopAll } from '../services/transport.js';
 import { userSave } from '../library/user-lib.js';
 import { makeZip, saveFile } from '../song/export.js';
 import { STEP_NAMES, joinNotes, toPattern } from '../zen/zc-seq.js';
+import { sceneName } from '../zen/zc-scenes.js';
 import { askDlg } from './dialogs.js';
 import { matchTypes } from './track-setup.js';
 
@@ -82,18 +83,20 @@ export function mpjOpen(u8, file) {
     unhook = onStopAll(stop);
   };
   const wavName = (s, i) => String(i + 1).padStart(2, '0') + ' ' + s.name.replace(/\.wav$/i, '') + '.wav';
-  /* the project's first 8 scenes that play a clip with notes: [{n, pick}] */
-  const scenes = m.scenes
-    .map((pick, n) => ({
+  /* the project's scenes from 1-1 to the last that plays a clip with notes (empty ones between kept, so
+     each keeps its number): [{n, pick, bars}] (bars: the chain length, 0 OFF) */
+  const all = m.scenes.map((x, n) => ({
       n,
-      pick: pick.map((k, t) => (k >= 0 && full(t, k) && m.tracks[t].kind !== 'looper' ? k : -1))
-    }))
-    .filter(x => x.pick.some(k => k >= 0));
+      bars: x.bars,
+      pick: x.pick.map((k, t) => (k >= 0 && full(t, k) && m.tracks[t].kind !== 'looper' ? k : -1))
+    })),
+    last = all.reduce((l, x, n) => (x.pick.some(k => k >= 0) ? n : l), -1);
+  const scenes = all.slice(0, last + 1);
   const sceneRows = scenes.map(x =>
     el(
       'div',
       { class: 'mpjScn' },
-      el('b', {}, '1-' + (x.n + 1)),
+      el('b', {}, sceneName(x.n)),
       ...x.pick.map((k, t) =>
         el(
           'span',
@@ -104,6 +107,11 @@ export function mpjOpen(u8, file) {
           },
           k < 0 ? '–' : String(k + 1)
         )
+      ),
+      el(
+        'span',
+        { class: 'mpjLen', title: 'How long the scene chain stays on it' },
+        x.bars ? x.bars + (x.bars === 1 ? ' bar' : ' bars') : 'OFF'
       )
     )
   );
@@ -224,12 +232,12 @@ export function mpjOpen(u8, file) {
     S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
     S.scn.clips = clips;
     if (scenes.length) {
-      /* its scenes, in order from 1-1; each as long as its longest clip (the chain lengths are not read yet) */
+      /* its scenes, in order from 1-1, each as long as its chain length (or its longest clip when OFF) */
       S.scn.first = 0;
       S.scn.rows = scenes.map(x => {
         const pick = x.pick.map((k, t) => (k >= 0 && clips[t][k] ? k : -1)),
-          bars = Math.max(1, ...pick.map((k, t) => (k >= 0 ? S.patterns[clips[t][k].pat].bars : 1)));
-        const r = newRow('r' + S.nextId++, 'Scene 1-' + (x.n + 1), bars);
+          bars = x.bars || Math.max(1, ...pick.map((k, t) => (k >= 0 ? S.patterns[clips[t][k].pat].bars : 1)));
+        const r = newRow('r' + S.nextId++, 'Scene ' + sceneName(x.n), bars);
         r.pick = pick;
         return r;
       });
@@ -294,11 +302,11 @@ export function mpjOpen(u8, file) {
         ? el(
             'div',
             { class: 'mpjScenes' },
-            el('h4', {}, 'Scenes 1-1 to 1-8'),
+            el('h4', {}, 'Scenes 1-1 to ' + sceneName(scenes.length - 1)),
             el(
               'p',
               { class: 'hint' },
-              'The clip each track plays in the project’s first 8 scenes (the ones that play anything). They come into Scene Mode with the clips, each as long as its longest clip: the chain lengths and scenes past 1-8 are not read yet.'
+              'The clip each track plays in each scene, and how many bars the scene chain stays on it. They come into Scene Mode with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip).'
             ),
             ...sceneRows
           )
@@ -316,7 +324,7 @@ export function mpjOpen(u8, file) {
       el(
         'p',
         { class: 'hint' },
-        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), scenes past 1-8 and chain lengths, motion, and looper recordings.'
+        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), motion and looper recordings.'
       ),
       m.samples.length
         ? el(

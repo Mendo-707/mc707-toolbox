@@ -28,9 +28,15 @@ function makeProject() {
   put(48, 'DUMYMC77');
   put(at + 0x10, 'Test Song       ');
   dv.setUint16(at + 0x20, 9500, true);
-  /* scenes as a new project has them (scene n plays clip n), but scene 1 plays clip 2 on track 1 */
+  /* scenes as a new project has them (scene n plays clip n, kept 1-16 in each track's block at +90),
+     but scene 1 plays clip 2 on track 1 and is 4 bars long; scene 2-2 (the 18th) plays the bass */
+  for (let sc = 0; sc < 8; sc++) for (let t = 0; t < 8; t++) u8[at + 0x200 + t * 0x100 + 0x90 + sc] = sc + 1;
+  u8[at + 0x200 + 0x90] = 2;
+  u8[at + 0x50] = 4;
+  u8[at + 0x200 + 3 * 0x100 + 0x90 + 17] = 1;
+  u8[at + 0x50 + 17] = 8;
+  /* the MV-1's 8 scenes at +D0 stay as a new project has them, unused */
   for (let sc = 0; sc < 8; sc++) for (let t = 0; t < 8; t++) u8[at + 0xd0 + sc * 8 + t] = sc;
-  u8[at + 0xd0] = 1;
   const kinds = [1, 1, 1, 0, 2, 0, 0, 0];
   kinds.forEach((k, t) => (u8[at + 0x214 + t * 0x100] = k));
   const clip = (t, k) => at + 0x10f0 + (t * 17 + k) * 0x5c40;
@@ -87,6 +93,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
       kick: m.tracks[0].clips[1].slots[8],
       samples: m.samples.map(s => [s.name, s.channels, s.count, s.rate]),
       scenes: m.scenes.slice(0, 2),
+      scene18: m.scenes[17].pick[3],
       bad: window.__app.mpj.read(new Uint8Array(100)).error
     };
   }, makeProject.toString());
@@ -98,9 +105,10 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.deepEqual(r.kick, [{ note: 36, vel: 90, start: 0, end: 50, sub: 0 }]);
   assert.deepEqual(r.samples, [['Hit.wav', 1, 64, 44100]]);
   assert.deepEqual(r.scenes, [
-    [1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1]
+    { pick: [1, 0, 0, 0, 0, 0, 0, 0], bars: 4 },
+    { pick: [1, 1, 1, 1, 1, 1, 1, 1], bars: 0 }
   ]);
+  assert.equal(r.scene18, 0, 'scene 2-2 plays the bass clip 1');
   assert.match(r.bad, /not an MC-707 project/);
   /* the window */
   await page.evaluate(() => window.__app.mpj.open(window.__mpj, 'Test.mpj'));
@@ -108,7 +116,12 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.match(text, /MC-707 project: Test Song/);
   assert.match(text, /95 BPM · 2 clips with notes · 1 sample/);
   assert.match(text, /Looper track/);
-  assert.equal(await page.locator('#mpjOv .mpjScn').count(), 2, 'the scenes that play a clip with notes: 1-1 and 1-2');
+  assert.equal(
+    await page.locator('#mpjOv .mpjScn').count(),
+    18,
+    'scenes 1-1 to 2-2, the last that plays a clip with notes'
+  );
+  assert.match(await page.locator('#mpjOv .mpjScn').first().textContent(), /4 bars/);
   /* the sample saves as a WAV */
   const [dl] = await Promise.all([
     page.waitForEvent('download'),
@@ -118,7 +131,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   /* into Scene Mode */
   await page.click('#mpjOv button:has-text("Bring the clips into Scene Mode")');
   await page.waitForFunction(() =>
-    /Brought in 2 clips and 2 scenes from Test Song at 95 BPM/.test(document.getElementById('toast').textContent)
+    /Brought in 2 clips and 18 scenes from Test Song at 95 BPM/.test(document.getElementById('toast').textContent)
   );
   const got = await page.evaluate(() => {
     const S = window.__app.S,
@@ -143,10 +156,16 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   );
   assert.deepEqual(got.bass, [2, [[0, 60, 2.1]]], 'one C4 tied over two steps and a bit, in a 2-bar clip');
   assert.equal(got.name, 'TEST KIT');
-  assert.deepEqual(got.rows, [
-    ['Scene 1-1', 2, '1,-1,-1,0,-1,-1,-1,-1'],
-    ['Scene 1-2', 1, '1,-1,-1,-1,-1,-1,-1,-1']
-  ]);
+  assert.equal(got.rows.length, 18);
+  assert.deepEqual(
+    got.rows.slice(0, 2),
+    [
+      ['Scene 1-1', 4, '1,-1,-1,0,-1,-1,-1,-1'],
+      ['Scene 1-2', 1, '1,-1,-1,-1,-1,-1,-1,-1']
+    ],
+    'its chain length, or its longest clip when OFF'
+  );
+  assert.deepEqual(got.rows[17], ['Scene 2-2', 8, '-1,-1,-1,0,-1,-1,-1,-1']);
   assert.equal(got.mode, 'scene');
   assert.deepEqual(errors, []);
 });

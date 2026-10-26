@@ -2057,6 +2057,11 @@ input[type='range'] {
 .mpjScn b {
   width: 42px;
 }
+.mpjLen {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--mute);
+}
 
 /* Fill tones (ui/fill-tones.js) */
 .ftBox {
@@ -57230,13 +57235,13 @@ body[data-mode='scene'] #scene {
         loops.push({ track: e >> 4, clip: e & 15, at: D2 + off, bytes });
       }
     }
-    const scenes = Array.from(
-      { length: 8 },
-      (_, s) => Array.from({ length: 8 }, (_2, t) => {
-        const k2 = u8[P2 + 208 + s * 8 + t];
-        return k2 < 16 ? k2 : -1;
-      })
-    );
+    const scenes = Array.from({ length: 128 }, (_, s) => ({
+      pick: Array.from({ length: 8 }, (_2, t) => {
+        const k2 = u8[P2 + 512 + t * 256 + 144 + s];
+        return k2 >= 1 && k2 <= 16 ? k2 - 1 : -1;
+      }),
+      bars: u8[P2 + 80 + s]
+    }));
     return {
       name: text(u8, P2 + 16, 16),
       scenes,
@@ -57340,15 +57345,17 @@ body[data-mode='scene'] #scene {
       unhook = onStopAll(stop);
     };
     const wavName = (s, i) => String(i + 1).padStart(2, "0") + " " + s.name.replace(/\.wav$/i, "") + ".wav";
-    const scenes = m.scenes.map((pick3, n) => ({
+    const all = m.scenes.map((x, n) => ({
       n,
-      pick: pick3.map((k2, t) => k2 >= 0 && full(t, k2) && m.tracks[t].kind !== "looper" ? k2 : -1)
-    })).filter((x) => x.pick.some((k2) => k2 >= 0));
+      bars: x.bars,
+      pick: x.pick.map((k2, t) => k2 >= 0 && full(t, k2) && m.tracks[t].kind !== "looper" ? k2 : -1)
+    })), last3 = all.reduce((l, x, n) => x.pick.some((k2) => k2 >= 0) ? n : l, -1);
+    const scenes = all.slice(0, last3 + 1);
     const sceneRows = scenes.map(
       (x) => el(
         "div",
         { class: "mpjScn" },
-        el("b", {}, "1-" + (x.n + 1)),
+        el("b", {}, sceneName(x.n)),
         ...x.pick.map(
           (k2, t) => el(
             "span",
@@ -57359,6 +57366,11 @@ body[data-mode='scene'] #scene {
             },
             k2 < 0 ? "–" : String(k2 + 1)
           )
+        ),
+        el(
+          "span",
+          { class: "mpjLen", title: "How long the scene chain stays on it" },
+          x.bars ? x.bars + (x.bars === 1 ? " bar" : " bars") : "OFF"
         )
       )
     );
@@ -57449,8 +57461,8 @@ body[data-mode='scene'] #scene {
       if (scenes.length) {
         S.scn.first = 0;
         S.scn.rows = scenes.map((x) => {
-          const pick3 = x.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1), bars2 = Math.max(1, ...pick3.map((k2, t) => k2 >= 0 ? S.patterns[clips[t][k2].pat].bars : 1));
-          const r = newRow("r" + S.nextId++, "Scene 1-" + (x.n + 1), bars2);
+          const pick3 = x.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1), bars2 = x.bars || Math.max(1, ...pick3.map((k2, t) => k2 >= 0 ? S.patterns[clips[t][k2].pat].bars : 1));
+          const r = newRow("r" + S.nextId++, "Scene " + sceneName(x.n), bars2);
           r.pick = pick3;
           return r;
         });
@@ -57499,11 +57511,11 @@ body[data-mode='scene'] #scene {
         scenes.length ? el(
           "div",
           { class: "mpjScenes" },
-          el("h4", {}, "Scenes 1-1 to 1-8"),
+          el("h4", {}, "Scenes 1-1 to " + sceneName(scenes.length - 1)),
           el(
             "p",
             { class: "hint" },
-            "The clip each track plays in the project’s first 8 scenes (the ones that play anything). They come into Scene Mode with the clips, each as long as its longest clip: the chain lengths and scenes past 1-8 are not read yet."
+            "The clip each track plays in each scene, and how many bars the scene chain stays on it. They come into Scene Mode with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip)."
           ),
           ...sceneRows
         ) : null,
@@ -57520,7 +57532,7 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), scenes past 1-8 and chain lengths, motion, and looper recordings."
+          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), motion and looper recordings."
         ),
         m.samples.length ? el(
           "div",
