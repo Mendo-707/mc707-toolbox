@@ -126,10 +126,14 @@ export const zeLive = () => sending();
  * Change several values as one undo step (the Sound Lab's potions): {key: value}. Sent together when live.
  * Resolves to the keys that changed.
  */
-export function zeBrew(vals) {
+export function zeBrew(vals, tag = null) {
   const keys = Object.keys(vals).filter(k => vals[k] !== ZE.snd.v[k]);
   if (!keys.length) return [];
-  ZE.undo.push(Object.fromEntries(keys.map(k => [k, ZE.snd.v[k]])));
+  /* the same tag as the last brew (one slider being dragged): it joins that undo step */
+  const last = ZE.undo[ZE.undo.length - 1];
+  if (tag && ZE.brewTag === tag && last) for (const k of keys) k in last || (last[k] = ZE.snd.v[k]);
+  else ZE.undo.push(Object.fromEntries(keys.map(k => [k, ZE.snd.v[k]])));
+  ZE.brewTag = tag;
   ZE.undo.length = Math.min(ZE.undo.length, 200);
   ZE.redo = [];
   for (const k of keys) setVal(ZE.snd, k, vals[k], null);
@@ -142,6 +146,7 @@ export function zeUndo(redo) {
   const from = redo ? ZE.redo : ZE.undo,
     to = redo ? ZE.undo : ZE.redo;
   const step = from.pop();
+  ZE.brewTag = null;
   if (!step) return;
   to.push(Object.fromEntries(Object.keys(step).map(k => [k, ZE.snd.v[k]])));
   for (const k in step) setVal(ZE.snd, k, step[k], null);

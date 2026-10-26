@@ -233,43 +233,123 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.labTaste {
+/* the taste keys: a keybed across the column */
+#labOv .labTaste {
+  margin: 0;
+  padding: 6px 10px 10px;
+}
+.labBed {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 6px;
+  height: 64px;
 }
-.labTaste .zcL {
-  color: #a9d9b5;
-  margin-right: 6px;
-}
-.labKey {
+.labKey,
+.labLatch {
   all: unset;
-  cursor: pointer;
-  flex: 1;
-  max-width: 64px;
-  height: 40px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 4px;
   box-sizing: border-box;
-  border-radius: 0 0 4px 4px;
-  background: #d5ddd7;
-  color: #1b2a20;
-  font:
-    700 10px ui-monospace,
-    Consolas,
-    monospace;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 7px;
+  border-radius: 3px 3px 8px 8px;
+  transition:
+    background 0.12s,
+    box-shadow 0.12s,
+    transform 0.08s;
+}
+.labKey {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(#f2f6f3, #cfd8d2);
+  color: #14231a;
+  box-shadow:
+    inset 0 -5px 0 #a9b5ad,
+    0 2px 0 #000;
 }
 .labKey:hover {
-  background: #e8f0ea;
+  background: linear-gradient(#fff, #dce5df);
+}
+.labKey b {
+  font:
+    700 14px ui-monospace,
+    Consolas,
+    monospace;
+}
+.labKey small {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #4d6455;
+}
+.labKey kbd {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  font:
+    600 9px ui-monospace,
+    Consolas,
+    monospace;
+  color: #5e7466;
+  border: 1px solid #a9b5ad;
+  border-radius: 3px;
+  padding: 0 3px;
 }
 .labKey.down {
+  background: linear-gradient(#b8ffcf, var(--zc-acc));
+  box-shadow:
+    inset 0 -2px 0 #1f9c4b,
+    0 0 16px var(--zc-glow);
+  transform: translateY(3px);
+}
+.labKey.down small,
+.labKey.down kbd {
+  color: #0b3a1b;
+  border-color: #1f9c4b;
+}
+.labLatch {
+  flex: 0 0 84px;
+  background: #050906;
+  border: 1px solid var(--zc-line);
+  color: #c9f7d5;
+  justify-content: center;
+  gap: 2px;
+  padding-bottom: 0;
+}
+.labLatch:hover {
+  border-color: var(--zc-acc);
+}
+.labLatch i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #12301c;
+  border: 1px solid var(--zc-line);
+}
+.labLatch b {
+  font-size: 13px;
+}
+.labLatch small {
+  font-size: 10px;
+  color: var(--zc-dim);
+}
+.labLatch.on {
+  border-color: var(--zc-acc);
+  box-shadow: inset 0 0 14px var(--zc-glow);
+}
+.labLatch.on i {
   background: var(--zc-acc);
-  box-shadow: 0 0 10px var(--zc-glow);
+  box-shadow: 0 0 8px var(--zc-acc);
+  animation: labBlink 1.2s ease-in-out infinite;
+}
+@keyframes labBlink {
+  50% {
+    opacity: 0.45;
+  }
 }
 /* the side panels */
 .labSide .zcG {
@@ -524,21 +604,8 @@
     transform: scale(1);
   }
 }
-.labKey {
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-.labKey small {
-  font-size: 9px;
-  opacity: 0.55;
-}
-.labLatch {
-  margin-left: 6px;
-  align-self: stretch;
-}
 .labKeys {
-  margin: 0;
+  margin: -2px 0 0;
   font-size: 11px;
   text-align: center;
 }
@@ -605,4 +672,78 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+/* pass 4: which partials, Character bars as sliders, Dial it in */
+.labTarget {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.labTarget .zcL {
+  color: #a9d9b5;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.labTarget .btn:disabled {
+  opacity: 0.35;
+}
+.lmRow {
+  cursor: pointer;
+}
+.lmRow input[type='range'],
+.llDialRow input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  background: #0b1a10;
+  border: 1px solid var(--zc-line);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.lmRow input[type='range']::-webkit-slider-runnable-track,
+.llDialRow input[type='range']::-webkit-slider-runnable-track {
+  height: 100%;
+}
+.lmRow input[type='range']::-webkit-slider-thumb,
+.llDialRow input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 10px;
+  background: #e6ffee;
+  box-shadow: -800px 0 0 800px var(--zc-acc);
+}
+.lmRow input[type='range']::-moz-range-progress,
+.llDialRow input[type='range']::-moz-range-progress {
+  height: 100%;
+  background: var(--zc-acc);
+}
+.lmRow input[type='range']:hover,
+.lmRow input[type='range']:focus-visible,
+.llDialRow input[type='range']:hover,
+.llDialRow input[type='range']:focus-visible {
+  outline: none;
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-glow);
+}
+.labMeters .hint {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+.llDial {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--zc-line);
+  display: grid;
+  gap: 6px;
+}
+.llDialRow {
+  font-size: 12px;
+}
+.llDialRow select {
+  grid-column: 1 / -1;
+  width: 100%;
 }

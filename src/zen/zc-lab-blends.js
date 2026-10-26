@@ -132,10 +132,10 @@ export const BLENDS = [
         'Slow filter movement',
         'A slow LFO on the cutoff, about one cycle a bar, makes it breathe. Synced to the tempo it moves with the track.',
         on([0, 1], {
-          'LFO.LFO1_FORM': 1,
-          'LFO.LFO1_RATE_SYNC': 1,
-          'LFO.LFO1_RATE_NOTE': 18,
-          'LFO.LFO1_TVF_DEPTH': 18
+          'LFO.LFO2_FORM': 1,
+          'LFO.LFO2_RATE_SYNC': 1,
+          'LFO.LFO2_RATE_NOTE': 18,
+          'LFO.LFO2_TVF_DEPTH': 18
         })
       ],
       [
@@ -168,12 +168,12 @@ export const BLENDS = [
       [
         'wobble',
         'An LFO on the filter, synced',
-        'The LFO is locked to the tempo at 1/8 notes, so the wobble is part of the rhythm. Change the note value (LFO page) to change the groove: 1/4, 1/8, 1/8 triplet.',
+        'LFO 2 is locked to the tempo at 1/8 notes, so the wobble is part of the rhythm. Change the note value (LFO page) to change the groove: 1/4, 1/8, 1/8 triplet.',
         on([0], {
-          'LFO.LFO1_FORM': 0,
-          'LFO.LFO1_RATE_SYNC': 1,
-          'LFO.LFO1_RATE_NOTE': 9,
-          'LFO.LFO1_TVF_DEPTH': 70
+          'LFO.LFO2_FORM': 0,
+          'LFO.LFO2_RATE_SYNC': 1,
+          'LFO.LFO2_RATE_NOTE': 9,
+          'LFO.LFO2_TVF_DEPTH': 70
         })
       ],
       [
@@ -188,7 +188,7 @@ export const BLENDS = [
           'PTL1.LEVEL': 110,
           'PTL1.CUTOFF': 1023,
           'PTL1.RESO': 0,
-          'LFO1.LFO1_TVF_DEPTH': 0,
+          'LFO1.LFO2_TVF_DEPTH': 0,
           'AENV1.T4': 120
         }
       ],

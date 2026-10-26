@@ -11,7 +11,8 @@
 // Owns: LAB (the lab's state), localStorage 'mc707-lab' (blends found, the last amount).
 import { $, el, toast } from '../core/dom.js';
 import { ZE, audition, zeBrew, zeLive, zeLoad, zeRender, zeUndo } from './zc-editor.js';
-import { paramOf } from './zc-tone.js';
+import { MFX_PARAMS, paramOf } from './zc-tone.js';
+import { DIALS, FX_GROUP, OSC_GROUP, fxOf, fxParam } from './zc-lab-more.js';
 import { tone } from './zc-starters.js';
 import { BLENDS } from './zc-lab-blends.js';
 
@@ -23,7 +24,9 @@ const LAB = {
   chain: Promise.resolve(),
   start: 0,
   latch: false,
-  guide: null
+  guide: null,
+  target: null,
+  dragN: 0
 };
 const STORE = 'mc707-lab';
 try {
@@ -43,9 +46,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---- brewing: reading and changing the tone's values ---- */
 /** The partials that are switched on (the first one when none reads as on). */
-function parts() {
+const onParts = () => {
   const on = [0, 1, 2, 3].filter(i => ZE.snd.v['PMT.PMT' + (i + 1) + '_PTL_SW'] === 1);
   return on.length ? on : [0];
+};
+/** The partials the lab works on: the one chosen under the slime (when it is on), or every one that is on. */
+function parts() {
+  const on = onParts();
+  return LAB.target != null && on.includes(LAB.target) ? [LAB.target] : on;
 }
 /* A mix: the changes an ingredient makes, built up before they go to the tone in one step. */
 function brewer() {
@@ -69,7 +77,12 @@ function brewer() {
   const ps = parts();
   /* fn(prefix) for each partial on: prefix('PTL') is 'PTL0', and so on; n counts the partials */
   const each = fn => ps.forEach((i, n) => fn(b => b + i, n));
-  return { get, set, add, toward, each, out, n: ps.length };
+  /* the first partial switched off (for a layer), or null */
+  const free = () => {
+    const i = [0, 1, 2, 3].find(i => get('PMT.PMT' + (i + 1) + '_PTL_SW') !== 1);
+    return i == null ? null : i;
+  };
+  return { get, set, add, toward, each, free, out, n: ps.length };
 }
 
 /* ---- the ingredients ---- */
@@ -520,6 +533,25 @@ const SUB = {
   grit: 'FXM, fat, analog feel',
   space: 'Reverb + delay sends'
 };
+GROUPS.unshift(OSC_GROUP);
+GROUPS.push(FX_GROUP);
+Object.assign(SUB, {
+  saw: 'VA saw',
+  square: 'VA square',
+  pwm: 'Pulse width + PWM',
+  tri: 'VA triangle',
+  sine: 'VA sine',
+  ssaw: 'SuperSAW + detune',
+  noise: 'Noise on a spare partial',
+  sync: 'Partial 2 synced',
+  ring: 'Partials 1 × 2',
+  od: 'MFX Overdrive',
+  dist: 'MFX Distortion',
+  crush: 'MFX Bit Crusher',
+  chorus: 'MFX Chorus',
+  phaser: 'MFX Phaser',
+  tape: 'MFX Tape Echo'
+});
 const ING = GROUPS.flatMap(([, ps]) => ps);
 const ing = id => ING.find(p => p.id === id);
 
@@ -756,25 +788,62 @@ function frame(now) {
     c.setAttribute('cy', Math.min(y, 250));
     c.setAttribute('r', Math.max(6, R * (0.5 - snap * 0.06) + Math.sin(SL.t * 1.1 + i * 2.3) * wob * 0.35));
   });
-  /* drips fall from a long, wet tone */
-  if (
-    !calm &&
-    g(T.Tail) + g(T.Space) > 0.55 &&
-    Math.random() < dt * (g(T.Tail) + g(T.Space)) * 0.5 &&
-    SL.drips.length < 4
-  ) {
-    const x = cx + (Math.random() - 0.5) * R * 1.4 * sx;
-    const c = svgEl('circle', { class: 'lsDrip', cx: x, cy: cy + R * 0.3, r: 9 });
-    body.append(c);
-    SL.drips.push({ c, x, y: cy + R * 0.3, v: 0, r: 9 });
+  /* drips: a bead gathers on the slime's side, hangs on a string of goo, lets go, lands and spreads into
+     a puddle that oozes back into the slime. A wet tone (long tail, lots of space) drips more. */
+  const FLOOR = 252;
+  if (!calm && SL.drips.length < 3 && Math.random() < dt * (0.6 + g(T.Tail) * 0.8 + g(T.Space) * 0.6)) {
+    const side = Math.random() < 0.5 ? -1 : 1,
+      c = svgEl('circle', { r: 0 }),
+      neck = svgEl('circle', { r: 0 });
+    body.append(neck, c);
+    SL.drips.push({ c, neck, side, k: 0.86 + Math.random() * 0.1, ph: 'grow', t: 0, x: 0, y: 0, v: 0, r: 0 });
   }
   SL.drips = SL.drips.filter(d => {
-    d.v += dt * 260;
-    d.y += d.v * dt;
-    d.r = Math.max(0, d.r - dt * 5);
+    d.t += dt;
+    /* where it hangs from: low on the side, so it follows the slime as it wobbles and grows */
+    const ax = ccx + d.side * R * d.k * sx,
+      ay = ccy + R * 0.18 * sy;
+    if (d.ph === 'grow') {
+      /* the bead swells and sags out and down from the side, on a stretching string */
+      const k = Math.min(1, d.t / 1.3);
+      d.x = ax + d.side * (4 + k * 12);
+      d.y = ay + 6 + k * k * 34;
+      d.r = 5 + k * 10;
+      d.neck.setAttribute('cx', ax + (d.x - ax) * 0.45);
+      d.neck.setAttribute('cy', ay + (d.y - ay) * 0.45);
+      d.neck.setAttribute('r', 8 - k * 2.5);
+      if (k >= 1) ((d.ph = 'fall'), (d.v = 20));
+    } else if (d.ph === 'fall') {
+      d.v += dt * 900;
+      d.y += d.v * dt;
+      /* the string thins and snaps */
+      const nr = Math.max(0, +d.neck.getAttribute('r') - dt * 30);
+      d.neck.setAttribute('r', nr);
+      if (d.y + d.r * 0.4 >= FLOOR) {
+        d.ph = 'pool';
+        d.t = 0;
+        d.y = FLOOR;
+        d.neck.remove();
+        const pool = svgEl('ellipse', { cx: d.x, cy: FLOOR, rx: d.r, ry: d.r * 0.5 });
+        d.c.replaceWith(pool);
+        d.c = pool;
+        d.px = d.x;
+      }
+    } else {
+      /* a puddle: splashes flat, then creeps back to the slime's foot and is absorbed */
+      const sp = Math.min(1, d.t / 0.25),
+        back = Math.max(0, (d.t - 0.9) / 2);
+      d.x = d.px + d.side * sp * 10 + (cx - d.px) * Math.min(1, back) * 0.75;
+      d.c.setAttribute('cx', d.x);
+      d.c.setAttribute('cy', FLOOR + 3);
+      d.c.setAttribute('rx', Math.max(0, (14 + sp * 24) * (1 - back * 0.55)));
+      d.c.setAttribute('ry', Math.max(0, (8 - sp * 3) * (1 - back * 0.4)));
+      if (back >= 1) return (d.c.remove(), false);
+      return true;
+    }
+    d.c.setAttribute('cx', d.x);
     d.c.setAttribute('cy', d.y);
     d.c.setAttribute('r', d.r);
-    if (d.y > 262 || d.r <= 0) return (d.c.remove(), false);
     return true;
   });
   /* ingredients falling in: a gloop with a stretchy tail, that splats into the slime */
@@ -1050,6 +1119,7 @@ export function labOpen() {
           stage,
           el('p', { class: 'labRead', id: 'labRead' })
         ),
+        el('div', { class: 'labTarget', id: 'labTarget' }),
         el(
           'div',
           { class: 'labCtl' },
@@ -1067,39 +1137,46 @@ export function labOpen() {
           )
         ),
         el(
-          'div',
-          { class: 'labTaste' },
-          el('span', { class: 'zcL' }, 'Taste'),
-          ...[
-            ['C1', 24],
-            ['C2', 36],
-            ['C3', 48],
-            ['C4', 60],
-            ['C5', 72]
-          ].map(([n, m]) =>
+          'fieldset',
+          { class: 'zcG labTaste' },
+          el('legend', {}, 'Taste'),
+          el(
+            'div',
+            { class: 'labBed' },
+            ...[
+              ['C1', 24, 'Sub'],
+              ['C2', 36, 'Bass'],
+              ['C3', 48, 'Low'],
+              ['C4', 60, 'Mid'],
+              ['C5', 72, 'High']
+            ].map(([n, m, where], i) =>
+              el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'labKey',
+                  'data-n': m,
+                  title: 'Hold to hear ' + n + ' (key ' + 'ZXCVB'[i] + '): the slime follows the amp envelope',
+                  onpointerdown: e => keyDown(m, e.currentTarget)
+                },
+                el('kbd', {}, 'ZXCVB'[i]),
+                el('b', {}, n),
+                el('small', {}, where)
+              )
+            ),
             el(
               'button',
               {
                 type: 'button',
-                class: 'labKey',
-                'data-n': m,
-                title: 'Hold to hear ' + n + ': the slime follows the amp envelope',
-                onpointerdown: e => keyDown(m, e.currentTarget)
+                class: 'labLatch' + (LAB.latch ? ' on' : ''),
+                id: 'labLatch',
+                title: 'Hold the note on: keep tasting while you mix in (each mix-in plays it again)',
+                onclick: latch
               },
-              el('span', {}, n),
-              el('small', {}, 'ZXCVB'[[24, 36, 48, 60, 72].indexOf(m)])
+              el('i', {}),
+              el('b', {}, 'Hold'),
+              el('small', {}, 'latch note')
             )
-          ),
-          el(
-            'button',
-            {
-              type: 'button',
-              class: 'btn sm labLatch' + (LAB.latch ? ' on' : ''),
-              id: 'labLatch',
-              title: 'Hold the note on: keep tasting while you mix in (each mix-in plays it again)',
-              onclick: latch
-            },
-            'Hold'
           )
         ),
         el(
@@ -1243,7 +1320,8 @@ function drawLearn() {
             ),
           last.ch.length > 12 ? el('small', { class: 'hint' }, '…and ' + (last.ch.length - 12) + ' more') : null
         )
-      : el('p', { class: 'hint' }, 'Mix it in to see exactly which settings it changes.')
+      : el('p', { class: 'hint' }, 'Mix it in to see exactly which settings it changes.'),
+    dialBox(p)
   );
 }
 /* everything that follows the tone: name, link, meters, the slime's character, blends, the list */
@@ -1257,18 +1335,8 @@ function draw() {
   const tr = traits();
   SL.T = Object.fromEntries(tr.map(([k, v]) => [k, v]));
   SL.to = tint(LAB.log.slice(-4).map(x => ing(x.id).c));
-  $('#labMeters').replaceChildren(
-    el('legend', {}, 'Character'),
-    ...tr.map(([n, v]) =>
-      el(
-        'div',
-        { class: 'lmRow' },
-        el('span', {}, n),
-        el('i', {}, el('em', { style: 'width:' + Math.round(v * 100) + '%' })),
-        el('b', {}, String(Math.round(v * 100)))
-      )
-    )
-  );
+  drawMeters(tr);
+  drawTarget();
   $('#labRead').textContent = reading(tr);
   $('#labBlends').replaceChildren(
     el('legend', {}, 'Blends'),
@@ -1324,6 +1392,270 @@ function draw() {
           )
         )
       : el('p', { class: 'hint' }, 'Nothing yet: pick an ingredient and mix it in, then hold a Taste key.')
+  );
+}
+
+/* ---- direct control: the Character bars as macros, and Dial it in ---- */
+/* each Character bar sets the settings behind it on the partials the lab works on (v: 0-1) */
+const MACROS = {
+  Brightness: [
+    'sun',
+    (b, v) =>
+      b.each(p => {
+        if (b.get(p('PTL') + '.FILTER_TYPE') === 0 && v < 0.99) b.set(p('PTL') + '.FILTER_TYPE', 1);
+        b.set(p('PTL') + '.CUTOFF', v * 1023);
+      })
+  ],
+  Bite: ['squelch', (b, v) => b.each(p => b.set(p('PTL') + '.RESO', v * 800))],
+  Snap: ['punch', (b, v) => b.each(p => b.set(p('AENV') + '.T1', (1 - v) ** 2 * 1023))],
+  Sustain: ['swell', (b, v) => b.each(p => b.set(p('AENV') + '.L3', v * 1023))],
+  Tail: ['mist', (b, v) => b.each(p => b.set(p('AENV') + '.T4', v * 800))],
+  Motion: [
+    'wobble',
+    (b, v) =>
+      b.each(p => {
+        const l = p('LFO') + '.',
+          ks = ['1_PIT', '1_TVF', '1_TVA', '2_PIT', '2_TVF', '2_TVA'].map(x => l + 'LFO' + x + '_DEPTH');
+        const cur = Math.max(...ks.map(k => Math.abs(b.get(k))));
+        if (cur < 1) b.set(l + 'LFO2_TVF_DEPTH', v * 60);
+        else for (const k of ks) b.set(k, (b.get(k) * v * 60) / cur);
+      })
+  ],
+  Width: [
+    'giant',
+    (b, v) =>
+      b.each((p, n) => {
+        if (b.n > 1) b.set(p('PTL') + '.PAN', (n % 2 ? -1 : 1) * v * 45);
+        b.set(p('PTL') + '.PAN_RND', v * 25);
+        b.set(p('PTL') + '.STEREO_DETN', v * 12);
+      })
+  ],
+  Grit: [
+    'grit',
+    (b, v) => {
+      b.set('CMN.ANALOG_FEEL', v * 100);
+      b.each(p => b.set(p('SPTL') + '.FAT', 64 + v * 63));
+    }
+  ],
+  Space: [
+    'space',
+    (b, v) =>
+      b.each(p => {
+        b.set(p('PTL') + '.REV_SEND', v * 100);
+        b.set(p('PTL') + '.CHO_SEND', v * 57);
+      })
+  ]
+};
+/* A slider being dragged sends at most every 60 ms, and one drag is one undo step and one entry in the list. */
+let dragT = 0,
+  dragJob = null;
+function dragged(tag, fn) {
+  dragJob = [tag, fn];
+  if (dragT) return;
+  dragT = setTimeout(() => {
+    dragT = 0;
+    const [t, f] = dragJob;
+    dragJob = null;
+    f(t);
+  }, 60);
+}
+function apply(tag, vals, id, label) {
+  const before = Object.fromEntries(Object.keys(vals).map(k => [k, ZE.snd.v[k]]));
+  const keys = zeBrew(vals, tag);
+  if (!keys.length) return;
+  const last = LAB.log[LAB.log.length - 1];
+  if (last && last.tag === tag) {
+    last.label = label;
+    for (const k of keys) last.ch.some(c => c[0] === k) || last.ch.push([k, before[k], ZE.snd.v[k]]);
+    for (const c of last.ch) c[2] = ZE.snd.v[c[0]];
+  } else LAB.log.push({ id, label, tag, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
+  draw();
+}
+function macro(name, v, tag) {
+  const [id, fn] = MACROS[name],
+    b = brewer();
+  fn(b, v);
+  apply(tag, b.out, id, name + ' ' + Math.round(v * 100));
+}
+/* the Character panel: built once, then its values follow the tone (except the bar being dragged) */
+function drawMeters(tr) {
+  const box = $('#labMeters');
+  if (!box) return;
+  if (!box.querySelector('.lmRow')) {
+    box.replaceChildren(
+      el('legend', {}, 'Character'),
+      el('p', { class: 'hint' }, 'Drag a bar to set it directly.'),
+      ...tr.map(([n]) => {
+        const out = el('b', {});
+        const inp = el('input', {
+          type: 'range',
+          min: 0,
+          max: 100,
+          'aria-label': n,
+          oninput: e => {
+            const v = +e.target.value;
+            out.textContent = String(v);
+            LAB.drag = n;
+            const tag = 'macro:' + n + ':' + LAB.dragN;
+            dragged(tag, t => macro(n, v / 100, t));
+          },
+          onchange: () => {
+            LAB.drag = null;
+            LAB.dragN++;
+          }
+        });
+        return el(
+          'label',
+          { class: 'lmRow', 'data-n': n, title: 'Drag to set the ' + n.toLowerCase() },
+          el('span', {}, n),
+          inp,
+          out
+        );
+      })
+    );
+  }
+  const legend = box.querySelector('legend');
+  const on = onParts();
+  legend.textContent =
+    'Character' + (LAB.target != null && on.includes(LAB.target) ? ' · partial ' + (LAB.target + 1) : '');
+  for (const [n, v] of tr) {
+    const row = box.querySelector('.lmRow[data-n="' + n + '"]');
+    if (!row || LAB.drag === n) continue;
+    const inp = row.querySelector('input');
+    inp.value = Math.round(v * 100);
+    inp.style.setProperty('--v', Math.round(v * 100) + '%');
+    row.querySelector('b').textContent = String(Math.round(v * 100));
+  }
+}
+/* which partials the ingredients, bars and dials work on */
+function drawTarget() {
+  const box = $('#labTarget');
+  if (!box) return;
+  const on = onParts(),
+    t = LAB.target != null && on.includes(LAB.target) ? LAB.target : null;
+  const b = (label, v, title) =>
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn sm' + (t === v ? ' on' : ''),
+        disabled: v != null && !on.includes(v),
+        title,
+        onclick: () => {
+          LAB.target = v;
+          draw();
+          drawLearn();
+        }
+      },
+      label
+    );
+  box.replaceChildren(
+    el('span', { class: 'zcL' }, 'Works on'),
+    b('All partials', null, 'Every partial that is on'),
+    ...[0, 1, 2, 3].map(i =>
+      b(String(i + 1), i, on.includes(i) ? 'Only partial ' + (i + 1) : 'Partial ' + (i + 1) + ' is off')
+    )
+  );
+}
+/* Dial it in: the settings behind an ingredient, as controls on the partials the lab works on */
+const dialKeys = k => {
+  if (/^(CMN|SCMN|SPMT|PMT|MFX)\./.test(k) || /^[A-Z]+\d\./.test(k)) return [k];
+  const [blk, id] = k.split('.');
+  return parts().map(i => blk + i + '.' + id);
+};
+function dialBox(p) {
+  const list = DIALS[p.id];
+  if (!list) return null;
+  const fx = fxOf(p.id);
+  if (fx != null && ZE.snd.v['MFX.mfxType'] !== fx)
+    return el(
+      'div',
+      { class: 'llDial' },
+      el('span', { class: 'llK' }, 'Dial it in'),
+      el('p', { class: 'hint' }, 'Mix it in first: its controls appear here once the tone’s effect is ' + p.name + '.')
+    );
+  const rows = list.map(d => (typeof d === 'object' ? fxDial(fx, d.mfx, p) : partDial(d, p))).filter(Boolean);
+  const on = onParts();
+  return el(
+    'div',
+    { class: 'llDial' },
+    el(
+      'span',
+      { class: 'llK' },
+      'Dial it in' + (LAB.target != null && on.includes(LAB.target) ? ' · partial ' + (LAB.target + 1) : '')
+    ),
+    ...rows
+  );
+}
+/* one control: a chooser for a short list, a slider otherwise; v is in stored units */
+function dialRow(label, def, v, text, set) {
+  const out = el('span', { class: 'zcV' }, text(v));
+  const tagOf = () => 'dial:' + label + ':' + LAB.dragN;
+  const ctl = def.list
+    ? el(
+        'select',
+        {
+          'aria-label': label,
+          onchange: e => {
+            set(+e.target.value, 'dial:' + label + ':' + LAB.dragN++);
+            out.textContent = text(+e.target.value);
+          }
+        },
+        ...def.list.map((n, i) => el('option', { value: i, selected: i === v }, String(n)))
+      )
+    : el('input', {
+        type: 'range',
+        min: def.lo,
+        max: def.hi,
+        value: v,
+        'aria-label': label,
+        oninput: e => {
+          const x = +e.target.value;
+          out.textContent = text(x);
+          const tag = tagOf();
+          dragged(tag, t => set(x, t));
+        },
+        onchange: () => LAB.dragN++
+      });
+  return el('label', { class: 'zcC llDialRow' }, el('span', { class: 'zcL' }, label), out, ctl);
+}
+function partDial(k, p) {
+  const keys = dialKeys(k).filter(x => paramOf('tone', x));
+  if (!keys.length) return null;
+  const d = paramOf('tone', keys[0])[0];
+  const list = d[8] && d[8].v;
+  const name = keyName(keys[0]).replace(/ · P\d$/, '');
+  const v = typeof ZE.snd.v[keys[0]] === 'number' ? ZE.snd.v[keys[0]] : d[5];
+  return dialRow(
+    name,
+    list ? { list } : { lo: d[3], hi: d[4] },
+    v,
+    x => shown(keys[0], x),
+    (x, tag) =>
+      apply(
+        tag,
+        Object.fromEntries(keys.map(kk => [kk, x])),
+        p.id,
+        p.name + ': ' + name.toLowerCase() + ' ' + shown(keys[0], x)
+      )
+  );
+}
+function fxDial(type, i, p) {
+  const sp = fxParam(type, i);
+  if (!sp) return null;
+  const k = MFX_PARAMS[i],
+    f = sp.kind === 'D' ? 10 ** sp.dec : 1;
+  const v = typeof ZE.snd.v[k] === 'number' ? ZE.snd.v[k] : 0;
+  const text = x =>
+    sp.list
+      ? String(sp.list[x] ?? x)
+      : (sp.kind === 'D' ? (x / f).toFixed(sp.dec) : String(x)) + (sp.unit ? ' ' + sp.unit : '');
+  return dialRow(
+    sp.name,
+    sp.list ? { list: sp.list } : { lo: Math.round(sp.lo * f), hi: Math.round(sp.hi * f) },
+    v,
+    text,
+    (x, tag) => apply(tag, { [k]: x }, p.id, p.name + ': ' + sp.name.toLowerCase() + ' ' + text(x))
   );
 }
 

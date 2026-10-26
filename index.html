@@ -6628,43 +6628,123 @@ body[data-mode='synth'] #synth {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.labTaste {
+/* the taste keys: a keybed across the column */
+#labOv .labTaste {
+  margin: 0;
+  padding: 6px 10px 10px;
+}
+.labBed {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 6px;
+  height: 64px;
 }
-.labTaste .zcL {
-  color: #a9d9b5;
-  margin-right: 6px;
-}
-.labKey {
+.labKey,
+.labLatch {
   all: unset;
-  cursor: pointer;
-  flex: 1;
-  max-width: 64px;
-  height: 40px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 4px;
   box-sizing: border-box;
-  border-radius: 0 0 4px 4px;
-  background: #d5ddd7;
-  color: #1b2a20;
-  font:
-    700 10px ui-monospace,
-    Consolas,
-    monospace;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 7px;
+  border-radius: 3px 3px 8px 8px;
+  transition:
+    background 0.12s,
+    box-shadow 0.12s,
+    transform 0.08s;
+}
+.labKey {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(#f2f6f3, #cfd8d2);
+  color: #14231a;
+  box-shadow:
+    inset 0 -5px 0 #a9b5ad,
+    0 2px 0 #000;
 }
 .labKey:hover {
-  background: #e8f0ea;
+  background: linear-gradient(#fff, #dce5df);
+}
+.labKey b {
+  font:
+    700 14px ui-monospace,
+    Consolas,
+    monospace;
+}
+.labKey small {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #4d6455;
+}
+.labKey kbd {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  font:
+    600 9px ui-monospace,
+    Consolas,
+    monospace;
+  color: #5e7466;
+  border: 1px solid #a9b5ad;
+  border-radius: 3px;
+  padding: 0 3px;
 }
 .labKey.down {
+  background: linear-gradient(#b8ffcf, var(--zc-acc));
+  box-shadow:
+    inset 0 -2px 0 #1f9c4b,
+    0 0 16px var(--zc-glow);
+  transform: translateY(3px);
+}
+.labKey.down small,
+.labKey.down kbd {
+  color: #0b3a1b;
+  border-color: #1f9c4b;
+}
+.labLatch {
+  flex: 0 0 84px;
+  background: #050906;
+  border: 1px solid var(--zc-line);
+  color: #c9f7d5;
+  justify-content: center;
+  gap: 2px;
+  padding-bottom: 0;
+}
+.labLatch:hover {
+  border-color: var(--zc-acc);
+}
+.labLatch i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #12301c;
+  border: 1px solid var(--zc-line);
+}
+.labLatch b {
+  font-size: 13px;
+}
+.labLatch small {
+  font-size: 10px;
+  color: var(--zc-dim);
+}
+.labLatch.on {
+  border-color: var(--zc-acc);
+  box-shadow: inset 0 0 14px var(--zc-glow);
+}
+.labLatch.on i {
   background: var(--zc-acc);
-  box-shadow: 0 0 10px var(--zc-glow);
+  box-shadow: 0 0 8px var(--zc-acc);
+  animation: labBlink 1.2s ease-in-out infinite;
+}
+@keyframes labBlink {
+  50% {
+    opacity: 0.45;
+  }
 }
 /* the side panels */
 .labSide .zcG {
@@ -6919,21 +6999,8 @@ body[data-mode='synth'] #synth {
     transform: scale(1);
   }
 }
-.labKey {
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-.labKey small {
-  font-size: 9px;
-  opacity: 0.55;
-}
-.labLatch {
-  margin-left: 6px;
-  align-self: stretch;
-}
 .labKeys {
-  margin: 0;
+  margin: -2px 0 0;
   font-size: 11px;
   text-align: center;
 }
@@ -7000,6 +7067,80 @@ body[data-mode='synth'] #synth {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+/* pass 4: which partials, Character bars as sliders, Dial it in */
+.labTarget {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.labTarget .zcL {
+  color: #a9d9b5;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.labTarget .btn:disabled {
+  opacity: 0.35;
+}
+.lmRow {
+  cursor: pointer;
+}
+.lmRow input[type='range'],
+.llDialRow input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  background: #0b1a10;
+  border: 1px solid var(--zc-line);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.lmRow input[type='range']::-webkit-slider-runnable-track,
+.llDialRow input[type='range']::-webkit-slider-runnable-track {
+  height: 100%;
+}
+.lmRow input[type='range']::-webkit-slider-thumb,
+.llDialRow input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 10px;
+  background: #e6ffee;
+  box-shadow: -800px 0 0 800px var(--zc-acc);
+}
+.lmRow input[type='range']::-moz-range-progress,
+.llDialRow input[type='range']::-moz-range-progress {
+  height: 100%;
+  background: var(--zc-acc);
+}
+.lmRow input[type='range']:hover,
+.lmRow input[type='range']:focus-visible,
+.llDialRow input[type='range']:hover,
+.llDialRow input[type='range']:focus-visible {
+  outline: none;
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-glow);
+}
+.labMeters .hint {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+.llDial {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--zc-line);
+  display: grid;
+  gap: 6px;
+}
+.llDialRow {
+  font-size: 12px;
+}
+.llDialRow select {
+  grid-column: 1 / -1;
+  width: 100%;
 }
 </style>
     <style>
@@ -37315,6 +37456,254 @@ body[data-mode='scene'] #scene {
     status();
   }
 
+  // src/zen/zc-lab-more.js
+  function useFx(b, type, set2) {
+    if (b.get("MFX.mfxType") !== type) {
+      const d = mfxDefaults(type);
+      b.set("MFX.mfxType", type);
+      MFX_PARAMS.forEach((k2, i) => b.set(k2, d[i]));
+    }
+    b.set("MFX.mfxSwitch", 1);
+    for (const i in set2) b.set(MFX_PARAMS[i], set2[i]);
+  }
+  var va = (b, p, form2) => {
+    b.set(p("SPTL") + ".OSC_TYPE", 1);
+    b.set(p("SPTL") + ".VA_FORM", form2);
+  };
+  function pair(b, struct, crs) {
+    b.set("PMT.PMT1_PTL_SW", 1);
+    b.set("PMT.PMT2_PTL_SW", 1);
+    if (b.get("SPTL0.OSC_TYPE") !== 1) b.set("SPTL0.OSC_TYPE", 1);
+    b.set("SPTL1.OSC_TYPE", 1);
+    b.set("SPTL1.VA_FORM", 0);
+    b.set("SPMT.STRUCT12", struct);
+    b.set("PTL1.PIT_CRS", crs);
+  }
+  var FX_TYPE = { od: 29, dist: 30, crush: 46, chorus: 23, phaser: 11, tape: 44 };
+  var OSC_GROUP = [
+    "Oscillator",
+    [
+      {
+        id: "saw",
+        name: "Saw wave",
+        c: "#ffb020",
+        tag: "Every harmonic: bright and buzzy.",
+        brew: (b) => b.each((p) => va(b, p, 0)),
+        what: "The oscillator makes the raw sound everything else shapes. A sawtooth contains every harmonic, falling off gently, so it sounds bright and buzzy and gives a filter plenty to work with. It is the starting point for strings, brass, leads and most basses.",
+        hear: "Trance leads, string machines, 80s brass, the Reese and acid basses.",
+        tip: "When in doubt, start from a saw and take away with the filter: subtractive synthesis."
+      },
+      {
+        id: "square",
+        name: "Square wave",
+        c: "#ff6b6b",
+        tag: "Odd harmonics: hollow and woody.",
+        brew: (b) => b.each((p) => {
+          va(b, p, 1);
+          b.set(p("SPTL") + ".PW", 64);
+        }),
+        what: "A square wave has only the odd harmonics, which gives it a hollow, woody sound, halfway between a clarinet and an old video game.",
+        hear: "Chiptune, clarinet-like leads, hollow basses, the 303’s other wave.",
+        tip: "An octave-down square under a saw makes a bass thicker without making it muddy."
+      },
+      {
+        id: "pwm",
+        name: "Pulse width",
+        c: "#ff8fab",
+        tag: "A narrower pulse, moving.",
+        brew: (b, d) => b.each((p) => {
+          va(b, p, 1);
+          b.set(p("SPTL") + ".PW", Math.round(64 - 50 * d));
+          b.add(p("SPTL") + ".PWM_DEPTH", 30 * d);
+        }),
+        what: "A pulse wave is a square whose two halves have different lengths. Narrow pulses sound thin and nasal; moving the width all the time (pulse width modulation, from LFO 1) makes a rich, chorus-like movement without any effect.",
+        hear: "Juno and Prophet pads, string machines, 80s basses.",
+        tip: "PWM speed is LFO 1’s rate: slow for pads, faster for a shimmering lead."
+      },
+      {
+        id: "tri",
+        name: "Triangle wave",
+        c: "#9ad1ff",
+        tag: "Soft: a few gentle harmonics.",
+        brew: (b) => b.each((p) => va(b, p, 2)),
+        what: "A triangle has only odd harmonics, and they fall away fast: soft, round and flute-like, with little for a filter to take away.",
+        hear: "Flutes, soft leads, gentle keys, sub layers.",
+        tip: "Triangles cut through less than saws, which is useful for parts that should sit back."
+      },
+      {
+        id: "sine",
+        name: "Sine wave",
+        c: "#e0f7ff",
+        tag: "Pure: no harmonics at all.",
+        brew: (b) => b.each((p) => va(b, p, 3)),
+        what: "A sine is a single frequency with no harmonics: the purest tone. Filters do nothing to it. It is all fundamental, which is why sub basses and 808s are built on it.",
+        hear: "Sub bass, 808s, whistles, bell partials, FM-style tones.",
+        tip: "Sines are nearly invisible on small speakers. Add drive, or layer a brighter wave on top, so the note can be heard everywhere."
+      },
+      {
+        id: "ssaw",
+        name: "SuperSAW",
+        c: "#ffd166",
+        tag: "Seven detuned saws in one.",
+        brew: (b, d) => b.each((p) => {
+          b.set(p("SPTL") + ".OSC_TYPE", 3);
+          b.toward(p("SPTL") + ".SSAW_DETUNE", 50 + 70 * d, 1);
+        }),
+        what: "The SuperSAW oscillator (from the JP-8000) plays seven saws at once, spread apart by its Detune. It is a huge sound from a single oscillator, without using up extra voices the way unison does.",
+        hear: "Trance, big room EDM, anthem chords.",
+        tip: "Detune sets the size: low is a thick saw, high is a wide wall of sound."
+      },
+      {
+        id: "noise",
+        name: "Noise layer",
+        c: "#cfcfcf",
+        tag: "Air and breath on a spare partial.",
+        brew: (b, d) => {
+          const i = b.free();
+          if (i == null) return;
+          b.set("PMT.PMT" + (i + 1) + "_PTL_SW", 1);
+          b.set("SPTL" + i + ".OSC_TYPE", 4);
+          b.set("PTL" + i + ".LEVEL", Math.round(30 + 50 * d));
+          b.set("PTL" + i + ".FILTER_TYPE", 3);
+          b.set("PTL" + i + ".CUTOFF", 600);
+        },
+        what: "Noise has every frequency at once, at random. A little, high-passed, on a spare partial adds air and breath to a sound, like the hiss of a flute or a bow on a string. With a short envelope it becomes a click at the start of each note.",
+        hear: "Breathy pads and flutes, risers, snares and hi-hats built from scratch.",
+        tip: "Give the noise partial its own short amp envelope (Amp tab, that partial) for a percussive attack."
+      },
+      {
+        id: "sync",
+        name: "Hard sync",
+        c: "#ff5d8f",
+        tag: "Partial 2 locked to partial 1.",
+        brew: (b, d) => pair(b, 1, Math.round(5 + 19 * d)),
+        what: "Hard sync restarts partial 2’s wave every time partial 1’s does. Partial 2 then always plays partial 1’s pitch, but its own tuning changes the harmonics, giving a hard, tearing edge. Sweep partial 2’s pitch (a pitch envelope on it) and the tone rips through its harmonics.",
+        hear: "The Cars’ and Prophet-5 sync leads, screaming solos.",
+        tip: "The tuning amount here is the brightness. Dial it in below, and try a pitch envelope on partial 2."
+      },
+      {
+        id: "ring",
+        name: "Ring mod",
+        c: "#b8f2e6",
+        tag: "Metallic, bell-like clang.",
+        brew: (b, d) => pair(b, 2, Math.round(3 + 16 * d)),
+        what: "Ring modulation multiplies partials 1 and 2. Instead of their pitches you hear their sum and difference, which are rarely in tune with each other: metallic, bell-like, alien.",
+        hear: "Bells, gongs, robot voices, sci-fi effects.",
+        tip: "Partial 2’s tuning decides the clang: fifths and octaves are bell-like, odd intervals are harsh."
+      }
+    ]
+  ];
+  var FX_GROUP = [
+    "Effects",
+    [
+      {
+        id: "od",
+        name: "Overdrive",
+        c: "#ff9f43",
+        tag: "Warm drive: the tone’s MFX.",
+        brew: (b, d) => useFx(b, FX_TYPE.od, { 0: Math.round(30 + 90 * d), 7: 100 }),
+        what: "Overdrive squeezes the peaks of the wave, gently at first, adding harmonics: warmth at low drive, crunch at high. It is the tone’s own effect (MFX), so it replaces whatever MFX the tone had.",
+        hear: "Organs through amps, driven basses, gritty leads.",
+        tip: "Drive adds level too: turn the effect’s Level down as you turn Drive up."
+      },
+      {
+        id: "dist",
+        name: "Distortion",
+        c: "#ef476f",
+        tag: "Hard clipping: aggressive.",
+        brew: (b, d) => useFx(b, FX_TYPE.dist, { 0: Math.round(30 + 90 * d), 7: 92 }),
+        what: "Distortion clips the wave hard, adding many harmonics: aggressive, fuzzy, loud. Before a filter it would be smoothed; after the oscillator and filter, as here, it is raw.",
+        hear: "Growling basses, industrial, distorted leads.",
+        tip: "Distortion on chords turns them to mush (all the notes intermodulate). Use it on single notes."
+      },
+      {
+        id: "crush",
+        name: "Bit crush",
+        c: "#a0c4ff",
+        tag: "Lo-fi: fewer bits, lower rate.",
+        brew: (b, d) => useFx(b, FX_TYPE.crush, { 0: Math.round(20 + 80 * d), 1: Math.round(2 + 10 * d) }),
+        what: "Digital audio is samples (how often) and bits (how finely). The bit crusher lowers both: fewer bits add a gritty noise, a lower sample rate adds whistling, metallic aliasing. It sounds like old samplers and games.",
+        hear: "Lo-fi hip hop, chiptune, 90s samplers.",
+        tip: "A little is character, a lot is destruction. Dial Sample Rate and Bit Down separately below."
+      },
+      {
+        id: "chorus",
+        name: "Chorus",
+        c: "#90e0ef",
+        tag: "Thick and wide.",
+        brew: (b, d) => useFx(b, FX_TYPE.chorus, { 6: Math.round(40 + 80 * d), 10: 50 }),
+        what: "A chorus mixes the sound with copies of itself, slightly delayed and wobbling in pitch: it thickens and widens, like several players at once.",
+        hear: "Juno pads, clean guitars, 80s keys.",
+        tip: "Chorus on a bass widens the low end, which can make it weaker on a club system. Keep basses dry."
+      },
+      {
+        id: "phaser",
+        name: "Phaser",
+        c: "#c77dff",
+        tag: "A sweeping, whooshing notch.",
+        brew: (b, d) => useFx(b, FX_TYPE.phaser, { 5: Math.round(40 + 80 * d), 7: Math.round(30 + 70 * d) }),
+        what: "A phaser cuts a few narrow notches in the spectrum and sweeps them up and down, so the sound whooshes like a jet. Resonance makes the notches sharper and the sweep more obvious.",
+        hear: "String machines, 70s electric pianos, psychedelic guitars.",
+        tip: "Slow phasing on a pad or a string machine is instant 70s."
+      },
+      {
+        id: "tape",
+        name: "Tape echo",
+        c: "#e9c46a",
+        tag: "Warm repeats that wobble.",
+        brew: (b, d) => useFx(b, FX_TYPE.tape, { 2: Math.round(30 + 60 * d), 11: Math.round(50 + 60 * d) }),
+        what: "A tape echo (like the Roland Space Echo) records the sound on a loop of tape and plays it back a moment later, again and again, each repeat darker and wobblier than the last.",
+        hear: "Dub, reggae, ambient, psychedelic leads.",
+        tip: "Intensity is the feedback: past a point the repeats build on themselves and run away. That is the dub trick."
+      }
+    ]
+  ];
+  var DIALS = {
+    sun: ["PTL.CUTOFF", "PTL.CUTOFF_KF", "PTL.RESO"],
+    moon: ["PTL.CUTOFF", "PTL.CUTOFF_KF"],
+    squelch: ["PTL.RESO", "PTL.CUTOFF", "FENV.DEPTH", "FENV.T2", "FENV.VSENS"],
+    bloom: ["FENV.DEPTH", "FENV.T1", "FENV.T2", "FENV.L3", "PTL.CUTOFF_VSENS"],
+    ghost: ["PTL.FILTER_TYPE", "PTL.CUTOFF", "PTL.RESO"],
+    hush: ["PTL.RESO", "CMN.ANALOG_FEEL", "SPTL.FAT"],
+    pluck: ["AENV.T2", "AENV.L3", "AENV.T4", "FENV.DEPTH", "FENV.T2"],
+    swell: ["AENV.T1", "AENV.L3", "AENV.T4"],
+    mist: ["AENV.T4", "FENV.T4"],
+    punch: ["PENV.DEPTH", "PENV.L0", "PENV.T1", "AENV.T1"],
+    wobble: ["LFO.LFO2_TVF_DEPTH", "LFO.LFO2_FORM", "LFO.LFO2_RATE_SYNC", "LFO.LFO2_RATE_NOTE", "LFO.LFO2_RATE"],
+    vibrato: ["LFO.LFO1_PIT_DEPTH", "LFO.LFO1_RATE", "LFO.LFO1_DELAY", "LFO.LFO1_FADE"],
+    tremolo: ["LFO.LFO1_TVA_DEPTH", "LFO.LFO1_FORM", "LFO.LFO1_RATE_SYNC", "LFO.LFO1_RATE_NOTE", "LFO.LFO1_RATE"],
+    swirl: ["LFO.LFO2_PAN_DEPTH", "LFO.LFO2_RATE_SYNC", "LFO.LFO2_RATE_NOTE", "LFO.LFO2_RATE"],
+    quick: ["LFO.LFO1_RATE", "LFO.LFO2_RATE"],
+    sloth: ["LFO.LFO1_RATE", "LFO.LFO2_RATE"],
+    abyss: ["CMN.OCTAVE", "PTL.PIT_CRS"],
+    feather: ["CMN.OCTAVE", "PTL.PIT_CRS"],
+    wolf: ["CMN.MONO_POLY", "CMN.LEGATO_SW"],
+    glide: ["CMN.PORTA_SW", "CMN.PORTA_MODE", "CMN.PORTA_TIME"],
+    drift: ["CMN.ANALOG_FEEL", "PTL.PIT_RND", "PTL.PIT_FINE"],
+    swarm: ["SCMN.UNISON_SW", "SCMN.UNISON_SIZE", "SCMN.UNISON_DETN"],
+    giant: ["PTL.PAN", "PTL.PAN_RND", "PTL.STEREO_WIDTH"],
+    shimmer: ["PTL.PIT_FINE", "PTL.STEREO_DETN"],
+    grit: ["PTL.FXM_SW", "PTL.FXM_DEPTH", "SPTL.FAT", "CMN.ANALOG_FEEL"],
+    space: ["PTL.REV_SEND", "PTL.CHO_SEND"],
+    saw: ["SPTL.OSC_TYPE", "SPTL.VA_FORM", "SPTL.FAT"],
+    square: ["SPTL.VA_FORM", "SPTL.PW", "SPTL.PWM_DEPTH"],
+    pwm: ["SPTL.PW", "SPTL.PWM_DEPTH", "LFO.LFO1_RATE"],
+    tri: ["SPTL.VA_FORM"],
+    sine: ["SPTL.VA_FORM", "PTL.PIT_CRS"],
+    ssaw: ["SPTL.OSC_TYPE", "SPTL.SSAW_DETUNE"],
+    noise: ["PTL.LEVEL", "PTL.FILTER_TYPE", "PTL.CUTOFF", "AENV.T2", "AENV.L3"],
+    sync: ["SPMT.STRUCT12", "PTL1.PIT_CRS", "PENV1.DEPTH", "PENV1.L0", "PENV1.T1"],
+    ring: ["SPMT.STRUCT12", "PTL1.PIT_CRS", "PTL1.PIT_FINE"],
+    od: [{ mfx: 0 }, { mfx: 1 }, { mfx: 7 }],
+    dist: [{ mfx: 0 }, { mfx: 1 }, { mfx: 7 }],
+    crush: [{ mfx: 0 }, { mfx: 1 }, { mfx: 2 }, { mfx: 5 }],
+    chorus: [{ mfx: 4 }, { mfx: 6 }, { mfx: 10 }],
+    phaser: [{ mfx: 0 }, { mfx: 3 }, { mfx: 5 }, { mfx: 7 }, { mfx: 9 }],
+    tape: [{ mfx: 0 }, { mfx: 1 }, { mfx: 2 }, { mfx: 11 }]
+  };
+  var fxOf = (id) => FX_TYPE[id] ?? null;
+  var fxParam = (type, i) => mfxParams(type)[i] || null;
+
   // src/zen/zc-lab-blends.js
   function mfx(type, set2 = {}) {
     const d = mfxDefaults(type);
@@ -37430,10 +37819,10 @@ body[data-mode='scene'] #scene {
           "Slow filter movement",
           "A slow LFO on the cutoff, about one cycle a bar, makes it breathe. Synced to the tempo it moves with the track.",
           on([0, 1], {
-            "LFO.LFO1_FORM": 1,
-            "LFO.LFO1_RATE_SYNC": 1,
-            "LFO.LFO1_RATE_NOTE": 18,
-            "LFO.LFO1_TVF_DEPTH": 18
+            "LFO.LFO2_FORM": 1,
+            "LFO.LFO2_RATE_SYNC": 1,
+            "LFO.LFO2_RATE_NOTE": 18,
+            "LFO.LFO2_TVF_DEPTH": 18
           })
         ],
         [
@@ -37466,12 +37855,12 @@ body[data-mode='scene'] #scene {
         [
           "wobble",
           "An LFO on the filter, synced",
-          "The LFO is locked to the tempo at 1/8 notes, so the wobble is part of the rhythm. Change the note value (LFO page) to change the groove: 1/4, 1/8, 1/8 triplet.",
+          "LFO 2 is locked to the tempo at 1/8 notes, so the wobble is part of the rhythm. Change the note value (LFO page) to change the groove: 1/4, 1/8, 1/8 triplet.",
           on([0], {
-            "LFO.LFO1_FORM": 0,
-            "LFO.LFO1_RATE_SYNC": 1,
-            "LFO.LFO1_RATE_NOTE": 9,
-            "LFO.LFO1_TVF_DEPTH": 70
+            "LFO.LFO2_FORM": 0,
+            "LFO.LFO2_RATE_SYNC": 1,
+            "LFO.LFO2_RATE_NOTE": 9,
+            "LFO.LFO2_TVF_DEPTH": 70
           })
         ],
         [
@@ -37486,7 +37875,7 @@ body[data-mode='scene'] #scene {
             "PTL1.LEVEL": 110,
             "PTL1.CUTOFF": 1023,
             "PTL1.RESO": 0,
-            "LFO1.LFO1_TVF_DEPTH": 0,
+            "LFO1.LFO2_TVF_DEPTH": 0,
             "AENV1.T4": 120
           }
         ],
@@ -37830,7 +38219,9 @@ body[data-mode='scene'] #scene {
     chain: Promise.resolve(),
     start: 0,
     latch: false,
-    guide: null
+    guide: null,
+    target: null,
+    dragN: 0
   };
   var STORE2 = "mc707-lab";
   try {
@@ -37849,9 +38240,13 @@ body[data-mode='scene'] #scene {
   };
   var still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   var wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  function parts2() {
+  var onParts = () => {
     const on4 = [0, 1, 2, 3].filter((i) => ZE.snd.v["PMT.PMT" + (i + 1) + "_PTL_SW"] === 1);
     return on4.length ? on4 : [0];
+  };
+  function parts2() {
+    const on4 = onParts();
+    return LAB.target != null && on4.includes(LAB.target) ? [LAB.target] : on4;
   }
   function brewer() {
     const out2 = {};
@@ -37873,7 +38268,11 @@ body[data-mode='scene'] #scene {
     const toward = (k2, target, amt) => set2(k2, get(k2) + (target - get(k2)) * Math.min(1, amt));
     const ps = parts2();
     const each = (fn) => ps.forEach((i, n) => fn((b) => b + i, n));
-    return { get, set: set2, add, toward, each, out: out2, n: ps.length };
+    const free = () => {
+      const i = [0, 1, 2, 3].find((i2) => get("PMT.PMT" + (i2 + 1) + "_PTL_SW") !== 1);
+      return i == null ? null : i;
+    };
+    return { get, set: set2, add, toward, each, free, out: out2, n: ps.length };
   }
   var GROUPS = [
     [
@@ -38305,6 +38704,25 @@ body[data-mode='scene'] #scene {
     grit: "FXM, fat, analog feel",
     space: "Reverb + delay sends"
   };
+  GROUPS.unshift(OSC_GROUP);
+  GROUPS.push(FX_GROUP);
+  Object.assign(SUB2, {
+    saw: "VA saw",
+    square: "VA square",
+    pwm: "Pulse width + PWM",
+    tri: "VA triangle",
+    sine: "VA sine",
+    ssaw: "SuperSAW + detune",
+    noise: "Noise on a spare partial",
+    sync: "Partial 2 synced",
+    ring: "Partials 1 × 2",
+    od: "MFX Overdrive",
+    dist: "MFX Distortion",
+    crush: "MFX Bit Crusher",
+    chorus: "MFX Chorus",
+    phaser: "MFX Phaser",
+    tape: "MFX Tape Echo"
+  });
   var ING = GROUPS.flatMap(([, ps]) => ps);
   var ing = (id) => ING.find((p) => p.id === id);
   function traits() {
@@ -38474,19 +38892,52 @@ body[data-mode='scene'] #scene {
       c.setAttribute("cy", Math.min(y, 250));
       c.setAttribute("r", Math.max(6, R3 * (0.5 - snap * 0.06) + Math.sin(SL.t * 1.1 + i * 2.3) * wob * 0.35));
     });
-    if (!calm && g(T3.Tail) + g(T3.Space) > 0.55 && Math.random() < dt * (g(T3.Tail) + g(T3.Space)) * 0.5 && SL.drips.length < 4) {
-      const x = cx + (Math.random() - 0.5) * R3 * 1.4 * sx;
-      const c = svgEl("circle", { class: "lsDrip", cx: x, cy: cy + R3 * 0.3, r: 9 });
-      body.append(c);
-      SL.drips.push({ c, x, y: cy + R3 * 0.3, v: 0, r: 9 });
+    const FLOOR = 252;
+    if (!calm && SL.drips.length < 3 && Math.random() < dt * (0.6 + g(T3.Tail) * 0.8 + g(T3.Space) * 0.6)) {
+      const side = Math.random() < 0.5 ? -1 : 1, c = svgEl("circle", { r: 0 }), neck = svgEl("circle", { r: 0 });
+      body.append(neck, c);
+      SL.drips.push({ c, neck, side, k: 0.86 + Math.random() * 0.1, ph: "grow", t: 0, x: 0, y: 0, v: 0, r: 0 });
     }
     SL.drips = SL.drips.filter((d) => {
-      d.v += dt * 260;
-      d.y += d.v * dt;
-      d.r = Math.max(0, d.r - dt * 5);
+      d.t += dt;
+      const ax = ccx + d.side * R3 * d.k * sx, ay = ccy + R3 * 0.18 * sy;
+      if (d.ph === "grow") {
+        const k2 = Math.min(1, d.t / 1.3);
+        d.x = ax + d.side * (4 + k2 * 12);
+        d.y = ay + 6 + k2 * k2 * 34;
+        d.r = 5 + k2 * 10;
+        d.neck.setAttribute("cx", ax + (d.x - ax) * 0.45);
+        d.neck.setAttribute("cy", ay + (d.y - ay) * 0.45);
+        d.neck.setAttribute("r", 8 - k2 * 2.5);
+        if (k2 >= 1) d.ph = "fall", d.v = 20;
+      } else if (d.ph === "fall") {
+        d.v += dt * 900;
+        d.y += d.v * dt;
+        const nr = Math.max(0, +d.neck.getAttribute("r") - dt * 30);
+        d.neck.setAttribute("r", nr);
+        if (d.y + d.r * 0.4 >= FLOOR) {
+          d.ph = "pool";
+          d.t = 0;
+          d.y = FLOOR;
+          d.neck.remove();
+          const pool = svgEl("ellipse", { cx: d.x, cy: FLOOR, rx: d.r, ry: d.r * 0.5 });
+          d.c.replaceWith(pool);
+          d.c = pool;
+          d.px = d.x;
+        }
+      } else {
+        const sp = Math.min(1, d.t / 0.25), back = Math.max(0, (d.t - 0.9) / 2);
+        d.x = d.px + d.side * sp * 10 + (cx - d.px) * Math.min(1, back) * 0.75;
+        d.c.setAttribute("cx", d.x);
+        d.c.setAttribute("cy", FLOOR + 3);
+        d.c.setAttribute("rx", Math.max(0, (14 + sp * 24) * (1 - back * 0.55)));
+        d.c.setAttribute("ry", Math.max(0, (8 - sp * 3) * (1 - back * 0.4)));
+        if (back >= 1) return d.c.remove(), false;
+        return true;
+      }
+      d.c.setAttribute("cx", d.x);
       d.c.setAttribute("cy", d.y);
       d.c.setAttribute("r", d.r);
-      if (d.y > 262 || d.r <= 0) return d.c.remove(), false;
       return true;
     });
     const top = ccy - R3 * 0.78 * sy;
@@ -38743,6 +39194,7 @@ body[data-mode='scene'] #scene {
             stage,
             el("p", { class: "labRead", id: "labRead" })
           ),
+          el("div", { class: "labTarget", id: "labTarget" }),
           el(
             "div",
             { class: "labCtl" },
@@ -38760,39 +39212,46 @@ body[data-mode='scene'] #scene {
             )
           ),
           el(
-            "div",
-            { class: "labTaste" },
-            el("span", { class: "zcL" }, "Taste"),
-            ...[
-              ["C1", 24],
-              ["C2", 36],
-              ["C3", 48],
-              ["C4", 60],
-              ["C5", 72]
-            ].map(
-              ([n, m]) => el(
+            "fieldset",
+            { class: "zcG labTaste" },
+            el("legend", {}, "Taste"),
+            el(
+              "div",
+              { class: "labBed" },
+              ...[
+                ["C1", 24, "Sub"],
+                ["C2", 36, "Bass"],
+                ["C3", 48, "Low"],
+                ["C4", 60, "Mid"],
+                ["C5", 72, "High"]
+              ].map(
+                ([n, m, where2], i) => el(
+                  "button",
+                  {
+                    type: "button",
+                    class: "labKey",
+                    "data-n": m,
+                    title: "Hold to hear " + n + " (key " + "ZXCVB"[i] + "): the slime follows the amp envelope",
+                    onpointerdown: (e) => keyDown(m, e.currentTarget)
+                  },
+                  el("kbd", {}, "ZXCVB"[i]),
+                  el("b", {}, n),
+                  el("small", {}, where2)
+                )
+              ),
+              el(
                 "button",
                 {
                   type: "button",
-                  class: "labKey",
-                  "data-n": m,
-                  title: "Hold to hear " + n + ": the slime follows the amp envelope",
-                  onpointerdown: (e) => keyDown(m, e.currentTarget)
+                  class: "labLatch" + (LAB.latch ? " on" : ""),
+                  id: "labLatch",
+                  title: "Hold the note on: keep tasting while you mix in (each mix-in plays it again)",
+                  onclick: latch
                 },
-                el("span", {}, n),
-                el("small", {}, "ZXCVB"[[24, 36, 48, 60, 72].indexOf(m)])
+                el("i", {}),
+                el("b", {}, "Hold"),
+                el("small", {}, "latch note")
               )
-            ),
-            el(
-              "button",
-              {
-                type: "button",
-                class: "btn sm labLatch" + (LAB.latch ? " on" : ""),
-                id: "labLatch",
-                title: "Hold the note on: keep tasting while you mix in (each mix-in plays it again)",
-                onclick: latch
-              },
-              "Hold"
             )
           ),
           el(
@@ -38923,7 +39382,8 @@ body[data-mode='scene'] #scene {
           )
         ),
         last3.ch.length > 12 ? el("small", { class: "hint" }, "…and " + (last3.ch.length - 12) + " more") : null
-      ) : el("p", { class: "hint" }, "Mix it in to see exactly which settings it changes.")
+      ) : el("p", { class: "hint" }, "Mix it in to see exactly which settings it changes."),
+      dialBox(p)
     );
   }
   function draw() {
@@ -38936,18 +39396,8 @@ body[data-mode='scene'] #scene {
     const tr = traits();
     SL.T = Object.fromEntries(tr.map(([k2, v]) => [k2, v]));
     SL.to = tint(LAB.log.slice(-4).map((x) => ing(x.id).c));
-    $("#labMeters").replaceChildren(
-      el("legend", {}, "Character"),
-      ...tr.map(
-        ([n, v]) => el(
-          "div",
-          { class: "lmRow" },
-          el("span", {}, n),
-          el("i", {}, el("em", { style: "width:" + Math.round(v * 100) + "%" })),
-          el("b", {}, String(Math.round(v * 100)))
-        )
-      )
-    );
+    drawMeters(tr);
+    drawTarget();
     $("#labRead").textContent = reading(tr);
     $("#labBlends").replaceChildren(
       el("legend", {}, "Blends"),
@@ -39000,6 +39450,246 @@ body[data-mode='scene'] #scene {
           )
         )
       ) : el("p", { class: "hint" }, "Nothing yet: pick an ingredient and mix it in, then hold a Taste key.")
+    );
+  }
+  var MACROS = {
+    Brightness: [
+      "sun",
+      (b, v) => b.each((p) => {
+        if (b.get(p("PTL") + ".FILTER_TYPE") === 0 && v < 0.99) b.set(p("PTL") + ".FILTER_TYPE", 1);
+        b.set(p("PTL") + ".CUTOFF", v * 1023);
+      })
+    ],
+    Bite: ["squelch", (b, v) => b.each((p) => b.set(p("PTL") + ".RESO", v * 800))],
+    Snap: ["punch", (b, v) => b.each((p) => b.set(p("AENV") + ".T1", (1 - v) ** 2 * 1023))],
+    Sustain: ["swell", (b, v) => b.each((p) => b.set(p("AENV") + ".L3", v * 1023))],
+    Tail: ["mist", (b, v) => b.each((p) => b.set(p("AENV") + ".T4", v * 800))],
+    Motion: [
+      "wobble",
+      (b, v) => b.each((p) => {
+        const l = p("LFO") + ".", ks = ["1_PIT", "1_TVF", "1_TVA", "2_PIT", "2_TVF", "2_TVA"].map((x) => l + "LFO" + x + "_DEPTH");
+        const cur2 = Math.max(...ks.map((k2) => Math.abs(b.get(k2))));
+        if (cur2 < 1) b.set(l + "LFO2_TVF_DEPTH", v * 60);
+        else for (const k2 of ks) b.set(k2, b.get(k2) * v * 60 / cur2);
+      })
+    ],
+    Width: [
+      "giant",
+      (b, v) => b.each((p, n) => {
+        if (b.n > 1) b.set(p("PTL") + ".PAN", (n % 2 ? -1 : 1) * v * 45);
+        b.set(p("PTL") + ".PAN_RND", v * 25);
+        b.set(p("PTL") + ".STEREO_DETN", v * 12);
+      })
+    ],
+    Grit: [
+      "grit",
+      (b, v) => {
+        b.set("CMN.ANALOG_FEEL", v * 100);
+        b.each((p) => b.set(p("SPTL") + ".FAT", 64 + v * 63));
+      }
+    ],
+    Space: [
+      "space",
+      (b, v) => b.each((p) => {
+        b.set(p("PTL") + ".REV_SEND", v * 100);
+        b.set(p("PTL") + ".CHO_SEND", v * 57);
+      })
+    ]
+  };
+  var dragT = 0;
+  var dragJob = null;
+  function dragged(tag, fn) {
+    dragJob = [tag, fn];
+    if (dragT) return;
+    dragT = setTimeout(() => {
+      dragT = 0;
+      const [t, f] = dragJob;
+      dragJob = null;
+      f(t);
+    }, 60);
+  }
+  function apply(tag, vals, id, label2) {
+    const before = Object.fromEntries(Object.keys(vals).map((k2) => [k2, ZE.snd.v[k2]]));
+    const keys2 = zeBrew(vals, tag);
+    if (!keys2.length) return;
+    const last3 = LAB.log[LAB.log.length - 1];
+    if (last3 && last3.tag === tag) {
+      last3.label = label2;
+      for (const k2 of keys2) last3.ch.some((c) => c[0] === k2) || last3.ch.push([k2, before[k2], ZE.snd.v[k2]]);
+      for (const c of last3.ch) c[2] = ZE.snd.v[c[0]];
+    } else LAB.log.push({ id, label: label2, tag, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
+    draw();
+  }
+  function macro(name, v, tag) {
+    const [id, fn] = MACROS[name], b = brewer();
+    fn(b, v);
+    apply(tag, b.out, id, name + " " + Math.round(v * 100));
+  }
+  function drawMeters(tr) {
+    const box = $("#labMeters");
+    if (!box) return;
+    if (!box.querySelector(".lmRow")) {
+      box.replaceChildren(
+        el("legend", {}, "Character"),
+        el("p", { class: "hint" }, "Drag a bar to set it directly."),
+        ...tr.map(([n]) => {
+          const out2 = el("b", {});
+          const inp = el("input", {
+            type: "range",
+            min: 0,
+            max: 100,
+            "aria-label": n,
+            oninput: (e) => {
+              const v = +e.target.value;
+              out2.textContent = String(v);
+              LAB.drag = n;
+              const tag = "macro:" + n + ":" + LAB.dragN;
+              dragged(tag, (t) => macro(n, v / 100, t));
+            },
+            onchange: () => {
+              LAB.drag = null;
+              LAB.dragN++;
+            }
+          });
+          return el(
+            "label",
+            { class: "lmRow", "data-n": n, title: "Drag to set the " + n.toLowerCase() },
+            el("span", {}, n),
+            inp,
+            out2
+          );
+        })
+      );
+    }
+    const legend = box.querySelector("legend");
+    const on4 = onParts();
+    legend.textContent = "Character" + (LAB.target != null && on4.includes(LAB.target) ? " · partial " + (LAB.target + 1) : "");
+    for (const [n, v] of tr) {
+      const row2 = box.querySelector('.lmRow[data-n="' + n + '"]');
+      if (!row2 || LAB.drag === n) continue;
+      const inp = row2.querySelector("input");
+      inp.value = Math.round(v * 100);
+      inp.style.setProperty("--v", Math.round(v * 100) + "%");
+      row2.querySelector("b").textContent = String(Math.round(v * 100));
+    }
+  }
+  function drawTarget() {
+    const box = $("#labTarget");
+    if (!box) return;
+    const on4 = onParts(), t = LAB.target != null && on4.includes(LAB.target) ? LAB.target : null;
+    const b = (label2, v, title) => el(
+      "button",
+      {
+        type: "button",
+        class: "btn sm" + (t === v ? " on" : ""),
+        disabled: v != null && !on4.includes(v),
+        title,
+        onclick: () => {
+          LAB.target = v;
+          draw();
+          drawLearn();
+        }
+      },
+      label2
+    );
+    box.replaceChildren(
+      el("span", { class: "zcL" }, "Works on"),
+      b("All partials", null, "Every partial that is on"),
+      ...[0, 1, 2, 3].map(
+        (i) => b(String(i + 1), i, on4.includes(i) ? "Only partial " + (i + 1) : "Partial " + (i + 1) + " is off")
+      )
+    );
+  }
+  var dialKeys = (k2) => {
+    if (/^(CMN|SCMN|SPMT|PMT|MFX)\./.test(k2) || /^[A-Z]+\d\./.test(k2)) return [k2];
+    const [blk, id] = k2.split(".");
+    return parts2().map((i) => blk + i + "." + id);
+  };
+  function dialBox(p) {
+    const list2 = DIALS[p.id];
+    if (!list2) return null;
+    const fx = fxOf(p.id);
+    if (fx != null && ZE.snd.v["MFX.mfxType"] !== fx)
+      return el(
+        "div",
+        { class: "llDial" },
+        el("span", { class: "llK" }, "Dial it in"),
+        el("p", { class: "hint" }, "Mix it in first: its controls appear here once the tone’s effect is " + p.name + ".")
+      );
+    const rows2 = list2.map((d) => typeof d === "object" ? fxDial(fx, d.mfx, p) : partDial(d, p)).filter(Boolean);
+    const on4 = onParts();
+    return el(
+      "div",
+      { class: "llDial" },
+      el(
+        "span",
+        { class: "llK" },
+        "Dial it in" + (LAB.target != null && on4.includes(LAB.target) ? " · partial " + (LAB.target + 1) : "")
+      ),
+      ...rows2
+    );
+  }
+  function dialRow(label2, def, v, text2, set2) {
+    const out2 = el("span", { class: "zcV" }, text2(v));
+    const tagOf = () => "dial:" + label2 + ":" + LAB.dragN;
+    const ctl2 = def.list ? el(
+      "select",
+      {
+        "aria-label": label2,
+        onchange: (e) => {
+          set2(+e.target.value, "dial:" + label2 + ":" + LAB.dragN++);
+          out2.textContent = text2(+e.target.value);
+        }
+      },
+      ...def.list.map((n, i) => el("option", { value: i, selected: i === v }, String(n)))
+    ) : el("input", {
+      type: "range",
+      min: def.lo,
+      max: def.hi,
+      value: v,
+      "aria-label": label2,
+      oninput: (e) => {
+        const x = +e.target.value;
+        out2.textContent = text2(x);
+        const tag = tagOf();
+        dragged(tag, (t) => set2(x, t));
+      },
+      onchange: () => LAB.dragN++
+    });
+    return el("label", { class: "zcC llDialRow" }, el("span", { class: "zcL" }, label2), out2, ctl2);
+  }
+  function partDial(k2, p) {
+    const keys2 = dialKeys(k2).filter((x) => paramOf("tone", x));
+    if (!keys2.length) return null;
+    const d = paramOf("tone", keys2[0])[0];
+    const list2 = d[8] && d[8].v;
+    const name = keyName(keys2[0]).replace(/ · P\d$/, "");
+    const v = typeof ZE.snd.v[keys2[0]] === "number" ? ZE.snd.v[keys2[0]] : d[5];
+    return dialRow(
+      name,
+      list2 ? { list: list2 } : { lo: d[3], hi: d[4] },
+      v,
+      (x) => shown3(keys2[0], x),
+      (x, tag) => apply(
+        tag,
+        Object.fromEntries(keys2.map((kk) => [kk, x])),
+        p.id,
+        p.name + ": " + name.toLowerCase() + " " + shown3(keys2[0], x)
+      )
+    );
+  }
+  function fxDial(type, i, p) {
+    const sp = fxParam(type, i);
+    if (!sp) return null;
+    const k2 = MFX_PARAMS[i], f = sp.kind === "D" ? 10 ** sp.dec : 1;
+    const v = typeof ZE.snd.v[k2] === "number" ? ZE.snd.v[k2] : 0;
+    const text2 = (x) => sp.list ? String(sp.list[x] ?? x) : (sp.kind === "D" ? (x / f).toFixed(sp.dec) : String(x)) + (sp.unit ? " " + sp.unit : "");
+    return dialRow(
+      sp.name,
+      sp.list ? { list: sp.list } : { lo: Math.round(sp.lo * f), hi: Math.round(sp.hi * f) },
+      v,
+      text2,
+      (x, tag) => apply(tag, { [k2]: x }, p.id, p.name + ": " + sp.name.toLowerCase() + " " + text2(x))
     );
   }
   var later = (fn) => LAB.chain = LAB.chain.then(fn).catch(() => {
@@ -39588,7 +40278,7 @@ body[data-mode='scene'] #scene {
       }
     }, 450);
   }
-  function apply(key, v) {
+  function apply2(key, v) {
     const keys2 = linkedKeys(key, ZE.linked);
     for (const k2 of keys2) {
       if (!(k2 in ZE.pend)) ZE.pend[k2] = ZE.snd.v[k2];
@@ -39606,10 +40296,13 @@ body[data-mode='scene'] #scene {
     remember();
   }
   var zeLive = () => sending();
-  function zeBrew(vals) {
+  function zeBrew(vals, tag = null) {
     const keys2 = Object.keys(vals).filter((k2) => vals[k2] !== ZE.snd.v[k2]);
     if (!keys2.length) return [];
-    ZE.undo.push(Object.fromEntries(keys2.map((k2) => [k2, ZE.snd.v[k2]])));
+    const last3 = ZE.undo[ZE.undo.length - 1];
+    if (tag && ZE.brewTag === tag && last3) for (const k2 of keys2) k2 in last3 || (last3[k2] = ZE.snd.v[k2]);
+    else ZE.undo.push(Object.fromEntries(keys2.map((k2) => [k2, ZE.snd.v[k2]])));
+    ZE.brewTag = tag;
     ZE.undo.length = Math.min(ZE.undo.length, 200);
     ZE.redo = [];
     for (const k2 of keys2) setVal(ZE.snd, k2, vals[k2], null);
@@ -39620,6 +40313,7 @@ body[data-mode='scene'] #scene {
   function zeUndo(redo3) {
     const from = redo3 ? ZE.redo : ZE.undo, to = redo3 ? ZE.undo : ZE.redo;
     const step = from.pop();
+    ZE.brewTag = null;
     if (!step) return;
     to.push(Object.fromEntries(Object.keys(step).map((k2) => [k2, ZE.snd.v[k2]])));
     for (const k2 in step) setVal(ZE.snd, k2, step[k2], null);
@@ -39817,7 +40511,7 @@ body[data-mode='scene'] #scene {
       key: ZE.key,
       get: (key) => ZE.snd.v[key],
       set: (key, v, final) => {
-        apply(key, v);
+        apply2(key, v);
         WATCH.forEach((f) => f(key));
         if (final) {
           commit();
@@ -57980,7 +58674,7 @@ body[data-mode='scene'] #scene {
     const kind = kindOf(t), keys2 = keysOf(ctlKey2), multi = keys2.length > 1, on4 = multi ? playing(t, q) : [0], ref = keys2[on4[0] ?? 0], p = paramOf(kind, ref)[0], known2 = keys2.every((k2, i) => !on4.includes(i) || q.has.has(k2));
     const v = q.snd.v[ref];
     const out2 = el("b", {}, known2 ? valText(kind, ref, v) : "–");
-    const apply3 = (x) => {
+    const apply4 = (x) => {
       const d = x - q.snd.v[ref], changed = [];
       keys2.forEach((k2, i) => {
         if (multi && !on4.includes(i)) return;
@@ -58001,7 +58695,7 @@ body[data-mode='scene'] #scene {
           type: "checkbox",
           checked: v === 1,
           disabled: !known2,
-          onchange: (e) => apply3(e.target.checked ? 1 : 0)
+          onchange: (e) => apply4(e.target.checked ? 1 : 0)
         })
       );
     if (ref === "MFX.mfxType")
@@ -58015,7 +58709,7 @@ body[data-mode='scene'] #scene {
       value: v,
       disabled: !known2,
       "aria-label": label2,
-      oninput: (e) => (apply3(+e.target.value), paint2(e.target, +e.target.value)),
+      oninput: (e) => (apply4(+e.target.value), paint2(e.target, +e.target.value)),
       ondblclick: (e) => {
         e.target.value = p[5];
         e.target.dispatchEvent(new Event("input"));
@@ -62627,7 +63321,7 @@ body[data-mode='scene'] #scene {
     ["button", "Forget every learned control", "Clear all"],
     ["button", "Move a control on your controller to link it", "Learn"]
   ];
-  function apply2(root) {
+  function apply3(root) {
     for (const [sel, help, text2] of HELP)
       for (const e of root.querySelectorAll(sel)) {
         if (e.title || e.closest('[title]:not([title=""])') || e.dataset.helped) continue;
@@ -62637,13 +63331,13 @@ body[data-mode='scene'] #scene {
       }
   }
   function hoverHelpStart() {
-    apply2(document);
+    apply3(document);
     let timer = 0;
     new MutationObserver(() => {
       if (timer) return;
       timer = setTimeout(() => {
         timer = 0;
-        apply2(document);
+        apply3(document);
       }, 1e3);
     }).observe(document.body, { childList: true, subtree: true });
   }
