@@ -5,6 +5,7 @@ import { humanizeSync, lvHumApply } from './humanize-ui.js';
 import { lvMoodApply, moodSync } from './mood-ui.js';
 import { $, el } from '../core/dom.js';
 import { DEV, DEVS, TRACK_COLORS, devOn } from '../core/device.js';
+import { hooks } from '../core/hooks.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
 import { FLASH_RH } from '../library/flash.js';
@@ -332,6 +333,13 @@ export function liveRenderKnobs() {
   const kb = $('#lvKnobs');
   if (!kb) return;
   kb.textContent = '';
+  /* one track chosen: what each knob controls there (KNOB ASSIGN), once the mixer has read it */
+  const t = Number.isInteger(+LV.ktarget) && LV.ktarget !== '' && LV.ktarget != null ? +LV.ktarget : null,
+    job = i => {
+      const K = hooks.knobs,
+        v = t != null && K ? K.now(t, i).cur : null;
+      return v == null ? '' : ' · ' + K.name(v);
+    };
   ['FILTER', 'MOD', 'FX', 'SOUND'].forEach((n, i) =>
     kb.append(
       el(
@@ -340,7 +348,7 @@ export function liveRenderKnobs() {
         el(
           'span',
           { class: 'lvKh' },
-          n,
+          n + job(i),
           el('b', { id: 'lvKv' + i }),
           el(
             'button',

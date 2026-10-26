@@ -4,6 +4,7 @@
 //
 // Reads: S, WO, MIDI.
 import { el } from '../core/dom.js';
+import { songMixerOpen } from '../song/song-mixer.js';
 import { S, scheduleSave } from '../core/state.js';
 import { MIDI, connectMidi } from '../services/midi.js';
 import { showMenu } from '../ui/menu.js';
@@ -127,7 +128,17 @@ export function sceneTop(toggle) {
         '▶ Play'
       ),
       el('div', { class: 'pos', id: 'scnPos' }, 'Stopped'),
-      el('label', {}, 'BPM ', bpm)
+      el('label', {}, 'BPM ', bpm),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn',
+          title: 'The mixer: levels, sends, knobs and effects, straight to the MC-707',
+          onclick: () => songMixerOpen()
+        },
+        'Mixer'
+      )
     ),
     steps(),
     el(
