@@ -11,8 +11,8 @@ after(closeBrowser);
 test('Templates: the zip is in the repository, and the window names the one for the Track setup', async () => {
   assert.ok(fs.statSync(path.join(ROOT, 'templates', 'MC707-Project-Templates.zip')).size > 100000);
   const { page, errors } = await openApp();
-  await page.locator('#menubar .mb', { hasText: 'Help' }).first().click();
-  await page.locator('.mdrop:not([hidden]) button', { hasText: 'MC-707 project templates' }).first().click();
+  await page.locator('#menubar .mb', { hasText: 'MC-707' }).first().click();
+  await page.locator('.mdrop:not([hidden]) button', { hasText: 'Project templates' }).first().click();
   const text = await page.textContent('#tplOv');
   assert.match(text, /For your Track setup \(3 drum, 5 tone\): 3 Drum 5 Tone Tracks\./);
   assert.match(text, /STORAGE MODE/);
@@ -24,8 +24,8 @@ test('Templates: the zip is in the repository, and the window names the one for 
   });
   await page.keyboard.press('Escape');
   await page.evaluate(() => document.querySelector('#tplOv')?.remove());
-  await page.locator('#menubar .mb', { hasText: 'Help' }).first().click();
-  await page.locator('.mdrop:not([hidden]) button', { hasText: 'MC-707 project templates' }).first().click();
+  await page.locator('#menubar .mb', { hasText: 'MC-707' }).first().click();
+  await page.locator('.mdrop:not([hidden]) button', { hasText: 'Project templates' }).first().click();
   assert.match(await page.textContent('#tplOv'), /yours are elsewhere/);
   assert.deepEqual(errors, []);
 });

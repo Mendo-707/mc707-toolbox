@@ -202,6 +202,7 @@ function trackRow(t, i, W) {
         type: 'text',
         value: t.name,
         maxlength: 16,
+        title: t.name,
         'aria-label': 'Track ' + (i + 1) + ' name',
         onchange: e => {
           pushUndo();

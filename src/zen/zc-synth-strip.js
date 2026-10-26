@@ -225,16 +225,19 @@ export function strip(t, act) {
     el(
       'div',
       { class: 'syBtns' },
-      el(
-        'button',
-        {
-          type: 'button',
-          class: 'btn sm syBrowse',
-          onclick: () => act.open(t, true),
-          title: 'Pick a sound from the Sound browser'
-        },
-        'Browse'
-      ),
+      /* tones only: a kit's drum sounds can't be changed over MIDI */
+      S.tracks[t].type === 'drum'
+        ? null
+        : el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn sm syBrowse',
+              onclick: () => act.open(t, true),
+              title: 'Pick a sound from the Sound browser'
+            },
+            'Browse'
+          ),
       el(
         'button',
         {

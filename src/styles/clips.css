@@ -52,6 +52,7 @@
   color: var(--ink);
 }
 .thead .thClip {
-  width: 60px;
+  /* narrow, so the track's name has room ("Drums 1" was cut to "Drums") */
+  width: 44px;
   text-align: left;
 }

@@ -2311,7 +2311,8 @@ input[type='range'] {
   color: var(--ink);
 }
 .thead .thClip {
-  width: 60px;
+  /* narrow, so the track's name has room ("Drums 1" was cut to "Drums") */
+  width: 44px;
   text-align: left;
 }
 </style>
@@ -6438,10 +6439,12 @@ body.popWin {
   margin-left: auto;
 }
 .mxStrips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  display: flex;
+  /* one row: the tracks and the master strip side by side, scrolling sideways in a narrow window
+     (strips wrapping into a second row overlapped the first) */
   gap: 6px;
   flex: 1;
+  overflow-x: auto;
 }
 .mxStrip {
   display: flex;
@@ -6631,11 +6634,6 @@ body.popWin {
     opacity: 0.35;
   }
 }
-@media (max-width: 560px) {
-  .mxStrips {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
 
 /* Live Mode's window: its own glow from the Live theme, on the strips and the title */
 .popLive .mxStrip {
@@ -6674,8 +6672,7 @@ body.popWin .mxWrap {
   min-height: 0;
 }
 .mxStrips {
-  grid-auto-rows: minmax(300px, 1fr);
-  min-height: 0;
+  min-height: 300px;
 }
 .mxStrip {
   min-height: 0;
@@ -6797,6 +6794,71 @@ body.popFrameless .mxTop input {
 }
 .mxRow.unset .mxKnob {
   opacity: 0.6;
+}
+
+/* the track's effect and the master strip's choosers */
+.mxSel {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  border: 1px solid var(--line, #d6d1c4);
+  background: var(--panel, #fff);
+  color: var(--ink, #1d1d1b);
+}
+.mxFx.busy span {
+  color: var(--acc, var(--hot, #39ff7a));
+}
+.mxStrips > .mxStrip {
+  flex: 1 1 0;
+  min-width: 84px;
+}
+.mxStrips > .mxMaster {
+  flex: 1.35 1 0;
+  min-width: 118px;
+}
+.mxMaster {
+  border-top-color: var(--ink, #1d1d1b);
+  overflow-y: auto;
+}
+.mxMaster .mxNum {
+  background: var(--ink, #1d1d1b);
+  color: var(--panel, #fff);
+}
+.mxMaster .mxBtns {
+  margin-top: auto;
+}
+.mxTg.on:not(.mute):not(.solo) {
+  background: var(--acc, var(--hot, #39ff7a));
+  color: #000;
+}
+.mxMaster .btn {
+  white-space: normal;
+}
+/* a knob's KNOB ASSIGN chooser, in place of its label: its own line, like the label */
+.mxKSel {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  font-size: 10.5px;
+  padding: 0 1px;
+  margin-left: -2px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mxKSel:hover,
+.mxKSel:focus {
+  border-color: var(--line, #d6d1c4);
+  background: var(--panel, #fff);
 }
 </style>
     <style>
@@ -7185,9 +7247,9 @@ body[data-mode='scene'] #scene {
 /* ---- clips board ---- */
 .sBoard {
   display: grid;
-  grid-template-columns: 118px repeat(16, minmax(50px, 1fr));
+  grid-template-columns: 118px repeat(16, minmax(54px, 1fr));
   gap: 4px;
-  min-width: 960px;
+  min-width: 1046px;
 }
 .sbRow {
   display: contents;
@@ -7228,7 +7290,7 @@ body[data-mode='scene'] #scene {
   justify-content: center;
   gap: 1px;
   min-height: 48px;
-  padding: 3px 4px;
+  padding: 3px 3px;
   font: inherit;
   text-align: left;
   color: var(--ink);
@@ -7240,14 +7302,16 @@ body[data-mode='scene'] #scene {
   min-width: 0;
 }
 .sbClip b {
-  font-size: 11px;
+  font-size: 10.5px;
   line-height: 1.15;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  word-break: break-word;
-  padding-right: 9px;
+  /* whole words where they fit ("Offbeat" was split into "Offbea t") */
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .sbSub {
   font-size: 10px;
@@ -7258,7 +7322,8 @@ body[data-mode='scene'] #scene {
 }
 .sbMark {
   position: absolute;
-  top: 1px;
+  /* beside the short "1 bar" line, leaving the name the whole width */
+  bottom: 2px;
   right: 3px;
 }
 .sbClip.empty {
@@ -7295,7 +7360,7 @@ body[data-mode='scene'] #scene {
   pointer-events: none;
 }
 .sMain.wide .sBoard {
-  grid-template-columns: 118px repeat(16, minmax(50px, 1fr));
+  grid-template-columns: 118px repeat(16, minmax(54px, 1fr));
 }
 
 /* ---- the clip editor ---- */
@@ -18620,7 +18685,17 @@ body[data-mode='scene'] #scene {
         );
     });
   }
+  var PREVIEWS = /* @__PURE__ */ new Set();
+  function onStopAll(stop) {
+    PREVIEWS.add(stop);
+    return () => PREVIEWS.delete(stop);
+  }
   function stopAll() {
+    for (const f of [...PREVIEWS])
+      try {
+        f();
+      } catch (e) {
+      }
     if (!TR.playing) return;
     TICKER.stop();
     TR.playing = false;
@@ -23965,7 +24040,7 @@ body[data-mode='scene'] #scene {
       const mm = cmFix()[c.t], ps = el(
         "select",
         {
-          title: "Switches this MC-707 track to a clip when this clip starts. Set up the clips in Settings › Your MC-707 clips.",
+          title: "Switches this MC-707 track to a clip when this clip starts. Set up the clips in MC-707 › Your MC-707 clips & ZenCore.",
           "aria-label": "MC-707 clip",
           onchange: (e) => {
             pushUndo();
@@ -25650,6 +25725,7 @@ body[data-mode='scene'] #scene {
           type: "text",
           value: t.name,
           maxlength: 16,
+          title: t.name,
           "aria-label": "Track " + (i + 1) + " name",
           onchange: (e) => {
             pushUndo();
@@ -29095,13 +29171,20 @@ body[data-mode='scene'] #scene {
     if (it.done) return;
     const [l, data] = it.value;
     ZX.q.delete(l);
-    rawSend(dt1(l, data));
+    try {
+      rawSend(dt1(l, data));
+    } catch (e) {
+    }
     if (ZX.q.size) ZX.timer = setTimeout(pump, ZX.pace || PACE);
     else if (ZX.onIdle) ZX.onIdle();
   }
   function zxFlush() {
     return new Promise((res) => {
-      const chk = () => ZX.q.size || ZX.timer ? setTimeout(chk, 10) : res();
+      const chk = () => {
+        if (!ZX.q.size && !ZX.timer) return res();
+        if (ZX.q.size && !ZX.timer) ZX.timer = setTimeout(pump, 0);
+        setTimeout(chk, 10);
+      };
       chk();
     });
   }
@@ -30726,19 +30809,19 @@ body[data-mode='scene'] #scene {
       out2.scrollTop = out2.scrollHeight;
     };
     const where2 = () => "track " + devNum(+trk.value) + " clip " + (+clip.value + 1);
-    let busy3 = false;
+    let busy4 = false;
     const run2 = async (job) => {
-      if (busy3) return;
+      if (busy4) return;
       if (!await zxConnect()) return toast("The " + name + " is not connected (or MIDI with SysEx is not allowed)");
       const t = +trk.value, k2 = +clip.value;
       const p = await clipSteps(t, k2);
       if (!p) return say("", where2() + ": the " + name + " did not answer for that clip.");
-      busy3 = true;
+      busy4 = true;
       btns.forEach((b) => b.disabled = true);
       try {
         await job(t, k2, p.steps);
       } finally {
-        busy3 = false;
+        busy4 = false;
         btns.forEach((b) => b.disabled = false);
         status3.textContent = "";
       }
@@ -30848,7 +30931,7 @@ body[data-mode='scene'] #scene {
       "Copy results"
     );
     const btns = [readAll, write, clear];
-    const close = () => !busy3 && ov.remove();
+    const close = () => !busy4 && ov.remove();
     const heard = el(
       "select",
       { "aria-label": "What did you hear?" },
@@ -34185,16 +34268,16 @@ body[data-mode='scene'] #scene {
   };
   var FORMS = ["SAW", "SQR", "TRI", "SIN", "RAMP", "JUNO", "TRI2", "TRI3", "SIN2"];
   function oscPreview(ctx2) {
-    const W = 420, H = 96, M = H / 2, A = H / 2 - 8;
+    const W = 420, H = 96, M2 = H / 2, A = H / 2 - 8;
     const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "Wave preview" });
     const cap = el("small", { class: "hint" });
     const S2 = (id) => ctx2.get(pk("SPTL", ctx2.part, id)), P2 = (id) => ctx2.get(pk("PTL", ctx2.part, id));
     const draw = () => {
       svg.textContent = "";
-      svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
+      svg.append(sv2("line", { x1: 0, x2: W, y1: M2, y2: M2, class: "zero" }));
       const ty = S2("OSC_TYPE"), inv = S2("VA_INVERT_SW") ? -1 : 1, line = (f, cls = "line") => {
         const pts = [];
-        for (let x = 0; x <= W; x++) pts.push([x, M - A * f(x / W * 2 % 1, x)]);
+        for (let x = 0; x <= W; x++) pts.push([x, M2 - A * f(x / W * 2 % 1, x)]);
         svg.append(sv2("path", { d: path(pts), class: cls }));
       };
       if (ty === 1) {
@@ -34216,11 +34299,11 @@ body[data-mode='scene'] #scene {
       } else if (ty === 4) {
         const r = rnd4(7);
         const pts = [];
-        for (let x = 0; x <= W; x += 2) pts.push([x, M - A * (r() * 2 - 1) * 0.9]);
+        for (let x = 0; x <= W; x += 2) pts.push([x, M2 - A * (r() * 2 - 1) * 0.9]);
         svg.append(sv2("path", { d: path(pts), class: "line" }));
         cap.textContent = "Noise";
       } else {
-        svg.append(sv2("text", { x: W / 2, y: M + 5, class: "lbl", "text-anchor": "middle" }, ""));
+        svg.append(sv2("text", { x: W / 2, y: M2 + 5, class: "lbl", "text-anchor": "middle" }, ""));
         svg.lastChild.textContent = (ty === 2 ? "PCM-Sync wave " + S2("SYNC_WAV_NUM") : "PCM wave " + P2("WAV_NUM_L")) + " (a sample)";
         cap.textContent = "PCM waves are recordings inside the MC-707, so there is no picture of them. Play a note to hear it.";
       }
@@ -34284,13 +34367,13 @@ body[data-mode='scene'] #scene {
   };
   var LFO_FORMS = ["SIN", "TRI", "SAW-UP", "SAW-DW", "SQR", "RND", "TRP", "S&H", "CHS", "VSIN", "STEP"];
   function lfoPreview(ctx2, n) {
-    const W = 420, H = 84, M = H / 2, A = H / 2 - 6;
+    const W = 420, H = 84, M2 = H / 2, A = H / 2 - 6;
     const pre = pk("LFO", ctx2.part, "LFO" + n + "_");
     const G = (id) => ctx2.get(pre + id);
     const svg = sv2("svg", { viewBox: `0 0 ${W} ${H}`, class: "zcEnv zcPrev", role: "img", "aria-label": "LFO preview" });
     const draw = () => {
       svg.textContent = "";
-      svg.append(sv2("line", { x1: 0, x2: W, y1: M, y2: M, class: "zero" }));
+      svg.append(sv2("line", { x1: 0, x2: W, y1: M2, y2: M2, class: "zero" }));
       const form2 = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W * 0.3, fade = G("FADE") / 1023 * W * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps2 = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
       const rand = Array.from({ length: cycles * 4 + 2 }, () => r() * 2 - 1);
       const val = (ph) => {
@@ -34312,7 +34395,7 @@ body[data-mode='scene'] #scene {
           if (fade > 0) amp = mode % 2 === 0 ? Math.min(1, t / fade) : Math.max(0, 1 - t / fade);
           v = val(t / (W - delay || 1) * cycles);
         }
-        pts.push([x, M - A * Math.max(-1, Math.min(1, v * amp + (x < delay ? 0 : off * 0.5)))]);
+        pts.push([x, M2 - A * Math.max(-1, Math.min(1, v * amp + (x < delay ? 0 : off * 0.5)))]);
       }
       svg.append(sv2("path", { d: path(pts), class: "line" }));
     };
@@ -37098,6 +37181,7 @@ body[data-mode='scene'] #scene {
     else if (MIDI.out) MIDI.out.send(on3 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
   };
   function audition2(n) {
+    if (TR.playing && TR.mode === "pat") stopAll();
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
     const send2 = (b, on3) => {
       noteOut(ch, b, on3);
@@ -37188,7 +37272,7 @@ body[data-mode='scene'] #scene {
     if (CK.busy) return;
     if (!list2.length) return toast("Nothing to check: no clips waiting to be written");
     CK.busy = true;
-    let busy3 = 0, bad = 0;
+    let busy4 = 0, bad = 0;
     for (const [n, [t, k2]] of list2.entries()) {
       CK.line = "Checking " + what + ": " + (n + 1) + " of " + list2.length + "…";
       SC.draw();
@@ -37200,10 +37284,10 @@ body[data-mode='scene'] #scene {
         continue;
       }
       CK.res[t + ":" + k2] = { notes: r.notes, name: r.name };
-      if (r.notes) busy3++;
+      if (r.notes) busy4++;
     }
     CK.busy = false;
-    CK.line = bad ? "Some clips did not answer" : busy3 ? busy3 + " of " + list2.length + " hold notes on the MC-707 (ringed): writing replaces them" : "All " + list2.length + " are empty on the MC-707";
+    CK.line = bad ? "Some clips did not answer" : busy4 ? busy4 + " of " + list2.length + " hold notes on the MC-707 (ringed): writing replaces them" : "All " + list2.length + " are empty on the MC-707";
     SC.draw();
   }
   function checkNew() {
@@ -38240,7 +38324,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/core/version.js
-  var VERSION = "1.5.2";
+  var VERSION = "1.5.3";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -38368,7 +38452,7 @@ body[data-mode='scene'] #scene {
       [
         "In the app",
         [
-          "0 · Start the MC-707 from a project template that matches your Track setup (Help › MC-707 project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.",
+          "0 · Start the MC-707 from a project template that matches your Track setup (MC-707 › Project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.",
           "1 · Clips: fill the MC-707’s clips on the board. Click an empty clip to choose its pattern, a full one to edit its notes (Notes) and its sound (Sound: the ZenCore editor and the factory tones).",
           "2 · Scenes: add scenes to the chain. Each one plays a clip per track (its chips) for so many bars; the last keeps playing.",
           "3 · Write: Write sends what changed (✓ written · ● changed · + not written yet). Or write one clip, a track or a scene from its button or right-click, or turn on Auto-write. Use a project you can lose the first time."
@@ -39044,7 +39128,7 @@ body[data-mode='scene'] #scene {
     watch2();
   }
   function sceneToggle() {
-    if (TR.playing) stopAll();
+    if (TR.playing && TR.mode === "scenes") stopAll();
     else scenePlay(SC.row);
     drawPlay();
   }
@@ -39157,12 +39241,17 @@ body[data-mode='scene'] #scene {
   var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
   var DEF2 = { lvl: 100, pan: 64, rev: 0, cho: 0 };
   var STRIP_KNOBS = [
-    ["flt", "Filter", 80, "C1 · the track’s FILTER knob (CC 80): cutoff, or what KNOB ASSIGN has on it"],
-    ["mod", "Mod", 81, "C2 · the track’s MOD knob (CC 81): what KNOB ASSIGN has on it"],
-    ["fx", "FX", 82, "C3 · the track’s FX knob (CC 82): what KNOB ASSIGN has on it"],
-    ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83), which KNOB ASSIGN lists with the others: Decay, Level…"]
+    [
+      "flt",
+      "Filter",
+      80,
+      "C1 · the track’s FILTER knob (CC 80): the slider turns it, the name above chooses what it controls"
+    ],
+    ["mod", "Mod", 81, "C2 · the track’s MOD knob (CC 81): the slider turns it, the name above chooses what it controls"],
+    ["fx", "FX", 82, "C3 · the track’s FX knob (CC 82): the slider turns it, the name above chooses what it controls"],
+    ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83): the slider turns it, the name above chooses what it controls"]
   ];
-  function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false) {
+  function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false, assign = null) {
     const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
     const paint = (inp2, x) => {
       const p = x / 127 * 100;
@@ -39200,11 +39289,27 @@ body[data-mode='scene'] #scene {
         class: "mxRow" + (unset ? " unset" : ""),
         title: tip + (unset ? " · not sent yet: the MC-707 keeps its own" : "") + " · double-click to reset"
       },
-      el("span", {}, label2),
+      assign ? assignSelect(label2, assign, s.name) : el("span", {}, label2),
       inp,
       out2
     );
     return row;
+  }
+  function assignSelect(label2, a, name) {
+    const known2 = a.cur == null || a.choices.some((c) => c[0] === a.cur);
+    return el(
+      "select",
+      {
+        class: "mxKSel",
+        "aria-label": label2 + " knob controls, " + name,
+        title: label2 + ": what this knob controls on the MC-707 (KNOB ASSIGN), for every clip of the track",
+        onchange: (e) => e.target.value !== "" && a.on(+e.target.value),
+        onclick: (e) => e.stopPropagation()
+      },
+      a.cur == null ? el("option", { value: "", selected: true }, label2) : null,
+      !known2 ? el("option", { value: a.cur, selected: true }, "Other (" + a.cur + ")") : null,
+      ...a.choices.map(([v, n]) => el("option", { value: v, selected: v === a.cur }, n))
+    );
   }
   function mixStrip(s, o) {
     const lvlOut = el("b", { class: "mxVal" }, String(s.lvl));
@@ -39269,14 +39374,23 @@ body[data-mode='scene'] #scene {
       ),
       knob("Pan", "pan", s.pan, s, o),
       knob("Reverb", "rev", s.rev, s, o),
-      knob("Chorus", "cho", s.cho, s, o),
+      knob(
+        "Delay",
+        "cho",
+        s.cho,
+        s,
+        o,
+        DEF2.cho,
+        "Delay send (CC 92): how much goes to the MC-707’s chorus/delay effect, set on the Master FX strip"
+      ),
       ...s.extra || [],
+      s.fx && o.fx ? fxRow(s.fx, o.fx, s.name) : null,
       s.knobs ? el(
         "div",
         { class: "mxKnobs", role: "group", "aria-label": "Knobs, " + s.name },
         ...s.knobs.map((k2) => {
           const [, label2, , tip] = STRIP_KNOBS.find((x) => x[0] === k2.key);
-          return knob(label2, k2.key, k2.v, s, o, k2.def, tip, k2.unset);
+          return knob(label2, k2.key, k2.v, s, o, k2.def, tip, k2.unset, k2.assign);
         })
       ) : null,
       el("div", { class: "mxFaderBox" }, el("span", { class: "mxMeter" }, meter), fader2),
@@ -39299,9 +39413,190 @@ body[data-mode='scene'] #scene {
     node.meter = meter;
     return node;
   }
+  function fxSelect(choices, cur2, on3, label2, title) {
+    const now = choices.find((c) => c.id === cur2);
+    const opt = (c) => el("option", { value: c.id, selected: c.id === cur2 }, c.label);
+    const sel = el(
+      "select",
+      { class: "mxSel", "aria-label": label2, title, onchange: (e) => e.target.value && on3(e.target.value) },
+      now ? opt(now) : el("option", { value: "", selected: true }, "—")
+    );
+    const fill2 = () => {
+      if (sel.dataset.full) return;
+      sel.dataset.full = "1";
+      const groups = [...new Set(choices.map((c) => c.group))];
+      sel.replaceChildren(
+        ...now ? [] : [el("option", { value: "", selected: true }, "—")],
+        ...groups.flatMap(
+          (g) => g ? [el("optgroup", { label: g }, ...choices.filter((c) => c.group === g).map(opt))] : choices.filter((c) => !c.group).map(opt)
+        )
+      );
+    };
+    for (const ev of ["pointerdown", "focus", "keydown"]) sel.addEventListener(ev, fill2);
+    return sel;
+  }
+  function fxRow(fx, on3, name) {
+    return el(
+      "label",
+      {
+        class: "mxRow mxFx" + (fx.busy ? " busy" : ""),
+        title: "The track’s effect (MFX): sent to every clip’s sound and the track’s own, so it stays whichever clip plays. Shape it further in the ZenCore editor."
+      },
+      el("span", {}, fx.busy ? "Effect · sending…" : "Effect"),
+      fxSelect(fx.choices, fx.cur, on3, "Effect, " + name, "")
+    );
+  }
+  function masterStrip(s, o) {
+    const m = s.m || {}, list2 = (names, cur2, what, label2) => fxSelect(
+      names.map((n, i) => ({ id: String(i), label: n, group: "" })),
+      cur2 == null ? null : String(cur2),
+      (v) => o.set(what, +v),
+      label2,
+      ""
+    );
+    const level = (label2, what, v, tip) => {
+      const out2 = el("b", {}, v == null ? "—" : String(v));
+      const inp = el("input", {
+        type: "range",
+        min: 0,
+        max: 127,
+        value: v ?? 64,
+        class: "mxKnob",
+        "aria-label": label2,
+        oninput: (e) => (out2.textContent = e.target.value, o.set(what, +e.target.value))
+      });
+      inp.style.setProperty("--lo", "0%");
+      inp.style.setProperty("--hi", (v ?? 64) / 127 * 100 + "%");
+      return el("label", { class: "mxRow" + (v == null ? " unset" : ""), title: tip }, el("span", {}, label2), inp, out2);
+    };
+    const tg = (lab, what, on3, title) => el(
+      "button",
+      {
+        type: "button",
+        class: "mxTg" + (on3 ? " on" : ""),
+        "aria-pressed": String(!!on3),
+        title,
+        onclick: () => o.set(what, on3 ? 0 : 1)
+      },
+      lab
+    );
+    const rev = m.rev || {}, cho = m.cho || {};
+    return el(
+      "section",
+      { class: "mxStrip mxMaster", style: "--tc:#e8e4d8", "aria-label": "Master effects" },
+      el(
+        "div",
+        { class: "mxHead" },
+        el("span", { class: "mxNum" }, "M"),
+        el("span", { class: "mxName" }, "Master FX"),
+        el("span", { class: "mxSub" }, s.busy ? "Sending…" : s.m ? "The MC-707’s total effects" : "Not read yet")
+      ),
+      el(
+        "label",
+        { class: "mxRow mxFx", title: "The reverb every track’s Reverb send goes to" },
+        el("span", {}, "Reverb"),
+        list2(s.rev, rev.sw === 0 ? 0 : rev.type, "revType", "Reverb type")
+      ),
+      level("Reverb level", "revLevel", rev.level, "How loud the reverb is"),
+      el(
+        "label",
+        { class: "mxRow mxFx", title: "The chorus or delay every track’s Chorus send goes to" },
+        el("span", {}, "Delay / chorus"),
+        list2(s.cho, cho.sw === 0 ? 0 : cho.type, "choType", "Chorus or delay type")
+      ),
+      level("Delay level", "choLevel", cho.level, "How loud the delay or chorus is"),
+      level("Delay → reverb", "choSend", cho.send, "How much of the delay or chorus goes on to the reverb"),
+      el(
+        "label",
+        { class: "mxRow mxFx", title: "The master Multi FX, on the whole mix (the MULTI button on the MC-707)" },
+        el("span", {}, "Multi FX"),
+        fxSelect(s.choices, m.mfx ? m.mfx.id : null, (v) => o.set("mfx", v), "Master Multi FX", "")
+      ),
+      el(
+        "div",
+        { class: "mxBtns" },
+        tg("Comp", "comp", m.comp, "The master compressor on or off"),
+        tg("EQ", "eq", m.eq, "The master EQ on or off")
+      ),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          title: "Read the total effects from the MC-707, to show what it has now",
+          onclick: () => o.read()
+        },
+        "Read from MC-707"
+      )
+    );
+  }
   function mixLight(node, a) {
     node.light.style.opacity = String(0.15 + 0.85 * a);
     node.meter.style.height = Math.round(a * 100) + "%";
+  }
+
+  // src/services/mixer-fx.js
+  var NOT = "Connect the MC-707 (the ZenCore editor’s link) to change its effects";
+  function trackFxFor(t, redraw) {
+    const F = hooks.fx;
+    if (!F) return [null, null];
+    const now = F.now.track[t];
+    return [
+      { choices: F.choices(), cur: now ? now.id : null, busy: !!(now && now.busy) },
+      async (id) => {
+        const run2 = F.trackFx(t, id);
+        redraw();
+        const ok = await run2.catch(() => false);
+        redraw();
+        if (ok === "slow") toast("The MC-707 is slow to take the effect: check it on the MC-707, or choose it again");
+        else if (!ok) toast(NOT);
+      }
+    ];
+  }
+  function knobAssignFor(t, n, redraw) {
+    const K = hooks.knobs;
+    if (!K) return null;
+    const now = K.now(t, n);
+    return {
+      ...now,
+      on: async (v) => {
+        const ok = await K.set(t, n, v).catch(() => false);
+        redraw();
+        if (!ok) toast(NOT.replace("effects", "knob settings"));
+      }
+    };
+  }
+  var knobsRead = false;
+  async function knobsReadOnce(tracks3, redraw) {
+    if (knobsRead || !hooks.knobs) return;
+    knobsRead = true;
+    if (await hooks.knobs.read(tracks3, true).catch(() => false)) redraw();
+    else knobsRead = false;
+  }
+  var busy2 = false;
+  function masterFor(redraw) {
+    const F = hooks.fx;
+    if (!F) return null;
+    return masterStrip(
+      { choices: F.choices(), rev: F.REV_TYPES, cho: F.CHO_TYPES, m: F.now.master, busy: busy2 },
+      {
+        set: async (what, v) => {
+          busy2 = true;
+          const run2 = F.setMaster(what, v);
+          if (!/Level|Send/.test(what)) redraw();
+          const ok = await run2.catch(() => false);
+          busy2 = false;
+          if (!/Level|Send/.test(what)) redraw();
+          if (!ok) toast(NOT);
+        },
+        read: async () => {
+          const m = await F.readMaster().catch(() => null);
+          if (!m) toast("The MC-707 did not answer: connect it (the ZenCore editor’s link) and try again");
+          redraw();
+          if (m && hooks.knobs && await hooks.knobs.read(DEVS[DEV].tracks).catch(() => false)) redraw();
+        }
+      }
+    );
   }
 
   // src/song/song-mixer.js
@@ -39368,8 +39663,10 @@ body[data-mode='scene'] #scene {
     });
     vel.style.setProperty("--lo", "0%");
     vel.style.setProperty("--hi", tr.vol / 127 * 100 + "%");
+    const [fx, onFx] = trackFxFor(t, refresh);
     return mixStrip(
       {
+        fx,
         num: devNum(t),
         name: tr.name,
         color: TRACK_COLORS[t],
@@ -39380,7 +39677,13 @@ body[data-mode='scene'] #scene {
         cho: valOf(t, "cho"),
         mute: tr.mute,
         solo: tr.solo,
-        knobs: KNOBS.map((key) => ({ key, v: valOf(t, key), def: DEF3[key], unset: !isSet(t, key) })),
+        knobs: KNOBS.map((key, n) => ({
+          key,
+          assign: knobAssignFor(t, n, refresh),
+          v: valOf(t, key),
+          def: DEF3[key],
+          unset: !isSet(t, key)
+        })),
         extra: [
           el(
             "label",
@@ -39392,6 +39695,7 @@ body[data-mode='scene'] #scene {
         ]
       },
       {
+        fx: onFx,
         grab: grab2,
         done,
         set: (key, v) => set(t, key, v),
@@ -39438,7 +39742,11 @@ body[data-mode='scene'] #scene {
           "div",
           { class: "mxTop" },
           el("b", { class: "mxTitle" }, "Song mixer"),
-          el("span", { class: "hint" }, "Saved with the song and sent to the MC-707 when it starts."),
+          el(
+            "span",
+            { class: "hint" },
+            "Levels, sends and knob positions are saved with the song and sent when it starts; effects and what the knobs control go straight into the MC-707 (press KNOB ASSIGN there to see them)."
+          ),
           el(
             "div",
             { class: "mxActs" },
@@ -39469,7 +39777,7 @@ body[data-mode='scene'] #scene {
           ),
           h.winBtns()
         ),
-        el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]))
+        el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]), masterFor(refresh))
       )
     );
     const tick = (now) => {
@@ -39482,13 +39790,14 @@ body[data-mode='scene'] #scene {
       h.raf(tick);
     };
     h.raf(tick);
+    knobsReadOnce(DEVS[DEV].tracks, refresh);
   }
   function refresh() {
     const h = popoutOf(ID);
     if (h) h.refresh();
   }
   function songMixerOpen() {
-    popout({ id: ID, title: "Song mixer", w: 760, h: 700, build });
+    popout({ id: ID, title: "Song mixer", w: 980, h: 760, build });
   }
 
   // src/library/harmony-pack.js
@@ -40087,7 +40396,7 @@ body[data-mode='scene'] #scene {
       const push = (o) => FAC.push(Object.assign({ id: "hx" + g + uid++, genre: g, styles: null, bpm: null, type: "tone" }, o));
       const BUSY2 = ["pushed", "3+3+2", "speeds up", "long-short", "3 bars + 1", "sus resolves late"];
       for (const [P2, keys2, scale] of plan2) {
-        const [title, pn, list2, opt] = P2, beats = list2.reduce((a, c) => a + c[2], 0), bars2 = beats / 4, total = bars2 * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")", busy3 = BUSY2.includes(opt.timing) || void 0;
+        const [title, pn, list2, opt] = P2, beats = list2.reduce((a, c) => a + c[2], 0), bars2 = beats / 4, total = bars2 * 16, K = keys2[ki++ % keys2.length], R3 = K.key.root, tag = title + " " + pn, how = " (" + opt.timing + ")", busy4 = BUSY2.includes(opt.timing) || void 0;
         const segs = segsOf(P2, R3, 62), beat = segsOf(P2, R3, 62, false);
         const rhythms = [CR[0], cr[ci++ % cr.length], cr[ci++ % cr.length]].filter((c, i, a) => a.indexOf(c) === i);
         if (rhythms.length < 3) rhythms.push(cr[ci++ % cr.length]);
@@ -40101,7 +40410,7 @@ body[data-mode='scene'] #scene {
             bars: bars2,
             notes,
             ...K,
-            busy: busy3,
+            busy: busy4,
             role: "Chords",
             pool: "chords",
             lively: c[0] !== "Hold"
@@ -40133,7 +40442,7 @@ body[data-mode='scene'] #scene {
             bars: bars2,
             notes,
             ...K,
-            busy: busy3,
+            busy: busy4,
             role: "Bass",
             pool: "bass",
             lively: b[0] !== "Sustain"
@@ -40144,7 +40453,7 @@ body[data-mode='scene'] #scene {
           pv.forEach(
             (sg) => sg.v.forEach((n, i) => notes.push({ s: sg.s, l: sg.e - sg.s, n, v: i === sg.v.length - 1 ? 92 : 82 }))
           );
-          push({ name: "Pad: " + tag + how, bars: bars2, notes, ...K, busy: busy3, role: "Pad", pool: "pad" });
+          push({ name: "Pad: " + tag + how, bars: bars2, notes, ...K, busy: busy4, role: "Pad", pool: "pad" });
         }
         {
           const A = [
@@ -40170,7 +40479,7 @@ body[data-mode='scene'] #scene {
             bars: bars2,
             notes,
             ...K,
-            busy: busy3,
+            busy: busy4,
             role: "Lead",
             pool: "pluck",
             lively: true
@@ -40183,7 +40492,7 @@ body[data-mode='scene'] #scene {
             bars: bars2,
             notes: lead2(beat, total, R3, scale, m[1]),
             ...K,
-            busy: busy3,
+            busy: busy4,
             role: "Lead",
             pool: "lead",
             lively: true
@@ -49310,8 +49619,10 @@ body[data-mode='scene'] #scene {
   function stripFor2(t) {
     const tr = S.tracks[t], eff = lvEffMute(t), pend = lvOn() && eff !== !!LV.mute[t] ? eff ? "mute" : "unmute" : "";
     const dim = lvUserOwns(t) ? "You’re playing it" : lvEmute(t) ? "Out (energy)" : "";
+    const [fx, onFx] = trackFxFor(t, refresh2);
     return mixStrip(
       {
+        fx,
         num: devNum(t),
         name: tr.name,
         color: TRACK_COLORS[t],
@@ -49324,9 +49635,15 @@ body[data-mode='scene'] #scene {
         solo: soloT === t,
         pending: pend,
         dim,
-        knobs: MIX_KNOBS.map((key) => ({ key, v: lvMixNow(t, key), def: LV.rest[MIX_CC[key] - 80] }))
+        knobs: MIX_KNOBS.map((key, n) => ({
+          key,
+          assign: knobAssignFor(t, n, refresh2),
+          v: lvMixNow(t, key),
+          def: LV.rest[MIX_CC[key] - 80]
+        }))
       },
       {
+        fx: onFx,
         title: "Right-click for more",
         grab: () => held2 = true,
         done: () => held2 = false,
@@ -49418,7 +49735,7 @@ body[data-mode='scene'] #scene {
           ),
           h.winBtns()
         ),
-        el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]))
+        el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]), masterFor(refresh2))
       )
     );
     const tick = (now) => {
@@ -49431,13 +49748,14 @@ body[data-mode='scene'] #scene {
       h.raf(tick);
     };
     h.raf(tick);
+    knobsReadOnce(DEVS[DEV].tracks, refresh2);
   }
   function refresh2() {
     const h = popoutOf(ID2);
     if (h) h.refresh();
   }
   function liveMixerOpen() {
-    popout({ id: ID2, title: "Live mixer", w: 760, h: 700, build: build2 });
+    popout({ id: ID2, title: "Live mixer", w: 980, h: 760, build: build2 });
   }
 
   // src/live/ui.js
@@ -51681,7 +51999,7 @@ body[data-mode='scene'] #scene {
   }
   async function audCheckRouting() {
     if (!MIDI.out) {
-      toast("Connect the MC-707 first (Settings › Quick setup).");
+      toast("Connect the MC-707 first (MC-707 › Set up your MC-707).");
       return;
     }
     if (!AUDREC.metering) await audMeterStart();
@@ -55096,7 +55414,8 @@ body[data-mode='scene'] #scene {
       el(
         "div",
         { class: "syBtns" },
-        el(
+        /* tones only: a kit's drum sounds can't be changed over MIDI */
+        S.tracks[t].type === "drum" ? null : el(
           "button",
           {
             type: "button",
@@ -55140,7 +55459,7 @@ body[data-mode='scene'] #scene {
   }
 
   // src/zen/zc-synth.js
-  var busy2 = "";
+  var busy3 = "";
   var exp = null;
   var dock2 = el("div", { class: "syDock" });
   var docked = () => !!$("#zcOv") && dock2.contains($("#zcOv"));
@@ -55161,10 +55480,10 @@ body[data-mode='scene'] #scene {
     }
   }
   async function refresh3(quiet) {
-    busy2 = "Reading the sounds…";
+    busy3 = "Reading the sounds…";
     synthRender();
     const ok = await readNames();
-    busy2 = "";
+    busy3 = "";
     synthRender();
     if (!ok && !quiet) toast("The " + dn() + " did not answer. Connect it by USB and allow MIDI with SysEx.");
   }
@@ -55211,14 +55530,14 @@ body[data-mode='scene'] #scene {
     }, 400);
   }
   async function readSetup() {
-    busy2 = "Reading all " + tracks2().length + " sounds…";
+    busy3 = "Reading all " + tracks2().length + " sounds…";
     synthRender();
     const o = await setupRead((t, f) => {
-      busy2 = "Reading track " + devNum(t) + "… " + Math.round(f * 100) + "%";
+      busy3 = "Reading track " + devNum(t) + "… " + Math.round(f * 100) + "%";
       const s = $("#syBusy");
-      if (s) s.textContent = busy2;
+      if (s) s.textContent = busy3;
     });
-    busy2 = "";
+    busy3 = "";
     synthRender();
     if (!o) toast("The " + dn() + " did not answer, so the sounds could not be read");
     return o;
@@ -55239,7 +55558,7 @@ body[data-mode='scene'] #scene {
     if (o) toast(setupKeep(name.trim(), o) ? "Kept " + name.trim() : "The browser would not store it (storage full?)");
   }
   async function sendSetup(o) {
-    busy2 = "Sending the setup…";
+    busy3 = "Sending the setup…";
     synthRender();
     try {
       for (const k2 in QS) delete QS[k2];
@@ -55251,7 +55570,7 @@ body[data-mode='scene'] #scene {
     } catch (e) {
       toast("That is not a Synth mode setup");
     }
-    busy2 = "";
+    busy3 = "";
     synthRender();
   }
   function setupsMenu(e) {
@@ -55427,7 +55746,7 @@ body[data-mode='scene'] #scene {
           el("span", { class: "syArrow", "aria-hidden": "true" }, "→"),
           kbd
         ),
-        el("span", { id: "syBusy", class: "syBusy" }, busy2)
+        el("span", { id: "syBusy", class: "syBusy" }, busy3)
       ),
       exp != null && tracks2().includes(exp) ? el(
         "div",
@@ -56166,7 +56485,10 @@ body[data-mode='scene'] #scene {
               title: "Play",
               onclick: () => {
                 if (au.paused) {
+                  stopAll();
                   $$("#grabPop audio").forEach((a) => a.pause());
+                  const un = onStopAll(() => au.pause());
+                  au.addEventListener("pause", un, { once: true });
                   au.currentTime = 0;
                   au.play();
                   pl.textContent = "■";
@@ -56418,10 +56740,12 @@ body[data-mode='scene'] #scene {
   var hx = (b) => b == null ? "--" : b.toString(16).padStart(2, "0").toUpperCase();
   var regions = null;
   var scans = [];
-  async function scanOnce(onStep, ms = 300) {
+  async function scanOnce(onStep, ms = 300, only = null) {
     if (!await zxConnect()) return /* @__PURE__ */ new Map();
-    if (!regions) {
+    if (only) regions = only;
+    else if (!regions || regions.only) {
       regions = [...WHOLE];
+      regions.only = false;
       const p = probes();
       for (let i = 0; i < p.length; i++) {
         if (onStep) onStep("Looking for other areas: " + p[i].label, i / p.length);
@@ -56469,9 +56793,27 @@ body[data-mode='scene'] #scene {
     return out2.map((r) => ({ at: hexAddr(r.at), hex: r.b.map(hx).join(" ") }));
   }
   var areaList = () => regions.map((r) => r.label + " " + hexAddr(r.from) + " (" + r.blocks * BLOCK + " bytes)").join("\n");
-  function sceneFinderOpen() {
+  function knobAreas() {
+    const out2 = [{ from: lin(268437504), blocks: 4, label: "track 1 settings" }];
+    for (let k2 = 0; k2 < 17; k2++) {
+      out2.push({ from: clipAddr(0, k2), blocks: 1, label: "track 1 clip " + (k2 + 1) + " head" });
+      out2.push({ from: clipAddr(0, k2) + lin(65536), blocks: 5, label: "track 1 clip " + (k2 + 1) + " sound control" });
+    }
+    out2.only = true;
+    return out2;
+  }
+  var KNOB_STEPS = [
+    "Stop playback. On the MC-707 select track 1, clip 1. Press Scan (about half a minute).",
+    "Press KNOB ASSIGN and set C1 (FILTER) to Resonance. Then press clip 2’s pad and clip 1’s pad again (so the MC-707 stores it), and press Scan.",
+    "Set C1 to Level, press clip 2 and clip 1 again, and press Scan.",
+    "Press Copy results and paste them into the chat."
+  ];
+  var knobFinderOpen = () => sceneFinderOpen(true);
+  function sceneFinderOpen(knobs = false) {
     if (document.getElementById("sfOv")) return;
     const name = DEVS[DEV].name;
+    if (knobs !== true) knobs = false;
+    scans.length = 0;
     const out2 = el("pre", { class: "sfOut" }, "No scans yet."), status3 = el("div", { class: "hint", role: "status", "aria-live": "polite" }, ""), fill2 = el("i", {}), bar2 = el("div", { class: "wpBar" }, fill2);
     let log = [];
     const show = () => out2.textContent = log.join("\n") || "No scans yet.";
@@ -56485,10 +56827,14 @@ body[data-mode='scene'] #scene {
           scan.disabled = true;
           const n = scans.length + 1;
           try {
-            const mem = await scanOnce((t, f) => {
-              status3.textContent = "Scan " + n + ": " + t;
-              fill2.style.width = Math.round(f * 100) + "%";
-            });
+            const mem = await scanOnce(
+              (t, f) => {
+                status3.textContent = "Scan " + n + ": " + t;
+                fill2.style.width = Math.round(f * 100) + "%";
+              },
+              300,
+              knobs ? knobAreas() : null
+            );
             scans.push(mem);
             if (n === 1) log.push("Scan 1: " + mem.size + " bytes read from:\n" + areaList());
             else {
@@ -56546,13 +56892,17 @@ body[data-mode='scene'] #scene {
       el(
         "div",
         { class: "ptBox", style: "max-width:720px" },
-        el("h3", {}, "Find where the " + name + " keeps its scenes"),
+        el(
+          "h3",
+          {},
+          knobs ? "Find where the " + name + " keeps the knob settings" : "Find where the " + name + " keeps its scenes"
+        ),
         el(
           "p",
           { class: "hint", style: "line-height:1.45" },
-          "Read-only: this only asks the " + name + " for data, it changes nothing. Stop playback first. The first scan takes about five minutes (it looks through the whole low address range), later ones one or two."
+          "Read-only: this only asks the " + name + (knobs ? " for data, it changes nothing. Each scan takes a few seconds." : " for data, it changes nothing. Stop playback first. The first scan takes about five minutes (it looks through the whole low address range), later ones one or two.")
         ),
-        el(
+        knobs ? el("ol", { class: "hint sfSteps" }, ...KNOB_STEPS.map((s) => el("li", {}, s))) : el(
           "ol",
           { class: "hint sfSteps" },
           el("li", {}, "Open the SCENE CHAIN screen (MUTE, then SHIFT + a step button) with CHAIN off. Press Scan."),
@@ -56750,21 +57100,23 @@ body[data-mode='scene'] #scene {
     const m = readMpj(u8);
     if (m.error) return toast(m.error);
     document.getElementById("mpjOv")?.remove();
-    const close = () => ov.remove();
+    const close = () => (stop(), ov.remove());
     const title = m.name || file.replace(/\.mpj$/i, "");
     const full = (t, k2) => {
       const c = m.tracks[t].clips[k2];
       return c && c.notes ? c : null;
     };
     const clipCount = m.tracks.reduce((n, tr, t) => n + tr.clips.filter((c, k2) => full(t, k2)).length, 0);
-    let playing2 = null;
+    let playing2 = null, unhook = null;
     const stop = () => {
       if (playing2) playing2.stop();
       playing2 = null;
+      if (unhook) unhook();
+      unhook = null;
     };
     const play2 = (s) => {
       ensureAudio();
-      stop();
+      stopAll();
       const ch = sampleAudio(u8, s), buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate);
       ch.forEach((d, i) => buf.copyToChannel(d, i));
       const src = AU.ctx.createBufferSource();
@@ -56772,6 +57124,7 @@ body[data-mode='scene'] #scene {
       src.connect(AU.ctx.destination);
       src.start();
       playing2 = src;
+      unhook = onStopAll(stop);
     };
     const wavName = (s, i) => String(i + 1).padStart(2, "0") + " " + s.name.replace(/\.wav$/i, "") + ".wav";
     const scenes = m.scenes.map((pick3, n) => ({
@@ -57271,7 +57624,7 @@ body[data-mode='scene'] #scene {
               (it) => el(
                 "option",
                 { value: itemKey(it), selected: c.item && itemKey(it) === itemKey(c.item), disabled: !resolve(it) },
-                itemName(it) + (resolve(it) ? "" : " (factory tones not added)")
+                itemName(it) + (resolve(it) ? "" : " (not added yet)")
               )
             ),
             el("option", { value: "__lib" }, "Any sound in the library…")
@@ -57646,7 +57999,7 @@ body[data-mode='scene'] #scene {
       const e = $(id);
       return !!(e && e.classList.contains("on"));
     };
-    const M = [
+    const M2 = [
       [
         "File",
         "",
@@ -57661,7 +58014,6 @@ body[data-mode='scene'] #scene {
           ["Saved songs (quick slots)…", go("#bFile")],
           ["Load demo song", go("#fDemo")],
           ["Export MIDI (.zip)", go("#fMidi")],
-          ["Open an MC-707 project file (.mpj)…", () => mpjPick()],
           0,
           [
             "Folders",
@@ -57744,8 +58096,6 @@ body[data-mode='scene'] #scene {
           ["Grab a sample…", () => grabOpen($(".mb.open") || $("#lvStart"))],
           ["Capture to Song", () => liveCapture()],
           ["Mixer…", () => liveMixerOpen()],
-          ["Your MC-707 clips…", () => clipMapOpen()],
-          ["Fill tones…", () => fillTonesOpen()],
           0,
           ["Connect MC-707", go("#lvMidi")],
           ["Settings and mapping…", go("#lvPadSet")]
@@ -57766,6 +58116,22 @@ body[data-mode='scene'] #scene {
         ]
       ],
       [
+        /* everything that talks to the MC-707 itself, in every mode */
+        "MC-707",
+        "",
+        [
+          ["Your MC-707 clips & ZenCore…", () => clipMapOpen()],
+          ["Fill tones…", () => fillTonesOpen()],
+          ["Mixer…", () => document.body.dataset.mode === "live" ? liveMixerOpen() : songMixerOpen()],
+          0,
+          ["Open an MC-707 project file (.mpj)…", () => mpjPick()],
+          ["Project templates…", () => templatesOpen()],
+          0,
+          ["Set up your MC-707…", go("#bSetup")],
+          ["MIDI and sound…", go("#bMidi")]
+        ]
+      ],
+      [
         "Settings",
         "",
         [
@@ -57781,10 +58147,7 @@ body[data-mode='scene'] #scene {
           ],
           ["Track setup…", () => trackSetupOpen()],
           ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
-          ["Your MC-707 clips…", () => clipMapOpen()],
-          ["Fill tones…", () => fillTonesOpen()],
           0,
-          ["Quick setup…", go("#bSetup")],
           ["MIDI and sound…", go("#bMidi")],
           ["Track MIDI controls…", go("#bTrackCtl")],
           ["Audio inputs…", go("#bAudSet")],
@@ -57817,8 +58180,6 @@ body[data-mode='scene'] #scene {
         [
           ["Shortcuts and tips", go("#bHelp"), "", null, null, "song"],
           ["Guide", () => openLink(LINKS.guide)],
-          ["Set up your MC-707…", go("#bSetup")],
-          ["MC-707 project templates…", () => templatesOpen()],
           0,
           [
             "For developers",
@@ -57830,6 +58191,7 @@ body[data-mode='scene'] #scene {
               { label: "ZenCore parameter reference", action: () => openLink(LINKS.params) },
               { label: "Diagnostics page", action: () => openLink(LINKS.diagnostics) },
               { label: "Find MC-707 scene data (read-only scan)…", action: () => sceneFinderOpen() },
+              { label: "Find the knob settings (read-only scan)…", action: () => knobFinderOpen() },
               { label: "Motion test (which lane moves what)…", action: () => motionTestOpen() }
             ]
           ],
@@ -57904,7 +58266,7 @@ body[data-mode='scene'] #scene {
       }
     };
     nav.append(el("span", { class: "mbrand" }, "MC-707 Toolbox"));
-    M.forEach(([name, modes, items]) => {
+    M2.forEach(([name, modes, items]) => {
       const b = el("button", { class: "mb", role: "menuitem", "aria-haspopup": "true", "aria-expanded": "false" }, name);
       const d = el("div", { class: "mdrop", role: "menu", hidden: true });
       if (modes) {
@@ -58721,6 +59083,211 @@ body[data-mode='scene'] #scene {
     toast("Recording " + bars2 + (bars2 === 1 ? " bar" : " bars") + " of " + p.name + " on " + S.tracks[t].name);
   }
 
+  // src/zen/zc-fx.js
+  var FXN = { track: [], master: null };
+  var pause6 = (ms) => new Promise((r) => setTimeout(r, ms));
+  var MFX_AT = 128;
+  var PRJ = {
+    mfx: [lin(268443648), lin(268444160), lin(268444672)],
+    cho: lin(268445184),
+    rev: lin(268445440),
+    eq: lin(268450048),
+    comp: lin(268450304)
+  };
+  var REV_TYPES = ["Off", "Integra", "Warm Hall", "Hall", "GS", "SRV2000", "SRV2000 Non-linear", "GM2 Reverb"];
+  var CHO_TYPES = [
+    "Off",
+    "Chorus",
+    "CE-1",
+    "SDD-320",
+    "JUNO-106 Chorus",
+    "Delay",
+    "T-Ctrl Delay",
+    "Delay + Tremolo",
+    "2Tap Pan Delay",
+    "3Tap Pan Delay"
+  ];
+  function fxChoices() {
+    const names = mfxNames();
+    return [
+      { id: "off", label: "Off", group: "" },
+      ...MFX_PRESETS.map((p, i) => ({ id: "p" + i, label: p[0], group: "Ready-made" })),
+      ...names.slice(1).map((n, i) => ({ id: "t" + (i + 1), label: n, group: "Effect types" }))
+    ];
+  }
+  function resolve2(id) {
+    if (id === "off") return { type: 0, vals: mfxDefaults(0), sw: 0 };
+    if (id[0] === "p") return { ...mfxPreset(+id.slice(1)), sw: 1 };
+    const type = +id.slice(1);
+    return { type, vals: mfxDefaults(type), sw: 1 };
+  }
+  var labelOf = (id) => (fxChoices().find((c) => c.id === id) || {}).label || "";
+  var mfxSound = (kind, r) => ({
+    kind,
+    v: {
+      "MFX.mfxType": r.type,
+      "MFX.mfxSwitch": r.sw,
+      ...Object.fromEntries(MFX_PARAMS.map((k2, i) => [k2, r.vals[i]]))
+    },
+    known: /* @__PURE__ */ new Set()
+  });
+  var HEAD2 = /* @__PURE__ */ new Set(["MFX.mfxType", "MFX.mfxSwitch"]);
+  async function refreshClip(t) {
+    if (TR.playing || PCLAST[t] == null) return;
+    await reselect(t, PCLAST[t]);
+  }
+  var flushed = () => Promise.race([zxFlush(), pause6(8e3)]);
+  async function sendMfx(jobs, r) {
+    for (const j2 of jobs) await sendSound(mfxSound(j2.kind, r), j2.base, HEAD2);
+    await flushed();
+    await pause6(MFX_RESET_MS);
+    for (const j2 of jobs) sendSound(mfxSound(j2.kind, r), j2.base, new Set(MFX_PARAMS));
+    await flushed();
+    const j = jobs[jobs.length - 1], copy = mfxSound(j.kind, r);
+    const back = await Promise.race([readSound(copy, j.base, new Set(MFX_PARAMS)), pause6(6e3).then(() => null)]);
+    if (back && back.ok && MFX_PARAMS.some((k2, i) => copy.v[k2] !== r.vals[i])) {
+      await pause6(MFX_RESET_MS);
+      for (const x of jobs) sendSound(mfxSound(x.kind, r), x.base, new Set(MFX_PARAMS));
+      await flushed();
+    }
+  }
+  async function trackFx(t, id) {
+    const was = FXN.track[t];
+    const now = FXN.track[t] = { id, label: labelOf(id), busy: true };
+    try {
+      if (!await zxConnect()) {
+        FXN.track[t] = was;
+        return false;
+      }
+      const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
+      const jobs = Array.from({ length: 17 }, (_, k2) => ({ kind, base: slotAddr(kind, t, k2) }));
+      const r = await Promise.race([sendMfx(jobs, resolve2(id)).then(() => true), pause6(2e4).then(() => "slow")]);
+      if (r === true) await refreshClip(t);
+      return r;
+    } finally {
+      now.busy = false;
+    }
+  }
+  var masterOk = () => DEV !== "101";
+  async function readMaster() {
+    if (!masterOk() || !await zxConnect()) return null;
+    const rev = await zxRead(PRJ.rev, 3), cho = await zxRead(PRJ.cho, 4), mfx = await zxRead(PRJ.mfx[0], 2), comp2 = await zxRead(PRJ.comp, 1), eq = await zxRead(PRJ.eq + 14, 1);
+    if (!rev && !cho && !mfx) return null;
+    FXN.master = {
+      rev: rev ? { sw: rev[0], type: rev[1], level: rev[2] } : null,
+      cho: cho ? { sw: cho[0], type: cho[1], level: cho[2], send: cho[3] } : null,
+      mfx: mfx ? { type: mfx[0], sw: mfx[1], id: mfx[1] ? "t" + mfx[0] : "off" } : null,
+      comp: comp2 ? comp2[0] : null,
+      eq: eq ? eq[0] : null
+    };
+    return FXN.master;
+  }
+  var M = () => FXN.master = FXN.master || { rev: null, cho: null, mfx: null, comp: null, eq: null };
+  async function setMaster(what, v) {
+    if (!masterOk() || !await zxConnect()) return false;
+    const m = M();
+    if (what === "revType") {
+      zxWrite(PRJ.rev, [v ? 1 : 0, v || m.rev?.type || 1]);
+      m.rev = { ...m.rev || {}, sw: v ? 1 : 0, type: v || m.rev?.type || 1 };
+    } else if (what === "revLevel") {
+      zxWrite(PRJ.rev + 2, [v]);
+      m.rev = { ...m.rev || {}, level: v };
+    } else if (what === "choType") {
+      zxWrite(PRJ.cho, [v ? 1 : 0, v || m.cho?.type || 1]);
+      m.cho = { ...m.cho || {}, sw: v ? 1 : 0, type: v || m.cho?.type || 1 };
+    } else if (what === "choLevel") {
+      zxWrite(PRJ.cho + 2, [v]);
+      m.cho = { ...m.cho || {}, level: v };
+    } else if (what === "choSend") {
+      zxWrite(PRJ.cho + 3, [v]);
+      m.cho = { ...m.cho || {}, send: v };
+    } else if (what === "comp") {
+      zxWrite(PRJ.comp, [v ? 1 : 0]);
+      m.comp = v ? 1 : 0;
+    } else if (what === "eq") {
+      zxWrite(PRJ.eq + 14, [v ? 1 : 0]);
+      m.eq = v ? 1 : 0;
+    } else if (what === "mfx") {
+      const r = resolve2(v);
+      m.mfx = { type: r.type, sw: r.sw, id: v, label: labelOf(v) };
+      await sendMfx([{ kind: "tone", base: PRJ.mfx[0] - MFX_AT }], r);
+    }
+    await zxFlush();
+    return true;
+  }
+
+  // src/zen/zc-knobs.js
+  var KNOB_ASSIGN = [
+    [0, "No Assign", "all", false],
+    [1, "Level", "all", true],
+    [2, "Pan", "all", true],
+    [3, "Coarse Tune", "td", false],
+    [4, "Fine Tune", "td", false],
+    [8, "Portamento", "tone", true],
+    [9, "Porta Time", "tone", false],
+    [10, "Cutoff", "td", true],
+    [11, "Resonance", "td", true],
+    [12, "Attack", "td", true],
+    [13, "Decay", "td", true],
+    [14, "Release", "td", false],
+    [15, "Vib Rate", "tone", false],
+    [16, "Vib Depth", "tone", false],
+    [17, "Vib Delay", "tone", false],
+    [18, "Oct Shift", "tone", false],
+    [20, "Delay Send", "all", false],
+    [21, "Reverb Send", "all", true],
+    [161, "SYS-Ctrl1", "td", true],
+    [162, "SYS-Ctrl2", "td", false],
+    [163, "SYS-Ctrl3", "td", false],
+    [164, "SYS-Ctrl4", "td", false]
+  ];
+  function knobChoices(type) {
+    return KNOB_ASSIGN.filter(([, , k2]) => k2 !== "tone" || type === "tone").map(([v, n]) => [v, n]);
+  }
+  var knobName = (v) => (KNOB_ASSIGN.find((x) => x[0] === v) || [, "Other (" + v + ")"])[1];
+  var KN = { track: [] };
+  var ENTRY = 41;
+  var STRIDE = 60;
+  var knobAddr = (t, k2, n) => clipAddr(t, k2) + lin(65536) + ENTRY + n * STRIDE;
+  var nibbles = (v) => [v >> 12 & 15, v >> 8 & 15, v >> 4 & 15, v & 15];
+  var fromNibbles = (b) => (b[0] & 15) << 12 | (b[1] & 15) << 8 | (b[2] & 15) << 4 | b[3] & 15;
+  async function readKnobs(t) {
+    if (!await zxConnect()) return null;
+    const out2 = [];
+    for (let n = 0; n < 4; n++) {
+      const b = await zxRead(knobAddr(t, 16, n), 4);
+      out2.push(Array.isArray(b) && b.length === 4 ? fromNibbles(b) : null);
+      if (n === 0 && out2[0] == null) return null;
+    }
+    if (out2.every((v) => v == null)) return null;
+    KN.track[t] = out2;
+    return out2;
+  }
+  async function readAllKnobs(tracks3, quiet = false) {
+    if (quiet && !ZX.out && !MIDI.out) return false;
+    let any = false;
+    for (const t of tracks3) if (await readKnobs(t)) any = true;
+    return any;
+  }
+  async function setKnob(t, n, choice) {
+    if (!await zxConnect()) return false;
+    const now = KN.track[t] || (KN.track[t] = [null, null, null, null]);
+    const high = now[n] != null ? now[n] >> 8 : 32, v = high << 8 | choice & 255;
+    now[n] = v;
+    zxWrite(knobAddr(t, 16, n), nibbles(v));
+    for (let k2 = 0; k2 < 16; k2++) zxWrite(knobAddr(t, k2, n), nibbles(v));
+    await zxFlush();
+    await refreshClip(t);
+    return true;
+  }
+  function knobNow(t, n) {
+    const v = KN.track[t] && KN.track[t][n];
+    return {
+      choices: knobChoices(S.tracks[t].type === "drum" ? "drum" : "tone"),
+      cur: v == null ? null : v & 255
+    };
+  }
+
   // src/ui/hover-help.js
   var HELP = [
     /* Song Mode */
@@ -58796,6 +59363,8 @@ body[data-mode='scene'] #scene {
   applyTheme();
   Object.assign(hooks, {
     fillTones: fillTonesOpen,
+    fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
+    knobs: { now: knobNow, name: knobName, read: readAllKnobs, set: setKnob },
     applyDevice,
     audRender,
     closePops,

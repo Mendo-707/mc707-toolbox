@@ -9,7 +9,7 @@ import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
-import { TR } from '../services/transport.js';
+import { TR, stopAll } from '../services/transport.js';
 import { ZX, slotAddr, trackSetAddr, zxConnect, zxFlush, zxNote, zxRead } from './zc-sysex.js';
 import { MFX_PARAMS, newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
@@ -411,6 +411,8 @@ const noteOut = (ch, b, on) => {
 };
 /** Play note n on the edited track while the pointer is held (the keyboard and the Sound browser). */
 export function audition(n) {
+  /* a pattern preview looping elsewhere stops, so the note is heard on its own (a song or Live set plays on) */
+  if (TR.playing && TR.mode === 'pat') stopAll();
   const ch = S.tracks[ZE.t].ch || ZE.t + 1;
   const send = (b, on) => {
     noteOut(ch, b, on);

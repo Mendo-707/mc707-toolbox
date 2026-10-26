@@ -24,7 +24,7 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
   const [win] = await Promise.all([page.waitForEvent('popup'), page.click('#bMixer')]);
   await win.waitForSelector('.mxStrip');
-  assert.equal(await win.locator('.mxStrip').count(), 8, 'a strip per track');
+  assert.equal(await win.locator('.mxStrip:not(.mxMaster)').count(), 8, 'a strip per track');
   assert.ok((await win.title()).includes('Song mixer'));
   await page.evaluate('window.__out.length = 0');
   /* track 4: level, pan and reverb */

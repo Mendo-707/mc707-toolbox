@@ -87,9 +87,11 @@ reading the MC-707 with the read-only scan pages and changing one setting at a t
 | Project tempo: BPM × 100 as four half-bytes (`03 02 00 00` = 128.00) | `10 00 00 10` | Read on an MC-707 at 128 BPM; written by Scene Mode |
 | Track settings, track *t* (0-7): bank select at +0/+1, Sound Source at +4 (0 TRACK, 1 CLIP) | `10 00 08 00` + *t* × `00 00 02 00` | Confirmed |
 | Track EQs, track *t* | `10 00 18 00` + *t* × `00 00 01 00` | Very likely |
-| Three project MFX | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |
-| Delay / chorus (on, type, level…) | `10 00 26 00` | Likely |
-| Reverb (on at +0, type at +1, level at +2) | `10 00 27 00` | Confirmed: level |
+| Three project MFX (same layout as a tone's MFX block; the first is taken as the master Multi FX) | `10 00 20 00`, `10 00 22 00`, `10 00 24 00` | Likely |
+| Delay / chorus (on at +0, type at +1 (0-9), level at +2, reverb send at +3) | `10 00 26 00` | Likely; written by the mixers' Master FX |
+| Reverb (on at +0, type at +1 (0-7), level at +2) | `10 00 27 00` | Confirmed: level; type written by the Master FX strip |
+| Master EQ (input, low, mid 1-3, high gains, then frequencies and Qs; on/off at +0E) | `10 00 39 00` | Likely (MV-1 map) |
+| Master compressor (on/off at +0, then 3 bands) | `10 00 3A 00` | Likely (MV-1 map) |
 
 The track faders are not stored in the project; use MIDI volume (CC 7) for track level.
 
@@ -117,6 +119,7 @@ Addresses here are packed, as Roland writes them; each byte must stay below `80`
 | Step settings: step size (0 1/8, 1 1/16, 2 1/32, 3 1/4T, 4 1/8T, 5 1/16T), then the number of steps (1-128) as two half-bytes | descriptor `+02 00 00` | Read by the Toolbox |
 | Step *s* (0-127) | descriptor `+03 00 00` + *s* × `01 00` | Read by the Toolbox |
 | Motion | descriptor `+04 00 00` + step × `01 00` + lane × `10` | 8 lanes: the track's FILTER, MOD, FX and SOUND (C4) knobs as KNOB ASSIGN sets them (tested: cutoff, Sys-Ctrl1, reverb send, decay; SOUND can be set to Level), then 4 more that changed nothing, 8 values a step as half-byte pairs, 0-127 or `FF` for no change (from Ada Locriana's mctools_sidechain). Used by Scene Mode's Pump (SOUND lane set to Level, or FILTER) and Help › For developers › Motion test |
+| Knob assignments (KNOB ASSIGN: what C1-C4 control) | descriptor `+01 00 00` + `29` + knob × `3C` (linear; 4 half-bytes, a 16-bit value) | Found on an MC-707 by scanning while KNOB ASSIGN changed: the live settings are in the track's own structure (the 17th after its 16 clips, track 1 at `21 00 00 00`); each clip has its own copy, which a project file saves. The low byte is the choice, the high byte reads `20`. Seen: `01` Level, `02` Pan, `08` Portamento, `0A` Cutoff, `0B` Resonance, `0C` Attack, `0D` Decay, `15` Reverb Send, `A1` SYS-Ctrl1 (the project file stores each one lower). The others are taken in the manual's order. Set by the mixers' knob choosers, into the track's structure and its 16 clips |
 | Pitch bend | descriptor `+05 00 00` | Not used |
 
 Each step has 16 note slots. Values marked ½ are two half-bytes (`06 03` = `0x63`):

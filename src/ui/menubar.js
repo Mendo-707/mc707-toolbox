@@ -24,7 +24,7 @@ import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
-import { sceneFinderOpen } from '../zen/zc-scan.js';
+import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
 import { mpjPick } from './mpj-open.js';
@@ -88,7 +88,6 @@ function initMenubar() {
         ['Saved songs (quick slots)…', go('#bFile')],
         ['Load demo song', go('#fDemo')],
         ['Export MIDI (.zip)', go('#fMidi')],
-        ['Open an MC-707 project file (.mpj)…', () => mpjPick()],
         0,
         [
           'Folders',
@@ -171,8 +170,6 @@ function initMenubar() {
         ['Grab a sample…', () => grabOpen($('.mb.open') || $('#lvStart'))],
         ['Capture to Song', () => liveCapture()],
         ['Mixer…', () => liveMixerOpen()],
-        ['Your MC-707 clips…', () => clipMapOpen()],
-        ['Fill tones…', () => fillTonesOpen()],
         0,
         ['Connect MC-707', go('#lvMidi')],
         ['Settings and mapping…', go('#lvPadSet')]
@@ -193,6 +190,22 @@ function initMenubar() {
       ]
     ],
     [
+      /* everything that talks to the MC-707 itself, in every mode */
+      'MC-707',
+      '',
+      [
+        ['Your MC-707 clips & ZenCore…', () => clipMapOpen()],
+        ['Fill tones…', () => fillTonesOpen()],
+        ['Mixer…', () => (document.body.dataset.mode === 'live' ? liveMixerOpen() : songMixerOpen())],
+        0,
+        ['Open an MC-707 project file (.mpj)…', () => mpjPick()],
+        ['Project templates…', () => templatesOpen()],
+        0,
+        ['Set up your MC-707…', go('#bSetup')],
+        ['MIDI and sound…', go('#bMidi')]
+      ]
+    ],
+    [
       'Settings',
       '',
       [
@@ -208,10 +221,7 @@ function initMenubar() {
         ],
         ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
-        ['Your MC-707 clips…', () => clipMapOpen()],
-        ['Fill tones…', () => fillTonesOpen()],
         0,
-        ['Quick setup…', go('#bSetup')],
         ['MIDI and sound…', go('#bMidi')],
         ['Track MIDI controls…', go('#bTrackCtl')],
         ['Audio inputs…', go('#bAudSet')],
@@ -244,8 +254,6 @@ function initMenubar() {
       [
         ['Shortcuts and tips', go('#bHelp'), '', null, null, 'song'],
         ['Guide', () => openLink(LINKS.guide)],
-        ['Set up your MC-707…', go('#bSetup')],
-        ['MC-707 project templates…', () => templatesOpen()],
         0,
         [
           'For developers',
@@ -257,6 +265,7 @@ function initMenubar() {
             { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
             { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) },
             { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() },
+            { label: 'Find the knob settings (read-only scan)…', action: () => knobFinderOpen() },
             { label: 'Motion test (which lane moves what)…', action: () => motionTestOpen() }
           ]
         ],

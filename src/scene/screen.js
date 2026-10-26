@@ -61,7 +61,8 @@ export function scenePlay(i = SC.row, loop = false) {
   watch();
 }
 export function sceneToggle() {
-  if (TR.playing) stopAll();
+  /* a pattern playing from a picker or the clip editor stops, and the scenes start */
+  if (TR.playing && TR.mode === 'scenes') stopAll();
   else scenePlay(SC.row);
   drawPlay();
 }

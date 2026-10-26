@@ -12,6 +12,7 @@ import { MIDI, midiAct } from '../services/midi.js';
 import { sendCC } from '../services/mc-controls.js';
 import { popTheme, popout, popoutOf, themeSig } from '../services/popout.js';
 import { mixLight, mixStrip } from '../services/mixer-strip.js';
+import { knobAssignFor, knobsReadOnce, masterFor, trackFxFor } from '../services/mixer-fx.js';
 import { showMenu } from '../ui/menu.js';
 import { renderArr } from './arrangement.js';
 
@@ -81,8 +82,10 @@ function stripFor(t) {
   });
   vel.style.setProperty('--lo', '0%');
   vel.style.setProperty('--hi', (tr.vol / 127) * 100 + '%');
+  const [fx, onFx] = trackFxFor(t, refresh);
   return mixStrip(
     {
+      fx,
       num: devNum(t),
       name: tr.name,
       color: TRACK_COLORS[t],
@@ -93,7 +96,13 @@ function stripFor(t) {
       cho: valOf(t, 'cho'),
       mute: tr.mute,
       solo: tr.solo,
-      knobs: KNOBS.map(key => ({ key, v: valOf(t, key), def: DEF[key], unset: !isSet(t, key) })),
+      knobs: KNOBS.map((key, n) => ({
+        key,
+        assign: knobAssignFor(t, n, refresh),
+        v: valOf(t, key),
+        def: DEF[key],
+        unset: !isSet(t, key)
+      })),
       extra: [
         el(
           'label',
@@ -105,6 +114,7 @@ function stripFor(t) {
       ]
     },
     {
+      fx: onFx,
       grab,
       done,
       set: (key, v) => set(t, key, v),
@@ -156,7 +166,11 @@ function build(root, h) {
         'div',
         { class: 'mxTop' },
         el('b', { class: 'mxTitle' }, 'Song mixer'),
-        el('span', { class: 'hint' }, 'Saved with the song and sent to the MC-707 when it starts.'),
+        el(
+          'span',
+          { class: 'hint' },
+          'Levels, sends and knob positions are saved with the song and sent when it starts; effects and what the knobs control go straight into the MC-707 (press KNOB ASSIGN there to see them).'
+        ),
         el(
           'div',
           { class: 'mxActs' },
@@ -187,7 +201,7 @@ function build(root, h) {
         ),
         h.winBtns()
       ),
-      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]))
+      el('div', { class: 'mxStrips' }, ...strips.map(x => x[1]), masterFor(refresh))
     )
   );
   const tick = now => {
@@ -201,6 +215,8 @@ function build(root, h) {
     h.raf(tick);
   };
   h.raf(tick);
+  /* what each knob controls, read once from the MC-707 when it is connected */
+  knobsReadOnce(DEVS[DEV].tracks, refresh);
 }
 function refresh() {
   const h = popoutOf(ID);
@@ -209,7 +225,7 @@ function refresh() {
 
 /** Open Song Mode's mixer (or bring it forward). */
 export function songMixerOpen() {
-  popout({ id: ID, title: 'Song mixer', w: 760, h: 700, build });
+  popout({ id: ID, title: 'Song mixer', w: 980, h: 760, build });
 }
 /** Close it (when leaving Song Mode). */
 export function songMixerClose() {

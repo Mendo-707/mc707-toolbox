@@ -15,7 +15,7 @@ const STEPS = () => {
     [
       'In the app',
       [
-        '0 · Start the MC-707 from a project template that matches your Track setup (Help › MC-707 project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.',
+        '0 · Start the MC-707 from a project template that matches your Track setup (MC-707 › Project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.',
         '1 · Clips: fill the MC-707’s clips on the board. Click an empty clip to choose its pattern, a full one to edit its notes (Notes) and its sound (Sound: the ZenCore editor and the factory tones).',
         '2 · Scenes: add scenes to the chain. Each one plays a clip per track (its chips) for so many bars; the last keeps playing.',
         '3 · Write: Write sends what changed (✓ written · ● changed · + not written yet). Or write one clip, a track or a scene from its button or right-click, or turn on Auto-write. Use a project you can lose the first time.'
