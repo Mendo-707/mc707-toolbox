@@ -175,6 +175,7 @@ import { slotAddr } from './zen/zc-sysex.js';
 import { mpjOpen } from './ui/mpj-open.js';
 import { fillTonesOpen } from './ui/fill-tones.js';
 import { CHO_TYPES, FXN, REV_TYPES, fxChoices, readMaster, setMaster, trackFx } from './zen/zc-fx.js';
+import { knobName, knobNow, readAllKnobs, setKnob } from './zen/zc-knobs.js';
 import { readMpj } from './core/mpj.js';
 import { hoverHelpStart } from './ui/hover-help.js';
 
@@ -185,6 +186,7 @@ applyTheme();
 Object.assign(hooks, {
   fillTones: fillTonesOpen,
   fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
+  knobs: { now: knobNow, name: knobName, read: readAllKnobs, set: setKnob },
   applyDevice,
   audRender,
   closePops,

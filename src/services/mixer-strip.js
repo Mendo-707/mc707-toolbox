@@ -18,7 +18,7 @@ export const STRIP_KNOBS = [
 ];
 
 /* a small horizontal control: pan from the centre, sends from the left */
-function knob(label, key, v, s, o, def = DEF[key], tip = label, unset = false) {
+function knob(label, key, v, s, o, def = DEF[key], tip = label, unset = false, assign = null) {
   const centre = key === 'pan',
     out = el('b', {}, centre ? panText(v) : String(v));
   const paint = (inp, x) => {
@@ -57,11 +57,29 @@ function knob(label, key, v, s, o, def = DEF[key], tip = label, unset = false) {
       class: 'mxRow' + (unset ? ' unset' : ''),
       title: tip + (unset ? ' · not sent yet: the MC-707 keeps its own' : '') + ' · double-click to reset'
     },
-    el('span', {}, label),
+    assign ? assignSelect(label, assign, s.name) : el('span', {}, label),
     inp,
     out
   );
   return row;
+}
+
+/* what the knob controls on the MC-707 (KNOB ASSIGN), chosen in place of its label */
+function assignSelect(label, a, name) {
+  const known = a.cur == null || a.choices.some(c => c[0] === a.cur);
+  return el(
+    'select',
+    {
+      class: 'mxKSel',
+      'aria-label': label + ' knob controls, ' + name,
+      title: label + ': what this knob controls on the MC-707 (KNOB ASSIGN), for every clip of the track',
+      onchange: e => e.target.value !== '' && a.on(+e.target.value),
+      onclick: e => e.stopPropagation()
+    },
+    a.cur == null ? el('option', { value: '', selected: true }, label) : null,
+    !known ? el('option', { value: a.cur, selected: true }, 'Other (' + a.cur + ')') : null,
+    ...a.choices.map(([v, n]) => el('option', { value: v, selected: v === a.cur }, n))
+  );
 }
 
 /**
@@ -149,7 +167,7 @@ export function mixStrip(s, o) {
           { class: 'mxKnobs', role: 'group', 'aria-label': 'Knobs, ' + s.name },
           ...s.knobs.map(k => {
             const [, label, , tip] = STRIP_KNOBS.find(x => x[0] === k.key);
-            return knob(label, k.key, k.v, s, o, k.def, tip, k.unset);
+            return knob(label, k.key, k.v, s, o, k.def, tip, k.unset, k.assign);
           })
         )
       : null,

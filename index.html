@@ -6837,6 +6837,29 @@ body.popFrameless .mxTop input {
 .mxMaster .btn {
   white-space: normal;
 }
+/* a knob's KNOB ASSIGN chooser, in place of its label: its own line, like the label */
+.mxKSel {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  font-size: 10.5px;
+  padding: 0 1px;
+  margin-left: -2px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mxKSel:hover,
+.mxKSel:focus {
+  border-color: var(--line, #d6d1c4);
+  background: var(--panel, #fff);
+}
 </style>
     <style>
 /* Scene Mode (scene/), in Song Mode's look (its colour tokens, light and dark): the toolbar with the four
@@ -39213,7 +39236,7 @@ body[data-mode='scene'] #scene {
     ["fx", "FX", 82, "C3 · the track’s FX knob (CC 82): what KNOB ASSIGN has on it"],
     ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83), which KNOB ASSIGN lists with the others: Decay, Level…"]
   ];
-  function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false) {
+  function knob(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false, assign = null) {
     const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
     const paint = (inp2, x) => {
       const p = x / 127 * 100;
@@ -39251,11 +39274,27 @@ body[data-mode='scene'] #scene {
         class: "mxRow" + (unset ? " unset" : ""),
         title: tip + (unset ? " · not sent yet: the MC-707 keeps its own" : "") + " · double-click to reset"
       },
-      el("span", {}, label2),
+      assign ? assignSelect(label2, assign, s.name) : el("span", {}, label2),
       inp,
       out2
     );
     return row;
+  }
+  function assignSelect(label2, a, name) {
+    const known2 = a.cur == null || a.choices.some((c) => c[0] === a.cur);
+    return el(
+      "select",
+      {
+        class: "mxKSel",
+        "aria-label": label2 + " knob controls, " + name,
+        title: label2 + ": what this knob controls on the MC-707 (KNOB ASSIGN), for every clip of the track",
+        onchange: (e) => e.target.value !== "" && a.on(+e.target.value),
+        onclick: (e) => e.stopPropagation()
+      },
+      a.cur == null ? el("option", { value: "", selected: true }, label2) : null,
+      !known2 ? el("option", { value: a.cur, selected: true }, "Other (" + a.cur + ")") : null,
+      ...a.choices.map(([v, n]) => el("option", { value: v, selected: v === a.cur }, n))
+    );
   }
   function mixStrip(s, o) {
     const lvlOut = el("b", { class: "mxVal" }, String(s.lvl));
@@ -39328,7 +39367,7 @@ body[data-mode='scene'] #scene {
         { class: "mxKnobs", role: "group", "aria-label": "Knobs, " + s.name },
         ...s.knobs.map((k2) => {
           const [, label2, , tip] = STRIP_KNOBS.find((x) => x[0] === k2.key);
-          return knob(label2, k2.key, k2.v, s, o, k2.def, tip, k2.unset);
+          return knob(label2, k2.key, k2.v, s, o, k2.def, tip, k2.unset, k2.assign);
         })
       ) : null,
       el("div", { class: "mxFaderBox" }, el("span", { class: "mxMeter" }, meter), fader2),
@@ -39490,6 +39529,26 @@ body[data-mode='scene'] #scene {
       }
     ];
   }
+  function knobAssignFor(t, n, redraw) {
+    const K = hooks.knobs;
+    if (!K) return null;
+    const now = K.now(t, n);
+    return {
+      ...now,
+      on: async (v) => {
+        const ok = await K.set(t, n, v).catch(() => false);
+        redraw();
+        if (!ok) toast(NOT.replace("effects", "knob settings"));
+      }
+    };
+  }
+  var knobsRead = false;
+  async function knobsReadOnce(tracks3, redraw) {
+    if (knobsRead || !hooks.knobs) return;
+    knobsRead = true;
+    if (await hooks.knobs.read(tracks3, true).catch(() => false)) redraw();
+    else knobsRead = false;
+  }
   var busy2 = false;
   function masterFor(redraw) {
     const F = hooks.fx;
@@ -39510,6 +39569,7 @@ body[data-mode='scene'] #scene {
           const m = await F.readMaster().catch(() => null);
           if (!m) toast("The MC-707 did not answer: connect it (the ZenCore editor’s link) and try again");
           redraw();
+          if (m && hooks.knobs && await hooks.knobs.read(DEVS[DEV].tracks).catch(() => false)) redraw();
         }
       }
     );
@@ -39593,7 +39653,13 @@ body[data-mode='scene'] #scene {
         cho: valOf(t, "cho"),
         mute: tr.mute,
         solo: tr.solo,
-        knobs: KNOBS.map((key) => ({ key, v: valOf(t, key), def: DEF3[key], unset: !isSet(t, key) })),
+        knobs: KNOBS.map((key, n) => ({
+          key,
+          assign: knobAssignFor(t, n, refresh),
+          v: valOf(t, key),
+          def: DEF3[key],
+          unset: !isSet(t, key)
+        })),
         extra: [
           el(
             "label",
@@ -39696,6 +39762,7 @@ body[data-mode='scene'] #scene {
       h.raf(tick);
     };
     h.raf(tick);
+    knobsReadOnce(DEVS[DEV].tracks, refresh);
   }
   function refresh() {
     const h = popoutOf(ID);
@@ -49540,7 +49607,12 @@ body[data-mode='scene'] #scene {
         solo: soloT === t,
         pending: pend,
         dim,
-        knobs: MIX_KNOBS.map((key) => ({ key, v: lvMixNow(t, key), def: LV.rest[MIX_CC[key] - 80] }))
+        knobs: MIX_KNOBS.map((key, n) => ({
+          key,
+          assign: knobAssignFor(t, n, refresh2),
+          v: lvMixNow(t, key),
+          def: LV.rest[MIX_CC[key] - 80]
+        }))
       },
       {
         fx: onFx,
@@ -49648,6 +49720,7 @@ body[data-mode='scene'] #scene {
       h.raf(tick);
     };
     h.raf(tick);
+    knobsReadOnce(DEVS[DEV].tracks, refresh2);
   }
   function refresh2() {
     const h = popoutOf(ID2);
@@ -59109,6 +59182,77 @@ body[data-mode='scene'] #scene {
     return true;
   }
 
+  // src/zen/zc-knobs.js
+  var KNOB_ASSIGN = [
+    [0, "No Assign", "all", false],
+    [1, "Level", "all", true],
+    [2, "Pan", "all", true],
+    [3, "Coarse Tune", "td", false],
+    [4, "Fine Tune", "td", false],
+    [8, "Portamento", "tone", true],
+    [9, "Porta Time", "tone", false],
+    [10, "Cutoff", "td", true],
+    [11, "Resonance", "td", true],
+    [12, "Attack", "td", true],
+    [13, "Decay", "td", true],
+    [14, "Release", "td", false],
+    [15, "Vib Rate", "tone", false],
+    [16, "Vib Depth", "tone", false],
+    [17, "Vib Delay", "tone", false],
+    [18, "Oct Shift", "tone", false],
+    [20, "Delay Send", "all", false],
+    [21, "Reverb Send", "all", true],
+    [161, "SYS-Ctrl1", "td", true],
+    [162, "SYS-Ctrl2", "td", false],
+    [163, "SYS-Ctrl3", "td", false],
+    [164, "SYS-Ctrl4", "td", false]
+  ];
+  function knobChoices(type) {
+    return KNOB_ASSIGN.filter(([, , k2]) => k2 !== "tone" || type === "tone").map(([v, n]) => [v, n]);
+  }
+  var knobName = (v) => (KNOB_ASSIGN.find((x) => x[0] === v) || [, "Other (" + v + ")"])[1];
+  var KN = { track: [] };
+  var ENTRY = 41;
+  var STRIDE = 60;
+  var knobAddr = (t, k2, n) => clipAddr(t, k2) + lin(65536) + ENTRY + n * STRIDE;
+  var nibbles = (v) => [v >> 12 & 15, v >> 8 & 15, v >> 4 & 15, v & 15];
+  var fromNibbles = (b) => (b[0] & 15) << 12 | (b[1] & 15) << 8 | (b[2] & 15) << 4 | b[3] & 15;
+  async function readKnobs(t) {
+    if (!await zxConnect()) return null;
+    const out2 = [];
+    for (let n = 0; n < 4; n++) {
+      const b = await zxRead(knobAddr(t, 16, n), 4);
+      out2.push(Array.isArray(b) && b.length === 4 ? fromNibbles(b) : null);
+      if (n === 0 && out2[0] == null) return null;
+    }
+    if (out2.every((v) => v == null)) return null;
+    KN.track[t] = out2;
+    return out2;
+  }
+  async function readAllKnobs(tracks3, quiet = false) {
+    if (quiet && !ZX.out && !MIDI.out) return false;
+    let any = false;
+    for (const t of tracks3) if (await readKnobs(t)) any = true;
+    return any;
+  }
+  async function setKnob(t, n, choice) {
+    if (!await zxConnect()) return false;
+    const now = KN.track[t] || (KN.track[t] = [null, null, null, null]);
+    const high = now[n] != null ? now[n] >> 8 : 32, v = high << 8 | choice & 255;
+    now[n] = v;
+    zxWrite(knobAddr(t, 16, n), nibbles(v));
+    for (let k2 = 0; k2 < 16; k2++) zxWrite(knobAddr(t, k2, n), nibbles(v));
+    await zxFlush();
+    return true;
+  }
+  function knobNow(t, n) {
+    const v = KN.track[t] && KN.track[t][n];
+    return {
+      choices: knobChoices(S.tracks[t].type === "drum" ? "drum" : "tone"),
+      cur: v == null ? null : v & 255
+    };
+  }
+
   // src/ui/hover-help.js
   var HELP = [
     /* Song Mode */
@@ -59185,6 +59329,7 @@ body[data-mode='scene'] #scene {
   Object.assign(hooks, {
     fillTones: fillTonesOpen,
     fx: { choices: fxChoices, now: FXN, trackFx, readMaster, setMaster, REV_TYPES, CHO_TYPES },
+    knobs: { now: knobNow, name: knobName, read: readAllKnobs, set: setKnob },
     applyDevice,
     audRender,
     closePops,

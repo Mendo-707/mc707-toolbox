@@ -12,7 +12,7 @@ import { MIDI, midiAct } from '../services/midi.js';
 import { sendCC } from '../services/mc-controls.js';
 import { popTheme, popout, popoutOf, themeSig } from '../services/popout.js';
 import { mixLight, mixStrip } from '../services/mixer-strip.js';
-import { masterFor, trackFxFor } from '../services/mixer-fx.js';
+import { knobAssignFor, knobsReadOnce, masterFor, trackFxFor } from '../services/mixer-fx.js';
 import { showMenu } from '../ui/menu.js';
 import { renderArr } from './arrangement.js';
 
@@ -96,7 +96,13 @@ function stripFor(t) {
       cho: valOf(t, 'cho'),
       mute: tr.mute,
       solo: tr.solo,
-      knobs: KNOBS.map(key => ({ key, v: valOf(t, key), def: DEF[key], unset: !isSet(t, key) })),
+      knobs: KNOBS.map((key, n) => ({
+        key,
+        assign: knobAssignFor(t, n, refresh),
+        v: valOf(t, key),
+        def: DEF[key],
+        unset: !isSet(t, key)
+      })),
       extra: [
         el(
           'label',
@@ -205,6 +211,8 @@ function build(root, h) {
     h.raf(tick);
   };
   h.raf(tick);
+  /* what each knob controls, read once from the MC-707 when it is connected */
+  knobsReadOnce(DEVS[DEV].tracks, refresh);
 }
 function refresh() {
   const h = popoutOf(ID);

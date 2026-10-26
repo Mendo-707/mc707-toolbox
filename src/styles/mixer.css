@@ -467,3 +467,26 @@ body.popFrameless .mxTop input {
 .mxMaster .btn {
   white-space: normal;
 }
+/* a knob's KNOB ASSIGN chooser, in place of its label: its own line, like the label */
+.mxKSel {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  font-size: 10.5px;
+  padding: 0 1px;
+  margin-left: -2px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mxKSel:hover,
+.mxKSel:focus {
+  border-color: var(--line, #d6d1c4);
+  background: var(--panel, #fff);
+}
