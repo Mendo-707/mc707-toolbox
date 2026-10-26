@@ -16,6 +16,7 @@ import { MFX_PARAMS, paramOf } from './zc-tone.js';
 import { DIALS, FX_GROUP, OSC_GROUP, fxOf, fxParam } from './zc-lab-more.js';
 import { tone } from './zc-starters.js';
 import { BLENDS } from './zc-lab-blends.js';
+import { benchBox } from './zc-lab-bench.js';
 
 const LAB = {
   sel: 'sun',
@@ -764,6 +765,7 @@ function frame(now) {
   const svg = document.querySelector('#labOv .lsSvg');
   if (!svg) return (SL.raf = 0);
   SL.raf = requestAnimationFrame(frame);
+  scopeHead(now);
   const calm = still();
   const dt = Math.min(0.05, (now - (SL.last || now)) / 1000);
   SL.last = now;
@@ -780,7 +782,7 @@ function frame(now) {
     if (r != null && r > envSec(SL.env.t4) + 0.1) SL.hold = null;
   }
   const g = x => (typeof x === 'number' ? x : 0);
-  const R = (58 + g(T.Sustain) * 12 + g(T.Tail) * 8) * (1 + E * 0.22);
+  const R = (48 + g(T.Sustain) * 10 + g(T.Tail) * 7) * (1 + E * 0.22);
   const sq = Math.sin(SL.kick * 9) * SL.kick;
   const sx = (1 + g(T.Width) * 0.42) * (1 + sq * 0.18),
     sy = (1 - g(T.Width) * 0.1) * (1 - sq * 0.16);
@@ -1131,6 +1133,13 @@ export function labOpen() {
       el(
         'div',
         { class: 'labIng' },
+        el('input', {
+          type: 'search',
+          class: 'labFind',
+          placeholder: 'Find an ingredient (cutoff, LFO, bass…)',
+          'aria-label': 'Find an ingredient',
+          oninput: e => find(e.target.value)
+        }),
         ...GROUPS.map(([name, ps]) => el('fieldset', { class: 'zcG labG' }, el('legend', {}, name), ...ps.map(ingBtn)))
       ),
       el(
@@ -1141,8 +1150,14 @@ export function labOpen() {
           { class: 'zcG labStageG' },
           el('legend', {}, 'Your tone'),
           stage,
+          el('div', {
+            class: 'labScope',
+            id: 'labScope',
+            title: 'The amp envelope (green) and filter envelope (yellow) of the partial the lab works on'
+          }),
           el('p', { class: 'labRead', id: 'labRead' })
         ),
+        el('div', { id: 'labBench' }),
         el('div', { class: 'labTarget', id: 'labTarget' }),
         el(
           'div',
@@ -1226,6 +1241,7 @@ export function labOpen() {
   addEventListener('keyup', onKeyUp, true);
   select(LAB.sel);
   draw();
+  drawBench();
   ov.focus();
   requestAnimationFrame(() => ov.classList.add('in'));
   if (!SL.raf) SL.raf = requestAnimationFrame(frame);
@@ -1361,6 +1377,7 @@ function draw() {
   SL.to = tint(LAB.log.slice(-4).map(x => ing(x.id).c));
   drawMeters(tr);
   drawTarget();
+  drawScope();
   $('#labRead').textContent = reading(tr);
   $('#labBlends').replaceChildren(
     el('legend', {}, 'Blends'),
@@ -1417,6 +1434,121 @@ function draw() {
         )
       : el('p', { class: 'hint' }, 'Nothing yet: pick an ingredient and mix it in, then hold a Taste key.')
   );
+}
+
+/* ---- finding an ingredient: by its name, what it changes, its tagline or what you hear it in ---- */
+function find(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  document.querySelectorAll('#labOv .labG').forEach(g => {
+    let any = false;
+    g.querySelectorAll('.liBtn').forEach(b => {
+      const p = ing(b.dataset.id);
+      const text = (p.name + ' ' + (SUB[p.id] || '') + ' ' + p.tag + ' ' + p.hear + ' ' + p.what).toLowerCase();
+      const hit = words.every(w => text.includes(w));
+      b.hidden = !hit;
+      any = any || hit;
+    });
+    g.hidden = !any;
+  });
+}
+
+/* ---- the bench (zc-lab-bench.js): Mutate, Morph, Ear test ---- */
+const CTX = {
+  apply: (tag, vals, id, label) => apply(tag, vals, id, label),
+  tag: () => 'bench:' + LAB.dragN++,
+  parts: () => parts(),
+  keyName: k => keyName(k),
+  shown: (k, v) => shown(k, v),
+  ingredients: () => ING,
+  select: id => select(id),
+  redraw: () => drawBench(),
+  dragN: () => LAB.dragN,
+  dragged: (tag, fn) => dragged(tag, fn),
+  dragDone: () => LAB.dragN++,
+  /* the ear test's hidden ingredient: mixed in with no name and no colour */
+  mixQuiet(id, amt, tag) {
+    const b = brewer();
+    ing(id).brew(b, amt / 10);
+    const before = Object.fromEntries(Object.keys(b.out).map(k => [k, ZE.snd.v[k]]));
+    const keys = zeBrew(b.out, tag);
+    if (keys.length) {
+      LAB.log.push({ id: 'ghost', label: 'Ear test', tag, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
+      SL.kick = 1;
+      SL.rip = 0;
+      draw();
+      if (NOTE && LAB.latch) retrigger();
+    }
+    return keys;
+  }
+};
+function drawBench() {
+  const box = $('#labBench');
+  if (box) box.replaceChildren(benchBox(CTX));
+}
+
+/* ---- the scope under the slime: the amp and filter envelopes of the partial the lab works on ---- */
+const SCOPE = { W: 400, H: 46, x: null };
+function drawScope() {
+  const box = $('#labScope');
+  if (!box) return;
+  const v = ZE.snd.v,
+    i = parts()[0],
+    n = k => (typeof v[k] === 'number' ? v[k] : 0);
+  const a = k => n('AENV' + i + '.' + k),
+    f = k => n('FENV' + i + '.' + k);
+  const at = [envSec(a('T1')), envSec(a('T2')), envSec(a('T3'))],
+    rel = envSec(a('T4'));
+  const ft = [envSec(f('T1')), envSec(f('T2')), envSec(f('T3'))],
+    frel = envSec(f('T4'));
+  const held = Math.max(at[0] + at[1] + at[2], ft[0] + ft[1] + ft[2]) + 0.5;
+  const total = Math.max(0.6, held + Math.max(rel, frel));
+  const W = SCOPE.W,
+    H = SCOPE.H,
+    X = t => (t / total) * W,
+    Y = l => H - 3 - l * (H - 8);
+  SCOPE.x = { total, held, at, W };
+  const ampPts = [
+    [0, 0],
+    [at[0], a('L1') / 1023],
+    [at[0] + at[1], a('L2') / 1023],
+    [at[0] + at[1] + at[2], a('L3') / 1023],
+    [held, a('L3') / 1023],
+    [held + rel, 0]
+  ];
+  const fl = l => (n('FENV' + i + '.DEPTH') < 0 ? 1 - l : l);
+  const filPts = [
+    [0, fl(f('L0') / 1023)],
+    [ft[0], fl(f('L1') / 1023)],
+    [ft[0] + ft[1], fl(f('L2') / 1023)],
+    [ft[0] + ft[1] + ft[2], fl(f('L3') / 1023)],
+    [held, fl(f('L3') / 1023)],
+    [held + frel, fl(f('L4') / 1023)]
+  ];
+  const path = pts => pts.map(([t, l], j) => (j ? 'L' : 'M') + X(t).toFixed(1) + ' ' + Y(l).toFixed(1)).join(' ');
+  const depth = Math.abs(n('FENV' + i + '.DEPTH'));
+  box.innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">` +
+    `<line class="lcRel" x1="${X(held)}" y1="0" x2="${X(held)}" y2="${H}"/>` +
+    `<path class="lcAmp" d="${path(ampPts)} L${X(held + rel)} ${H} L0 ${H} Z"/>` +
+    `<path class="lcAmpL" d="${path(ampPts)}"/>` +
+    (depth ? `<path class="lcFil" d="${path(filPts)}"/>` : '') +
+    `<line class="lcHead" x1="-10" y1="0" x2="-10" y2="${H}"/></svg>` +
+    `<span class="lcLab">AMP${depth ? ' · <i>FILTER</i>' : ''} · P${i + 1}</span><span class="lcKey" style="left:${((X(held) / W) * 100).toFixed(1)}%">key up</span>`;
+}
+/* the playhead while a note is tasted: through the envelope, parked in the hold, then on from key up */
+function scopeHead(now) {
+  const h = document.querySelector('#labScope .lcHead');
+  if (!h || !SCOPE.x) return;
+  let x = -10;
+  if (SL.hold) {
+    const { total, held, W } = SCOPE.x;
+    const t = (now - SL.hold.t0) / 1000,
+      r = SL.hold.up == null ? null : (now - SL.hold.up) / 1000;
+    const pos = r == null ? Math.min(t, held) : held + r;
+    x = (Math.min(pos, total) / total) * W;
+  }
+  h.setAttribute('x1', x);
+  h.setAttribute('x2', x);
 }
 
 /* ---- direct control: the Character bars as macros, and Dial it in ---- */
