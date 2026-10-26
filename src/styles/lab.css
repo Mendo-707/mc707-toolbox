@@ -747,3 +747,14 @@
   grid-column: 1 / -1;
   width: 100%;
 }
+.llHow {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-left: 2px solid var(--ic, var(--zc-acc));
+  background: #050906;
+  font:
+    500 11.5px/1.5 ui-monospace,
+    Consolas,
+    monospace;
+  color: #c9f7d5;
+}

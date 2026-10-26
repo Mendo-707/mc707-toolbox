@@ -9,7 +9,7 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 - **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
 - **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen, with every track's FILTER, MOD, FX and SOUND (C4) knobs.
 
-> **Version 1.5.5.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.6.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -33,6 +33,10 @@ Write songs and play live sets on the **Roland MC-707** from your computer. One 
 ![Windows, Mac, Linux and the web](docs/features/8-everywhere.png)
 
 </details>
+
+## New in 1.6
+
+- **Slime Lab** (new, experimental): a fun, visual way into sound design in the ZenCore editor (**Slime Lab** in the editor's header, tones only). Your tone is a living slime that takes on its character: it wobbles with the motion, spreads with the width, glows with the brightness, drips when it rings on, and swells and fades along the amp envelope while you hold a Taste key. Around it are 42 ingredients in seven groups (Oscillator, Filter, Shape, Motion, Pitch, Space and texture, Effects), each a real sound-design move: double-click, press **+** or drag one onto the slime and it gloops in, changing the sound on the MC-707 as it lands. The **Learn** panel explains the idea behind each one, where you hear it and a tip, lists exactly what it changed, and has **Dial it in** controls for the settings behind it. Drag the **Character** bars (brightness, bite, snap, sustain, tail, motion, width, grit, space) to set them directly, and choose which partials everything **works on**. Ten **blends** (acid, Reese, wobble and 808 basses, supersaw lead, dream pad, brass stab, house pluck, lo-fi keys, sync lead) build a classic sound from **New tone**, step by step with the reason for each step, or in one go; every step is something you can do in the lab yourself (which partials it works on, the ingredient and amount, the dial settings), so you can make any of them by hand. Every change is one undo step; **Start over** brings back the tone you opened with. Keys: Z X C V B taste, Enter mixes in, arrows choose, 1–0 set the amount.
 
 ## New in 1.5
 
@@ -267,6 +271,7 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 - **Read from MC-707** reads the clip's sound when the editor opens and shows *Read X of Y values*; anything it couldn't read shows faded until you change it.
 - **Starters** (32 sounds in groups: saw lead, acid, Reese and wobble basses, Juno and PWM pads, strings, brass, Hoover, sync lead, bell, organ, house chord stab, kick, five step sequences, four FM-style sounds and more), **Sounds** (the Sound browser, below), **File** (save and open sounds), **Partial** (copy, paste, reset) and **Copy to** another clip. Undo and redo with Ctrl+Z and Ctrl+Shift+Z.
 - **Sound browser** (**Sounds**, or *Browse all sounds…* at the top of Starters): every starter and every sound you've saved, in one list with search, an instrument filter (bass, pads, leads, keys, plucks and more, worked out from each sound's ZenCore category or name), genre tags and ★ favourites. Click a sound to load it into the clip (with Live on you hear it at once); hold ▶ to play a note. **Save this tone** keeps the sound you're editing with a name, type and tags. **Grab from MC-707** reads one clip, a track's 16 clips or every clip on every track and keeps each sound it finds, so factory sounds you pick on the MC-707 end up in your library (empty clips and sounds you already have are skipped). **Backup** exports the library to a file and imports one, to move it to another computer or share it. The library lives in this browser (or the desktop app) and holds thousands of sounds. Your older My sounds move in by themselves. Make your own **folders** under My sounds (right-click one to rename or remove it). **Ctrl-click** or **Shift-click** picks several sounds: the bar above the list tags them, sets their category, copies them (factory tones and starters too) or moves your own into a folder, or deletes them. The **Tag** list under the categories shows only the sounds with a tag. **Edit in ZenCore** closes the browser for the editor; **Done** closes both.
+- **Slime Lab** (experimental, tones): shape the sound by mixing ingredients into a living slime, learn the idea behind each one, dial in the settings behind it, and build ten classic sounds step by step (see [New in 1.6](#new-in-16)).
 - **Keep it:** the editor changes the sound in the MC-707's memory, so save the project on the MC-707.
 
 **For developers:** everything the editor learned about the MC-707's SysEx is written up in [docs/MC707-SYSEX.md](docs/MC707-SYSEX.md) (message format, where each clip's sound lives, the device's quirks, the project settings mapped so far), with every tone, drum kit and MFX parameter in [docs/ZENCORE-PARAMETERS.md](docs/ZENCORE-PARAMETERS.md).

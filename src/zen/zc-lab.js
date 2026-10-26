@@ -1,11 +1,12 @@
 // The Slime Lab (experimental): a playful, visual way into sound design for ZenCore tones. The tone is a
 // living slime in the middle; each ingredient around it is one sound-design move (open the filter, pluck
 // the envelope, wobble an LFO, widen the stereo, glide between notes…) made of real parameter changes.
-// Mix one in (double-click, drag it onto the slime, or select it and press Mix in) and the tone changes,
+// Mix one in (double-click, +, drag it onto the slime, or select it and press Mix in) and the tone changes,
 // on the MC-707 too when the editor is live. The slime takes on the tone's character: its wobble is the
 // motion, its spread the width, its glow the brightness, and it swells and fades with the amp envelope
 // while you hold a Taste key. The Learn panel explains the idea behind each ingredient and lists exactly
-// what changed; blends mix classic sounds step by step, and mixing a blend's ingredients yourself finds it.
+// what changed, with Dial it in controls for the settings behind it. The Character bars set the tone directly,
+// Works on picks the partials, and blends (zc-lab-blends.js) build classic sounds from a clean slate, step by step.
 //
 // Every mix-in is one undo step in the editor's history. Reads and changes: ZE.snd (through zeBrew).
 // Owns: LAB (the lab's state), localStorage 'mc707-lab' (blends found, the last amount).
@@ -533,6 +534,27 @@ const SUB = {
   grit: 'FXM, fat, analog feel',
   space: 'Reverb + delay sends'
 };
+/* Add a layer: partial 1 (or the partial chosen) copied onto the first partial that is off */
+const LAYER_BLKS = /^(PTL|PENV|FENV|AENV|LFO|EQ|SPTL)(\d)\.(.+)$/;
+OSC_GROUP[1].splice(6, 0, {
+  id: 'layer',
+  name: 'Add a layer',
+  c: '#b5e48c',
+  tag: 'A copy on the next free partial.',
+  brew: b => {
+    const src = parts()[0],
+      to = b.free();
+    if (to == null) return;
+    b.set('PMT.PMT' + (to + 1) + '_PTL_SW', 1);
+    for (const k of Object.keys(ZE.snd.v)) {
+      const m = LAYER_BLKS.exec(k);
+      if (m && +m[2] === src) b.set(m[1] + to + '.' + m[3], b.get(k));
+    }
+  },
+  what: 'A ZenCore tone has four partials: four complete synth voices that play together. Add a layer copies the partial you are working on onto the next one that is off, so you can change the copy: another wave, detuned, an octave away, quieter. Layering is how most big sounds are made: a saw over a sine sub, two detuned saws, a body and a bell.',
+  hear: 'Reese basses, layered pads, sub under a lead, electric pianos (body plus bell).',
+  tip: 'After adding a layer, set Works on to the new partial and change only that one.'
+});
 GROUPS.unshift(OSC_GROUP);
 GROUPS.push(FX_GROUP);
 Object.assign(SUB, {
@@ -542,6 +564,7 @@ Object.assign(SUB, {
   tri: 'VA triangle',
   sine: 'VA sine',
   ssaw: 'SuperSAW + detune',
+  layer: 'Copy to a new partial',
   noise: 'Noise on a spare partial',
   sync: 'Partial 2 synced',
   ring: 'Partials 1 × 2',
@@ -1097,6 +1120,7 @@ export function labOpen() {
         { class: 'labTools' },
         btn('Random', random, 'Mix in three random ingredients'),
         btn('Undo', undo, 'Take back the last mix-in (Ctrl+Z)'),
+        btn('New tone', () => newTone(), 'Start from scratch: a fresh tone, a saw wave on partial 1 (one undo step)'),
         btn('Start over', startOver, 'Take back everything mixed in since the lab opened'),
         btn('Back to editor', () => labClose(), 'Back to the editor (Esc)', true)
       )
@@ -1358,7 +1382,7 @@ function draw() {
           el(
             'div',
             { class: 'lbDots' },
-            ...r.steps.map(([id, t]) => el('i', { style: '--ic:' + ing(id).c, title: t }))
+            ...r.steps.map(st => el('i', { style: '--ic:' + ing(st.ing).c, title: st.title }))
           ),
           el('small', {}, r.about)
         ),
@@ -1735,49 +1759,89 @@ async function random() {
   await LAB.chain;
   toast('Mixed in ' + pick.map(p => p.name).join(', ') + ': have a taste');
 }
-/* ---- blends: a clean slate, then each step with its reason ---- */
-/* the values that exist in a tone (so a blend's typo can't send nonsense) */
-const real = vals => Object.fromEntries(Object.entries(vals).filter(([k]) => paramOf('tone', k)));
-/** Start a blend: the clean slate goes in, then (auto) every step, or (guided) one per Next. */
-function blendStart(r, auto) {
+/* ---- New tone, and blends: a run of lab actions, each with its reason ---- */
+/** New tone: a fresh tone, a saw wave on partial 1 (one undo step). Resolves once it is in. */
+function newTone(why = true, name = 'INIT TONE') {
   noteOffIfHeld();
-  /* i: the next step asked for; done: the steps in the tone */
-  LAB.guide = { r, i: 0, done: 0, auto, away: false };
-  const name = r.name.toUpperCase().slice(0, 16);
-  const snd = tone(name, set => {
-    if (r.slate === 'supersaw') set('SPTL.OSC_TYPE', 3);
-    else set('SPTL.VA_FORM', r.slate);
-  });
-  const p = ing('ghost');
-  const landed = dropIn(p);
-  later(async () => {
+  LAB.target = null;
+  const landed = dropIn(ing('ghost'));
+  return later(async () => {
     await landed;
     if (!$('#labOv')) return;
-    await zeLoad(snd);
-    LAB.log.push({ id: 'ghost', label: 'Clean slate', guide: true, slate: true, ch: [] });
+    await zeLoad(tone(name, () => {}));
+    LAB.log.push({ id: 'ghost', label: 'New tone', slate: true, guide: !!LAB.guide, ch: [] });
     draw();
     drawLearn();
+    if (why) toast('A fresh tone: a saw wave on partial 1 (Undo brings the old one back)');
   });
+}
+/* a step's values, as the lab's controls would set them: the dial keys on the partials it works on */
+function dialVals(dial) {
+  const out = {};
+  for (const [k, x] of Object.entries(dial)) {
+    if (/^mfx\d+$/.test(k)) out[MFX_PARAMS[+k.slice(3)]] = x;
+    else for (const kk of dialKeys(k)) if (paramOf('tone', kk)) out[kk] = x;
+  }
+  return out;
+}
+/* what a step does, in the lab's own words: Works on, Mix in, Dial in */
+function stepHow(st) {
+  const p = ing(st.ing),
+    out = [st.on != null ? 'Works on: partial ' + (st.on + 1) : 'Works on: all partials'];
+  if (st.amt) out.push('Mix in ' + p.name + ' at ' + st.amt);
+  const ds = Object.entries(st.dial).map(([k, x]) => {
+    if (/^mfx\d+$/.test(k)) {
+      const sp = fxParam(fxOf(st.ing), +k.slice(3));
+      return (sp ? sp.name : k) + ' ' + (sp && sp.list ? sp.list[x] : x);
+    }
+    const kk = /^(CMN|SCMN|SPMT|PMT)\./.test(k) || /^[A-Z]+\d\./.test(k) ? k : k.replace('.', '0.');
+    return keyName(kk).replace(/ · P\d$/, '') + ' ' + shown(kk, x);
+  });
+  if (ds.length) out.push('Dial in ' + p.name + ': ' + ds.join(', '));
+  return out;
+}
+/** Start a blend: New tone, then (auto) every step, or (guided) one per Next. */
+function blendStart(r, auto) {
+  /* i: the next step asked for; done: the steps in the tone */
+  LAB.guide = { r, i: 0, done: 0, auto, away: false };
+  /* the tone is named after the blend (rename it in the editor's Common page) */
+  newTone(false, r.name.toUpperCase().slice(0, 16));
   drawLearn();
   if (auto) runSteps(r, 0);
   return LAB.chain;
 }
-/* one step of a blend (resolves once it is in the tone) */
+/* one step of a blend (resolves once it is in the tone): exactly what you would do by hand */
 function blendStep(r, i) {
   const g = LAB.guide;
   if (!g || g.r !== r || i !== g.i || i >= r.steps.length) return Promise.resolve();
-  const [id, label, , vals] = r.steps[i];
+  const st = r.steps[i],
+    p = ing(st.ing);
   g.i = i + 1;
   g.away = false;
   drawLearn();
-  const landed = dropIn(ing(id));
+  const landed = dropIn(p);
   return later(async () => {
     await landed;
     if (!$('#labOv')) return;
-    const v = real(vals);
-    const before = Object.fromEntries(Object.keys(v).map(k => [k, ZE.snd.v[k]]));
-    const keys = zeBrew(v);
-    LAB.log.push({ id, label, guide: true, ch: keys.map(k => [k, before[k], ZE.snd.v[k]]) });
+    LAB.target = st.on ?? null;
+    const tag = 'blend:' + r.id + ':' + i + ':' + LAB.dragN++,
+      ch = [];
+    const put = vals => {
+      const before = Object.fromEntries(Object.keys(vals).map(k => [k, ZE.snd.v[k]]));
+      for (const k of zeBrew(vals, tag)) {
+        const c = ch.find(x => x[0] === k);
+        if (c) c[2] = ZE.snd.v[k];
+        else ch.push([k, before[k], ZE.snd.v[k]]);
+      }
+    };
+    if (st.amt) {
+      const b = brewer();
+      p.brew(b, st.amt / 10);
+      put(b.out);
+    }
+    /* the dials after the mix-in, so a new layer's partial counts as on */
+    put(dialVals(st.dial));
+    LAB.log.push({ id: st.ing, label: st.title, guide: true, ch, tag });
     g.done = i + 1;
     if (g.done >= r.steps.length) made(r);
     draw();
@@ -1811,24 +1875,25 @@ function drawGuide(box) {
   const shownStep = Math.max(0, g.done - 1);
   const last = [...LAB.log].reverse().find(x => x.guide && !x.slate);
   const step = g.done ? r.steps[shownStep] : null;
-  box.style.setProperty('--ic', step ? ing(step[0]).c : '#dfe9ff');
+  box.style.setProperty('--ic', step ? ing(step.ing).c : '#dfe9ff');
   box.replaceChildren(
     el('legend', {}, 'Blend · ' + r.name),
     el('p', { class: 'llAbout' }, r.about),
     el(
       'ol',
       { class: 'lgSteps' },
-      el('li', { class: LAB.log.some(x => x.slate) ? 'done' : 'now' }, 'Clean slate: ' + slateName(r)),
-      ...r.steps.map(([id, t], i) =>
-        el('li', { class: i < g.done ? 'done' : i === g.done ? 'next' : '', style: '--ic:' + ing(id).c }, t)
+      el('li', { class: LAB.log.some(x => x.slate) ? 'done' : 'now' }, 'New tone'),
+      ...r.steps.map((st, i) =>
+        el('li', { class: i < g.done ? 'done' : i === g.done ? 'next' : '', style: '--ic:' + ing(st.ing).c }, st.title)
       )
     ),
     step
       ? el(
           'div',
           { class: 'llStep' },
-          el('span', { class: 'llK' }, 'Step ' + g.done + ' of ' + r.steps.length + ' · ' + step[1]),
-          el('p', {}, step[2]),
+          el('span', { class: 'llK' }, 'Step ' + (g.done + 1) + ' of ' + (r.steps.length + 1) + ' · ' + step.title),
+          el('p', {}, step.why),
+          el('div', { class: 'llHow' }, ...stepHow(step).map(t => el('div', {}, t))),
           last && last.ch.length
             ? el(
                 'div',
@@ -1851,9 +1916,7 @@ function drawGuide(box) {
       : el(
           'p',
           { class: 'hint' },
-          'A fresh tone on the ' +
-            slateName(r) +
-            ' oscillator, with nothing else set: every blend starts from the same place, so it sounds right whatever was loaded. Taste it, then take the first step.'
+          'Every blend starts from New tone (in the lab’s header): a saw wave on partial 1 with nothing else set, so it sounds the same whatever was loaded. Each step is something you can do in the lab yourself, shown as Works on, Mix in and Dial in.'
         ),
     el(
       'div',
@@ -1863,7 +1926,7 @@ function drawGuide(box) {
         ? btn('Done', () => ((LAB.guide = null), draw(), drawLearn()), 'Close the guide', true)
         : g.auto || busy
           ? el('span', { class: 'hint' }, 'Mixing…')
-          : btn('Next: ' + r.steps[g.i][1], () => blendStep(r, g.i), 'Take the next step', true),
+          : btn('Next: ' + r.steps[g.i].title, () => blendStep(r, g.i), 'Take the next step', true),
       done || g.auto ? null : btn('Finish', () => finish(r), 'Do the remaining steps in one go')
     )
   );
@@ -1871,7 +1934,6 @@ function drawGuide(box) {
   const t = box.querySelector('.llGo .btn');
   t.addEventListener('pointerdown', e => keyDown(r.note, e.currentTarget));
 }
-const slateName = r => (r.slate === 'supersaw' ? 'SuperSAW' : ['saw', 'square', 'triangle', 'sine'][r.slate] + ' wave');
 function finish(r) {
   const g = LAB.guide;
   if (!g) return;
