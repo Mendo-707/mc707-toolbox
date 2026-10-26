@@ -29168,13 +29168,20 @@ body[data-mode='scene'] #scene {
     if (it.done) return;
     const [l, data] = it.value;
     ZX.q.delete(l);
-    rawSend(dt1(l, data));
+    try {
+      rawSend(dt1(l, data));
+    } catch (e) {
+    }
     if (ZX.q.size) ZX.timer = setTimeout(pump, ZX.pace || PACE);
     else if (ZX.onIdle) ZX.onIdle();
   }
   function zxFlush() {
     return new Promise((res) => {
-      const chk = () => ZX.q.size || ZX.timer ? setTimeout(chk, 10) : res();
+      const chk = () => {
+        if (!ZX.q.size && !ZX.timer) return res();
+        if (ZX.q.size && !ZX.timer) ZX.timer = setTimeout(pump, 0);
+        setTimeout(chk, 10);
+      };
       chk();
     });
   }
@@ -39525,7 +39532,8 @@ body[data-mode='scene'] #scene {
         redraw();
         const ok = await run2.catch(() => false);
         redraw();
-        if (!ok) toast(NOT);
+        if (ok === "slow") toast("The MC-707 is slow to take the effect: check it on the MC-707, or choose it again");
+        else if (!ok) toast(NOT);
       }
     ];
   }
@@ -59104,18 +59112,23 @@ body[data-mode='scene'] #scene {
     known: /* @__PURE__ */ new Set()
   });
   var HEAD2 = /* @__PURE__ */ new Set(["MFX.mfxType", "MFX.mfxSwitch"]);
+  async function refreshClip(t) {
+    if (TR.playing || PCLAST[t] == null) return;
+    await reselect(t, PCLAST[t]);
+  }
+  var flushed = () => Promise.race([zxFlush(), pause6(8e3)]);
   async function sendMfx(jobs, r) {
     for (const j2 of jobs) await sendSound(mfxSound(j2.kind, r), j2.base, HEAD2);
-    await zxFlush();
+    await flushed();
     await pause6(MFX_RESET_MS);
     for (const j2 of jobs) sendSound(mfxSound(j2.kind, r), j2.base, new Set(MFX_PARAMS));
-    await zxFlush();
+    await flushed();
     const j = jobs[jobs.length - 1], copy = mfxSound(j.kind, r);
-    const back = await readSound(copy, j.base, new Set(MFX_PARAMS));
+    const back = await Promise.race([readSound(copy, j.base, new Set(MFX_PARAMS)), pause6(6e3).then(() => null)]);
     if (back && back.ok && MFX_PARAMS.some((k2, i) => copy.v[k2] !== r.vals[i])) {
       await pause6(MFX_RESET_MS);
       for (const x of jobs) sendSound(mfxSound(x.kind, r), x.base, new Set(MFX_PARAMS));
-      await zxFlush();
+      await flushed();
     }
   }
   async function trackFx(t, id) {
@@ -59128,8 +59141,9 @@ body[data-mode='scene'] #scene {
       }
       const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
       const jobs = Array.from({ length: 17 }, (_, k2) => ({ kind, base: slotAddr(kind, t, k2) }));
-      await sendMfx(jobs, resolve2(id));
-      return true;
+      const r = await Promise.race([sendMfx(jobs, resolve2(id)).then(() => true), pause6(2e4).then(() => "slow")]);
+      if (r === true) await refreshClip(t);
+      return r;
     } finally {
       now.busy = false;
     }
@@ -59243,6 +59257,7 @@ body[data-mode='scene'] #scene {
     zxWrite(knobAddr(t, 16, n), nibbles(v));
     for (let k2 = 0; k2 < 16; k2++) zxWrite(knobAddr(t, k2, n), nibbles(v));
     await zxFlush();
+    await refreshClip(t);
     return true;
   }
   function knobNow(t, n) {

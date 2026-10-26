@@ -9,6 +9,9 @@
 // Owns: FXN (what was last chosen or read, for the mixers to show).
 // Reads: ZX, DEV, S (track types).
 import { S } from '../core/state.js';
+import { PCLAST } from '../services/clip-switch.js';
+import { TR } from '../services/transport.js';
+import { reselect } from './zc-editor.js';
 import { DEV } from '../core/device.js';
 import { MFX_PARAMS, MFX_RESET_MS, readSound, sendSound } from './zc-tone.js';
 import { lin, slotAddr, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
@@ -79,26 +82,35 @@ const HEAD = new Set(['MFX.mfxType', 'MFX.mfxSwitch']);
 
 /* type and switch to every block first, then (after the MC-707 has reset each new type's settings) the
    settings: two passes, so 17 sounds take a couple of seconds rather than one reset wait each */
+/** Select track t's clip again, so the MC-707 takes what was sent (not while the app plays: a clip
+    change then could be heard). Only when the app knows which clip is selected. */
+export async function refreshClip(t) {
+  /* only to the clip the app last chose: an unknown one would change what the MC-707 has selected */
+  if (TR.playing || PCLAST[t] == null) return;
+  await reselect(t, PCLAST[t]);
+}
+/* a wait that never holds the mixer for long: the writes go out regardless */
+const flushed = () => Promise.race([zxFlush(), pause(8000)]);
 async function sendMfx(jobs, r) {
   for (const j of jobs) await sendSound(mfxSound(j.kind, r), j.base, HEAD);
-  await zxFlush();
+  await flushed();
   await pause(MFX_RESET_MS);
   for (const j of jobs) sendSound(mfxSound(j.kind, r), j.base, new Set(MFX_PARAMS));
-  await zxFlush();
+  await flushed();
   /* one checked: read back, and the settings sent again if the reset came late */
   const j = jobs[jobs.length - 1],
     copy = mfxSound(j.kind, r);
-  const back = await readSound(copy, j.base, new Set(MFX_PARAMS));
+  const back = await Promise.race([readSound(copy, j.base, new Set(MFX_PARAMS)), pause(6000).then(() => null)]);
   if (back && back.ok && MFX_PARAMS.some((k, i) => copy.v[k] !== r.vals[i])) {
     await pause(MFX_RESET_MS);
     for (const x of jobs) sendSound(mfxSound(x.kind, r), x.base, new Set(MFX_PARAMS));
-    await zxFlush();
+    await flushed();
   }
 }
 
 /**
  * Give track t an effect: every clip's sound and the track's own (17 sounds), so it stays whichever
- * clip plays. Resolves false when the MC-707 is not connected.
+ * clip plays. Resolves false when the MC-707 is not connected, 'slow' when it had not finished after 20 s.
  */
 export async function trackFx(t, id) {
   const was = FXN.track[t];
@@ -110,8 +122,11 @@ export async function trackFx(t, id) {
     }
     const kind = S.tracks[t].type === 'drum' ? 'kit' : 'tone';
     const jobs = Array.from({ length: 17 }, (_, k) => ({ kind, base: slotAddr(kind, t, k) }));
-    await sendMfx(jobs, resolve(id));
-    return true;
+    /* never stuck on "sending": the writes take a few seconds; past 20 the strip lets go */
+    const r = await Promise.race([sendMfx(jobs, resolve(id)).then(() => true), pause(20000).then(() => 'slow')]);
+    /* the MC-707 shows (and plays) the new effect once the clip is selected again */
+    if (r === true) await refreshClip(t);
+    return r;
   } finally {
     now.busy = false;
   }

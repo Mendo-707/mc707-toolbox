@@ -14,6 +14,7 @@ import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
 import { ZX, lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
 import { clipAddr } from './zc-seq.js';
+import { refreshClip } from './zc-fx.js';
 
 /**
  * The choices: [value, name, which tracks ('all', 'td' tone and drum, 'tone'), sure]. "sure" ones were
@@ -96,6 +97,8 @@ export async function setKnob(t, n, choice) {
   zxWrite(knobAddr(t, 16, n), nibbles(v));
   for (let k = 0; k < 16; k++) zxWrite(knobAddr(t, k, n), nibbles(v));
   await zxFlush();
+  /* the MC-707 shows the new choice once the clip is selected again */
+  await refreshClip(t);
   return true;
 }
 /** For the mixers: the track type's choices and the knob's current choice (null: not read). */

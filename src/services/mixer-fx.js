@@ -21,7 +21,8 @@ export function trackFxFor(t, redraw) {
       redraw();
       const ok = await run.catch(() => false);
       redraw();
-      if (!ok) toast(NOT);
+      if (ok === 'slow') toast('The MC-707 is slow to take the effect: check it on the MC-707, or choose it again');
+      else if (!ok) toast(NOT);
     }
   ];
 }

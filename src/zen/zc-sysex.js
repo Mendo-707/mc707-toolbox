@@ -156,14 +156,22 @@ function pump() {
   if (it.done) return;
   const [l, data] = it.value;
   ZX.q.delete(l);
-  rawSend(dt1(l, data));
+  /* a send that throws (the port closing mid-write) must not stop the queue: zxFlush would wait forever */
+  try {
+    rawSend(dt1(l, data));
+  } catch (e) {}
   if (ZX.q.size) ZX.timer = setTimeout(pump, ZX.pace || PACE);
   else if (ZX.onIdle) ZX.onIdle();
 }
 /** Resolves once every queued write has gone out. */
 export function zxFlush() {
   return new Promise(res => {
-    const chk = () => (ZX.q.size || ZX.timer ? setTimeout(chk, 10) : res());
+    const chk = () => {
+      if (!ZX.q.size && !ZX.timer) return res();
+      /* writes waiting with nothing sending them: start the queue again */
+      if (ZX.q.size && !ZX.timer) ZX.timer = setTimeout(pump, 0);
+      setTimeout(chk, 10);
+    };
     chk();
   });
 }
