@@ -78,8 +78,43 @@ export function banksIn(list) {
  * @param {{bank:string, group:string, cat:string, tag:string, q:string}} f bank: 'all', 'fav', 'factory'
  *   (every factory bank) or a bank id; group or cat ('' for any)
  */
+/* search text: lower case, accents off; and a compact form with no spaces or punctuation, so "epiano"
+   finds E.Piano and "808" finds TR-808 */
+const plain = t =>
+  String(t)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+const compact = t => plain(t).replace(/[^a-z0-9]+/g, '');
+const SRC_WORDS = { starter: 'starter', factory: 'factory', mine: 'mine my', mc707: 'grabbed mc-707', file: 'file' };
+/** The text a search looks through for an entry: name, category, instrument, tags, number, folder, source. */
+function searchText(e) {
+  const hay = plain(
+    [
+      e.name,
+      catLabel(catOf(e)),
+      groupOf(e),
+      ...(e.tags || []),
+      e.group || '',
+      e.type || '',
+      e.folder || '',
+      e.bank ? 'bank ' + e.bank : '',
+      SRC_WORDS[e.src] || '',
+      e.no ? String(e.no).padStart(4, '0') + ' ' + e.no : ''
+    ].join(' ')
+  );
+  return [hay, compact(hay)];
+}
+/** Does an entry match a search? Every word must match, in any order (in the text or its compact form). */
+export function searchHit(e, q) {
+  const words = plain(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const [hay, flat] = searchText(e);
+  return words.every(w => hay.includes(w) || (compact(w) && flat.includes(compact(w))));
+}
+/** The entries a bank, category, tag and search show. */
 export function filterList(list, f) {
-  const q = f.q.trim().toLowerCase();
+  const q = (f.q || '').trim();
   return list.filter(e => {
     const b = bankOf(e);
     if (
@@ -88,15 +123,7 @@ export function filterList(list, f) {
       return false;
     if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
     if (f.tag && !(e.tags || []).includes(f.tag)) return false;
-    if (!q) return true;
-    const hay = [
-      e.name,
-      catLabel(catOf(e)),
-      ...(e.tags || []),
-      e.group || '',
-      e.no ? String(e.no).padStart(4, '0') : ''
-    ];
-    return hay.join(' ').toLowerCase().includes(q);
+    return !q || searchHit(e, q);
   });
 }
 

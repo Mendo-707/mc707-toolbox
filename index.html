@@ -7153,6 +7153,302 @@ body[data-mode='synth'] #synth {
     monospace;
   color: #c9f7d5;
 }
+/* pass 5: a smaller slime with its envelope scope, the bench, finding ingredients */
+.labStageG {
+  flex: 0 0 auto !important;
+}
+.lsStage {
+  flex: 0 0 auto;
+  height: clamp(150px, 26vh, 230px);
+  min-height: 0;
+}
+.labScope {
+  position: relative;
+  height: 46px;
+  margin-top: 6px;
+  border: 1px solid var(--zc-line);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, #0f2316 1px, transparent 1px) 0 0 / 10% 100%,
+    var(--zc-well);
+  overflow: hidden;
+}
+.labScope svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lcAmp {
+  fill: color-mix(in srgb, var(--zc-acc) 18%, transparent);
+}
+.lcAmpL {
+  fill: none;
+  stroke: var(--zc-acc);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+.lcFil {
+  fill: none;
+  stroke: #ffd23f;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.lcRel {
+  stroke: #ffffff26;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+}
+.lcHead {
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 3px var(--zc-acc));
+}
+.lcLab,
+.lcKey {
+  position: absolute;
+  top: 3px;
+  font:
+    600 9px ui-monospace,
+    Consolas,
+    monospace;
+  letter-spacing: 1px;
+  color: var(--zc-dim);
+  pointer-events: none;
+}
+.lcLab {
+  left: 6px;
+}
+.lcLab i {
+  font-style: normal;
+  color: #ffd23f;
+}
+.lcKey {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+.labRead {
+  margin-top: 4px;
+}
+/* the bench */
+#labOv .labBench {
+  margin: 0;
+  display: block;
+}
+.lbTabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--zc-line);
+  margin-bottom: 8px;
+}
+.lbTab {
+  all: unset;
+  cursor: pointer;
+  padding: 5px 12px 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--zc-dim);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.lbTab:hover {
+  color: #e6ffee;
+}
+.lbTab.on {
+  color: var(--zc-acc);
+  border-bottom-color: var(--zc-acc);
+}
+.lbBody {
+  display: grid;
+  gap: 8px;
+}
+.lbBody .hint {
+  margin: 0;
+  font-size: 12px;
+}
+.lbRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lbStr,
+.lbMorph {
+  flex: 1;
+  min-width: 160px;
+}
+.lbLocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.lbLocks .zcL {
+  font-size: 11px;
+  color: #a9d9b5;
+  margin-right: 4px;
+}
+.lbLock {
+  all: unset;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--zc-line);
+  color: #c9f7d5;
+  background: #050906;
+}
+.lbLock:hover {
+  border-color: var(--zc-acc);
+}
+.lbLock.on {
+  background: #12301c;
+  border-color: var(--zc-acc);
+  color: var(--zc-acc);
+}
+.lbKids {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.lbKid {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 4px 6px;
+  border: 1px solid var(--zc-line);
+  border-radius: 8px;
+  background: var(--zc-well);
+  min-width: 0;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+.lbKid:hover {
+  border-color: var(--zc-acc);
+  transform: translateY(-2px);
+}
+.lbKid.on {
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 10px var(--zc-glow);
+}
+.lbKid b {
+  font-size: 11px;
+  color: #e6ffee;
+}
+.lbKid small {
+  font-size: 9.5px;
+  color: var(--zc-dim);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lbMiniW {
+  display: block;
+  width: 46px;
+  height: 42px;
+}
+.lbKid:hover .lbMiniW,
+.lbKid.on .lbMiniW {
+  animation: labJig 1.4s ease-in-out infinite;
+}
+.lbMini {
+  width: 100%;
+  height: 100%;
+}
+.lbScore {
+  margin-left: auto;
+  font:
+    600 11px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--zc-acc);
+}
+.lbGuess {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.lbGuess .btn {
+  padding: 8px 4px;
+}
+.lbGuess .btn.right {
+  background: var(--zc-acc);
+  color: #000;
+  border-color: var(--zc-acc);
+  opacity: 1;
+}
+.lbGuess .btn.wrong {
+  border-color: #ff5f6b;
+  color: #ff9aa2;
+  opacity: 1;
+}
+.lbYes {
+  color: var(--zc-acc);
+}
+.lbNo {
+  color: #ff9aa2;
+}
+/* finding an ingredient */
+.labFind {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--zc-line);
+  background: var(--zc-well);
+  color: #e6ffee;
+  font: inherit;
+  font-size: 13px;
+}
+.labFind:focus {
+  outline: none;
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 8px var(--zc-glow);
+}
+.liBtn[hidden],
+.labG[hidden] {
+  display: none !important;
+}
+/* the slime takes the room the bench leaves, within limits */
+#labOv .labStageG {
+  flex: 1 1 auto !important;
+  min-height: 0;
+}
+#labOv .lsStage {
+  flex: 1 1 200px;
+  height: auto;
+  min-height: 150px;
+  max-height: 280px;
+}
+/* a found or made blend: a compact note in the corner, not over the slime */
+.lsFound {
+  left: 8px;
+  top: 8px;
+  right: auto;
+  max-width: 62%;
+  padding: 5px 9px;
+  gap: 0;
+}
+.lsFound b {
+  font-size: 13px;
+}
+.lsFound small {
+  font-size: 11px;
+}
+.lbKid {
+  cursor: grab;
+}
 </style>
     <style>
 /* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
@@ -10882,7 +11178,7 @@ body[data-mode='scene'] #scene {
       const all = Object.keys(F.styles);
       const bpm = F.styles[all[0]].bpm;
       const tag = (F.tag || GTAG[F.genre] || F.genre) + " ";
-      const put = (name, role, pool, lanes, bars2) => add({
+      const put2 = (name, role, pool, lanes, bars2) => add({
         name: tag + name,
         type: "drum",
         genre: F.genre,
@@ -10894,20 +11190,20 @@ body[data-mode='scene'] #scene {
         pool
       });
       F.K.forEach(([n, d]) => {
-        put("Kick: " + n, "Kick", "", d, 1);
+        put2("Kick: " + n, "Kick", "", d, 1);
         [0, 1].forEach(
-          (i) => put("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
+          (i) => put2("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
         );
       });
       F.S.forEach(([n, d]) => {
-        put("Snare: " + n, "Snare", "", d, 1);
-        put("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
+        put2("Snare: " + n, "Snare", "", d, 1);
+        put2("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
       });
-      F.H.forEach(([n, d]) => put("Hats: " + n, "Hats", "hats", d, 1));
+      F.H.forEach(([n, d]) => put2("Hats: " + n, "Hats", "hats", d, 1));
       F.H.forEach(([n, d], i) => {
-        if (i % 2 === 0) put("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
+        if (i % 2 === 0) put2("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
       });
-      F.perc.forEach(([n, d]) => put("Perc: " + n, "Perc", "perc", d, 1));
+      F.perc.forEach(([n, d]) => put2("Perc: " + n, "Perc", "perc", d, 1));
     }
     function genFills(F) {
       const all = Object.keys(F.styles);
@@ -13619,22 +13915,22 @@ body[data-mode='scene'] #scene {
   };
   function fixState(s) {
     const d = newState();
-    const num = (v, lo, hi, def) => {
+    const num2 = (v, lo, hi, def) => {
       v = Number(v);
       return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
     };
     if (!s || typeof s !== "object") return d;
     s.v = 1;
-    s.bpm = num(s.bpm, 40, 240, 120);
-    s.swing = num(s.swing, 50, 75, 50);
-    s.bars = Math.round(num(s.bars, 8, 512, 32));
-    s.cursor = num(s.cursor, 0, 512, 0);
-    s.key = Math.round(num(s.key, 0, 11, 5));
+    s.bpm = num2(s.bpm, 40, 240, 120);
+    s.swing = num2(s.swing, 50, 75, 50);
+    s.bars = Math.round(num2(s.bars, 8, 512, 32));
+    s.cursor = num2(s.cursor, 0, 512, 0);
+    s.key = Math.round(num2(s.key, 0, 11, 5));
     if (!SCALES[s.scale]) s.scale = "minor";
-    s.midiOffset = num(s.midiOffset, -200, 200, 0);
-    s.transpose = Math.round(num(s.transpose, -24, 24, 0));
+    s.midiOffset = num2(s.midiOffset, -200, 200, 0);
+    s.transpose = Math.round(num2(s.transpose, -24, 24, 0));
     s.snap = [1, 0.5, 0.25, 0.0625].includes(+s.snap) ? +s.snap : 1;
-    s.ctrlCh = Math.round(num(s.ctrlCh, 1, 16, 16));
+    s.ctrlCh = Math.round(num2(s.ctrlCh, 1, 16, 16));
     s.sendCC = s.sendCC !== false;
     s.metro = !!s.metro;
     s.clock = !!s.clock;
@@ -13653,13 +13949,13 @@ body[data-mode='scene'] #scene {
       (m) => m && Number.isInteger(+m.t) && +m.t >= 0 && +m.t < 8 && Number.isFinite(+m.bar) && Number.isInteger(+m.k) && +m.k >= -1 && +m.k < 16
     ).map((m) => ({ t: +m.t, bar: Math.max(0, Math.round(+m.bar)), k: +m.k }));
     const lp = s.loop && typeof s.loop === "object" ? s.loop : {};
-    const ls = Math.max(0, Math.round(num(lp.start, 0, 511, 0) * 16) / 16);
+    const ls = Math.max(0, Math.round(num2(lp.start, 0, 511, 0) * 16) / 16);
     s.loop = {
       on: !!lp.on,
       start: ls,
-      end: Math.max(ls + 0.0625, Math.round(num(lp.end, 0.0625, 512, 8) * 16) / 16)
+      end: Math.max(ls + 0.0625, Math.round(num2(lp.end, 0.0625, 512, 8) * 16) / 16)
     };
-    s.drumMap = Array.isArray(s.drumMap) && s.drumMap.length === 12 ? s.drumMap.map((n, i) => Math.round(num(n, 0, 127, d.drumMap[i]))) : d.drumMap;
+    s.drumMap = Array.isArray(s.drumMap) && s.drumMap.length === 12 ? s.drumMap.map((n, i) => Math.round(num2(n, 0, 127, d.drumMap[i]))) : d.drumMap;
     s.tracks = d.tracks.map((dt, i) => {
       const t = s.tracks && s.tracks[i] || {};
       const role = ROLES.some((r) => r[0] === t.role) && t.role !== DEF_ROLES[i] ? t.role : null;
@@ -13667,10 +13963,10 @@ body[data-mode='scene'] #scene {
         name: String(t.name || dt.name).slice(0, 16),
         type: role ? roleInfo(role)[2] : dt.type,
         ...role ? { role } : {},
-        ch: Math.round(num(t.ch, 1, 16, i + 1)),
+        ch: Math.round(num2(t.ch, 1, 16, i + 1)),
         mute: !!t.mute,
         solo: !!t.solo,
-        vol: Math.round(num(t.vol, 0, 127, 100)),
+        vol: Math.round(num2(t.vol, 0, 127, 100)),
         ...Number.isFinite(+t.nudge) && +t.nudge ? { nudge: +t.nudge } : {},
         ...Number.isFinite(+t.hum) && +t.hum ? { hum: +t.hum } : {},
         ...cleanTrackCC(t.cc)
@@ -13683,7 +13979,7 @@ body[data-mode='scene'] #scene {
         const p = s.patterns[id];
         if (!p || !Array.isArray(p.notes) || p.type !== "drum" && p.type !== "tone") continue;
         p.id = id;
-        p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars) ? p.bars : Math.min(8, Math.max(1, Math.round(num(p.bars, 1, 8, 1))));
+        p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars) ? p.bars : Math.min(8, Math.max(1, Math.round(num2(p.bars, 1, 8, 1))));
         p.name = String(p.name || "Pattern").slice(0, 40);
         p.notes = p.notes.filter(
           (n) => n && Number.isFinite(+n.s) && Number.isFinite(+n.l) && Number.isFinite(+n.n) && Number.isFinite(+n.v) && n.l > 0 && n.s >= 0 && n.s < p.bars * 16
@@ -13725,7 +14021,7 @@ body[data-mode='scene'] #scene {
       s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
     });
     fixScenes(s, pats);
-    s.nextId = Math.max(Math.round(num(s.nextId, 1, 1e9, 1)), maxId + 1);
+    s.nextId = Math.max(Math.round(num2(s.nextId, 1, 1e9, 1)), maxId + 1);
     return s;
   }
   function cleanPts(a, maxY) {
@@ -14488,12 +14784,12 @@ body[data-mode='scene'] #scene {
       MOT.forEach(([mn, mot]) => {
         const notes = [];
         const deg = (d) => 60 + R3 + SC2[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
-        const put = (bar2, shift, vel) => mot.forEach(
+        const put2 = (bar2, shift, vel) => mot.forEach(
           ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
-        put(0, 0, 104);
-        put(1, 2, 98);
-        put(2, 0, 104);
+        put2(0, 0, 104);
+        put2(1, 2, 98);
+        put2(2, 0, 104);
         [
           [0, 2, 4],
           [2, 2, 3],
@@ -18485,20 +18781,20 @@ body[data-mode='scene'] #scene {
     S.loop = { on: true, start: 0, end: 8 };
     S.key = 5;
     S.scale = "minor";
-    const put = (t, start, len, fid) => {
+    const put2 = (t, start, len, fid) => {
       const pid = instFactory(FAC.find((x) => x.id === fid));
       S.clips.push({ id: "c" + S.nextId++, t, start, len, off: 0, pat: pid });
     };
-    put(0, 0, 7, "dnb-twostep");
-    put(0, 7, 1, "dnb-fill");
-    put(0, 8, 8, "dnb-neuro");
-    put(3, 0, 8, "dnb-sub");
-    put(3, 8, 8, "dnb-reese");
-    put(4, 4, 4, "dnb-stabs");
-    put(4, 8, 8, "dnb-liquid-ch");
-    put(5, 0, 8, "dnb-pad");
-    put(6, 12, 4, "dnb-arp");
-    put(7, 8, 8, "dnb-pluck");
+    put2(0, 0, 7, "dnb-twostep");
+    put2(0, 7, 1, "dnb-fill");
+    put2(0, 8, 8, "dnb-neuro");
+    put2(3, 0, 8, "dnb-sub");
+    put2(3, 8, 8, "dnb-reese");
+    put2(4, 4, 4, "dnb-stabs");
+    put2(4, 8, 8, "dnb-liquid-ch");
+    put2(5, 0, 8, "dnb-pad");
+    put2(6, 12, 4, "dnb-arp");
+    put2(7, 8, 8, "dnb-pluck");
   }
   var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
@@ -30044,8 +30340,8 @@ body[data-mode='scene'] #scene {
     if (d[1] !== 65 || d[7] !== 18 || w.kind !== "rq") return;
     if (!MODELS.includes(d[6])) return;
     const a = [...d.slice(8, 12)], data = [...d.slice(12, d.length - 2)];
-    const want = replyBytes(w.l + w.buf.length), plain = addrBytes(w.l + w.buf.length);
-    if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain[i])) {
+    const want = replyBytes(w.l + w.buf.length), plain2 = addrBytes(w.l + w.buf.length);
+    if (!a.every((b, i) => b === want[i]) && !a.every((b, i) => b === plain2[i])) {
       if (!(w.loose && !w.buf.length)) {
         w.stray++;
         return;
@@ -34968,7 +35264,7 @@ body[data-mode='scene'] #scene {
       addEventListener("pointermove", move);
       addEventListener("pointerup", up);
     }
-    const num = (id, label2) => {
+    const num2 = (id, label2) => {
       const [p] = paramOf(ctx2.kind, K(id));
       const inp = el("input", {
         type: "number",
@@ -34984,10 +35280,10 @@ body[data-mode='scene'] #scene {
     const row2 = el(
       "div",
       { class: "zcEnvNums" },
-      ...[1, 2, 3, 4].map((i) => num("T" + i, "Time " + i)),
-      ...levels.map((id, i) => id ? num(id, "Level " + i) : null).filter(Boolean)
+      ...[1, 2, 3, 4].map((i) => num2("T" + i, "Time " + i)),
+      ...levels.map((id, i) => id ? num2(id, "Level " + i) : null).filter(Boolean)
     );
-    const put = (e, pt, T3, Lf) => {
+    const put2 = (e, pt, T3, Lf) => {
       const k2 = (id) => e + pt + "." + id, ls = LEVELS2[e];
       T3.forEach((t, i) => ctx2.set(k2("T" + (i + 1)), t, false));
       ls.forEach((id, i) => {
@@ -35013,7 +35309,7 @@ body[data-mode='scene'] #scene {
           const s = SHAPES2[KIND[env]][+e.target.value];
           e.target.value = "";
           if (!s) return;
-          put(env, part, s[1], s[2]);
+          put2(env, part, s[1], s[2]);
           ctx2.commit();
         }
       },
@@ -35029,8 +35325,8 @@ body[data-mode='scene'] #scene {
           const v = e.target.value;
           e.target.value = "";
           const [T3, L2] = shape();
-          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put(env, i, T3, L2));
-          else if (KIND[v]) put(v, part, T3, L2);
+          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put2(env, i, T3, L2));
+          else if (KIND[v]) put2(v, part, T3, L2);
           else return;
           ctx2.commit();
         }
@@ -35818,10 +36114,29 @@ body[data-mode='scene'] #scene {
   }
 
   // src/zen/zc-starters.js
+  var CATS = [
+    [/init/, "None"],
+    [/^seq:/, "Synth Seq/Pop"],
+    [/electric piano|e\.piano|keys/, "E.Piano1"],
+    [/organ/, "E.Organ"],
+    [/bell/, "Bell"],
+    [/bass|808|sub\b/, "Synth Bass"],
+    [/brass/, "Synth Brass"],
+    [/string|pad/, "Synth Pad/Str"],
+    [/lead|hoover|sync|supersaw/, "Synth Lead"],
+    [/stab|chord|pluck/, "Synth PolyKey"],
+    [/kick|drum|snare|hat/, "Percussion"],
+    [/noise|sweep|fx|riser/, "Synth FX"]
+  ];
+  function categoryFor(name) {
+    const n = String(name).toLowerCase(), hit = CATS.find(([re]) => re.test(n));
+    return hit ? Math.max(0, ZC_CATEGORIES.indexOf(hit[1])) : 0;
+  }
   function tone(name, fn) {
     const s = newSound("tone");
     const set2 = (key, i, id, v) => s.v[pk(key, i, id)] = v;
     s.v["CMN.NAME"] = name;
+    s.v["CMN.CATEGORY"] = categoryFor(name);
     for (let i = 0; i < 4; i++) set2("PMT", null, "PMT" + (i + 1) + "_PTL_SW", i === 0 ? 1 : 0);
     set2("SPTL", 0, "OSC_TYPE", 1);
     fn(
@@ -36597,12 +36912,12 @@ body[data-mode='scene'] #scene {
     return e.src === "file" ? "mine" : e.src;
   }
   var SRC_NAME = { mine: "My sounds", mc707: "From the MC-707", starter: "Starters" };
-  function bankName(id, short2) {
+  function bankName(id, short3) {
     if (id.startsWith("u:")) return id.slice(2);
     if (id.startsWith("f:")) {
       const l = id.slice(2);
       if (l === "?") return "Factory";
-      return short2 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
+      return short3 ? "PRST_" + l : "PRST_" + l + " " + (FW_BANK_NAMES[l] || "Factory");
     }
     return SRC_NAME[id] || id;
   }
@@ -36618,23 +36933,41 @@ body[data-mode='scene'] #scene {
       ...have.has("starter") ? ["starter"] : []
     ];
   }
+  var plain = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  var compact = (t) => plain(t).replace(/[^a-z0-9]+/g, "");
+  var SRC_WORDS = { starter: "starter", factory: "factory", mine: "mine my", mc707: "grabbed mc-707", file: "file" };
+  function searchText(e) {
+    const hay = plain(
+      [
+        e.name,
+        catLabel(catOf(e)),
+        groupOf(e),
+        ...e.tags || [],
+        e.group || "",
+        e.type || "",
+        e.folder || "",
+        e.bank ? "bank " + e.bank : "",
+        SRC_WORDS[e.src] || "",
+        e.no ? String(e.no).padStart(4, "0") + " " + e.no : ""
+      ].join(" ")
+    );
+    return [hay, compact(hay)];
+  }
+  function searchHit(e, q) {
+    const words = plain(q).split(/\s+/).filter(Boolean);
+    if (!words.length) return true;
+    const [hay, flat] = searchText(e);
+    return words.every((w) => hay.includes(w) || compact(w) && flat.includes(compact(w)));
+  }
   function filterList(list2, f) {
-    const q = f.q.trim().toLowerCase();
+    const q = (f.q || "").trim();
     return list2.filter((e) => {
       const b = bankOf(e);
       if (f.bank === "fav" ? !ratingOf(e.id) : f.bank === "factory" ? e.src !== "factory" : f.bank !== "all" && b !== f.bank)
         return false;
       if (f.cat ? catOf(e) !== f.cat : f.group && groupOf(e) !== f.group) return false;
       if (f.tag && !(e.tags || []).includes(f.tag)) return false;
-      if (!q) return true;
-      const hay = [
-        e.name,
-        catLabel(catOf(e)),
-        ...e.tags || [],
-        e.group || "",
-        e.no ? String(e.no).padStart(4, "0") : ""
-      ];
-      return hay.join(" ").toLowerCase().includes(q);
+      return !q || searchHit(e, q);
     });
   }
   function catCounts(list2) {
@@ -37396,7 +37729,12 @@ body[data-mode='scene'] #scene {
       return "Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).";
     if (B.bank === "mc707" && !all.some((e) => e.src === "mc707"))
       return "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab.";
-    return "Nothing matches.";
+    if (B.q.trim() && (B.bank !== "all" || B.cat || B.group || B.tag)) {
+      const n = filterList(all, { ...B, bank: "all", cat: "", group: "", tag: "" }).length;
+      if (n)
+        return "Nothing here matches “" + B.q.trim() + "”, but " + n + " sound" + (n === 1 ? "" : "s") + " elsewhere do.";
+    }
+    return B.q.trim() ? "Nothing matches “" + B.q.trim() + "”. Try fewer words, or part of a name." : "Nothing here yet.";
   }
   function render() {
     const ov = $("#zbOv");
@@ -37412,7 +37750,29 @@ body[data-mode='scene'] #scene {
       count.textContent = l.length + " shown";
       box.textContent = "";
       box.scrollTop = 0;
-      if (!l.length) box.append(el("p", { class: "hint zbEmpty" }, emptyText(all)));
+      if (!l.length) {
+        const msg = emptyText(all);
+        box.append(
+          el(
+            "p",
+            { class: "hint zbEmpty" },
+            msg,
+            / elsewhere do\.$/.test(msg) ? el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                style: "margin-left:8px",
+                onclick: () => {
+                  Object.assign(B, { bank: "all", cat: "", group: "", tag: "" });
+                  render();
+                }
+              },
+              "Search all sounds"
+            ) : null
+          )
+        );
+      }
       fillTable(box, l, { cur: B.cur, sel: B.sel, click: click2, load: load3, play, menu: rowMenu, more, redraw: render }, editRow);
     };
     const q = el("input", {
@@ -37425,6 +37785,19 @@ body[data-mode='scene'] #scene {
       oninput: (e) => {
         B.q = e.target.value;
         drawList();
+      },
+      /* Esc clears a search first (a second Esc closes the browser); Enter or Down goes to the results */
+      onkeydown: (e) => {
+        if (e.key === "Escape" && e.target.value) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.target.value = B.q = "";
+          drawList();
+        } else if ((e.key === "ArrowDown" || e.key === "Enter") && box.querySelector(".zbItem")) {
+          e.preventDefault();
+          box.focus();
+          box.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: false }));
+        }
       }
     });
     const inBank = filterList(all, { ...B, group: "", cat: "" });
@@ -38259,6 +38632,501 @@ body[data-mode='scene'] #scene {
     }
   ];
 
+  // src/zen/zc-lab-bench.js
+  var BENCH = {
+    tab: "mutate",
+    str: 4,
+    locks: /* @__PURE__ */ new Set(),
+    kids: [],
+    parent: null,
+    pick: -1,
+    gen: 0,
+    A: null,
+    B: null,
+    t: 0,
+    ear: null
+  };
+  var EAR_KEY = "mc707-lab-ear";
+  var SCORE = { right: 0, tries: 0, streak: 0 };
+  try {
+    SCORE = { ...SCORE, ...JSON.parse(localStorage.getItem(EAR_KEY) || "{}") };
+  } catch (e) {
+  }
+  var saveScore = () => {
+    try {
+      localStorage.setItem(EAR_KEY, JSON.stringify(SCORE));
+    } catch (e) {
+    }
+  };
+  var GENES = {
+    Oscillator: [
+      ["SPTL.PW", 0.25],
+      ["SPTL.PWM_DEPTH", 0.2],
+      ["SPTL.SSAW_DETUNE", 0.2],
+      ["SPTL.FAT", 0.25],
+      ["PTL.PIT_FINE", 0.08]
+    ],
+    Filter: [
+      ["PTL.CUTOFF", 0.22],
+      ["PTL.RESO", 0.2],
+      ["PTL.CUTOFF_KF", 0.15],
+      ["FENV.DEPTH", 0.18],
+      ["FENV.T1", 0.12],
+      ["FENV.T2", 0.18],
+      ["FENV.L2", 0.2],
+      ["FENV.L3", 0.2]
+    ],
+    Amp: [
+      ["AENV.T1", 0.12],
+      ["AENV.T2", 0.18],
+      ["AENV.L2", 0.15],
+      ["AENV.T3", 0.15],
+      ["AENV.L3", 0.15],
+      ["AENV.T4", 0.18]
+    ],
+    Motion: [
+      ["LFO.LFO1_RATE", 0.15],
+      ["LFO.LFO2_RATE", 0.15],
+      ["LFO.LFO1_PIT_DEPTH", 0.04],
+      ["LFO.LFO2_TVF_DEPTH", 0.2],
+      ["LFO.LFO1_TVA_DEPTH", 0.12],
+      ["LFO.LFO2_PAN_DEPTH", 0.2]
+    ],
+    Pitch: [
+      ["PENV.DEPTH", 0.06],
+      ["PENV.T1", 0.15],
+      ["PTL.PIT_RND", 0.01],
+      ["CMN.PORTA_TIME", 0.15],
+      ["CMN.ANALOG_FEEL", 0.25]
+    ],
+    Space: [
+      ["PTL.REV_SEND", 0.25],
+      ["PTL.CHO_SEND", 0.25],
+      ["PTL.PAN_RND", 0.2],
+      ["PTL.STEREO_DETN", 0.15]
+    ],
+    Effect: "mfx"
+  };
+  var GENE_NAMES = Object.keys(GENES);
+  var num = (v, k2) => {
+    const x = v[k2];
+    if (typeof x === "number") return x;
+    const d = paramOf("tone", k2);
+    return d ? d[0][5] : 0;
+  };
+  var gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+  function mutate(ctx2, strength) {
+    const v = ZE.snd.v, out2 = {}, s = strength / 10;
+    for (const g of GENE_NAMES) {
+      if (BENCH.locks.has(g)) continue;
+      if (GENES[g] === "mfx") {
+        const sp = mfxParams(num(v, "MFX.mfxType"));
+        sp.forEach((p, i) => {
+          if (p.kind !== "R" || Math.random() > 0.5) return;
+          const k2 = MFX_PARAMS[i], span = p.hi - p.lo;
+          out2[k2] = Math.round(Math.max(p.lo, Math.min(p.hi, num(v, k2) + gauss() * span * 0.2 * s * 2)));
+        });
+        continue;
+      }
+      for (const [key, scale] of GENES[g]) {
+        const [blk, id] = key.split(".");
+        const keys2 = blk === "CMN" ? [key] : ctx2.parts().map((i) => blk + i + "." + id);
+        for (const k2 of keys2) {
+          const d = paramOf("tone", k2);
+          if (!d) continue;
+          const cur2 = num(v, k2);
+          if (Math.random() > (cur2 === 0 ? 0.25 : 0.55)) continue;
+          const span = d[0][4] - d[0][3];
+          out2[k2] = Math.round(Math.max(d[0][3], Math.min(d[0][4], cur2 + gauss() * span * scale * s * 2)));
+        }
+      }
+    }
+    return Object.fromEntries(Object.entries(out2).filter(([k2, x]) => x !== num(v, k2)));
+  }
+  function gist(ctx2, vals, from) {
+    return Object.keys(vals).map((k2) => {
+      const d = paramOf("tone", k2);
+      const span = d ? d[0][4] - d[0][3] : 127;
+      return [k2, (vals[k2] - num(from, k2)) / span];
+    }).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 2).map(([k2, dv]) => short2(ctx2, k2) + (dv > 0 ? " ↑" : " ↓")).join(" · ");
+  }
+  var short2 = (ctx2, k2) => {
+    if (k2.startsWith("MFX.")) {
+      const i = MFX_PARAMS.indexOf(k2), p = mfxParams(num(ZE.snd.v, "MFX.mfxType"))[i];
+      return p ? p.name : "effect";
+    }
+    return ctx2.keyName(k2).replace(/ · P\d$/, "").replace(/^(TVF|TVA) /, "").replace("Cutoff Frequency", "cutoff").replace("Resonance", "reso");
+  };
+  function mini(color, seed4, wide = 0.5, lumpy = 0.5) {
+    let r = seed4 * 9301 + 49297;
+    const rnd5 = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+    const id = "lsm" + Math.round(seed4 * 1e3) + "_" + Math.round(Math.random() * 1e6);
+    const lobes = Array.from({ length: 6 }, (_, i) => {
+      const a = i / 6 * Math.PI * 2 + rnd5() * 0.6, d = 9 + lumpy * 8 + rnd5() * 4;
+      return `<circle cx="${30 + Math.cos(a) * d * (1 + wide * 0.4)}" cy="${30 + Math.sin(a) * d * 0.85}" r="${8 + rnd5() * 5}"/>`;
+    }).join("");
+    return `<svg viewBox="0 0 60 56" class="lbMini" aria-hidden="true"><defs><filter id="${id}"><feGaussianBlur stdDeviation="3.4"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 22 -9"/></filter></defs><ellipse cx="30" cy="50" rx="${18 + wide * 6}" ry="3" fill="#000" opacity=".55"/><g filter="url(#${id})" fill="${color}"><circle cx="30" cy="30" r="15"/>${lobes}<circle cx="30" cy="42" r="10"/></g><ellipse cx="23" cy="22" rx="5" ry="2.4" fill="#fff" opacity=".45" transform="rotate(-25 23 22)"/></svg>`;
+  }
+  var KID_COLS = ["#39ff7a", "#5ef2d6", "#b4ff5e", "#7af0ff"];
+  function benchBox(ctx2) {
+    const tab = (id, label2, title) => el(
+      "button",
+      {
+        type: "button",
+        class: "lbTab" + (BENCH.tab === id ? " on" : ""),
+        title,
+        onclick: () => (BENCH.tab = id, ctx2.redraw())
+      },
+      label2
+    );
+    const body = BENCH.tab === "mutate" ? mutateBox(ctx2) : BENCH.tab === "morph" ? morphBox(ctx2) : earBox(ctx2);
+    return el(
+      "fieldset",
+      { class: "zcG labBench" },
+      el("legend", {}, "Bench"),
+      el(
+        "div",
+        { class: "lbTabs" },
+        tab("mutate", "Mutate", "Sprout four variations of the tone and pick the one you like"),
+        tab("morph", "Morph A ↔ B", "Keep two snapshots and slide between them"),
+        tab("ear", "Ear test", "Guess the hidden ingredient by ear")
+      ),
+      body
+    );
+  }
+  function pickKid(ctx2, i) {
+    const tag = "mutate:" + BENCH.gen;
+    const back = Object.fromEntries(
+      [...new Set(BENCH.kids.flatMap((k2) => Object.keys(k2.vals)))].map((k2) => [k2, num(BENCH.parent, k2)])
+    );
+    const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
+    ctx2.apply(tag, vals, "drift", i < 0 ? "Mutate: back to the parent" : "Mutate: variation " + (i + 1));
+    BENCH.pick = i;
+    ctx2.redraw();
+  }
+  async function benchDrop(ctx2, data) {
+    const m = /^kid:(-?\d)$/.exec(data || "");
+    if (!m || !BENCH.kids.length) return false;
+    const i = +m[1];
+    await ctx2.gloop(i < 0 ? "#9aa59e" : BENCH.kids[i].col);
+    pickKid(ctx2, i);
+    return true;
+  }
+  function mutateBox(ctx2) {
+    const sprout = () => {
+      BENCH.parent = { ...ZE.snd.v };
+      BENCH.gen++;
+      BENCH.pick = -1;
+      BENCH.kids = Array.from({ length: 4 }, (_, i) => {
+        const vals = mutate(ctx2, BENCH.str);
+        return { vals, gist: gist(ctx2, vals, BENCH.parent), seed: Math.random(), col: KID_COLS[i] };
+      });
+      ctx2.redraw();
+    };
+    const pick3 = (i) => pickKid(ctx2, i);
+    const lock = (g) => el(
+      "button",
+      {
+        type: "button",
+        class: "lbLock" + (BENCH.locks.has(g) ? " on" : ""),
+        title: BENCH.locks.has(g) ? g + " is locked: variations keep it" : "Lock " + g + " so variations keep it",
+        onclick: () => {
+          if (BENCH.locks.has(g)) BENCH.locks.delete(g);
+          else BENCH.locks.add(g);
+          ctx2.redraw();
+        }
+      },
+      (BENCH.locks.has(g) ? "🔒 " : "") + g
+    );
+    const strength = el("input", {
+      type: "range",
+      min: 1,
+      max: 10,
+      value: BENCH.str,
+      "aria-label": "How far the variations go",
+      oninput: (e) => {
+        BENCH.str = +e.target.value;
+        e.target.parentNode.querySelector(".zcV").textContent = strLabel();
+      }
+    });
+    const strLabel = () => (BENCH.str <= 3 ? "Subtle" : BENCH.str <= 6 ? "Medium" : "Wild") + " · " + BENCH.str;
+    const kids = BENCH.kids.length ? el(
+      "div",
+      { class: "lbKids" },
+      kidBtn(-1, "Parent", "As it was", "#9aa59e", 0.42),
+      ...BENCH.kids.map((k2, i) => kidBtn(i, "Variation " + (i + 1), k2.gist || "tiny change", k2.col, k2.seed))
+    ) : el(
+      "p",
+      { class: "hint" },
+      "Sprout four variations of the tone. Click one to hear it, keep the one you like, and sprout again from it: sound design by breeding."
+    );
+    function kidBtn(i, name, what, col, seed4) {
+      const b = el(
+        "button",
+        {
+          type: "button",
+          class: "lbKid" + (BENCH.pick === i ? " on" : ""),
+          draggable: "true",
+          title: (i < 0 ? "Back to the tone you sprouted from" : "Hear this variation: " + what) + ". Click, or drag it onto the slime.",
+          onclick: () => pick3(i),
+          ondragstart: (e) => {
+            e.dataTransfer.setData("text/plain", "kid:" + i);
+            e.dataTransfer.effectAllowed = "copy";
+            const m = e.currentTarget.querySelector(".lbMiniW");
+            if (m && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(m, 23, 21);
+          }
+        },
+        el("span", { class: "lbMiniW" }),
+        el("b", {}, name),
+        el("small", {}, what)
+      );
+      b.firstChild.innerHTML = mini(col, seed4, Math.random(), Math.random());
+      return b;
+    }
+    return el(
+      "div",
+      { class: "lbBody" },
+      el(
+        "div",
+        { class: "lbRow" },
+        el(
+          "label",
+          { class: "zcC lbStr" },
+          el("span", { class: "zcL" }, "How far"),
+          el("span", { class: "zcV" }, strLabel()),
+          strength
+        ),
+        el(
+          "button",
+          { type: "button", class: "btn on", onclick: sprout, title: "Four new variations of the tone as it is now" },
+          BENCH.kids.length ? "Sprout again" : "Sprout"
+        )
+      ),
+      el("div", { class: "lbLocks" }, el("span", { class: "zcL" }, "Keep"), ...GENE_NAMES.map(lock)),
+      kids
+    );
+  }
+  function morphBox(ctx2) {
+    const snap = (slot2) => {
+      BENCH[slot2] = { ...ZE.snd.v };
+      BENCH.t = slot2 === "A" ? 0 : 1;
+      toast("Snapshot " + slot2 + " kept: the tone as it is now");
+      ctx2.redraw();
+    };
+    const diff = () => BENCH.A && BENCH.B ? Object.keys(BENCH.B).filter((k2) => k2 in BENCH.A && BENCH.A[k2] !== BENCH.B[k2]) : [];
+    const ks = diff();
+    const at2 = (t, tag) => {
+      const A = BENCH.A, B2 = BENCH.B, fxSame = A["MFX.mfxType"] === B2["MFX.mfxType"], out2 = {};
+      for (const k2 of ks) {
+        const d = paramOf("tone", k2), a = A[k2], b = B2[k2];
+        const step = typeof a !== "number" || typeof b !== "number" || d && d[0][8] || k2.startsWith("MFX.") && !fxSame;
+        out2[k2] = step ? t < 0.5 ? a : b : Math.round(a + (b - a) * t);
+      }
+      ctx2.apply(tag, out2, "shimmer", "Morph " + Math.round(t * 100) + "% to B");
+    };
+    const slider = el("input", {
+      type: "range",
+      min: 0,
+      max: 100,
+      value: Math.round(BENCH.t * 100),
+      disabled: !ks.length,
+      "aria-label": "Morph from A to B",
+      oninput: (e) => {
+        BENCH.t = +e.target.value / 100;
+        e.target.parentNode.querySelector(".zcV").textContent = Math.round(BENCH.t * 100) + "% B";
+        const tag = "morph:" + ctx2.dragN();
+        ctx2.dragged(tag, (t) => at2(BENCH.t, t));
+      },
+      onchange: () => ctx2.dragDone()
+    });
+    const flip = (t) => () => {
+      BENCH.t = t;
+      at2(t, ctx2.tag());
+      ctx2.redraw();
+    };
+    return el(
+      "div",
+      { class: "lbBody" },
+      el(
+        "div",
+        { class: "lbRow" },
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn" + (BENCH.A ? " on" : ""),
+            onclick: () => snap("A"),
+            title: "Keep the tone as it is now as A"
+          },
+          BENCH.A ? "A ✓ (keep again)" : "Keep as A"
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn" + (BENCH.B ? " on" : ""),
+            onclick: () => snap("B"),
+            title: "Keep the tone as it is now as B"
+          },
+          BENCH.B ? "B ✓ (keep again)" : "Keep as B"
+        ),
+        el("button", { type: "button", class: "btn", disabled: !ks.length, onclick: flip(0), title: "Hear A" }, "Hear A"),
+        el("button", { type: "button", class: "btn", disabled: !ks.length, onclick: flip(1), title: "Hear B" }, "Hear B")
+      ),
+      el(
+        "label",
+        { class: "zcC lbMorph" },
+        el("span", { class: "zcL" }, "A ↔ B"),
+        el("span", { class: "zcV" }, Math.round(BENCH.t * 100) + "% B"),
+        slider
+      ),
+      el(
+        "p",
+        { class: "hint" },
+        !BENCH.A || !BENCH.B ? "Keep the tone as A, change it (ingredients, a blend, a mutation), keep it as B, then slide between them or flip to compare." : ks.length ? ks.length + " settings differ. Numbers slide; waves, types and switches change halfway." : "A and B are the same: change the tone and keep it again."
+      )
+    );
+  }
+  var EAR_POOL = [
+    "sun",
+    "moon",
+    "squelch",
+    "ghost",
+    "pluck",
+    "swell",
+    "mist",
+    "punch",
+    "wobble",
+    "vibrato",
+    "tremolo",
+    "swirl",
+    "abyss",
+    "feather",
+    "drift",
+    "swarm",
+    "shimmer",
+    "space",
+    "od",
+    "chorus",
+    "phaser",
+    "square",
+    "sine",
+    "ssaw"
+  ];
+  function earBox(ctx2) {
+    const E = BENCH.ear;
+    const start = () => {
+      const before = { ...ZE.snd.v };
+      const pool = [...EAR_POOL].sort(() => Math.random() - 0.5);
+      for (const id of pool) {
+        const tag = ctx2.tag();
+        const keys2 = ctx2.mixQuiet(id, 7, tag);
+        if (!keys2.length) continue;
+        const after = Object.fromEntries(keys2.map((k2) => [k2, ZE.snd.v[k2]]));
+        const others = EAR_POOL.filter((x) => x !== id).sort(() => Math.random() - 0.5).slice(0, 3);
+        BENCH.ear = {
+          id,
+          tag,
+          keys: keys2,
+          before: Object.fromEntries(keys2.map((k2) => [k2, before[k2]])),
+          after,
+          side: "after",
+          options: [id, ...others].sort(() => Math.random() - 0.5),
+          answer: null
+        };
+        return ctx2.redraw();
+      }
+      toast("Nothing to hide: every ingredient is already as far as it goes on this tone");
+    };
+    const side = (s) => () => {
+      ctx2.apply(E.tag, s === "before" ? E.before : E.after, "ghost", "Ear test (" + s + ")");
+      E.side = s;
+      ctx2.redraw();
+    };
+    const guess = (id) => {
+      if (E.answer) return;
+      E.answer = id;
+      SCORE.tries++;
+      if (id === E.id) {
+        SCORE.right++;
+        SCORE.streak++;
+      } else SCORE.streak = 0;
+      saveScore();
+      if (E.side !== "after") ctx2.apply(E.tag, E.after, E.id, "Ear test");
+      ctx2.select(E.id);
+      ctx2.redraw();
+    };
+    const score = el(
+      "span",
+      { class: "lbScore" },
+      SCORE.tries ? SCORE.right + " / " + SCORE.tries + " right" + (SCORE.streak > 1 ? " · streak " + SCORE.streak : "") : "No score yet"
+    );
+    if (!E)
+      return el(
+        "div",
+        { class: "lbBody" },
+        el(
+          "p",
+          { class: "hint" },
+          "The lab mixes a hidden ingredient into your tone. Flip between before and after, taste with the keys, and guess what it was. Training your ears to name what you hear is the core skill of sound design."
+        ),
+        el(
+          "div",
+          { class: "lbRow" },
+          el("button", { type: "button", class: "btn on", onclick: start }, "New challenge"),
+          score
+        )
+      );
+    const name = (id) => (ctx2.ingredients().find((p) => p.id === id) || { name: id }).name;
+    return el(
+      "div",
+      { class: "lbBody" },
+      el(
+        "div",
+        { class: "lbRow" },
+        el(
+          "button",
+          { type: "button", class: "btn" + (E.side === "before" ? " on" : ""), onclick: side("before") },
+          "Before"
+        ),
+        el(
+          "button",
+          { type: "button", class: "btn" + (E.side === "after" ? " on" : ""), onclick: side("after") },
+          "After"
+        ),
+        el("span", { class: "hint" }, "Flip, taste, then guess:"),
+        score
+      ),
+      el(
+        "div",
+        { class: "lbGuess" },
+        ...E.options.map(
+          (id) => el(
+            "button",
+            {
+              type: "button",
+              class: "btn" + (E.answer ? id === E.id ? " right" : id === E.answer ? " wrong" : "" : ""),
+              disabled: !!E.answer,
+              onclick: () => guess(id)
+            },
+            name(id)
+          )
+        )
+      ),
+      E.answer ? el(
+        "div",
+        { class: "lbRow" },
+        el(
+          "b",
+          { class: E.answer === E.id ? "lbYes" : "lbNo" },
+          E.answer === E.id ? "Right: " + name(E.id) + "." : "It was " + name(E.id) + "."
+        ),
+        el("span", { class: "hint" }, "Learn shows what it does. It stays in (Undo takes it out)."),
+        el("button", { type: "button", class: "btn on", onclick: start }, "Next challenge")
+      ) : null
+    );
+  }
+
   // src/zen/zc-lab.js
   var LAB = {
     sel: "sun",
@@ -38287,6 +39155,7 @@ body[data-mode='scene'] #scene {
     } catch (e) {
     }
   };
+  var put = (box, ...kids) => box.replaceChildren(...kids.flat().filter((k2) => k2 != null && k2 !== false));
   var still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   var wait = (ms) => new Promise((r) => setTimeout(r, ms));
   var onParts = () => {
@@ -38920,6 +39789,7 @@ body[data-mode='scene'] #scene {
     const svg = document.querySelector("#labOv .lsSvg");
     if (!svg) return SL.raf = 0;
     SL.raf = requestAnimationFrame(frame2);
+    scopeHead(now);
     const calm = still();
     const dt = Math.min(0.05, (now - (SL.last || now)) / 1e3);
     SL.last = now;
@@ -38934,7 +39804,7 @@ body[data-mode='scene'] #scene {
       if (r != null && r > envSec(SL.env.t4) + 0.1) SL.hold = null;
     }
     const g = (x) => typeof x === "number" ? x : 0;
-    const R3 = (58 + g(T3.Sustain) * 12 + g(T3.Tail) * 8) * (1 + E * 0.22);
+    const R3 = (48 + g(T3.Sustain) * 10 + g(T3.Tail) * 7) * (1 + E * 0.22);
     const sq = Math.sin(SL.kick * 9) * SL.kick;
     const sx = (1 + g(T3.Width) * 0.42) * (1 + sq * 0.18), sy = (1 - g(T3.Width) * 0.1) * (1 - sq * 0.16);
     const cx = 200, cy = 252 - R3 * 1.2 * sy;
@@ -39210,6 +40080,7 @@ body[data-mode='scene'] #scene {
         e.currentTarget.classList.remove("drop");
         const id = e.dataTransfer.getData("text/plain");
         if (ing(id)) mixIn(id);
+        else benchDrop(CTX, id);
       }
     });
     stage.append(slimeSvg(), el("div", { class: "lsFound", id: "lsFound" }));
@@ -39252,6 +40123,13 @@ body[data-mode='scene'] #scene {
         el(
           "div",
           { class: "labIng" },
+          el("input", {
+            type: "search",
+            class: "labFind",
+            placeholder: "Find an ingredient (cutoff, LFO, bass…)",
+            "aria-label": "Find an ingredient",
+            oninput: (e) => find(e.target.value)
+          }),
           ...GROUPS.map(([name, ps]) => el("fieldset", { class: "zcG labG" }, el("legend", {}, name), ...ps.map(ingBtn)))
         ),
         el(
@@ -39262,8 +40140,14 @@ body[data-mode='scene'] #scene {
             { class: "zcG labStageG" },
             el("legend", {}, "Your tone"),
             stage,
+            el("div", {
+              class: "labScope",
+              id: "labScope",
+              title: "The amp envelope (green) and filter envelope (yellow) of the partial the lab works on"
+            }),
             el("p", { class: "labRead", id: "labRead" })
           ),
+          el("div", { id: "labBench" }),
           el("div", { class: "labTarget", id: "labTarget" }),
           el(
             "div",
@@ -39347,6 +40231,7 @@ body[data-mode='scene'] #scene {
     addEventListener("keyup", onKeyUp, true);
     select(LAB.sel);
     draw();
+    drawBench();
     ov.focus();
     requestAnimationFrame(() => ov.classList.add("in"));
     if (!SL.raf) SL.raf = requestAnimationFrame(frame2);
@@ -39431,7 +40316,8 @@ body[data-mode='scene'] #scene {
     const back = LAB.guide ? btn("◂ Back to " + LAB.guide.r.name, () => (LAB.guide.away = false, drawLearn()), "Back to the blend") : null;
     const last3 = [...LAB.log].reverse().find((x) => x.id === p.id);
     box.style.setProperty("--ic", p.c);
-    box.replaceChildren(
+    put(
+      box,
       el("legend", {}, "Learn"),
       back,
       el("div", { class: "llTop" }, blob(p.c), el("b", {}, p.name), el("small", {}, p.tag)),
@@ -39468,8 +40354,10 @@ body[data-mode='scene'] #scene {
     SL.to = tint(LAB.log.slice(-4).map((x) => ing(x.id).c));
     drawMeters(tr);
     drawTarget();
+    drawScope();
     $("#labRead").textContent = reading(tr);
-    $("#labBlends").replaceChildren(
+    put(
+      $("#labBlends"),
       el("legend", {}, "Blends"),
       el(
         "p",
@@ -39501,7 +40389,8 @@ body[data-mode='scene'] #scene {
         );
       })
     );
-    $("#labLog").replaceChildren(
+    put(
+      $("#labLog"),
       el("legend", {}, "Mixed in"),
       LAB.log.length ? el(
         "div",
@@ -39521,6 +40410,100 @@ body[data-mode='scene'] #scene {
         )
       ) : el("p", { class: "hint" }, "Nothing yet: pick an ingredient and mix it in, then hold a Taste key.")
     );
+  }
+  function find(q) {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    document.querySelectorAll("#labOv .labG").forEach((g) => {
+      let any = false;
+      g.querySelectorAll(".liBtn").forEach((b) => {
+        const p = ing(b.dataset.id);
+        const text2 = (p.name + " " + (SUB2[p.id] || "") + " " + p.tag + " " + p.hear + " " + p.what).toLowerCase();
+        const hit = words.every((w) => text2.includes(w));
+        b.hidden = !hit;
+        any = any || hit;
+      });
+      g.hidden = !any;
+    });
+  }
+  var CTX = {
+    apply: (tag, vals, id, label2) => apply(tag, vals, id, label2),
+    tag: () => "bench:" + LAB.dragN++,
+    parts: () => parts2(),
+    keyName: (k2) => keyName(k2),
+    shown: (k2, v) => shown3(k2, v),
+    ingredients: () => ING,
+    select: (id) => select(id),
+    redraw: () => drawBench(),
+    dragN: () => LAB.dragN,
+    dragged: (tag, fn) => dragged(tag, fn),
+    dragDone: () => LAB.dragN++,
+    /* a blob of this colour gloops into the slime (resolves as it lands) */
+    gloop: (c) => dropIn({ c }),
+    /* the ear test's hidden ingredient: mixed in with no name and no colour */
+    mixQuiet(id, amt, tag) {
+      const b = brewer();
+      ing(id).brew(b, amt / 10);
+      const before = Object.fromEntries(Object.keys(b.out).map((k2) => [k2, ZE.snd.v[k2]]));
+      const keys2 = zeBrew(b.out, tag);
+      if (keys2.length) {
+        LAB.log.push({ id: "ghost", label: "Ear test", tag, ch: keys2.map((k2) => [k2, before[k2], ZE.snd.v[k2]]) });
+        SL.kick = 1;
+        SL.rip = 0;
+        draw();
+        if (NOTE && LAB.latch) retrigger();
+      }
+      return keys2;
+    }
+  };
+  function drawBench() {
+    const box = $("#labBench");
+    if (box) put(box, benchBox(CTX));
+  }
+  var SCOPE = { W: 400, H: 46, x: null };
+  function drawScope() {
+    const box = $("#labScope");
+    if (!box) return;
+    const v = ZE.snd.v, i = parts2()[0], n = (k2) => typeof v[k2] === "number" ? v[k2] : 0;
+    const a = (k2) => n("AENV" + i + "." + k2), f = (k2) => n("FENV" + i + "." + k2);
+    const at2 = [envSec(a("T1")), envSec(a("T2")), envSec(a("T3"))], rel = envSec(a("T4"));
+    const ft = [envSec(f("T1")), envSec(f("T2")), envSec(f("T3"))], frel = envSec(f("T4"));
+    const held3 = Math.max(at2[0] + at2[1] + at2[2], ft[0] + ft[1] + ft[2]) + 0.5;
+    const total = Math.max(0.6, held3 + Math.max(rel, frel));
+    const W = SCOPE.W, H = SCOPE.H, X = (t) => t / total * W, Y = (l) => H - 3 - l * (H - 8);
+    SCOPE.x = { total, held: held3, at: at2, W };
+    const ampPts = [
+      [0, 0],
+      [at2[0], a("L1") / 1023],
+      [at2[0] + at2[1], a("L2") / 1023],
+      [at2[0] + at2[1] + at2[2], a("L3") / 1023],
+      [held3, a("L3") / 1023],
+      [held3 + rel, 0]
+    ];
+    const fl = (l) => n("FENV" + i + ".DEPTH") < 0 ? 1 - l : l;
+    const filPts = [
+      [0, fl(f("L0") / 1023)],
+      [ft[0], fl(f("L1") / 1023)],
+      [ft[0] + ft[1], fl(f("L2") / 1023)],
+      [ft[0] + ft[1] + ft[2], fl(f("L3") / 1023)],
+      [held3, fl(f("L3") / 1023)],
+      [held3 + frel, fl(f("L4") / 1023)]
+    ];
+    const path2 = (pts) => pts.map(([t, l], j) => (j ? "L" : "M") + X(t).toFixed(1) + " " + Y(l).toFixed(1)).join(" ");
+    const depth = Math.abs(n("FENV" + i + ".DEPTH"));
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><line class="lcRel" x1="${X(held3)}" y1="0" x2="${X(held3)}" y2="${H}"/><path class="lcAmp" d="${path2(ampPts)} L${X(held3 + rel)} ${H} L0 ${H} Z"/><path class="lcAmpL" d="${path2(ampPts)}"/>` + (depth ? `<path class="lcFil" d="${path2(filPts)}"/>` : "") + `<line class="lcHead" x1="-10" y1="0" x2="-10" y2="${H}"/></svg><span class="lcLab">AMP${depth ? " · <i>FILTER</i>" : ""} · P${i + 1}</span><span class="lcKey" style="left:${(X(held3) / W * 100).toFixed(1)}%">key up</span>`;
+  }
+  function scopeHead(now) {
+    const h = document.querySelector("#labScope .lcHead");
+    if (!h || !SCOPE.x) return;
+    let x = -10;
+    if (SL.hold) {
+      const { total, held: held3, W } = SCOPE.x;
+      const t = (now - SL.hold.t0) / 1e3, r = SL.hold.up == null ? null : (now - SL.hold.up) / 1e3;
+      const pos = r == null ? Math.min(t, held3) : held3 + r;
+      x = Math.min(pos, total) / total * W;
+    }
+    h.setAttribute("x1", x);
+    h.setAttribute("x2", x);
   }
   var MACROS = {
     Brightness: [
@@ -39599,7 +40582,8 @@ body[data-mode='scene'] #scene {
     const box = $("#labMeters");
     if (!box) return;
     if (!box.querySelector(".lmRow")) {
-      box.replaceChildren(
+      put(
+        box,
         el("legend", {}, "Character"),
         el("p", { class: "hint" }, "Drag a bar to set it directly."),
         ...tr.map(([n]) => {
@@ -39662,7 +40646,8 @@ body[data-mode='scene'] #scene {
       },
       label2
     );
-    box.replaceChildren(
+    put(
+      box,
       el("span", { class: "zcL" }, "Works on"),
       b("All partials", null, "Every partial that is on"),
       ...[0, 1, 2, 3].map(
@@ -39893,7 +40878,7 @@ body[data-mode='scene'] #scene {
       if (!$("#labOv")) return;
       LAB.target = st.on ?? null;
       const tag = "blend:" + r.id + ":" + i + ":" + LAB.dragN++, ch = [];
-      const put = (vals) => {
+      const put2 = (vals) => {
         const before = Object.fromEntries(Object.keys(vals).map((k2) => [k2, ZE.snd.v[k2]]));
         for (const k2 of zeBrew(vals, tag)) {
           const c = ch.find((x) => x[0] === k2);
@@ -39904,9 +40889,9 @@ body[data-mode='scene'] #scene {
       if (st.amt) {
         const b = brewer();
         p.brew(b, st.amt / 10);
-        put(b.out);
+        put2(b.out);
       }
-      put(dialVals(st.dial));
+      put2(dialVals(st.dial));
       LAB.log.push({ id: st.ing, label: st.title, guide: true, ch, tag });
       g.done = i + 1;
       if (g.done >= r.steps.length) made(r);
@@ -39920,7 +40905,8 @@ body[data-mode='scene'] #scene {
     save3();
     const f = $("#lsFound");
     if (!f) return;
-    f.replaceChildren(
+    put(
+      f,
       el("span", { class: "llK" }, "Blend made"),
       el("b", {}, r.name),
       el("small", {}, "Taste it on " + noteName3(r.note) + ", then shape it further with the ingredients.")
@@ -39938,7 +40924,8 @@ body[data-mode='scene'] #scene {
     const last3 = [...LAB.log].reverse().find((x) => x.guide && !x.slate);
     const step = g.done ? r.steps[shownStep] : null;
     box.style.setProperty("--ic", step ? ing(step.ing).c : "#dfe9ff");
-    box.replaceChildren(
+    put(
+      box,
       el("legend", {}, "Blend · " + r.name),
       el("p", { class: "llAbout" }, r.about),
       el(
@@ -45426,7 +46413,7 @@ body[data-mode='scene'] #scene {
     const kits = lvPool(st, "kit").map(facById).filter(ok), hats2 = lvPool(st, "hats").map(facById).filter(ok), perc2 = lvPool(st, "perc").map(facById).filter(ok);
     const out2 = FULLKITS[st.id] = [];
     if (!kits.length) return out2;
-    const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short2 = (x) => x.name.split(":").pop().trim();
+    const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short3 = (x) => x.name.split(":").pop().trim();
     for (let i = 0; i < N * 3 && out2.length < N; i++) {
       const k2 = kits[i % kits.length], h = hats2.length ? hats2[Math.floor(r() * hats2.length)] : null, p = perc2.length && r() < 0.45 ? perc2[Math.floor(r() * perc2.length)] : null;
       const key = k2.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
@@ -45445,7 +46432,7 @@ body[data-mode='scene'] #scene {
       });
       const e = {
         id: "fk-" + st.id + "-" + out2.length,
-        name: "Full Kit: " + short2(k2) + (h ? " + " + short2(h) : "") + (p ? " + " + short2(p) : ""),
+        name: "Full Kit: " + short3(k2) + (h ? " + " + short3(h) : "") + (p ? " + " + short3(p) : ""),
         type: "drum",
         genre: k2.genre,
         bpm: k2.bpm,
@@ -45546,8 +46533,8 @@ body[data-mode='scene'] #scene {
       const loud = n.filter((x) => x.v >= 70), kicks = n.filter((x) => x.n === 0).length / bars2, fast = n.filter((x) => x.s % 1 !== 0).length / bars2;
       return Math.min(1, loud.length / bars2 / 26) * 0.35 + vel * 0.25 + Math.min(1, kicks / 6) * 0.2 + off * 0.1 + Math.min(1, fast / 6) * 0.1;
     }
-    const onsets = new Set(n.map((x) => x.s)).size / bars2, short2 = n.filter((x) => x.l <= 1).length / n.length;
-    return Math.min(1, onsets / 12) * 0.4 + vel * 0.25 + short2 * 0.2 + off * 0.15;
+    const onsets = new Set(n.map((x) => x.s)).size / bars2, short3 = n.filter((x) => x.l <= 1).length / n.length;
+    return Math.min(1, onsets / 12) * 0.4 + vel * 0.25 + short3 * 0.2 + off * 0.15;
   }
   function rawColour(f) {
     if (f.type === "drum") return 0.5;
@@ -58572,10 +59559,10 @@ body[data-mode='scene'] #scene {
     for (const e of o.tracks) {
       const t = e.track;
       if (!tracks2().includes(t)) continue;
-      const num = (v, lo, hi) => Number.isFinite(v) && Math.max(lo, Math.min(hi, v | 0));
-      if (num(e.level, 0, 127) !== false) SY.level[t] = num(e.level, 0, 127);
-      if (num(e.pan, 0, 127) !== false) SY.pan[t] = num(e.pan, 0, 127);
-      if (num(e.rev, 0, 127) !== false) SY.rev[t] = num(e.rev, 0, 127);
+      const num2 = (v, lo, hi) => Number.isFinite(v) && Math.max(lo, Math.min(hi, v | 0));
+      if (num2(e.level, 0, 127) !== false) SY.level[t] = num2(e.level, 0, 127);
+      if (num2(e.pan, 0, 127) !== false) SY.pan[t] = num2(e.pan, 0, 127);
+      if (num2(e.rev, 0, 127) !== false) SY.rev[t] = num2(e.rev, 0, 127);
       const snd = e.sound && soundFrom(e.sound);
       if (!snd || snd.kind !== kindOf(t)) continue;
       const k2 = Number.isInteger(e.slot) && e.slot >= 0 && e.slot <= 16 ? e.slot : 0;
@@ -59261,7 +60248,7 @@ body[data-mode='scene'] #scene {
     exp: () => exp,
     expand: (t) => exp === t ? collapse() : expand(t)
   };
-  var mini = (t) => el(
+  var mini2 = (t) => el(
     "button",
     {
       type: "button",
@@ -59389,7 +60376,7 @@ body[data-mode='scene'] #scene {
         el(
           "nav",
           { class: "syRail", "aria-label": "The other tracks" },
-          ...tracks2().map((t) => t === exp ? null : mini(t)),
+          ...tracks2().map((t) => t === exp ? null : mini2(t)),
           el(
             "button",
             { type: "button", class: "btn sm syAll", onclick: collapse, title: "Back to all eight strips (Esc)" },
@@ -60959,7 +61946,7 @@ body[data-mode='scene'] #scene {
       }))
         return;
       pushUndo();
-      let dropped = 0, put = 0, skipped = 0;
+      let dropped = 0, put2 = 0, skipped = 0;
       const clips = emptyClips();
       for (const t of DEVS[DEV].tracks)
         for (let k2 = 0; k2 < 16; k2++) {
@@ -60973,7 +61960,7 @@ body[data-mode='scene'] #scene {
           if (!r.pattern.notes.length) continue;
           const p = r.pattern;
           clips[t][k2] = { pat: addPattern(p.type, p.name, p.bars, p.notes, { role: p.role || "" }) };
-          put++;
+          put2++;
         }
       S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
       S.scn.clips = clips;
@@ -60995,7 +61982,7 @@ body[data-mode='scene'] #scene {
       hooks.setMode("scene");
       hooks.renderAll();
       toast(
-        "Brought in " + plural3(put, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+        "Brought in " + plural3(put2, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
     };
     const toMine = () => {

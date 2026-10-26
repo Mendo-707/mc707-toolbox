@@ -702,7 +702,13 @@ function emptyText(all) {
     return 'Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).';
   if (B.bank === 'mc707' && !all.some(e => e.src === 'mc707'))
     return 'Nothing grabbed yet. Pick sounds into clips on the ' + DEVS[DEV].name + ', then use Grab.';
-  return 'Nothing matches.';
+  /* a search that finds nothing here, but would elsewhere: say so (the button searches everything) */
+  if (B.q.trim() && (B.bank !== 'all' || B.cat || B.group || B.tag)) {
+    const n = filterList(all, { ...B, bank: 'all', cat: '', group: '', tag: '' }).length;
+    if (n)
+      return 'Nothing here matches “' + B.q.trim() + '”, but ' + n + ' sound' + (n === 1 ? '' : 's') + ' elsewhere do.';
+  }
+  return B.q.trim() ? 'Nothing matches “' + B.q.trim() + '”. Try fewer words, or part of a name.' : 'Nothing here yet.';
 }
 
 function render() {
@@ -721,7 +727,31 @@ function render() {
     count.textContent = l.length + ' shown';
     box.textContent = '';
     box.scrollTop = 0;
-    if (!l.length) box.append(el('p', { class: 'hint zbEmpty' }, emptyText(all)));
+    if (!l.length) {
+      const msg = emptyText(all);
+      box.append(
+        el(
+          'p',
+          { class: 'hint zbEmpty' },
+          msg,
+          / elsewhere do\.$/.test(msg)
+            ? el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'btn sm',
+                  style: 'margin-left:8px',
+                  onclick: () => {
+                    Object.assign(B, { bank: 'all', cat: '', group: '', tag: '' });
+                    render();
+                  }
+                },
+                'Search all sounds'
+              )
+            : null
+        )
+      );
+    }
     fillTable(box, l, { cur: B.cur, sel: B.sel, click, load, play, menu: rowMenu, more, redraw: render }, editRow);
   };
   const q = el('input', {
@@ -735,6 +765,19 @@ function render() {
     oninput: e => {
       B.q = e.target.value;
       drawList();
+    },
+    /* Esc clears a search first (a second Esc closes the browser); Enter or Down goes to the results */
+    onkeydown: e => {
+      if (e.key === 'Escape' && e.target.value) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.value = B.q = '';
+        drawList();
+      } else if ((e.key === 'ArrowDown' || e.key === 'Enter') && box.querySelector('.zbItem')) {
+        e.preventDefault();
+        box.focus();
+        box.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: false }));
+      }
     }
   });
   const inBank = filterList(all, { ...B, group: '', cat: '' });
