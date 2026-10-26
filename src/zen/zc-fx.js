@@ -14,7 +14,7 @@ import { TR } from '../services/transport.js';
 import { WHOLE_SOUND, reselect, zeQuietly } from './zc-editor.js';
 import { DEV } from '../core/device.js';
 import { MFX_PARAMS, MFX_RESET_MS, readSound, sendSound } from './zc-tone.js';
-import { lin, slotAddr, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
+import { lin, slotAddr, zxConnect, zxFlush, zxReadIn, zxWrite } from './zc-sysex.js';
 import { MFX_PRESETS, mfxPreset } from './zc-mfx-presets.js';
 import { mfxDefaults, mfxNames } from './zc-mfx.js';
 
@@ -152,11 +152,12 @@ const masterOk = () => DEV !== '101';
 /** The total effects now, read from the MC-707 (null when it does not answer). */
 export async function readMaster() {
   if (!masterOk() || !(await zxConnect())) return null;
-  const rev = await zxRead(PRJ.rev, 3),
-    cho = await zxRead(PRJ.cho, 4),
-    mfx = await zxRead(PRJ.mfx[0], 2),
-    comp = await zxRead(PRJ.comp, 1),
-    eq = await zxRead(PRJ.eq + 14, 1);
+  /* whole blocks: exact small reads of the project area go unanswered on an MC-707 */
+  const rev = await zxReadIn(PRJ.rev, 3),
+    cho = await zxReadIn(PRJ.cho, 4),
+    mfx = await zxReadIn(PRJ.mfx[0], 2),
+    comp = await zxReadIn(PRJ.comp, 1),
+    eq = await zxReadIn(PRJ.eq + 14, 1);
   if (!rev && !cho && !mfx) return null;
   FXN.master = {
     rev: rev ? { sw: rev[0], type: rev[1], level: rev[2] } : null,

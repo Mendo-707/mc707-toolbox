@@ -31,7 +31,8 @@ test('Master FX: level, reverb and delay settings for their type, master EQ and 
   await put(CHO, [1, 8, 90, 0, ...[1, 300, 11, 20, 17, -20, 20, 100, 100].flatMap(nib)]);
   await put(EQ, [64, 64, 64, 64, 64, 64, 10, 17, 17, 17, 20, 1, 1, 1, 0]);
   await put(COMP, [0, 0, 0, 64, 0, 0, 64, 0, 0, 64, 0, 0, 64, 0, 0, 64, 0, 0, 64, 10, 24, 0, 0, 0]);
-  await put(lin(0x10000014), [100]);
+  /* the project block from its start (the MC-707 answers whole blocks): name, tempo, level 100 */
+  await put(lin(0x10000000), [...Array(16).fill(32), 0, 0, 0, 0, 100]);
   const [win] = await Promise.all([page.waitForEvent('popup'), page.click('#bMixer')]);
   const M = win.locator('.mxMaster');
   await M.locator('button', { hasText: 'Read from MC-707' }).click();

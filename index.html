@@ -29312,6 +29312,11 @@ body[data-mode='scene'] #scene {
       return void 0;
     });
   }
+  async function zxReadIn(l, n) {
+    const from = l - (l & 127), at2 = l & 127;
+    const b = await zxRead(from, 128, 600, true);
+    return Array.isArray(b) && b.length >= at2 + n ? b.slice(at2, at2 + n) : null;
+  }
   var SETTLE = 30;
 
   // src/zen/zc-tone.js
@@ -59366,7 +59371,7 @@ body[data-mode='scene'] #scene {
   var masterOk = () => DEV !== "101";
   async function readMaster() {
     if (!masterOk() || !await zxConnect()) return null;
-    const rev = await zxRead(PRJ.rev, 3), cho = await zxRead(PRJ.cho, 4), mfx = await zxRead(PRJ.mfx[0], 2), comp2 = await zxRead(PRJ.comp, 1), eq = await zxRead(PRJ.eq + 14, 1);
+    const rev = await zxReadIn(PRJ.rev, 3), cho = await zxReadIn(PRJ.cho, 4), mfx = await zxReadIn(PRJ.mfx[0], 2), comp2 = await zxReadIn(PRJ.comp, 1), eq = await zxReadIn(PRJ.eq + 14, 1);
     if (!rev && !cho && !mfx) return null;
     FXN.master = {
       rev: rev ? { sw: rev[0], type: rev[1], level: rev[2] } : null,
@@ -59761,13 +59766,13 @@ body[data-mode='scene'] #scene {
   async function totalRead(sec) {
     if (!await zxConnect()) return false;
     if (sec === "level") {
-      const b2 = await zxRead(AT.level, 1);
+      const b2 = await zxReadIn(AT.level, 1);
       if (!Array.isArray(b2)) return false;
       TV.level = b2[0];
       return true;
     }
     if (sec === "eq" || sec === "comp") {
-      const n2 = sec === "eq" ? 15 : 24, b2 = await zxRead(AT[sec], n2);
+      const n2 = sec === "eq" ? 15 : 24, b2 = await zxReadIn(AT[sec], n2);
       if (!Array.isArray(b2) || b2.length < n2) return false;
       const list2 = sec === "eq" ? MASTER_EQ : MASTER_COMP, out2 = [];
       for (const p of list2) {
@@ -59778,15 +59783,19 @@ body[data-mode='scene'] #scene {
       return true;
     }
     if (sec === "mfx") {
-      const copy = { kind: "tone", v: {}, known: /* @__PURE__ */ new Set() };
-      const r = await readSound(copy, AT.mfx - MFX_AT2, new Set(MFX_PARAMS));
-      if (!r || !r.ok) return false;
-      TV.mfx = MFX_PARAMS.map((k2) => copy.v[k2] ?? 0);
+      const b2 = await zxRead(AT.mfx, 128, 600, true), c = Array.isArray(b2) ? await zxRead(AT.mfx + 128, 128, 600, true) : null;
+      if (!Array.isArray(b2) || !Array.isArray(c)) return false;
+      const blk = [...b2, ...new Array(Math.max(0, 128 - b2.length)).fill(0), ...c];
+      const at2 = new Map(allParams("tone").map(([k2, p, off]) => [k2, [p, off - MFX_AT2]]));
+      TV.mfx = MFX_PARAMS.map((k2) => {
+        const [p, off] = at2.get(k2);
+        return decode(p, blk.slice(off, off + p[2])) ?? 0;
+      });
       return true;
     }
     const n = totalPanel(sec).controls.length;
     if (!n) return true;
-    const b = await zxRead(AT[sec], n * 4);
+    const b = await zxReadIn(AT[sec], n * 4);
     if (!Array.isArray(b) || b.length < n * 4) return false;
     TV[sec] = Array.from({ length: n }, (_, i) => unNib(b.slice(i * 4, i * 4 + 4)));
     return true;

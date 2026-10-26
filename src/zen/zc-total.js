@@ -12,8 +12,8 @@
 //                      gains kept as 64 + value, as the default bytes read back)
 //
 // Owns: TV (what was last read or set). Reads: FXN (the types chosen).
-import { lin, zxConnect, zxFlush, zxRead, zxWrite } from './zc-sysex.js';
-import { MFX_PARAMS, readSound, sendSound } from './zc-tone.js';
+import { lin, zxConnect, zxFlush, zxRead, zxReadIn, zxWrite } from './zc-sysex.js';
+import { MFX_PARAMS, allParams, decode, sendSound } from './zc-tone.js';
 import { NOTES, mfxParams } from './zc-mfx.js';
 import { FXN } from './zc-fx.js';
 import { CHO_PARAMS, MASTER_COMP, MASTER_EQ, REV_PARAMS } from './zc-total-data.js';
@@ -143,14 +143,14 @@ const unNib = b => (((b[0] & 15) << 12) | ((b[1] & 15) << 8) | ((b[2] & 15) << 4
 export async function totalRead(sec) {
   if (!(await zxConnect())) return false;
   if (sec === 'level') {
-    const b = await zxRead(AT.level, 1);
+    const b = await zxReadIn(AT.level, 1);
     if (!Array.isArray(b)) return false;
     TV.level = b[0];
     return true;
   }
   if (sec === 'eq' || sec === 'comp') {
     const n = sec === 'eq' ? 15 : 24,
-      b = await zxRead(AT[sec], n);
+      b = await zxReadIn(AT[sec], n);
     if (!Array.isArray(b) || b.length < n) return false;
     const list = sec === 'eq' ? MASTER_EQ : MASTER_COMP,
       out = [];
@@ -162,15 +162,21 @@ export async function totalRead(sec) {
     return true;
   }
   if (sec === 'mfx') {
-    const copy = { kind: 'tone', v: {}, known: new Set() };
-    const r = await readSound(copy, AT.mfx - MFX_AT, new Set(MFX_PARAMS));
-    if (!r || !r.ok) return false;
-    TV.mfx = MFX_PARAMS.map(k => copy.v[k] ?? 0);
+    /* the block in two whole reads (it runs past 128 bytes), each parameter where a tone's MFX has it */
+    const b = await zxRead(AT.mfx, 128, 600, true),
+      c = Array.isArray(b) ? await zxRead(AT.mfx + 128, 128, 600, true) : null;
+    if (!Array.isArray(b) || !Array.isArray(c)) return false;
+    const blk = [...b, ...new Array(Math.max(0, 128 - b.length)).fill(0), ...c];
+    const at = new Map(allParams('tone').map(([k, p, off]) => [k, [p, off - MFX_AT]]));
+    TV.mfx = MFX_PARAMS.map(k => {
+      const [p, off] = at.get(k);
+      return decode(p, blk.slice(off, off + p[2])) ?? 0;
+    });
     return true;
   }
   const n = totalPanel(sec).controls.length;
   if (!n) return true;
-  const b = await zxRead(AT[sec], n * 4);
+  const b = await zxReadIn(AT[sec], n * 4);
   if (!Array.isArray(b) || b.length < n * 4) return false;
   TV[sec] = Array.from({ length: n }, (_, i) => unNib(b.slice(i * 4, i * 4 + 4)));
   return true;
