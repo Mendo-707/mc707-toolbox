@@ -19,9 +19,9 @@ test('menus: the right ones in each mode, nothing repeated in a menu, submenus a
       [...document.querySelectorAll('#menubar .mb')].filter(b => b.offsetParent).map(b => b.textContent)
     );
   const want = {
-    song: ['File', 'Edit', 'Song', 'Settings', 'View', 'Help'],
-    live: ['File', 'Live', 'Settings', 'View', 'Help'],
-    synth: ['File', 'Synth', 'Settings', 'View', 'Help']
+    song: ['File', 'Edit', 'Song', 'MC-707', 'Settings', 'View', 'Help'],
+    live: ['File', 'Live', 'MC-707', 'Settings', 'View', 'Help'],
+    synth: ['File', 'Synth', 'MC-707', 'Settings', 'View', 'Help']
   };
   for (const m of ['song', 'live', 'synth']) {
     await page.click('#menubar .mtab[data-mode=' + m + ']');

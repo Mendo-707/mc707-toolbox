@@ -94,7 +94,7 @@ export function clipOptionsEl(c, p, isDrum) {
         'select',
         {
           title:
-            'Switches this MC-707 track to a clip when this clip starts. Set up the clips in Settings › Your MC-707 clips.',
+            'Switches this MC-707 track to a clip when this clip starts. Set up the clips in MC-707 › Your MC-707 clips & ZenCore.',
           'aria-label': 'MC-707 clip',
           onchange: e => {
             pushUndo();

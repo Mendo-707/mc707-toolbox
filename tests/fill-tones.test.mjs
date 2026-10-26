@@ -48,7 +48,7 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
   const { page, errors } = await openApp();
   await page.evaluate(async () => (window.__app.ensureAudio(), await window.__app.connectMidi()));
   await seed(page);
-  await page.locator('#menubar .mb', { hasText: 'Settings' }).first().click();
+  await page.locator('#menubar .mb', { hasText: 'MC-707' }).first().click();
   await page.locator('.mdrop:not([hidden]) button', { hasText: 'Your MC-707 clips' }).first().click();
   await page.evaluate(() => {
     const m = window.__app.S.clipMap[3];
@@ -131,7 +131,7 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
 test('Fill tones: the pools are editable per genre and job, and go back to the suggestions', async () => {
   const { page, errors } = await openApp();
   await seed(page);
-  await page.locator('#menubar .mb', { hasText: 'Settings' }).first().click();
+  await page.locator('#menubar .mb', { hasText: 'MC-707' }).first().click();
   await page.locator('.mdrop:not([hidden]) button', { hasText: 'Fill tones' }).first().click();
   await page.waitForSelector('#ftOv');
   await page.click('#ftOv button:has-text("Edit the pools")');
@@ -189,7 +189,7 @@ test('Fill tones: pools fill from the sounds you have that fit the job and the g
     add('Glass Amb Pad', 'Synth Pad/Str');
     return true;
   });
-  await page.locator('#menubar .mb', { hasText: 'Settings' }).first().click();
+  await page.locator('#menubar .mb', { hasText: 'MC-707' }).first().click();
   await page.locator('.mdrop:not([hidden]) button', { hasText: 'Fill tones' }).first().click();
   await page.waitForSelector('#ftOv');
   await page.click('#ftOv button:has-text("Edit the pools")');

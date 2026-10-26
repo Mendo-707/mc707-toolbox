@@ -115,7 +115,7 @@ function audMeterStop() {
 /* Play a note on each MC-707 track in turn and see which USB channel pair it arrives on. */
 async function audCheckRouting() {
   if (!MIDI.out) {
-    toast('Connect the MC-707 first (Settings › Quick setup).');
+    toast('Connect the MC-707 first (MC-707 › Set up your MC-707).');
     return;
   }
   if (!AUDREC.metering) await audMeterStart();

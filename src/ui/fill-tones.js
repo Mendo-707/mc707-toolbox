@@ -249,7 +249,7 @@ export async function fillTonesOpen() {
               el(
                 'option',
                 { value: itemKey(it), selected: c.item && itemKey(it) === itemKey(c.item), disabled: !resolve(it) },
-                itemName(it) + (resolve(it) ? '' : ' (factory tones not added)')
+                itemName(it) + (resolve(it) ? '' : ' (not added yet)')
               )
             ),
             el('option', { value: '__lib' }, 'Any sound in the library…')
