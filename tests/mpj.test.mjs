@@ -15,7 +15,9 @@ function makeProject() {
     usd = at + PRJ,
     smp = 64,
     size = 0x30 + 0x30 + 1024,
-    u8 = new Uint8Array(usd + size),
+    lpd = usd + size,
+    lsize = 16 + 4112 + 64 * 4,
+    u8 = new Uint8Array(lpd + lsize),
     dv = new DataView(u8.buffer);
   const put = (o, s) => [...s].forEach((c, i) => (u8[o + i] = c.charCodeAt(0)));
   put(2, 'PRJ5');
@@ -25,7 +27,15 @@ function makeProject() {
   put(32, 'USDaMC77');
   dv.setUint32(40, usd, true);
   dv.setUint32(44, size, true);
-  put(48, 'DUMYMC77');
+  put(48, 'LPDaMC77');
+  dv.setUint32(56, lpd, true);
+  dv.setUint32(60, lsize, true);
+  put(64, 'DUMYMC77');
+  /* a looper recording in track 5's clip 2 (entry 4 × 16 + 1): 64 samples, 32-bit mono, a ramp */
+  put(lpd + 16, 'DIK0');
+  dv.setUint32(lpd + 16 + 16 + 65 * 16, 64 * 4, true);
+  dv.setUint32(lpd + 16 + 16 + 65 * 16 + 4, 4112, true);
+  for (let i = 0; i < 64; i++) dv.setInt32(lpd + 16 + 4112 + i * 4, (i - 32) * 0x2000000, true);
   put(at + 0x10, 'Test Song       ');
   dv.setUint16(at + 0x20, 9500, true);
   /* scenes as a new project has them (scene n plays clip n, kept 1-16 in each track's block at +90),
@@ -92,6 +102,8 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
       ],
       kick: m.tracks[0].clips[1].slots[8],
       samples: m.samples.map(s => [s.name, s.channels, s.count, s.rate]),
+      loops: m.loops.map(l => [l.track, l.clip, l.bytes]),
+      loop: Array.from(window.__app.mpj.loopAudio(u8, m.loops[0])[0].slice(30, 34)),
       scenes: m.scenes.slice(0, 2),
       scene18: m.scenes[17].pick[3],
       bad: window.__app.mpj.read(new Uint8Array(100)).error
@@ -104,6 +116,8 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.deepEqual(r.clip, ['SUB BASS 1', 32, 3]);
   assert.deepEqual(r.kick, [{ note: 36, vel: 90, start: 0, end: 50, sub: 0 }]);
   assert.deepEqual(r.samples, [['Hit.wav', 1, 64, 44100]]);
+  assert.deepEqual(r.loops, [[4, 1, 256]], 'the looper recording in track 5 clip 2');
+  assert.deepEqual(r.loop, [-0.03125, -0.015625, 0, 0.015625], '32-bit mono samples');
   assert.deepEqual(r.scenes, [
     { pick: [1, 0, 0, 0, 0, 0, 0, 0], bars: 4 },
     { pick: [1, 1, 1, 1, 1, 1, 1, 1], bars: 0 }
@@ -116,6 +130,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   assert.match(text, /MC-707 project: Test Song/);
   assert.match(text, /95 BPM · 2 clips with notes · 1 sample/);
   assert.match(text, /Looper track/);
+  assert.match(text, /Looper recordings\s*▶\s*Track 5 · clip 2/);
   assert.equal(
     await page.locator('#mpjOv .mpjScn').count(),
     18,
@@ -125,7 +140,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   /* the sample saves as a WAV */
   const [dl] = await Promise.all([
     page.waitForEvent('download'),
-    page.click('#mpjOv .mpjSmp button:has-text("Save WAV")')
+    page.locator('#mpjOv .mpjSmp', { hasText: 'Hit' }).locator('button', { hasText: 'Save WAV' }).click()
   ]);
   assert.equal(dl.suggestedFilename(), '01 Hit.wav');
   /* into Scene Mode */

@@ -16,7 +16,8 @@
 //               (padded to 1 KB), sample count (all channels), file name (16), number, sample rate, then
 //               16-bit PCM
 //   LPDa        looper recordings: "DIK0", then 256 entries (size, offset from "DIK0", 2 unused); entry
-//               track × 16 + clip; 32-bit mono PCM at 44.1 kHz
+//               track × 16 + clip; 32-bit mono PCM at 44.1 kHz (checked: a 2-bar recording at 128 BPM
+//               is 165376 samples, 3.75 s, and plays back as recorded)
 //
 // Plain data only. Reads: nothing.
 

@@ -57257,6 +57257,11 @@ body[data-mode='scene'] #scene {
       for (let c = 0; c < s.channels; c++) ch[c][i] = dv.getInt16(s.at + (i * s.channels + c) * 2, true) / 32768;
     return ch;
   }
+  function loopAudio(u8, l) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), frames = Math.floor(l.bytes / 4), M2 = new Float32Array(frames);
+    for (let i = 0; i < frames; i++) M2[i] = dv.getInt32(l.at + i * 4, true) / 2147483648;
+    return [M2];
+  }
   function wavBytes(chs, rate, bits = 16) {
     const n = chs[0].length, c = chs.length, bps = bits / 8, out2 = new Uint8Array(44 + n * c * bps), dv = new DataView(out2.buffer);
     const w = (o, s) => [...s].forEach((x, i) => dv.setUint8(o + i, x.charCodeAt(0)));
@@ -57335,7 +57340,7 @@ body[data-mode='scene'] #scene {
     const play2 = (s) => {
       ensureAudio();
       stopAll();
-      const ch = sampleAudio(u8, s), buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate);
+      const ch = s.loop ? loopAudio(u8, s.loop) : sampleAudio(u8, s), buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate || 44100);
       ch.forEach((d, i) => buf.copyToChannel(d, i));
       const src = AU.ctx.createBufferSource();
       src.buffer = buf;
@@ -57414,6 +57419,26 @@ body[data-mode='scene'] #scene {
             type: "button",
             class: "btn sm",
             onclick: () => saveFile(wavName(s, i), wavBytes(sampleAudio(u8, s), s.rate))
+          },
+          "Save WAV"
+        )
+      )
+    );
+    const loopName = (l) => "Looper track " + (l.track + 1) + " clip " + (l.clip + 1) + ".wav";
+    const loopRows = m.loops.map(
+      (l) => el(
+        "div",
+        { class: "mpjSmp" },
+        el("button", { type: "button", class: "btn sm", title: "Play it", onclick: () => play2({ loop: l }) }, "▶"),
+        el("b", {}, "Track " + (l.track + 1) + " · clip " + (l.clip + 1)),
+        el("span", { class: "hint" }, "mono · " + (l.bytes / 4 / 44100).toFixed(2) + " s · 44.1 kHz"),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            title: "A 24-bit WAV (the recording is kept in 32 bits)",
+            onclick: () => saveFile(loopName(l), wavBytes(loopAudio(u8, l), 44100, 24))
           },
           "Save WAV"
         )
@@ -57532,8 +57557,9 @@ body[data-mode='scene'] #scene {
         el(
           "p",
           { class: "hint" },
-          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), motion and looper recordings."
+          "Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names) and motion."
         ),
+        m.loops.length ? el("div", { class: "mpjSamples" }, el("h4", {}, "Looper recordings"), ...loopRows) : null,
         m.samples.length ? el(
           "div",
           { class: "mpjSamples" },
@@ -60051,7 +60077,7 @@ body[data-mode='scene'] #scene {
       },
       motion: zc_motion_exports,
       pump: pump_exports,
-      mpj: { open: mpjOpen, read: readMpj },
+      mpj: { open: mpjOpen, read: readMpj, loopAudio },
       get S() {
         return S;
       },

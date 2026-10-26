@@ -9,7 +9,7 @@ import { S, addPattern, pushUndo, scheduleSave } from '../core/state.js';
 import { DEVS, DEV, TRACK_COLORS } from '../core/device.js';
 import { hooks } from '../core/hooks.js';
 import { emptyClips, newRow } from '../core/scene-model.js';
-import { readMpj, sampleAudio, wavBytes } from '../core/mpj.js';
+import { loopAudio, readMpj, sampleAudio, wavBytes } from '../core/mpj.js';
 import { AU, ensureAudio } from '../services/synth.js';
 import { onStopAll, stopAll } from '../services/transport.js';
 import { userSave } from '../library/user-lib.js';
@@ -68,12 +68,13 @@ export function mpjOpen(u8, file) {
     if (unhook) unhook();
     unhook = null;
   };
+  /* a sample, or a looper recording ({loop}: 32-bit mono at 44.1 kHz) */
   const play = s => {
     ensureAudio();
     /* anything playing stops: the song, a preview, another sample */
     stopAll();
-    const ch = sampleAudio(u8, s),
-      buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate);
+    const ch = s.loop ? loopAudio(u8, s.loop) : sampleAudio(u8, s),
+      buf = AU.ctx.createBuffer(ch.length, ch[0].length, s.rate || 44100);
     ch.forEach((d, i) => buf.copyToChannel(d, i));
     const src = AU.ctx.createBufferSource();
     src.buffer = buf;
@@ -173,6 +174,27 @@ export function mpjOpen(u8, file) {
           type: 'button',
           class: 'btn sm',
           onclick: () => saveFile(wavName(s, i), wavBytes(sampleAudio(u8, s), s.rate))
+        },
+        'Save WAV'
+      )
+    )
+  );
+  /* the looper recordings: one per looper clip that holds one */
+  const loopName = l => 'Looper track ' + (l.track + 1) + ' clip ' + (l.clip + 1) + '.wav';
+  const loopRows = m.loops.map(l =>
+    el(
+      'div',
+      { class: 'mpjSmp' },
+      el('button', { type: 'button', class: 'btn sm', title: 'Play it', onclick: () => play({ loop: l }) }, '▶'),
+      el('b', {}, 'Track ' + (l.track + 1) + ' · clip ' + (l.clip + 1)),
+      el('span', { class: 'hint' }, 'mono · ' + (l.bytes / 4 / 44100).toFixed(2) + ' s · 44.1 kHz'),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn sm',
+          title: 'A 24-bit WAV (the recording is kept in 32 bits)',
+          onclick: () => saveFile(loopName(l), wavBytes(loopAudio(u8, l), 44100, 24))
         },
         'Save WAV'
       )
@@ -324,8 +346,9 @@ export function mpjOpen(u8, file) {
       el(
         'p',
         { class: 'hint' },
-        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names), motion and looper recordings.'
+        'Clips come in with their notes, lengths and step sizes, each in the same track and clip number, as patterns you can edit and write back; the tracks take their sounds’ names and the song its tempo. Not read from the file yet: the sounds themselves (only their names) and motion.'
       ),
+      m.loops.length ? el('div', { class: 'mpjSamples' }, el('h4', {}, 'Looper recordings'), ...loopRows) : null,
       m.samples.length
         ? el(
             'div',
