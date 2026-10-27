@@ -8,7 +8,8 @@ let closing = false;
 // Only one copy at a time (two copies would fight over the MIDI port).
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 else {
-  app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+  /* opening it again brings the window forward, and shows it if it somehow never appeared */
+  app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 }
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
@@ -26,11 +27,17 @@ function folderFor(kind) {
 
 // The window as it was last time (size, place, maximised), if that place is still on a screen.
 function lastBounds() {
-  const w = readCfg().win;
-  if (!w || !(w.width > 300) || !(w.height > 200)) return { width: 1400, height: 900 };
-  const area = screen.getDisplayMatching(w).workArea;
-  const on = w.x < area.x + area.width - 80 && w.x + w.width > area.x + 80 && w.y >= area.y - 10 && w.y < area.y + area.height - 80;
-  return on ? w : { width: w.width, height: w.height };
+  const def = { width: 1400, height: 900 };
+  try {
+    const w = readCfg().win;
+    if (!w || !(w.width > 300) || !(w.height > 200)) return def;
+    if (!Number.isFinite(w.x) || !Number.isFinite(w.y)) return { width: w.width, height: w.height, max: !!w.max };
+    const area = screen.getDisplayMatching({ x: w.x, y: w.y, width: w.width, height: w.height }).workArea;
+    const on = w.x < area.x + area.width - 80 && w.x + w.width > area.x + 80 && w.y >= area.y - 10 && w.y < area.y + area.height - 80;
+    return on ? w : { width: w.width, height: w.height, max: !!w.max };
+  } catch (e) {
+    return def;
+  }
 }
 let saveT = null;
 function keepBounds() {
@@ -44,8 +51,9 @@ const keepSoon = () => { clearTimeout(saveT); saveT = setTimeout(keepBounds, 600
 function createWindow() {
   const b = lastBounds(),
     cfg = readCfg(),
-    bg = cfg.chrome && cfg.chrome.bg ? cfg.chrome.bg : '#16171a',
-    ink = cfg.chrome && cfg.chrome.ink ? cfg.chrome.ink : '#ece9e2';
+    hex = v => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null),
+    bg = hex(cfg.chrome && cfg.chrome.bg) || '#16171a',
+    ink = hex(cfg.chrome && cfg.chrome.ink) || '#ece9e2';
   /* the app's own top bar is the title bar: on Windows the system's buttons sit over its right end, on a
      Mac the traffic lights over its left end; Linux keeps its usual frame */
   const chrome =
@@ -64,10 +72,18 @@ function createWindow() {
     ...chrome,
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') }
   });
-  win.once('ready-to-show', () => {
+  /* the window appears once the page has drawn, or after a few seconds whatever happens: never stays
+     hidden (a page waiting on the network, a slow machine) */
+  let shown = false;
+  const showNow = () => {
+    if (shown || !win || win.isDestroyed()) return;
+    shown = true;
     if (b.max) win.maximize();
     win.show();
-  });
+  };
+  win.once('ready-to-show', showNow);
+  win.webContents.once('did-finish-load', () => setTimeout(showNow, 300));
+  setTimeout(showNow, 3000);
   for (const ev of ['resize', 'move', 'maximize', 'unmaximize']) win.on(ev, keepSoon);
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
@@ -129,12 +145,15 @@ ipcMain.handle('pop-win', (_e, name, act, on) => {
 
 // The page's colours, for the title bar's buttons (Windows) and the window behind the page next time.
 ipcMain.on('chrome', (_e, c) => {
-  if (!c || typeof c.bg !== 'string') return;
+  const ok = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+  if (!c || !ok(c.bg) || !ok(c.ink)) return;
   const cfg = readCfg();
   cfg.chrome = { bg: c.bg, ink: c.ink };
   writeCfg(cfg);
-  if (win && process.platform === 'win32') try { win.setTitleBarOverlay({ color: c.bg, symbolColor: c.ink }); } catch (e) {}
-  if (win) win.setBackgroundColor(c.bg);
+  try {
+    if (win && process.platform === 'win32') win.setTitleBarOverlay({ color: c.bg, symbolColor: c.ink });
+    if (win) win.setBackgroundColor(c.bg);
+  } catch (e) {}
 });
 // A Mac's menu bar: the app's own menus, sent by the page as [{label, items:[{id, label, key, checked,
 // sub:[…]} | '-']}]; choosing one tells the page (menu-cmd, id). Shortcuts are only shown: the page
