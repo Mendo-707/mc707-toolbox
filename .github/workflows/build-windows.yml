@@ -15,6 +15,10 @@ on:
         description: 'Release tag to build and attach the exe to (optional, e.g. v1.0.0)'
         required: false
         default: ''
+      attach:
+        description: 'Or: build this branch and attach the exe to this (draft) release, for test builds (e.g. test-builds)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -43,8 +47,8 @@ jobs:
             dist/MC-707-Toolbox-Setup.exe
             dist/MC-707-Toolbox.exe
       - name: Attach the installer and the portable exe to the release
-        if: github.event_name == 'release' || github.event.inputs.tag != ''
+        if: github.event_name == 'release' || github.event.inputs.tag != '' || github.event.inputs.attach != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag }}" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
+        run: gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag || github.event.inputs.attach }}" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
