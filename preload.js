@@ -18,5 +18,10 @@ contextBridge.exposeInMainWorld('toolbox', {
   closeNow: () => ipcRenderer.send('close-now'),
   onClosing: (cb) => ipcRenderer.on('app-closing', () => cb()),
   // a tool window (the mixers): 'min', 'close', or 'top' with on (stay on top); returns whether it is on top
-  popWin: (name, act, on) => ipcRenderer.invoke('pop-win', name, act, on)
+  popWin: (name, act, on) => ipcRenderer.invoke('pop-win', name, act, on),
+  // the page's colours, for the title bar and the window behind the page
+  setChrome: (c) => ipcRenderer.send('chrome', c),
+  // a Mac's menu bar: the app's menus, and the one chosen
+  setMacMenu: (menus) => ipcRenderer.send('mac-menu', menus),
+  onMenuCmd: (cb) => ipcRenderer.on('menu-cmd', (_e, id) => cb(id))
 });

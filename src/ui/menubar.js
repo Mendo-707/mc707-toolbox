@@ -28,6 +28,7 @@ import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
 import { checkUpdateNow } from './update-check.js';
+import { macMenus } from './desktop.js';
 import { mpjPick } from './mpj-open.js';
 import { fillTonesOpen } from './fill-tones.js';
 import { sceneToggle } from '../scene/screen.js';
@@ -435,6 +436,33 @@ function initMenubar() {
     if (e.key === 'Escape' && openB) closeAll();
   });
   addEventListener('blur', closeAll);
+  /* on a Mac, the same menus go in the Mac's own menu bar (desktop.js) */
+  macMenus(() => {
+    const mode = document.body.dataset.mode;
+    return M.filter(([, modes]) => !modes || modes === mode).map(([name, , items]) => {
+      const out = [];
+      for (const it of items) {
+        if (!it) out.push('-');
+        else if (it === 'recent') {
+          const rl = projRecents();
+          if (rl.length)
+            out.push({ label: 'Open recent', sub: rl.map(r => ({ label: r.name, run: () => projOpenPath(r.path) })) });
+        } else {
+          const [label, fn, key, chk, sub, onlyMode] = it;
+          if (onlyMode && onlyMode !== mode) continue;
+          if (sub)
+            out.push({
+              label,
+              sub: sub().map(x =>
+                x === '-' ? '-' : { label: x.label, checked: x.checked == null ? null : x.checked, run: x.action }
+              )
+            });
+          else out.push({ label, key, checked: chk ? chk() : null, run: fn });
+        }
+      }
+      return { label: name, items: out };
+    });
+  });
 }
 export function initSetup() {
   initMenubar();

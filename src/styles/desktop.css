@@ -1,0 +1,62 @@
+/* The desktop app's native feel (ui/desktop.js puts .desktop and .os-win32 / .os-darwin / .os-linux on
+   <html>; none of this applies in a browser). Loaded last. */
+
+/* an app, not a page: controls don't select as text, nothing bounces, images don't drag out */
+html.desktop body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+html.desktop :is(input, textarea, [contenteditable], select, pre, code, .selectable, .selectable *) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+html.desktop,
+html.desktop body,
+html.desktop * {
+  overscroll-behavior: none;
+}
+html.desktop :is(img, a) {
+  -webkit-user-drag: none;
+}
+/* the arrow on buttons, as in a desktop app (things you drag keep their grab hand) */
+html.desktop
+  :is(button, .btn, a, summary, label, [role='button'], [role='tab'], [role='menuitem']):not([draggable='true']) {
+  cursor: default !important;
+}
+/* focus rings only for the keyboard */
+html.desktop :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* the top bar is the window's title bar: drag it to move the window, double-click to maximise */
+html.desktop:is(.os-win32, .os-darwin) #menubar {
+  -webkit-app-region: drag;
+  min-height: 34px;
+  align-items: center;
+  align-content: center;
+}
+html.desktop #menubar :is(button, input, select, a, .mdrop, .mproj) {
+  -webkit-app-region: no-drag;
+}
+/* anything over the top bar is not part of it */
+html.desktop :is(.ptOv, .zcDock, [role='dialog'], .cmenu, .pop, .mdrop, #toast, #labOv, #zbOv) {
+  -webkit-app-region: no-drag;
+}
+/* Windows: room for the system's minimise, maximise and close buttons at the right */
+html.os-win32.desktop #menubar {
+  padding-right: 146px;
+}
+html.os-win32.desktop #menubar .mbrand {
+  padding-left: 4px;
+}
+/* a Mac: room for the traffic lights at the left; the menus live in the Mac's own menu bar */
+html.os-darwin.desktop #menubar {
+  padding-left: 80px;
+  min-height: 38px;
+}
+html.os-darwin.native-menu #menubar :is(.mb, .mdrop, .mbrand) {
+  display: none !important;
+}
+html.os-darwin.native-menu #menubar .mproj {
+  margin-left: 0;
+}

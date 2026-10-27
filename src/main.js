@@ -8,6 +8,7 @@
 import { popoutCloseAll } from './services/popout.js';
 import './core/dom.js';
 import { applyTheme } from './core/theme.js';
+import { initDesktop } from './ui/desktop.js';
 import './core/icons.js';
 import './core/theory.js';
 import './library/factory.js';
@@ -182,6 +183,7 @@ import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
 applyTheme();
+initDesktop();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {

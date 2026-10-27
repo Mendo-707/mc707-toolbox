@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, ipcMain, dialog, shell, Menu, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, session, ipcMain, dialog, shell, Menu, powerSaveBlocker, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -24,13 +24,51 @@ function folderFor(kind) {
   return dir;
 }
 
+// The window as it was last time (size, place, maximised), if that place is still on a screen.
+function lastBounds() {
+  const w = readCfg().win;
+  if (!w || !(w.width > 300) || !(w.height > 200)) return { width: 1400, height: 900 };
+  const area = screen.getDisplayMatching(w).workArea;
+  const on = w.x < area.x + area.width - 80 && w.x + w.width > area.x + 80 && w.y >= area.y - 10 && w.y < area.y + area.height - 80;
+  return on ? w : { width: w.width, height: w.height };
+}
+let saveT = null;
+function keepBounds() {
+  if (!win || win.isDestroyed() || win.isFullScreen() || win.isMinimized()) return;
+  const cfg = readCfg();
+  cfg.win = { ...(win.isMaximized() ? (cfg.win || {}) : win.getBounds()), max: win.isMaximized() };
+  writeCfg(cfg);
+}
+const keepSoon = () => { clearTimeout(saveT); saveT = setTimeout(keepBounds, 600); };
+
 function createWindow() {
+  const b = lastBounds(),
+    cfg = readCfg(),
+    bg = cfg.chrome && cfg.chrome.bg ? cfg.chrome.bg : '#16171a',
+    ink = cfg.chrome && cfg.chrome.ink ? cfg.chrome.ink : '#ece9e2';
+  /* the app's own top bar is the title bar: on Windows the system's buttons sit over its right end, on a
+     Mac the traffic lights over its left end; Linux keeps its usual frame */
+  const chrome =
+    process.platform === 'win32'
+      ? { titleBarStyle: 'hidden', titleBarOverlay: { color: bg, symbolColor: ink, height: 34 } }
+      : process.platform === 'darwin'
+        ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: 11 } }
+        : {};
   win = new BrowserWindow({
-    width: 1400, height: 900, minWidth: 700, minHeight: 500,
+    x: b.x, y: b.y, width: b.width, height: b.height, minWidth: 700, minHeight: 500,
     title: 'MC-707 Toolbox',
     icon: path.join(__dirname, 'icon.png'),
+    /* no white flash: the window shows once the page has drawn, in the app's own colour */
+    show: false,
+    backgroundColor: bg,
+    ...chrome,
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') }
   });
+  win.once('ready-to-show', () => {
+    if (b.max) win.maximize();
+    win.show();
+  });
+  for (const ev of ['resize', 'move', 'maximize', 'unmaximize']) win.on(ev, keepSoon);
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
   win.on('leave-full-screen', () => win.webContents.send('fullscreen', false));
@@ -69,6 +107,7 @@ function createWindow() {
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   // Let the app send "all notes off" to the MC-707 before the window closes.
   win.on('close', (e) => {
+    keepBounds();
     if (closing) return;
     e.preventDefault();
     for (const w of BrowserWindow.getAllWindows()) if (w !== win) w.destroy();
@@ -86,6 +125,52 @@ ipcMain.handle('pop-win', (_e, name, act, on) => {
   else if (act === 'close') w.close();
   else if (act === 'top') w.setAlwaysOnTop(!!on, 'floating');
   return w.isAlwaysOnTop();
+});
+
+// The page's colours, for the title bar's buttons (Windows) and the window behind the page next time.
+ipcMain.on('chrome', (_e, c) => {
+  if (!c || typeof c.bg !== 'string') return;
+  const cfg = readCfg();
+  cfg.chrome = { bg: c.bg, ink: c.ink };
+  writeCfg(cfg);
+  if (win && process.platform === 'win32') try { win.setTitleBarOverlay({ color: c.bg, symbolColor: c.ink }); } catch (e) {}
+  if (win) win.setBackgroundColor(c.bg);
+});
+// A Mac's menu bar: the app's own menus, sent by the page as [{label, items:[{id, label, key, checked,
+// sub:[…]} | '-']}]; choosing one tells the page (menu-cmd, id). Shortcuts are only shown: the page
+// keeps handling its own keys, as everywhere else.
+const accel = k => {
+  const a = String(k || '').replace(/^Ctrl\+/, 'CmdOrCtrl+');
+  return /^(CmdOrCtrl\+)?(Shift\+)?([A-Z0-9]|F\d{1,2}|Space)$/.test(a) ? a : undefined;
+};
+function macItems(items) {
+  return items.map(it =>
+    it === '-'
+      ? { type: 'separator' }
+      : it.sub
+        ? { label: it.label, submenu: macItems(it.sub) }
+        : {
+            label: it.label,
+            type: it.checked == null ? 'normal' : 'checkbox',
+            checked: !!it.checked,
+            accelerator: accel(it.key),
+            registerAccelerator: false,
+            click: () => win && win.webContents.send('menu-cmd', it.id)
+          }
+  );
+}
+ipcMain.on('mac-menu', (_e, menus) => {
+  if (process.platform !== 'darwin' || !Array.isArray(menus)) return;
+  try {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([
+        { role: 'appMenu' },
+        ...menus.map(m => ({ label: m.label, submenu: macItems(m.items) })),
+        { label: 'Text', submenu: [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+        { role: 'windowMenu' }
+      ])
+    );
+  } catch (e) {}
 });
 
 let blocker = null;
