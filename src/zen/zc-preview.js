@@ -4,6 +4,7 @@
 //
 // Reads: the sound through the editor's ctx.
 import { el } from '../core/dom.js';
+import { syncWaveName, waveLabel } from './zc-waves.js';
 import { pk } from './zc-tone.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -77,14 +78,20 @@ export function oscPreview(ctx) {
       /* PCM waves are samples inside the MC-707: there is nothing to draw */
       svg.append(sv('text', { x: W / 2, y: M + 5, class: 'lbl', 'text-anchor': 'middle' }, ''));
       svg.lastChild.textContent =
-        (ty === 2 ? 'PCM-Sync wave ' + S('SYNC_WAV_NUM') : 'PCM wave ' + P('WAV_NUM_L')) + ' (a sample)';
+        ty === 2
+          ? 'PCM-Sync wave ' +
+            S('SYNC_WAV_NUM') +
+            (syncWaveName(S('SYNC_WAV_NUM')) ? ': ' + syncWaveName(S('SYNC_WAV_NUM')) : '')
+          : 'PCM wave ' + waveLabel(P('WAV_GTYPE'), P('WAV_GID'), P('WAV_NUM_L')).replace(/^Wave /, '');
       cap.textContent =
         'PCM waves are recordings inside the MC-707, so there is no picture of them. Play a note to hear it.';
     }
   };
   draw();
   ctx.watch(
-    k => /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|SYNC_WAV_NUM)$/.test(k) && draw()
+    k =>
+      /\.(OSC_TYPE|VA_FORM|VA_INVERT_SW|PW|PWM_DEPTH|SSAW_DETUNE|WAV_NUM_L|WAV_GID|WAV_GTYPE|SYNC_WAV_NUM)$/.test(k) &&
+      draw()
   );
   return el('div', { class: 'zcEnvBox' }, svg, cap);
 }

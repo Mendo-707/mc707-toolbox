@@ -1,7 +1,7 @@
 // The app's version, shown in Help › About. Kept in step with package.json (a test checks it).
 //
 // Reads: nothing.
-export const VERSION = '1.6.2';
+export const VERSION = '1.6.3';
 /** Where the project lives, for Help's links. */
 export const LINKS = {
   home: 'https://github.com/Mendo-707/mc707-toolbox',

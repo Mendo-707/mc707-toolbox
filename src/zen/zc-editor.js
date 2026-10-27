@@ -5,6 +5,7 @@
 // Owns: ZE (the open editor).
 // Reads: S, DEV, ZX.
 import { $, el, toast } from '../core/dom.js';
+import { waveSource } from './zc-waves.js';
 import { S } from '../core/state.js';
 import { DEVS, DEV, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
@@ -66,6 +67,8 @@ const TABS = {
   ]
 };
 const PART_TABS = ['osc', 'filter', 'amp', 'pitch', 'lfo', 'matrix', 'eq'];
+/* wave numbers show their names from the sound's own wave group */
+waveSource(k => ZE.snd && ZE.snd.v[k]);
 /** The MC-707 address of the sound being edited. */
 export const zeBase = () => slotAddr(ZE.kind, ZE.t, ZE.k);
 const sending = () => ZE.live && ZX.state === 'ready';
