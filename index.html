@@ -618,7 +618,8 @@ input[type='range'] {
 .thead {
   position: sticky;
   left: 0;
-  z-index: 4;
+  /* above the playhead (5), so a scrolled playhead never draws over the track names */
+  z-index: 6;
   flex: none;
   width: var(--head);
   background: var(--panel);
@@ -9186,6 +9187,70 @@ body[data-mode='scene'] #scene {
   }
 }
 </style>
+    <style>
+/* The desktop app's native feel (ui/desktop.js puts .desktop and .os-win32 / .os-darwin / .os-linux on
+   <html>; none of this applies in a browser). Loaded last. */
+
+/* an app, not a page: controls don't select as text, nothing bounces, images don't drag out */
+html.desktop body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+html.desktop :is(input, textarea, [contenteditable], select, pre, code, .selectable, .selectable *) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+html.desktop,
+html.desktop body,
+html.desktop * {
+  overscroll-behavior: none;
+}
+html.desktop :is(img, a) {
+  -webkit-user-drag: none;
+}
+/* the arrow on buttons, as in a desktop app (things you drag keep their grab hand) */
+html.desktop
+  :is(button, .btn, a, summary, label, [role='button'], [role='tab'], [role='menuitem']):not([draggable='true']) {
+  cursor: default !important;
+}
+/* focus rings only for the keyboard */
+html.desktop :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* the top bar is the window's title bar: drag it to move the window, double-click to maximise */
+html.desktop:is(.os-win32, .os-darwin) #menubar {
+  -webkit-app-region: drag;
+  min-height: 34px;
+  align-items: center;
+  align-content: center;
+}
+html.desktop #menubar :is(button, input, select, a, .mdrop, .mproj) {
+  -webkit-app-region: no-drag;
+}
+/* anything over the top bar is not part of it */
+html.desktop :is(.ptOv, .zcDock, [role='dialog'], .cmenu, .pop, .mdrop, #toast, #labOv, #zbOv) {
+  -webkit-app-region: no-drag;
+}
+/* Windows: room for the system's minimise, maximise and close buttons at the right */
+html.os-win32.desktop #menubar {
+  padding-right: 146px;
+}
+html.os-win32.desktop #menubar .mbrand {
+  padding-left: 4px;
+}
+/* a Mac: room for the traffic lights at the left; the menus live in the Mac's own menu bar */
+html.os-darwin.desktop #menubar {
+  padding-left: 80px;
+  min-height: 38px;
+}
+html.os-darwin.native-menu #menubar :is(.mb, .mdrop, .mbrand) {
+  display: none !important;
+}
+html.os-darwin.native-menu #menubar .mproj {
+  margin-left: 0;
+}
+</style>
   </head>
   <body data-mode="song">
     <script>
@@ -9897,11 +9962,218 @@ body[data-mode='scene'] #scene {
     dispatchEvent(new Event("mc707-theme"));
   }
 
-  // src/core/icons.js
-  var ICON = {
-    play: '<svg viewBox="0 0 12 12"><path d="M2 1v10l9-5z"/></svg>',
-    stop: '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9"/></svg>'
-  };
+  // src/core/pump.js
+  var pump_exports = {};
+  __export(pump_exports, {
+    KICK_LANE: () => KICK_LANE,
+    PUMP_CURVES: () => PUMP_CURVES,
+    PUMP_DEPTH: () => PUMP_DEPTH,
+    PUMP_FINE: () => PUMP_FINE,
+    PUMP_GHOST: () => PUMP_GHOST,
+    PUMP_LANE: () => PUMP_LANE,
+    PUMP_MODES: () => PUMP_MODES,
+    PUMP_REL: () => PUMP_REL,
+    PUMP_REST: () => PUMP_REST,
+    PUMP_TIME: () => PUMP_TIME,
+    duck: () => duck,
+    fixPump: () => fixPump,
+    kickHits: () => kickHits,
+    kicksUnder: () => kicksUnder,
+    newPump: () => newPump,
+    pumpValues: () => pumpValues
+  });
+  var PUMP_LANE = { level: 3, filter: 0 };
+  var PUMP_MODES = [
+    ["level", "Volume"],
+    ["filter", "Filter"]
+  ];
+  var PUMP_DEPTH = { light: 0.35, medium: 0.6, heavy: 0.85 };
+  var PUMP_REL = { "1/16": 1, "1/8": 2, "1/4": 4 };
+  var PUMP_TIME = { rel: [0.25, 8, 2], hold: [0, 4, 0.5], start: [-1, 1, 0] };
+  var PUMP_FINE = 1 / 8;
+  var PUMP_CURVES = [
+    ["eased", "Eased"],
+    ["straight", "Straight"]
+  ];
+  var PUMP_REST = { level: 100, filter: 127 };
+  var PUMP_GHOST = 50;
+  var KICK_LANE = 0;
+  var newPump = (mode) => ({
+    mode,
+    depth: "medium",
+    rel: PUMP_TIME.rel[2],
+    hold: PUMP_TIME.hold[2],
+    start: PUMP_TIME.start[2],
+    curve: "eased",
+    rest: PUMP_REST[mode]
+  });
+  function fine(v, which) {
+    const [lo, hi, def] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
+    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def;
+  }
+  function fixPump(x) {
+    if (!x || typeof x !== "object" || !PUMP_LANE.hasOwnProperty(x.mode)) return null;
+    const rest = Math.round(+x.rest);
+    return {
+      mode: x.mode,
+      depth: PUMP_DEPTH.hasOwnProperty(x.depth) ? x.depth : "medium",
+      rel: fine(x.rel, "rel"),
+      hold: fine(x.hold, "hold"),
+      start: fine(x.start, "start"),
+      curve: x.curve === "straight" ? "straight" : "eased",
+      rest: Number.isFinite(rest) ? Math.max(1, Math.min(127, rest)) : PUMP_REST[x.mode]
+    };
+  }
+  var kickHits = (p) => (p && p.type === "drum" ? p.notes : []).filter((n) => n.n === KICK_LANE && (n.v || 100) >= PUMP_GHOST).map((n) => ({ s: n.s, v: n.v || 100 }));
+  function kicksUnder(srcs, len) {
+    const out2 = [];
+    for (const { hits, period } of srcs)
+      if (period > 0) {
+        for (let o = 0; o < len; o += period) for (const h of hits) if (h.s + o < len) out2.push({ s: h.s + o, v: h.v });
+      }
+    return out2.sort((a, b) => a.s - b.s);
+  }
+  function duck(d, o, early) {
+    const x = d - o.start;
+    if (x < -early - 1e-9 || x > o.hold + o.rel * 2) return 0;
+    if (x < 0) return 0.5;
+    if (x < o.hold) return 1;
+    const r = x - o.hold;
+    return o.curve === "straight" ? Math.max(0, 1 - r / o.rel) : Math.exp(-r * 3 / o.rel);
+  }
+  function pumpValues(pump2, kicks, steps2, k2) {
+    const n = steps2 * 8, dt = k2 / 8, len = steps2 * k2, depth = PUMP_DEPTH[pump2.depth] || 0.6, o = {
+      rel: fine(pump2.rel, "rel"),
+      hold: pump2.hold == null ? PUMP_TIME.hold[2] : fine(pump2.hold, "hold"),
+      start: pump2.start == null ? 0 : fine(pump2.start, "start"),
+      curve: pump2.curve
+    }, rest = pump2.rest;
+    const all = [...kicks, ...kicks.map((x) => ({ ...x, s: x.s - len })), ...kicks.map((x) => ({ ...x, s: x.s + len }))];
+    return Array.from({ length: n }, (_, i) => {
+      const t = i * dt;
+      let down = 0;
+      for (const x of all) {
+        const g = duck(t - x.s, o, dt);
+        if (g) down = Math.max(down, g * depth * Math.min(1, x.v / 100));
+      }
+      return Math.max(0, Math.min(127, Math.round(rest * (1 - down))));
+    });
+  }
+
+  // src/core/scene-model.js
+  var SCN_MAX = 128;
+  var SCN_BARS = 127;
+  var newRow = (id, name, bars2 = 8) => ({ id, name, bars: bars2, pick: Array(8).fill(-1) });
+  var emptyClips = () => Array.from({ length: 8 }, () => Array(16).fill(null));
+  var sameClip = (a, b) => !!a && !!b && a.pat === b.pat && (a.tr || 0) === (b.tr || 0) && (a.tone || "") === (b.tone || "");
+  function fnv(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+    return h.toString(36);
+  }
+  function clipMark(clip, pats, tones) {
+    const p = clip && pats[clip.pat];
+    if (!p) return "";
+    const tn = clip.tone && tones[clip.tone];
+    return fnv(JSON.stringify([p.type, p.bars, p.notes, clip.tr || 0, tn ? [tn.kind, tn.d] : 0]));
+  }
+  var sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
+  function pumpSource(q, pats, t, k2) {
+    const sets = /* @__PURE__ */ new Map();
+    q.rows.forEach((r, i) => {
+      if (r.pick[t] !== k2) return;
+      const from = r.pick.map((kk, tt) => [tt, kk]).filter(([tt, kk]) => tt !== t && kk >= 0 && q.clips[tt][kk] && kickHits(pats[q.clips[tt][kk].pat]).length);
+      const key = JSON.stringify(from);
+      if (!sets.has(key)) sets.set(key, { from, scenes: [] });
+      sets.get(key).scenes.push(i);
+    });
+    if (!sets.size) return null;
+    const list2 = [...sets.values()].sort((a, b) => b.scenes.length - a.scenes.length);
+    return { ...list2[0], differ: list2.length > 1 };
+  }
+  var pumpKicks = (q, pats, src) => src ? src.from.map(([tt, kk]) => {
+    const p = pats[q.clips[tt][kk].pat];
+    return { hits: kickHits(p), period: p.bars * 16 };
+  }) : [];
+  function clipMarkAt(q, pats, t, k2) {
+    const c = q.clips[t][k2], base = clipMark(c, pats, q.tones);
+    if (!c || !c.pump) return base;
+    return fnv(base + JSON.stringify([c.pump, pumpKicks(q, pats, pumpSource(q, pats, t, k2))]));
+  }
+  var stateOf = (was, now) => !was ? "new" : was === now ? "written" : was === "!" + now ? "odd" : "changed";
+  function clipState(q, pats, t, k2) {
+    const c = q.clips[t][k2];
+    if (!c) return "empty";
+    return stateOf(q.done && q.done.c[t + ":" + k2], clipMarkAt(q, pats, t, k2));
+  }
+  var sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
+  function fromCells(q) {
+    const clips = emptyClips(), start = Array.isArray(q.start) ? q.start : [];
+    const rows2 = q.rows.map((r) => ({ ...r, pick: Array(8).fill(-1) }));
+    for (let t = 0; t < 8; t++) {
+      let k2 = Math.max(0, Math.min(15, Math.round(+start[t]) || 0));
+      q.rows.forEach((r, i) => {
+        const c = r && Array.isArray(r.cells) ? r.cells[t] : null;
+        if (!c) return;
+        let at2 = clips[t].findIndex((x) => sameClip(x, c));
+        if (at2 < 0 && k2 < 16) clips[t][at2 = k2++] = { ...c };
+        rows2[i].pick[t] = at2;
+      });
+    }
+    return { clips, rows: rows2 };
+  }
+  function fixScenes(s, pats) {
+    let q = s.scn;
+    if (!q || typeof q !== "object") return void delete s.scn;
+    if (Array.isArray(q.rows) && q.rows.some((r) => r && Array.isArray(r.cells))) q = { ...q, ...fromCells(q) };
+    const tones = {};
+    if (q.tones && typeof q.tones === "object")
+      for (const k2 in q.tones) {
+        const t = q.tones[k2];
+        if (t && (t.kind === "tone" || t.kind === "kit") && t.d && typeof t.d === "object")
+          tones[k2] = { name: String(t.name || "Tone").slice(0, 16), kind: t.kind, d: t.d };
+      }
+    const clips = emptyClips();
+    for (let t = 0; t < 8; t++)
+      for (let k2 = 0; k2 < 16; k2++) {
+        const c = Array.isArray(q.clips) && Array.isArray(q.clips[t]) ? q.clips[t][k2] : null, p = c && pats[c.pat];
+        if (!p || !s.tracks[t] || p.type !== s.tracks[t].type) continue;
+        const o = { pat: c.pat };
+        if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
+        if (typeof c.tone === "string" && tones[c.tone] && tones[c.tone].kind === (p.type === "drum" ? "kit" : "tone"))
+          o.tone = c.tone;
+        const pump2 = fixPump(c.pump);
+        if (pump2) o.pump = pump2;
+        clips[t][k2] = o;
+      }
+    const ids = /* @__PURE__ */ new Set();
+    const rows2 = (Array.isArray(q.rows) ? q.rows : []).slice(0, SCN_MAX).map((r, i) => {
+      const id = r && typeof r.id === "string" && !ids.has(r.id) ? r.id : "r" + (i + 1) + "_" + ids.size;
+      ids.add(id);
+      const bars2 = Math.round(+(r && r.bars));
+      return {
+        id,
+        name: String(r && r.name || "Scene").slice(0, 20),
+        bars: Number.isFinite(bars2) ? Math.max(1, Math.min(SCN_BARS, bars2)) : 8,
+        pick: Array.from({ length: 8 }, (_, t) => {
+          const k2 = Math.round(+(r && Array.isArray(r.pick) ? r.pick[t] : -1));
+          return k2 >= 0 && k2 < 16 && clips[t][k2] ? k2 : -1;
+        })
+      };
+    });
+    if (!rows2.length && !clips.some((l) => l.some(Boolean))) return void delete s.scn;
+    const first = Math.round(+q.first);
+    const marks = (o) => Object.fromEntries(Object.entries(o && typeof o === "object" ? o : {}).filter(([, v]) => typeof v === "string"));
+    s.scn = {
+      v: 2,
+      first: Number.isFinite(first) ? Math.max(0, Math.min(SCN_MAX - 1, first)) : 0,
+      clips,
+      rows: rows2,
+      tones,
+      done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s), p: marks(q.done && q.done.p) }
+    };
+  }
+  var clipUses = (q, t, k2) => q.rows.filter((r) => r.pick[t] === k2).length;
 
   // src/core/theory.js
   var NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -9947,6 +10219,418 @@ body[data-mode='scene'] #scene {
     "minor pent": [0, 3, 5, 7, 10],
     "major pent": [0, 2, 4, 7, 9],
     blues: [0, 3, 5, 6, 7, 10]
+  };
+
+  // src/core/mc707-params.js
+  var MC_PARAMS = [
+    { n: 7, name: "Volume", def: 100 },
+    { n: 10, name: "Pan", def: 64 },
+    { n: 11, name: "Expression", def: 127 },
+    { n: 74, name: "Cutoff", def: 64 },
+    { n: 71, name: "Resonance", def: 64 },
+    { n: 73, name: "Attack time", def: 64 },
+    { n: 75, name: "Decay time", def: 64 },
+    { n: 72, name: "Release time", def: 64 },
+    { n: 91, name: "Reverb send", def: 0 },
+    { n: 92, name: "Chorus send", def: 0 },
+    { n: 1, name: "Modulation", def: 0 },
+    { n: 5, name: "Portamento time", def: 0 },
+    { n: 76, name: "Vibrato rate", def: 64 },
+    { n: 77, name: "Vibrato depth", def: 64 },
+    { n: 78, name: "Vibrato delay", def: 64 },
+    { n: 80, name: "FILTER knob", def: 64 },
+    { n: 81, name: "MOD knob", def: 64 },
+    { n: 82, name: "FX knob", def: 64 },
+    { n: 83, name: "SOUND knob", def: 64 }
+  ];
+
+  // src/core/hooks.js
+  var hooks = {};
+
+  // src/core/tracks.js
+  var ROLES = [
+    ["kit", "Drums: kit", "drum", 0, "kit"],
+    ["hats", "Drums: hats", "drum", 1, "hats"],
+    ["perc", "Drums: perc", "drum", 2, "perc"],
+    ["bass", "Bass", "tone", 3, "bass"],
+    ["chords", "Chords", "tone", 4, "chords"],
+    ["pad", "Pad", "tone", 5, "pad"],
+    ["lead", "Lead", "tone", 6, "lead"],
+    ["pluck", "Pluck / arp", "tone", 7, "pluck"],
+    ["acid", "Acid", "tone", 3, "acid"]
+  ];
+  var DEF_ROLES = ["kit", "hats", "perc", "bass", "chords", "pad", "lead", "pluck"];
+  var R = Object.fromEntries(ROLES.map((r) => [r[0], r]));
+  var roleInfo = (role, t = 0) => R[role] || R[DEF_ROLES[t]];
+  var roleOf = (t) => S.tracks[t] && R[S.tracks[t].role] ? S.tracks[t].role : DEF_ROLES[t];
+  var slotOf = (t) => roleInfo(roleOf(t), t)[3];
+  var poolOf = (t) => roleInfo(roleOf(t), t)[4];
+  function trackOf(slot2) {
+    for (let t = 0; t < 8; t++) if (slotOf(t) === slot2) return t;
+    return -1;
+  }
+  var tracksOf = (slot2) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => slotOf(t) === slot2);
+  function bySlot(m, first) {
+    const out2 = {};
+    for (const k2 in m) {
+      const ts = tracksOf(+k2);
+      (first ? ts.slice(0, 1) : ts).forEach((t) => out2[t] = m[k2]);
+    }
+    return out2;
+  }
+  var tracksFor = (slots) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => (slots || []).includes(slotOf(t)));
+  var toneTracksAll = () => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t] && S.tracks[t].type === "tone");
+  function kitTrack() {
+    const k2 = trackOf(0);
+    return k2 >= 0 ? k2 : S.tracks.findIndex((x) => x && x.type === "drum");
+  }
+  var buildTrack = () => trackOf(2) >= 0 ? trackOf(2) : kitTrack();
+
+  // src/core/state.js
+  var DEFAULT_TRACKS = [
+    { name: "Drums 1", type: "drum" },
+    { name: "Drums 2", type: "drum" },
+    { name: "Drums 3", type: "drum" },
+    { name: "Bass", type: "tone" },
+    { name: "Chords", type: "tone" },
+    { name: "Pad", type: "tone" },
+    { name: "Lead", type: "tone" },
+    { name: "Pluck", type: "tone" }
+  ];
+  var STORE = "mc707-song-mode-v1";
+  function newState() {
+    return {
+      v: 1,
+      bpm: 120,
+      swing: 50,
+      bars: 32,
+      loop: { on: false, start: 0, end: 8 },
+      cursor: 0,
+      key: 5,
+      scale: "minor",
+      metro: false,
+      clock: false,
+      preview: true,
+      follow: true,
+      midiOut: "",
+      drumMap: LANES.map((l) => l[1]),
+      tracks: DEFAULT_TRACKS.map((t, i) => ({ ...t, ch: i + 1, mute: false, solo: false, vol: 100 })),
+      patterns: {},
+      clips: [],
+      markers: [],
+      midiOffset: 0,
+      transpose: 0,
+      snap: 1,
+      ctrlCh: 16,
+      sendCC: true,
+      nextId: 1
+    };
+  }
+  var S = newState();
+  function replaceState(v) {
+    S = v;
+    UI.view = null;
+  }
+  var UI = {
+    sel: null,
+    arm: null,
+    libTab: "fac",
+    libType: "all",
+    libGenre: "all",
+    libRole: "all",
+    libStyle: "all",
+    libKey: "all",
+    libBars: "all",
+    libTempo: "all",
+    libSort: "default",
+    libFav: false,
+    q: "",
+    libLimit: 60,
+    prevTrack: -1,
+    /** a library pattern open in the editor without a clip (see song/lib-view.js), or null */
+    view: null
+  };
+  function addPattern(type, name, bars2, notes, extra = {}) {
+    const id = "p" + S.nextId++;
+    S.patterns[id] = { id, name, type, bars: bars2, notes: notes.map((n) => ({ ...n })), mod: false, ...extra };
+    return id;
+  }
+  var UNDO = [];
+  var REDO = [];
+  var snapState = () => JSON.stringify(S);
+  function pushUndo() {
+    UNDO.push(snapState());
+    if (UNDO.length > 80) UNDO.shift();
+    REDO.length = 0;
+    updUndo();
+  }
+  function updUndo() {
+    $("#bUndo").disabled = !UNDO.length;
+    $("#bRedo").disabled = !REDO.length;
+  }
+  function undo() {
+    if (!UNDO.length) return;
+    REDO.push(snapState());
+    S = JSON.parse(UNDO.pop());
+    afterReplace();
+  }
+  function redo() {
+    if (!REDO.length) return;
+    UNDO.push(snapState());
+    S = JSON.parse(REDO.pop());
+    afterReplace();
+  }
+  function afterReplace() {
+    ED.selNotes.clear();
+    if (!curClip()) UI.sel = null;
+    hooks.stopAll();
+    hooks.renderAll();
+    scheduleSave();
+  }
+  var HOST = window.toolbox || null;
+  var BUSY = { write: "" };
+  var APP_NAME = HOST ? { darwin: "Mac app", linux: "Linux app" }[HOST.platform] || "Windows app" : null;
+  var PROJ = { name: "", path: "", dirty: false, t: null };
+  var saveT = 0;
+  function scheduleSave() {
+    PROJ.dirty = true;
+    if (PROJ.t) PROJ.t();
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(S));
+        scheduleSave.warned = false;
+      } catch (e) {
+        if (!scheduleSave.warned) {
+          scheduleSave.warned = true;
+          toast("Autosave failed: storage is full. Use File > Save to keep your work.");
+        }
+      }
+    }, 400);
+  }
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem(STORE);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || s.v !== 1 || !Array.isArray(s.tracks) || s.tracks.length !== 8 || !s.patterns || !Array.isArray(s.clips))
+        return null;
+      return fixState(s);
+    } catch (e) {
+      return null;
+    }
+  }
+  var getClip = (id) => S.clips.find((c) => c.id === id);
+  var curClip = () => UI.sel ? getClip(UI.sel) : null;
+  var edClip = () => curClip() || UI.view || null;
+  var ED = {
+    mode: "steps",
+    snap: 1,
+    zoom: 26,
+    lo: 36,
+    clipboard: null,
+    selNotes: /* @__PURE__ */ new Set(),
+    fit: true,
+    geom: null,
+    drag: null,
+    lastDown: null
+  };
+  function fixState(s) {
+    const d = newState();
+    const num2 = (v, lo, hi, def) => {
+      v = Number(v);
+      return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
+    };
+    if (!s || typeof s !== "object") return d;
+    s.v = 1;
+    s.bpm = num2(s.bpm, 40, 240, 120);
+    s.swing = num2(s.swing, 50, 75, 50);
+    s.bars = Math.round(num2(s.bars, 8, 512, 32));
+    s.cursor = num2(s.cursor, 0, 512, 0);
+    s.key = Math.round(num2(s.key, 0, 11, 5));
+    if (!SCALES[s.scale]) s.scale = "minor";
+    s.midiOffset = num2(s.midiOffset, -200, 200, 0);
+    s.transpose = Math.round(num2(s.transpose, -24, 24, 0));
+    s.snap = [1, 0.5, 0.25, 0.0625].includes(+s.snap) ? +s.snap : 1;
+    s.ctrlCh = Math.round(num2(s.ctrlCh, 1, 16, 16));
+    s.sendCC = s.sendCC !== false;
+    s.metro = !!s.metro;
+    s.clock = !!s.clock;
+    s.preview = s.preview !== false;
+    s.follow = s.follow !== false;
+    s.midiOut = typeof s.midiOut === "string" ? s.midiOut : "";
+    s.midiIn = typeof s.midiIn === "string" ? s.midiIn : "";
+    s.markers = (Array.isArray(s.markers) ? s.markers : []).filter((m) => m && Number.isFinite(+m.bar)).map((m) => {
+      const o = { bar: Math.max(0, Math.round(+m.bar)), name: String(m.name || "Section").slice(0, 20) };
+      if (Number.isFinite(+m.bpm) && +m.bpm >= 40 && +m.bpm <= 240) o.bpm = Math.round(+m.bpm);
+      if (m.scene != null && m.scene !== "" && Number.isInteger(+m.scene) && +m.scene >= 0 && +m.scene <= 127)
+        o.scene = +m.scene;
+      return o;
+    });
+    s.clipMarks = (Array.isArray(s.clipMarks) ? s.clipMarks : []).filter(
+      (m) => m && Number.isInteger(+m.t) && +m.t >= 0 && +m.t < 8 && Number.isFinite(+m.bar) && Number.isInteger(+m.k) && +m.k >= -1 && +m.k < 16
+    ).map((m) => ({ t: +m.t, bar: Math.max(0, Math.round(+m.bar)), k: +m.k }));
+    const lp = s.loop && typeof s.loop === "object" ? s.loop : {};
+    const ls = Math.max(0, Math.round(num2(lp.start, 0, 511, 0) * 16) / 16);
+    s.loop = {
+      on: !!lp.on,
+      start: ls,
+      end: Math.max(ls + 0.0625, Math.round(num2(lp.end, 0.0625, 512, 8) * 16) / 16)
+    };
+    s.drumMap = Array.isArray(s.drumMap) && s.drumMap.length === 12 ? s.drumMap.map((n, i) => Math.round(num2(n, 0, 127, d.drumMap[i]))) : d.drumMap;
+    s.tracks = d.tracks.map((dt, i) => {
+      const t = s.tracks && s.tracks[i] || {};
+      const role = ROLES.some((r) => r[0] === t.role) && t.role !== DEF_ROLES[i] ? t.role : null;
+      return {
+        name: String(t.name || dt.name).slice(0, 16),
+        type: role ? roleInfo(role)[2] : dt.type,
+        ...role ? { role } : {},
+        ch: Math.round(num2(t.ch, 1, 16, i + 1)),
+        mute: !!t.mute,
+        solo: !!t.solo,
+        vol: Math.round(num2(t.vol, 0, 127, 100)),
+        ...Number.isFinite(+t.nudge) && +t.nudge ? { nudge: +t.nudge } : {},
+        ...Number.isFinite(+t.hum) && +t.hum ? { hum: +t.hum } : {},
+        ...cleanTrackCC(t.cc)
+      };
+    });
+    const pats = {};
+    let maxId = 1;
+    if (s.patterns && typeof s.patterns === "object")
+      for (const id in s.patterns) {
+        const p = s.patterns[id];
+        if (!p || !Array.isArray(p.notes) || p.type !== "drum" && p.type !== "tone") continue;
+        p.id = id;
+        p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars) ? p.bars : Math.min(8, Math.max(1, Math.round(num2(p.bars, 1, 8, 1))));
+        p.name = String(p.name || "Pattern").slice(0, 40);
+        p.notes = p.notes.filter(
+          (n) => n && Number.isFinite(+n.s) && Number.isFinite(+n.l) && Number.isFinite(+n.n) && Number.isFinite(+n.v) && n.l > 0 && n.s >= 0 && n.s < p.bars * 16
+        ).map((n) => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) }));
+        if (p.key && !(Number.isFinite(+p.key.root) && SCALES[p.key.scale])) p.key = null;
+        pats[id] = p;
+        const m = /^p(\d+)$/.exec(id);
+        if (m) maxId = Math.max(maxId, +m[1] + 1);
+      }
+    s.patterns = pats;
+    const seen = /* @__PURE__ */ new Set();
+    s.clips = (Array.isArray(s.clips) ? s.clips : []).filter(
+      (c) => c && pats[c.pat] && Number.isInteger(c.t) && c.t >= 0 && c.t < 8 && s.tracks[c.t].type === pats[c.pat].type && Number.isFinite(+c.start) && Number.isFinite(+c.len) && c.start >= 0 && c.len >= 0.0625
+    ).map((c) => {
+      let id = typeof c.id === "string" && !seen.has(c.id) ? c.id : "c" + maxId++;
+      seen.add(id);
+      const m = /^c(\d+)$/.exec(id);
+      if (m) maxId = Math.max(maxId, +m[1] + 1);
+      const o = {
+        id,
+        t: c.t,
+        start: Math.round(+c.start * 16) / 16,
+        len: Math.max(0.0625, Math.round(+c.len * 16) / 16),
+        off: 0,
+        pat: c.pat
+      };
+      if (Number.isFinite(+c.ll) && +c.ll > 0) o.ll = Math.min(8, Math.max(0.0625, Math.round(+c.ll * 16) / 16));
+      {
+        const L2 = o.ll || pats[c.pat].bars;
+        o.off = Math.round(((+c.off || 0) % L2 + L2) % L2 * 16) / 16;
+      }
+      if (c.mute) o.mute = true;
+      if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
+      if (Number.isFinite(+c.vel) && +c.vel && +c.vel !== 100) o.vel = +c.vel;
+      fixClipExtras(c, o);
+      return o;
+    });
+    s.clips.forEach((c) => {
+      s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
+    });
+    fixScenes(s, pats);
+    s.nextId = Math.max(Math.round(num2(s.nextId, 1, 1e9, 1)), maxId + 1);
+    return s;
+  }
+  function cleanPts(a, maxY) {
+    if (!Array.isArray(a)) return null;
+    const o = a.filter((q) => Array.isArray(q) && Number.isFinite(+q[0]) && Number.isFinite(+q[1])).map((q) => [Math.min(1, Math.max(0, +q[0])), Math.min(maxY, Math.max(0, +q[1]))]).sort((x, y) => x[0] - y[0]).slice(0, 200);
+    return o;
+  }
+  function fixClipExtras(c, o) {
+    if (Number.isFinite(+c.fi) && +c.fi > 0) o.fi = Math.min(512, Math.round(+c.fi));
+    if (Number.isFinite(+c.fo) && +c.fo > 0) o.fo = Math.min(512, Math.round(+c.fo));
+    if (["exp", "log", "s"].includes(c.fcv)) o.fcv = c.fcv;
+    const ve = cleanPts(c.ve, 1.5);
+    if (ve && ve.length) o.ve = ve;
+    if (c.cc && MC_PARAMS.some((m) => m.n === +c.cc.n)) {
+      const pts = cleanPts(c.cc.pts, 1);
+      if (pts) o.cc = { n: +c.cc.n, pts };
+    }
+    if (Number.isInteger(+c.pc) && +c.pc >= 0 && +c.pc <= 127 && c.pc !== null && c.pc !== "") o.pc = +c.pc;
+  }
+  function cleanTrackCC(cc2) {
+    if (!cc2 || typeof cc2 !== "object") return {};
+    const o = {};
+    MC_PARAMS.forEach((m) => {
+      const v = cc2[m.n];
+      if (Number.isFinite(+v) && v !== null && v !== "") o[m.n] = Math.max(0, Math.min(127, Math.round(+v)));
+    });
+    return Object.keys(o).length ? { cc: o } : {};
+  }
+
+  // src/ui/desktop.js
+  function initDesktop() {
+    if (!HOST) return;
+    const r = document.documentElement;
+    r.classList.add("desktop", "os-" + (HOST.platform || "win32"));
+    if (!HOST.setChrome) return;
+    const send2 = () => {
+      const bar2 = document.getElementById("menubar") || document.body, cs = getComputedStyle(bar2);
+      const bg = toHex(cs.backgroundColor) || "#16171a", ink = toHex(getComputedStyle(document.body).color) || "#ece9e2";
+      HOST.setChrome({ bg, ink });
+    };
+    requestAnimationFrame(send2);
+    addEventListener("mc707-theme", () => requestAnimationFrame(send2));
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => requestAnimationFrame(send2));
+  }
+  function toHex(c) {
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || "");
+    return m ? "#" + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, "0")).join("") : null;
+  }
+  function macMenus(build3) {
+    if (!HOST || HOST.platform !== "darwin" || !HOST.setMacMenu || !HOST.onMenuCmd) return false;
+    let RUN = /* @__PURE__ */ new Map();
+    const send2 = () => {
+      const run2 = /* @__PURE__ */ new Map();
+      let n = 0;
+      const ser = (items) => items.map((it) => {
+        if (it === "-") return "-";
+        if (it.sub) return { label: it.label, sub: ser(it.sub) };
+        const id = "m" + n++;
+        run2.set(id, it.run);
+        return { id, label: it.label, key: it.key || "", checked: it.checked == null ? null : !!it.checked };
+      });
+      try {
+        HOST.setMacMenu(build3().map((m) => ({ label: m.label, items: ser(m.items) })));
+        RUN = run2;
+      } catch (e) {
+      }
+    };
+    HOST.onMenuCmd((id) => {
+      const f = RUN.get(id);
+      try {
+        if (f) f();
+      } catch (e) {
+      }
+      setTimeout(send2, 50);
+    });
+    new MutationObserver(send2).observe(document.body, { attributes: true, attributeFilter: ["data-mode"] });
+    addEventListener("focus", send2);
+    addEventListener("mc707-theme", send2);
+    document.documentElement.classList.add("native-menu");
+    send2();
+    return true;
+  }
+
+  // src/core/icons.js
+  var ICON = {
+    play: '<svg viewBox="0 0 12 12"><path d="M2 1v10l9-5z"/></svg>',
+    stop: '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9"/></svg>'
   };
 
   // src/library/factory.js
@@ -13485,571 +14169,6 @@ body[data-mode='scene'] #scene {
       used.add(n);
     });
   })();
-
-  // src/core/pump.js
-  var pump_exports = {};
-  __export(pump_exports, {
-    KICK_LANE: () => KICK_LANE,
-    PUMP_CURVES: () => PUMP_CURVES,
-    PUMP_DEPTH: () => PUMP_DEPTH,
-    PUMP_FINE: () => PUMP_FINE,
-    PUMP_GHOST: () => PUMP_GHOST,
-    PUMP_LANE: () => PUMP_LANE,
-    PUMP_MODES: () => PUMP_MODES,
-    PUMP_REL: () => PUMP_REL,
-    PUMP_REST: () => PUMP_REST,
-    PUMP_TIME: () => PUMP_TIME,
-    duck: () => duck,
-    fixPump: () => fixPump,
-    kickHits: () => kickHits,
-    kicksUnder: () => kicksUnder,
-    newPump: () => newPump,
-    pumpValues: () => pumpValues
-  });
-  var PUMP_LANE = { level: 3, filter: 0 };
-  var PUMP_MODES = [
-    ["level", "Volume"],
-    ["filter", "Filter"]
-  ];
-  var PUMP_DEPTH = { light: 0.35, medium: 0.6, heavy: 0.85 };
-  var PUMP_REL = { "1/16": 1, "1/8": 2, "1/4": 4 };
-  var PUMP_TIME = { rel: [0.25, 8, 2], hold: [0, 4, 0.5], start: [-1, 1, 0] };
-  var PUMP_FINE = 1 / 8;
-  var PUMP_CURVES = [
-    ["eased", "Eased"],
-    ["straight", "Straight"]
-  ];
-  var PUMP_REST = { level: 100, filter: 127 };
-  var PUMP_GHOST = 50;
-  var KICK_LANE = 0;
-  var newPump = (mode) => ({
-    mode,
-    depth: "medium",
-    rel: PUMP_TIME.rel[2],
-    hold: PUMP_TIME.hold[2],
-    start: PUMP_TIME.start[2],
-    curve: "eased",
-    rest: PUMP_REST[mode]
-  });
-  function fine(v, which) {
-    const [lo, hi, def] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
-    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def;
-  }
-  function fixPump(x) {
-    if (!x || typeof x !== "object" || !PUMP_LANE.hasOwnProperty(x.mode)) return null;
-    const rest = Math.round(+x.rest);
-    return {
-      mode: x.mode,
-      depth: PUMP_DEPTH.hasOwnProperty(x.depth) ? x.depth : "medium",
-      rel: fine(x.rel, "rel"),
-      hold: fine(x.hold, "hold"),
-      start: fine(x.start, "start"),
-      curve: x.curve === "straight" ? "straight" : "eased",
-      rest: Number.isFinite(rest) ? Math.max(1, Math.min(127, rest)) : PUMP_REST[x.mode]
-    };
-  }
-  var kickHits = (p) => (p && p.type === "drum" ? p.notes : []).filter((n) => n.n === KICK_LANE && (n.v || 100) >= PUMP_GHOST).map((n) => ({ s: n.s, v: n.v || 100 }));
-  function kicksUnder(srcs, len) {
-    const out2 = [];
-    for (const { hits, period } of srcs)
-      if (period > 0) {
-        for (let o = 0; o < len; o += period) for (const h of hits) if (h.s + o < len) out2.push({ s: h.s + o, v: h.v });
-      }
-    return out2.sort((a, b) => a.s - b.s);
-  }
-  function duck(d, o, early) {
-    const x = d - o.start;
-    if (x < -early - 1e-9 || x > o.hold + o.rel * 2) return 0;
-    if (x < 0) return 0.5;
-    if (x < o.hold) return 1;
-    const r = x - o.hold;
-    return o.curve === "straight" ? Math.max(0, 1 - r / o.rel) : Math.exp(-r * 3 / o.rel);
-  }
-  function pumpValues(pump2, kicks, steps2, k2) {
-    const n = steps2 * 8, dt = k2 / 8, len = steps2 * k2, depth = PUMP_DEPTH[pump2.depth] || 0.6, o = {
-      rel: fine(pump2.rel, "rel"),
-      hold: pump2.hold == null ? PUMP_TIME.hold[2] : fine(pump2.hold, "hold"),
-      start: pump2.start == null ? 0 : fine(pump2.start, "start"),
-      curve: pump2.curve
-    }, rest = pump2.rest;
-    const all = [...kicks, ...kicks.map((x) => ({ ...x, s: x.s - len })), ...kicks.map((x) => ({ ...x, s: x.s + len }))];
-    return Array.from({ length: n }, (_, i) => {
-      const t = i * dt;
-      let down = 0;
-      for (const x of all) {
-        const g = duck(t - x.s, o, dt);
-        if (g) down = Math.max(down, g * depth * Math.min(1, x.v / 100));
-      }
-      return Math.max(0, Math.min(127, Math.round(rest * (1 - down))));
-    });
-  }
-
-  // src/core/scene-model.js
-  var SCN_MAX = 128;
-  var SCN_BARS = 127;
-  var newRow = (id, name, bars2 = 8) => ({ id, name, bars: bars2, pick: Array(8).fill(-1) });
-  var emptyClips = () => Array.from({ length: 8 }, () => Array(16).fill(null));
-  var sameClip = (a, b) => !!a && !!b && a.pat === b.pat && (a.tr || 0) === (b.tr || 0) && (a.tone || "") === (b.tone || "");
-  function fnv(s) {
-    let h = 2166136261;
-    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
-    return h.toString(36);
-  }
-  function clipMark(clip, pats, tones) {
-    const p = clip && pats[clip.pat];
-    if (!p) return "";
-    const tn = clip.tone && tones[clip.tone];
-    return fnv(JSON.stringify([p.type, p.bars, p.notes, clip.tr || 0, tn ? [tn.kind, tn.d] : 0]));
-  }
-  var sceneMark = (q, i) => fnv(JSON.stringify([q.rows[i].pick, i === q.rows.length - 1 ? 0 : q.rows[i].bars]));
-  function pumpSource(q, pats, t, k2) {
-    const sets = /* @__PURE__ */ new Map();
-    q.rows.forEach((r, i) => {
-      if (r.pick[t] !== k2) return;
-      const from = r.pick.map((kk, tt) => [tt, kk]).filter(([tt, kk]) => tt !== t && kk >= 0 && q.clips[tt][kk] && kickHits(pats[q.clips[tt][kk].pat]).length);
-      const key = JSON.stringify(from);
-      if (!sets.has(key)) sets.set(key, { from, scenes: [] });
-      sets.get(key).scenes.push(i);
-    });
-    if (!sets.size) return null;
-    const list2 = [...sets.values()].sort((a, b) => b.scenes.length - a.scenes.length);
-    return { ...list2[0], differ: list2.length > 1 };
-  }
-  var pumpKicks = (q, pats, src) => src ? src.from.map(([tt, kk]) => {
-    const p = pats[q.clips[tt][kk].pat];
-    return { hits: kickHits(p), period: p.bars * 16 };
-  }) : [];
-  function clipMarkAt(q, pats, t, k2) {
-    const c = q.clips[t][k2], base = clipMark(c, pats, q.tones);
-    if (!c || !c.pump) return base;
-    return fnv(base + JSON.stringify([c.pump, pumpKicks(q, pats, pumpSource(q, pats, t, k2))]));
-  }
-  var stateOf = (was, now) => !was ? "new" : was === now ? "written" : was === "!" + now ? "odd" : "changed";
-  function clipState(q, pats, t, k2) {
-    const c = q.clips[t][k2];
-    if (!c) return "empty";
-    return stateOf(q.done && q.done.c[t + ":" + k2], clipMarkAt(q, pats, t, k2));
-  }
-  var sceneState = (q, i) => stateOf(q.done && q.done.s[q.first + i], sceneMark(q, i));
-  function fromCells(q) {
-    const clips = emptyClips(), start = Array.isArray(q.start) ? q.start : [];
-    const rows2 = q.rows.map((r) => ({ ...r, pick: Array(8).fill(-1) }));
-    for (let t = 0; t < 8; t++) {
-      let k2 = Math.max(0, Math.min(15, Math.round(+start[t]) || 0));
-      q.rows.forEach((r, i) => {
-        const c = r && Array.isArray(r.cells) ? r.cells[t] : null;
-        if (!c) return;
-        let at2 = clips[t].findIndex((x) => sameClip(x, c));
-        if (at2 < 0 && k2 < 16) clips[t][at2 = k2++] = { ...c };
-        rows2[i].pick[t] = at2;
-      });
-    }
-    return { clips, rows: rows2 };
-  }
-  function fixScenes(s, pats) {
-    let q = s.scn;
-    if (!q || typeof q !== "object") return void delete s.scn;
-    if (Array.isArray(q.rows) && q.rows.some((r) => r && Array.isArray(r.cells))) q = { ...q, ...fromCells(q) };
-    const tones = {};
-    if (q.tones && typeof q.tones === "object")
-      for (const k2 in q.tones) {
-        const t = q.tones[k2];
-        if (t && (t.kind === "tone" || t.kind === "kit") && t.d && typeof t.d === "object")
-          tones[k2] = { name: String(t.name || "Tone").slice(0, 16), kind: t.kind, d: t.d };
-      }
-    const clips = emptyClips();
-    for (let t = 0; t < 8; t++)
-      for (let k2 = 0; k2 < 16; k2++) {
-        const c = Array.isArray(q.clips) && Array.isArray(q.clips[t]) ? q.clips[t][k2] : null, p = c && pats[c.pat];
-        if (!p || !s.tracks[t] || p.type !== s.tracks[t].type) continue;
-        const o = { pat: c.pat };
-        if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
-        if (typeof c.tone === "string" && tones[c.tone] && tones[c.tone].kind === (p.type === "drum" ? "kit" : "tone"))
-          o.tone = c.tone;
-        const pump2 = fixPump(c.pump);
-        if (pump2) o.pump = pump2;
-        clips[t][k2] = o;
-      }
-    const ids = /* @__PURE__ */ new Set();
-    const rows2 = (Array.isArray(q.rows) ? q.rows : []).slice(0, SCN_MAX).map((r, i) => {
-      const id = r && typeof r.id === "string" && !ids.has(r.id) ? r.id : "r" + (i + 1) + "_" + ids.size;
-      ids.add(id);
-      const bars2 = Math.round(+(r && r.bars));
-      return {
-        id,
-        name: String(r && r.name || "Scene").slice(0, 20),
-        bars: Number.isFinite(bars2) ? Math.max(1, Math.min(SCN_BARS, bars2)) : 8,
-        pick: Array.from({ length: 8 }, (_, t) => {
-          const k2 = Math.round(+(r && Array.isArray(r.pick) ? r.pick[t] : -1));
-          return k2 >= 0 && k2 < 16 && clips[t][k2] ? k2 : -1;
-        })
-      };
-    });
-    if (!rows2.length && !clips.some((l) => l.some(Boolean))) return void delete s.scn;
-    const first = Math.round(+q.first);
-    const marks = (o) => Object.fromEntries(Object.entries(o && typeof o === "object" ? o : {}).filter(([, v]) => typeof v === "string"));
-    s.scn = {
-      v: 2,
-      first: Number.isFinite(first) ? Math.max(0, Math.min(SCN_MAX - 1, first)) : 0,
-      clips,
-      rows: rows2,
-      tones,
-      done: { c: marks(q.done && q.done.c), s: marks(q.done && q.done.s), p: marks(q.done && q.done.p) }
-    };
-  }
-  var clipUses = (q, t, k2) => q.rows.filter((r) => r.pick[t] === k2).length;
-
-  // src/core/mc707-params.js
-  var MC_PARAMS = [
-    { n: 7, name: "Volume", def: 100 },
-    { n: 10, name: "Pan", def: 64 },
-    { n: 11, name: "Expression", def: 127 },
-    { n: 74, name: "Cutoff", def: 64 },
-    { n: 71, name: "Resonance", def: 64 },
-    { n: 73, name: "Attack time", def: 64 },
-    { n: 75, name: "Decay time", def: 64 },
-    { n: 72, name: "Release time", def: 64 },
-    { n: 91, name: "Reverb send", def: 0 },
-    { n: 92, name: "Chorus send", def: 0 },
-    { n: 1, name: "Modulation", def: 0 },
-    { n: 5, name: "Portamento time", def: 0 },
-    { n: 76, name: "Vibrato rate", def: 64 },
-    { n: 77, name: "Vibrato depth", def: 64 },
-    { n: 78, name: "Vibrato delay", def: 64 },
-    { n: 80, name: "FILTER knob", def: 64 },
-    { n: 81, name: "MOD knob", def: 64 },
-    { n: 82, name: "FX knob", def: 64 },
-    { n: 83, name: "SOUND knob", def: 64 }
-  ];
-
-  // src/core/hooks.js
-  var hooks = {};
-
-  // src/core/tracks.js
-  var ROLES = [
-    ["kit", "Drums: kit", "drum", 0, "kit"],
-    ["hats", "Drums: hats", "drum", 1, "hats"],
-    ["perc", "Drums: perc", "drum", 2, "perc"],
-    ["bass", "Bass", "tone", 3, "bass"],
-    ["chords", "Chords", "tone", 4, "chords"],
-    ["pad", "Pad", "tone", 5, "pad"],
-    ["lead", "Lead", "tone", 6, "lead"],
-    ["pluck", "Pluck / arp", "tone", 7, "pluck"],
-    ["acid", "Acid", "tone", 3, "acid"]
-  ];
-  var DEF_ROLES = ["kit", "hats", "perc", "bass", "chords", "pad", "lead", "pluck"];
-  var R = Object.fromEntries(ROLES.map((r) => [r[0], r]));
-  var roleInfo = (role, t = 0) => R[role] || R[DEF_ROLES[t]];
-  var roleOf = (t) => S.tracks[t] && R[S.tracks[t].role] ? S.tracks[t].role : DEF_ROLES[t];
-  var slotOf = (t) => roleInfo(roleOf(t), t)[3];
-  var poolOf = (t) => roleInfo(roleOf(t), t)[4];
-  function trackOf(slot2) {
-    for (let t = 0; t < 8; t++) if (slotOf(t) === slot2) return t;
-    return -1;
-  }
-  var tracksOf = (slot2) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => slotOf(t) === slot2);
-  function bySlot(m, first) {
-    const out2 = {};
-    for (const k2 in m) {
-      const ts = tracksOf(+k2);
-      (first ? ts.slice(0, 1) : ts).forEach((t) => out2[t] = m[k2]);
-    }
-    return out2;
-  }
-  var tracksFor = (slots) => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => (slots || []).includes(slotOf(t)));
-  var toneTracksAll = () => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t] && S.tracks[t].type === "tone");
-  function kitTrack() {
-    const k2 = trackOf(0);
-    return k2 >= 0 ? k2 : S.tracks.findIndex((x) => x && x.type === "drum");
-  }
-  var buildTrack = () => trackOf(2) >= 0 ? trackOf(2) : kitTrack();
-
-  // src/core/state.js
-  var DEFAULT_TRACKS = [
-    { name: "Drums 1", type: "drum" },
-    { name: "Drums 2", type: "drum" },
-    { name: "Drums 3", type: "drum" },
-    { name: "Bass", type: "tone" },
-    { name: "Chords", type: "tone" },
-    { name: "Pad", type: "tone" },
-    { name: "Lead", type: "tone" },
-    { name: "Pluck", type: "tone" }
-  ];
-  var STORE = "mc707-song-mode-v1";
-  function newState() {
-    return {
-      v: 1,
-      bpm: 120,
-      swing: 50,
-      bars: 32,
-      loop: { on: false, start: 0, end: 8 },
-      cursor: 0,
-      key: 5,
-      scale: "minor",
-      metro: false,
-      clock: false,
-      preview: true,
-      follow: true,
-      midiOut: "",
-      drumMap: LANES.map((l) => l[1]),
-      tracks: DEFAULT_TRACKS.map((t, i) => ({ ...t, ch: i + 1, mute: false, solo: false, vol: 100 })),
-      patterns: {},
-      clips: [],
-      markers: [],
-      midiOffset: 0,
-      transpose: 0,
-      snap: 1,
-      ctrlCh: 16,
-      sendCC: true,
-      nextId: 1
-    };
-  }
-  var S = newState();
-  function replaceState(v) {
-    S = v;
-    UI.view = null;
-  }
-  var UI = {
-    sel: null,
-    arm: null,
-    libTab: "fac",
-    libType: "all",
-    libGenre: "all",
-    libRole: "all",
-    libStyle: "all",
-    libKey: "all",
-    libBars: "all",
-    libTempo: "all",
-    libSort: "default",
-    libFav: false,
-    q: "",
-    libLimit: 60,
-    prevTrack: -1,
-    /** a library pattern open in the editor without a clip (see song/lib-view.js), or null */
-    view: null
-  };
-  function addPattern(type, name, bars2, notes, extra = {}) {
-    const id = "p" + S.nextId++;
-    S.patterns[id] = { id, name, type, bars: bars2, notes: notes.map((n) => ({ ...n })), mod: false, ...extra };
-    return id;
-  }
-  var UNDO = [];
-  var REDO = [];
-  var snapState = () => JSON.stringify(S);
-  function pushUndo() {
-    UNDO.push(snapState());
-    if (UNDO.length > 80) UNDO.shift();
-    REDO.length = 0;
-    updUndo();
-  }
-  function updUndo() {
-    $("#bUndo").disabled = !UNDO.length;
-    $("#bRedo").disabled = !REDO.length;
-  }
-  function undo() {
-    if (!UNDO.length) return;
-    REDO.push(snapState());
-    S = JSON.parse(UNDO.pop());
-    afterReplace();
-  }
-  function redo() {
-    if (!REDO.length) return;
-    UNDO.push(snapState());
-    S = JSON.parse(REDO.pop());
-    afterReplace();
-  }
-  function afterReplace() {
-    ED.selNotes.clear();
-    if (!curClip()) UI.sel = null;
-    hooks.stopAll();
-    hooks.renderAll();
-    scheduleSave();
-  }
-  var HOST = window.toolbox || null;
-  var BUSY = { write: "" };
-  var APP_NAME = HOST ? { darwin: "Mac app", linux: "Linux app" }[HOST.platform] || "Windows app" : null;
-  var PROJ = { name: "", path: "", dirty: false, t: null };
-  var saveT = 0;
-  function scheduleSave() {
-    PROJ.dirty = true;
-    if (PROJ.t) PROJ.t();
-    clearTimeout(saveT);
-    saveT = setTimeout(() => {
-      try {
-        localStorage.setItem(STORE, JSON.stringify(S));
-        scheduleSave.warned = false;
-      } catch (e) {
-        if (!scheduleSave.warned) {
-          scheduleSave.warned = true;
-          toast("Autosave failed: storage is full. Use File > Save to keep your work.");
-        }
-      }
-    }, 400);
-  }
-  function loadSaved() {
-    try {
-      const raw = localStorage.getItem(STORE);
-      if (!raw) return null;
-      const s = JSON.parse(raw);
-      if (!s || s.v !== 1 || !Array.isArray(s.tracks) || s.tracks.length !== 8 || !s.patterns || !Array.isArray(s.clips))
-        return null;
-      return fixState(s);
-    } catch (e) {
-      return null;
-    }
-  }
-  var getClip = (id) => S.clips.find((c) => c.id === id);
-  var curClip = () => UI.sel ? getClip(UI.sel) : null;
-  var edClip = () => curClip() || UI.view || null;
-  var ED = {
-    mode: "steps",
-    snap: 1,
-    zoom: 26,
-    lo: 36,
-    clipboard: null,
-    selNotes: /* @__PURE__ */ new Set(),
-    fit: true,
-    geom: null,
-    drag: null,
-    lastDown: null
-  };
-  function fixState(s) {
-    const d = newState();
-    const num2 = (v, lo, hi, def) => {
-      v = Number(v);
-      return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
-    };
-    if (!s || typeof s !== "object") return d;
-    s.v = 1;
-    s.bpm = num2(s.bpm, 40, 240, 120);
-    s.swing = num2(s.swing, 50, 75, 50);
-    s.bars = Math.round(num2(s.bars, 8, 512, 32));
-    s.cursor = num2(s.cursor, 0, 512, 0);
-    s.key = Math.round(num2(s.key, 0, 11, 5));
-    if (!SCALES[s.scale]) s.scale = "minor";
-    s.midiOffset = num2(s.midiOffset, -200, 200, 0);
-    s.transpose = Math.round(num2(s.transpose, -24, 24, 0));
-    s.snap = [1, 0.5, 0.25, 0.0625].includes(+s.snap) ? +s.snap : 1;
-    s.ctrlCh = Math.round(num2(s.ctrlCh, 1, 16, 16));
-    s.sendCC = s.sendCC !== false;
-    s.metro = !!s.metro;
-    s.clock = !!s.clock;
-    s.preview = s.preview !== false;
-    s.follow = s.follow !== false;
-    s.midiOut = typeof s.midiOut === "string" ? s.midiOut : "";
-    s.midiIn = typeof s.midiIn === "string" ? s.midiIn : "";
-    s.markers = (Array.isArray(s.markers) ? s.markers : []).filter((m) => m && Number.isFinite(+m.bar)).map((m) => {
-      const o = { bar: Math.max(0, Math.round(+m.bar)), name: String(m.name || "Section").slice(0, 20) };
-      if (Number.isFinite(+m.bpm) && +m.bpm >= 40 && +m.bpm <= 240) o.bpm = Math.round(+m.bpm);
-      if (m.scene != null && m.scene !== "" && Number.isInteger(+m.scene) && +m.scene >= 0 && +m.scene <= 127)
-        o.scene = +m.scene;
-      return o;
-    });
-    s.clipMarks = (Array.isArray(s.clipMarks) ? s.clipMarks : []).filter(
-      (m) => m && Number.isInteger(+m.t) && +m.t >= 0 && +m.t < 8 && Number.isFinite(+m.bar) && Number.isInteger(+m.k) && +m.k >= -1 && +m.k < 16
-    ).map((m) => ({ t: +m.t, bar: Math.max(0, Math.round(+m.bar)), k: +m.k }));
-    const lp = s.loop && typeof s.loop === "object" ? s.loop : {};
-    const ls = Math.max(0, Math.round(num2(lp.start, 0, 511, 0) * 16) / 16);
-    s.loop = {
-      on: !!lp.on,
-      start: ls,
-      end: Math.max(ls + 0.0625, Math.round(num2(lp.end, 0.0625, 512, 8) * 16) / 16)
-    };
-    s.drumMap = Array.isArray(s.drumMap) && s.drumMap.length === 12 ? s.drumMap.map((n, i) => Math.round(num2(n, 0, 127, d.drumMap[i]))) : d.drumMap;
-    s.tracks = d.tracks.map((dt, i) => {
-      const t = s.tracks && s.tracks[i] || {};
-      const role = ROLES.some((r) => r[0] === t.role) && t.role !== DEF_ROLES[i] ? t.role : null;
-      return {
-        name: String(t.name || dt.name).slice(0, 16),
-        type: role ? roleInfo(role)[2] : dt.type,
-        ...role ? { role } : {},
-        ch: Math.round(num2(t.ch, 1, 16, i + 1)),
-        mute: !!t.mute,
-        solo: !!t.solo,
-        vol: Math.round(num2(t.vol, 0, 127, 100)),
-        ...Number.isFinite(+t.nudge) && +t.nudge ? { nudge: +t.nudge } : {},
-        ...Number.isFinite(+t.hum) && +t.hum ? { hum: +t.hum } : {},
-        ...cleanTrackCC(t.cc)
-      };
-    });
-    const pats = {};
-    let maxId = 1;
-    if (s.patterns && typeof s.patterns === "object")
-      for (const id in s.patterns) {
-        const p = s.patterns[id];
-        if (!p || !Array.isArray(p.notes) || p.type !== "drum" && p.type !== "tone") continue;
-        p.id = id;
-        p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars) ? p.bars : Math.min(8, Math.max(1, Math.round(num2(p.bars, 1, 8, 1))));
-        p.name = String(p.name || "Pattern").slice(0, 40);
-        p.notes = p.notes.filter(
-          (n) => n && Number.isFinite(+n.s) && Number.isFinite(+n.l) && Number.isFinite(+n.n) && Number.isFinite(+n.v) && n.l > 0 && n.s >= 0 && n.s < p.bars * 16
-        ).map((n) => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) }));
-        if (p.key && !(Number.isFinite(+p.key.root) && SCALES[p.key.scale])) p.key = null;
-        pats[id] = p;
-        const m = /^p(\d+)$/.exec(id);
-        if (m) maxId = Math.max(maxId, +m[1] + 1);
-      }
-    s.patterns = pats;
-    const seen = /* @__PURE__ */ new Set();
-    s.clips = (Array.isArray(s.clips) ? s.clips : []).filter(
-      (c) => c && pats[c.pat] && Number.isInteger(c.t) && c.t >= 0 && c.t < 8 && s.tracks[c.t].type === pats[c.pat].type && Number.isFinite(+c.start) && Number.isFinite(+c.len) && c.start >= 0 && c.len >= 0.0625
-    ).map((c) => {
-      let id = typeof c.id === "string" && !seen.has(c.id) ? c.id : "c" + maxId++;
-      seen.add(id);
-      const m = /^c(\d+)$/.exec(id);
-      if (m) maxId = Math.max(maxId, +m[1] + 1);
-      const o = {
-        id,
-        t: c.t,
-        start: Math.round(+c.start * 16) / 16,
-        len: Math.max(0.0625, Math.round(+c.len * 16) / 16),
-        off: 0,
-        pat: c.pat
-      };
-      if (Number.isFinite(+c.ll) && +c.ll > 0) o.ll = Math.min(8, Math.max(0.0625, Math.round(+c.ll * 16) / 16));
-      {
-        const L2 = o.ll || pats[c.pat].bars;
-        o.off = Math.round(((+c.off || 0) % L2 + L2) % L2 * 16) / 16;
-      }
-      if (c.mute) o.mute = true;
-      if (Number.isFinite(+c.tr) && +c.tr) o.tr = Math.max(-48, Math.min(48, Math.round(+c.tr)));
-      if (Number.isFinite(+c.vel) && +c.vel && +c.vel !== 100) o.vel = +c.vel;
-      fixClipExtras(c, o);
-      return o;
-    });
-    s.clips.forEach((c) => {
-      s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
-    });
-    fixScenes(s, pats);
-    s.nextId = Math.max(Math.round(num2(s.nextId, 1, 1e9, 1)), maxId + 1);
-    return s;
-  }
-  function cleanPts(a, maxY) {
-    if (!Array.isArray(a)) return null;
-    const o = a.filter((q) => Array.isArray(q) && Number.isFinite(+q[0]) && Number.isFinite(+q[1])).map((q) => [Math.min(1, Math.max(0, +q[0])), Math.min(maxY, Math.max(0, +q[1]))]).sort((x, y) => x[0] - y[0]).slice(0, 200);
-    return o;
-  }
-  function fixClipExtras(c, o) {
-    if (Number.isFinite(+c.fi) && +c.fi > 0) o.fi = Math.min(512, Math.round(+c.fi));
-    if (Number.isFinite(+c.fo) && +c.fo > 0) o.fo = Math.min(512, Math.round(+c.fo));
-    if (["exp", "log", "s"].includes(c.fcv)) o.fcv = c.fcv;
-    const ve = cleanPts(c.ve, 1.5);
-    if (ve && ve.length) o.ve = ve;
-    if (c.cc && MC_PARAMS.some((m) => m.n === +c.cc.n)) {
-      const pts = cleanPts(c.cc.pts, 1);
-      if (pts) o.cc = { n: +c.cc.n, pts };
-    }
-    if (Number.isInteger(+c.pc) && +c.pc >= 0 && +c.pc <= 127 && c.pc !== null && c.pc !== "") o.pc = +c.pc;
-  }
-  function cleanTrackCC(cc2) {
-    if (!cc2 || typeof cc2 !== "object") return {};
-    const o = {};
-    MC_PARAMS.forEach((m) => {
-      const v = cc2[m.n];
-      if (Number.isFinite(+v) && v !== null && v !== "") o[m.n] = Math.max(0, Math.min(127, Math.round(+v)));
-    });
-    return Object.keys(o).length ? { cc: o } : {};
-  }
 
   // src/core/device.js
   var TRACK_COLORS = ["#ff5f45", "#ffa629", "#ff6fa3", "#2fd3c0", "#4da3ff", "#a283ff", "#84d95b", "#e9d94a"];
@@ -55570,6 +55689,15 @@ body[data-mode='scene'] #scene {
       edPlay(tick / 2);
     }
   }
+  function phClip() {
+    const ph = $("#playhead"), a = $("#arr");
+    if (!ph || !a) return;
+    if (!a.dataset.phClip) {
+      a.dataset.phClip = "1";
+      a.addEventListener("scroll", phClip, { passive: true });
+    }
+    ph.style.visibility = HEAD + SH.pos * bw < a.scrollLeft + HEAD ? "hidden" : "";
+  }
   function updPlayhead(bars2) {
     SH.pos = bars2;
     if (ED.mode === "shape" && TR.playing && $("#edShape") && !$("#edShape").hidden) drawShape();
@@ -55577,12 +55705,13 @@ body[data-mode='scene'] #scene {
     if (!ph) return;
     ph.style.display = "block";
     ph.style.transform = "translateX(" + (HEAD + bars2 * bw) + "px)";
-    if (TR.playing && TR.mode === "song" && S.follow) {
-      const a = $("#arr");
+    const a = $("#arr");
+    if (a && TR.playing && TR.mode === "song" && S.follow) {
       const x = HEAD + bars2 * bw;
       if (x < a.scrollLeft + HEAD + 10 || x > a.scrollLeft + a.clientWidth - 50)
         a.scrollLeft = Math.max(0, x - HEAD - 40);
     }
+    phClip();
     if (!TR.playing) $("#pos").textContent = fmtPos(bars2);
   }
 
@@ -63093,6 +63222,32 @@ body[data-mode='scene'] #scene {
       if (e.key === "Escape" && openB) closeAll();
     });
     addEventListener("blur", closeAll);
+    macMenus(() => {
+      const mode = document.body.dataset.mode;
+      return M2.filter(([, modes]) => !modes || modes === mode).map(([name, , items]) => {
+        const out2 = [];
+        for (const it of items) {
+          if (!it) out2.push("-");
+          else if (it === "recent") {
+            const rl = projRecents();
+            if (rl.length)
+              out2.push({ label: "Open recent", sub: rl.map((r) => ({ label: r.name, run: () => projOpenPath(r.path) })) });
+          } else {
+            const [label2, fn, key, chk, sub, onlyMode] = it;
+            if (onlyMode && onlyMode !== mode) continue;
+            if (sub)
+              out2.push({
+                label: label2,
+                sub: sub().map(
+                  (x) => x === "-" ? "-" : { label: x.label, checked: x.checked == null ? null : x.checked, run: x.action }
+                )
+              });
+            else out2.push({ label: label2, key, checked: chk ? chk() : null, run: fn });
+          }
+        }
+        return { label: name, items: out2 };
+      });
+    });
   }
   function initSetup() {
     initMenubar();
@@ -64435,6 +64590,7 @@ body[data-mode='scene'] #scene {
 
   // src/main.js
   applyTheme();
+  initDesktop();
   Object.assign(hooks, {
     fillTones: fillTonesOpen,
     fx: {
