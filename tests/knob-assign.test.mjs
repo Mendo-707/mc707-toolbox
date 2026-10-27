@@ -23,7 +23,9 @@ test('Mixer knobs: what C1-C4 control, read from the MC-707 and set for the whol
   await win.waitForSelector('.mxStrip .mxKSel');
   const sels = win.locator('.mxStrip').first().locator('.mxKSel');
   assert.equal(await sels.count(), 4, 'a chooser per knob');
-  await win.waitForFunction(() => document.querySelector('.mxStrip .mxKSel').selectedOptions[0].textContent === 'Cutoff');
+  await win.waitForFunction(
+    () => document.querySelector('.mxStrip .mxKSel').selectedOptions[0].textContent === 'Cutoff'
+  );
   const shown = await sels.evaluateAll(s => s.map(x => x.selectedOptions[0].textContent));
   assert.deepEqual(shown, ['Cutoff', 'Decay', 'Reverb Send', 'Coarse Tune'], 'read from the MC-707');
   /* a drum track has no tone-only choices */

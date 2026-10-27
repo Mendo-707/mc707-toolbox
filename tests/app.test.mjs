@@ -230,7 +230,11 @@ test('every hook in core/hooks.js is filled in when the app starts', async () =>
   ].map(m => m[1]);
   assert.ok(listed.length > 0, 'hooks.js lists its hooks');
   const { page, errors } = await openApp();
-  const missing = await page.evaluate(names => names.filter(n => !['function', 'object'].includes(typeof window.__app.hooks[n]) || !window.__app.hooks[n]), listed);
+  const missing = await page.evaluate(
+    names =>
+      names.filter(n => !['function', 'object'].includes(typeof window.__app.hooks[n]) || !window.__app.hooks[n]),
+    listed
+  );
   assert.deepEqual(missing, []);
   assert.deepEqual(errors, []);
 });
