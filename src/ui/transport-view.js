@@ -60,6 +60,18 @@ export function frame() {
     edPlay(tick / 2);
   }
 }
+/* the playhead (and its grab button) hides while it is scrolled under the track names, instead of
+   drawing over them */
+export function phClip() {
+  const ph = $('#playhead'),
+    a = $('#arr');
+  if (!ph || !a) return;
+  if (!a.dataset.phClip) {
+    a.dataset.phClip = '1';
+    a.addEventListener('scroll', phClip, { passive: true });
+  }
+  ph.style.visibility = HEAD + SH.pos * bw < a.scrollLeft + HEAD ? 'hidden' : '';
+}
 export function updPlayhead(bars) {
   SH.pos = bars;
   if (ED.mode === 'shape' && TR.playing && $('#edShape') && !$('#edShape').hidden) drawShape();
@@ -67,11 +79,12 @@ export function updPlayhead(bars) {
   if (!ph) return;
   ph.style.display = 'block';
   ph.style.transform = 'translateX(' + (HEAD + bars * bw) + 'px)';
-  if (TR.playing && TR.mode === 'song' && S.follow) {
-    const a = $('#arr');
+  const a = $('#arr');
+  if (a && TR.playing && TR.mode === 'song' && S.follow) {
     const x = HEAD + bars * bw;
     if (x < a.scrollLeft + HEAD + 10 || x > a.scrollLeft + a.clientWidth - 50)
       a.scrollLeft = Math.max(0, x - HEAD - 40);
   }
+  phClip();
   if (!TR.playing) $('#pos').textContent = fmtPos(bars);
 }

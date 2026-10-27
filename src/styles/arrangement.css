@@ -86,7 +86,8 @@
 .thead {
   position: sticky;
   left: 0;
-  z-index: 4;
+  /* above the playhead (5), so a scrolled playhead never draws over the track names */
+  z-index: 6;
   flex: none;
   width: var(--head);
   background: var(--panel);

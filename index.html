@@ -618,7 +618,8 @@ input[type='range'] {
 .thead {
   position: sticky;
   left: 0;
-  z-index: 4;
+  /* above the playhead (5), so a scrolled playhead never draws over the track names */
+  z-index: 6;
   flex: none;
   width: var(--head);
   background: var(--panel);
@@ -55688,6 +55689,15 @@ html.os-darwin.native-menu #menubar .mproj {
       edPlay(tick / 2);
     }
   }
+  function phClip() {
+    const ph = $("#playhead"), a = $("#arr");
+    if (!ph || !a) return;
+    if (!a.dataset.phClip) {
+      a.dataset.phClip = "1";
+      a.addEventListener("scroll", phClip, { passive: true });
+    }
+    ph.style.visibility = HEAD + SH.pos * bw < a.scrollLeft + HEAD ? "hidden" : "";
+  }
   function updPlayhead(bars2) {
     SH.pos = bars2;
     if (ED.mode === "shape" && TR.playing && $("#edShape") && !$("#edShape").hidden) drawShape();
@@ -55695,12 +55705,13 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!ph) return;
     ph.style.display = "block";
     ph.style.transform = "translateX(" + (HEAD + bars2 * bw) + "px)";
-    if (TR.playing && TR.mode === "song" && S.follow) {
-      const a = $("#arr");
+    const a = $("#arr");
+    if (a && TR.playing && TR.mode === "song" && S.follow) {
       const x = HEAD + bars2 * bw;
       if (x < a.scrollLeft + HEAD + 10 || x > a.scrollLeft + a.clientWidth - 50)
         a.scrollLeft = Math.max(0, x - HEAD - 40);
     }
+    phClip();
     if (!TR.playing) $("#pos").textContent = fmtPos(bars2);
   }
 
