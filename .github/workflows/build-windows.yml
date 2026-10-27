@@ -51,4 +51,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag || github.event.inputs.attach }}" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
+        run: |
+          T="${{ github.event.release.tag_name || github.event.inputs.tag || github.event.inputs.attach }}"
+          # a test build's draft release is made the first time (drafts are private to the repo's owners)
+          if [ -n "${{ github.event.inputs.attach }}" ] && ! gh release view "$T" >/dev/null 2>&1; then
+            gh release create "$T" --draft --target "$GITHUB_SHA" --title "Test builds (draft, private)" --notes "Test builds for trying changes before a release. A draft: only the repo's owners see it. Not for publishing."
+          fi
+          gh release upload "$T" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
