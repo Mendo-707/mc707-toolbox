@@ -3,6 +3,7 @@
 //
 // Reads: ZE (through the editor's callbacks), ZC_CATEGORIES.
 import { el } from '../core/dom.js';
+import { waveText } from './zc-waves.js';
 import { showMenu } from '../ui/menu.js';
 import { ZC_CATEGORIES } from './zc-data.js';
 import { paramOf } from './zc-tone.js';
@@ -110,6 +111,9 @@ export function listOf(kind, key) {
 }
 /** Text for a value. */
 export function valText(kind, key, v) {
+  /* a PCM wave's number shows its name (zc-waves.js) */
+  const wave = kind === 'tone' ? waveText(key, v) : '';
+  if (wave) return wave;
   const id = key.split('.')[1],
     p = paramOf(kind, key)[0],
     x = p[8] || {},
