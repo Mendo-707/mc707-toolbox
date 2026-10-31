@@ -1717,3 +1717,42 @@ input[type='number'] {
 .lvMoodDot[hidden] {
   display: none;
 }
+/* panels that fold away (ui.js fold): the heading is the switch */
+.lvFold > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lvFold > summary::-webkit-details-marker {
+  display: none;
+}
+.lvFold > summary::before {
+  content: '▸';
+  color: var(--mute);
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+.lvFold[open] > summary::before {
+  transform: rotate(90deg);
+}
+.lvFold[open] > summary {
+  margin-bottom: 8px;
+}
+.lvFold:not([open]) {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.lvFold .lvViz {
+  height: 260px;
+}
+.lvMore > summary {
+  cursor: pointer;
+  color: var(--mute);
+  font-size: 12.5px;
+  margin: 4px 0 6px;
+}
+.lvMore[open] > summary {
+  color: var(--ink);
+}
