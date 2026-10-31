@@ -183,6 +183,11 @@ import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
 applyTheme();
+/* the window itself never scrolls (base.css); if a focus jump or scrollIntoView scrolls it anyway, put it back,
+   so the app can never end up off screen as a blank window */
+for (const t of [document.scrollingElement || document.documentElement, document.body])
+  t.addEventListener('scroll', () => t.scrollTop && (t.scrollTop = 0), { passive: true });
+addEventListener('scroll', () => (scrollX || scrollY) && scrollTo(0, 0), { passive: true });
 initDesktop();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.

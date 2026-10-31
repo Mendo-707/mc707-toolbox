@@ -82,6 +82,11 @@ body {
   height: 100%;
   margin: 0;
 }
+/* the app fills the window and scrolls inside its panels; the window itself never scrolls (a focused control
+   outside a panel could otherwise push the whole app off screen) */
+html {
+  overflow: hidden;
+}
 body {
   background: var(--bg);
   color: var(--ink);
@@ -2484,6 +2489,8 @@ input[type='range'] {
   margin: 0;
 }
 .rvSwitch {
+  /* holds its hidden checkbox: without it, focusing the checkbox scrolled the whole window away (black screen) */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2493,6 +2500,10 @@ input[type='range'] {
 }
 .rvSwitch input {
   position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -66525,6 +66536,9 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/main.js
   applyTheme();
+  for (const t of [document.scrollingElement || document.documentElement, document.body])
+    t.addEventListener("scroll", () => t.scrollTop && (t.scrollTop = 0), { passive: true });
+  addEventListener("scroll", () => (scrollX || scrollY) && scrollTo(0, 0), { passive: true });
   initDesktop();
   Object.assign(hooks, {
     fillTones: fillTonesOpen,

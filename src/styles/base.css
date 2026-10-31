@@ -62,6 +62,11 @@ body {
   height: 100%;
   margin: 0;
 }
+/* the app fills the window and scrolls inside its panels; the window itself never scrolls (a focused control
+   outside a panel could otherwise push the whole app off screen) */
+html {
+  overflow: hidden;
+}
 body {
   background: var(--bg);
   color: var(--ink);

@@ -24,6 +24,8 @@
   margin: 0;
 }
 .rvSwitch {
+  /* holds its hidden checkbox: without it, focusing the checkbox scrolled the whole window away (black screen) */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -33,6 +35,10 @@
 }
 .rvSwitch input {
   position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }
