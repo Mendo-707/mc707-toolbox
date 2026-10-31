@@ -31508,14 +31508,14 @@ html.os-darwin.native-menu #menubar .mproj {
     const near = (a, b) => Math.abs(a - b) < 0.06;
     const groups = /* @__PURE__ */ new Map();
     for (const x of notes) {
-      const key = x.n + ":" + Math.floor(x.s / k2 + 1e-6);
+      const key = x.n + ":" + Math.floor(x.s / k2 + 0.02);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(x);
     }
     const out2 = [], gone = /* @__PURE__ */ new Set();
     for (const g of groups.values()) {
       if (g.length < 2 || g.length > 4) continue;
-      const f = Math.floor(g[0].s / k2 + 1e-6), offs = g.map((x) => x.s / k2 - f), n = g.length;
+      const f = Math.floor(g[0].s / k2 + 0.02), offs = g.map((x) => x.s / k2 - f), n = g.length;
       if (!offs.every((o, i) => near(o, i / n))) continue;
       g.forEach((x) => gone.add(x));
       out2.push({ s: f * k2, l: Math.min(...g.map((x) => x.l)), n: g[0].n, v: Math.max(...g.map((x) => x.v)), sub: n - 1 });
@@ -31542,42 +31542,89 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     return p.bars * 16 <= MAX_STEPS ? 1 : 0;
   }
-  function encodePattern(p, type) {
-    const size = stepSize(p), k2 = STEP_SIZES[size], steps2 = Math.round(p.bars * 16 / k2);
-    if (steps2 > MAX_STEPS) return { error: "An MC-707 clip holds up to 16 bars; this pattern is " + p.bars };
+  function encodeAt(p, type, size) {
+    const k2 = STEP_SIZES[size], steps2 = Math.round(p.bars * 16 / k2);
     const slots = Array.from({ length: steps2 }, () => []);
-    let skipped = 0;
+    let skipped = 0, merged = 0, cut = 0, id = 0;
+    const lost = [];
     const notes = ratchets(
       [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n),
       k2
     );
+    const tail = (from, nid) => {
+      for (let i = from; i < steps2; i++) {
+        const j = slots[i].findIndex((y) => y.id === nid);
+        if (j < 0) break;
+        slots[i].splice(j, 1);
+      }
+      const before = slots[from - 1] && slots[from - 1].find((y) => y.id === nid);
+      if (before) before.end = Math.min(before.end, 99);
+    };
+    const pitch = (x) => type === "drum" ? S.drumMap[x.n] : x.n, onStep = /* @__PURE__ */ new Set();
     for (const x of notes) {
-      const note = type === "drum" ? S.drumMap[x.n] : x.n;
+      const q = x.s / k2;
+      if (Math.abs(q - Math.round(q)) < 0.02) onStep.add(pitch(x) + ":" + Math.round(q));
+    }
+    for (const x of notes) {
+      const note = pitch(x);
       if (!(note >= 0 && note <= 127)) {
         skipped++;
+        lost.push([x.s, x.n, "nomap"]);
         continue;
       }
       const pos = x.s / k2;
-      let at2 = Math.round(pos + 1e-6);
+      let at2 = Math.round(pos + 0.02);
+      if (Math.abs(pos - Math.floor(pos) - 0.5) < 0.02 && onStep.has(note + ":" + at2) && !onStep.has(note + ":" + (at2 - 1)))
+        at2--;
       if (at2 >= steps2) at2 = Math.floor(pos + 1e-6);
       let start = Math.round((pos - at2) * 100);
       if (start >= 100) at2++, start = 0;
       if (at2 < 0 || at2 >= steps2) {
         skipped++;
+        lost.push([x.s, note, "outside"]);
         continue;
       }
+      const busy4 = (i) => slots[i] && slots[i].some((z) => z.note === note && z.head);
+      if (busy4(at2) && !slots[at2].some((z) => z.note === note && z.start === start)) {
+        const y = slots[at2].find((z) => z.note === note && z.head);
+        if (start < 0 && at2 > 0 && start + 100 <= 99 && !busy4(at2 - 1)) at2--, start += 100;
+        else if (start > 0 && at2 + 1 < steps2 && start - 100 >= -50 && !busy4(at2 + 1)) at2++, start -= 100;
+        else if (y.start < 0 && y.end < 100 && at2 > 0 && !busy4(at2 - 1) && slots[at2 - 1].length < 16) {
+          slots[at2].splice(slots[at2].indexOf(y), 1);
+          y.start += 100;
+          y.end = Math.min(99, y.end + 100);
+          slots[at2 - 1].push(y);
+        }
+      }
       const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
+      const nid = ++id;
       let left = Math.max(1, Math.round((x.l || 0.8) / k2 * 100)), first = true, prev = null;
       while (left > 0 && at2 < steps2) {
         const room = 100 - start, tie = left > room;
-        const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0 };
+        const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0, id: nid };
         const s = slots[at2];
-        if (s.length >= 16 || s.some((y) => y.note === note)) {
-          if (first) skipped++;
+        let y = s.find((z) => z.note === note);
+        if (y && first) {
+          if (!y.head) {
+            tail(at2, y.id);
+            cut++;
+            y = null;
+          } else if (y.start === start) {
+            y.vel = Math.max(y.vel, vel);
+            merged++;
+            break;
+          }
+        }
+        if (s.length >= 16 || y) {
+          if (first) {
+            skipped++;
+            lost.push([x.s, note, s.length >= 16 ? "full" : "twice"]);
+          }
           if (prev) prev.end = 99;
           prev = null;
           break;
         }
+        if (first) c.head = true;
         s.push(c);
         prev = c;
         first = false;
@@ -31587,7 +31634,37 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       if (prev && prev.end >= 100) prev.end = 99;
     }
-    return { steps: steps2, size, slots, skipped };
+    for (const s of slots) for (const c of s) delete c.id, delete c.head;
+    return { steps: steps2, size, slots, skipped, lost, merged, cut };
+  }
+  function lostText(r) {
+    const l = r.lost || [], n = r.skipped || l.length;
+    if (!n) return "";
+    const why = {
+      nomap: "no drum note for its lane",
+      outside: "past the end",
+      full: "more than 16 notes at once",
+      twice: "the same note twice too close together for the clip’s steps"
+    };
+    const kinds = [...new Set(l.map((x) => x[2]))].map((k2) => why[k2] || k2);
+    const at2 = l.length ? Math.floor(l[0][0] / 16) + 1 + "." + (Math.floor(l[0][0] % 16 / 4) + 1) : "";
+    return n + " note" + (n === 1 ? "" : "s") + " could not go in (" + (kinds.join(", ") || "no room") + ")" + (at2 ? ", the first at bar " + at2 : "");
+  }
+  function encodePattern(p, type) {
+    const first = stepSize(p);
+    if (Math.round(p.bars * 16 / STEP_SIZES[first]) > MAX_STEPS)
+      return { error: "An MC-707 clip holds up to 16 bars; this pattern is " + p.bars };
+    let best = encodeAt(p, type, first);
+    if (!best.skipped) return best;
+    for (const size of [1, 2, 5, 4, 0, 3]) {
+      if (size === first) continue;
+      const steps2 = p.bars * 16 / STEP_SIZES[size];
+      if (Math.abs(steps2 - Math.round(steps2)) > 1e-6 || steps2 > MAX_STEPS) continue;
+      const e = encodeAt(p, type, size);
+      if (e.skipped < best.skipped) best = e;
+      if (!best.skipped) break;
+    }
+    return best;
   }
   var nib = (v) => [(v & 255) >> 4 & 15, v & 15];
   function stepWrites(slots) {
@@ -31644,6 +31721,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ok: true,
       notes: want.length,
       skipped: enc.skipped,
+      lost: enc.lost,
       checked: checked2,
       replaced,
       diff: checked2 ? "" : diffText(enc, want, after)
@@ -31789,7 +31867,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!r) return;
     if (!r.ok) return r.why && /answer|send/.test(r.why) ? showWhy(r.why, t, k2) : toast(r.why);
     toast(
-      (r.replaced ? "Replaced the notes in " + where2 + " with " : "Wrote ") + r.notes + (r.replaced ? " notes" : " notes to " + where2) + (r.checked ? ", read back and checked" : ". The read-back did not match: check the clip on the MC-707") + (r.skipped ? ". " + r.skipped + " notes could not go in (no drum note, past the end, or a full step)" : "")
+      (r.replaced ? "Replaced the notes in " + where2 + " with " : "Wrote ") + r.notes + (r.replaced ? " notes" : " notes to " + where2) + (r.checked ? ", read back and checked" : ". The read-back did not match: check the clip on the MC-707") + (r.skipped ? ". " + lostText(r) : "")
     );
   }
   function songPlan(starts = {}) {
@@ -43936,10 +44014,7 @@ html.os-darwin.native-menu #menubar .mproj {
           continue;
         }
         if (!r.checked) bad.push(where2 + ": read-back did not match (" + r.diff + ")");
-        if (r.skipped)
-          bad.push(
-            where2 + ": " + r.skipped + " note" + (r.skipped === 1 ? "" : "s") + " could not go in (no drum note for its lane, past the end, or two of the same note in one step)"
-          );
+        if (r.skipped) bad.push(where2 + ": " + lostText(r));
         const tn = toneOf(c), snd = WO.tones && tn && tn.kind !== "kit" && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });
         if (snd) {
           ui.set(head2 + " · tone " + tn.name, (n + 0.9) / N);
@@ -66782,6 +66857,7 @@ html.os-darwin.native-menu #menubar .mproj {
       seq: {
         clipPacked,
         encode: encodePattern,
+        encodeAt,
         stepAddr,
         paramAddr,
         clipAddr,

@@ -152,6 +152,7 @@ import {
   clipNotesToMine,
   clipPacked,
   encodePattern,
+  encodeAt,
   clipWriteAsk,
   clipWriteNow,
   songToClipsOpen,
@@ -290,6 +291,7 @@ PROJ.t = projTitle;
     seq: {
       clipPacked,
       encode: encodePattern,
+      encodeAt,
       stepAddr,
       paramAddr,
       clipAddr,
