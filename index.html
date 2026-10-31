@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- GENERATED FILE. Do not edit: change the files in src/ and run "npm run build". See AGENTS.md. -->
-<html lang="en">
+<html lang="en" class="boot">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -86,6 +86,17 @@ body {
    outside a panel could otherwise push the whole app off screen) */
 html {
   overflow: hidden;
+}
+/* until the app has drawn itself (main.js takes the class off), the half-built page stays out of sight; if
+   start-up ever fails, it shows anyway after a few seconds */
+html.boot body {
+  visibility: hidden;
+  animation: bootShow 0s 5s forwards;
+}
+@keyframes bootShow {
+  to {
+    visibility: visible;
+  }
 }
 body {
   background: var(--bg);
@@ -45162,7 +45173,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/core/version.js
-  var VERSION = "1.6.3";
+  var VERSION = "1.6.4";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -66463,6 +66474,12 @@ html.os-darwin.native-menu #menubar .mproj {
     projTitle();
     if (startOnOpen()) startOpen(!!saved);
     requestAnimationFrame(frame2);
+    requestAnimationFrame(
+      () => requestAnimationFrame(() => {
+        document.documentElement.classList.remove("boot");
+        if (HOST && HOST.appReady) HOST.appReady();
+      })
+    );
     (async () => {
       try {
         if (window.claude && typeof claude.use === "function") {

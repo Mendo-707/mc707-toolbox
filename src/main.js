@@ -393,6 +393,13 @@ PROJ.t = projTitle;
   /* the app opens in Song Mode with the start screen: last session, blank song, template, wizard or Live Mode */
   if (startOnOpen()) startOpen(!!saved);
   requestAnimationFrame(frame);
+  /* drawn: show the page (and, in the desktop app, the window) */
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('boot');
+      if (HOST && HOST.appReady) HOST.appReady();
+    })
+  );
   (async () => {
     try {
       if (window.claude && typeof claude.use === 'function') {

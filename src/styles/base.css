@@ -67,6 +67,17 @@ body {
 html {
   overflow: hidden;
 }
+/* until the app has drawn itself (main.js takes the class off), the half-built page stays out of sight; if
+   start-up ever fails, it shows anyway after a few seconds */
+html.boot body {
+  visibility: hidden;
+  animation: bootShow 0s 5s forwards;
+}
+@keyframes bootShow {
+  to {
+    visibility: visible;
+  }
+}
 body {
   background: var(--bg);
   color: var(--ink);

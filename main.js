@@ -72,8 +72,8 @@ function createWindow() {
     ...chrome,
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') }
   });
-  /* the window appears once the page has drawn, or after a few seconds whatever happens: never stays
-     hidden (a page waiting on the network, a slow machine) */
+  /* the window appears once the app has built and drawn itself (it says so), or after a few seconds
+     whatever happens: never stays hidden (a page that fails to start, a slow machine) */
   let shown = false;
   const showNow = () => {
     if (shown || !win || win.isDestroyed()) return;
@@ -81,9 +81,10 @@ function createWindow() {
     if (b.max) win.maximize();
     win.show();
   };
-  win.once('ready-to-show', showNow);
-  win.webContents.once('did-finish-load', () => setTimeout(showNow, 300));
-  setTimeout(showNow, 3000);
+  ipcMain.removeAllListeners('app-ready');
+  ipcMain.once('app-ready', showNow);
+  win.webContents.once('did-fail-load', showNow);
+  setTimeout(showNow, 6000);
   for (const ev of ['resize', 'move', 'maximize', 'unmaximize']) win.on(ev, keepSoon);
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
