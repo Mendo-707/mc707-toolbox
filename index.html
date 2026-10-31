@@ -1642,6 +1642,25 @@ input[type='range'] {
 .tsBox {
   max-width: 760px;
 }
+.tsMust {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--hot);
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hot) 10%, var(--panel));
+  font-size: 14px;
+  line-height: 1.4;
+}
+.tsMust b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--hot);
+  font-size: 15px;
+}
+.tsMust .btn {
+  margin: 0 2px;
+}
 .tsPresets {
   display: flex;
   flex-wrap: wrap;
@@ -30761,9 +30780,9 @@ html.os-darwin.native-menu #menubar .mproj {
     ZS.list.unshift(e);
     return e;
   }
-  async function soundAddMany(items) {
-    const seen2 = new Set(ZS.list.map((e) => e.h)), at2 = Date.now(), add = [];
-    items.forEach(({ snd, name, src, bank, no }, i) => {
+  async function soundAddMany(items, among = null) {
+    const seen2 = new Set((among ? ZS.list.filter(among) : ZS.list).map((e) => e.h)), at2 = Date.now(), add = [];
+    items.forEach(({ snd, name, src, bank, no, folder }, i) => {
       const d = diffOf(snd), h = hashOf(snd.kind, d);
       if (seen2.has(h)) return;
       seen2.add(h);
@@ -30777,6 +30796,7 @@ html.os-darwin.native-menu #menubar .mproj {
         tags: [],
         src: src || "mine",
         ...bank ? { bank, no } : {},
+        ...folder ? { folder } : {},
         h,
         d
       });
@@ -30784,6 +30804,12 @@ html.os-darwin.native-menu #menubar .mproj {
     await tx("readwrite", (s) => add.forEach((e) => s.put(e)));
     ZS.list = [...ZS.list, ...add].sort((a, b) => b.at - a.at);
     return add.length;
+  }
+  async function soundsRemoveWhere(gone) {
+    const out2 = ZS.list.filter(gone);
+    ZS.list = ZS.list.filter((e) => !gone(e));
+    await tx("readwrite", (s) => out2.forEach((e) => s.delete(e.id)));
+    return out2.length;
   }
   async function soundsRemoveSrc(src) {
     const gone = ZS.list.filter((e) => e.src === src);
@@ -37930,6 +37956,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/zen/zc-pages-fx.js
+  var PRESET = { at: -1 };
   function pageMfx(ctx2) {
     const type = ctx2.get("MFX.mfxType"), sps = mfxParams(type);
     const typeSel = el("select", { onchange: (e) => ctx2.mfxType(+e.target.value) });
@@ -37944,12 +37971,15 @@ html.os-darwin.native-menu #menubar .mproj {
           const i = +e.target.value;
           if (i >= 0) {
             const p = mfxPreset(i);
+            PRESET.at = i;
             ctx2.mfxType(p.type, p.vals);
           }
         }
       },
       el("option", { value: -1 }, "Preset…"),
-      ...MFX_PRESETS.map(([n], i) => el("option", { value: i }, n))
+      ...MFX_PRESETS.map(
+        ([n], i) => el("option", { value: i, selected: i === PRESET.at && mfxPreset(i).type === type }, n)
+      )
     );
     const params = sps.map((sp, i) => {
       const key = "MFX.param_" + (i + 1), known2 = ctx2.snd.known.has(key), v = shown(sp, ctx2.get(key));
@@ -38009,7 +38039,7 @@ html.os-darwin.native-menu #menubar .mproj {
       group(
         "Multi-effect",
         el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Type"), stepper(typeSel)),
-        el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Presets"), presetSel),
+        el("label", { class: "zcC wide" }, el("span", { class: "zcL" }, "Presets"), stepper(presetSel)),
         ctl(ctx2, "MFX.mfxSwitch", { label: "On" }),
         ctl(ctx2, "MFX.choSend", { label: "Delay send" }),
         ctl(ctx2, "MFX.revSend", { label: "Reverb send" })
@@ -38852,6 +38882,62 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     i.click();
   }
+  async function folderFor(file) {
+    const stem = file.name.replace(/\.svz$/i, "").trim().slice(0, 30) || "Expansion";
+    const have = folderList();
+    const sel = el(
+      "select",
+      { style: "width:100%" },
+      el("option", { value: "" }, have.includes(stem) ? "The folder “" + stem + "”" : "A new folder: “" + stem + "”"),
+      ...have.filter((f) => f !== stem).map((f) => el("option", { value: f }, "📁 " + f))
+    );
+    const ok = await askDlg({
+      title: "Add " + file.name + " to a folder",
+      text: "Its tones go into one of your folders, where you can rename, tag and organise them.",
+      body: sel,
+      ok: "Add"
+    });
+    return ok ? folderAdd(sel.value || stem) : null;
+  }
+  function expansionImport(done2) {
+    const i = el("input", {
+      type: "file",
+      accept: ".svz",
+      multiple: true,
+      onchange: async () => {
+        let total = 0, moved = 0, last3 = null;
+        for (const f of i.files) {
+          toast("Reading " + f.name + "…");
+          await frame();
+          let tones;
+          try {
+            tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+          } catch (e) {
+            tones = [];
+          }
+          if (!tones.length) {
+            toast("No tones found in " + f.name);
+            continue;
+          }
+          const folder = await folderFor(f);
+          if (!folder) continue;
+          last3 = folder;
+          const items = tones.map(({ name, snd }) => ({ name, snd, src: "mine", folder }));
+          const n = await soundAddMany(items, (e) => e.src === "mine" && e.folder === folder);
+          total += n;
+          const hs = new Set(ZS.list.filter((e) => e.folder === folder && e.src === "mine").map((e) => e.h));
+          moved += await soundsRemoveWhere((e) => e.src === "factory" && !FW_BANK_NAMES[e.bank] && hs.has(e.h));
+          toast(
+            "Added " + n + " tones from " + f.name + " to " + folder + (n < tones.length ? " (" + (tones.length - n) + " were already there)" : "")
+          );
+        }
+        if (moved)
+          toast("Took " + moved + " of them out of the extra factory bank, where an earlier import had put them");
+        done2(total, last3 ? "u:" + last3 : null);
+      }
+    });
+    i.click();
+  }
   function factoryItems(done2) {
     const have = ZS.list.some((e) => e.src === "factory");
     return [
@@ -38859,6 +38945,7 @@ html.os-darwin.native-menu #menubar .mproj {
         label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
         action: () => factoryImport(done2)
       },
+      { label: "Expansion tones from .svz files, into a folder…", action: () => expansionImport(done2) },
       have ? {
         label: "Remove the factory tones",
         action: async () => {
@@ -39454,6 +39541,8 @@ html.os-darwin.native-menu #menubar .mproj {
     );
   }
   function rowMenu(e, x, y) {
+    const many = B.sel.has(e.id) && B.sel.size > 1 ? picked() : null;
+    if (many && many.length > 1) return manyMenu(many, x, y);
     const r = ratingOf(e.id), mine = e.src !== "starter";
     showMenu(x, y, [
       { label: "Load into this clip", action: () => load3(e) },
@@ -39496,6 +39585,25 @@ html.os-darwin.native-menu #menubar .mproj {
           if (await askDlg({ title: "Delete " + e.name + "?", ok: "Delete" })) await soundDelete(e.id), render();
         }
       } : null
+    ]);
+  }
+  function manyMenu(list2, x, y) {
+    const own = list2.filter(editable);
+    showMenu(x, y, [
+      { label: list2.length + " picked", disabled: true },
+      {
+        label: "Rating",
+        sub: [3, 2, 1, 0].map((n) => ({
+          label: n ? "★".repeat(n) + "☆".repeat(3 - n) : "No rating",
+          action: () => (list2.forEach((e) => setRating(e.id, n)), render())
+        }))
+      },
+      { label: "Tag", sub: tagItems(list2).filter(Boolean) },
+      ZE.kind === "tone" ? { label: "Category", sub: catItems(list2) } : null,
+      "-",
+      { label: "Copy to", sub: targets((f) => copyTo(list2, f)) },
+      own.length ? { label: "Move to", sub: targets((f) => moveTo(list2, f)) } : null,
+      own.length ? { label: "Delete…", danger: true, action: () => deleteMany(list2) } : null
     ]);
   }
   function more(e, x) {
@@ -39572,7 +39680,7 @@ html.os-darwin.native-menu #menubar .mproj {
           { label: "This clip", action: () => grab("clip") },
           { label: "All 16 clips of track " + devNum(ZE.t), action: () => grab("track") },
           { label: "Every clip of every track", action: () => grab("all") },
-          ...ZE.kind === "tone" ? ["-", ...factoryItems((n) => (n && (B.bank = "factory"), render()))] : []
+          ...ZE.kind === "tone" ? ["-", ...factoryItems((n, bank) => (n && (B.bank = bank || "factory"), render()))] : []
         ]
       ),
       menuBtn("Backup ▾", "Export or import your sound library", () => [
@@ -42829,6 +42937,1030 @@ html.os-darwin.native-menu #menubar .mproj {
     else if (!NOTE) noteOn(48, $('#labOv .labKey[data-n="48"]'));
   }
 
+  // src/zen/zc-synth-io.js
+  var KEY4 = "mc707-synth";
+  var SETUPS = "mc707-synth-setups";
+  var SY = {
+    slot: Array(8).fill(0),
+    level: Array(8).fill(100),
+    pan: Array(8).fill(64),
+    rev: Array(8).fill(0),
+    mute: Array(8).fill(false),
+    solo: Array(8).fill(false),
+    names: Array(8).fill(""),
+    /* the quick settings page open on each strip (null: closed) */
+    page: Array(8).fill(null),
+    thru: "",
+    /* where passed-through notes go: 'own' (each on its own channel) or a track number */
+    kbd: "own"
+  };
+  try {
+    const o = JSON.parse(localStorage.getItem(KEY4) || "{}");
+    for (const k2 of ["slot", "level", "pan", "rev", "names", "mute", "solo"])
+      if (Array.isArray(o[k2]) && o[k2].length === 8)
+        SY[k2] = o[k2].map(
+          (v, i) => k2 === "names" ? String(v || "") : k2 === "mute" || k2 === "solo" ? !!v : Number.isFinite(+v) ? +v : SY[k2][i]
+        );
+    if (Array.isArray(o.page) && o.page.length === 8) SY.page = o.page.map((x) => typeof x === "string" ? x : null);
+    if (typeof o.thru === "string") SY.thru = o.thru;
+    if (o.kbd === "own" || Number.isInteger(o.kbd) && o.kbd >= 0 && o.kbd < 8) SY.kbd = o.kbd;
+  } catch (e) {
+  }
+  function synthSave() {
+    try {
+      localStorage.setItem(KEY4, JSON.stringify(SY));
+    } catch (e) {
+    }
+  }
+  var tracks = () => DEVS[DEV].tracks;
+  var kindOf = (t) => S.tracks[t].type === "drum" ? "kit" : "tone";
+  var chOf = (t) => (S.tracks[t] && S.tracks[t].ch || t + 1) - 1;
+  var out = () => ZX.out || MIDI.out;
+  var cc = (t, n, v) => out() && out().send([176 | chOf(t), n, v]);
+  var slotOf2 = (t) => slotAddr(kindOf(t), t, SY.slot[t]);
+  var heardLevel = (t) => SY.mute[t] || SY.solo.some(Boolean) && !SY.solo[t] ? 0 : SY.level[t];
+  var sendLevels = () => tracks().forEach((t) => cc(t, 7, heardLevel(t)));
+  function setLevel(t, v) {
+    SY.level[t] = v;
+    cc(t, 7, heardLevel(t));
+    synthSave();
+  }
+  function setPan(t, v) {
+    SY.pan[t] = v;
+    cc(t, 10, v);
+    synthSave();
+  }
+  function setRev(t, v) {
+    SY.rev[t] = v;
+    cc(t, 91, v);
+    synthSave();
+  }
+  function setMute(t, on3) {
+    SY.mute[t] = on3;
+    sendLevels();
+    synthSave();
+  }
+  function setSolo(t, on3) {
+    SY.solo[t] = on3;
+    sendLevels();
+    synthSave();
+  }
+  function sendMix() {
+    for (const t of tracks()) {
+      cc(t, 7, heardLevel(t));
+      cc(t, 10, SY.pan[t]);
+      cc(t, 91, SY.rev[t]);
+    }
+  }
+  function panic2() {
+    for (const t of tracks()) {
+      cc(t, 64, 0);
+      cc(t, 123, 0);
+      cc(t, 120, 0);
+    }
+  }
+  async function setSlot(t, k2) {
+    SY.slot[t] = k2;
+    synthSave();
+    if (!await zxConnect()) return false;
+    zxWrite(trackSetAddr(t) + 4, [k2 === 16 ? 0 : 1]);
+    if (k2 < 16 && out()) out().send([192 | chOf(t), k2]);
+    return true;
+  }
+  var ascii = (d) => (d || []).map((x) => x >= 32 && x < 127 ? String.fromCharCode(x) : " ").join("").trim();
+  async function readNames(progress) {
+    if (!await zxConnect() || !ZX.inp) return false;
+    let any = false;
+    for (const t of tracks()) {
+      const src = await zxRead(trackSetAddr(t) + 4, 1);
+      if (src && src[0] === 0) SY.slot[t] = 16;
+      else if (src && SY.slot[t] === 16) SY.slot[t] = 0;
+      const d = await zxRead(slotOf2(t), 16);
+      if (d) {
+        SY.names[t] = ascii(d);
+        any = true;
+      }
+      if (progress) progress(t);
+    }
+    synthSave();
+    return any;
+  }
+  async function readTrackSound(t) {
+    if (!await zxConnect() || !ZX.inp) return null;
+    const snd = newSound(kindOf(t)), r = await readSound(snd, slotOf2(t));
+    return r.silent || !r.ok ? null : snd;
+  }
+  async function sendTrackSound(t, snd) {
+    if (!await zxConnect() || snd.kind !== kindOf(t)) return false;
+    await zeQuietly(() => sendSound(snd, slotOf2(t)), t);
+    rememberClip(snd, t, SY.slot[t]);
+    SY.names[t] = (snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim();
+    synthSave();
+    return true;
+  }
+  function resetMix(t) {
+    SY.mute[t] = SY.solo[t] = false;
+    setLevel(t, 100);
+    setPan(t, 64);
+    setRev(t, 0);
+  }
+  async function setupRead(progress) {
+    if (!await zxConnect() || !ZX.inp) return null;
+    const list2 = [];
+    for (const t of tracks()) {
+      const snd = newSound(kindOf(t)), r = await readSound(snd, slotOf2(t), null, (d, n) => progress && progress(t, d / n));
+      const e = { track: t, slot: SY.slot[t], level: SY.level[t], pan: SY.pan[t], rev: SY.rev[t], sound: null };
+      if (!r.silent && r.ok) {
+        e.sound = soundJSON(snd);
+        SY.names[t] = e.sound.name.trim();
+      }
+      list2.push(e);
+    }
+    synthSave();
+    if (!list2.some((e) => e.sound)) return null;
+    return { app: "mc707-toolbox", synth: 1, device: DEV, tracks: list2 };
+  }
+  async function setupSend(o, progress) {
+    if (!o || o.synth !== 1 || !Array.isArray(o.tracks)) throw new Error("not a synth setup");
+    if (!await zxConnect()) return false;
+    let n = 0;
+    for (const e of o.tracks) {
+      const t = e.track;
+      if (!tracks().includes(t)) continue;
+      const num4 = (v, lo, hi) => Number.isFinite(v) && Math.max(lo, Math.min(hi, v | 0));
+      if (num4(e.level, 0, 127) !== false) SY.level[t] = num4(e.level, 0, 127);
+      if (num4(e.pan, 0, 127) !== false) SY.pan[t] = num4(e.pan, 0, 127);
+      if (num4(e.rev, 0, 127) !== false) SY.rev[t] = num4(e.rev, 0, 127);
+      const snd = e.sound && soundFrom(e.sound);
+      if (!snd || snd.kind !== kindOf(t)) continue;
+      const k2 = Number.isInteger(e.slot) && e.slot >= 0 && e.slot <= 16 ? e.slot : 0;
+      await setSlot(t, k2);
+      await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k2)), t);
+      rememberClip(snd, t, k2);
+      SY.names[t] = (e.sound.name || "").trim();
+      n++;
+      if (progress) progress(t);
+    }
+    SY.mute.fill(false);
+    SY.solo.fill(false);
+    sendMix();
+    synthSave();
+    return n;
+  }
+  function setupsList() {
+    try {
+      const l = JSON.parse(localStorage.getItem(SETUPS) || "[]");
+      return Array.isArray(l) ? l.filter((x) => x && x.name && x.setup) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function setupKeep(name, o) {
+    const small = {
+      ...o,
+      tracks: o.tracks.map((e) => {
+        if (!e.sound) return e;
+        const s = soundFrom(e.sound);
+        return { ...e, sound: { ...e.sound, v: s ? diffOf(s) : e.sound.v } };
+      })
+    };
+    const l = setupsList().filter((x) => x.name !== name);
+    l.unshift({ name, at: Date.now(), setup: small });
+    try {
+      localStorage.setItem(SETUPS, JSON.stringify(l));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function setupForget(name) {
+    try {
+      localStorage.setItem(SETUPS, JSON.stringify(setupsList().filter((x) => x.name !== name)));
+    } catch (e) {
+    }
+  }
+  var thruIn = null;
+  var SYHOOK = { activity: null };
+  var pass = (e) => {
+    let d = e.data;
+    if (!d || d[0] < 128 || d[0] >= 240 || !MIDI.out) return;
+    if (SY.kbd !== "own" && tracks().includes(SY.kbd)) {
+      d = Uint8Array.from(d);
+      d[0] = d[0] & 240 | chOf(SY.kbd);
+    }
+    MIDI.out.send(d);
+    if ((d[0] & 240) === 144 && d[2] > 0 && SYHOOK.activity) {
+      const t = tracks().find((x) => chOf(x) === (d[0] & 15));
+      if (t != null) SYHOOK.activity(t);
+    }
+  };
+  var thruInputs = () => MIDI.access ? [...MIDI.access.inputs.values()].filter((p) => !/MC-?(707|101)/i.test(p.name)) : [];
+  function thruSet(id, on3 = true) {
+    if (thruIn) thruIn.removeEventListener("midimessage", pass);
+    thruIn = null;
+    SY.thru = id || "";
+    synthSave();
+    if (!on3 || !id || !MIDI.access) return;
+    const p = MIDI.access.inputs.get(id);
+    if (p) {
+      p.addEventListener("midimessage", pass);
+      thruIn = p;
+    }
+  }
+  function kbdSet(v) {
+    SY.kbd = v;
+    synthSave();
+  }
+
+  // src/zen/zc-synth-quick.js
+  var PAGES = {
+    tone: [
+      [
+        "tone",
+        "Tone",
+        [
+          ["CMN.LEVEL", "Level"],
+          ["CMN.OCTAVE", "Octave"],
+          ["CMN.MONO_POLY", "Mono"],
+          ["CMN.PORTA_SW", "Glide"],
+          ["CMN.PORTA_TIME", "Glide time"],
+          ["CMN.ANALOG_FEEL", "Analog feel"]
+        ]
+      ],
+      [
+        "filter",
+        "Filter",
+        [
+          ["*PTL.CUTOFF", "Cutoff"],
+          ["*PTL.RESO", "Resonance"],
+          ["*FENV.DEPTH", "Env depth"],
+          ["*PTL.CUTOFF_KF", "Key follow"]
+        ]
+      ],
+      [
+        "env",
+        "Envelope",
+        [
+          ["*AENV.T1", "Attack"],
+          ["*AENV.T2", "Decay"],
+          ["*AENV.L3", "Sustain"],
+          ["*AENV.T4", "Release"]
+        ]
+      ],
+      [
+        "move",
+        "Movement",
+        [
+          ["*LFO.LFO1_RATE", "LFO rate"],
+          ["*LFO.LFO1_PIT_DEPTH", "Vibrato"],
+          ["*LFO.LFO1_TVF_DEPTH", "Wah"],
+          ["*LFO.LFO1_TVA_DEPTH", "Tremolo"]
+        ]
+      ],
+      [
+        "fx",
+        "Effect",
+        [
+          ["MFX.mfxType", "Effect"],
+          ["MFX.mfxSwitch", "Effect on"],
+          ["MFX.choSend", "Chorus send"],
+          ["MFX.revSend", "Reverb send"]
+        ]
+      ]
+    ],
+    kit: [
+      ["tone", "Kit", [["KCMN.LEVEL", "Kit level"]]],
+      [
+        "fx",
+        "Effect",
+        [
+          ["MFX.mfxType", "Effect"],
+          ["MFX.mfxSwitch", "Effect on"],
+          ["MFX.choSend", "Chorus send"],
+          ["MFX.revSend", "Reverb send"]
+        ]
+      ]
+    ]
+  };
+  var quickPages = (t) => PAGES[kindOf(t)];
+  var PSW = (i) => "PMT.PMT" + (i + 1) + "_PTL_SW";
+  var keysOf = (ctlKey2) => {
+    const m = /^\*(\w+)\.(\w+)$/.exec(ctlKey2);
+    return m ? [0, 1, 2, 3].map((i) => m[1] + i + "." + m[2]) : [ctlKey2];
+  };
+  var QS = {};
+  var cur = (t) => {
+    const q = QS[t];
+    return q && q.slot === SY.slot[t] && q.snd.kind === kindOf(t) ? q : QS[t] = { slot: SY.slot[t], snd: newSound(kindOf(t)), has: /* @__PURE__ */ new Set() };
+  };
+  var quickForget = (t) => delete QS[t];
+  function readPage(t, page) {
+    const q = cur(t), k2 = page[0];
+    q.busy = q.busy || {};
+    if (!q.busy[k2]) q.busy[k2] = readNow(t, page).finally(() => delete q.busy[k2]);
+    return q.busy[k2];
+  }
+  async function readNow(t, page) {
+    const q = cur(t), want = new Set(page[2].flatMap(([k2]) => keysOf(k2)));
+    if (kindOf(t) === "tone") for (let i = 0; i < 4; i++) want.add(PSW(i));
+    for (const k2 of [...want]) if (q.has.has(k2)) want.delete(k2);
+    if (!want.size) return true;
+    if (!await zxConnect() || !ZX.inp) return false;
+    const r = await readSound(q.snd, slotOf2(t), want);
+    if (r.silent) return false;
+    for (const k2 of want) if (q.snd.known.has(k2)) q.has.add(k2);
+    return true;
+  }
+  var playing = (t, q) => kindOf(t) === "kit" ? [0] : [0, 1, 2, 3].filter((i) => !q.has.has(PSW(i)) || q.snd.v[PSW(i)] === 1);
+  var PEND = {};
+  function send(t, keys2) {
+    const q = cur(t);
+    const p = PEND[t] = PEND[t] || { keys: /* @__PURE__ */ new Set(), timer: 0 };
+    keys2.forEach((k2) => p.keys.add(k2));
+    clearTimeout(p.timer);
+    p.timer = setTimeout(() => {
+      const ks = new Set(p.keys);
+      p.keys.clear();
+      sendSound(q.snd, slotOf2(t), ks);
+      const mem = clipMemory(kindOf(t), t, SY.slot[t]);
+      if (mem) {
+        ks.forEach((k2) => mem.v[k2] = q.snd.v[k2]);
+        rememberClip(mem, t, SY.slot[t]);
+      }
+    }, 30);
+  }
+  function control(t, q, [ctlKey2, label2]) {
+    const kind = kindOf(t), keys2 = keysOf(ctlKey2), multi = keys2.length > 1, on3 = multi ? playing(t, q) : [0], ref = keys2[on3[0] ?? 0], p = paramOf(kind, ref)[0], known2 = keys2.every((k2, i) => !on3.includes(i) || q.has.has(k2));
+    const v = q.snd.v[ref];
+    const out2 = el("b", {}, known2 ? valText(kind, ref, v) : "–");
+    const apply4 = (x) => {
+      const d = x - q.snd.v[ref], changed = [];
+      keys2.forEach((k2, i) => {
+        if (multi && !on3.includes(i)) return;
+        const [pp] = paramOf(kind, k2);
+        const nv = multi ? Math.max(pp[3], Math.min(pp[4], q.snd.v[k2] + d)) : x;
+        if (nv !== q.snd.v[k2]) q.snd.v[k2] = nv, changed.push(k2);
+      });
+      if (changed.length) send(t, changed);
+      out2.textContent = valText(kind, ref, q.snd.v[ref]);
+    };
+    const title = (p[7] || label2) + (multi ? ". Moves every playing partial by the same amount." : "");
+    if (p[3] === 0 && p[4] === 1)
+      return el(
+        "label",
+        { class: "syQ sw", title },
+        el("span", {}, label2),
+        el("input", {
+          type: "checkbox",
+          checked: v === 1,
+          disabled: !known2,
+          onchange: (e) => apply4(e.target.checked ? 1 : 0)
+        })
+      );
+    if (ref === "MFX.mfxType")
+      return el("label", { class: "syQ", title }, el("span", {}, label2), el("b", {}, mfxNames()[v] || "–"));
+    const paint2 = (inp2, x) => inp2.style.setProperty("--hi", (x - p[3]) / (p[4] - p[3]) * 100 + "%");
+    const inp = el("input", {
+      type: "range",
+      class: "syFader",
+      min: p[3],
+      max: p[4],
+      value: v,
+      disabled: !known2,
+      "aria-label": label2,
+      oninput: (e) => (apply4(+e.target.value), paint2(e.target, +e.target.value)),
+      ondblclick: (e) => {
+        e.target.value = p[5];
+        e.target.dispatchEvent(new Event("input"));
+      }
+    });
+    inp.style.setProperty("--lo", "0%");
+    paint2(inp, v);
+    return el(
+      "label",
+      { class: "syRange syQ", title: title + " Double-click for the start value." },
+      el("span", {}, label2),
+      inp,
+      out2
+    );
+  }
+  function quickPanel(t) {
+    const pages = quickPages(t), page = pages.find((p) => p[0] === SY.page[t]);
+    const body = el("div", { class: "syQBody" });
+    const menu = el(
+      "select",
+      {
+        class: "syQMenu",
+        "aria-label": "Sound settings for this track",
+        title: "Change this track’s sound here: pick a page of settings",
+        onchange: (e) => {
+          SY.page[t] = e.target.value || null;
+          synthSave();
+          fill2();
+        }
+      },
+      el("option", { value: "" }, "Sound settings…"),
+      ...pages.map(([id, l]) => el("option", { value: id, selected: page && page[0] === id }, l))
+    );
+    async function fill2() {
+      body.textContent = "";
+      const pg = pages.find((p) => p[0] === SY.page[t]);
+      if (!pg) return;
+      body.append(el("div", { class: "syQNote" }, "Reading from the " + DEVS[DEV].name + "…"));
+      const ok = await readPage(t, pg);
+      if (SY.page[t] !== pg[0]) return;
+      body.textContent = "";
+      if (!ok)
+        body.append(
+          el(
+            "div",
+            { class: "syQNote" },
+            "The " + DEVS[DEV].name + " did not answer. Connect it by USB to change the sound here."
+          )
+        );
+      const q = cur(t);
+      pg[2].forEach((c) => body.append(control(t, q, c)));
+    }
+    if (page) fill2();
+    return el("div", { class: "syQuick" }, menu, body);
+  }
+
+  // src/zen/zc-synth-strip.js
+  var slotName = (k2) => k2 === 16 ? "Track sound" : "Clip " + (k2 + 1);
+  function playBtn(t) {
+    const n = kindOf(t) === "kit" ? 36 : S.tracks[t].role === "bass" || /bass|\bbs\b|sub/i.test(SY.names[t]) ? 36 : 60;
+    return el(
+      "button",
+      {
+        type: "button",
+        class: "btn sm syPlay",
+        title: "Hold to play a note",
+        onpointerdown: (e) => {
+          e.preventDefault();
+          if (!MIDI.out) return toast("No MIDI output");
+          MIDI.out.send([144 | chOf(t), n, 100]);
+          flash(t);
+          const up = () => {
+            if (MIDI.out) MIDI.out.send([128 | chOf(t), n, 0]);
+            for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
+          };
+          for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
+        }
+      },
+      "▶"
+    );
+  }
+  function flash(t) {
+    const d = document.querySelector("#syAct" + t);
+    if (!d) return;
+    d.classList.add("on");
+    clearTimeout(d._t);
+    d._t = setTimeout(() => d.classList.remove("on"), 120);
+  }
+  var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
+  function fader(label2, v, set2, title, t, centre) {
+    const out2 = el("b", {}, centre ? panText(v) : String(v));
+    const paint2 = (inp2, x) => {
+      const p = x / 127 * 100;
+      inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
+      inp2.style.setProperty("--hi", (centre ? Math.max(p, 50) : p) + "%");
+    };
+    const inp = el("input", {
+      type: "range",
+      min: 0,
+      max: 127,
+      value: v,
+      class: "syFader" + (centre ? " centre" : ""),
+      "aria-label": label2 + ", track " + devNum(t),
+      oninput: (e) => {
+        const x = +e.target.value;
+        set2(x);
+        paint2(e.target, x);
+        out2.textContent = centre ? panText(x) : String(x);
+      },
+      /* double-click back to the middle (pan) or the default level */
+      ondblclick: (e) => {
+        const x = centre ? 64 : label2 === "Level" ? 100 : 0;
+        e.target.value = x;
+        e.target.dispatchEvent(new Event("input"));
+      }
+    });
+    paint2(inp, v);
+    return el("label", { class: "syRange", title: title + " · double-click to reset" }, el("span", {}, label2), inp, out2);
+  }
+  function stripMenu(t, act, x, y) {
+    const others = tracks().filter((u) => u !== t && kindOf(u) === kindOf(t));
+    const withSound = async (why, fn) => {
+      toast(why);
+      const snd = await readTrackSound(t);
+      if (!snd) return toast("The " + DEVS[DEV].name + " did not answer");
+      await fn(snd);
+    };
+    showMenu(x, y, [
+      { label: "Browse sounds…", action: () => act.open(t, true) },
+      { label: "Edit in the ZenCore editor…", action: () => act.open(t, false) },
+      "-",
+      { label: "Mute", checked: SY.mute[t], action: () => (setMute(t, !SY.mute[t]), act.render()) },
+      { label: "Solo", checked: SY.solo[t], action: () => (setSolo(t, !SY.solo[t]), act.render()) },
+      { label: "Reset level and pan", action: () => (resetMix(t), act.render()) },
+      { label: "Play it from the keyboard (Notes in)", checked: SY.kbd === t, action: () => (kbdSet(t), act.render()) },
+      "-",
+      {
+        label: "Save this sound to the Sound library",
+        action: () => withSound("Reading the sound…", async (snd) => {
+          await soundsLoad();
+          const e = await soundAdd(snd, { src: "mine", mine: true });
+          toast(e ? "Saved " + e.name + " to My sounds" : "It is already in My sounds");
+        })
+      },
+      others.length ? {
+        label: "Copy this sound to",
+        sub: others.map((u) => ({
+          label: "Track " + devNum(u) + (SY.names[u] ? " (" + SY.names[u] + ")" : ""),
+          action: () => withSound("Copying…", async (snd) => {
+            quickForget(u);
+            if (await sendTrackSound(u, snd)) toast("Copied to track " + devNum(u));
+            act.render();
+          })
+        }))
+      } : null,
+      { label: "Read its name again", action: () => act.refresh() }
+    ]);
+  }
+  function strip(t, act) {
+    const dn2 = DEVS[DEV].name, target = SY.kbd === t, quiet = heardLevel(t) === 0;
+    const slot2 = el(
+      "select",
+      {
+        class: "sySlot",
+        "aria-label": "Which sound track " + devNum(t) + " plays",
+        title: "The sound the DAW plays on this track: one of its clips (selected on the " + dn2 + ") or the track’s own sound",
+        onchange: async (e) => {
+          const k2 = +e.target.value;
+          quickForget(t);
+          if (await setSlot(t, k2)) toast("Track " + devNum(t) + " plays " + slotName(k2).toLowerCase());
+          act.refresh();
+        }
+      },
+      ...[...Array.from({ length: 16 }, (_, k2) => k2), 16].map(
+        (k2) => el("option", { value: k2, selected: SY.slot[t] === k2 }, slotName(k2))
+      )
+    );
+    const toggle = (lab, cls, on3, fn, title) => el(
+      "button",
+      {
+        type: "button",
+        class: "syTg " + cls + (on3 ? " on" : ""),
+        "aria-pressed": String(on3),
+        title,
+        onclick: () => (fn(!on3), act.render())
+      },
+      lab
+    );
+    return el(
+      "section",
+      {
+        class: "syStrip" + (quiet ? " quiet" : "") + (target ? " target" : "") + (SY.solo[t] ? " solo" : ""),
+        style: "--tc:" + (TRACK_COLORS[t] || "#39ff7a"),
+        "aria-label": "Track " + devNum(t),
+        title: "Right-click for more: copy the sound to another track, save it to the library, reset the mix",
+        oncontextmenu: (e) => {
+          if (e.target.matches("input, select")) return;
+          e.preventDefault();
+          stripMenu(t, act, e.clientX, e.clientY);
+        }
+      },
+      el(
+        "div",
+        { class: "syHead" },
+        el("span", { class: "syNum" }, String(devNum(t))),
+        el("span", { class: "syType" }, (kindOf(t) === "kit" ? "Drum kit" : "Tone") + ", channel " + (chOf(t) + 1)),
+        el("i", { class: "syAct", id: "syAct" + t, title: "Lights when notes arrive" }),
+        toggle("M", "mute", SY.mute[t], (v) => setMute(t, v), "Mute"),
+        toggle("S", "solo", SY.solo[t], (v) => setSolo(t, v), "Solo: hear only the soloed tracks")
+      ),
+      el(
+        "div",
+        { class: "syLcd" },
+        el(
+          "button",
+          {
+            type: "button",
+            class: "syName" + (SY.names[t] ? "" : " none"),
+            title: SY.kbd === "own" ? SY.names[t] || "No sound read yet" : "Play this track from the keyboard",
+            onclick: () => {
+              if (SY.kbd !== "own") kbdSet(t), act.render();
+            }
+          },
+          SY.names[t] || "No sound read"
+        ),
+        el(
+          "div",
+          { class: "syLcdRow" },
+          slot2,
+          target ? el("span", { class: "syKbd", title: "Notes in play this track" }, "⌨ keyboard") : null
+        )
+      ),
+      el(
+        "div",
+        { class: "syBtns" },
+        /* tones only: a kit's drum sounds can't be changed over MIDI */
+        S.tracks[t].type === "drum" ? null : el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm syBrowse",
+            onclick: () => act.open(t, true),
+            title: "Pick a sound from the Sound browser"
+          },
+          "Browse"
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            onclick: () => act.open(t, false),
+            title: "Edit every parameter in the ZenCore editor"
+          },
+          "Edit"
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm syExpBtn" + (act.exp && act.exp() === t ? " on" : ""),
+            onclick: () => act.expand(t),
+            title: act.exp && act.exp() === t ? "Back to all eight strips" : "Expand this track: the others shrink to the side and its ZenCore editor fills the screen"
+          },
+          act.exp && act.exp() === t ? "⤡ Collapse" : "⤢ Expand"
+        ),
+        playBtn(t)
+      ),
+      quickPanel(t),
+      el(
+        "div",
+        { class: "syMix" },
+        fader("Level", SY.level[t], (v) => setLevel(t, v), "Track level (MIDI volume, CC 7)", t),
+        /* no reverb send here: the MC-707's main effects only reach its MIX output, not a track's own */
+        fader("Pan", SY.pan[t], (v) => setPan(t, v), "Pan (CC 10)", t, true)
+      )
+    );
+  }
+
+  // src/zen/zc-synth.js
+  var busy2 = "";
+  var exp = null;
+  var dock = el("div", { class: "syDock" });
+  var docked = () => !!$("#zcOv") && dock.contains($("#zcOv"));
+  var dn = () => DEVS[DEV].name;
+  var VIEW_KEY = "mc707-synth-view";
+  var VIEW = { open: "last", last: "strips", t: 0 };
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEW_KEY) || "null");
+    if (v && ["last", "strips", "expanded"].includes(v.open)) Object.assign(VIEW, v);
+  } catch (e) {
+  }
+  var viewSave = () => {
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify(VIEW));
+    } catch (e) {
+    }
+  };
+  var synthViewOpen = () => VIEW.open;
+  function synthViewSet(v) {
+    VIEW.open = v;
+    viewSave();
+  }
+  function synthEnter(on3) {
+    if (!on3 && docked()) zenClose();
+    if (!on3) exp = null;
+    thruSet(SY.thru, on3);
+    SYHOOK.activity = on3 ? flash : null;
+    if (on3) {
+      synthRender();
+      const want = VIEW.open === "expanded" || VIEW.open === "last" && VIEW.last === "expanded";
+      if (want && exp == null) expand(tracks().includes(VIEW.t) ? VIEW.t : tracks()[0]);
+      if (!MIDI.access)
+        connectMidi().then(() => {
+          if (document.body.dataset.mode !== "synth") return;
+          thruSet(SY.thru, true);
+          synthRender();
+        });
+      if (!SY.names.some(Boolean)) refresh(true);
+    }
+  }
+  async function refresh(quiet) {
+    busy2 = "Reading the sounds…";
+    synthRender();
+    const ok = await readNames();
+    busy2 = "";
+    synthRender();
+    if (!ok && !quiet) toast("The " + dn() + " did not answer. Connect it by USB and allow MIDI with SysEx.");
+  }
+  var edT = 0;
+  var wait2 = 0;
+  function openEditor(t, browse) {
+    if (exp != null) return expand(t, browse);
+    edT = t;
+    zenOpen(t, SY.slot[t]);
+    if (browse) setTimeout(browserOpen, 0);
+    watch();
+  }
+  function expand(t, browse) {
+    if (docked() && edT !== t) quickForget(edT);
+    exp = t;
+    edT = t;
+    VIEW.last = "expanded";
+    VIEW.t = t;
+    viewSave();
+    synthRender();
+    zenOpen(t, SY.slot[t], dock);
+    if (browse) setTimeout(browserOpen, 0);
+    watch();
+  }
+  function collapse() {
+    VIEW.last = "strips";
+    viewSave();
+    if (docked()) zenClose();
+    else {
+      exp = null;
+      synthRender();
+    }
+  }
+  function watch() {
+    clearInterval(wait2);
+    wait2 = setInterval(() => {
+      if ($("#zcOv")) {
+        if (exp != null && ZE.t !== exp && tracks().includes(ZE.t)) {
+          quickForget(edT);
+          exp = edT = VIEW.t = ZE.t;
+          viewSave();
+          synthRender();
+        }
+        return;
+      }
+      clearInterval(wait2);
+      quickForget(edT);
+      if (exp != null && document.body.dataset.mode === "synth") {
+        VIEW.last = "strips";
+        viewSave();
+      }
+      exp = null;
+      refresh(true);
+    }, 400);
+  }
+  async function readSetup() {
+    busy2 = "Reading all " + tracks().length + " sounds…";
+    synthRender();
+    const o = await setupRead((t, f) => {
+      busy2 = "Reading track " + devNum(t) + "… " + Math.round(f * 100) + "%";
+      const s = $("#syBusy");
+      if (s) s.textContent = busy2;
+    });
+    busy2 = "";
+    synthRender();
+    if (!o) toast("The " + dn() + " did not answer, so the sounds could not be read");
+    return o;
+  }
+  async function saveSetup() {
+    const o = await readSetup();
+    if (o) hooks.saveFile("mc707-synth-setup.json", JSON.stringify(o));
+  }
+  async function keepSetup() {
+    const name = await askDlg({
+      title: "Keep this setup in the browser",
+      input: true,
+      def: "Setup " + (setupsList().length + 1),
+      ok: "Keep"
+    });
+    if (!name || !name.trim()) return;
+    const o = await readSetup();
+    if (o) toast(setupKeep(name.trim(), o) ? "Kept " + name.trim() : "The browser would not store it (storage full?)");
+  }
+  async function sendSetup(o) {
+    busy2 = "Sending the setup…";
+    synthRender();
+    try {
+      for (const k2 in QS) delete QS[k2];
+      const n = await setupSend(o, (t) => {
+        const s = $("#syBusy");
+        if (s) s.textContent = "Sent track " + devNum(t);
+      });
+      toast(n ? "Sent " + n + " sounds to the " + dn() : "Nothing in that setup fits these tracks");
+    } catch (e) {
+      toast("That is not a Synth mode setup");
+    }
+    busy2 = "";
+    synthRender();
+  }
+  function setupsMenu(e) {
+    const r = e.currentTarget.getBoundingClientRect(), kept = setupsList();
+    showMenu(r.left, r.bottom + 4, [
+      { label: "Save to a file…", action: saveSetup },
+      { label: "Open a file…", action: openSetup },
+      { label: "Keep in this browser…", action: keepSetup },
+      kept.length ? "-" : null,
+      ...kept.map((k2) => ({
+        label: k2.name,
+        sub: [
+          { label: "Send to the " + dn(), action: () => sendSetup(k2.setup) },
+          { label: "Forget", action: () => (setupForget(k2.name), toast("Forgot " + k2.name)) }
+        ]
+      }))
+    ]);
+  }
+  function openSetup() {
+    const i = el("input", {
+      type: "file",
+      accept: ".json,application/json",
+      onchange: async () => {
+        let o = null;
+        try {
+          o = JSON.parse(await i.files[0].text());
+        } catch (e) {
+          return toast("That is not a Synth mode setup file from this app");
+        }
+        sendSetup(o);
+      }
+    });
+    i.click();
+  }
+  function synthAct(what) {
+    if (what === "read") refresh(false);
+    else if (what === "save") saveSetup();
+    else if (what === "open") openSetup();
+    else if (what === "keep") keepSetup();
+    else if (what === "panic") panic2(), toast("All notes off");
+    else if (what === "help") {
+      const d = $("#synth .syHelp");
+      if (d) {
+        d.open = true;
+        d.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }
+  var ACT = {
+    open: (t, b) => openEditor(t, b),
+    refresh: () => refresh(true),
+    render: () => synthRender(),
+    exp: () => exp,
+    expand: (t) => exp === t ? collapse() : expand(t)
+  };
+  var mini = (t) => el(
+    "button",
+    {
+      type: "button",
+      class: "syMini" + (SY.mute[t] ? " muted" : "") + (SY.solo[t] ? " solo" : ""),
+      style: "--tc:" + (TRACK_COLORS[t] || "#39ff7a"),
+      title: "Expand track " + devNum(t) + (SY.names[t] ? ", " + SY.names[t] : "") + " and edit it here",
+      onclick: () => expand(t)
+    },
+    el("span", { class: "syNum" }, String(devNum(t))),
+    el("i", { class: "syAct", id: "syAct" + t }),
+    el("span", { class: "syMiniName" }, SY.names[t] || "—")
+  );
+  function synthSoundSent(t, k2, snd) {
+    if (!tracks().includes(t) || SY.slot[t] !== k2) return;
+    SY.names[t] = (snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim();
+    quickForget(t);
+    synthSave();
+    if (document.body.dataset.mode === "synth") synthRender();
+  }
+  function synthRender() {
+    const box = $("#synth");
+    if (!box) return;
+    box.textContent = "";
+    const thru = el(
+      "select",
+      {
+        "aria-label": "Pass notes through from",
+        title: "Notes from this input go to the " + dn() + ": a keyboard, or the DAW through a virtual MIDI port (loopMIDI on Windows) when the DAW cannot share the " + dn() + "’s port",
+        onchange: (e) => thruSet(e.target.value, true)
+      },
+      el("option", { value: "" }, "Off"),
+      ...thruInputs().map((p) => el("option", { value: p.id, selected: SY.thru === p.id }, p.name))
+    );
+    const kbd = el(
+      "select",
+      {
+        "aria-label": "Where passed-through notes go",
+        title: "Each on its own channel (a DAW), or all to one track (a keyboard). Click a strip’s sound name to move it there.",
+        onchange: (e) => (kbdSet(e.target.value === "own" ? "own" : +e.target.value), synthRender())
+      },
+      el("option", { value: "own", selected: SY.kbd === "own" }, "Each track’s channel"),
+      ...tracks().map((t) => el("option", { value: t, selected: SY.kbd === t }, "Track " + devNum(t)))
+    );
+    const on3 = ZX.state === "ready";
+    const steps2 = [
+      [
+        "Audio",
+        "On the " + dn() + ", set USB audio to send the tracks separately (see its manual), and install Roland’s driver on Windows. Your DAW then sees one input per track."
+      ],
+      [
+        "Tracks",
+        "Make one MIDI track per " + dn() + " track in the DAW, sending on the channel shown on its strip, and one audio track recording each input."
+      ],
+      [
+        "MIDI port",
+        "Windows lets one program use the " + dn() + "’s MIDI port at a time. Let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share the port. Macs share it anyway."
+      ],
+      [
+        "Saving",
+        "Setups › Save to a file keeps all eight sounds and the mix next to your DAW project. Saving the project on the " + dn() + " keeps them too."
+      ]
+    ];
+    box.append(
+      el(
+        "header",
+        { class: "syTop" },
+        el(
+          "div",
+          { class: "syTitle" },
+          el("h2", {}, "Synth Mode"),
+          el(
+            "p",
+            {},
+            "Your DAW plays the " + dn() + "’s " + tracks().length + " tracks and records each one’s audio over USB. Pick, edit and mix the sounds here."
+          )
+        ),
+        el(
+          "div",
+          {
+            class: "syLink" + (on3 ? " on" : ""),
+            title: on3 ? "Reading and writing sounds over SysEx" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
+          },
+          el("i"),
+          on3 ? dn() + " connected" : dn() + " not connected"
+        )
+      ),
+      el(
+        "div",
+        { class: "syBar" },
+        el(
+          "div",
+          { class: "syActs" },
+          el(
+            "button",
+            { type: "button", class: "btn", onclick: () => refresh(false), title: "Read every track’s sound name again" },
+            "Read sounds"
+          ),
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              onclick: setupsMenu,
+              title: "Save, open or keep all eight sounds with the mix"
+            },
+            "Setups ▾"
+          ),
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn syPanic",
+              onclick: () => (panic2(), toast("All notes off")),
+              title: "Stop every note on every track"
+            },
+            "Panic"
+          )
+        ),
+        el(
+          "div",
+          { class: "syIn", title: "Notes from another input played on the " + dn() },
+          el("span", {}, "Notes in"),
+          thru,
+          el("span", { class: "syArrow", "aria-hidden": "true" }, "→"),
+          kbd
+        ),
+        el("span", { id: "syBusy", class: "syBusy" }, busy2)
+      ),
+      exp != null && tracks().includes(exp) ? el(
+        "div",
+        { class: "syExp" },
+        el(
+          "nav",
+          { class: "syRail", "aria-label": "The other tracks" },
+          ...tracks().map((t) => t === exp ? null : mini(t)),
+          el(
+            "button",
+            { type: "button", class: "btn sm syAll", onclick: collapse, title: "Back to all eight strips (Esc)" },
+            "All tracks"
+          )
+        ),
+        strip(exp, ACT),
+        dock
+      ) : el("div", { class: "syGrid" }, ...tracks().map((t) => strip(t, ACT))),
+      el(
+        "details",
+        { class: "syHelp" },
+        el("summary", {}, "Setting up your DAW"),
+        el("ol", {}, ...steps2.map(([h, t]) => el("li", {}, el("b", {}, h), el("span", {}, t))))
+      )
+    );
+  }
+
   // src/zen/zc-actions.js
   var menuAt = (e, items) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -42918,6 +44050,7 @@ html.os-darwin.native-menu #menubar .mproj {
             if (!await zxConnect()) return toast("Connect the " + DEVS[DEV].name + " first");
             sendSound(ZE.snd, slotAddr(ZE.kind, t, k2));
             rememberClip(copySound(ZE.snd), t, k2);
+            synthSoundSent(t, k2, ZE.snd);
             toast("Copied to track " + devNum(t) + ", " + targetName(k2));
           }
         }))
@@ -42991,7 +44124,7 @@ html.os-darwin.native-menu #menubar .mproj {
           title: "Experiment: shape this tone by mixing ingredients into a slime, and learn the sound design behind each one"
         }) : null,
         btn2("File ▾", (e) => menuAt(e, fileMenu())),
-        ZE.kind === "tone" ? btn2("Partial ▾", (e) => menuAt(e, partMenu())) : null,
+        ZE.kind === "tone" && PART_TABS.includes(ZE.tab) ? btn2("Partial ▾", (e) => menuAt(e, partMenu())) : null,
         btn2("Copy to ▾", (e) => menuAt(e, copyMenu()), { title: "Send this sound to another clip" }),
         btn2("Done", () => zenClose(), { on: true })
       )
@@ -43119,17 +44252,17 @@ html.os-darwin.native-menu #menubar .mproj {
     const c = S.tracks[t] && S.tracks[t].cc && S.tracks[t].cc[11];
     return Number.isFinite(c) && c > 0 ? c : 127;
   };
-  var chOf = (t) => (S.tracks[t] && S.tracks[t].ch || t + 1) - 1;
+  var chOf2 = (t) => (S.tracks[t] && S.tracks[t].ch || t + 1) - 1;
   var QUIET = /* @__PURE__ */ new Map();
   var pause4 = (ms) => new Promise((r) => setTimeout(r, ms));
   function zeUnmute(t) {
-    const out2 = ZX.out || MIDI.out, ch = chOf(t);
+    const out2 = ZX.out || MIDI.out, ch = chOf2(t);
     QUIET.delete(ch);
     if (out2) out2.send([176 | ch, 11, exprBack(t)]);
   }
   var WHOLE_SOUND = 3e4;
   async function zeQuietly(send2, t = ZE.t, after2 = null, cap = 1500) {
-    const ch = chOf(t), out2 = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
+    const ch = chOf2(t), out2 = ZX.out || MIDI.out, q = QUIET.get(ch) || { n: 0, t };
     if (!q.n++ && out2) out2.send([176 | ch, 11, 0]);
     QUIET.set(ch, q);
     try {
@@ -43149,7 +44282,7 @@ html.os-darwin.native-menu #menubar .mproj {
   async function reselect(t, k2) {
     const out2 = ZX.out || MIDI.out;
     if (!out2 || k2 > 15) return;
-    const ch = chOf(t);
+    const ch = chOf2(t);
     try {
       out2.send([192 | ch, k2 === 15 ? 14 : k2 + 1]);
       await pause4(60);
@@ -43454,16 +44587,16 @@ html.os-darwin.native-menu #menubar .mproj {
   var uncheck = (t, k2) => delete CK.res[t + ":" + k2];
 
   // src/scene/write.js
-  var KEY4 = "mc707-scene-write";
+  var KEY5 = "mc707-scene-write";
   var WO = { replace: true, tones: true, tempo: true, names: true, auto: false };
   try {
-    Object.assign(WO, JSON.parse(localStorage.getItem(KEY4) || "{}"));
+    Object.assign(WO, JSON.parse(localStorage.getItem(KEY5) || "{}"));
   } catch (e) {
   }
   function setWO(k2, v) {
     WO[k2] = v;
     try {
-      localStorage.setItem(KEY4, JSON.stringify(WO));
+      localStorage.setItem(KEY5, JSON.stringify(WO));
     } catch (e) {
     }
     SC.draw();
@@ -44471,7 +45604,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/services/mixer-strip.js
-  var panText = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
+  var panText2 = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
   var DEF2 = { lvl: 100, pan: 64, rev: 0, cho: 0 };
   var STRIP_KNOBS = [
     [
@@ -44485,7 +45618,7 @@ html.os-darwin.native-menu #menubar .mproj {
     ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83): the slider turns it, the name above chooses what it controls"]
   ];
   function knob2(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false, assign = null) {
-    const centre = key === "pan", out2 = el("b", {}, centre ? panText(v) : String(v));
+    const centre = key === "pan", out2 = el("b", {}, centre ? panText2(v) : String(v));
     const paint2 = (inp2, x) => {
       const p = x / 127 * 100;
       inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
@@ -44502,7 +45635,7 @@ html.os-darwin.native-menu #menubar .mproj {
       oninput: (e) => {
         const x = +e.target.value;
         paint2(e.target, x);
-        out2.textContent = centre ? panText(x) : String(x);
+        out2.textContent = centre ? panText2(x) : String(x);
         row2.classList.remove("unset");
         o.set(key, x);
       },
@@ -44919,7 +46052,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (await hooks.knobs.read(tracks3, true).catch(() => false)) redraw();
     else knobsRead = false;
   }
-  var busy2 = false;
+  var busy3 = false;
   function masterFor(redraw) {
     const F = hooks.fx;
     if (!F) return null;
@@ -44930,7 +46063,7 @@ html.os-darwin.native-menu #menubar .mproj {
         rev: F.REV_TYPES,
         cho: F.CHO_TYPES,
         m: F.now.master,
-        busy: busy2,
+        busy: busy3,
         lvl: T3 ? T3.now.level : null,
         open: PANEL.sec
       },
@@ -44941,11 +46074,11 @@ html.os-darwin.native-menu #menubar .mproj {
             if (T3 && !await T3.set("level", 0, v).catch(() => false)) toast(NOT);
             return;
           }
-          busy2 = true;
+          busy3 = true;
           const run2 = F.setMaster(what, v);
           if (!/Level|Send/.test(what)) redraw();
           const ok = await run2.catch(() => false);
-          busy2 = false;
+          busy3 = false;
           if (!/Level|Send/.test(what)) redraw();
           if (!ok) toast(NOT);
           if (ok && T3) {
@@ -44994,7 +46127,7 @@ html.os-darwin.native-menu #menubar .mproj {
     fn();
     renderArr();
     scheduleSave();
-    refresh();
+    refresh2();
   }
   function resetTrack(t) {
     const tr = S.tracks[t];
@@ -45035,7 +46168,7 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     vel.style.setProperty("--lo", "0%");
     vel.style.setProperty("--hi", tr.vol / 127 * 100 + "%");
-    const [fx, onFx] = trackFxFor(t, refresh);
+    const [fx, onFx] = trackFxFor(t, refresh2);
     return mixStrip(
       {
         fx,
@@ -45051,7 +46184,7 @@ html.os-darwin.native-menu #menubar .mproj {
         solo: tr.solo,
         knobs: KNOBS2.map((key, n) => ({
           key,
-          assign: knobAssignFor(t, n, refresh),
+          assign: knobAssignFor(t, n, refresh2),
           v: valOf(t, key),
           def: DEF3[key],
           unset: !isSet(t, key)
@@ -45149,7 +46282,7 @@ html.os-darwin.native-menu #menubar .mproj {
           ),
           h.winBtns()
         ),
-        el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]), masterFor(refresh))
+        el("div", { class: "mxStrips" }, ...strips.map((x) => x[1]), masterFor(refresh2))
       )
     );
     const tick = (now) => {
@@ -45157,14 +46290,14 @@ html.os-darwin.native-menu #menubar .mproj {
       for (const [t, node] of strips) mixLight(node, midiAct(S.tracks[t].ch - 1));
       if (!held && now - lastSig > 150) {
         lastSig = now;
-        if (sig2() !== last || themeSig(lookSrc()) !== look2) return refresh();
+        if (sig2() !== last || themeSig(lookSrc()) !== look2) return refresh2();
       }
       h.raf(tick);
     };
     h.raf(tick);
-    knobsReadOnce(DEVS[DEV].tracks, refresh);
+    knobsReadOnce(DEVS[DEV].tracks, refresh2);
   }
-  function refresh() {
+  function refresh2() {
     const h = popoutOf(ID);
     if (h) h.refresh();
   }
@@ -45173,7 +46306,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/core/version.js
-  var VERSION = "1.6.4";
+  var VERSION = "1.6.5";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -45744,17 +46877,17 @@ html.os-darwin.native-menu #menubar .mproj {
   var HOST2 = null;
   var host = () => HOST2 || (HOST2 = el("div", { class: "scnZen" }));
   var open = null;
-  var watch = null;
+  var watch2 = null;
   function watchClose() {
-    if (watch) return;
-    watch = new MutationObserver(() => {
+    if (watch2) return;
+    watch2 = new MutationObserver(() => {
       if (!open || host().querySelector("#zcOv")) return;
       keepSound();
       open = null;
       SC.tab = "notes";
       SC.draw();
     });
-    watch.observe(host(), { childList: true });
+    watch2.observe(host(), { childList: true });
   }
   function keepSound(later2 = false) {
     if (!open || !ZE.snd || ZE.undo.length <= open.undo) return;
@@ -45921,7 +47054,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     );
   }
-  function dock(changed) {
+  function dock2(changed) {
     const t = SC.t, k2 = SC.k, c = clipAt(t, k2), p = c && S.patterns[c.pat];
     if (!SC.edit || !p) {
       if (SC.edit) SC.edit = SC.big = false;
@@ -45955,7 +47088,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/scene/screen.js
-  var tracks = () => DEVS[DEV].tracks;
+  var tracks2 = () => DEVS[DEV].tracks;
   var raf = 0;
   function sceneEnter(on3) {
     if (!on3) {
@@ -45981,10 +47114,10 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     const list2 = rs.map((r) => ({
       bars: r.bars,
-      parts: tracks().filter((t) => r.pick[t] >= 0 && clipAt(t, r.pick[t])).map((t) => ({ t, p: patOf2(t, r.pick[t]) }))
+      parts: tracks2().filter((t) => r.pick[t] >= 0 && clipAt(t, r.pick[t])).map((t) => ({ t, p: patOf2(t, r.pick[t]) }))
     }));
     startScenes(list2, Math.min(i, rs.length - 1), loop2);
-    watch2();
+    watch3();
   }
   function sceneToggle() {
     if (TR.playing && TR.mode === "scenes") stopAll();
@@ -45992,7 +47125,7 @@ html.os-darwin.native-menu #menubar .mproj {
     drawPlay();
   }
   var sceneKeyDown = (e) => sceneKey(e, sceneToggle, (t, k2) => editClip(t, k2));
-  function watch2() {
+  function watch3() {
     cancelAnimationFrame(raf);
     const step = () => {
       const on3 = TR.playing && TR.mode === "scenes", i = on3 ? sceneRowAt(TR.tick) : -1, r = rows()[i];
@@ -46018,7 +47151,7 @@ html.os-darwin.native-menu #menubar .mproj {
     b.classList.toggle("on", on3);
     b.textContent = on3 ? "■ Stop" : "▶ Play";
   }
-  var ACT = {
+  var ACT2 = {
     pick: (t, k2) => (SC.t = t, SC.k = k2, choosePattern(t, k2, () => editClip(t, k2))),
     edit: (t, k2) => editClip(t, k2),
     menu: (t, k2, x, y) => (SC.t = t, SC.k = k2, clipMenu(t, k2, x, y, editClip)),
@@ -46079,8 +47212,8 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     const wrap = el("div", { class: "sBoardWrap" });
-    const drawBoard = () => (wrap.textContent = "", wrap.append(board(ACT, d && SC.big ? SC.t : null)));
-    const d = dock(drawBoard);
+    const drawBoard = () => (wrap.textContent = "", wrap.append(board(ACT2, d && SC.big ? SC.t : null)));
+    const d = dock2(drawBoard);
     drawBoard();
     const main = el("div", { class: "sMain" + (d ? " editing" : "") + (d && SC.big ? " wide" : "") }, wrap, d);
     const hint = el(
@@ -46092,7 +47225,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const l = host2.querySelector(".scList");
     if (l) l.scrollTop = sc[0];
     wrap.scrollTop = sc[1];
-    if (TR.playing && TR.mode === "scenes") watch2();
+    if (TR.playing && TR.mode === "scenes") watch3();
     drawPlay();
   }
 
@@ -52658,7 +53791,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var seen = false;
   var watching = null;
-  function watch3() {
+  function watch4() {
     const cv = $("#lvViz");
     if (!cv || watching === cv || typeof IntersectionObserver === "undefined") return;
     watching = cv;
@@ -52672,7 +53805,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     requestAnimationFrame(vizLoop);
-    watch3();
+    watch4();
     if (now - VZ.last < 33) return;
     const dt = Math.min(0.1, (now - (VZ.last || now)) / 1e3);
     VZ.last = now;
@@ -55972,7 +57105,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function stripFor2(t) {
     const tr = S.tracks[t], eff = lvEffMute(t), pend = lvOn() && eff !== !!LV.mute[t] ? eff ? "mute" : "unmute" : "";
     const dim = lvUserOwns(t) ? "You’re playing it" : lvEmute(t) ? "Out (energy)" : "";
-    const [fx, onFx] = trackFxFor(t, refresh2);
+    const [fx, onFx] = trackFxFor(t, refresh3);
     return mixStrip(
       {
         fx,
@@ -55990,7 +57123,7 @@ html.os-darwin.native-menu #menubar .mproj {
         dim,
         knobs: MIX_KNOBS.map((key, n) => ({
           key,
-          assign: knobAssignFor(t, n, refresh2),
+          assign: knobAssignFor(t, n, refresh3),
           v: lvMixNow(t, key),
           def: LV.rest[MIX_CC[key] - 80]
         }))
@@ -56003,15 +57136,15 @@ html.os-darwin.native-menu #menubar .mproj {
         set: (key, v) => lvMixSet(t, key, v, lvNow()),
         mute: () => {
           muteNow([t], !lvEffMute(t));
-          refresh2();
+          refresh3();
         },
         solo: () => {
           solo(t);
-          refresh2();
+          refresh3();
         },
         menu: (e) => showMenu(e.clientX, e.clientY, [
-          { label: "Reset this track’s mix", action: () => (lvMixReset(t, lvNow()), refresh2()) },
-          { label: "Unmute every track", action: () => (unmuteAll(), refresh2()) }
+          { label: "Reset this track’s mix", action: () => (lvMixReset(t, lvNow()), refresh3()) },
+          { label: "Unmute every track", action: () => (unmuteAll(), refresh3()) }
         ])
       }
     );
@@ -56075,20 +57208,20 @@ html.os-darwin.native-menu #menubar .mproj {
               },
               "Send to MC-707"
             ),
-            el("button", { type: "button", class: "btn sm", onclick: () => (unmuteAll(), refresh2()) }, "Unmute all"),
+            el("button", { type: "button", class: "btn sm", onclick: () => (unmuteAll(), refresh3()) }, "Unmute all"),
             el(
               "button",
               {
                 type: "button",
                 class: "btn sm",
-                onclick: () => (DEVS[DEV].tracks.forEach((t) => lvMixReset(t, lvNow())), refresh2())
+                onclick: () => (DEVS[DEV].tracks.forEach((t) => lvMixReset(t, lvNow())), refresh3())
               },
               "Reset all"
             )
           ),
           h.winBtns()
         ),
-        el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]), masterFor(refresh2))
+        el("div", { class: "mxStrips" }, ...strips2.map((x) => x[1]), masterFor(refresh3))
       )
     );
     const tick = (now) => {
@@ -56096,14 +57229,14 @@ html.os-darwin.native-menu #menubar .mproj {
       for (const [t, node] of strips2) mixLight(node, midiAct(S.tracks[t].ch - 1));
       if (!held2 && now - lastSig2 > 120) {
         lastSig2 = now;
-        if (sig3() !== last2 || themeSig(lookSrc2()) !== look3) return refresh2();
+        if (sig3() !== last2 || themeSig(lookSrc2()) !== look3) return refresh3();
       }
       h.raf(tick);
     };
     h.raf(tick);
-    knobsReadOnce(DEVS[DEV].tracks, refresh2);
+    knobsReadOnce(DEVS[DEV].tracks, refresh3);
   }
-  function refresh2() {
+  function refresh3() {
     const h = popoutOf(ID2);
     if (h) h.refresh();
   }
@@ -59505,7 +60638,7 @@ html.os-darwin.native-menu #menubar .mproj {
       (8 * beat + 0.4) * 1e3
     );
   }
-  function openSetup() {
+  function openSetup2() {
     $("#midiPop").hidden = true;
     $("#setup").hidden = false;
     renderSetup();
@@ -61137,10 +62270,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/live/genre-picker.js
-  var KEY5 = "mc707-live-pick";
+  var KEY6 = "mc707-live-pick";
   function livePickOnOpen() {
     try {
-      return localStorage.getItem(KEY5) !== "0";
+      return localStorage.getItem(KEY6) !== "0";
     } catch (e) {
       return true;
     }
@@ -61201,7 +62334,7 @@ html.os-darwin.native-menu #menubar .mproj {
             checked: true,
             onchange: (e) => {
               try {
-                localStorage.setItem(KEY5, e.target.checked ? "1" : "0");
+                localStorage.setItem(KEY6, e.target.checked ? "1" : "0");
               } catch (er) {
               }
             }
@@ -61218,992 +62351,6 @@ html.os-darwin.native-menu #menubar .mproj {
       const b = ov.querySelector(".lpStyle.on");
       if (b) b.focus();
     }, 30);
-  }
-
-  // src/zen/zc-synth-io.js
-  var KEY6 = "mc707-synth";
-  var SETUPS = "mc707-synth-setups";
-  var SY = {
-    slot: Array(8).fill(0),
-    level: Array(8).fill(100),
-    pan: Array(8).fill(64),
-    rev: Array(8).fill(0),
-    mute: Array(8).fill(false),
-    solo: Array(8).fill(false),
-    names: Array(8).fill(""),
-    /* the quick settings page open on each strip (null: closed) */
-    page: Array(8).fill(null),
-    thru: "",
-    /* where passed-through notes go: 'own' (each on its own channel) or a track number */
-    kbd: "own"
-  };
-  try {
-    const o = JSON.parse(localStorage.getItem(KEY6) || "{}");
-    for (const k2 of ["slot", "level", "pan", "rev", "names", "mute", "solo"])
-      if (Array.isArray(o[k2]) && o[k2].length === 8)
-        SY[k2] = o[k2].map(
-          (v, i) => k2 === "names" ? String(v || "") : k2 === "mute" || k2 === "solo" ? !!v : Number.isFinite(+v) ? +v : SY[k2][i]
-        );
-    if (Array.isArray(o.page) && o.page.length === 8) SY.page = o.page.map((x) => typeof x === "string" ? x : null);
-    if (typeof o.thru === "string") SY.thru = o.thru;
-    if (o.kbd === "own" || Number.isInteger(o.kbd) && o.kbd >= 0 && o.kbd < 8) SY.kbd = o.kbd;
-  } catch (e) {
-  }
-  function synthSave() {
-    try {
-      localStorage.setItem(KEY6, JSON.stringify(SY));
-    } catch (e) {
-    }
-  }
-  var tracks2 = () => DEVS[DEV].tracks;
-  var kindOf = (t) => S.tracks[t].type === "drum" ? "kit" : "tone";
-  var chOf2 = (t) => (S.tracks[t] && S.tracks[t].ch || t + 1) - 1;
-  var out = () => ZX.out || MIDI.out;
-  var cc = (t, n, v) => out() && out().send([176 | chOf2(t), n, v]);
-  var slotOf2 = (t) => slotAddr(kindOf(t), t, SY.slot[t]);
-  var heardLevel = (t) => SY.mute[t] || SY.solo.some(Boolean) && !SY.solo[t] ? 0 : SY.level[t];
-  var sendLevels = () => tracks2().forEach((t) => cc(t, 7, heardLevel(t)));
-  function setLevel(t, v) {
-    SY.level[t] = v;
-    cc(t, 7, heardLevel(t));
-    synthSave();
-  }
-  function setPan(t, v) {
-    SY.pan[t] = v;
-    cc(t, 10, v);
-    synthSave();
-  }
-  function setRev(t, v) {
-    SY.rev[t] = v;
-    cc(t, 91, v);
-    synthSave();
-  }
-  function setMute(t, on3) {
-    SY.mute[t] = on3;
-    sendLevels();
-    synthSave();
-  }
-  function setSolo(t, on3) {
-    SY.solo[t] = on3;
-    sendLevels();
-    synthSave();
-  }
-  function sendMix() {
-    for (const t of tracks2()) {
-      cc(t, 7, heardLevel(t));
-      cc(t, 10, SY.pan[t]);
-      cc(t, 91, SY.rev[t]);
-    }
-  }
-  function panic2() {
-    for (const t of tracks2()) {
-      cc(t, 64, 0);
-      cc(t, 123, 0);
-      cc(t, 120, 0);
-    }
-  }
-  async function setSlot(t, k2) {
-    SY.slot[t] = k2;
-    synthSave();
-    if (!await zxConnect()) return false;
-    zxWrite(trackSetAddr(t) + 4, [k2 === 16 ? 0 : 1]);
-    if (k2 < 16 && out()) out().send([192 | chOf2(t), k2]);
-    return true;
-  }
-  var ascii = (d) => (d || []).map((x) => x >= 32 && x < 127 ? String.fromCharCode(x) : " ").join("").trim();
-  async function readNames(progress) {
-    if (!await zxConnect() || !ZX.inp) return false;
-    let any = false;
-    for (const t of tracks2()) {
-      const src = await zxRead(trackSetAddr(t) + 4, 1);
-      if (src && src[0] === 0) SY.slot[t] = 16;
-      else if (src && SY.slot[t] === 16) SY.slot[t] = 0;
-      const d = await zxRead(slotOf2(t), 16);
-      if (d) {
-        SY.names[t] = ascii(d);
-        any = true;
-      }
-      if (progress) progress(t);
-    }
-    synthSave();
-    return any;
-  }
-  async function readTrackSound(t) {
-    if (!await zxConnect() || !ZX.inp) return null;
-    const snd = newSound(kindOf(t)), r = await readSound(snd, slotOf2(t));
-    return r.silent || !r.ok ? null : snd;
-  }
-  async function sendTrackSound(t, snd) {
-    if (!await zxConnect() || snd.kind !== kindOf(t)) return false;
-    await zeQuietly(() => sendSound(snd, slotOf2(t)), t);
-    rememberClip(snd, t, SY.slot[t]);
-    SY.names[t] = (snd.v[snd.kind === "kit" ? "KCMN.NAME" : "CMN.NAME"] || "").trim();
-    synthSave();
-    return true;
-  }
-  function resetMix(t) {
-    SY.mute[t] = SY.solo[t] = false;
-    setLevel(t, 100);
-    setPan(t, 64);
-    setRev(t, 0);
-  }
-  async function setupRead(progress) {
-    if (!await zxConnect() || !ZX.inp) return null;
-    const list2 = [];
-    for (const t of tracks2()) {
-      const snd = newSound(kindOf(t)), r = await readSound(snd, slotOf2(t), null, (d, n) => progress && progress(t, d / n));
-      const e = { track: t, slot: SY.slot[t], level: SY.level[t], pan: SY.pan[t], rev: SY.rev[t], sound: null };
-      if (!r.silent && r.ok) {
-        e.sound = soundJSON(snd);
-        SY.names[t] = e.sound.name.trim();
-      }
-      list2.push(e);
-    }
-    synthSave();
-    if (!list2.some((e) => e.sound)) return null;
-    return { app: "mc707-toolbox", synth: 1, device: DEV, tracks: list2 };
-  }
-  async function setupSend(o, progress) {
-    if (!o || o.synth !== 1 || !Array.isArray(o.tracks)) throw new Error("not a synth setup");
-    if (!await zxConnect()) return false;
-    let n = 0;
-    for (const e of o.tracks) {
-      const t = e.track;
-      if (!tracks2().includes(t)) continue;
-      const num4 = (v, lo, hi) => Number.isFinite(v) && Math.max(lo, Math.min(hi, v | 0));
-      if (num4(e.level, 0, 127) !== false) SY.level[t] = num4(e.level, 0, 127);
-      if (num4(e.pan, 0, 127) !== false) SY.pan[t] = num4(e.pan, 0, 127);
-      if (num4(e.rev, 0, 127) !== false) SY.rev[t] = num4(e.rev, 0, 127);
-      const snd = e.sound && soundFrom(e.sound);
-      if (!snd || snd.kind !== kindOf(t)) continue;
-      const k2 = Number.isInteger(e.slot) && e.slot >= 0 && e.slot <= 16 ? e.slot : 0;
-      await setSlot(t, k2);
-      await zeQuietly(() => sendSound(snd, slotAddr(snd.kind, t, k2)), t);
-      rememberClip(snd, t, k2);
-      SY.names[t] = (e.sound.name || "").trim();
-      n++;
-      if (progress) progress(t);
-    }
-    SY.mute.fill(false);
-    SY.solo.fill(false);
-    sendMix();
-    synthSave();
-    return n;
-  }
-  function setupsList() {
-    try {
-      const l = JSON.parse(localStorage.getItem(SETUPS) || "[]");
-      return Array.isArray(l) ? l.filter((x) => x && x.name && x.setup) : [];
-    } catch (e) {
-      return [];
-    }
-  }
-  function setupKeep(name, o) {
-    const small = {
-      ...o,
-      tracks: o.tracks.map((e) => {
-        if (!e.sound) return e;
-        const s = soundFrom(e.sound);
-        return { ...e, sound: { ...e.sound, v: s ? diffOf(s) : e.sound.v } };
-      })
-    };
-    const l = setupsList().filter((x) => x.name !== name);
-    l.unshift({ name, at: Date.now(), setup: small });
-    try {
-      localStorage.setItem(SETUPS, JSON.stringify(l));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function setupForget(name) {
-    try {
-      localStorage.setItem(SETUPS, JSON.stringify(setupsList().filter((x) => x.name !== name)));
-    } catch (e) {
-    }
-  }
-  var thruIn = null;
-  var SYHOOK = { activity: null };
-  var pass = (e) => {
-    let d = e.data;
-    if (!d || d[0] < 128 || d[0] >= 240 || !MIDI.out) return;
-    if (SY.kbd !== "own" && tracks2().includes(SY.kbd)) {
-      d = Uint8Array.from(d);
-      d[0] = d[0] & 240 | chOf2(SY.kbd);
-    }
-    MIDI.out.send(d);
-    if ((d[0] & 240) === 144 && d[2] > 0 && SYHOOK.activity) {
-      const t = tracks2().find((x) => chOf2(x) === (d[0] & 15));
-      if (t != null) SYHOOK.activity(t);
-    }
-  };
-  var thruInputs = () => MIDI.access ? [...MIDI.access.inputs.values()].filter((p) => !/MC-?(707|101)/i.test(p.name)) : [];
-  function thruSet(id, on3 = true) {
-    if (thruIn) thruIn.removeEventListener("midimessage", pass);
-    thruIn = null;
-    SY.thru = id || "";
-    synthSave();
-    if (!on3 || !id || !MIDI.access) return;
-    const p = MIDI.access.inputs.get(id);
-    if (p) {
-      p.addEventListener("midimessage", pass);
-      thruIn = p;
-    }
-  }
-  function kbdSet(v) {
-    SY.kbd = v;
-    synthSave();
-  }
-
-  // src/zen/zc-synth-quick.js
-  var PAGES = {
-    tone: [
-      [
-        "tone",
-        "Tone",
-        [
-          ["CMN.LEVEL", "Level"],
-          ["CMN.OCTAVE", "Octave"],
-          ["CMN.MONO_POLY", "Mono"],
-          ["CMN.PORTA_SW", "Glide"],
-          ["CMN.PORTA_TIME", "Glide time"],
-          ["CMN.ANALOG_FEEL", "Analog feel"]
-        ]
-      ],
-      [
-        "filter",
-        "Filter",
-        [
-          ["*PTL.CUTOFF", "Cutoff"],
-          ["*PTL.RESO", "Resonance"],
-          ["*FENV.DEPTH", "Env depth"],
-          ["*PTL.CUTOFF_KF", "Key follow"]
-        ]
-      ],
-      [
-        "env",
-        "Envelope",
-        [
-          ["*AENV.T1", "Attack"],
-          ["*AENV.T2", "Decay"],
-          ["*AENV.L3", "Sustain"],
-          ["*AENV.T4", "Release"]
-        ]
-      ],
-      [
-        "move",
-        "Movement",
-        [
-          ["*LFO.LFO1_RATE", "LFO rate"],
-          ["*LFO.LFO1_PIT_DEPTH", "Vibrato"],
-          ["*LFO.LFO1_TVF_DEPTH", "Wah"],
-          ["*LFO.LFO1_TVA_DEPTH", "Tremolo"]
-        ]
-      ],
-      [
-        "fx",
-        "Effect",
-        [
-          ["MFX.mfxType", "Effect"],
-          ["MFX.mfxSwitch", "Effect on"],
-          ["MFX.choSend", "Chorus send"],
-          ["MFX.revSend", "Reverb send"]
-        ]
-      ]
-    ],
-    kit: [
-      ["tone", "Kit", [["KCMN.LEVEL", "Kit level"]]],
-      [
-        "fx",
-        "Effect",
-        [
-          ["MFX.mfxType", "Effect"],
-          ["MFX.mfxSwitch", "Effect on"],
-          ["MFX.choSend", "Chorus send"],
-          ["MFX.revSend", "Reverb send"]
-        ]
-      ]
-    ]
-  };
-  var quickPages = (t) => PAGES[kindOf(t)];
-  var PSW = (i) => "PMT.PMT" + (i + 1) + "_PTL_SW";
-  var keysOf = (ctlKey2) => {
-    const m = /^\*(\w+)\.(\w+)$/.exec(ctlKey2);
-    return m ? [0, 1, 2, 3].map((i) => m[1] + i + "." + m[2]) : [ctlKey2];
-  };
-  var QS = {};
-  var cur = (t) => {
-    const q = QS[t];
-    return q && q.slot === SY.slot[t] && q.snd.kind === kindOf(t) ? q : QS[t] = { slot: SY.slot[t], snd: newSound(kindOf(t)), has: /* @__PURE__ */ new Set() };
-  };
-  var quickForget = (t) => delete QS[t];
-  function readPage(t, page) {
-    const q = cur(t), k2 = page[0];
-    q.busy = q.busy || {};
-    if (!q.busy[k2]) q.busy[k2] = readNow(t, page).finally(() => delete q.busy[k2]);
-    return q.busy[k2];
-  }
-  async function readNow(t, page) {
-    const q = cur(t), want = new Set(page[2].flatMap(([k2]) => keysOf(k2)));
-    if (kindOf(t) === "tone") for (let i = 0; i < 4; i++) want.add(PSW(i));
-    for (const k2 of [...want]) if (q.has.has(k2)) want.delete(k2);
-    if (!want.size) return true;
-    if (!await zxConnect() || !ZX.inp) return false;
-    const r = await readSound(q.snd, slotOf2(t), want);
-    if (r.silent) return false;
-    for (const k2 of want) if (q.snd.known.has(k2)) q.has.add(k2);
-    return true;
-  }
-  var playing = (t, q) => kindOf(t) === "kit" ? [0] : [0, 1, 2, 3].filter((i) => !q.has.has(PSW(i)) || q.snd.v[PSW(i)] === 1);
-  var PEND = {};
-  function send(t, keys2) {
-    const q = cur(t);
-    const p = PEND[t] = PEND[t] || { keys: /* @__PURE__ */ new Set(), timer: 0 };
-    keys2.forEach((k2) => p.keys.add(k2));
-    clearTimeout(p.timer);
-    p.timer = setTimeout(() => {
-      const ks = new Set(p.keys);
-      p.keys.clear();
-      sendSound(q.snd, slotOf2(t), ks);
-      const mem = clipMemory(kindOf(t), t, SY.slot[t]);
-      if (mem) {
-        ks.forEach((k2) => mem.v[k2] = q.snd.v[k2]);
-        rememberClip(mem, t, SY.slot[t]);
-      }
-    }, 30);
-  }
-  function control(t, q, [ctlKey2, label2]) {
-    const kind = kindOf(t), keys2 = keysOf(ctlKey2), multi = keys2.length > 1, on3 = multi ? playing(t, q) : [0], ref = keys2[on3[0] ?? 0], p = paramOf(kind, ref)[0], known2 = keys2.every((k2, i) => !on3.includes(i) || q.has.has(k2));
-    const v = q.snd.v[ref];
-    const out2 = el("b", {}, known2 ? valText(kind, ref, v) : "–");
-    const apply4 = (x) => {
-      const d = x - q.snd.v[ref], changed = [];
-      keys2.forEach((k2, i) => {
-        if (multi && !on3.includes(i)) return;
-        const [pp] = paramOf(kind, k2);
-        const nv = multi ? Math.max(pp[3], Math.min(pp[4], q.snd.v[k2] + d)) : x;
-        if (nv !== q.snd.v[k2]) q.snd.v[k2] = nv, changed.push(k2);
-      });
-      if (changed.length) send(t, changed);
-      out2.textContent = valText(kind, ref, q.snd.v[ref]);
-    };
-    const title = (p[7] || label2) + (multi ? ". Moves every playing partial by the same amount." : "");
-    if (p[3] === 0 && p[4] === 1)
-      return el(
-        "label",
-        { class: "syQ sw", title },
-        el("span", {}, label2),
-        el("input", {
-          type: "checkbox",
-          checked: v === 1,
-          disabled: !known2,
-          onchange: (e) => apply4(e.target.checked ? 1 : 0)
-        })
-      );
-    if (ref === "MFX.mfxType")
-      return el("label", { class: "syQ", title }, el("span", {}, label2), el("b", {}, mfxNames()[v] || "–"));
-    const paint2 = (inp2, x) => inp2.style.setProperty("--hi", (x - p[3]) / (p[4] - p[3]) * 100 + "%");
-    const inp = el("input", {
-      type: "range",
-      class: "syFader",
-      min: p[3],
-      max: p[4],
-      value: v,
-      disabled: !known2,
-      "aria-label": label2,
-      oninput: (e) => (apply4(+e.target.value), paint2(e.target, +e.target.value)),
-      ondblclick: (e) => {
-        e.target.value = p[5];
-        e.target.dispatchEvent(new Event("input"));
-      }
-    });
-    inp.style.setProperty("--lo", "0%");
-    paint2(inp, v);
-    return el(
-      "label",
-      { class: "syRange syQ", title: title + " Double-click for the start value." },
-      el("span", {}, label2),
-      inp,
-      out2
-    );
-  }
-  function quickPanel(t) {
-    const pages = quickPages(t), page = pages.find((p) => p[0] === SY.page[t]);
-    const body = el("div", { class: "syQBody" });
-    const menu = el(
-      "select",
-      {
-        class: "syQMenu",
-        "aria-label": "Sound settings for this track",
-        title: "Change this track’s sound here: pick a page of settings",
-        onchange: (e) => {
-          SY.page[t] = e.target.value || null;
-          synthSave();
-          fill2();
-        }
-      },
-      el("option", { value: "" }, "Sound settings…"),
-      ...pages.map(([id, l]) => el("option", { value: id, selected: page && page[0] === id }, l))
-    );
-    async function fill2() {
-      body.textContent = "";
-      const pg = pages.find((p) => p[0] === SY.page[t]);
-      if (!pg) return;
-      body.append(el("div", { class: "syQNote" }, "Reading from the " + DEVS[DEV].name + "…"));
-      const ok = await readPage(t, pg);
-      if (SY.page[t] !== pg[0]) return;
-      body.textContent = "";
-      if (!ok)
-        body.append(
-          el(
-            "div",
-            { class: "syQNote" },
-            "The " + DEVS[DEV].name + " did not answer. Connect it by USB to change the sound here."
-          )
-        );
-      const q = cur(t);
-      pg[2].forEach((c) => body.append(control(t, q, c)));
-    }
-    if (page) fill2();
-    return el("div", { class: "syQuick" }, menu, body);
-  }
-
-  // src/zen/zc-synth-strip.js
-  var slotName = (k2) => k2 === 16 ? "Track sound" : "Clip " + (k2 + 1);
-  function playBtn(t) {
-    const n = kindOf(t) === "kit" ? 36 : S.tracks[t].role === "bass" || /bass|\bbs\b|sub/i.test(SY.names[t]) ? 36 : 60;
-    return el(
-      "button",
-      {
-        type: "button",
-        class: "btn sm syPlay",
-        title: "Hold to play a note",
-        onpointerdown: (e) => {
-          e.preventDefault();
-          if (!MIDI.out) return toast("No MIDI output");
-          MIDI.out.send([144 | chOf2(t), n, 100]);
-          flash(t);
-          const up = () => {
-            if (MIDI.out) MIDI.out.send([128 | chOf2(t), n, 0]);
-            for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
-          };
-          for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
-        }
-      },
-      "▶"
-    );
-  }
-  function flash(t) {
-    const d = document.querySelector("#syAct" + t);
-    if (!d) return;
-    d.classList.add("on");
-    clearTimeout(d._t);
-    d._t = setTimeout(() => d.classList.remove("on"), 120);
-  }
-  var panText2 = (v) => v === 64 ? "C" : v < 64 ? "L" + (64 - v) : "R" + (v - 64);
-  function fader(label2, v, set2, title, t, centre) {
-    const out2 = el("b", {}, centre ? panText2(v) : String(v));
-    const paint2 = (inp2, x) => {
-      const p = x / 127 * 100;
-      inp2.style.setProperty("--lo", (centre ? Math.min(p, 50) : 0) + "%");
-      inp2.style.setProperty("--hi", (centre ? Math.max(p, 50) : p) + "%");
-    };
-    const inp = el("input", {
-      type: "range",
-      min: 0,
-      max: 127,
-      value: v,
-      class: "syFader" + (centre ? " centre" : ""),
-      "aria-label": label2 + ", track " + devNum(t),
-      oninput: (e) => {
-        const x = +e.target.value;
-        set2(x);
-        paint2(e.target, x);
-        out2.textContent = centre ? panText2(x) : String(x);
-      },
-      /* double-click back to the middle (pan) or the default level */
-      ondblclick: (e) => {
-        const x = centre ? 64 : label2 === "Level" ? 100 : 0;
-        e.target.value = x;
-        e.target.dispatchEvent(new Event("input"));
-      }
-    });
-    paint2(inp, v);
-    return el("label", { class: "syRange", title: title + " · double-click to reset" }, el("span", {}, label2), inp, out2);
-  }
-  function stripMenu(t, act, x, y) {
-    const others = tracks2().filter((u) => u !== t && kindOf(u) === kindOf(t));
-    const withSound = async (why, fn) => {
-      toast(why);
-      const snd = await readTrackSound(t);
-      if (!snd) return toast("The " + DEVS[DEV].name + " did not answer");
-      await fn(snd);
-    };
-    showMenu(x, y, [
-      { label: "Browse sounds…", action: () => act.open(t, true) },
-      { label: "Edit in the ZenCore editor…", action: () => act.open(t, false) },
-      "-",
-      { label: "Mute", checked: SY.mute[t], action: () => (setMute(t, !SY.mute[t]), act.render()) },
-      { label: "Solo", checked: SY.solo[t], action: () => (setSolo(t, !SY.solo[t]), act.render()) },
-      { label: "Reset level and pan", action: () => (resetMix(t), act.render()) },
-      { label: "Play it from the keyboard (Notes in)", checked: SY.kbd === t, action: () => (kbdSet(t), act.render()) },
-      "-",
-      {
-        label: "Save this sound to the Sound library",
-        action: () => withSound("Reading the sound…", async (snd) => {
-          await soundsLoad();
-          const e = await soundAdd(snd, { src: "mine", mine: true });
-          toast(e ? "Saved " + e.name + " to My sounds" : "It is already in My sounds");
-        })
-      },
-      others.length ? {
-        label: "Copy this sound to",
-        sub: others.map((u) => ({
-          label: "Track " + devNum(u) + (SY.names[u] ? " (" + SY.names[u] + ")" : ""),
-          action: () => withSound("Copying…", async (snd) => {
-            quickForget(u);
-            if (await sendTrackSound(u, snd)) toast("Copied to track " + devNum(u));
-            act.render();
-          })
-        }))
-      } : null,
-      { label: "Read its name again", action: () => act.refresh() }
-    ]);
-  }
-  function strip(t, act) {
-    const dn2 = DEVS[DEV].name, target = SY.kbd === t, quiet = heardLevel(t) === 0;
-    const slot2 = el(
-      "select",
-      {
-        class: "sySlot",
-        "aria-label": "Which sound track " + devNum(t) + " plays",
-        title: "The sound the DAW plays on this track: one of its clips (selected on the " + dn2 + ") or the track’s own sound",
-        onchange: async (e) => {
-          const k2 = +e.target.value;
-          quickForget(t);
-          if (await setSlot(t, k2)) toast("Track " + devNum(t) + " plays " + slotName(k2).toLowerCase());
-          act.refresh();
-        }
-      },
-      ...[...Array.from({ length: 16 }, (_, k2) => k2), 16].map(
-        (k2) => el("option", { value: k2, selected: SY.slot[t] === k2 }, slotName(k2))
-      )
-    );
-    const toggle = (lab, cls, on3, fn, title) => el(
-      "button",
-      {
-        type: "button",
-        class: "syTg " + cls + (on3 ? " on" : ""),
-        "aria-pressed": String(on3),
-        title,
-        onclick: () => (fn(!on3), act.render())
-      },
-      lab
-    );
-    return el(
-      "section",
-      {
-        class: "syStrip" + (quiet ? " quiet" : "") + (target ? " target" : "") + (SY.solo[t] ? " solo" : ""),
-        style: "--tc:" + (TRACK_COLORS[t] || "#39ff7a"),
-        "aria-label": "Track " + devNum(t),
-        title: "Right-click for more: copy the sound to another track, save it to the library, reset the mix",
-        oncontextmenu: (e) => {
-          if (e.target.matches("input, select")) return;
-          e.preventDefault();
-          stripMenu(t, act, e.clientX, e.clientY);
-        }
-      },
-      el(
-        "div",
-        { class: "syHead" },
-        el("span", { class: "syNum" }, String(devNum(t))),
-        el("span", { class: "syType" }, (kindOf(t) === "kit" ? "Drum kit" : "Tone") + ", channel " + (chOf2(t) + 1)),
-        el("i", { class: "syAct", id: "syAct" + t, title: "Lights when notes arrive" }),
-        toggle("M", "mute", SY.mute[t], (v) => setMute(t, v), "Mute"),
-        toggle("S", "solo", SY.solo[t], (v) => setSolo(t, v), "Solo: hear only the soloed tracks")
-      ),
-      el(
-        "div",
-        { class: "syLcd" },
-        el(
-          "button",
-          {
-            type: "button",
-            class: "syName" + (SY.names[t] ? "" : " none"),
-            title: SY.kbd === "own" ? SY.names[t] || "No sound read yet" : "Play this track from the keyboard",
-            onclick: () => {
-              if (SY.kbd !== "own") kbdSet(t), act.render();
-            }
-          },
-          SY.names[t] || "No sound read"
-        ),
-        el(
-          "div",
-          { class: "syLcdRow" },
-          slot2,
-          target ? el("span", { class: "syKbd", title: "Notes in play this track" }, "⌨ keyboard") : null
-        )
-      ),
-      el(
-        "div",
-        { class: "syBtns" },
-        /* tones only: a kit's drum sounds can't be changed over MIDI */
-        S.tracks[t].type === "drum" ? null : el(
-          "button",
-          {
-            type: "button",
-            class: "btn sm syBrowse",
-            onclick: () => act.open(t, true),
-            title: "Pick a sound from the Sound browser"
-          },
-          "Browse"
-        ),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "btn sm",
-            onclick: () => act.open(t, false),
-            title: "Edit every parameter in the ZenCore editor"
-          },
-          "Edit"
-        ),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "btn sm syExpBtn" + (act.exp && act.exp() === t ? " on" : ""),
-            onclick: () => act.expand(t),
-            title: act.exp && act.exp() === t ? "Back to all eight strips" : "Expand this track: the others shrink to the side and its ZenCore editor fills the screen"
-          },
-          act.exp && act.exp() === t ? "⤡ Collapse" : "⤢ Expand"
-        ),
-        playBtn(t)
-      ),
-      quickPanel(t),
-      el(
-        "div",
-        { class: "syMix" },
-        fader("Level", SY.level[t], (v) => setLevel(t, v), "Track level (MIDI volume, CC 7)", t),
-        /* no reverb send here: the MC-707's main effects only reach its MIX output, not a track's own */
-        fader("Pan", SY.pan[t], (v) => setPan(t, v), "Pan (CC 10)", t, true)
-      )
-    );
-  }
-
-  // src/zen/zc-synth.js
-  var busy3 = "";
-  var exp = null;
-  var dock2 = el("div", { class: "syDock" });
-  var docked = () => !!$("#zcOv") && dock2.contains($("#zcOv"));
-  var dn = () => DEVS[DEV].name;
-  function synthEnter(on3) {
-    if (!on3 && docked()) zenClose();
-    thruSet(SY.thru, on3);
-    SYHOOK.activity = on3 ? flash : null;
-    if (on3) {
-      synthRender();
-      if (!MIDI.access)
-        connectMidi().then(() => {
-          if (document.body.dataset.mode !== "synth") return;
-          thruSet(SY.thru, true);
-          synthRender();
-        });
-      if (!SY.names.some(Boolean)) refresh3(true);
-    }
-  }
-  async function refresh3(quiet) {
-    busy3 = "Reading the sounds…";
-    synthRender();
-    const ok = await readNames();
-    busy3 = "";
-    synthRender();
-    if (!ok && !quiet) toast("The " + dn() + " did not answer. Connect it by USB and allow MIDI with SysEx.");
-  }
-  var edT = 0;
-  var wait2 = 0;
-  function openEditor(t, browse) {
-    if (exp != null) return expand(t, browse);
-    edT = t;
-    zenOpen(t, SY.slot[t]);
-    if (browse) setTimeout(browserOpen, 0);
-    watch4();
-  }
-  function expand(t, browse) {
-    if (docked() && edT !== t) quickForget(edT);
-    exp = t;
-    edT = t;
-    synthRender();
-    zenOpen(t, SY.slot[t], dock2);
-    if (browse) setTimeout(browserOpen, 0);
-    watch4();
-  }
-  function collapse() {
-    if (docked()) zenClose();
-    else {
-      exp = null;
-      synthRender();
-    }
-  }
-  function watch4() {
-    clearInterval(wait2);
-    wait2 = setInterval(() => {
-      if ($("#zcOv")) {
-        if (exp != null && ZE.t !== exp && tracks2().includes(ZE.t)) {
-          quickForget(edT);
-          exp = edT = ZE.t;
-          synthRender();
-        }
-        return;
-      }
-      clearInterval(wait2);
-      quickForget(edT);
-      exp = null;
-      refresh3(true);
-    }, 400);
-  }
-  async function readSetup() {
-    busy3 = "Reading all " + tracks2().length + " sounds…";
-    synthRender();
-    const o = await setupRead((t, f) => {
-      busy3 = "Reading track " + devNum(t) + "… " + Math.round(f * 100) + "%";
-      const s = $("#syBusy");
-      if (s) s.textContent = busy3;
-    });
-    busy3 = "";
-    synthRender();
-    if (!o) toast("The " + dn() + " did not answer, so the sounds could not be read");
-    return o;
-  }
-  async function saveSetup() {
-    const o = await readSetup();
-    if (o) hooks.saveFile("mc707-synth-setup.json", JSON.stringify(o));
-  }
-  async function keepSetup() {
-    const name = await askDlg({
-      title: "Keep this setup in the browser",
-      input: true,
-      def: "Setup " + (setupsList().length + 1),
-      ok: "Keep"
-    });
-    if (!name || !name.trim()) return;
-    const o = await readSetup();
-    if (o) toast(setupKeep(name.trim(), o) ? "Kept " + name.trim() : "The browser would not store it (storage full?)");
-  }
-  async function sendSetup(o) {
-    busy3 = "Sending the setup…";
-    synthRender();
-    try {
-      for (const k2 in QS) delete QS[k2];
-      const n = await setupSend(o, (t) => {
-        const s = $("#syBusy");
-        if (s) s.textContent = "Sent track " + devNum(t);
-      });
-      toast(n ? "Sent " + n + " sounds to the " + dn() : "Nothing in that setup fits these tracks");
-    } catch (e) {
-      toast("That is not a Synth mode setup");
-    }
-    busy3 = "";
-    synthRender();
-  }
-  function setupsMenu(e) {
-    const r = e.currentTarget.getBoundingClientRect(), kept = setupsList();
-    showMenu(r.left, r.bottom + 4, [
-      { label: "Save to a file…", action: saveSetup },
-      { label: "Open a file…", action: openSetup2 },
-      { label: "Keep in this browser…", action: keepSetup },
-      kept.length ? "-" : null,
-      ...kept.map((k2) => ({
-        label: k2.name,
-        sub: [
-          { label: "Send to the " + dn(), action: () => sendSetup(k2.setup) },
-          { label: "Forget", action: () => (setupForget(k2.name), toast("Forgot " + k2.name)) }
-        ]
-      }))
-    ]);
-  }
-  function openSetup2() {
-    const i = el("input", {
-      type: "file",
-      accept: ".json,application/json",
-      onchange: async () => {
-        let o = null;
-        try {
-          o = JSON.parse(await i.files[0].text());
-        } catch (e) {
-          return toast("That is not a Synth mode setup file from this app");
-        }
-        sendSetup(o);
-      }
-    });
-    i.click();
-  }
-  function synthAct(what) {
-    if (what === "read") refresh3(false);
-    else if (what === "save") saveSetup();
-    else if (what === "open") openSetup2();
-    else if (what === "keep") keepSetup();
-    else if (what === "panic") panic2(), toast("All notes off");
-    else if (what === "help") {
-      const d = $("#synth .syHelp");
-      if (d) {
-        d.open = true;
-        d.scrollIntoView({ block: "nearest" });
-      }
-    }
-  }
-  var ACT2 = {
-    open: (t, b) => openEditor(t, b),
-    refresh: () => refresh3(true),
-    render: () => synthRender(),
-    exp: () => exp,
-    expand: (t) => exp === t ? collapse() : expand(t)
-  };
-  var mini = (t) => el(
-    "button",
-    {
-      type: "button",
-      class: "syMini" + (SY.mute[t] ? " muted" : "") + (SY.solo[t] ? " solo" : ""),
-      style: "--tc:" + (TRACK_COLORS[t] || "#39ff7a"),
-      title: "Expand track " + devNum(t) + (SY.names[t] ? ", " + SY.names[t] : "") + " and edit it here",
-      onclick: () => expand(t)
-    },
-    el("span", { class: "syNum" }, String(devNum(t))),
-    el("i", { class: "syAct", id: "syAct" + t }),
-    el("span", { class: "syMiniName" }, SY.names[t] || "—")
-  );
-  function synthRender() {
-    const box = $("#synth");
-    if (!box) return;
-    box.textContent = "";
-    const thru = el(
-      "select",
-      {
-        "aria-label": "Pass notes through from",
-        title: "Notes from this input go to the " + dn() + ": a keyboard, or the DAW through a virtual MIDI port (loopMIDI on Windows) when the DAW cannot share the " + dn() + "’s port",
-        onchange: (e) => thruSet(e.target.value, true)
-      },
-      el("option", { value: "" }, "Off"),
-      ...thruInputs().map((p) => el("option", { value: p.id, selected: SY.thru === p.id }, p.name))
-    );
-    const kbd = el(
-      "select",
-      {
-        "aria-label": "Where passed-through notes go",
-        title: "Each on its own channel (a DAW), or all to one track (a keyboard). Click a strip’s sound name to move it there.",
-        onchange: (e) => (kbdSet(e.target.value === "own" ? "own" : +e.target.value), synthRender())
-      },
-      el("option", { value: "own", selected: SY.kbd === "own" }, "Each track’s channel"),
-      ...tracks2().map((t) => el("option", { value: t, selected: SY.kbd === t }, "Track " + devNum(t)))
-    );
-    const on3 = ZX.state === "ready";
-    const steps2 = [
-      [
-        "Audio",
-        "On the " + dn() + ", set USB audio to send the tracks separately (see its manual), and install Roland’s driver on Windows. Your DAW then sees one input per track."
-      ],
-      [
-        "Tracks",
-        "Make one MIDI track per " + dn() + " track in the DAW, sending on the channel shown on its strip, and one audio track recording each input."
-      ],
-      [
-        "MIDI port",
-        "Windows lets one program use the " + dn() + "’s MIDI port at a time. Let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share the port. Macs share it anyway."
-      ],
-      [
-        "Saving",
-        "Setups › Save to a file keeps all eight sounds and the mix next to your DAW project. Saving the project on the " + dn() + " keeps them too."
-      ]
-    ];
-    box.append(
-      el(
-        "header",
-        { class: "syTop" },
-        el(
-          "div",
-          { class: "syTitle" },
-          el("h2", {}, "Synth Mode"),
-          el(
-            "p",
-            {},
-            "Your DAW plays the " + dn() + "’s " + tracks2().length + " tracks and records each one’s audio over USB. Pick, edit and mix the sounds here."
-          )
-        ),
-        el(
-          "div",
-          {
-            class: "syLink" + (on3 ? " on" : ""),
-            title: on3 ? "Reading and writing sounds over SysEx" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
-          },
-          el("i"),
-          on3 ? dn() + " connected" : dn() + " not connected"
-        )
-      ),
-      el(
-        "div",
-        { class: "syBar" },
-        el(
-          "div",
-          { class: "syActs" },
-          el(
-            "button",
-            { type: "button", class: "btn", onclick: () => refresh3(false), title: "Read every track’s sound name again" },
-            "Read sounds"
-          ),
-          el(
-            "button",
-            {
-              type: "button",
-              class: "btn",
-              onclick: setupsMenu,
-              title: "Save, open or keep all eight sounds with the mix"
-            },
-            "Setups ▾"
-          ),
-          el(
-            "button",
-            {
-              type: "button",
-              class: "btn syPanic",
-              onclick: () => (panic2(), toast("All notes off")),
-              title: "Stop every note on every track"
-            },
-            "Panic"
-          )
-        ),
-        el(
-          "div",
-          { class: "syIn", title: "Notes from another input played on the " + dn() },
-          el("span", {}, "Notes in"),
-          thru,
-          el("span", { class: "syArrow", "aria-hidden": "true" }, "→"),
-          kbd
-        ),
-        el("span", { id: "syBusy", class: "syBusy" }, busy3)
-      ),
-      exp != null && tracks2().includes(exp) ? el(
-        "div",
-        { class: "syExp" },
-        el(
-          "nav",
-          { class: "syRail", "aria-label": "The other tracks" },
-          ...tracks2().map((t) => t === exp ? null : mini(t)),
-          el(
-            "button",
-            { type: "button", class: "btn sm syAll", onclick: collapse, title: "Back to all eight strips (Esc)" },
-            "All tracks"
-          )
-        ),
-        strip(exp, ACT2),
-        dock2
-      ) : el("div", { class: "syGrid" }, ...tracks2().map((t) => strip(t, ACT2))),
-      el(
-        "details",
-        { class: "syHelp" },
-        el("summary", {}, "Setting up your DAW"),
-        el("ol", {}, ...steps2.map(([h, t]) => el("li", {}, el("b", {}, h), el("span", {}, t))))
-      )
-    );
   }
 
   // src/ui/mode.js
@@ -62583,6 +62730,23 @@ html.os-darwin.native-menu #menubar .mproj {
           { class: "hint" },
           "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown5.length - nD) + " tone tracks."
         ),
+        /* the one thing the app cannot do for you: it says it up front, not as a footnote */
+        el(
+          "div",
+          { class: "tsMust", role: "note" },
+          el("b", {}, "Set the MC-707 to match, by hand"),
+          el(
+            "span",
+            {},
+            "The app can’t change what a track is on the MC-707. After choosing here, set each MC-707 track the same way: a drum kit on each drum track, a tone on each tone track (select the track on the MC-707 and choose its sound). If they don’t match, drum parts play notes on a tone, or melodies on a kit. Easiest: start from an "
+          ),
+          el(
+            "button",
+            { type: "button", class: "btn sm", onclick: () => (ov.remove(), templatesOpen()) },
+            "MC-707 project template…"
+          ),
+          el("span", {}, " with the tracks already set up.")
+        ),
         el(
           "div",
           { class: "tsPresets" },
@@ -62598,13 +62762,7 @@ html.os-darwin.native-menu #menubar .mproj {
         el(
           "p",
           { class: "hint" },
-          "On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings. ",
-          el(
-            "button",
-            { type: "button", class: "btn sm", onclick: () => (ov.remove(), templatesOpen()) },
-            "MC-707 project templates…"
-          ),
-          " start a project with the tracks already set up."
+          "Each app track sends on its own MIDI channel, set in MIDI and sound and the MC-707’s Track Channel settings."
         )
       )
     );
@@ -64691,6 +64849,17 @@ html.os-darwin.native-menu #menubar .mproj {
           ],
           ["Track setup…", () => trackSetupOpen()],
           ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
+          [
+            "Synth Mode opens",
+            null,
+            "",
+            null,
+            () => [
+              ["last", "As I left it"],
+              ["strips", "All eight strips"],
+              ["expanded", "Expanded: one track with its editor"]
+            ].map(([v, label2]) => ({ label: label2, checked: synthViewOpen() === v, action: () => synthViewSet(v) }))
+          ],
           0,
           ["MIDI and sound…", go("#bMidi")],
           ["Track MIDI controls…", go("#bTrackCtl")],
@@ -64933,8 +65102,8 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function initSetup() {
     initMenubar();
-    $("#bSetup").addEventListener("click", openSetup);
-    $("#bSetupFromMidi").addEventListener("click", openSetup);
+    $("#bSetup").addEventListener("click", openSetup2);
+    $("#bSetupFromMidi").addEventListener("click", openSetup2);
     $("#setup").addEventListener("pointerdown", (e) => {
       if (e.target.id === "setup") closeSetup();
     });

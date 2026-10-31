@@ -11,6 +11,8 @@ import { MFX_PRESETS, mfxPreset } from './zc-mfx-presets.js';
 import { KIT_LOW, pk } from './zc-tone.js';
 import { pageEq } from './zc-panels.js';
 
+/* the MFX preset picked last (its ◀ ▶ step from it) */
+const PRESET = { at: -1 };
 export function pageMfx(ctx) {
   const type = ctx.get('MFX.mfxType'),
     sps = mfxParams(type);
@@ -26,12 +28,16 @@ export function pageMfx(ctx) {
         const i = +e.target.value;
         if (i >= 0) {
           const p = mfxPreset(i);
+          PRESET.at = i;
           ctx.mfxType(p.type, p.vals);
         }
       }
     },
     el('option', { value: -1 }, 'Preset…'),
-    ...MFX_PRESETS.map(([n], i) => el('option', { value: i }, n))
+    /* the preset last picked stays shown while the effect is still its type, so ◀ ▶ step on from it */
+    ...MFX_PRESETS.map(([n], i) =>
+      el('option', { value: i, selected: i === PRESET.at && mfxPreset(i).type === type }, n)
+    )
   );
   const params = sps.map((sp, i) => {
     const key = 'MFX.param_' + (i + 1),
@@ -93,7 +99,7 @@ export function pageMfx(ctx) {
     group(
       'Multi-effect',
       el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Type'), stepper(typeSel)),
-      el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Presets'), presetSel),
+      el('label', { class: 'zcC wide' }, el('span', { class: 'zcL' }, 'Presets'), stepper(presetSel)),
       ctl(ctx, 'MFX.mfxSwitch', { label: 'On' }),
       ctl(ctx, 'MFX.choSend', { label: 'Delay send' }),
       ctl(ctx, 'MFX.revSend', { label: 'Reverb send' })

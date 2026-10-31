@@ -222,13 +222,15 @@ export async function soundAdd(snd, meta = {}) {
 }
 /**
  * Add many sounds in one go (one store write): [{snd, name, src, bank?, no?}] (bank and no: a factory
- * tone's bank letter and number). Sounds already in the library are skipped. Returns how many were added.
+ * tone's bank letter and number; folder: one of your folders). Sounds already in the library (or, with among,
+ * among the sounds it picks) are skipped. Returns how many were added.
  */
-export async function soundAddMany(items) {
-  const seen = new Set(ZS.list.map(e => e.h)),
+export async function soundAddMany(items, among = null) {
+  /* among: only the sounds a new one may already be (a folder's); every sound in the library otherwise */
+  const seen = new Set((among ? ZS.list.filter(among) : ZS.list).map(e => e.h)),
     at = Date.now(),
     add = [];
-  items.forEach(({ snd, name, src, bank, no }, i) => {
+  items.forEach(({ snd, name, src, bank, no, folder }, i) => {
     const d = diffOf(snd),
       h = hashOf(snd.kind, d);
     if (seen.has(h)) return;
@@ -243,6 +245,7 @@ export async function soundAddMany(items) {
       tags: [],
       src: src || 'mine',
       ...(bank ? { bank, no } : {}),
+      ...(folder ? { folder } : {}),
       h,
       d
     });
@@ -250,6 +253,13 @@ export async function soundAddMany(items) {
   await tx('readwrite', s => add.forEach(e => s.put(e)));
   ZS.list = [...ZS.list, ...add].sort((a, b) => b.at - a.at);
   return add.length;
+}
+/** Remove the sounds gone(e) picks. Returns how many went. */
+export async function soundsRemoveWhere(gone) {
+  const out = ZS.list.filter(gone);
+  ZS.list = ZS.list.filter(e => !gone(e));
+  await tx('readwrite', s => out.forEach(e => s.delete(e.id)));
+  return out.length;
 }
 /** Remove every sound from one source ('factory', say). Returns how many went. */
 export async function soundsRemoveSrc(src) {

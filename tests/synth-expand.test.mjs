@@ -1,5 +1,6 @@
 // Synth mode's expanded track (zen/zc-synth.js): Expand shrinks the other strips to a rail and docks the
-// ZenCore editor in the screen; a rail track switches to it, and closing goes back to all eight strips.
+// ZenCore editor in the screen; a rail track switches to it, closing goes back to all eight strips, and Synth
+// mode opens the way it was left.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openApp, closeBrowser } from './helpers.mjs';
@@ -38,5 +39,18 @@ test('Synth mode: expand a track to edit it in full beside the others', async ()
   await page.waitForSelector('#synth .syDock #zcOv');
   await page.click('#menubar .mtab[data-mode=song]');
   assert.equal(await page.locator('#zcOv').count(), 0, 'closed on leaving');
+  /* it opens as it was left: expanded on track 3 again */
+  await page.click('#menubar .mtab[data-mode=synth]');
+  await page.waitForSelector('#synth .syDock #zcOv');
+  await page.waitForFunction(() => window.__app.zen.ZE.t === 2);
+  assert.equal(await page.locator('#synth .syMini').count(), 7);
+  /* collapsed, it opens with all eight */
+  await page.locator('#synth .syExpBtn.on').click();
+  await page.waitForFunction(() => document.querySelectorAll('#synth .syStrip').length === 8, null, { timeout: 3000 });
+  await page.click('#menubar .mtab[data-mode=song]');
+  await page.click('#menubar .mtab[data-mode=synth]');
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('#synth .syStrip').count(), 8);
+  assert.equal(await page.locator('#zcOv').count(), 0);
   assert.deepEqual(errors, []);
 });

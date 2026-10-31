@@ -66,7 +66,8 @@ const TABS = {
     ['mfx', 'MFX', pageMfx]
   ]
 };
-const PART_TABS = ['osc', 'filter', 'amp', 'pitch', 'lfo', 'matrix', 'eq'];
+/** The tone pages that show one partial (the partial bar, and the Partial menu, show on these). */
+export const PART_TABS = ['osc', 'filter', 'amp', 'pitch', 'lfo', 'matrix', 'eq'];
 /* wave numbers show their names from the sound's own wave group */
 waveSource(k => ZE.snd && ZE.snd.v[k]);
 /** The MC-707 address of the sound being edited. */
