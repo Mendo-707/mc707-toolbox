@@ -148,6 +148,7 @@ import { songToRows, scenesToSong } from './scene/convert.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
+import { pageOf } from './zen/zc-lab-fine.js';
 import {
   clipNotesToMine,
   clipPacked,
@@ -286,7 +287,8 @@ PROJ.t = projTitle;
       fw: { FW_REC, fwFields, newSound },
       get ZE() {
         return ZE;
-      }
+      },
+      labPageOf: pageOf
     },
     seq: {
       clipPacked,

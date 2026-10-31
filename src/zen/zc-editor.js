@@ -429,6 +429,8 @@ function ctx() {
     audition
   };
 }
+/** The editor's ctx for its pages and controls, with the editor's state as ze (the Slime Lab's Fine-tune). */
+export const zeCtx = () => ({ ...ctx(), ze: ZE });
 /* notes the editor's keyboard is holding: [channel, note] by 'ch:note' */
 const HELD = new Map();
 const noteOut = (ch, b, on) => {

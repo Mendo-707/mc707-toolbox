@@ -1,5 +1,6 @@
 /* The Slime Lab (zen/zc-lab.js): a view inside the ZenCore editor's box, in its look (black, green, monospace
-   values, outlined groups). Builds on zen.css (.zcG, .zcC, .zcHead). */
+   values). One screen: the starting sounds along the top, the scope, five knobs, variations and Taste keys
+   in the middle, Learn or Fine-tune on the right. Builds on zen.css (.zcG, .zcC, .zcHead, the editor's pages). */
 .zcBox {
   position: relative;
 }
@@ -10,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 16px 10px;
+  padding: 14px 16px 12px;
   background: #000;
   border-radius: inherit;
   outline: none;
@@ -39,209 +40,432 @@
   gap: 6px;
   flex-wrap: wrap;
 }
-.labBody {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(270px, 320px) minmax(300px, 1fr) minmax(270px, 330px);
-  gap: 12px;
+#labOv .labBefore.down {
+  background: var(--zc-acc);
+  color: #000;
 }
-.labIng,
-.labSide {
-  overflow: auto;
-  min-height: 0;
-  padding: 2px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--zc-line) transparent;
-}
-#labOv .zcG {
-  display: block;
-}
-/* the ingredients */
-.labG {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
-.liBtn {
-  all: unset;
-  box-sizing: border-box;
+
+/* ---- Start from ---- */
+.labStart {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 6px;
-  border-radius: 7px;
-  border: 1px solid transparent;
-  cursor: grab;
-  min-width: 0;
+  gap: 6px 10px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  border: 1px solid var(--zc-line);
+  border-radius: 10px;
+  background: var(--zc-well);
+}
+.labStartK,
+#labOv .labH {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--zc-acc);
+}
+.lsGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lsGroup small {
+  font-size: 10.5px;
+  color: var(--zc-dim);
+  margin-right: 1px;
+}
+.lsChip {
+  all: unset;
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #23462f;
+  color: #c9f7d5;
+  background: #070d09;
   transition:
     border-color 0.15s,
     background 0.15s;
 }
-.liBtn:hover {
-  border-color: var(--zc-line);
-  background: #07110a;
-}
-.liBtn:focus-visible {
-  outline: 1px solid var(--zc-acc);
-}
-.liBtn.sel {
+.lsChip:hover,
+.lsChip:focus-visible {
   border-color: var(--zc-acc);
-  background: #0a1a0f;
-  box-shadow: 0 0 8px var(--zc-glow);
 }
-.liBtn > span {
+.lsChip.on {
+  background: var(--zc-acc);
+  border-color: var(--zc-acc);
+  color: #000;
+}
+.lsChip.got:not(.on)::after {
+  content: ' ✓';
+  color: var(--zc-acc);
+}
+.lsChip.blank {
+  border-style: dashed;
+}
+.lsHow {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #c9f7d5;
+  cursor: pointer;
+}
+.lsHow input {
+  accent-color: var(--zc-acc);
+}
+
+/* ---- the body: the sound in the middle, Learn or Fine-tune on the right ---- */
+.labBody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 12px;
+}
+.labMain {
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: 10px;
 }
-.liBtn b {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #e6ffee;
+.labPanel {
+  border: 1px solid var(--zc-line);
+  border-radius: 10px;
+  padding: 8px 10px 10px;
+  background: #020403;
+}
+#labOv .labH {
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.labRead {
+  font:
+    400 12px ui-monospace,
+    Consolas,
+    monospace;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #a9d9b5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.liBtn small {
+
+/* the scope */
+.labScopeP {
+  flex: 1;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+.lsScope {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(70px, 1fr) 54px;
+  gap: 6px;
+  position: relative;
+}
+.lsScope svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 6px;
+  background:
+    linear-gradient(var(--zc-line) 1px, transparent 1px) 0 0 / 100% 25%,
+    linear-gradient(90deg, #0f2015 1px, transparent 1px) 0 0 / 8.333% 100%,
+    #010201;
+  box-shadow: inset 0 0 0 1px var(--zc-line);
+}
+.lsWave path {
+  fill: none;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.lsLine {
+  stroke: var(--zc-acc);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 4px var(--zc-glow));
+}
+.lsGhost path {
+  stroke: #5ef2d6;
+  stroke-width: 1.4;
+}
+.lsEcho path {
+  stroke: #7fa7c9;
+  stroke-width: 1.2;
+}
+.lsMid {
+  stroke: #1d3a26;
+  vector-effect: non-scaling-stroke;
+}
+.lsEnv path,
+.lsEnv line {
+  vector-effect: non-scaling-stroke;
+}
+.lcAmp {
+  fill: #39ff7a22;
+}
+.lcAmpL {
+  fill: none;
+  stroke: var(--zc-acc);
+  stroke-width: 1.6;
+}
+.lcFil {
+  fill: none;
+  stroke: #ffd23f;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+}
+.lcRel {
+  stroke: #2a5236;
+  stroke-dasharray: 2 3;
+}
+.lcHead {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+.lcLab {
+  position: absolute;
+  right: 8px;
+  bottom: 38px;
+  font:
+    600 9.5px ui-monospace,
+    Consolas,
+    monospace;
+  letter-spacing: 1px;
+  color: var(--zc-dim);
+  pointer-events: none;
+}
+.lcLab i {
+  font-style: normal;
+  color: #ffd23f;
+}
+
+/* the knobs */
+.labKnobs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.lkKnob {
+  --kc: var(--zc-acc);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 8px 4px 7px;
+  border: 1px solid var(--zc-line);
+  border-radius: 10px;
+  background: #020403;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.lkKnob:hover,
+.lkKnob:focus-visible,
+.lkKnob.drag {
+  border-color: var(--kc);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--kc) 25%, transparent);
+}
+.lkName {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--kc);
+}
+.lkKnob svg {
+  width: 62px;
+  height: 62px;
+}
+.lkTrack,
+.lkFill {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.lkTrack {
+  stroke: #10241a;
+}
+.lkFill {
+  stroke: var(--kc);
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--kc) 60%, transparent));
+}
+.lkCap {
+  fill: #0b130e;
+  stroke: #24412e;
+}
+.lkTick {
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.lkVal {
+  font:
+    700 13px ui-monospace,
+    Consolas,
+    monospace;
+  color: #fff;
+  margin-top: -4px;
+}
+.lkWord {
   font-size: 10.5px;
+  color: var(--zc-dim);
+}
+
+/* variations */
+.lxBox {
+  display: grid;
+  gap: 8px;
+}
+.lxTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lxSeg {
+  display: inline-flex;
+  border: 1px solid #23462f;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.lxSeg button {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+  color: #c9f7d5;
+}
+.lxSeg button + button {
+  border-left: 1px solid #23462f;
+}
+.lxSeg button.on {
+  background: #143a22;
+  color: var(--zc-acc);
+}
+.lxKeep {
+  font-size: 12px;
+  color: #a9d9b5;
+}
+.lxKeep summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 8px;
+  border: 1px solid #23462f;
+  border-radius: 7px;
+}
+.lxKeep summary::-webkit-details-marker {
+  display: none;
+}
+.lxKeep[open] summary {
+  border-color: var(--zc-acc);
+}
+.lxKeep > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.lxLock {
+  all: unset;
+  cursor: pointer;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #23462f;
+  color: #a9d9b5;
+}
+.lxLock.on {
+  border-color: var(--zc-acc);
+  color: var(--zc-acc);
+}
+.lxLock.on::before {
+  content: '🔒 ';
+}
+.lxKids {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.lxKid {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 4px 5px 5px;
+  border-radius: 8px;
+  border: 1px solid var(--zc-line);
+  background: #010201;
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
+}
+.lxKid:hover,
+.lxKid:focus-visible {
+  border-color: #3a7a4c;
+}
+.lxKid.on {
+  border-color: var(--zc-acc);
+  box-shadow: 0 0 10px var(--zc-glow);
+}
+.lxKid:active {
+  transform: scale(0.97);
+}
+.lxPic svg {
+  width: 100%;
+  height: 40px;
+  display: block;
+}
+.lmW {
+  fill: none;
+  stroke: var(--zc-acc);
+  stroke-width: 1.4;
+}
+.lmG {
+  fill: none;
+  stroke: #5ef2d6;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.lmE {
+  fill: none;
+  stroke: #ff5fa2;
+  stroke-width: 1.2;
+  opacity: 0.8;
+}
+.lxKid b {
+  font-size: 11.5px;
+  color: #fff;
+}
+.lxKid small {
+  font-size: 10px;
   color: var(--zc-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.liBlob {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ic, #39ff7a) 60%, transparent));
-  transition: transform 0.3s cubic-bezier(0.3, 1.8, 0.5, 1);
-}
-.liBtn:hover .liBlob {
-  transform: scale(1.15, 0.9) translateY(1px);
-}
-.liBtn.sel .liBlob {
-  animation: labJig 1.6s ease-in-out infinite;
-}
-/* the slime */
-.labMid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-}
-.labStageG {
-  flex: 1;
-  min-height: 0;
-  display: flex !important;
-  flex-direction: column;
+.lxNone {
   margin: 0;
+  font-size: 12.5px;
 }
-.lsStage {
-  position: relative;
-  flex: 1;
-  min-height: 200px;
-  border: 1px solid var(--zc-line);
-  border-radius: 6px;
-  background:
-    linear-gradient(#0f2316 1px, transparent 1px) 0 0 / 100% 40px,
-    linear-gradient(90deg, #0f2316 1px, transparent 1px) 0 0 / 40px 100%,
-    radial-gradient(ellipse at 50% 80%, #06180c, var(--zc-well) 70%);
-  overflow: hidden;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-.lsStage.drop {
-  border-color: var(--zc-acc);
-  box-shadow: inset 0 0 30px var(--zc-glow);
-}
-.lsSvg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.lsShadow {
-  fill: #000;
-  opacity: 0.6;
-}
-.lsShine,
-.lsDot {
-  fill: #fff;
-  pointer-events: none;
-}
-.lsMotes circle {
-  filter: blur(1px);
-}
-.labRead {
-  margin: 6px 0 0;
-  font:
-    600 12px ui-monospace,
-    Consolas,
-    monospace;
-  color: var(--zc-acc);
-  min-height: 1.3em;
-}
-.lsFound {
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  right: 12px;
-  max-width: 360px;
-  padding: 8px 12px;
-  border: 1px solid var(--zc-acc);
-  border-radius: 6px;
-  background: #000d;
-  box-shadow: 0 0 14px var(--zc-glow);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition:
-    opacity 0.3s,
-    transform 0.3s;
-  pointer-events: none;
-}
-.lsFound.show {
-  opacity: 1;
-  transform: none;
-}
-.lsFound b {
-  font:
-    700 16px ui-monospace,
-    Consolas,
-    monospace;
-  color: var(--zc-acc);
-}
-.lsFound small {
-  color: #c9f7d5;
-  font-size: 12px;
-}
-.labCtl {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.labAmt {
-  flex: 1;
-}
-.labMix {
-  white-space: nowrap;
-  max-width: 50%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* the taste keys: a keybed across the column */
-#labOv .labTaste {
-  margin: 0;
-  padding: 6px 10px 10px;
-}
-.labBed {
+
+/* the Taste keys */
+.labTaste {
   display: flex;
   gap: 6px;
-  height: 64px;
+  height: 60px;
+  flex: none;
 }
 .labKey,
 .labLatch {
@@ -351,42 +575,96 @@
     opacity: 0.45;
   }
 }
-/* the side panels */
-.labSide .zcG {
-  font-size: 12.5px;
-  line-height: 1.45;
+/* ---- the side: Learn and Fine-tune ---- */
+.labSide {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--zc-line);
+  border-radius: 10px;
+  background: #020403;
+  overflow: hidden;
+}
+.labSideTabs {
+  display: flex;
+  border-bottom: 1px solid var(--zc-line);
+}
+.labSideTab {
+  all: unset;
+  flex: 1;
+  cursor: pointer;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--zc-dim);
+}
+.labSideTab[aria-selected='true'] {
+  color: var(--zc-acc);
+  box-shadow: inset 0 -2px 0 var(--zc-acc);
+}
+.labSideTab:hover {
   color: #c9f7d5;
 }
-.labLearn p {
+.labSideBody {
+  --kc: var(--zc-acc);
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #c9f7d5;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zc-line) transparent;
+}
+.labSideBody p {
   margin: 6px 0;
 }
 .llTop {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.llDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--kc);
+  box-shadow: 0 0 8px var(--kc);
+  align-self: center;
 }
 .llTop b {
-  font-size: 15px;
+  font-size: 16px;
   color: #fff;
 }
 .llTop small {
   color: var(--zc-dim);
-  flex-basis: 100%;
-  margin-left: 32px;
-  margin-top: -6px;
 }
 .llK {
   display: block;
   font-size: 10px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: var(--zc-acc);
+  color: var(--kc);
 }
-.llDid {
-  margin-top: 8px;
+.llDid,
+.llHow {
+  margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid var(--zc-line);
+}
+.llHow div {
+  margin: 3px 0;
+  font-size: 12px;
+}
+.llHow b {
+  color: #fff;
+  font-weight: 600;
 }
 .llCh {
   display: grid;
@@ -410,249 +688,39 @@
 .llCh b {
   color: var(--zc-acc);
 }
-.lmRow {
+.llGoFine {
+  margin-top: 12px;
+}
+.llWelcome h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #fff;
+}
+.llWelcome ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
   display: grid;
-  grid-template-columns: 74px 1fr 28px;
-  align-items: center;
   gap: 8px;
-  margin: 3px 0;
 }
-.lmRow span {
-  color: #a9d9b5;
-}
-.lmRow i {
-  height: 8px;
-  background: #0b1a10;
-  border: 1px solid var(--zc-line);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.lmRow em {
-  display: block;
-  height: 100%;
-  background: var(--zc-acc);
-  box-shadow: 0 0 6px var(--zc-glow);
-  transition: width 0.6s cubic-bezier(0.3, 1.3, 0.5, 1);
-}
-.lmRow b {
-  font:
-    600 11px ui-monospace,
-    Consolas,
-    monospace;
-  color: var(--zc-acc);
-  text-align: right;
-}
-.labBlends .hint,
-.labLog .hint {
-  margin: 2px 0 6px;
-  font-size: 11.5px;
-}
-.lbRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-top: 1px solid #0f2316;
-}
-.lbRow b {
-  color: #e6ffee;
-}
-.lbRow.got b {
-  color: var(--zc-acc);
-}
-.lbRow.got b::after {
-  content: ' ✓';
-}
-.lbRow small {
-  display: block;
-  color: var(--zc-dim);
-  font-size: 11px;
-}
-.lbDots {
-  display: flex;
-  gap: 3px;
-  margin: 3px 0 2px;
-}
-.lbDots i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50% 50% 45% 45%;
-  background: var(--ic);
-}
-.lgList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.lgChip {
-  font-size: 11.5px;
-  padding: 2px 8px 2px 6px;
-  border-radius: 99px;
-  border: 1px solid var(--zc-line);
-  background: #050906;
-  animation: labIn 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-.lgChip::before {
-  content: '';
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--ic);
-  margin-right: 5px;
-}
-@keyframes labJig {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.12, 0.9);
-  }
-  60% {
-    transform: scale(0.94, 1.08);
-  }
-}
-@keyframes labIn {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-}
-@media (max-width: 1050px) {
-  .labBody {
-    grid-template-columns: 1fr 1fr;
-    overflow: auto;
-  }
-  .labSide {
-    grid-column: 1 / -1;
-    overflow: visible;
-  }
-  .labIng {
-    overflow: visible;
-  }
-}
-@media (max-width: 700px) {
-  .labBody {
-    grid-template-columns: 1fr;
-  }
-  .labMid {
-    order: -1;
-    min-height: 420px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  #labOv,
-  #labOv * {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-/* pass 2: quick add, a squeeze on mix-in, hold, keyboard hints, taste rings */
-.liBtn {
-  position: relative;
-}
-.liAdd {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  margin-top: -9px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font:
-    700 14px/1 ui-monospace,
-    Consolas,
-    monospace;
-  color: #000;
-  background: var(--zc-acc);
-  box-shadow:
-    0 0 0 3px #0a1a0f,
-    0 0 8px var(--zc-glow);
-  cursor: pointer;
-  opacity: 0;
-  transform: scale(0.6);
-  transition:
-    opacity 0.15s,
-    transform 0.2s cubic-bezier(0.3, 1.8, 0.5, 1);
-}
-.liBtn:hover .liAdd,
-.liBtn.sel .liAdd {
-  opacity: 1;
-  transform: none;
-}
-.liAdd:hover {
-  transform: scale(1.15) !important;
-}
-.liBtn.go .liBlob {
-  animation: labSqueeze 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-@keyframes labSqueeze {
-  0% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.35, 0.6) translateY(4px);
-  }
-  65% {
-    transform: scale(0.8, 1.3) translateY(-3px);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-.labKeys {
-  margin: -2px 0 0;
-  font-size: 11px;
-  text-align: center;
-}
-.lsRing {
-  fill: none;
-  stroke-width: 2;
-}
-.lgChip {
-  font: inherit;
-  font-size: 11.5px;
-  color: inherit;
-  cursor: pointer;
-}
-.lgChip:hover {
-  border-color: var(--zc-acc);
-}
-/* blends: the guide in the Learn panel */
-.lbBtns {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.lbRow.cur {
-  background: #07110a;
-  box-shadow: inset 2px 0 0 var(--zc-acc);
-  padding-left: 6px;
+.llWelcome b {
+  color: #fff;
 }
 .llAbout {
-  color: #e6ffee;
+  color: #a9d9b5;
 }
 .lgSteps {
-  margin: 6px 0;
+  margin: 8px 0;
   padding-left: 22px;
+  display: grid;
+  gap: 2px;
   font-size: 12px;
-}
-.lgSteps li {
   color: var(--zc-dim);
-  padding: 1px 0;
-}
-.lgSteps li::marker {
-  color: var(--ic, var(--zc-dim));
 }
 .lgSteps li.done {
-  color: #c9f7d5;
+  color: #a9d9b5;
 }
-.lgSteps li.done::after {
-  content: ' ✓';
+.lgSteps li.done::marker {
+  content: '✓  ';
   color: var(--zc-acc);
 }
 .lgSteps li.next,
@@ -661,396 +729,129 @@
   font-weight: 600;
 }
 .llStep {
-  border-top: 1px solid var(--zc-line);
-  padding-top: 6px;
-}
-.llStep p {
-  margin: 4px 0;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #06100a;
+  border: 1px solid var(--zc-line);
 }
 .llGo {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
-}
-/* pass 4: which partials, Character bars as sliders, Dial it in */
-.labTarget {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   flex-wrap: wrap;
-}
-.labTarget .zcL {
-  color: #a9d9b5;
-  font-size: 12px;
-  margin-right: 6px;
-}
-.labTarget .btn:disabled {
-  opacity: 0.35;
-}
-.lmRow {
-  cursor: pointer;
-}
-.lmRow input[type='range'],
-.llDialRow input[type='range'] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 10px;
-  margin: 0;
-  background: #0b1a10;
-  border: 1px solid var(--zc-line);
-  border-radius: 2px;
-  overflow: hidden;
-  cursor: pointer;
-}
-.lmRow input[type='range']::-webkit-slider-runnable-track,
-.llDialRow input[type='range']::-webkit-slider-runnable-track {
-  height: 100%;
-}
-.lmRow input[type='range']::-webkit-slider-thumb,
-.llDialRow input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 4px;
-  height: 10px;
-  background: #e6ffee;
-  box-shadow: -800px 0 0 800px var(--zc-acc);
-}
-.lmRow input[type='range']::-moz-range-progress,
-.llDialRow input[type='range']::-moz-range-progress {
-  height: 100%;
-  background: var(--zc-acc);
-}
-.lmRow input[type='range']:hover,
-.lmRow input[type='range']:focus-visible,
-.llDialRow input[type='range']:hover,
-.llDialRow input[type='range']:focus-visible {
-  outline: none;
-  border-color: var(--zc-acc);
-  box-shadow: 0 0 8px var(--zc-glow);
-}
-.labMeters .hint {
-  margin: 0 0 4px;
-  font-size: 11px;
-}
-.llDial {
+  align-items: center;
   margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--zc-line);
-  display: grid;
-  gap: 6px;
 }
-.llDialRow {
-  font-size: 12px;
-}
-.llDialRow select {
-  grid-column: 1 / -1;
-  width: 100%;
-}
-.llHow {
-  margin: 6px 0;
-  padding: 6px 8px;
-  border-left: 2px solid var(--ic, var(--zc-acc));
-  background: #050906;
-  font:
-    500 11.5px/1.5 ui-monospace,
-    Consolas,
-    monospace;
-  color: #c9f7d5;
-}
-/* pass 5: a smaller slime with its envelope scope, the bench, finding ingredients */
-.labStageG {
-  flex: 0 0 auto !important;
-}
-.lsStage {
-  flex: 0 0 auto;
-  height: clamp(150px, 26vh, 230px);
-  min-height: 0;
-}
-.labScope {
-  position: relative;
-  height: 46px;
-  margin-top: 6px;
-  border: 1px solid var(--zc-line);
-  border-radius: 4px;
-  background:
-    linear-gradient(90deg, #0f2316 1px, transparent 1px) 0 0 / 10% 100%,
-    var(--zc-well);
-  overflow: hidden;
-}
-.labScope svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.lcAmp {
-  fill: color-mix(in srgb, var(--zc-acc) 18%, transparent);
-}
-.lcAmpL {
-  fill: none;
-  stroke: var(--zc-acc);
-  stroke-width: 1.6;
-  vector-effect: non-scaling-stroke;
-}
-.lcFil {
-  fill: none;
-  stroke: #ffd23f;
-  stroke-width: 1.4;
-  stroke-dasharray: 4 3;
-  vector-effect: non-scaling-stroke;
-}
-.lcRel {
-  stroke: #ffffff26;
-  stroke-dasharray: 2 3;
-  vector-effect: non-scaling-stroke;
-}
-.lcHead {
-  stroke: #fff;
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 3px var(--zc-acc));
-}
-.lcLab,
-.lcKey {
-  position: absolute;
-  top: 3px;
-  font:
-    600 9px ui-monospace,
-    Consolas,
-    monospace;
-  letter-spacing: 1px;
-  color: var(--zc-dim);
-  pointer-events: none;
-}
-.lcLab {
-  left: 6px;
-}
-.lcLab i {
-  font-style: normal;
-  color: #ffd23f;
-}
-.lcKey {
-  margin-left: 4px;
-  opacity: 0.7;
-}
-.labRead {
-  margin-top: 4px;
-}
-/* the bench */
-#labOv .labBench {
-  margin: 0;
-  display: block;
-}
-.lbTabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 1px solid var(--zc-line);
-  margin-bottom: 8px;
-}
-.lbTab {
-  all: unset;
-  cursor: pointer;
-  padding: 5px 12px 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--zc-dim);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.lbTab:hover {
-  color: #e6ffee;
-}
-.lbTab.on {
-  color: var(--zc-acc);
-  border-bottom-color: var(--zc-acc);
-}
-.lbBody {
-  display: grid;
-  gap: 8px;
-}
-.lbBody .hint {
-  margin: 0;
-  font-size: 12px;
-}
-.lbRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.lbStr,
-.lbMorph {
-  flex: 1;
-  min-width: 160px;
-}
-.lbLocks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-.lbLocks .zcL {
-  font-size: 11px;
-  color: #a9d9b5;
-  margin-right: 4px;
-}
-.lbLock {
-  all: unset;
-  cursor: pointer;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 99px;
-  border: 1px solid var(--zc-line);
-  color: #c9f7d5;
-  background: #050906;
-}
-.lbLock:hover {
-  border-color: var(--zc-acc);
-}
-.lbLock.on {
-  background: #12301c;
-  border-color: var(--zc-acc);
-  color: var(--zc-acc);
-}
-.lbKids {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-}
-.lbKid {
-  all: unset;
-  box-sizing: border-box;
-  cursor: pointer;
+/* Fine-tune: the editor's controls, in a narrow column */
+.lfBox {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 4px 4px 6px;
-  border: 1px solid var(--zc-line);
-  border-radius: 8px;
-  background: var(--zc-well);
-  min-width: 0;
-  transition:
-    border-color 0.15s,
-    transform 0.15s;
+  gap: 8px;
+  min-height: 100%;
 }
-.lbKid:hover {
-  border-color: var(--zc-acc);
-  transform: translateY(-2px);
+.lfTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
-.lbKid.on {
-  border-color: var(--zc-acc);
-  box-shadow: 0 0 10px var(--zc-glow);
+.lfTab {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #23462f;
+  color: #c9f7d5;
 }
-.lbKid b {
-  font-size: 11px;
-  color: #e6ffee;
-}
-.lbKid small {
-  font-size: 9.5px;
-  color: var(--zc-dim);
-  text-align: center;
-  line-height: 1.2;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lbMiniW {
-  display: block;
-  width: 46px;
-  height: 42px;
-}
-.lbKid:hover .lbMiniW,
-.lbKid.on .lbMiniW {
-  animation: labJig 1.4s ease-in-out infinite;
-}
-.lbMini {
-  width: 100%;
-  height: 100%;
-}
-.lbScore {
-  margin-left: auto;
-  font:
-    600 11px ui-monospace,
-    Consolas,
-    monospace;
-  color: var(--zc-acc);
-}
-.lbGuess {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-.lbGuess .btn {
-  padding: 8px 4px;
-}
-.lbGuess .btn.right {
+.lfTab.on {
   background: var(--zc-acc);
+  border-color: var(--zc-acc);
   color: #000;
-  border-color: var(--zc-acc);
-  opacity: 1;
 }
-.lbGuess .btn.wrong {
-  border-color: #ff5f6b;
-  color: #ff9aa2;
-  opacity: 1;
+#labOv .lfPage {
+  overflow: visible;
+  padding: 0;
+  display: grid;
+  gap: 8px;
 }
-.lbYes {
-  color: var(--zc-acc);
+#labOv .lfPage .zcG {
+  grid-template-columns: minmax(0, 1fr);
 }
-.lbNo {
-  color: #ff9aa2;
+#labOv .lfPage .zcEnvTools {
+  flex-wrap: wrap;
 }
-/* finding an ingredient */
-.labFind {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 0 10px;
-  padding: 7px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--zc-line);
-  background: var(--zc-well);
-  color: #e6ffee;
-  font: inherit;
-  font-size: 13px;
+#labOv .lfPage .zcEnvTools select {
+  min-width: 0;
+  max-width: 100%;
 }
-.labFind:focus {
-  outline: none;
-  border-color: var(--zc-acc);
-  box-shadow: 0 0 8px var(--zc-glow);
+#labOv .lfPage .zcParts {
+  flex-wrap: wrap;
 }
-.liBtn[hidden],
-.labG[hidden] {
-  display: none !important;
+.lfAll {
+  align-self: flex-start;
+  margin-top: auto;
 }
-/* the slime takes the room the bench leaves, within limits */
-#labOv .labStageG {
-  flex: 1 1 auto !important;
-  min-height: 0;
+
+/* ---- smaller windows: the side goes under the sound ---- */
+@media (max-width: 980px) {
+  .labBody {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    overflow: auto;
+  }
+  .labMain {
+    min-height: auto;
+  }
+  .labScopeP {
+    flex: none;
+    height: 300px;
+  }
+  .labSide {
+    min-height: 360px;
+  }
+  .lxKids {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
-#labOv .lsStage {
-  flex: 1 1 200px;
-  height: auto;
-  min-height: 150px;
-  max-height: 280px;
+@media (max-width: 640px) {
+  .labKnobs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .lsHow {
+    margin-left: 0;
+  }
+  .labTaste kbd {
+    display: none;
+  }
 }
-/* a found or made blend: a compact note in the corner, not over the slime */
-.lsFound {
-  left: 8px;
-  top: 8px;
-  right: auto;
-  max-width: 62%;
-  padding: 5px 9px;
-  gap: 0;
+@media (max-height: 760px) {
+  .lkKnob svg {
+    width: 48px;
+    height: 48px;
+  }
+  .labTaste {
+    height: 48px;
+  }
 }
-.lsFound b {
-  font-size: 13px;
+@media (prefers-reduced-motion: reduce) {
+  #labOv,
+  .lxKid,
+  .lkKnob {
+    transition: none;
+  }
 }
-.lsFound small {
-  font-size: 11px;
+#labOv .lfPage {
+  grid-template-columns: minmax(0, 1fr);
 }
-.lbKid {
-  cursor: grab;
+#labOv .lfPage > *,
+#labOv .lfPage .zcG,
+#labOv .lfPage .zcWide {
+  min-width: 0;
+}
+#labOv .lfPage .zcG {
+  margin: 0;
+}
+#labOv .lfPage svg,
+#labOv .lfPage canvas {
+  max-width: 100%;
 }
