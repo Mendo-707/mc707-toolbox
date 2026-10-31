@@ -148,10 +148,12 @@ import { songToRows, scenesToSong } from './scene/convert.js';
 import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
+import { pageOf } from './zen/zc-lab-fine.js';
 import {
   clipNotesToMine,
   clipPacked,
   encodePattern,
+  encodeAt,
   clipWriteAsk,
   clipWriteNow,
   songToClipsOpen,
@@ -183,6 +185,11 @@ import { hoverHelpStart } from './ui/hover-help.js';
 
 /* the colours first, so the app does not flash light before going dark */
 applyTheme();
+/* the window itself never scrolls (base.css); if a focus jump or scrollIntoView scrolls it anyway, put it back,
+   so the app can never end up off screen as a blank window */
+for (const t of [document.scrollingElement || document.documentElement, document.body])
+  t.addEventListener('scroll', () => t.scrollTop && (t.scrollTop = 0), { passive: true });
+addEventListener('scroll', () => (scrollX || scrollY) && scrollTo(0, 0), { passive: true });
 initDesktop();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
@@ -280,11 +287,13 @@ PROJ.t = projTitle;
       fw: { FW_REC, fwFields, newSound },
       get ZE() {
         return ZE;
-      }
+      },
+      labPageOf: pageOf
     },
     seq: {
       clipPacked,
       encode: encodePattern,
+      encodeAt,
       stepAddr,
       paramAddr,
       clipAddr,
@@ -384,6 +393,13 @@ PROJ.t = projTitle;
   /* the app opens in Song Mode with the start screen: last session, blank song, template, wizard or Live Mode */
   if (startOnOpen()) startOpen(!!saved);
   requestAnimationFrame(frame);
+  /* drawn: show the page (and, in the desktop app, the window) */
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('boot');
+      if (HOST && HOST.appReady) HOST.appReady();
+    })
+  );
   (async () => {
     try {
       if (window.claude && typeof claude.use === 'function') {

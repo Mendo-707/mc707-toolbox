@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('toolbox', {
   keepAwake: (on) => ipcRenderer.send('keep-awake', !!on),
   quit: () => ipcRenderer.send('quit-now'),
   closeNow: () => ipcRenderer.send('close-now'),
+  appReady: () => ipcRenderer.send('app-ready'),
   onClosing: (cb) => ipcRenderer.on('app-closing', () => cb()),
   // a tool window (the mixers): 'min', 'close', or 'top' with on (stay on top); returns whether it is on top
   popWin: (name, act, on) => ipcRenderer.invoke('pop-win', name, act, on),

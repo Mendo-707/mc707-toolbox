@@ -206,7 +206,7 @@
   color: #fff;
 }
 #live[data-light='1'] .lvnow {
-  box-shadow: 0 0 calc(6px + 18px * var(--beat, 0)) color-mix(in srgb, var(--acc) 30%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--acc) 30%, transparent);
 }
 #live[data-light='1'] .lvbox,
 #live[data-light='1'] .lvPanel,

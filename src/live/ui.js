@@ -77,6 +77,29 @@ export function lvSegs(tickf) {
   return segs.sort((a, b) => a.tick - b.tick);
 }
 export const lvTickF = () => (lvOn() && TR.vis[0] ? TR.vis[0].tick : 0);
+/* A panel that folds away: its heading is the switch, and whether it is open is remembered. Folded, its
+   contents are not drawn at all (the visualizer stops drawing too). */
+const FOLD_KEY = 'mc707-live-fold';
+const folds = () => {
+  try {
+    return JSON.parse(localStorage.getItem(FOLD_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+};
+function fold(id, title, open, ...kids) {
+  const f = folds(),
+    d = el('details', { class: 'lvPanel lvFold', id: 'lvF-' + id, open: id in f ? f[id] : open });
+  d.addEventListener('toggle', () => {
+    const now = folds();
+    now[id] = d.open;
+    try {
+      localStorage.setItem(FOLD_KEY, JSON.stringify(now));
+    } catch (e) {}
+  });
+  d.append(el('summary', {}, el('h3', {}, title)), ...kids);
+  return d;
+}
 const lvBtn = (cls, txt, fn, title, id) =>
   el('button', { class: cls, onclick: fn, title: title || '', id: id || null }, txt);
 export function liveInit() {
@@ -452,10 +475,12 @@ export function liveInit() {
     el('div', { class: 'lvh' }, el('h3', {}, 'Pads'), el('span', { class: 'hint', id: 'lvPadHint' })),
     el('div', { class: 'lvPads', id: 'lvPads' })
   );
-  const viz = el(
-    'div',
-    { class: 'lvViz' },
-    el('canvas', { id: 'lvViz', 'aria-label': 'Visualizer', 'aria-hidden': 'true' })
+  /* the visualizer is extra: folded away (and not drawn) unless you open it */
+  const viz = fold(
+    'viz',
+    'Visualizer',
+    false,
+    el('div', { class: 'lvViz' }, el('canvas', { id: 'lvViz', 'aria-label': 'Visualizer', 'aria-hidden': 'true' }))
   );
   const left = el(
     'div',
@@ -552,38 +577,7 @@ export function liveInit() {
       el(
         'div',
         { class: 'lvBtns' },
-        lvBtn('btn lvbd', '🚀 Build → Drop', liveBuildDrop, 'Queue a build scene with a filter riser, then the drop'),
-        lvBtn('btn', 'Riser ↑', () => liveRiser('up'), 'Sweep the FILTER knob up over the next bars'),
-        lvBtn('btn', 'Riser ↓', () => liveRiser('down')),
-        el(
-          'select',
-          {
-            id: 'lvRiseBars',
-            'aria-label': 'Build length',
-            title: 'How long Build → Drop and the risers last',
-            onchange: e => {
-              LV.riseBars = +e.target.value;
-              saveLive();
-            }
-          },
-          ...[2, 4, 8].map(n => el('option', { value: n }, n + ' bars'))
-        ),
-        el(
-          'select',
-          {
-            id: 'lvDropSt',
-            'aria-label': 'Drop style',
-            title:
-              'How big jumps land: Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first',
-            onchange: e => {
-              LV.dropStyle = e.target.value;
-              saveLive();
-            }
-          },
-          el('option', { value: 'gap' }, 'Hard drop + gap'),
-          el('option', { value: 'hard' }, 'Hard drop'),
-          el('option', { value: 'smooth' }, 'Smooth drop')
-        )
+        lvBtn('btn lvbd', '🚀 Build → Drop', liveBuildDrop, 'Queue a build scene with a filter riser, then the drop')
       ),
       el(
         'div',
@@ -597,75 +591,120 @@ export function liveInit() {
           () => liveMoveNow('pump'),
           'Sidechain-style pumping on the bass, chords and pad. Press again to stop.',
           'lvPumpB'
-        ),
-        lvBtn(
-          'btn',
-          'Autopan',
-          () => liveMoveNow('pan'),
-          'Lead and pluck swing left and right in time. Press again to stop.',
-          'lvPanB'
         )
       ),
+      /* the rest, folded away: still all there, just not in the way */
       el(
-        'label',
-        { class: 'lvf', style: 'margin:2px 0 6px' },
-        el('input', {
-          type: 'checkbox',
-          id: 'lvBuildFx',
-          onchange: e => {
-            LV.buildFx = e.target.checked;
-            saveLive();
-          }
-        }),
-        'Epic builds: resonance, reverb wash and pump climb into every drop'
-      ),
-      el(
-        'div',
-        { class: 'lvBtns' },
-        ...[
-          ['Stutter ¼', 8],
-          ['Stutter ⅛', 4],
-          ['Stutter 1/16', 2]
-        ].map(([l, len]) => {
-          const b = el('button', { class: 'btn lvhold', title: 'Hold to repeat the last slice' }, l);
-          const on = ev => {
-            ev.preventDefault();
-            try {
-              b.setPointerCapture(ev.pointerId);
-            } catch (_) {}
-            b.classList.add('on');
-            liveStutter(len, true);
-          };
-          const off = () => {
-            b.classList.remove('on');
-            liveStutter(0, false);
-          };
-          b.addEventListener('pointerdown', on);
-          b.addEventListener('pointerup', off);
-          b.addEventListener('pointercancel', off);
-          b.addEventListener('lostpointercapture', off);
-          return b;
-        })
-      ),
-      el(
-        'div',
-        { class: 'lvBtns' },
+        'details',
+        { class: 'lvMore' },
+        el('summary', {}, 'More moves'),
+        el(
+          'div',
+          { class: 'lvBtns' },
+          lvBtn('btn', 'Riser ↑', () => liveRiser('up'), 'Sweep the FILTER knob up over the next bars'),
+          lvBtn('btn', 'Riser ↓', () => liveRiser('down')),
+          el(
+            'select',
+            {
+              id: 'lvRiseBars',
+              'aria-label': 'Build length',
+              title: 'How long Build → Drop and the risers last',
+              onchange: e => {
+                LV.riseBars = +e.target.value;
+                saveLive();
+              }
+            },
+            ...[2, 4, 8].map(n => el('option', { value: n }, n + ' bars'))
+          ),
+          el(
+            'select',
+            {
+              id: 'lvDropSt',
+              'aria-label': 'Drop style',
+              title:
+                'How big jumps land: Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first',
+              onchange: e => {
+                LV.dropStyle = e.target.value;
+                saveLive();
+              }
+            },
+            el('option', { value: 'gap' }, 'Hard drop + gap'),
+            el('option', { value: 'hard' }, 'Hard drop'),
+            el('option', { value: 'smooth' }, 'Smooth drop')
+          )
+        ),
+        el(
+          'div',
+          { class: 'lvBtns' },
+          lvBtn(
+            'btn',
+            'Autopan',
+            () => liveMoveNow('pan'),
+            'Lead and pluck swing left and right in time. Press again to stop.',
+            'lvPanB'
+          )
+        ),
         el(
           'label',
-          { class: 'lvf' },
-          'Chaos',
+          { class: 'lvf', style: 'margin:2px 0 6px' },
           el('input', {
-            type: 'range',
-            id: 'lvChaos',
-            min: 0,
-            max: 100,
-            style: 'width:90px',
-            oninput: e => {
-              LV.chaos = +e.target.value;
+            type: 'checkbox',
+            id: 'lvBuildFx',
+            onchange: e => {
+              LV.buildFx = e.target.checked;
               saveLive();
-            },
-            title: 'How often Auto-pilot adds fills and swaps'
+            }
+          }),
+          'Epic builds: resonance, reverb wash and pump climb into every drop'
+        ),
+        el(
+          'div',
+          { class: 'lvBtns' },
+          ...[
+            ['Stutter ¼', 8],
+            ['Stutter ⅛', 4],
+            ['Stutter 1/16', 2]
+          ].map(([l, len]) => {
+            const b = el('button', { class: 'btn lvhold', title: 'Hold to repeat the last slice' }, l);
+            const on = ev => {
+              ev.preventDefault();
+              try {
+                b.setPointerCapture(ev.pointerId);
+              } catch (_) {}
+              b.classList.add('on');
+              liveStutter(len, true);
+            };
+            const off = () => {
+              b.classList.remove('on');
+              liveStutter(0, false);
+            };
+            b.addEventListener('pointerdown', on);
+            b.addEventListener('pointerup', off);
+            b.addEventListener('pointercancel', off);
+            b.addEventListener('lostpointercapture', off);
+            return b;
           })
+        ),
+        el(
+          'div',
+          { class: 'lvBtns' },
+          el(
+            'label',
+            { class: 'lvf' },
+            'Chaos',
+            el('input', {
+              type: 'range',
+              id: 'lvChaos',
+              min: 0,
+              max: 100,
+              style: 'width:90px',
+              oninput: e => {
+                LV.chaos = +e.target.value;
+                saveLive();
+              },
+              title: 'How often Auto-pilot adds fills and swaps'
+            })
+          )
         )
       )
     ),
@@ -704,17 +743,17 @@ export function liveInit() {
         el('span', {}, 'FILTER ↔ · FX ↕')
       )
     ),
-    el(
-      'div',
-      { class: 'lvPanel' },
-      el('div', { class: 'lvh' }, el('h3', {}, 'Scatter'), el('span', { class: 'hint' }, 'hold')),
+    fold(
+      'scatter',
+      'Scatter (hold)',
+      false,
       el('div', { class: 'lvSc', id: 'lvScG' }),
       el('div', { class: 'hint', id: 'lvScHint' })
     ),
-    el(
-      'div',
-      { class: 'lvPanel' },
-      el('h3', {}, 'Key and parts'),
+    fold(
+      'keys',
+      'Key and parts',
+      false,
       el('div', { class: 'hint', id: 'lvPerfHint' }),
       el('div', { class: 'lvKeysRow', id: 'lvKeys' }),
       el('div', { class: 'lvStrips', id: 'lvMutes' }),

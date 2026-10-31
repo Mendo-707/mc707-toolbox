@@ -227,11 +227,27 @@ export function liveScene(idx, tick, hard) {
       .flatMap(tracksOf)
       .map(t => sc.cells[t] && lvProg(facById(sc.cells[t].id)))
       .find(Boolean) || null;
+  /* going down (fewer or calmer parts): drums that leave fade over a beat, and the last notes of the parts
+     that leave ring out into the reverb, so a busy scene settles into a quiet one instead of cutting */
+  const parts = c => (c ? Array.from({ length: 8 }, (_, t) => c[t]).filter(Boolean).length : 0);
+  const down = !hard && LV.entry !== 'hard' && (jump < 0 || parts(sc.cells) < parts(prev && prev.cells)),
+    leaving = [];
   for (let t = 0; t < 8; t++) {
     const cell = sc.cells[t],
       tone = S.tracks[t].type === 'tone',
       top = lvTop(t);
     lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
+    if (!cell && down && top && !tone) {
+      /* drums that leave fade over a beat instead of stopping dead (bass and melodies still stop cleanly on
+         the downbeat, and pads and chords fade as below) */
+      LV.voices[t].forEach(v => {
+        if (v.env.v1 > 0) v.env = mkEnv(envAt(v.env, tick), 0, tick, 8);
+      });
+      leaving.push(t);
+      continue;
+    }
+    /* melodies that leave (not the bass: reverb on it is mud) ring out into the reverb */
+    if (!cell && down && top && lvFadeKind(t) === 'cut' && slotOf(t) !== 3) leaving.push(t);
     if (!cell) {
       const clash = top && newProg && lvProg(top.f) && lvProg(top.f) !== newProg;
       const kind = tone ? lvFadeKind(t) : 'drum';
@@ -261,8 +277,22 @@ export function liveScene(idx, tick, hard) {
     LV.crash = true;
     LV.dropTick = tick;
   }
-  /* a big step down lands softly: the tone parts that stay get a short reverb tail across the change */
-  if (jump <= -3 && LV.buildFx && !hard)
+  /* the leaving parts' last notes ring out into the reverb, then their send goes back for next time */
+  if (leaving.length && S.sendCC !== false)
+    lvMove({
+      id: 'leavetail',
+      tag: 'scene',
+      tracks: leaving,
+      cc: 91,
+      kind: 'ramp',
+      from: 90,
+      to: 'rest',
+      curve: 'log',
+      start: tick,
+      end: tick + 48
+    });
+  /* a step down lands softly: the tone parts that stay get a short reverb tail across the change */
+  if (jump <= -2 && LV.buildFx && !hard)
     lvMove({
       id: 'landthrow',
       tag: 'scene',

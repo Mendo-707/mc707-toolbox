@@ -1,10 +1,10 @@
-// The Slime Lab's Oscillator and Effects ingredients, and the "Dial it in" controls: for every ingredient,
-// the two to five real parameters behind it, so after mixing one in you can set it exactly.
+// The Slime Lab's Oscillator and Effects moves (the rest are in zc-lab-moves.js), which its starting sounds
+// are built from.
 //
 // Ingredients here follow zc-lab.js's shape: {id, name, c (colour), tag, brew(b, dose), what, hear, tip}.
 // b is the lab's brewer: get/set/add/toward a key, each(fn) over the partials it applies to, free() the
 // first partial switched off. Reads: MFX defaults (zc-mfx.js), MFX_PARAMS (zc-tone.js).
-import { mfxDefaults, mfxParams } from './zc-mfx.js';
+import { mfxDefaults } from './zc-mfx.js';
 import { MFX_PARAMS } from './zc-tone.js';
 
 /* the tone's MFX as a type: a new type starts from its defaults; set {index: value} on top */
@@ -217,78 +217,3 @@ export const FX_GROUP = [
     }
   ]
 ];
-
-/**
- * Dial it in: per ingredient, the parameters behind it. A string 'BLK.ID' is a partial parameter (set on
- * the partials the lab applies to) or a common one (CMN, SCMN, SPMT, PMT); {mfx: i} is the effect's
- * parameter i (shown when the tone's effect is that ingredient's type).
- */
-export const DIALS = {
-  sun: ['PTL.CUTOFF', 'PTL.CUTOFF_KF', 'PTL.RESO'],
-  moon: ['PTL.CUTOFF', 'PTL.CUTOFF_KF', 'PTL.RESO'],
-  squelch: [
-    'PTL.RESO',
-    'PTL.CUTOFF',
-    'FENV.DEPTH',
-    'FENV.T2',
-    'FENV.L3',
-    'FENV.VSENS',
-    'SPTL.FILTER_TYPE',
-    'SPTL.VCF_TYPE',
-    'SPTL.FILTER_SLOPE'
-  ],
-  bloom: ['PTL.CUTOFF', 'FENV.DEPTH', 'FENV.T1', 'FENV.T2', 'FENV.L2', 'FENV.L3', 'FENV.VSENS', 'PTL.CUTOFF_VSENS'],
-  ghost: ['PTL.FILTER_TYPE', 'PTL.CUTOFF', 'PTL.RESO'],
-  hush: ['PTL.RESO', 'CMN.ANALOG_FEEL', 'SPTL.FAT'],
-  pluck: [
-    'AENV.T1',
-    'AENV.T2',
-    'AENV.L2',
-    'AENV.T3',
-    'AENV.L3',
-    'AENV.T4',
-    'FENV.DEPTH',
-    'FENV.T2',
-    'FENV.L2',
-    'FENV.L3'
-  ],
-  swell: ['AENV.T1', 'AENV.L3', 'AENV.T4'],
-  mist: ['AENV.T4', 'FENV.T4'],
-  punch: ['PENV.DEPTH', 'PENV.L0', 'PENV.T1', 'AENV.T1'],
-  wobble: ['LFO.LFO2_TVF_DEPTH', 'LFO.LFO2_FORM', 'LFO.LFO2_RATE_SYNC', 'LFO.LFO2_RATE_NOTE', 'LFO.LFO2_RATE'],
-  vibrato: ['LFO.LFO1_PIT_DEPTH', 'LFO.LFO1_RATE', 'LFO.LFO1_DELAY', 'LFO.LFO1_FADE'],
-  tremolo: ['LFO.LFO1_TVA_DEPTH', 'LFO.LFO1_FORM', 'LFO.LFO1_RATE_SYNC', 'LFO.LFO1_RATE_NOTE', 'LFO.LFO1_RATE'],
-  swirl: ['LFO.LFO2_PAN_DEPTH', 'LFO.LFO2_RATE_SYNC', 'LFO.LFO2_RATE_NOTE', 'LFO.LFO2_RATE'],
-  quick: ['LFO.LFO1_RATE', 'LFO.LFO2_RATE'],
-  sloth: ['LFO.LFO1_RATE', 'LFO.LFO2_RATE'],
-  abyss: ['CMN.OCTAVE', 'PTL.PIT_CRS'],
-  feather: ['CMN.OCTAVE', 'PTL.PIT_CRS'],
-  wolf: ['CMN.MONO_POLY', 'CMN.LEGATO_SW'],
-  glide: ['CMN.PORTA_SW', 'CMN.PORTA_MODE', 'CMN.PORTA_TIME'],
-  drift: ['CMN.ANALOG_FEEL', 'PTL.PIT_RND', 'PTL.PIT_FINE'],
-  swarm: ['SCMN.UNISON_SW', 'SCMN.UNISON_SIZE', 'SCMN.UNISON_DETN'],
-  giant: ['PTL.PAN', 'PTL.PAN_RND', 'PTL.STEREO_WIDTH'],
-  shimmer: ['PTL.PIT_FINE', 'PTL.STEREO_DETN'],
-  grit: ['PTL.FXM_SW', 'PTL.FXM_DEPTH', 'SPTL.FAT', 'CMN.ANALOG_FEEL'],
-  space: ['PTL.REV_SEND', 'PTL.CHO_SEND'],
-  saw: ['SPTL.OSC_TYPE', 'SPTL.VA_FORM', 'SPTL.FAT'],
-  square: ['SPTL.VA_FORM', 'SPTL.PW', 'SPTL.PWM_DEPTH'],
-  pwm: ['SPTL.PW', 'SPTL.PWM_DEPTH', 'LFO.LFO1_RATE'],
-  tri: ['SPTL.VA_FORM'],
-  sine: ['SPTL.VA_FORM', 'PTL.PIT_CRS'],
-  ssaw: ['SPTL.OSC_TYPE', 'SPTL.SSAW_DETUNE'],
-  layer: ['PTL.LEVEL', 'PTL.PIT_CRS', 'PTL.PIT_FINE', 'PTL.PAN'],
-  noise: ['PTL.LEVEL', 'PTL.FILTER_TYPE', 'PTL.CUTOFF', 'AENV.T2', 'AENV.L3'],
-  sync: ['SPMT.STRUCT12', 'PTL1.PIT_CRS', 'PENV1.DEPTH', 'PENV1.L0', 'PENV1.T1'],
-  ring: ['SPMT.STRUCT12', 'PTL1.PIT_CRS', 'PTL1.PIT_FINE'],
-  od: [{ mfx: 0 }, { mfx: 1 }, { mfx: 7 }],
-  dist: [{ mfx: 0 }, { mfx: 1 }, { mfx: 7 }],
-  crush: [{ mfx: 0 }, { mfx: 1 }, { mfx: 2 }, { mfx: 5 }],
-  chorus: [{ mfx: 4 }, { mfx: 6 }, { mfx: 10 }],
-  phaser: [{ mfx: 0 }, { mfx: 3 }, { mfx: 5 }, { mfx: 7 }, { mfx: 9 }],
-  tape: [{ mfx: 0 }, { mfx: 1 }, { mfx: 2 }, { mfx: 11 }]
-};
-/** The MFX type an effect ingredient uses (null for the others). */
-export const fxOf = id => FX_TYPE[id] ?? null;
-/** An MFX parameter of a type, as {name, kind, lo, hi, list, dec, unit} (null when there is none). */
-export const fxParam = (type, i) => mfxParams(type)[i] || null;

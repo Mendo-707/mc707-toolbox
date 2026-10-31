@@ -13,7 +13,7 @@ import { PUMP_LANE, kicksUnder, pumpValues } from '../core/pump.js';
 import { MIDI } from '../services/midi.js';
 import { TR } from '../services/transport.js';
 import { askDlg } from '../ui/dialogs.js';
-import { MAX_STEPS, STEP_SIZES, encodePattern, writeClip, writeSession } from '../zen/zc-seq.js';
+import { MAX_STEPS, STEP_SIZES, encodePattern, lostText, writeClip, writeSession } from '../zen/zc-seq.js';
 import { MOTION_NONE, MOTION_PER_STEP, motionThin, writeMotion } from '../zen/zc-motion.js';
 import { sceneName, writeScenes } from '../zen/zc-scenes.js';
 import { lin, slotAddr, trackSetAddr, zxConnect, zxFlush, zxWrite } from '../zen/zc-sysex.js';
@@ -128,15 +128,7 @@ export async function writeThese(what, quiet = false) {
         continue;
       }
       if (!r.checked) bad.push(where + ': read-back did not match (' + r.diff + ')');
-      if (r.skipped)
-        bad.push(
-          where +
-            ': ' +
-            r.skipped +
-            ' note' +
-            (r.skipped === 1 ? '' : 's') +
-            ' could not go in (no drum note for its lane, past the end, or two of the same note in one step)'
-        );
+      if (r.skipped) bad.push(where + ': ' + lostText(r));
       const tn = toneOf(c),
         /* kits stay as they are: the MC-707 keeps each key's drum instrument whatever is sent */
         snd = WO.tones && tn && tn.kind !== 'kit' && soundFrom({ zencore: 1, kind: tn.kind, v: tn.d });

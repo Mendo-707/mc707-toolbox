@@ -1,11 +1,11 @@
-// The Slime Lab's blends: classic synth sounds built only from what you can do in the lab yourself.
-// A blend starts with New tone (a fresh tone, saw wave on partial 1), then each step is one lab action:
-// choose which partials it Works on, mix in an ingredient at an amount (or 0: leave it out), and set some of
-// that ingredient's Dial it in controls. The guide shows each step that way, so any blend can be made by hand.
+// The Slime Lab's starting sounds (blends): classic synth sounds built from a blank tone (a saw wave on
+// partial 1), step by step. Each step is a move (zc-lab-moves.js) at an amount and some settings, on the
+// partials it names; every setting a step changes is on a Fine-tune page, and the guide lists them page by
+// page, so any of them can be made by hand.
 //
-// A step: {ing, amt (0-10; 0 only dials), on (partial 0-3, or all when left out), dial {key: value}, title,
-// why}. Dial keys are that ingredient's Dial it in keys (zc-lab-more.js DIALS); 'mfx0'… is the effect's
-// parameter 0…; values are in stored units, as the controls set them.
+// A step: {ing (a move), amt (0-10; 0: settings only), on (partial 0-3, or all when left out), dial {key:
+// value}, title, why}. Dial keys are 'BLK.ID' (set on the partials the step works on) or whole keys;
+// 'mfx0'… is the effect's parameter 0…; values are in stored units.
 //
 // Reads: nothing.
 

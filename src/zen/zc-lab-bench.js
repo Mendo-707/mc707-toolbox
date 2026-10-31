@@ -1,22 +1,19 @@
-// The Slime Lab's bench, under the slime: three ways of working borrowed from sound-design tools.
+// The Slime Lab's variations and morph, two ways of working borrowed from other sound-design tools.
 //
-//   Mutate     (after Synplant's seeds and branches) sprouts four variations of the tone, each a small
-//              random step on its "genes" (oscillator, filter, amp, motion, pitch, space, effect), with a
-//              strength and locks for the genes to keep. Click one to hear it; sprout again from it.
-//   Morph      (after A/B snapshots and morphing in Pigments and friends) keeps two snapshots, A and B,
-//              and slides the tone between them, or flips between them to compare.
-//   Ear test   (after Syntorial's ear training) mixes in a hidden ingredient: flip before and after,
-//              taste, and guess which one it was.
+//   Variations  (after Synplant's seed and branches) six variations of the tone, each a small random step on
+//               its "genes" (oscillator, filter, amp, motion, pitch, space, effect), as far as you choose, keeping
+//               the genes you lock. Click one to hear it (the tone becomes it); Grow from it sprouts six more.
+//   Morph       (after the A/B snapshots and morphing of Pigments and friends) keeps two snapshots, A and B,
+//               and slides the tone between them, or flips between them to compare.
 //
-// Every change goes through the lab's apply (one undo step per action). Reads: ZE.snd. Owns: BENCH,
-// localStorage 'mc707-lab-ear' (the ear test score).
+// Every change goes through the lab's apply (one undo step per action). Reads: ZE.snd. Owns: BENCH.
 import { el, toast } from '../core/dom.js';
 import { ZE } from './zc-editor.js';
 import { MFX_PARAMS, paramOf } from './zc-tone.js';
 import { mfxParams } from './zc-mfx.js';
+import { miniSvg } from './zc-lab-scope.js';
 
 const BENCH = {
-  tab: 'mutate',
   str: 4,
   locks: new Set(),
   kids: [],
@@ -25,19 +22,14 @@ const BENCH = {
   gen: 0,
   A: null,
   B: null,
-  t: 0,
-  ear: null
+  t: 0
 };
-const EAR_KEY = 'mc707-lab-ear';
-let SCORE = { right: 0, tries: 0, streak: 0 };
-try {
-  SCORE = { ...SCORE, ...JSON.parse(localStorage.getItem(EAR_KEY) || '{}') };
-} catch (e) {}
-const saveScore = () => {
-  try {
-    localStorage.setItem(EAR_KEY, JSON.stringify(SCORE));
-  } catch (e) {}
-};
+const KIDS = 6;
+const STRENGTH = [
+  [2, 'Subtle'],
+  [4, 'Medium'],
+  [7, 'Wild']
+];
 
 /* ---- the genes: per partial [block.id, how far it may move as a share of its range] ---- */
 const GENES = {
@@ -158,60 +150,22 @@ const short = (ctx, k) => {
     .replace('Resonance', 'reso');
 };
 
-/* a small static slime for a variation, its shape from the values (stretch, lumps) and a seed */
-function mini(color, seed, wide = 0.5, lumpy = 0.5) {
-  let r = seed * 9301 + 49297;
-  const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
-  const id = 'lsm' + Math.round(seed * 1000) + '_' + Math.round(Math.random() * 1e6);
-  const lobes = Array.from({ length: 6 }, (_, i) => {
-    const a = (i / 6) * Math.PI * 2 + rnd() * 0.6,
-      d = 9 + lumpy * 8 + rnd() * 4;
-    return `<circle cx="${30 + Math.cos(a) * d * (1 + wide * 0.4)}" cy="${30 + Math.sin(a) * d * 0.85}" r="${8 + rnd() * 5}"/>`;
-  }).join('');
-  return (
-    `<svg viewBox="0 0 60 56" class="lbMini" aria-hidden="true"><defs><filter id="${id}"><feGaussianBlur stdDeviation="3.4"/>` +
-    `<feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 22 -9"/></filter></defs>` +
-    `<ellipse cx="30" cy="50" rx="${18 + wide * 6}" ry="3" fill="#000" opacity=".55"/>` +
-    `<g filter="url(#${id})" fill="${color}"><circle cx="30" cy="30" r="15"/>${lobes}<circle cx="30" cy="42" r="10"/></g>` +
-    `<ellipse cx="23" cy="22" rx="5" ry="2.4" fill="#fff" opacity=".45" transform="rotate(-25 23 22)"/></svg>`
-  );
+/** Forget the variations (a new tone, a starting sound: they belong to the old one). */
+export function varsForget() {
+  BENCH.kids = [];
+  BENCH.pick = -1;
 }
-const KID_COLS = ['#39ff7a', '#5ef2d6', '#b4ff5e', '#7af0ff'];
-
-/* ---- the bench ---- */
-/**
- * The bench element, redrawn by the lab.
- * @param {object} ctx  the lab: apply(tag, vals, id, label), tag(), parts(), keyName(k), shown(k, v),
- *   ingredients() [{id, name}], mixQuiet(id, amount, tag) -> keys, select(id), redraw()
- */
-export function benchBox(ctx) {
-  const tab = (id, label, title) =>
-    el(
-      'button',
-      {
-        type: 'button',
-        class: 'lbTab' + (BENCH.tab === id ? ' on' : ''),
-        title,
-        onclick: () => ((BENCH.tab = id), ctx.redraw())
-      },
-      label
-    );
-  const body = BENCH.tab === 'mutate' ? mutateBox(ctx) : BENCH.tab === 'morph' ? morphBox(ctx) : earBox(ctx);
-  return el(
-    'fieldset',
-    { class: 'zcG labBench' },
-    el('legend', {}, 'Bench'),
-    el(
-      'div',
-      { class: 'lbTabs' },
-      tab('mutate', 'Mutate', 'Sprout four variations of the tone and pick the one you like'),
-      tab('morph', 'Morph A ↔ B', 'Keep two snapshots and slide between them'),
-      tab('ear', 'Ear test', 'Guess the hidden ingredient by ear')
-    ),
-    body
-  );
+/* six new variations of the tone as it is now */
+function sprout(ctx) {
+  BENCH.parent = { ...ZE.snd.v };
+  BENCH.gen++;
+  BENCH.pick = -1;
+  BENCH.kids = Array.from({ length: KIDS }, () => {
+    const vals = mutate(ctx, BENCH.str);
+    return { vals, gist: gist(ctx, vals, BENCH.parent) };
+  });
+  ctx.redraw();
 }
-
 /* hear a variation: the tone becomes it (one undo step for the whole generation); -1 is the parent */
 function pickKid(ctx, i) {
   const tag = 'mutate:' + BENCH.gen;
@@ -219,126 +173,100 @@ function pickKid(ctx, i) {
     [...new Set(BENCH.kids.flatMap(k => Object.keys(k.vals)))].map(k => [k, num(BENCH.parent, k)])
   );
   const vals = i < 0 ? back : { ...back, ...BENCH.kids[i].vals };
-  ctx.apply(tag, vals, 'drift', i < 0 ? 'Mutate: back to the parent' : 'Mutate: variation ' + (i + 1));
+  ctx.apply(tag, vals, i < 0 ? 'Variations: back to where they grew from' : 'Variation ' + (i + 1));
   BENCH.pick = i;
   ctx.redraw();
+  ctx.hear();
 }
-/**
- * Something dropped on the slime from the bench: a variation ('kid:n') gloops in and the tone becomes it.
- * Resolves true when it was the bench's.
- */
-export async function benchDrop(ctx, data) {
-  const m = /^kid:(-?\d)$/.exec(data || '');
-  if (!m || !BENCH.kids.length) return false;
-  const i = +m[1];
-  await ctx.gloop(i < 0 ? '#9aa59e' : BENCH.kids[i].col);
-  pickKid(ctx, i);
-  return true;
-}
-
-/* Mutate: four variations, each a small step from the parent */
-function mutateBox(ctx) {
-  const sprout = () => {
-    BENCH.parent = { ...ZE.snd.v };
-    BENCH.gen++;
-    BENCH.pick = -1;
-    BENCH.kids = Array.from({ length: 4 }, (_, i) => {
-      const vals = mutate(ctx, BENCH.str);
-      return { vals, gist: gist(ctx, vals, BENCH.parent), seed: Math.random(), col: KID_COLS[i] };
-    });
-    ctx.redraw();
+/** The variations: six small pictures of the tone, how far they go, the genes kept. */
+export function varsBox(ctx) {
+  const ps = ctx.parts();
+  const kid = (i, name, what, vals) => {
+    const b = el(
+      'button',
+      {
+        type: 'button',
+        class: 'lxKid' + (BENCH.pick === i ? ' on' : ''),
+        title: (i < 0 ? 'Back to the tone they grew from' : 'Hear this variation: ' + what) + ' (click)',
+        onclick: () => pickKid(ctx, i)
+      },
+      el('span', { class: 'lxPic' }),
+      el('b', {}, name),
+      el('small', {}, what)
+    );
+    b.firstChild.innerHTML = miniSvg(vals, ps);
+    return b;
   };
-  const pick = i => pickKid(ctx, i);
+  const strength = el(
+    'div',
+    { class: 'lxSeg', role: 'group', 'aria-label': 'How far the variations go' },
+    ...STRENGTH.map(([n, label]) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: BENCH.str === n ? 'on' : '',
+          'aria-pressed': String(BENCH.str === n),
+          title: label + ' variations',
+          onclick: () => ((BENCH.str = n), ctx.redraw())
+        },
+        label
+      )
+    )
+  );
   const lock = g =>
     el(
       'button',
       {
         type: 'button',
-        class: 'lbLock' + (BENCH.locks.has(g) ? ' on' : ''),
-        title: BENCH.locks.has(g) ? g + ' is locked: variations keep it' : 'Lock ' + g + ' so variations keep it',
+        class: 'lxLock' + (BENCH.locks.has(g) ? ' on' : ''),
+        'aria-pressed': String(BENCH.locks.has(g)),
+        title: BENCH.locks.has(g) ? g + ' is kept: variations leave it alone' : 'Keep ' + g + ' as it is in variations',
         onclick: () => {
           if (BENCH.locks.has(g)) BENCH.locks.delete(g);
           else BENCH.locks.add(g);
           ctx.redraw();
         }
       },
-      (BENCH.locks.has(g) ? '🔒 ' : '') + g
+      g
     );
-  const strength = el('input', {
-    type: 'range',
-    min: 1,
-    max: 10,
-    value: BENCH.str,
-    'aria-label': 'How far the variations go',
-    oninput: e => {
-      BENCH.str = +e.target.value;
-      e.target.parentNode.querySelector('.zcV').textContent = strLabel();
-    }
-  });
-  const strLabel = () => (BENCH.str <= 3 ? 'Subtle' : BENCH.str <= 6 ? 'Medium' : 'Wild') + ' · ' + BENCH.str;
   const kids = BENCH.kids.length
-    ? el(
-        'div',
-        { class: 'lbKids' },
-        kidBtn(-1, 'Parent', 'As it was', '#9aa59e', 0.42),
-        ...BENCH.kids.map((k, i) => kidBtn(i, 'Variation ' + (i + 1), k.gist || 'tiny change', k.col, k.seed))
-      )
-    : el(
-        'p',
-        { class: 'hint' },
-        'Sprout four variations of the tone. Click one to hear it, keep the one you like, and sprout again from it: sound design by breeding.'
-      );
-  function kidBtn(i, name, what, col, seed) {
-    const b = el(
-      'button',
-      {
-        type: 'button',
-        class: 'lbKid' + (BENCH.pick === i ? ' on' : ''),
-        draggable: 'true',
-        title:
-          (i < 0 ? 'Back to the tone you sprouted from' : 'Hear this variation: ' + what) +
-          '. Click, or drag it onto the slime.',
-        onclick: () => pick(i),
-        ondragstart: e => {
-          e.dataTransfer.setData('text/plain', 'kid:' + i);
-          e.dataTransfer.effectAllowed = 'copy';
-          const m = e.currentTarget.querySelector('.lbMiniW');
-          if (m && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(m, 23, 21);
-        }
-      },
-      el('span', { class: 'lbMiniW' }),
-      el('b', {}, name),
-      el('small', {}, what)
-    );
-    b.firstChild.innerHTML = mini(col, seed, Math.random(), Math.random());
-    return b;
-  }
+    ? [
+        kid(-1, 'Before', 'as it was', BENCH.parent),
+        ...BENCH.kids.map((k, i) => kid(i, String(i + 1), k.gist || 'tiny change', { ...BENCH.parent, ...k.vals }))
+      ]
+    : [];
   return el(
     'div',
-    { class: 'lbBody' },
+    { class: 'lxBox' },
     el(
       'div',
-      { class: 'lbRow' },
-      el(
-        'label',
-        { class: 'zcC lbStr' },
-        el('span', { class: 'zcL' }, 'How far'),
-        el('span', { class: 'zcV' }, strLabel()),
-        strength
-      ),
+      { class: 'lxTop' },
       el(
         'button',
-        { type: 'button', class: 'btn on', onclick: sprout, title: 'Four new variations of the tone as it is now' },
-        BENCH.kids.length ? 'Sprout again' : 'Sprout'
-      )
+        {
+          type: 'button',
+          class: 'btn on lxGrow',
+          onclick: () => sprout(ctx),
+          title: 'Six new variations of the tone as it is now'
+        },
+        BENCH.kids.length ? (BENCH.pick >= 0 ? 'Grow from ' + (BENCH.pick + 1) : 'Grow again') : 'Grow variations'
+      ),
+      strength,
+      el('details', { class: 'lxKeep' }, el('summary', {}, 'Keep…'), el('div', {}, ...GENE_NAMES.map(lock)))
     ),
-    el('div', { class: 'lbLocks' }, el('span', { class: 'zcL' }, 'Keep'), ...GENE_NAMES.map(lock)),
-    kids
+    kids.length
+      ? el('div', { class: 'lxKids' }, ...kids)
+      : el(
+          'p',
+          { class: 'hint lxNone' },
+          'Not sure where to go? Grow six variations of your sound, click through them by ear, and grow again from the one you like.'
+        )
   );
 }
 
 /* Morph: snapshots A and B, and the tone between them */
-function morphBox(ctx) {
+export function morphBox(ctx) {
   const snap = slot => {
     BENCH[slot] = { ...ZE.snd.v };
     BENCH.t = slot === 'A' ? 0 : 1;
@@ -362,7 +290,7 @@ function morphBox(ctx) {
         typeof a !== 'number' || typeof b !== 'number' || (d && d[0][8]) || (k.startsWith('MFX.') && !fxSame);
       out[k] = step ? (t < 0.5 ? a : b) : Math.round(a + (b - a) * t);
     }
-    ctx.apply(tag, out, 'shimmer', 'Morph ' + Math.round(t * 100) + '% to B');
+    ctx.apply(tag, out, 'Morph ' + Math.round(t * 100) + '% to B');
   };
   const slider = el('input', {
     type: 'range',
@@ -424,158 +352,10 @@ function morphBox(ctx) {
       'p',
       { class: 'hint' },
       !BENCH.A || !BENCH.B
-        ? 'Keep the tone as A, change it (ingredients, a blend, a mutation), keep it as B, then slide between them or flip to compare.'
+        ? 'Keep the tone as A, change it (the knobs, a starting sound, a variation, Fine-tune), keep it as B, then slide between them or flip to compare.'
         : ks.length
           ? ks.length + ' settings differ. Numbers slide; waves, types and switches change halfway.'
           : 'A and B are the same: change the tone and keep it again.'
     )
-  );
-}
-
-/* Ear test: a hidden ingredient; flip before and after and guess it */
-const EAR_POOL = [
-  'sun',
-  'moon',
-  'squelch',
-  'ghost',
-  'pluck',
-  'swell',
-  'mist',
-  'punch',
-  'wobble',
-  'vibrato',
-  'tremolo',
-  'swirl',
-  'abyss',
-  'feather',
-  'drift',
-  'swarm',
-  'shimmer',
-  'space',
-  'od',
-  'chorus',
-  'phaser',
-  'square',
-  'sine',
-  'ssaw'
-];
-function earBox(ctx) {
-  const E = BENCH.ear;
-  const start = () => {
-    const before = { ...ZE.snd.v };
-    const pool = [...EAR_POOL].sort(() => Math.random() - 0.5);
-    for (const id of pool) {
-      const tag = ctx.tag();
-      const keys = ctx.mixQuiet(id, 7, tag);
-      if (!keys.length) continue;
-      const after = Object.fromEntries(keys.map(k => [k, ZE.snd.v[k]]));
-      const others = EAR_POOL.filter(x => x !== id)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
-      BENCH.ear = {
-        id,
-        tag,
-        keys,
-        before: Object.fromEntries(keys.map(k => [k, before[k]])),
-        after,
-        side: 'after',
-        options: [id, ...others].sort(() => Math.random() - 0.5),
-        answer: null
-      };
-      return ctx.redraw();
-    }
-    toast('Nothing to hide: every ingredient is already as far as it goes on this tone');
-  };
-  const side = s => () => {
-    ctx.apply(E.tag, s === 'before' ? E.before : E.after, 'ghost', 'Ear test (' + s + ')');
-    E.side = s;
-    ctx.redraw();
-  };
-  const guess = id => {
-    if (E.answer) return;
-    E.answer = id;
-    SCORE.tries++;
-    if (id === E.id) {
-      SCORE.right++;
-      SCORE.streak++;
-    } else SCORE.streak = 0;
-    saveScore();
-    /* the tone ends up with the ingredient in, and the lab shows what it was */
-    if (E.side !== 'after') ctx.apply(E.tag, E.after, E.id, 'Ear test');
-    ctx.select(E.id);
-    ctx.redraw();
-  };
-  const score = el(
-    'span',
-    { class: 'lbScore' },
-    SCORE.tries
-      ? SCORE.right + ' / ' + SCORE.tries + ' right' + (SCORE.streak > 1 ? ' · streak ' + SCORE.streak : '')
-      : 'No score yet'
-  );
-  if (!E)
-    return el(
-      'div',
-      { class: 'lbBody' },
-      el(
-        'p',
-        { class: 'hint' },
-        'The lab mixes a hidden ingredient into your tone. Flip between before and after, taste with the keys, and guess what it was. Training your ears to name what you hear is the core skill of sound design.'
-      ),
-      el(
-        'div',
-        { class: 'lbRow' },
-        el('button', { type: 'button', class: 'btn on', onclick: start }, 'New challenge'),
-        score
-      )
-    );
-  const name = id => (ctx.ingredients().find(p => p.id === id) || { name: id }).name;
-  return el(
-    'div',
-    { class: 'lbBody' },
-    el(
-      'div',
-      { class: 'lbRow' },
-      el(
-        'button',
-        { type: 'button', class: 'btn' + (E.side === 'before' ? ' on' : ''), onclick: side('before') },
-        'Before'
-      ),
-      el(
-        'button',
-        { type: 'button', class: 'btn' + (E.side === 'after' ? ' on' : ''), onclick: side('after') },
-        'After'
-      ),
-      el('span', { class: 'hint' }, 'Flip, taste, then guess:'),
-      score
-    ),
-    el(
-      'div',
-      { class: 'lbGuess' },
-      ...E.options.map(id =>
-        el(
-          'button',
-          {
-            type: 'button',
-            class: 'btn' + (E.answer ? (id === E.id ? ' right' : id === E.answer ? ' wrong' : '') : ''),
-            disabled: !!E.answer,
-            onclick: () => guess(id)
-          },
-          name(id)
-        )
-      )
-    ),
-    E.answer
-      ? el(
-          'div',
-          { class: 'lbRow' },
-          el(
-            'b',
-            { class: E.answer === E.id ? 'lbYes' : 'lbNo' },
-            E.answer === E.id ? 'Right: ' + name(E.id) + '.' : 'It was ' + name(E.id) + '.'
-          ),
-          el('span', { class: 'hint' }, 'Learn shows what it does. It stays in (Undo takes it out).'),
-          el('button', { type: 'button', class: 'btn on', onclick: start }, 'Next challenge')
-        )
-      : null
   );
 }

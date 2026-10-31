@@ -333,7 +333,8 @@ function ratchets(notes, k) {
   const near = (a, b) => Math.abs(a - b) < 0.06;
   const groups = new Map();
   for (const x of notes) {
-    const key = x.n + ':' + Math.floor(x.s / k + 1e-6);
+    /* the step a note is in (a note a hair before a step line, from rounding 16ths into triplets, counts as on it) */
+    const key = x.n + ':' + Math.floor(x.s / k + 0.02);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(x);
   }
@@ -341,7 +342,7 @@ function ratchets(notes, k) {
     gone = new Set();
   for (const g of groups.values()) {
     if (g.length < 2 || g.length > 4) continue;
-    const f = Math.floor(g[0].s / k + 1e-6),
+    const f = Math.floor(g[0].s / k + 0.02),
       offs = g.map(x => x.s / k - f),
       n = g.length;
     if (!offs.every((o, i) => near(o, i / n))) continue;
@@ -377,52 +378,123 @@ export function stepSize(p) {
   }
   return p.bars * 16 <= MAX_STEPS ? 1 : 0;
 }
-export function encodePattern(p, type) {
-  /* the grid the notes sit on (see stepSize), else up to 8 bars in 1/16 steps and 9-16 bars in 1/8, a
-     note's place off the step kept by its start (-50 = half a step early); longer does not fit a clip */
-  const size = stepSize(p),
-    k = STEP_SIZES[size],
+/**
+ * The pattern in one step size: the notes in their steps, each kept off the grid by its start. Where the
+ * MC-707 can't take a note as it is, the closest it can: a note that starts while the same pitch is still
+ * held cuts the held one short (a synth retriggers it the same way), and two hits of one pitch on the same
+ * spot (two drum lanes on one MIDI note) become one, the louder. Only a second hit of a pitch inside one
+ * step, at a different moment, can't go in: those are lost, and counted.
+ */
+export function encodeAt(p, type, size) {
+  const k = STEP_SIZES[size],
     steps = Math.round((p.bars * 16) / k);
-  if (steps > MAX_STEPS) return { error: 'An MC-707 clip holds up to 16 bars; this pattern is ' + p.bars };
   const slots = Array.from({ length: steps }, () => []);
-  let skipped = 0;
+  let skipped = 0,
+    merged = 0,
+    cut = 0,
+    id = 0;
+  /* what did not fit, and why: [time in 16ths, note, reason] */
+  const lost = [];
   const notes = ratchets(
     [...p.notes].sort((a, b) => a.s - b.s || a.n - b.n),
     k
   );
+  /* a held note's entries in the steps after its first, so a retrigger can cut it */
+  const tail = (from, nid) => {
+    for (let i = from; i < steps; i++) {
+      const j = slots[i].findIndex(y => y.id === nid);
+      if (j < 0) break;
+      slots[i].splice(j, 1);
+    }
+    const before = slots[from - 1] && slots[from - 1].find(y => y.id === nid);
+    if (before) before.end = Math.min(before.end, 99);
+  };
+  /* the steps a pitch has a note right on, so a note half way between two steps can take the one that
+     stays free */
+  const pitch = x => (type === 'drum' ? S.drumMap[x.n] : x.n),
+    onStep = new Set();
   for (const x of notes) {
-    const note = type === 'drum' ? S.drumMap[x.n] : x.n;
+    const q = x.s / k;
+    if (Math.abs(q - Math.round(q)) < 0.02) onStep.add(pitch(x) + ':' + Math.round(q));
+  }
+  for (const x of notes) {
+    const note = pitch(x);
     if (!(note >= 0 && note <= 127)) {
       skipped++;
+      lost.push([x.s, x.n, 'nomap']);
       continue;
     }
     /* a note goes in its nearest step, moved early or late by its start (-50 to 49 hundredths), the
        way the MC-707 keeps a note off the grid; past the last step it stays in the last one, late */
     const pos = x.s / k;
-    let at = Math.round(pos + 1e-6);
+    let at = Math.round(pos + 0.02);
+    /* half way, and the later step is taken by a note of this pitch right on it: the earlier step, late */
+    if (
+      Math.abs(pos - Math.floor(pos) - 0.5) < 0.02 &&
+      onStep.has(note + ':' + at) &&
+      !onStep.has(note + ':' + (at - 1))
+    )
+      at--;
     if (at >= steps) at = Math.floor(pos + 1e-6);
     let start = Math.round((pos - at) * 100);
     if (start >= 100) (at++, (start = 0));
     if (at < 0 || at >= steps) {
       skipped++;
+      lost.push([x.s, note, 'outside']);
       continue;
     }
+    /* the pitch already at that spot in its nearest step: the neighbouring step can hold the note too,
+       within the start's range (half a step early to nearly a step late) */
+    const busy = i => slots[i] && slots[i].some(z => z.note === note && z.head);
+    if (busy(at) && !slots[at].some(z => z.note === note && z.start === start)) {
+      const y = slots[at].find(z => z.note === note && z.head);
+      if (start < 0 && at > 0 && start + 100 <= 99 && !busy(at - 1)) (at--, (start += 100));
+      else if (start > 0 && at + 1 < steps && start - 100 >= -50 && !busy(at + 1)) (at++, (start -= 100));
+      else if (y.start < 0 && y.end < 100 && at > 0 && !busy(at - 1) && slots[at - 1].length < 16) {
+        /* the note already there sits half a step early and is short: it moves to the step before, late by
+           as much, which leaves this step to the new note */
+        slots[at].splice(slots[at].indexOf(y), 1);
+        y.start += 100;
+        y.end = Math.min(99, y.end + 100);
+        slots[at - 1].push(y);
+      }
+    }
     const vel = Math.max(1, Math.min(127, Math.round(x.v || 100)));
+    const nid = ++id;
     let left = Math.max(1, Math.round(((x.l || 0.8) / k) * 100)),
       first = true,
       prev = null;
     while (left > 0 && at < steps) {
       const room = 100 - start,
         tie = left > room;
-      const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0 };
+      const c = { note, vel, start, end: tie ? 100 : Math.min(99, start + left), sub: first ? x.sub || 0 : 0, id: nid };
       const s = slots[at];
-      /* a full step, or this pitch already in it: the note is cut here */
-      if (s.length >= 16 || s.some(y => y.note === note)) {
-        if (first) skipped++;
+      let y = s.find(z => z.note === note);
+      if (y && first) {
+        if (!y.head) {
+          /* the same pitch still held from an earlier note: that one stops here, this one plays */
+          tail(at, y.id);
+          cut++;
+          y = null;
+        } else if (y.start === start) {
+          /* the same pitch at the same moment: one hit, the louder */
+          y.vel = Math.max(y.vel, vel);
+          merged++;
+          break;
+        }
+      }
+      /* a full step, or this pitch already in it at another moment: the note is lost (its first step) or
+         stops here (a held note running into the next one of its pitch) */
+      if (s.length >= 16 || y) {
+        if (first) {
+          skipped++;
+          lost.push([x.s, note, s.length >= 16 ? 'full' : 'twice']);
+        }
         if (prev) prev.end = 99;
         prev = null;
         break;
       }
+      if (first) c.head = true;
       s.push(c);
       prev = c;
       first = false;
@@ -433,7 +505,54 @@ export function encodePattern(p, type) {
     /* a note running past the clip's end stops on its last step */
     if (prev && prev.end >= 100) prev.end = 99;
   }
-  return { steps, size, slots, skipped };
+  /* each step's notes in its lowest slots, without the bookkeeping */
+  for (const s of slots) for (const c of s) (delete c.id, delete c.head);
+  return { steps, size, slots, skipped, lost, merged, cut };
+}
+/**
+ * A pattern as clip steps (see encodeAt). Every step size that holds the pattern in 128 steps is tried,
+ * and the one that keeps the most notes is used: the grid its notes sit on first (stepSize), so a pattern
+ * that fits exactly is written exactly; a finer or triplet grid when that keeps notes the first would lose
+ * (16th triplets over straight 16ths, say). Longer than 16 bars does not fit a clip.
+ */
+/** What a write left out, in words: how many notes, why, and where the first one was (bar.beat). */
+export function lostText(r) {
+  const l = r.lost || [],
+    n = r.skipped || l.length;
+  if (!n) return '';
+  const why = {
+    nomap: 'no drum note for its lane',
+    outside: 'past the end',
+    full: 'more than 16 notes at once',
+    twice: 'the same note twice too close together for the clip’s steps'
+  };
+  const kinds = [...new Set(l.map(x => x[2]))].map(k => why[k] || k);
+  const at = l.length ? Math.floor(l[0][0] / 16) + 1 + '.' + (Math.floor((l[0][0] % 16) / 4) + 1) : '';
+  return (
+    n +
+    ' note' +
+    (n === 1 ? '' : 's') +
+    ' could not go in (' +
+    (kinds.join(', ') || 'no room') +
+    ')' +
+    (at ? ', the first at bar ' + at : '')
+  );
+}
+export function encodePattern(p, type) {
+  const first = stepSize(p);
+  if (Math.round((p.bars * 16) / STEP_SIZES[first]) > MAX_STEPS)
+    return { error: 'An MC-707 clip holds up to 16 bars; this pattern is ' + p.bars };
+  let best = encodeAt(p, type, first);
+  if (!best.skipped) return best;
+  for (const size of [1, 2, 5, 4, 0, 3]) {
+    if (size === first) continue;
+    const steps = (p.bars * 16) / STEP_SIZES[size];
+    if (Math.abs(steps - Math.round(steps)) > 1e-6 || steps > MAX_STEPS) continue;
+    const e = encodeAt(p, type, size);
+    if (e.skipped < best.skipped) best = e;
+    if (!best.skipped) break;
+  }
+  return best;
 }
 const nib = v => [((v & 0xff) >> 4) & 15, v & 15];
 /** The 7 writes (offset, 16 bytes) that set one step's slots; empty slots as the MC-707 keeps them. */
@@ -509,6 +628,7 @@ export async function writeClip(t, k, p, o = {}) {
     ok: true,
     notes: want.length,
     skipped: enc.skipped,
+    lost: enc.lost,
     checked,
     replaced,
     diff: checked ? '' : diffText(enc, want, after)
@@ -697,7 +817,7 @@ export async function clipWriteNow(p, t, k, o = {}) {
       r.notes +
       (r.replaced ? ' notes' : ' notes to ' + where) +
       (r.checked ? ', read back and checked' : '. The read-back did not match: check the clip on the MC-707') +
-      (r.skipped ? '. ' + r.skipped + ' notes could not go in (no drum note, past the end, or a full step)' : '')
+      (r.skipped ? '. ' + lostText(r) : '')
   );
 }
 
