@@ -22,7 +22,7 @@ import { setMode } from './mode.js';
 import { showMenu } from './menu.js';
 import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
-import { synthAct } from '../zen/zc-synth.js';
+import { synthAct, synthViewOpen, synthViewSet } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
 import { motionTestOpen } from '../zen/zc-motion.js';
@@ -223,6 +223,18 @@ function initMenubar() {
         ],
         ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
+        [
+          'Synth Mode opens',
+          null,
+          '',
+          null,
+          () =>
+            [
+              ['last', 'As I left it'],
+              ['strips', 'All eight strips'],
+              ['expanded', 'Expanded: one track with its editor']
+            ].map(([v, label]) => ({ label, checked: synthViewOpen() === v, action: () => synthViewSet(v) }))
+        ],
         0,
         ['MIDI and sound…', go('#bMidi')],
         ['Track MIDI controls…', go('#bTrackCtl')],

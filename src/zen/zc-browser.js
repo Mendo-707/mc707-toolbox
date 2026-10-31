@@ -396,8 +396,10 @@ function selBar() {
   );
 }
 
-/* a sound's right-click menu */
+/* a sound's right-click menu; on one of several picked sounds, it acts on all of them */
 function rowMenu(e, x, y) {
+  const many = B.sel.has(e.id) && B.sel.size > 1 ? picked() : null;
+  if (many && many.length > 1) return manyMenu(many, x, y);
   const r = ratingOf(e.id),
     mine = e.src !== 'starter';
   showMenu(x, y, [
@@ -445,6 +447,26 @@ function rowMenu(e, x, y) {
           }
         }
       : null
+  ]);
+}
+/* the right-click menu of several picked sounds: what the bar above the table does */
+function manyMenu(list, x, y) {
+  const own = list.filter(editable);
+  showMenu(x, y, [
+    { label: list.length + ' picked', disabled: true },
+    {
+      label: 'Rating',
+      sub: [3, 2, 1, 0].map(n => ({
+        label: n ? '★'.repeat(n) + '☆'.repeat(3 - n) : 'No rating',
+        action: () => (list.forEach(e => setRating(e.id, n)), render())
+      }))
+    },
+    { label: 'Tag', sub: tagItems(list).filter(Boolean) },
+    ZE.kind === 'tone' ? { label: 'Category', sub: catItems(list) } : null,
+    '-',
+    { label: 'Copy to', sub: targets(f => copyTo(list, f)) },
+    own.length ? { label: 'Move to', sub: targets(f => moveTo(list, f)) } : null,
+    own.length ? { label: 'Delete…', danger: true, action: () => deleteMany(list) } : null
   ]);
 }
 /* the ⋯ button's menu */
@@ -533,7 +555,9 @@ function toolbar() {
             { label: 'This clip', action: () => grab('clip') },
             { label: 'All 16 clips of track ' + devNum(ZE.t), action: () => grab('track') },
             { label: 'Every clip of every track', action: () => grab('all') },
-            ...(ZE.kind === 'tone' ? ['-', ...factoryItems(n => (n && (B.bank = 'factory'), render()))] : [])
+            ...(ZE.kind === 'tone'
+              ? ['-', ...factoryItems((n, bank) => (n && (B.bank = bank || 'factory'), render()))]
+              : [])
           ]
         ),
     menuBtn('Backup ▾', 'Export or import your sound library', () => [

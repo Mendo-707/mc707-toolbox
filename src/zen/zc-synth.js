@@ -20,6 +20,7 @@ import { QS, quickForget } from './zc-synth-quick.js';
 import {
   SY,
   SYHOOK,
+  synthSave,
   kbdSet,
   panic,
   readNames,
@@ -40,14 +41,37 @@ let exp = null;
 const dock = el('div', { class: 'syDock' });
 const docked = () => !!$('#zcOv') && dock.contains($('#zcOv'));
 const dn = () => DEVS[DEV].name;
+/* how Synth mode opens: 'last' (as it was left), 'strips' (all eight) or 'expanded' (a track and its editor);
+   last: how it was left, t: the track that was expanded */
+const VIEW_KEY = 'mc707-synth-view';
+const VIEW = { open: 'last', last: 'strips', t: 0 };
+try {
+  const v = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null');
+  if (v && ['last', 'strips', 'expanded'].includes(v.open)) Object.assign(VIEW, v);
+} catch (e) {}
+const viewSave = () => {
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify(VIEW));
+  } catch (e) {}
+};
+/** How Synth mode opens: 'last', 'strips' or 'expanded' (Settings). */
+export const synthViewOpen = () => VIEW.open;
+export function synthViewSet(v) {
+  VIEW.open = v;
+  viewSave();
+}
 
 /** Enter or leave Synth mode (called by the mode switch). */
 export function synthEnter(on) {
   if (!on && docked()) zenClose();
+  if (!on) exp = null;
   thruSet(SY.thru, on);
   SYHOOK.activity = on ? flash : null;
   if (on) {
     synthRender();
+    /* the view it opens in: expanded on the track expanded last, or all eight strips */
+    const want = VIEW.open === 'expanded' || (VIEW.open === 'last' && VIEW.last === 'expanded');
+    if (want && exp == null) expand(tracks().includes(VIEW.t) ? VIEW.t : tracks()[0]);
     /* the inputs to pass notes from need MIDI access: ask once, then draw the list and start passing */
     if (!MIDI.access)
       connectMidi().then(() => {
@@ -81,6 +105,9 @@ function expand(t, browse) {
   if (docked() && edT !== t) quickForget(edT);
   exp = t;
   edT = t;
+  VIEW.last = 'expanded';
+  VIEW.t = t;
+  viewSave();
   synthRender();
   zenOpen(t, SY.slot[t], dock);
   if (browse) setTimeout(browserOpen, 0);
@@ -88,6 +115,8 @@ function expand(t, browse) {
 }
 /* back to all eight strips (closing the editor; the watch below redraws) */
 function collapse() {
+  VIEW.last = 'strips';
+  viewSave();
   if (docked()) zenClose();
   else {
     exp = null;
@@ -102,13 +131,19 @@ function watch() {
     if ($('#zcOv')) {
       if (exp != null && ZE.t !== exp && tracks().includes(ZE.t)) {
         quickForget(edT);
-        exp = edT = ZE.t;
+        exp = edT = VIEW.t = ZE.t;
+        viewSave();
         synthRender();
       }
       return;
     }
     clearInterval(wait);
     quickForget(edT);
+    /* the docked editor closed (Done) while in Synth mode: back to the strips, and it opens that way */
+    if (exp != null && document.body.dataset.mode === 'synth') {
+      VIEW.last = 'strips';
+      viewSave();
+    }
     exp = null;
     refresh(true);
   }, 400);
@@ -231,6 +266,17 @@ const mini = t =>
     el('span', { class: 'syMiniName' }, SY.names[t] || '—')
   );
 
+/**
+ * A sound was sent to track t's clip k from elsewhere (the editor's Copy to): when it is the sound the
+ * track plays, its strip shows the new name at once.
+ */
+export function synthSoundSent(t, k, snd) {
+  if (!tracks().includes(t) || SY.slot[t] !== k) return;
+  SY.names[t] = (snd.v[snd.kind === 'kit' ? 'KCMN.NAME' : 'CMN.NAME'] || '').trim();
+  quickForget(t);
+  synthSave();
+  if (document.body.dataset.mode === 'synth') synthRender();
+}
 /** Draw the Synth mode screen. */
 export function synthRender() {
   const box = $('#synth');

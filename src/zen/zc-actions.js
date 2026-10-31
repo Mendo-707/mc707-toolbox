@@ -13,8 +13,10 @@ import { copySound, newSound, sendSound, soundFrom, soundJSON } from './zc-tone.
 import { rememberClip } from './zc-library.js';
 import { browserOpen } from './zc-browser.js';
 import { labOpen } from './zc-lab.js';
+import { synthSoundSent } from './zc-synth.js';
 import { starterMenu } from './zc-starters-more.js';
 import {
+  PART_TABS,
   ZE,
   targetName,
   zeLoad,
@@ -121,6 +123,7 @@ function copyMenu() {
           if (!(await zxConnect())) return toast('Connect the ' + DEVS[DEV].name + ' first');
           sendSound(ZE.snd, slotAddr(ZE.kind, t, k));
           rememberClip(copySound(ZE.snd), t, k);
+          synthSoundSent(t, k, ZE.snd);
           toast('Copied to track ' + devNum(t) + ', ' + targetName(k));
         }
       }))
@@ -207,7 +210,7 @@ export function headerBar() {
           })
         : null,
       btn('File ▾', e => menuAt(e, fileMenu())),
-      ZE.kind === 'tone' ? btn('Partial ▾', e => menuAt(e, partMenu())) : null,
+      ZE.kind === 'tone' && PART_TABS.includes(ZE.tab) ? btn('Partial ▾', e => menuAt(e, partMenu())) : null,
       btn('Copy to ▾', e => menuAt(e, copyMenu()), { title: 'Send this sound to another clip' }),
       btn('Done', () => zenClose(), { on: true })
     )

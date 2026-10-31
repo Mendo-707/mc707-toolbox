@@ -185,6 +185,23 @@ function render(ov) {
           (shown.length - nD) +
           ' tone tracks.'
       ),
+      /* the one thing the app cannot do for you: it says it up front, not as a footnote */
+      el(
+        'div',
+        { class: 'tsMust', role: 'note' },
+        el('b', {}, 'Set the MC-707 to match, by hand'),
+        el(
+          'span',
+          {},
+          'The app can’t change what a track is on the MC-707. After choosing here, set each MC-707 track the same way: a drum kit on each drum track, a tone on each tone track (select the track on the MC-707 and choose its sound). If they don’t match, drum parts play notes on a tone, or melodies on a kit. Easiest: start from an '
+        ),
+        el(
+          'button',
+          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templatesOpen()) },
+          'MC-707 project template…'
+        ),
+        el('span', {}, ' with the tracks already set up.')
+      ),
       el(
         'div',
         { class: 'tsPresets' },
@@ -200,13 +217,7 @@ function render(ov) {
       el(
         'p',
         { class: 'hint' },
-        'On the MC-707, set each track to match: a drum kit on drum tracks and a tone on tone tracks (select the track and choose its sound). Each app track sends on its own MIDI channel, set in MIDI and the MC-707’s Track Channel settings. ',
-        el(
-          'button',
-          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templatesOpen()) },
-          'MC-707 project templates…'
-        ),
-        ' start a project with the tracks already set up.'
+        'Each app track sends on its own MIDI channel, set in MIDI and sound and the MC-707’s Track Channel settings.'
       )
     )
   );
