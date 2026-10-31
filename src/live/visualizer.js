@@ -83,8 +83,9 @@ function vizDraw(now, dt) {
   const W = cv.clientWidth,
     H = cv.clientHeight;
   if (W < 10 || H < 10) return;
-  let dpr = Math.min(1.5, devicePixelRatio || 1);
-  if (W * H * dpr * dpr > 900000) dpr = Math.sqrt(900000 / (W * H));
+  /* a modest resolution: it is a backdrop, and every pixel costs time the music needs */
+  let dpr = Math.min(1, devicePixelRatio || 1);
+  if (W * H * dpr * dpr > 400000) dpr = Math.sqrt(400000 / (W * H));
   if (VZ.cw !== Math.round(W * dpr) || VZ.ch !== H * dpr) {
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
@@ -255,19 +256,37 @@ function vizDraw(now, dt) {
   x.fillText(on && sc ? sc.name.toUpperCase() : 'READY', 14, H - 10);
   x.globalAlpha = 1;
 }
+/* Drawn only while it is on screen, at most 30 times a second: drawing it off screen at full rate used
+   most of the computer's time and made the music stutter. */
+let seen = false,
+  watching = null;
+function watch() {
+  const cv = $('#lvViz');
+  if (!cv || watching === cv || typeof IntersectionObserver === 'undefined') return;
+  watching = cv;
+  new IntersectionObserver(es => es.forEach(e => (seen = e.isIntersecting && e.intersectionRatio > 0.05)), {
+    threshold: [0, 0.05, 0.5]
+  }).observe(cv);
+}
 function vizLoop(now) {
   if (document.body.dataset.mode !== 'live') {
     VZ.run = false;
     return;
   }
+  requestAnimationFrame(vizLoop);
+  watch();
+  if (now - VZ.last < 33) return;
   const dt = Math.min(0.1, (now - (VZ.last || now)) / 1000);
   VZ.last = now;
-  if (!document.hidden) {
-    try {
-      vizDraw(now, dt);
-    } catch (e) {}
+  /* off screen: just let the queued notes go, so nothing piles up */
+  if (document.hidden || !seen) {
+    const actx = AU.ctx ? AU.ctx.currentTime : 0;
+    while (VZ.ev.length && VZ.ev[0].time <= actx) VZ.ev.shift();
+    return;
   }
-  requestAnimationFrame(vizLoop);
+  try {
+    vizDraw(now, dt);
+  } catch (e) {}
 }
 export function vizStart() {
   if (VZ.run) return;

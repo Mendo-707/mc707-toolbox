@@ -2888,7 +2888,7 @@ body[data-mode='live'] #live {
 }
 .lvnow {
   border-color: color-mix(in srgb, var(--acc) 55%, var(--line));
-  box-shadow: 0 0 calc(10px + 26px * var(--beat, 0)) color-mix(in srgb, var(--acc) 35%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--acc) 35%, transparent);
 }
 .lvnow .big {
   background: linear-gradient(90deg, #fff, var(--acc));
@@ -3379,7 +3379,7 @@ body[data-mode='live'] #live {
   box-shadow:
     inset 0 1px 0 #ffffff26,
     0 3px 0 #05060b,
-    0 0 calc(12px + 18px * var(--beat, 0)) color-mix(in srgb, var(--c) 70%, transparent);
+    0 0 18px color-mix(in srgb, var(--c) 70%, transparent);
 }
 .lvPad.cur::before {
   opacity: 1;
@@ -4392,7 +4392,7 @@ input[type='number'] {
   color: #fff;
 }
 #live[data-light='1'] .lvnow {
-  box-shadow: 0 0 calc(6px + 18px * var(--beat, 0)) color-mix(in srgb, var(--acc) 30%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--acc) 30%, transparent);
 }
 #live[data-light='1'] .lvbox,
 #live[data-light='1'] .lvPanel,
@@ -9796,12 +9796,12 @@ html.os-darwin.native-menu #menubar .mproj {
       } catch (e) {
       }
     };
-    const watch4 = setInterval(() => {
+    const watch5 = setInterval(() => {
       if (win.closed) h.close(true);
       else save4();
     }, 1e3);
     win.addEventListener("beforeunload", save4);
-    Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch4) });
+    Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch5) });
     return true;
   }
   function openPanel(o, h) {
@@ -10526,12 +10526,12 @@ html.os-darwin.native-menu #menubar .mproj {
         if (m) maxId = Math.max(maxId, +m[1] + 1);
       }
     s.patterns = pats;
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     s.clips = (Array.isArray(s.clips) ? s.clips : []).filter(
       (c) => c && pats[c.pat] && Number.isInteger(c.t) && c.t >= 0 && c.t < 8 && s.tracks[c.t].type === pats[c.pat].type && Number.isFinite(+c.start) && Number.isFinite(+c.len) && c.start >= 0 && c.len >= 0.0625
     ).map((c) => {
-      let id = typeof c.id === "string" && !seen.has(c.id) ? c.id : "c" + maxId++;
-      seen.add(id);
+      let id = typeof c.id === "string" && !seen2.has(c.id) ? c.id : "c" + maxId++;
+      seen2.add(id);
       const m = /^c(\d+)$/.exec(id);
       if (m) maxId = Math.max(maxId, +m[1] + 1);
       const o = {
@@ -11658,12 +11658,12 @@ html.os-darwin.native-menu #menubar .mproj {
     const GK = ["Fm", "Gm", "Cm", "Am", "Dm", "Em"];
     let kc = 0;
     const nextKey = () => GK[kc++ % GK.length];
-    const seen = new Set(FAC.map((f) => f.type + JSON.stringify(f.notes.map((n) => [n.s, n.l, n.n, n.v]))));
+    const seen2 = new Set(FAC.map((f) => f.type + JSON.stringify(f.notes.map((n) => [n.s, n.l, n.n, n.v]))));
     let uid = 1;
     const add = (o) => {
       const sig4 = o.type + JSON.stringify(o.notes.map((n) => [n.s, n.l, n.n, n.v]));
-      if (!o.notes.length || seen.has(sig4)) return false;
-      seen.add(sig4);
+      if (!o.notes.length || seen2.has(sig4)) return false;
+      seen2.add(sig4);
       FAC.push({
         id: "g" + uid++,
         name: o.name,
@@ -11876,7 +11876,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const all = Object.keys(F.styles);
       const bpm = F.styles[all[0]].bpm;
       const tag = (F.tag || GTAG[F.genre] || F.genre) + " ";
-      const put2 = (name, role, pool, lanes, bars2) => add({
+      const put3 = (name, role, pool, lanes, bars2) => add({
         name: tag + name,
         type: "drum",
         genre: F.genre,
@@ -11888,20 +11888,20 @@ html.os-darwin.native-menu #menubar .mproj {
         pool
       });
       F.K.forEach(([n, d]) => {
-        put2("Kick: " + n, "Kick", "", d, 1);
+        put3("Kick: " + n, "Kick", "", d, 1);
         [0, 1].forEach(
-          (i) => put2("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
+          (i) => put3("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
         );
       });
       F.S.forEach(([n, d]) => {
-        put2("Snare: " + n, "Snare", "", d, 1);
-        put2("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
+        put3("Snare: " + n, "Snare", "", d, 1);
+        put3("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
       });
-      F.H.forEach(([n, d]) => put2("Hats: " + n, "Hats", "hats", d, 1));
+      F.H.forEach(([n, d]) => put3("Hats: " + n, "Hats", "hats", d, 1));
       F.H.forEach(([n, d], i) => {
-        if (i % 2 === 0) put2("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
+        if (i % 2 === 0) put3("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
       });
-      F.perc.forEach(([n, d]) => put2("Perc: " + n, "Perc", "perc", d, 1));
+      F.perc.forEach(([n, d]) => put3("Perc: " + n, "Perc", "perc", d, 1));
     }
     function genFills(F) {
       const all = Object.keys(F.styles);
@@ -14917,12 +14917,12 @@ html.os-darwin.native-menu #menubar .mproj {
       MOT.forEach(([mn, mot]) => {
         const notes = [];
         const deg = (d) => 60 + R3 + SC2[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
-        const put2 = (bar2, shift, vel) => mot.forEach(
+        const put3 = (bar2, shift, vel) => mot.forEach(
           ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
-        put2(0, 0, 104);
-        put2(1, 2, 98);
-        put2(2, 0, 104);
+        put3(0, 0, 104);
+        put3(1, 2, 98);
+        put3(2, 0, 104);
         [
           [0, 2, 4],
           [2, 2, 3],
@@ -16383,11 +16383,11 @@ html.os-darwin.native-menu #menubar .mproj {
     if (drop.length) f.styles = f.styles.filter((s) => !drop.includes(s));
   }
   var tidy = (notes) => {
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     return notes.filter((n) => {
       const k2 = n.s + ":" + n.n;
-      if (seen.has(k2)) return false;
-      seen.add(k2);
+      if (seen2.has(k2)) return false;
+      seen2.add(k2);
       return true;
     }).sort((a, b) => a.s - b.s || a.n - b.n);
   };
@@ -18914,20 +18914,20 @@ html.os-darwin.native-menu #menubar .mproj {
     S.loop = { on: true, start: 0, end: 8 };
     S.key = 5;
     S.scale = "minor";
-    const put2 = (t, start, len, fid) => {
+    const put3 = (t, start, len, fid) => {
       const pid = instFactory(FAC.find((x) => x.id === fid));
       S.clips.push({ id: "c" + S.nextId++, t, start, len, off: 0, pat: pid });
     };
-    put2(0, 0, 7, "dnb-twostep");
-    put2(0, 7, 1, "dnb-fill");
-    put2(0, 8, 8, "dnb-neuro");
-    put2(3, 0, 8, "dnb-sub");
-    put2(3, 8, 8, "dnb-reese");
-    put2(4, 4, 4, "dnb-stabs");
-    put2(4, 8, 8, "dnb-liquid-ch");
-    put2(5, 0, 8, "dnb-pad");
-    put2(6, 12, 4, "dnb-arp");
-    put2(7, 8, 8, "dnb-pluck");
+    put3(0, 0, 7, "dnb-twostep");
+    put3(0, 7, 1, "dnb-fill");
+    put3(0, 8, 8, "dnb-neuro");
+    put3(3, 0, 8, "dnb-sub");
+    put3(3, 8, 8, "dnb-reese");
+    put3(4, 4, 4, "dnb-stabs");
+    put3(4, 8, 8, "dnb-liquid-ch");
+    put3(5, 0, 8, "dnb-pad");
+    put3(6, 12, 4, "dnb-arp");
+    put3(7, 8, 8, "dnb-pluck");
   }
   var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
@@ -21735,15 +21735,15 @@ html.os-darwin.native-menu #menubar .mproj {
     return out2;
   }
   function midiPartToNotes(part, ppq, type) {
-    const k2 = 4 / ppq, seen = /* @__PURE__ */ new Set(), notes = [];
+    const k2 = 4 / ppq, seen2 = /* @__PURE__ */ new Set(), notes = [];
     part.notes.sort((a, b) => a.t - b.t).forEach((n) => {
       const s = Math.round(n.t * k2);
       if (s >= 16 * 32) return;
       const nn = type === "drum" ? GMDRUM[n.n] !== void 0 ? GMDRUM[n.n] : 11 : n.n;
       const l = type === "drum" ? 1 : Math.max(1, Math.round(n.d * k2));
       const key = s + ":" + nn;
-      if (seen.has(key)) return;
-      seen.add(key);
+      if (seen2.has(key)) return;
+      seen2.add(key);
       notes.push({ s, l: Math.min(l, 16 * 32 - s), n: nn, v: clamp(n.v, 1, 127) });
     });
     const bars2 = clamp(Math.ceil(notes.reduce((m, n) => Math.max(m, n.s + n.l), 1) / 16), 1, 32);
@@ -30911,11 +30911,11 @@ html.os-darwin.native-menu #menubar .mproj {
     return e;
   }
   async function soundAddMany(items) {
-    const seen = new Set(ZS.list.map((e) => e.h)), at2 = Date.now(), add = [];
+    const seen2 = new Set(ZS.list.map((e) => e.h)), at2 = Date.now(), add = [];
     items.forEach(({ snd, name, src, bank, no }, i) => {
       const d = diffOf(snd), h = hashOf(snd.kind, d);
-      if (seen.has(h)) return;
-      seen.add(h);
+      if (seen2.has(h)) return;
+      seen2.add(h);
       const nm = (name || snd.v["CMN.NAME"] || snd.v["KCMN.NAME"] || "Untitled").trim();
       add.push({
         id: "s" + at2.toString(36) + "_" + i.toString(36),
@@ -31756,23 +31756,23 @@ html.os-darwin.native-menu #menubar .mproj {
   function songPlan(starts = {}) {
     const out2 = [];
     for (const t of DEVS[DEV].tracks) {
-      const seen = /* @__PURE__ */ new Map();
+      const seen2 = /* @__PURE__ */ new Map();
       for (const c of [...S.clips].filter((c2) => c2.t === t).sort((a, b) => a.start - b.start)) {
         const p = S.patterns[c.pat];
         if (!p || !p.notes.length) continue;
         const tr = p.type === "tone" ? c.tr || 0 : 0, key = c.pat + ":" + tr;
-        if (seen.has(key)) continue;
+        if (seen2.has(key)) continue;
         const q = tr ? {
           ...p,
           name: p.name + " " + (tr > 0 ? "+" : "") + tr,
           notes: p.notes.map((n) => ({ ...n, n: Math.max(0, Math.min(127, n.n + tr)) }))
         } : p;
-        seen.set(key, { ...q, key });
+        seen2.set(key, { ...q, key });
       }
-      if (!seen.size) continue;
+      if (!seen2.size) continue;
       let k2 = starts[t] || 0;
       const items = [];
-      for (const { key, ...p } of seen.values()) {
+      for (const { key, ...p } of seen2.values()) {
         const skip = p.bars * 8 > MAX_STEPS ? "longer than 16 bars" : k2 > 15 ? "no clip left on this track" : "";
         items.push({ k: skip ? -1 : k2, key, p, label: p.name, ...skip ? { skip } : {} });
         if (!skip) k2++;
@@ -37347,7 +37347,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ...[1, 2, 3, 4].map((i) => num2("T" + i, "Time " + i)),
       ...levels.map((id, i) => id ? num2(id, "Level " + i) : null).filter(Boolean)
     );
-    const put2 = (e, pt, T3, Lf) => {
+    const put3 = (e, pt, T3, Lf) => {
       const k2 = (id) => e + pt + "." + id, ls = LEVELS2[e];
       T3.forEach((t, i) => ctx2.set(k2("T" + (i + 1)), t, false));
       ls.forEach((id, i) => {
@@ -37373,7 +37373,7 @@ html.os-darwin.native-menu #menubar .mproj {
           const s = SHAPES2[KIND[env]][+e.target.value];
           e.target.value = "";
           if (!s) return;
-          put2(env, part, s[1], s[2]);
+          put3(env, part, s[1], s[2]);
           ctx2.commit();
         }
       },
@@ -37389,8 +37389,8 @@ html.os-darwin.native-menu #menubar .mproj {
           const v = e.target.value;
           e.target.value = "";
           const [T3, L2] = shape();
-          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put2(env, i, T3, L2));
-          else if (KIND[v]) put2(v, part, T3, L2);
+          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put3(env, i, T3, L2));
+          else if (KIND[v]) put3(v, part, T3, L2);
           else return;
           ctx2.commit();
         }
@@ -42942,7 +42942,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (!$("#labOv")) return;
       LAB.target = st.on ?? null;
       const tag = "blend:" + r.id + ":" + i + ":" + LAB.dragN++, ch = [];
-      const put2 = (vals) => {
+      const put3 = (vals) => {
         const before = Object.fromEntries(Object.keys(vals).map((k2) => [k2, ZE.snd.v[k2]]));
         for (const k2 of zeBrew(vals, tag)) {
           const c = ch.find((x) => x[0] === k2);
@@ -42953,9 +42953,9 @@ html.os-darwin.native-menu #menubar .mproj {
       if (st.amt) {
         const b = brewer();
         p.brew(b, st.amt / 10);
-        put2(b.out);
+        put3(b.out);
       }
-      put2(dialVals(st.dial));
+      put3(dialVals(st.dial));
       LAB.log.push({ id: st.ing, label: st.title, guide: true, ch, tag });
       g.done = i + 1;
       if (g.done >= r.steps.length) made(r);
@@ -48478,12 +48478,12 @@ html.os-darwin.native-menu #menubar .mproj {
     const kits = lvPool(st, "kit").map(facById).filter(ok), hats2 = lvPool(st, "hats").map(facById).filter(ok), perc2 = lvPool(st, "perc").map(facById).filter(ok);
     const out2 = FULLKITS[st.id] = [];
     if (!kits.length) return out2;
-    const r = mulberry(hashStr("full:" + st.id)), seen = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short3 = (x) => x.name.split(":").pop().trim();
+    const r = mulberry(hashStr("full:" + st.id)), seen2 = /* @__PURE__ */ new Set(), N = Math.min(28, kits.length * Math.max(1, hats2.length)), short3 = (x) => x.name.split(":").pop().trim();
     for (let i = 0; i < N * 3 && out2.length < N; i++) {
       const k2 = kits[i % kits.length], h = hats2.length ? hats2[Math.floor(r() * hats2.length)] : null, p = perc2.length && r() < 0.45 ? perc2[Math.floor(r() * perc2.length)] : null;
       const key = k2.id + "|" + (h ? h.id : "") + "|" + (p ? p.id : "");
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (seen2.has(key)) continue;
+      seen2.add(key);
       const parts4 = [k2, h, p].filter(Boolean), L2 = Math.max(...parts4.map((x) => x.bars));
       if (parts4.some((x) => L2 % x.bars)) continue;
       const kitLanes = new Set(k2.notes.map((n) => n.n)), m = /* @__PURE__ */ new Map();
@@ -50381,7 +50381,7 @@ html.os-darwin.native-menu #menubar .mproj {
         el("ul", {}, ...st.tips.map((x) => el("li", {}, x)))
       )
     );
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     const kt = KIND_TIPS[st.fam];
     right.append(
       el(
@@ -50391,7 +50391,7 @@ html.os-darwin.native-menu #menubar .mproj {
         el(
           "ul",
           {},
-          ...plan2.sections.filter((s) => !seen.has(s.kind) && seen.add(s.kind)).map((s) => el("li", {}, el("b", {}, kindsOf(st.fam)[s.kind].name + ": "), kt[s.kind]))
+          ...plan2.sections.filter((s) => !seen2.has(s.kind) && seen2.add(s.kind)).map((s) => el("li", {}, el("b", {}, kindsOf(st.fam)[s.kind].name + ": "), kt[s.kind]))
         )
       )
     );
@@ -51448,10 +51448,10 @@ html.os-darwin.native-menu #menubar .mproj {
         o[1] = o[2] = null;
       }
       if (DEV === "101") o[5] = o[7] = null;
-      const tr = { chords: o[4] }, seen = /* @__PURE__ */ new Set();
+      const tr = { chords: o[4] }, seen2 = /* @__PURE__ */ new Set();
       for (let t = 0; t < 8; t++) {
-        const s = slotOf(t), pool = poolOf(t), own = !seen.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
-        seen.add(s);
+        const s = slotOf(t), pool = poolOf(t), own = !seen2.has(s) && pool === roleInfo(DEF_ROLES[s])[4];
+        seen2.add(s);
         if (own || s === 0 && oneKit()) tr[t] = o[s];
         else tr[t] = S.tracks[t].type === "drum" ? take(pool) : fit(pool);
       }
@@ -52872,8 +52872,8 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!cv) return;
     const W = cv.clientWidth, H = cv.clientHeight;
     if (W < 10 || H < 10) return;
-    let dpr = Math.min(1.5, devicePixelRatio || 1);
-    if (W * H * dpr * dpr > 9e5) dpr = Math.sqrt(9e5 / (W * H));
+    let dpr = Math.min(1, devicePixelRatio || 1);
+    if (W * H * dpr * dpr > 4e5) dpr = Math.sqrt(4e5 / (W * H));
     if (VZ.cw !== Math.round(W * dpr) || VZ.ch !== H * dpr) {
       cv.width = Math.round(W * dpr);
       cv.height = Math.round(H * dpr);
@@ -53025,20 +53025,35 @@ html.os-darwin.native-menu #menubar .mproj {
     x.fillText(on3 && sc ? sc.name.toUpperCase() : "READY", 14, H - 10);
     x.globalAlpha = 1;
   }
+  var seen = false;
+  var watching = null;
+  function watch3() {
+    const cv = $("#lvViz");
+    if (!cv || watching === cv || typeof IntersectionObserver === "undefined") return;
+    watching = cv;
+    new IntersectionObserver((es) => es.forEach((e) => seen = e.isIntersecting && e.intersectionRatio > 0.05), {
+      threshold: [0, 0.05, 0.5]
+    }).observe(cv);
+  }
   function vizLoop(now) {
     if (document.body.dataset.mode !== "live") {
       VZ.run = false;
       return;
     }
+    requestAnimationFrame(vizLoop);
+    watch3();
+    if (now - VZ.last < 33) return;
     const dt = Math.min(0.1, (now - (VZ.last || now)) / 1e3);
     VZ.last = now;
-    if (!document.hidden) {
-      try {
-        vizDraw(now, dt);
-      } catch (e) {
-      }
+    if (document.hidden || !seen) {
+      const actx = AU.ctx ? AU.ctx.currentTime : 0;
+      while (VZ.ev.length && VZ.ev[0].time <= actx) VZ.ev.shift();
+      return;
     }
-    requestAnimationFrame(vizLoop);
+    try {
+      vizDraw(now, dt);
+    } catch (e) {
+    }
   }
   function vizStart() {
     if (VZ.run) return;
@@ -57450,6 +57465,19 @@ html.os-darwin.native-menu #menubar .mproj {
     t.className = "lvTiming" + (n ? " bad" : gap > 90 ? " warn" : "");
     t.title = "Whether this computer kept up with the set. A hiccup means it was too busy for a moment and the music paused slightly. Closing other programs, browser tabs or the visualiser helps.";
   }
+  var SHOWN = /* @__PURE__ */ new Map();
+  function put2(id, text2) {
+    const e = $("#" + id);
+    if (!e || SHOWN.get(e) === text2) return;
+    SHOWN.set(e, text2);
+    e.textContent = text2;
+  }
+  function cssVar(e, k2, v) {
+    if (!e) return;
+    if (e.__lvv && e.__lvv[k2] === v) return;
+    (e.__lvv = e.__lvv || {})[k2] = v;
+    e.style.setProperty(k2, v);
+  }
   function liveStatus(tickf) {
     liveTiming();
     const on3 = lvOn(), sg = on3 ? lvSegs(tickf) : null;
@@ -57460,11 +57488,17 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const nm = $("#lvNowName");
     if (!nm) return;
-    nm.textContent = on3 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on3 && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on3 && sc ? sc.name : "Stopped";
+    put2(
+      "lvNowName",
+      on3 && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf ? "⚡ Break: " + LV.flash.name : on3 && s0 && s0.label ? s0.label + (LV.jam && LV.jam.kind === "in" ? " → " + (sc ? sc.name : "") : "") : on3 && sc ? sc.name : "Stopped"
+    );
     const root = $("#live");
-    if (root && sc) root.style.setProperty("--acc", lvScCol(sc.e, 58));
+    if (root && sc) cssVar(root, "--acc", lvScCol(sc.e, 58));
     const barNo = on3 && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
-    $("#lvNowBar").textContent = on3 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad";
+    put2(
+      "lvNowBar",
+      on3 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad"
+    );
     const pg = $("#lvProg");
     if (pg && sc) {
       if (pg.children.length !== sc.bars) {
@@ -57477,11 +57511,11 @@ html.os-darwin.native-menu #menubar .mproj {
       });
     }
     const cue = LV.cues.filter((c) => c.type === "scene")[0], ns = cue ? LV.scenes[cue.idx] : null;
-    $("#lvNextName").textContent = on3 && ns ? ns.name : on3 && LV.auto ? "Auto" : "—";
+    put2("lvNextName", on3 && ns ? ns.name : on3 && LV.auto ? "Auto" : "—");
     const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-    $("#lvNextIn").textContent = on3 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "";
+    put2("lvNextIn", on3 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "");
     const kc = LV.cues.filter((c) => c.type === "key")[0];
-    $("#lvKeyShow").textContent = NK(LV.key, LV.mode);
+    put2("lvKeyShow", NK(LV.key, LV.mode));
     const ks = $("#lvKey");
     if (ks && +ks.value !== LV.key) ks.value = LV.key;
     const ms = $("#lvMode");
@@ -57490,15 +57524,16 @@ html.os-darwin.native-menu #menubar .mproj {
       lvKeyRecK = LV.key + LV.mode + LV.style;
       liveRenderKeyRec();
     }
-    $("#lvKeyNext").textContent = kc ? "→ " + NK(kc.key, kc.mode || LV.mode) + " next bar" : "";
-    $("#lvBpmShow").textContent = String(Math.round(LV.bpm * LV.rate));
+    put2("lvKeyNext", kc ? "→ " + NK(kc.key, kc.mode || LV.mode) + " next bar" : "");
+    put2("lvBpmShow", String(Math.round(LV.bpm * LV.rate)));
     const bi2 = $("#lvBpm");
     if (bi2 && document.activeElement !== bi2 && +bi2.value !== LV.bpm) bi2.value = LV.bpm;
-    $("#lvRateShow").textContent = LV.rate === 1 ? "" : LV.rate === 0.5 ? "half speed" : "double speed";
+    put2("lvRateShow", LV.rate === 1 ? "" : LV.rate === 0.5 ? "half speed" : "double speed");
     const ec = LV.cues.filter((c) => c.type === "energy").pop(), en = $("#lvEnergy");
     if (en && document.activeElement !== en) {
-      en.value = ec ? ec.n : LV.energy;
-      $("#lvEnVal").textContent = (ec ? ec.n : LV.energy) + (ec ? " →" : "");
+      const ev = ec ? ec.n : LV.energy;
+      if (+en.value !== ev) en.value = ev;
+      put2("lvEnVal", ev + (ec ? " →" : ""));
     }
     LV.scenes.forEach((s, i) => {
       const c = $("#lvCard" + i);
@@ -57512,9 +57547,10 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       c.classList.toggle("cur", !!isCur);
       c.classList.toggle("queued", !!isQ);
-      const q = $("#lvCardQ" + i);
-      if (q)
-        q.textContent = isQ ? qn ? "in " + qn + " bar" + (qn === 1 ? "" : "s") : "next bar" : isCur ? lvIsFlash(s) ? "FLASH!" : "playing" : "";
+      put2(
+        "lvCardQ" + i,
+        isQ ? qn ? "in " + qn + " bar" + (qn === 1 ? "" : "s") : "next bar" : isCur ? lvIsFlash(s) ? "FLASH!" : "playing" : ""
+      );
     });
     for (let i = 0; i < 16; i++) {
       const a = LV.acts[i], b = $("#lvPad" + i);
@@ -57556,6 +57592,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (b) b.classList.toggle("off", lvEffMute(i) || lvEmute(i));
     }
   }
+  var FR = { status: 0, vu: 0, bar: -1, beat: -1 };
   function liveFrame(tickf) {
     VZ.tickf = tickf;
     const b0 = Math.floor(tickf / 32), k2 = b0 + "|" + LV.ver;
@@ -57565,20 +57602,29 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const inner = $("#lvInner");
     if (inner && lvUI) inner.style.transform = "translateX(" + -(tickf / 32 - b0) * lvUI.bw + "px)";
-    liveStatus(tickf);
-    const beat = Math.floor(tickf % 32 / 8), frac = tickf % 8 / 8;
-    for (let i = 0; i < 4; i++) {
-      const d = $("#lvBeat" + i);
-      if (d) d.classList.toggle("on", i === beat);
+    const ms = performance.now();
+    if (ms - FR.status >= 95 || b0 !== FR.bar) {
+      FR.status = ms;
+      FR.bar = b0;
+      liveStatus(tickf);
+    }
+    const beat = Math.floor(tickf % 32 / 8);
+    if (beat !== FR.beat) {
+      FR.beat = beat;
+      for (let i = 0; i < 4; i++) {
+        const d = $("#lvBeat" + i);
+        if (d) d.classList.toggle("on", i === beat);
+      }
     }
     const root = $("#live");
-    if (root) root.style.setProperty("--beat", String(Math.pow(1 - frac, 2.2) * (beat === 0 ? 1 : 0.55)));
-    const now = AU.ctx ? AU.ctx.currentTime : 0;
-    for (let t = 0; t < 8; t++) {
-      const p = LV.pulse[t], v = now >= p.time ? Math.max(0, 1 - (now - p.time) / 0.28) * p.v : 0;
-      const a = $("#lvVu" + t), c = $("#lvLVu" + t);
-      if (a) a.style.setProperty("--v", v.toFixed(2));
-      if (c) c.style.setProperty("--v", v.toFixed(2));
+    if (ms - FR.vu >= 33) {
+      FR.vu = ms;
+      const now = AU.ctx ? AU.ctx.currentTime : 0;
+      for (let t = 0; t < 8; t++) {
+        const p = LV.pulse[t], v = (now >= p.time ? Math.max(0, 1 - (now - p.time) / 0.28) * p.v : 0).toFixed(1);
+        cssVar($("#lvVu" + t), "--v", v);
+        cssVar($("#lvLVu" + t), "--v", v);
+      }
     }
     if (LV.dropTick != null && tickf >= LV.dropTick) {
       LV.dropTick = null;
@@ -62191,7 +62237,7 @@ html.os-darwin.native-menu #menubar .mproj {
     edT = t;
     zenOpen(t, SY.slot[t]);
     if (browse) setTimeout(browserOpen, 0);
-    watch3();
+    watch4();
   }
   function expand(t, browse) {
     if (docked() && edT !== t) quickForget(edT);
@@ -62200,7 +62246,7 @@ html.os-darwin.native-menu #menubar .mproj {
     synthRender();
     zenOpen(t, SY.slot[t], dock2);
     if (browse) setTimeout(browserOpen, 0);
-    watch3();
+    watch4();
   }
   function collapse() {
     if (docked()) zenClose();
@@ -62209,7 +62255,7 @@ html.os-darwin.native-menu #menubar .mproj {
       synthRender();
     }
   }
-  function watch3() {
+  function watch4() {
     clearInterval(wait2);
     wait2 = setInterval(() => {
       if ($("#zcOv")) {
@@ -63780,11 +63826,11 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const loops = [];
     if (sec.LPDa && text(u8, sec.LPDa.at + 16, 4) === "DIK0") {
-      const D2 = sec.LPDa.at + 16, end = sec.LPDa.at + sec.LPDa.size, seen = /* @__PURE__ */ new Set();
+      const D2 = sec.LPDa.at + 16, end = sec.LPDa.at + sec.LPDa.size, seen2 = /* @__PURE__ */ new Set();
       for (let e = 0; e < 128; e++) {
         const bytes = dv.getUint32(D2 + 16 + e * 16, true), off = dv.getUint32(D2 + 16 + e * 16 + 4, true);
-        if (!bytes || bytes % 4 || D2 + off + bytes > end || seen.has(off)) continue;
-        seen.add(off);
+        if (!bytes || bytes % 4 || D2 + off + bytes > end || seen2.has(off)) continue;
+        seen2.add(off);
         loops.push({ track: e >> 4, clip: e & 15, at: D2 + off, bytes });
       }
     }
@@ -64021,7 +64067,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }))
         return;
       pushUndo();
-      let dropped = 0, put2 = 0, skipped = 0;
+      let dropped = 0, put3 = 0, skipped = 0;
       const clips = emptyClips();
       for (const t of DEVS[DEV].tracks)
         for (let k2 = 0; k2 < 16; k2++) {
@@ -64035,7 +64081,7 @@ html.os-darwin.native-menu #menubar .mproj {
           if (!r.pattern.notes.length) continue;
           const p = r.pattern;
           clips[t][k2] = { pat: addPattern(p.type, p.name, p.bars, p.notes, { role: p.role || "" }) };
-          put2++;
+          put3++;
         }
       S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
       S.scn.clips = clips;
@@ -64057,7 +64103,7 @@ html.os-darwin.native-menu #menubar .mproj {
       hooks.setMode("scene");
       hooks.renderAll();
       toast(
-        "Brought in " + plural3(put2, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+        "Brought in " + plural3(put3, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
     };
     const toMine = () => {
@@ -64337,13 +64383,13 @@ html.os-darwin.native-menu #menubar .mproj {
       (a, b) => b[0] - a[0] || (a[1].bank || "").localeCompare(b[1].bank || "") || (a[1].no || 0) - (b[1].no || 0)
     );
     const base = role === "drums" ? 1 : 3, fit = hits.filter(([n]) => n > base + 1), take = (fit.length >= 12 ? fit : hits.slice(0, Math.max(12, fit.length))).map(([, e]) => e);
-    const out2 = [...list2, ...mine], seen = new Set(out2.map(itemKey));
+    const out2 = [...list2, ...mine], seen2 = new Set(out2.map(itemKey));
     for (const e of take) {
       if (out2.length >= POOL_MAX) break;
       const it = e.src === "factory" && e.bank ? e.bank + "-" + e.no + " " + e.name : { name: e.name, kind: e.kind, d: e.d };
       const k2 = itemKey(it);
-      if (seen.has(k2) || out2.some((x) => itemName(x) === e.name)) continue;
-      seen.add(k2);
+      if (seen2.has(k2) || out2.some((x) => itemName(x) === e.name)) continue;
+      seen2.add(k2);
       out2.push(it);
     }
     return out2;

@@ -251,6 +251,21 @@ function liveTiming() {
   t.title =
     'Whether this computer kept up with the set. A hiccup means it was too busy for a moment and the music paused slightly. Closing other programs, browser tabs or the visualiser helps.';
 }
+/* Screen updates while playing: only what changed is written, so the browser has nothing to redo
+   (rewriting the same text and styles 60 times a second kept it busy enough to make the music stutter). */
+const SHOWN = new Map();
+function put(id, text) {
+  const e = $('#' + id);
+  if (!e || SHOWN.get(e) === text) return;
+  SHOWN.set(e, text);
+  e.textContent = text;
+}
+function cssVar(e, k, v) {
+  if (!e) return;
+  if (e.__lvv && e.__lvv[k] === v) return;
+  (e.__lvv = e.__lvv || {})[k] = v;
+  e.style.setProperty(k, v);
+}
 export function liveStatus(tickf) {
   liveTiming();
   const on = lvOn(),
@@ -263,25 +278,29 @@ export function liveStatus(tickf) {
   }
   const nm = $('#lvNowName');
   if (!nm) return;
-  nm.textContent =
+  put(
+    'lvNowName',
     on && LV.flash && LV.flash.start <= tickf && LV.flash.end > tickf
       ? '⚡ Break: ' + LV.flash.name
       : on && s0 && s0.label
         ? s0.label + (LV.jam && LV.jam.kind === 'in' ? ' → ' + (sc ? sc.name : '') : '')
         : on && sc
           ? sc.name
-          : 'Stopped';
+          : 'Stopped'
+  );
   const root = $('#live');
-  if (root && sc) root.style.setProperty('--acc', lvScCol(sc.e, 58));
+  if (root && sc) cssVar(root, '--acc', lvScCol(sc.e, 58));
   const barNo = on && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
-  $('#lvNowBar').textContent =
+  put(
+    'lvNowBar',
     on && sc
       ? 'bar ' +
         (barNo + 1) +
         ' of ' +
         sc.bars +
         (LV.auto ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + LV.autoReps : '')
-      : 'Press Start Jam, or hit a scene pad';
+      : 'Press Start Jam, or hit a scene pad'
+  );
   const pg = $('#lvProg');
   if (pg && sc) {
     if (pg.children.length !== sc.bars) {
@@ -295,11 +314,11 @@ export function liveStatus(tickf) {
   }
   const cue = LV.cues.filter(c => c.type === 'scene')[0],
     ns = cue ? LV.scenes[cue.idx] : null;
-  $('#lvNextName').textContent = on && ns ? ns.name : on && LV.auto ? 'Auto' : '—';
+  put('lvNextName', on && ns ? ns.name : on && LV.auto ? 'Auto' : '—');
   const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-  $('#lvNextIn').textContent = on && cue ? 'in ' + nb + ' bar' + (nb === 1 ? '' : 's') : '';
+  put('lvNextIn', on && cue ? 'in ' + nb + ' bar' + (nb === 1 ? '' : 's') : '');
   const kc = LV.cues.filter(c => c.type === 'key')[0];
-  $('#lvKeyShow').textContent = NK(LV.key, LV.mode);
+  put('lvKeyShow', NK(LV.key, LV.mode));
   const ks = $('#lvKey');
   if (ks && +ks.value !== LV.key) ks.value = LV.key;
   const ms = $('#lvMode');
@@ -308,16 +327,17 @@ export function liveStatus(tickf) {
     lvKeyRecK = LV.key + LV.mode + LV.style;
     liveRenderKeyRec();
   }
-  $('#lvKeyNext').textContent = kc ? '→ ' + NK(kc.key, kc.mode || LV.mode) + ' next bar' : '';
-  $('#lvBpmShow').textContent = String(Math.round(LV.bpm * LV.rate));
+  put('lvKeyNext', kc ? '→ ' + NK(kc.key, kc.mode || LV.mode) + ' next bar' : '');
+  put('lvBpmShow', String(Math.round(LV.bpm * LV.rate)));
   const bi = $('#lvBpm');
   if (bi && document.activeElement !== bi && +bi.value !== LV.bpm) bi.value = LV.bpm;
-  $('#lvRateShow').textContent = LV.rate === 1 ? '' : LV.rate === 0.5 ? 'half speed' : 'double speed';
+  put('lvRateShow', LV.rate === 1 ? '' : LV.rate === 0.5 ? 'half speed' : 'double speed');
   const ec = LV.cues.filter(c => c.type === 'energy').pop(),
     en = $('#lvEnergy');
   if (en && document.activeElement !== en) {
-    en.value = ec ? ec.n : LV.energy;
-    $('#lvEnVal').textContent = (ec ? ec.n : LV.energy) + (ec ? ' →' : '');
+    const ev = ec ? ec.n : LV.energy;
+    if (+en.value !== ev) en.value = ev;
+    put('lvEnVal', ev + (ec ? ' →' : ''));
   }
   LV.scenes.forEach((s, i) => {
     const c = $('#lvCard' + i);
@@ -333,9 +353,9 @@ export function liveStatus(tickf) {
     }
     c.classList.toggle('cur', !!isCur);
     c.classList.toggle('queued', !!isQ);
-    const q = $('#lvCardQ' + i);
-    if (q)
-      q.textContent = isQ
+    put(
+      'lvCardQ' + i,
+      isQ
         ? qn
           ? 'in ' + qn + ' bar' + (qn === 1 ? '' : 's')
           : 'next bar'
@@ -343,7 +363,8 @@ export function liveStatus(tickf) {
           ? lvIsFlash(s)
             ? 'FLASH!'
             : 'playing'
-          : '';
+          : ''
+    );
   });
   for (let i = 0; i < 16; i++) {
     const a = LV.acts[i],
@@ -387,6 +408,7 @@ export function liveStatus(tickf) {
     if (b) b.classList.toggle('off', lvEffMute(i) || lvEmute(i));
   }
 }
+const FR = { status: 0, vu: 0, bar: -1, beat: -1 };
 export function liveFrame(tickf) {
   VZ.tickf = tickf;
   const b0 = Math.floor(tickf / 32),
@@ -397,23 +419,32 @@ export function liveFrame(tickf) {
   }
   const inner = $('#lvInner');
   if (inner && lvUI) inner.style.transform = 'translateX(' + -(tickf / 32 - b0) * lvUI.bw + 'px)';
-  liveStatus(tickf);
-  const beat = Math.floor((tickf % 32) / 8),
-    frac = (tickf % 8) / 8;
-  for (let i = 0; i < 4; i++) {
-    const d = $('#lvBeat' + i);
-    if (d) d.classList.toggle('on', i === beat);
+  /* the status (names, bars, cards, pads) about 10 times a second, the meters about 30: plenty to read
+     and see, and it leaves the computer free for the music */
+  const ms = performance.now();
+  if (ms - FR.status >= 95 || b0 !== FR.bar) {
+    FR.status = ms;
+    FR.bar = b0;
+    liveStatus(tickf);
+  }
+  const beat = Math.floor((tickf % 32) / 8);
+  if (beat !== FR.beat) {
+    FR.beat = beat;
+    for (let i = 0; i < 4; i++) {
+      const d = $('#lvBeat' + i);
+      if (d) d.classList.toggle('on', i === beat);
+    }
   }
   const root = $('#live');
-  if (root) root.style.setProperty('--beat', String(Math.pow(1 - frac, 2.2) * (beat === 0 ? 1 : 0.55)));
-  const now = AU.ctx ? AU.ctx.currentTime : 0;
-  for (let t = 0; t < 8; t++) {
-    const p = LV.pulse[t],
-      v = now >= p.time ? Math.max(0, 1 - (now - p.time) / 0.28) * p.v : 0;
-    const a = $('#lvVu' + t),
-      c = $('#lvLVu' + t);
-    if (a) a.style.setProperty('--v', v.toFixed(2));
-    if (c) c.style.setProperty('--v', v.toFixed(2));
+  if (ms - FR.vu >= 33) {
+    FR.vu = ms;
+    const now = AU.ctx ? AU.ctx.currentTime : 0;
+    for (let t = 0; t < 8; t++) {
+      const p = LV.pulse[t],
+        v = (now >= p.time ? Math.max(0, 1 - (now - p.time) / 0.28) * p.v : 0).toFixed(1);
+      cssVar($('#lvVu' + t), '--v', v);
+      cssVar($('#lvLVu' + t), '--v', v);
+    }
   }
   if (LV.dropTick != null && tickf >= LV.dropTick) {
     LV.dropTick = null;
