@@ -295,10 +295,10 @@ export function liveStatus(tickf) {
     'lvNowBar',
     on && sc
       ? 'bar ' +
-        (barNo + 1) +
-        ' of ' +
-        sc.bars +
-        (LV.auto ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + LV.autoReps : '')
+          (barNo + 1) +
+          ' of ' +
+          sc.bars +
+          (LV.auto ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + LV.autoReps : '')
       : 'Press Start Jam, or hit a scene pad'
   );
   const pg = $('#lvProg');
