@@ -4,7 +4,7 @@
 
 Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and design sounds, all from your computer. One USB cable carries every track, and the app can record the audio that comes back.
 
-> **Version 1.7.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
+> **Version 1.7.2.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -42,7 +42,7 @@ Every setting of the sounds inside your MC-707 on a big screen: partials, filter
 
 ### Slime Lab
 
-Sound design made simple: start from a classic sound (built step by step if you like, with the reason for each step), shape it with five knobs that are the same on every sound while a scope draws it, grow variations and pick one by ear, then fine-tune the real settings behind it. [More](#slime-lab-1)
+Sound design made simple: start from a classic sound (built step by step if you like, with the reason for each step), shape it with five knobs that are the same on every sound while a scope draws it, grow variations and pick one by ear, fine-tune the real settings behind it, and save it to your sounds. [More](#slime-lab-1)
 
 ![Slime Lab](docs/features/6-slime-lab.png)
 
@@ -242,7 +242,7 @@ Sound design for ZenCore tones, simple to start and as deep as you want: **Slime
 | **Five knobs**          | **Bright, Body, Shape, Motion and Space**, the same on every sound. Drag, scroll or use the arrow keys; double-click to go back. The **scope** draws the wave and envelopes as you turn them, and follows the note while you taste it.                                                                                                   |
 | **Variations**          | **Grow variations** makes six versions of your sound, subtle, medium or wild, keeping the parts you lock; click through them by ear and grow again from the one you like.                                                                                                                                                                |
 | **Learn and Fine-tune** | **Learn** explains whatever you touch and shows exactly what it changed. **Fine-tune** has the real settings behind it, a few to a page (oscillator, filter, amp, motion, voice, effects), and **Morph** slides between two snapshots.                                                                                                   |
-| **Taste**               | Hold **Z X C V B** (or the keys on screen) to play C1–C5, **Hold** keeps a note going, and hold **Q** (or **Hold: before**) to hear the sound you started with. Every change is one undo step.                                                                                                                                           |
+| **Taste**               | Hold **Z X C V B** (or the keys on screen) to play C1–C5, **Hold** keeps a note going, and hold **Q** (or **Hold: before**) to hear the sound you started with. Every change is one undo step. **Save…** (Ctrl+S) names the tone and keeps it in My sounds.                                                                              |
 
 ## Track setup
 
