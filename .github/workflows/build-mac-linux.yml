@@ -47,8 +47,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # making a Mac disk image on GitHub's machines now and then fails ("resource busy"): try once more
-      - run: npm run ${{ matrix.dist }} || (sleep 15 && npm run ${{ matrix.dist }})
+      # on GitHub's Macs, the malware scan (XProtect) and Spotlight hold a new disk image open, so making it
+      # fails ("resource busy", hdiutil detach): stop them first, and try up to three times
+      - name: Let go of new disk images (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          sudo mdutil -a -i off || true
+          sudo pkill -9 XProtect || true
+          while pgrep -q XProtect; do sleep 3; done
+      - run: |
+          for i in 1 2 3; do
+            npm run ${{ matrix.dist }} && exit 0
+            echo "Build failed (try $i), trying again"
+            if [ "$RUNNER_OS" = macOS ]; then
+              for v in /Volumes/MC707*; do hdiutil detach -force "$v" || true; done
+              sudo pkill -9 XProtect || true
+            fi
+            sleep 20
+          done
+          exit 1
+        shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
