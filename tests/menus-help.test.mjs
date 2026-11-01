@@ -44,7 +44,7 @@ test('menus: the right ones in each mode, nothing repeated in a menu, submenus a
   await page.mouse.click(5, 300);
   /* Help › About */
   await page.locator('#menubar .mb', { hasText: 'Help' }).click();
-  await page.locator('#menubar .mi', { hasText: 'About MC-707 Toolbox' }).click();
+  await page.locator('#menubar .mi', { hasText: 'About MC707 / 101 Toolbox' }).click();
   assert.match(await page.locator('#aboutOv').textContent(), new RegExp('Version ' + VERSION.replace(/\./g, '\\.')));
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#aboutOv').count(), 0, 'Escape closes it');

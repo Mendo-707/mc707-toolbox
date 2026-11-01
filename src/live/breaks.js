@@ -43,8 +43,13 @@ export const LV_BRK = [
   ['hits', 'Unison hits'],
   ['stutter', 'Stutter'],
   ['roll', 'Snare roll'],
-  ['drop', 'Drop-out']
+  ['drop', 'Drop-out'],
+  ['gate', 'Gate chop'],
+  ['half', 'Half-time'],
+  ['wash', 'Reverb wash']
 ];
+/** The Gate chop's rhythm, a 16th per character: x plays, . is silent. */
+export const LV_GATE = 'x.xx.x.xx.x.xxx.';
 export const LV_BRKLEN = [
   [16, '½ bar'],
   [32, '1 bar'],
@@ -54,7 +59,20 @@ function lvMakeBreak(kind, len) {
   const st = lvStyle();
   if (kind === 'mix') {
     const x = Math.random();
-    kind = x < 0.4 ? 'hits' : x < 0.6 ? 'stutter' : x < 0.8 ? 'roll' : 'drop';
+    kind =
+      x < 0.3
+        ? 'hits'
+        : x < 0.42
+          ? 'stutter'
+          : x < 0.54
+            ? 'roll'
+            : x < 0.66
+              ? 'drop'
+              : x < 0.78
+                ? 'gate'
+                : x < 0.9
+                  ? 'half'
+                  : 'wash';
   }
   if (kind === 'drop' && len < 32) kind = 'roll';
   const b = { kind, len, v: {} };
@@ -71,7 +89,17 @@ function lvMakeBreak(kind, len) {
       b.name = R[1];
     } else b.kind = 'roll';
   }
-  b.name = b.name || { stutter: 'Stutter', roll: 'Snare roll', drop: 'Drop-out' }[b.kind];
+  if (kind === 'wash' && len < 32) kind = b.kind = 'gate';
+  b.name =
+    b.name ||
+    {
+      stutter: 'Stutter',
+      roll: 'Snare roll',
+      drop: 'Drop-out',
+      gate: 'Gate chop',
+      half: 'Half-time',
+      wash: 'Reverb wash'
+    }[b.kind];
   return b;
 }
 export function liveBreak(kind) {
@@ -117,7 +145,11 @@ export function lvBreakStart(b, tick) {
   b.start = tick;
   b.end = tick + b.len;
   b.loop = b.kind !== 'hits';
-  b.keep = b.kind === 'stutter' ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === 'drop' ? tracksFor([4, 5, 6, 7]) : [];
+  b.keep = ['stutter', 'gate', 'half', 'wash'].includes(b.kind)
+    ? [0, 1, 2, 3, 4, 5, 6, 7]
+    : b.kind === 'drop'
+      ? tracksFor([4, 5, 6, 7])
+      : [];
   if (b.kind === 'hits')
     for (const t in b.v) {
       const P = b.v[t].f.bars * 32;
@@ -150,6 +182,34 @@ export function lvBreakStart(b, tick) {
         kind: 'ramp',
         from: 118,
         to: 'rest',
+        curve: 'log',
+        start: tick,
+        end: b.end
+      });
+    else if (b.kind === 'wash')
+      /* the one hit rings out in a wall of reverb, which falls back as the loop returns */
+      lvMove({
+        id: 'brkfx',
+        tag: 'flash',
+        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+        cc: 91,
+        kind: 'ramp',
+        from: 124,
+        to: 'rest',
+        curve: 'log',
+        start: tick,
+        end: b.end
+      });
+    else if (b.kind === 'half')
+      /* half-time sinks: the filter closes a little, and opens again for the return */
+      lvMove({
+        id: 'brkfx',
+        tag: 'flash',
+        tracks: toneTracksAll(),
+        cc: 80,
+        kind: 'ramp',
+        from: 'rest',
+        to: 40,
         curve: 'log',
         start: tick,
         end: b.end

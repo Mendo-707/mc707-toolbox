@@ -8,6 +8,7 @@ import { hashStr, mulberry } from '../core/random.js';
 import { addHarmonyPack } from './harmony-pack.js';
 import { addMelodicPack } from './melodic-pack.js';
 import { BB_GENRE, addBigBeatPack } from './bigbeat-pack.js';
+import { addFillPack } from './fill-pack.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
@@ -41,6 +42,7 @@ export function finishLibrary(styles) {
   addMelodicPack();
   addBigBeatPack();
   addMelodicPack(BB_GENRE);
+  addFillPack();
   for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
   for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
   /* styles whose patterns only arrive with the packs (Big Beat) build their full kits now */

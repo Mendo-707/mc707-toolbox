@@ -24,8 +24,6 @@ import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct, synthViewOpen, synthViewSet } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
-import { knobFinderOpen, sceneFinderOpen } from '../zen/zc-scan.js';
-import { motionTestOpen } from '../zen/zc-motion.js';
 import { templatesOpen } from './templates.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
@@ -270,20 +268,6 @@ function initMenubar() {
         ['Guide', () => openLink(LINKS.guide)],
         0,
         [
-          'For developers',
-          null,
-          '',
-          null,
-          () => [
-            { label: 'MC-707 SysEx guide', action: () => openLink(LINKS.sysex) },
-            { label: 'ZenCore parameter reference', action: () => openLink(LINKS.params) },
-            { label: 'Diagnostics page', action: () => openLink(LINKS.diagnostics) },
-            { label: 'Find MC-707 scene data (read-only scan)…', action: () => sceneFinderOpen() },
-            { label: 'Find the knob settings (read-only scan)…', action: () => knobFinderOpen() },
-            { label: 'Motion test (which lane moves what)…', action: () => motionTestOpen() }
-          ]
-        ],
-        [
           'Troubleshooting',
           null,
           '',
@@ -298,7 +282,7 @@ function initMenubar() {
         0,
         ['Check for updates', () => checkUpdateNow()],
         ['Report a problem', () => openLink(LINKS.issues)],
-        ['About MC-707 Toolbox', () => aboutOpen()]
+        ['About MC707 / 101 Toolbox', () => aboutOpen()]
       ]
     ]
   ];
@@ -353,7 +337,7 @@ function initMenubar() {
       }
     }
   };
-  nav.append(el('span', { class: 'mbrand' }, 'MC-707 Toolbox'));
+  nav.append(el('span', { class: 'mbrand' }, 'MC707 / 101 Toolbox'));
   M.forEach(([name, modes, items]) => {
     const b = el('button', { class: 'mb', role: 'menuitem', 'aria-haspopup': 'true', 'aria-expanded': 'false' }, name);
     const d = el('div', { class: 'mdrop', role: 'menu', hidden: true });

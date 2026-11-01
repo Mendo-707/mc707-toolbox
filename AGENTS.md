@@ -1,4 +1,4 @@
-# Working on MC-707 Toolbox
+# Working on MC707 / 101 Toolbox
 
 This is the guide for anyone changing the code, people and coding agents alike. Read it first.
 `docs/ARCHITECTURE.md` explains how the parts fit, and has a one-line description of every

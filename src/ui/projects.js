@@ -13,7 +13,7 @@ import { askDlg } from './dialogs.js';
 /* ---------- projects, folders and exit ---------- */
 export function projTitle() {
   const n = PROJ.name || 'Untitled';
-  document.title = n + (PROJ.dirty ? ' •' : '') + ' – MC-707 Toolbox';
+  document.title = n + (PROJ.dirty ? ' •' : '') + ' – MC707 / 101 Toolbox';
   const m = $('#mProj');
   if (m) {
     m.textContent = n + (PROJ.dirty ? ' •' : '');

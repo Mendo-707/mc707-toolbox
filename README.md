@@ -1,103 +1,44 @@
-# MC-707 Toolbox
+# MC707 / 101 Toolbox
 
-Write songs and play live sets on the **Roland MC-707** from your computer. One USB cable carries all eight tracks, and the app can record the audio that comes back.
+![MC707 / 101 Toolbox](docs/features/0-banner.png)
 
-- **Song Mode**: arrange a whole track on a timeline, then play it on the MC-707 note for note.
-- **Scene Mode**: arrange a song as MC-707 clips and scenes, then write it there so the MC-707 plays it by itself, no computer needed.
-- **Live Mode**: perform a looping set from 16 pads, with breaks, builds, drops, swaps and fades that land on the beat.
-- **Synth Mode**: the MC-707 as an 8-track hardware synth for your DAW.
-- **ZenCore editor**: edit the sound in any of your MC-707's clips on a big screen.
-- **Mixers**: a mixer for Song Mode and one for Live Mode, each in a window you can drag onto another screen, with every track's FILTER, MOD, FX and SOUND (C4) knobs.
+Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and design sounds, all from your computer. One USB cable carries every track, and the app can record the audio that comes back.
 
-> **Version 1.6.5.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland.
+> **Version 1.7.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
-![Live Mode](docs/live-mode.png)
-![Song Mode](docs/song-mode.png)
+## What it does
 
-<details>
-<summary><b>More screenshots and a tour in 9 cards</b></summary>
-
-![Your MC-707 clips](docs/mc707-clips.png)
-![ZenCore editor](docs/zencore-editor.png)
+### Song Mode
+Arrange a whole track on a timeline and play it on the MC-707 note for note. The song wizard writes a full arrangement in one of 42 styles, from over 25,000 patterns (drums, bass, chords, pads, arps, leads, fills and builds); change any of it in the step grid or piano roll, record every track's audio, or export MIDI. [More](#song-mode-1)
 
 ![Song Mode](docs/features/1-song-mode.png)
-![Scene Mode](docs/features/9-scene-mode.png)
-![Live Mode](docs/features/2-live-mode.png)
-![Synth Mode](docs/features/3-synth-mode.png)
-![ZenCore editor](docs/features/4-zencore-editor.png)
-![Sound browser](docs/features/5-sound-browser.png)
-![Mixers](docs/features/6-mixers.png)
-![Your MC-707 clips](docs/features/7-mc707-clips.png)
-![Windows, Mac, Linux and the web](docs/features/8-everywhere.png)
 
-</details>
+### Scene Mode
+Turn the song into MC-707 clips and a chain of scenes and write them over USB, so the MC-707 plays it by itself with no computer. Every pattern is fitted to the MC-707's clips, and Auto-write keeps it in step as you change things. [More](#scene-mode-1)
 
-## New in 1.6
+![Scene Mode](docs/features/2-scene-mode.png)
 
-- **Slime Lab** (new, experimental): a fun, visual way into sound design in the ZenCore editor (**Slime Lab** in the editor's header, tones only). Your tone is a living slime that takes on its character: it wobbles with the motion, spreads with the width, glows with the brightness, drips when it rings on, and swells and fades along the amp envelope while you hold a Taste key. Around it are 42 ingredients in seven groups (Oscillator, Filter, Shape, Motion, Pitch, Space and texture, Effects), each a real sound-design move: double-click, press **+** or drag one onto the slime and it gloops in, changing the sound on the MC-707 as it lands. The **Learn** panel explains the idea behind each one, where you hear it and a tip, lists exactly what it changed, and has **Dial it in** controls for the settings behind it. Drag the **Character** bars (brightness, bite, snap, sustain, tail, motion, width, grit, space) to set them directly, and choose which partials everything **works on**. Ten **blends** (acid, Reese, wobble and 808 basses, supersaw lead, dream pad, brass stab, house pluck, lo-fi keys, sync lead) build a classic sound from **New tone**, step by step with the reason for each step, or in one go; every step is something you can do in the lab yourself (which partials it works on, the ingredient and amount, the dial settings), so you can make any of them by hand. Every change is one undo step; **Start over** brings back the tone you opened with. Keys: Z X C V B taste, Enter mixes in, arrows choose, 1–0 set the amount.
-- **1.6.1: The Slime Lab's bench**: under a smaller slime, three ways of working borrowed from other sound-design tools. **Mutate** sprouts four variations of your tone, as far as you like, keeping the parts you lock (oscillator, filter, amp, motion, pitch, space, effect); click one or drag it onto the slime to hear it, and sprout again from it. **Morph A ↔ B** keeps two snapshots and slides between them, or flips to compare. **Ear test** mixes in a hidden ingredient: flip before and after, taste and guess it, with a score. An envelope view under the slime draws the amp and filter envelopes, with a playhead while you taste, and a search box finds ingredients.
-- **1.6.1: Sound browser search**: every word in any order, any case, with spaces and punctuation ignored ("super saw" finds Supersaw, "sub-808" finds Sub 808), and instrument, category and source words (bass, synth lead, starter, factory); Esc clears it, Enter goes to the results, and a search that finds nothing in the bank or category you're in offers to search everything. Starters now have a ZenCore category, so they sort and filter by it too.
-- **1.6.2: Feels like a desktop app**: in the Windows and Mac apps, the app's top bar is the window's title bar (drag it to move the window, double-click to maximise; Windows' buttons sit at its right in the app's colours, a Mac's traffic lights at its left, and a Mac shows the app's menus in its own menu bar). The window opens where and how big you left it, with no white flash, and controls no longer select as text, lists don't bounce, and buttons use the normal arrow. In Song Mode the playhead no longer draws over the track names when you scroll past it.
-- **1.6.3: Fixes the desktop app not opening, and names the PCM waves**: 1.6.2 could stay invisible on some computers (it waited for the first draw, which a slow connection could hold up); the window now always appears, opening the app again shows it, and the web font no longer holds up the first draw. In the ZenCore editor, PCM wave numbers show their names (A 492 MplLmtr Kick), from Roland's MC-707 Sound List, as do PCM-Sync waves.
-- **1.6.4: A new Slime Lab, a calmer Live Mode, and patterns that fit the MC-707**: the **Slime Lab** is rethought as one screen in three depths. Start from a blank tone or one of ten classic sounds (in one go, or step by step with **Show me how**); shape it with five knobs that are the same on every sound (**Bright, Body, Shape, Motion, Space**) while a scope draws the wave and envelopes; grow six **variations** and pick one by ear; then **Fine-tune** the real settings behind it, page by page, or **Morph** between two snapshots. **Learn** explains whatever you touch, and **Hold: before** (Q) plays the sound you started with. **Live Mode** is cleaned up: no more stutters (the visuals draw far less and only when on screen), the Raven mode switch no longer blanks the screen, busier-to-quieter scene changes fade drums out and leave a reverb tail instead of cutting, and the less used moves are folded under More moves. **Patterns** written to MC-707 clips now follow how the MC-707 plays them back: each pattern takes the step size that keeps the most notes, a note that repeats while held retriggers, same-pitch hits merge, and clashing notes move to a free neighbouring step; 359 factory patterns used to lose notes, now 30 very dense 16th-triplet arps do (they need more than 128 steps), and the message says what didn't fit and where. The desktop app no longer flashes a half-drawn screen as it starts.
-- **1.6.5: Fixes from testers' notes**: with several sounds picked in the Sound browser, the right-click menu now copies, moves, deletes, rates, tags or sets the category of all of them (it did only the one clicked). **Expansion tones** from Roland .svz files go straight into a folder of your own, named after the file or one you choose (Grab from › Expansion tones from .svz files). The MFX **presets** have ◀ ▶ like the other long lists. The editor's **Partial** menu shows only on the pages that show a partial. **Synth Mode** opens the way you left it, expanded or all eight strips (or choose in Settings › Synth Mode opens), and the editor's Copy to updates the track's strip at once. **Track setup** now says up front that the MC-707's tracks must be set to match by hand. The Mac apps build again (GitHub retired the macOS 14 machines).
-- **1.6.5: Fixes and requests from testing**: with several sounds picked in the Sound browser, the right-click menu now copies, moves, deletes, rates, tags or sets the category of all of them (it only did the one clicked). **Expansion tones** (.svz files) go into a folder of your own: Grab from › Expansion tones from .svz files makes a folder named after each file, or uses one you pick. **Synth Mode opens the way you left it** (expanded on the same track, or all eight strips), or as you choose in Settings › Synth Mode opens. Copying a sound to another track from the editor updates that track's strip at once. The MFX presets have ◀ ▶, the editor's Partial menu shows only on the pages with a partial, and Track setup says up front that the MC-707's tracks must be set to match by hand.
+### Live Mode
+Play a looping set from 16 pads, laid out like the MC-707's: scenes, swaps, fades, builds and drops that always land on the beat, breaks (unison hits, rolls, gate chops, half-time, reverb washes) and fills for every genre, with an auto-pilot when you want one. [More](#live-mode-1)
 
-## New in 1.5
+![Live Mode](docs/features/3-live-mode.png)
 
-![Scene Mode](docs/features/9-scene-mode.png)
+### Synth Mode
+The MC-707 as an 8-track hardware synth for your DAW: pick, edit and mix the sound on each track, expand any track with its editor beside the others, and keep all eight sounds as a setup. [More](#synth-mode-1)
 
-- **Scene Mode** (new, experimental): arrange a song the way the MC-707 keeps one, as each track's 16 clips and a chain of scenes, then write it over USB so the MC-707 plays the whole song by itself. Make the clips and scenes from your Song Mode arrangement in one click, edit any clip's notes in the pattern editor and its sound in the ZenCore editor, and see every clip and scene marked written, changed or new. Write what changed, one clip, a track, a scene or everything, or let Auto-write do it. See [Scene Mode](#scene-mode). Thanks to Ada for the pointers on the scene chain.
-- **Your MC-707 clips**: read a clip's notes from the MC-707 into My patterns, write a pattern into a clip (read back to check), and send a whole song's patterns to the MC-707's clips. Patterns up to 8 bars go in 1/16 steps and 9–16 bars in 1/8; triplet patterns go in 1/16T or 1/8T steps so every note lands on a step; drum rolls and flams use the MC-707's sub steps (1/2, 1/3, 1/4, FLAM).
-- **1.5.1: Pump (sidechain), experimental**: in Scene Mode, right-click a bass, pad or chords clip › **Pump (sidechain)…** and the part ducks on every kick and comes back, written into the clip's motion so the MC-707 pumps it by itself. **Volume** (set SOUND (C4) to Level with KNOB ASSIGN on that track, once) or **Filter**; depth and rest level; when it starts, how long it holds and how long it comes back, set finely in eighths of a 16th, eased or straight; drawn over the clip and close up on a kick. Built on Ada Locriana's [mctools_sidechain](https://github.com/Locriana/mctools_sidechain), with her timing suggestion. **Help › For developers › Motion test** shows which knob each motion lane moves.
-- **1.5.2: Fill tones**: on the Your MC-707 clips screen (or MC-707 › Fill tones), pick a genre and every clip set up there gets a sound for its job (bass, chords, pad, lead, pluck, acid, FX; drum kits stay as they are, since the MC-707 won't take new drum sounds over MIDI, so choose those on the MC-707), different ones across a track's clips. Change any from the pool, 🎲 for another, or pick from the library, then send the ones ticked (Select all / none, or All / None per track): each goes into its MC-707 clip and every track written is set to play its clips' own sounds (Sound Source CLIP), so each clip can have its own tone; any other clip of the track that holds notes but has no sound of its own gets one too, so none goes quiet. The pools are editable per genre and job; each starts with the factory tones the song wizard suggests for the genre, then fills (up to 24) with the sounds you have that fit: the right ZenCore category for the job (Synth Bass for bass, E.Piano or stabs for chords…) and words in the name that suit the genre (Reese and Sub for DnB, TB and Acid for acid techno, Glass and Amb for ambient…), plus your own sounds tagged with the genre. Add the factory tones from the MC-707 update file once for the most choice.
-- **1.5.2: Open an MC-707 project file**: MC-707 › Open an MC-707 project file (.mpj) shows what a project holds and brings its clips into Scene Mode or My patterns, and saves its samples as WAV files (see [Open an MC-707 project file](#open-an-mc-707-project-file)).
-- **1.5.2: MC-707 project templates**: an empty project for each track layout, with the steps to copy them onto the SD card in storage mode and start a song from one (see [MC-707 project templates](#mc-707-project-templates)); **MC-707 › Project templates** names the one for your Track setup.
-- **1.5.2: Drum kits stay on the MC-707**: tested on a real MC-707, a kit's drum sounds can't be changed over MIDI (it keeps each key's instrument whatever is sent), so the ZenCore editor's Sound browser is for tones only and Scene Mode no longer sends kits; choose kits on the MC-707 itself. Writing tones is gentler too: each whole sound goes in before its clip is selected again.
-- **1.5.5: Polish**: the start screen shows the version and checks for updates (so do Help › Check for updates and About); in Live Mode, choose one track for the knobs and each shows its job (FILTER · Cutoff…), and right-click a scene pad to cue or edit it; Scene Mode has a Mixer button; tooltips on the last few controls without one; Fill tones no longer shows a stray "null"; the Master FX panels' sliders fill their track.
-- **1.5.5: Project files: every scene, and the looper**: opening an MC-707 project file now reads all its scenes (past 1-8) with their chain lengths, and brings them into Scene Mode in order and at their length; the looper tracks' recordings play with ▶ and save as WAV files.
-- **1.5.4: Master FX settings**: the Master FX strip has a **Master level**, and **Reverb…, Delay…, Multi FX…, EQ… and Comp…** open a panel beside it with that effect's settings, read from the MC-707 and sent as you move them: the reverb's and the delay's settings for the type chosen (time, pre delay, feedback, delay time or note, damping, taps…), the master Multi FX's, the master EQ (input, low, three mids with their frequencies and Q, high) and the three-band master compressor (threshold, ratio, attack, release, knee, gain, split frequencies). New and taken from Roland's map and the manual, so tell us if one does not do what it says.
-- **1.5.4: Quieter effect changes**: changing a track's effect mutes that track for the moment the MC-707 takes it (it plays the new type with the wrong settings briefly), then the rest of the track's clips take it unheard.
-- **1.5.3: Mixer knob choosers**: each knob's name in the Song and Live mixers is now a chooser for **what it controls on the MC-707** (KNOB ASSIGN): Level, Pan, Cutoff, Resonance, Attack, Decay, Portamento, the sends, SYS-Ctrl1–4 and the rest of the MC-707's list. It shows the track's current setting, read from the MC-707 when a mixer opens (or with **Read from MC-707**), and a change goes to the whole track, every clip included, so the knob does the same whichever clip plays.
-- **1.5.3: MC-707 menu**: everything that talks to the MC-707 in one menu, in every mode: your clips & ZenCore, Fill tones, the mixer, project files, templates, setup and MIDI.
-- **1.5.3: Smaller fixes**: the mixers' Chorus send is called **Delay** (it feeds the MC-707's delay/chorus effect); the mixer strips sit in one row; Scene Mode's Play starts the scenes even while a pattern preview plays; playing a project file's samples, a grabbed recording or a note in the ZenCore editor stops other previews; Song Mode's track names have room; Scene Mode's clip names keep whole words; Synth Mode's drum strips no longer show a Browse button that did nothing.
-- **1.5.2: Mixer knobs**: each strip in the Song and Live mixers has the track's four knobs, **Filter, Mod, FX and Sound** (C1–C4: the FILTER, MOD and FX knobs above each MC-707 fader, and SOUND, the fourth KNOB ASSIGN lists), sent as CC 80–83. Whatever KNOB ASSIGN has on a knob is what it moves. In Song Mode a knob is saved with the song and only sent once you have set it (greyed until then); in Live Mode a track's knob rests where you put it, or where Live's knob panel has it.
-- **1.5.3: Effects in the mixers**: each strip in the Song and Live mixers has an **Effect** to choose: off, one of the ready-made settings (dotted ping-pong delay, dub echo, Juno chorus, Leslie, gates, filter wobbles, lo-fi, drive…) or any of the 90 effect types. It goes into the effect (MFX) of every clip's sound on that track and the track's own, so it stays whichever clip plays (it replaces the clips' own effects; shape it further in the ZenCore editor). Each strip's **Delay** send (CC 92, called Chorus before) feeds the MC-707's delay/chorus effect, a delay or a chorus as the Master FX strip sets it. A **Master FX** strip sets the MC-707's total effects: the reverb and chorus/delay types and levels, how much of the delay goes on to the reverb, the master Multi FX, and the master compressor and EQ on or off; **Read from MC-707** shows what it has now. Reverb level is confirmed on an MC-707; the other total effects follow Roland's project map and are new, so reports are welcome.
-- **Theme**: the app is now **dark** by default. **Settings › Theme** switches to Light, or Match the computer.
+![Synth Mode](docs/features/4-synth-mode.png)
 
-## New in 1.4
+### ZenCore editor
+Every setting of the sounds inside your MC-707 on a big screen: partials, filters, envelopes you can drag, LFOs, effects and drum kits, with a Sound browser for your own sounds, starters, factory tones and expansions. [More](#zencore-editor-1)
 
-- **Mixers**: Song Mode and Live Mode each get a mixer (**🎚 Mixer**, or Song › Mixer and Live › Mixer): a strip per track with level, pan, reverb and delay sends, mute and solo, a light for the notes going out, and a meter. Song's mixer is the song's own mix (saved with it, with undo, sent to the MC-707 when the song starts); Live's is Live's own (kept apart from the song's, sent at Start, and its mutes and solos land on the next beat while the jam plays). Each opens in a window of its own you can drag onto another screen, in the colours of its mode (Live's follow the Live theme). In the desktop app the window is borderless: drag it by its header, with 📌 to keep it on top, minimise and close.
-- **Synth Mode: Expand** a track and the others shrink to a column on the left while its full ZenCore editor fills the screen. Click another track to edit that one; **Collapse**, **All tracks**, **Done** or **Esc** go back to all eight. The reverb send is gone from the strips (the MC-707's main effects only reach its MIX output, not a track's own USB output).
-- **Sound browser**: your own **folders** under My sounds (make, rename, remove; kept in backups); **Ctrl-click** and **Shift-click** pick several sounds to tag, set their ZenCore category, copy (factory tones and starters too) or move into a folder, or delete; a **Tag** filter under the categories; **Save this tone** and **Save a copy** always land in My sounds and show you the sound saved; **Edit in ZenCore** goes back to the editor and **Done** back to the tracks.
-- **ZenCore editor**: ◀ ▶ beside long lists (the MFX type and its settings, wave groups and more) step to the previous or next choice.
-- **Factory tones**: random pitch number and condition are read from the right place (thanks to kraftf for the report).
-- **Live Mode**: the half and double speed buttons are gone.
-- **Start screen**: a **ZenCore editor** card opens the editor straight away.
-- **1.4.1: Mac and Linux apps**, alongside the Windows one: a .dmg for Apple Silicon and Intel Macs, and an AppImage and a .deb for Linux (see [Getting started](#getting-started)). The ZenCore editor's partial bar switches each partial **on or off** in one click (⏻ 1–4).
+![ZenCore editor](docs/features/5-zencore-editor.png)
 
-## New in 1.3
+### Slime Lab
+Sound design made simple: start from a classic sound (built step by step if you like, with the reason for each step), shape it with five knobs that are the same on every sound while a scope draws it, grow variations and pick one by ear, then fine-tune the real settings behind it. [More](#slime-lab-1)
 
-- **Start screen** with Load last session, Blank song, Empty template, Song wizard, Live Mode and Synth Mode. Live Mode opens with a genre picker.
-- **Track setup**: split the 8 tracks any way you like, from 8 drum tracks to 8 tone tracks.
-- **Harmony pack**: 2,000 new patterns on 20 unusual progressions, with chords that change off the bar line, in 8- and 16-bar loops.
-- **Finer clip edges** in Song Mode, down to 1/256 bar.
-- **Smoother Live fades** on the MC-707's own volume, with new 4- and 8-bar fades.
-- **Acid** lines for a tone track, and **My MC-707 clips & ZenCore** at the top of Song Mode.
-- ZenCore editor: reads every parameter of a tone reliably (1.3.1 fixes how it asks the MC-707, found from a real dump), the MC-707's screen updates by itself, there's a black-and-green look, and MC-101 support is fixed.
-- **Settings › App sounds** turns the app's own sound on or off. Punk and rock are gone.
-- **1.3.3, ZenCore you can see:** a wave preview for each oscillator, a live filter response curve and a picture of each LFO. Envelopes take typed numbers as well as dragging, have shape presets (plucks, swells, stabs, gates and more) and copy to other partials or envelopes. 21 starter sounds.
-- **1.3.3, Live timing:** fills end exactly on the downbeat they lead into, auto-pilot's changes land on phrase lines, and 2-bar breaks come back on the phrase. Only pads and chords fade now: bass and melodies come in on the beat and stop cleanly.
-- **1.3.4, ZenCore ideas:** link any partials together, 28 effect presets, a step sequencer that turns one held key into a riff (up to four voices), and 32 starter sounds in groups, including step sequences and FM-style sounds.
-- **1.3.5:** calmer harmony (the song wizard and Live Mode pick only the plainer chord timings; basslines, arps and leads stay on the beat), the app switches to MC-101 mode by itself when it finds one (the ZenCore editor is now confirmed on a real MC-101), and a [SysEx guide](docs/MC707-SYSEX.md) and [parameter reference](docs/ZENCORE-PARAMETERS.md) for developers.
-- **1.3.6:** Live Mode built for the stage (a broken tick, a freeze or a pulled USB cable no longer stops the set; a red banner and an automatic resync bring it back), **Humanize** with four feels, drums that swing and drift together as one drummer, a timing readout, the **melodic pack** (11,000 new pads, arps, leads and chord rhythms over every progression), **Mood** (Angry to Dreamy, in Live Mode and the song wizard, with a one-bar transition while playing) and a new **Big Beat** style.
-- **1.3.7:** **Synth Mode**, a third tab: the MC-707 as an 8-track hardware synth for your DAW, with a strip per track (sound, clip or track sound, quick Tone, Filter, Envelope, Movement and Effect settings, mute, solo, level, pan and reverb), setups and notes passed through from a keyboard or DAW. The ZenCore editor's **Sound browser** (search, instrument types, genre tags, favourites, and grab sounds from the MC-707's clips into your library). Loading a sound is quiet. Cleaner menus with Help › About, more right-click menus, and hover help.
-- **1.3.8:** **Factory tones**: pick the MC-707's system update file (MC707_UPA_up.bin from Roland's site) and the Sound browser reads its 2,770 preset tones on your computer, in their banks (PRST_A to PRST_E) and numbers as on the MC-707. The **Sound browser** now works like ZENOLOGY: banks on the left, categories in groups, a sortable table, 0-3 star ratings, and ↑ ↓ to step through and load. Loading a sound sends all of it and re-selects the clip, so the MC-707 always plays the new sound.
-- **1.3.9:** factory tones now keep their portamento start setting (checked against tones read back from an MC-707).
-
-
+![Slime Lab](docs/features/6-slime-lab.png)
 
 ## Getting started
 
@@ -114,9 +55,9 @@ Both keep their work in the same place, so you can switch between them. The firs
 
 ### Mac app
 
-Download from [Releases](../../releases): **`MC-707-Toolbox-mac-arm64.dmg`** for Apple Silicon Macs (M1 and later) or **`MC-707-Toolbox-mac-x64.dmg`** for Intel Macs (Apple menu › About This Mac shows which you have). Open it and drag **MC-707 Toolbox** into **Applications**.
+Download from [Releases](../../releases): **`MC-707-Toolbox-mac-arm64.dmg`** for Apple Silicon Macs (M1 and later) or **`MC-707-Toolbox-mac-x64.dmg`** for Intel Macs (Apple menu › About This Mac shows which you have). Open it and drag **MC707-101 Toolbox** into **Applications**.
 
-The app isn't signed with a paid Apple developer certificate, so the first time you open it macOS says it can't check it. Click **Done**, then open **System Settings › Privacy & Security**, scroll down to *"MC-707 Toolbox was blocked"* and click **Open Anyway**. After that it opens normally. Allow the microphone when it asks if you want to record audio.
+The app isn't signed with a paid Apple developer certificate, so the first time you open it macOS says it can't check it. Click **Done**, then open **System Settings › Privacy & Security**, scroll down to *"MC707-101 Toolbox was blocked"* and click **Open Anyway**. After that it opens normally. Allow the microphone when it asks if you want to record audio.
 
 **Build it yourself** (on a Mac): install Node.js LTS, then `npm install` and `npm run dist:mac` in this folder.
 
@@ -181,7 +122,7 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Big Beat** | A new style and genre: late-90s breakbeat rock-dance at 110–140 BPM. 48 chopped funk breaks and stomping beats (with crash and tambourine versions), tambourines, shakers, cowbell and congas, distorted riffs, octave, fuzz and acid basslines, stabs, horn hits, power chugs, organ, sirens, hoover stabs and wah guitar on minor-pentatonic and mixolydian progressions, plus its own intros, fills, snare-roll builds, impacts and flash breaks. In Live Mode and the song wizard, under Dance and club. |
 | **Variety and groove packs** | Borrowed chords, line clichés, modal vamps (Dorian, Mixolydian, Lydian, Phrygian, harmonic minor, blues), two chords to a bar, pedal points and sus chords that resolve, with rhythms from clave, tresillo, gates and pushes. |
 | **Pattern editor** | A step grid, piano roll and fade or automation shapes. **Edit bars** changes one block, and **Repeat to end** copies it through. Click any library pattern to open it, play it and change it, then **Place at playhead**. Editing a factory pattern changes your own copy, never the library. **Save to My patterns** keeps it in your own library (the **Mine** tab). |
-| **New patterns and MIDI** | **+ Pattern** makes a blank drum or tone pattern, or loads MIDI files from any folder or USB drive (or drop `.mid` files on the arranger). Channel 10 parts become drums. |
+| **New patterns and MIDI** | **+ New blank pattern** at the top of the library (or **+ Pattern**) makes a blank drum or tone pattern, or loads MIDI files from any folder or USB drive (or drop `.mid` files on the arranger). Channel 10 parts become drums. |
 | **Fine clip edges** | Clips can start and end anywhere, down to 1/256 bar. **Snap** offers bar, ½ bar, beat, step, 1/32, 1/64 or Free; hold **Shift** while dragging to ignore it. **Clip options** take exact positions in steps, fractions included (2.5 is half a step later), plus where in the pattern the clip starts and a loop length for polyrhythms. |
 | **Clips that work together** | Linked clips share a pattern: edit once and every copy changes, or **Make unique**. Double-click one repeat of a long clip to edit just that block. **Glue** (G) joins touching clips back into one. |
 | **Structure and transpose** | Copy, paste, repeat, insert and delete whole sections. Transpose the song or just part of it. |
@@ -190,7 +131,7 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Sample grabber** | The **◉** on the playhead records 1–16 bars of the mix, one track or Ext In to a WAV, from the next bar line, ready to load into the MC-707 as a sample. **● Record sample** in the editor grabs one pattern on its own. |
 | **Export MIDI** | A `.zip` with the whole song and one `.mid` per track. |
 | **Mixer** | **🎚 Mixer** (or Song › Mixer) opens the song's mix in a window you can drag onto another screen: per track level, pan, reverb, chorus and note velocity, mute and solo, with a light and meter for the notes going out. It's saved with the song, has undo, and is sent to the MC-707 as you move it and when the song starts. Right-click a strip to solo only it or reset it. |
-| **Menus** | Each mode shows only its own menus. **Help** has the guide, MC-707 setup, links for developers (SysEx guide, parameter reference, diagnostics), troubleshooting, update checks, problem reports and **About**. |
+| **Menus** | Each mode shows only its own menus. **Help** has the guide, MC-707 setup, troubleshooting, update checks, problem reports and **About**. |
 | **Right-click** | Quick options on the Play button, clips, tracks, lanes, markers and library patterns; in Live Mode on scene cards, pads, tracks, keys and the mood pad; on Synth Mode strips (copy a sound to another track, save it to the Sound library, reset the mix); on Sound browser rows; and on every ZenCore control (back to the start value, copy and paste a value, the same value on all four partials). Hover over a control for a short note on what it does. |
 
 ## Live Mode
@@ -200,7 +141,7 @@ Untick *Show this when the app opens* to skip it; **File › Start screen** brin
 | **Start Jam and End Jam** | **▶ Start Jam** opens with a few 2-bar intro loops built from the first scene, rising into the drop (Shift-click skips them). **■ End Jam** ends within 1–2 bars: a last hit, a thinned-out bar and a hit, or a short fade. Press it again to stop at once. |
 | **Scenes** | Seven loops built for playing live: Groove, Lift, Peak, Stripped, Groove B, Tool and Peak B. Each has its own mix of parts and length, and parts come and go so the loop breathes. A big jump in energy lands as a drop. Press ✎ to edit any scene: its name, length, energy, the pattern and MC-707 clip on each track (stay, pick one or **random**), and which bars each part plays. |
 | **16 pads** | Laid out like the MC-707. Pads 1–7 hold the scenes and pad 8 is **Break**. The bottom row holds the Drums, Bass, Chords and Lead swaps, Fill, Stutter, Build → Drop and Next scene. Select a drum track on the MC-707 and its pads work straight away. You can also use the mouse or computer keys (`Q`–`I` top row, `A`–`K` bottom row). |
-| **Break and Build → Drop** | **Break** gives a quick flash (unison hits, stutter, snare roll or drop-out), then it's straight back in on the downbeat with a crash. **Build → Drop** brings a snare build that doubles to a roll, a filter riser, a cut and a beat of silence, then the drop with an impact, over 2, 4 or 8 bars. |
+| **Break and Build → Drop** | **Break** gives a quick flash (unison hits, stutter, snare roll, drop-out, a gate chop of the whole loop, half-time, or one hit left ringing in a reverb wash), then it's straight back in on the downbeat with a crash. **Build → Drop** brings a snare build that doubles to a roll, a filter riser, a cut and a beat of silence, then the drop with an impact, over 2, 4 or 8 bars. |
 | **Humanize** | Next to Swing: makes the band sound played, not just randomly wobbly. Each instrument sits in its own spot against the beat (snare a touch behind, hats on top, keys behind, a lead that floats) and drifts a little over time, the bass locks to wherever the kick landed, and the whole band breathes together. Downbeats and the backbeat lean in, hat strokes alternate hands, and the players lean into every fourth bar. Chords are strummed up and down instead of struck as a block, and at higher amounts the snare sometimes flams. Pick a feel: **Natural**, **Laid back**, **Pushed** or **Drunk** (loose and lazy, after J Dilla). Off is machine-tight, exactly as before. |
 | **Mood** | Next to Humanize: pick **Angry**, **Dark**, **Driving**, **Euphoric**, **Uplifting**, **Chill**, **Dreamy** or **Melancholy**, or drag the little pad (calm to intense across, dark to bright up). The set is rebuilt from patterns that feel that way inside the style: intense moods pick harder, busier, shorter parts, play them harder and nearer the top of the style's tempo range, and come in and drop hard; calm moods pick softer, sparser, longer parts, play them softer and slower, lay back and come in smoothly. Dark moods pick minor, clashing, lower parts; bright moods major, open, higher ones. While playing, the new set comes in over one bar from the next bar line: intense moods roll the snare, open the filter and slam in on a crash after an eighth of silence; calm moods let the beat fall away, close the filter and wash into it. Off (or a double-click on the pad) picks from the whole style again. The song wizard has the same Mood choice. |
 | **Built for the stage** | The clock runs on its own thread, so it keeps time with the window in the background. If the computer freezes for a moment, the set carries on from where it was instead of firing the missed notes all at once; if something goes wrong inside the app, it's logged and the music carries on. If the USB cable comes out, a red banner says so while the set keeps time; plug it back in and every note is released, then the scene's clips and levels are sent again, in time. Every release is played through hours of simulated sets with thousands of random pad presses, checking that every note is released and every effect returns to rest. |
@@ -285,6 +226,18 @@ Edit the sounds inside your MC-707: every parameter of a ZEN-Core tone, on a big
 
 Roland hasn't published SysEx details for the MC-707, so the editor builds on community work: [mc-programmer](https://github.com/rsenna/mc-programmer) and [mcpoker / mctools_basic](https://github.com/Locriana/mctools_basic) found how the MC-707 answers SysEx and where clip tones live, and [Roland-Zen-Decode-XML](https://github.com/DrKnackeratorStrikesAgain/Roland-Zen-Decode-XML) decoded Roland's parameter list. Effect names come from the MC-707 Reference Manual. Some effect values have only been tested against a simulated MC-707, so reports from real hardware are welcome. On a real MC-707 a drum kit's key settings (level, pitch, filter and so on) change over MIDI, but its drum sounds don't: the MC-707 keeps each key's instrument whatever is sent, so choose kits on the MC-707. PCM wave names come from Roland's MC-707 Sound List; drum instrument names aren't published, so they show as numbers.
 
+## Slime Lab
+
+Sound design for ZenCore tones, simple to start and as deep as you want: **Slime Lab** in the ZenCore editor's header (tones only). One screen, in three depths.
+
+| | |
+|---|---|
+| **Start from** | A blank tone, or one of ten classic sounds (acid, Reese, wobble and 808 basses, supersaw and sync leads, a dream pad, lo-fi keys, a house pluck, a brass stab) built from scratch in one go. Tick **Show me how** to build it one step at a time with the reason for each step and the settings it changes, so you can make it yourself. |
+| **Five knobs** | **Bright, Body, Shape, Motion and Space**, the same on every sound. Drag, scroll or use the arrow keys; double-click to go back. The **scope** draws the wave and envelopes as you turn them, and follows the note while you taste it. |
+| **Variations** | **Grow variations** makes six versions of your sound, subtle, medium or wild, keeping the parts you lock; click through them by ear and grow again from the one you like. |
+| **Learn and Fine-tune** | **Learn** explains whatever you touch and shows exactly what it changed. **Fine-tune** has the real settings behind it, a few to a page (oscillator, filter, amp, motion, voice, effects), and **Morph** slides between two snapshots. |
+| **Taste** | Hold **Z X C V B** (or the keys on screen) to play C1–C5, **Hold** keeps a note going, and hold **Q** (or **Hold: before**) to hear the sound you started with. Every change is one undo step. |
+
 ## Track setup
 
 **Settings › Track setup** splits the 8 tracks the way you want, from **8 drum tracks to 8 tone tracks**. Pick a preset (3 drums + 5 tone is the default, then 8 drums, 6 + 2, 4 + 4, 2 + 6, 1 + 7 and 8 tone), or give each track its job: **kit, hats or perc** for drums; **bass, chords, pad, lead, pluck or acid** for tones. The song wizard and Live Mode follow it, so a second kit track gets its own grooves and a second lead its own line. Clips that no longer fit a track are removed, and Undo brings them back. On the MC-707, load a kit on each drum track and a tone on each tone track to match.
@@ -341,7 +294,7 @@ tests/          automated tests (Playwright, with a simulated MC-707)
 main.js         desktop app window, file dialogs, folders, keep-awake
 preload.js      the small bridge the page uses to reach those features
 build-exe.bat   one-click Windows build
-docs/           ARCHITECTURE.md, and the screenshots and cards in this README
+docs/           ARCHITECTURE.md, and the pictures in this README (scripts/feature-cards.mjs makes them)
 AGENTS.md       how to work on the code (for people and coding agents)
 LICENSE.md      PolyForm Noncommercial 1.0.0
 .github/        runs the tests on every push, and builds the Windows, Mac and Linux apps for each release
@@ -357,6 +310,6 @@ Open an [issue](../../issues) and say what you pressed, what you expected and wh
 
 ## Licence
 
-MC-707 Toolbox is free to use, share and change for any **noncommercial** purpose under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You may not sell it, charge for it or use it commercially. If you share a copy or a changed version, include the licence and its Required Notice line.
+MC707 / 101 Toolbox is free to use, share and change for any **noncommercial** purpose under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You may not sell it, charge for it or use it commercially. If you share a copy or a changed version, include the licence and its Required Notice line.
 
 Roland and MC-707 are trademarks of Roland Corporation. This project is not made by, endorsed by or affiliated with Roland. Sound names in the wizard's suggestions refer to the MC-707's factory sounds; no Roland sounds or samples are included.

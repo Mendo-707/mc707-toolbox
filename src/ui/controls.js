@@ -188,6 +188,7 @@ export function initControls() {
   });
   const libBtn = () => $('#bLibT').classList.toggle('on', !$('#main').classList.contains('nolib'));
   $('#bNewPat').addEventListener('click', openNewPat);
+  $('#libNew').addEventListener('click', openNewPat);
   addEventListener('dragover', e => {
     if (document.body.dataset.mode !== 'song') return;
     if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();

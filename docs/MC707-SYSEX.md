@@ -1,7 +1,7 @@
 # MC-707 and MC-101 SysEx: a practical guide
 
 Roland never published a MIDI implementation for the MC-707 or MC-101, but both answer Roland's usual
-data request and data set messages. This page collects what the MC-707 Toolbox learned building its
+data request and data set messages. This page collects what the MC707 / 101 Toolbox learned building its
 ZenCore editor, tested on a real MC-707 (and with the ZenCore editor confirmed on a real MC-101), so
 others can build on it. Every tone, drum kit and MFX parameter is listed in
 **[ZENCORE-PARAMETERS.md](ZENCORE-PARAMETERS.md)**.
