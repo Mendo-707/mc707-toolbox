@@ -78,7 +78,7 @@ test('Big Beat: its own breaks, riffs and fills fill a Live set and a wizard son
     bb.forEach(f => (pools[f.pool] = (pools[f.pool] || 0) + 1));
     const bad = bb.filter(
       f =>
-        !(f.mx ? /^mxbigbeat/ : /^(bb|fk-bigbeat-)/).test(f.id) ||
+        !(f.mx ? /^mxbigbeat/ : /^(bb|fk-bigbeat-|fp\d)/).test(f.id) ||
         !f.notes.length ||
         f.notes.some(n => n.s < 0 || n.s >= f.bars * 16 || n.l <= 0 || n.n < 0 || n.n > 127)
     );
