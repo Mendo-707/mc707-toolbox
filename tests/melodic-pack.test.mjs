@@ -70,7 +70,10 @@ test('melodic pack: in time, on its progression, in key, and new rhythms', async
   }, SCALES);
   assert.deepEqual(r.bad, []);
   assert.ok(r.count > 10000, 'over 10,000 new parts (' + r.count + ')');
-  assert.ok(r.after, 'the pack comes after every older pattern (only Big Beat and the fill pack follow it), so no older id moves');
+  assert.ok(
+    r.after,
+    'the pack comes after every older pattern (only Big Beat and the fill pack follow it), so no older id moves'
+  );
   assert.ok(r.distinct.pad >= 20 && r.distinct.pluck >= 20 && r.distinct.lead >= 30, JSON.stringify(r.distinct));
   assert.deepEqual(errors, []);
 });
