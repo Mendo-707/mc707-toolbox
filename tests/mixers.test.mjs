@@ -136,8 +136,14 @@ test('Mixers in the Windows app: borderless, dragged by the header, with pin, mi
     ['mc707-song-mixer', 'top', true],
     ['mc707-song-mixer', 'min', undefined]
   ]);
-  await win.locator('.popWb.x').click();
-  await win.waitForEvent('close', { timeout: 3000 }).catch(() => {});
+  /* the click closes the window, which can end it before the click itself returns */
+  await Promise.all([
+    win.waitForEvent('close', { timeout: 3000 }).catch(() => {}),
+    win
+      .locator('.popWb.x')
+      .click({ noWaitAfter: true })
+      .catch(e => assert.match(String(e), /closed/))
+  ]);
   assert.equal(win.isClosed(), true, 'closed');
   assert.deepEqual(errors, []);
 });
