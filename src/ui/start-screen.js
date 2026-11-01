@@ -110,7 +110,7 @@ export function startOpen(last = true) {
       el(
         'div',
         { class: 'stHead' },
-        el('h2', {}, 'MC-707 Toolbox'),
+        el('h2', {}, 'MC707 / 101 Toolbox'),
         el('span', { class: 'stVer' }, 'Version ' + VERSION),
         upd,
         updBtn

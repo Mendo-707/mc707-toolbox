@@ -2,7 +2,7 @@
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-Required Notice: Copyright (c) 2026 Aaron (MC-707 Toolbox)
+Required Notice: Copyright (c) 2026 Aaron (MC707 / 101 Toolbox)
 
 
 ## Acceptance

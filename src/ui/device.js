@@ -14,7 +14,7 @@ import { liveRender } from '../live/panels.js';
 export function applyDevice() {
   document.body.dataset.dev = DEV;
   const b = $('#menubar .mbrand');
-  if (b) b.textContent = DEV === '101' ? 'MC-707 Toolbox · MC-101 mode' : 'MC-707 Toolbox';
+  if (b) b.textContent = DEV === '101' ? 'MC707 / 101 Toolbox · MC-101 mode' : 'MC707 / 101 Toolbox';
 }
 export function setDevice(d) {
   if (d === DEV) return;

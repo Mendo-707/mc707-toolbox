@@ -86,7 +86,7 @@ function openWindow(o, h) {
   doc.open();
   doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body></body></html>');
   doc.close();
-  doc.title = o.title + ' · MC-707 Toolbox';
+  doc.title = o.title + ' · MC707 / 101 Toolbox';
   copyStyles(doc);
   doc.body.className = 'popWin' + (APP ? ' popFrameless' : '');
   h.name = 'mc707-' + o.id;

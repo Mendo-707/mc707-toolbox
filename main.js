@@ -12,6 +12,9 @@ else {
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 }
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+/* the app was called MC-707 Toolbox: its saved songs, sounds and settings stay where they were (the folder
+   is named after the app, and would otherwise move with the new name) */
+app.setPath('userData', path.join(app.getPath('appData'), 'MC-707 Toolbox'));
 
 function configPath() { return path.join(app.getPath('userData'), 'toolbox-folders.json'); }
 function readCfg() { try { return JSON.parse(fs.readFileSync(configPath(), 'utf8')); } catch (e) { return {}; } }
@@ -64,7 +67,7 @@ function createWindow() {
         : {};
   win = new BrowserWindow({
     x: b.x, y: b.y, width: b.width, height: b.height, minWidth: 700, minHeight: 500,
-    title: 'MC-707 Toolbox',
+    title: 'MC707 / 101 Toolbox',
     icon: path.join(__dirname, 'icon.png'),
     /* no white flash: the window shows once the page has drawn, in the app's own colour */
     show: false,
@@ -203,11 +206,11 @@ ipcMain.handle('is-fullscreen', () => !!(win && win.isFullScreen()));
 ipcMain.on('close-now', () => { closing = true; if (win) win.close(); });
 ipcMain.on('quit-now', () => { closing = true; app.quit(); });
 ipcMain.handle('save-dialog', async (_e, name) => {
-  const r = await dialog.showSaveDialog(win, { defaultPath: path.join(folderFor('projects'), name || 'project.json'), filters: [{ name: 'MC-707 Toolbox project', extensions: ['json'] }] });
+  const r = await dialog.showSaveDialog(win, { defaultPath: path.join(folderFor('projects'), name || 'project.json'), filters: [{ name: 'MC707 / 101 Toolbox project', extensions: ['json'] }] });
   return r.canceled ? null : r.filePath;
 });
 ipcMain.handle('open-dialog', async () => {
-  const r = await dialog.showOpenDialog(win, { defaultPath: folderFor('projects'), properties: ['openFile'], filters: [{ name: 'MC-707 Toolbox project', extensions: ['json'] }] });
+  const r = await dialog.showOpenDialog(win, { defaultPath: folderFor('projects'), properties: ['openFile'], filters: [{ name: 'MC707 / 101 Toolbox project', extensions: ['json'] }] });
   if (r.canceled || !r.filePaths[0]) return null;
   const p = r.filePaths[0];
   return { path: p, name: path.basename(p), text: fs.readFileSync(p, 'utf8') };

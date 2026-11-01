@@ -40,7 +40,7 @@ export function aboutOpen() {
         el(
           'div',
           {},
-          el('h2', { id: 'abTitle' }, 'MC-707 Toolbox'),
+          el('h2', { id: 'abTitle' }, 'MC707 / 101 Toolbox'),
           el('div', { class: 'abVer' }, 'Version ' + VERSION + ' · ' + (APP_NAME || 'web'))
         )
       ),

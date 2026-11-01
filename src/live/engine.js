@@ -22,7 +22,7 @@ import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } fro
 import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
-import { lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
+import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
 import { liveBuild, liveSwapIds } from './set-builder.js';
@@ -615,6 +615,14 @@ export function liveTick(tick, nt, td) {
     fft = fl.start - seg + ((((tick - fl.start) % seg) + seg) % seg);
   }
   if (fl && (fl.kind === 'roll' || fl.kind === 'drop')) lvRollTick(fl, tick, nt, td);
+  /* Gate chop plays the loop only on the gate's 16ths, cut short; Half-time plays it at half speed; Reverb
+     wash plays its first beat and lets the reverb ring */
+  const fk = fl && fl.loop ? fl.kind : '',
+    fr = fl ? tick - fl.start : 0;
+  const hush =
+    (fk === 'half' && fr % 2 !== 0) || (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x') || (fk === 'wash' && fr >= 8);
+  const durK = fk === 'half' ? 2 : 1,
+    durMax = fk === 'gate' ? 1.6 * td : Infinity;
   for (let t = 0; t < 8; t++) {
     const trk = S.tracks[t];
     if (trk.mute || (solo && !trk.solo) || lvUserOwns(t)) continue;
@@ -644,8 +652,9 @@ export function liveTick(tick, nt, td) {
       continue;
     }
     if ((!fl || fl.loop) && lvMaskOff(t, tick)) continue;
+    if (hush) continue;
     if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT) continue;
-    const vft = fl && fl.kind === 'stutter' ? fft : ft;
+    const vft = fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : ft;
     for (const v of fl
       ? fl.loop
         ? fl.keep.includes(t)
@@ -683,7 +692,7 @@ export function liveTick(tick, nt, td) {
           tone ? clamp(nn, 0, 127) : nn,
           clamp(n.v * g, 1, 127),
           nt + subTick(n) * (TR.subTd || td),
-          n.l * 2 * td
+          Math.min(n.l * 2 * td * durK, durMax)
         );
         if (slotOf(t) === 3) v._last = nn;
         if (vt === 'echo' && last && tone)

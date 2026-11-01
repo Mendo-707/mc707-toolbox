@@ -35,4 +35,4 @@ http
     });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log('MC-707 Toolbox (source) at http://localhost:' + PORT));
+  .listen(PORT, () => console.log('MC707 / 101 Toolbox (source) at http://localhost:' + PORT));

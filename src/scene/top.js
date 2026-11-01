@@ -112,7 +112,7 @@ export function sceneTop(toggle) {
   return el(
     'header',
     { class: 'scnTop' },
-    el('div', { class: 'brand' }, el('b', {}, 'Scene Mode'), el('span', {}, 'MC-707 Toolbox')),
+    el('div', { class: 'brand' }, el('b', {}, 'Scene Mode'), el('span', {}, 'MC707 / 101 Toolbox')),
     el(
       'div',
       { class: 'grp' },

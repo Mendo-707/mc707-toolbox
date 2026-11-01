@@ -28,6 +28,10 @@
 #libClose {
   display: none;
 }
+.libNew {
+  width: 100%;
+  font-weight: 600;
+}
 @media (max-width: 860px) {
   #main,
   #main.nolib {
