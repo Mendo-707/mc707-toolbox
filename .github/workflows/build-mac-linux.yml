@@ -47,8 +47,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # on GitHub's Macs, the malware scan (XProtect) and Spotlight hold a new disk image open, so making it
-      # fails ("resource busy", hdiutil detach): stop them first, and try up to three times
+      # the two Mac disk images are made one after the other (dist:mac), as both mount under the app's name;
+      # GitHub's Macs can also hold a new one open (XProtect, Spotlight): stop those, and try up to 3 times
       - name: Let go of new disk images (Mac)
         if: runner.os == 'macOS'
         run: |
