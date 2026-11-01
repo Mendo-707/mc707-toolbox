@@ -23,6 +23,7 @@ import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fa
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
 import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
+import { lvChordNow, lvLockNote } from './chord-lock.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
 import { liveBuild, liveSwapIds } from './set-builder.js';
@@ -621,6 +622,9 @@ export function liveTick(tick, nt, td) {
     fr = fl ? tick - fl.start : 0;
   const hush =
     (fk === 'half' && fr % 2 !== 0) || (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x') || (fk === 'wash' && fr >= 8);
+  /* Chord lock: the chord playing now, worked out once this tick when a lead or pluck needs it */
+  let chordNow;
+  const chord = () => (chordNow === undefined ? (chordNow = lvChordNow(ft)) : chordNow);
   const durK = fk === 'half' ? 2 : 1,
     durMax = fk === 'gate' ? 1.6 * td : Infinity;
   for (let t = 0; t < 8; t++) {
@@ -687,6 +691,7 @@ export function liveTick(tick, nt, td) {
         let nn = tone ? (conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0)) : n.n;
         if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && slotOf(t) >= 6)))
           nn = slotOf(t) === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
+        if (tone && slotOf(t) >= 6 && LV.chordLock !== false) nn = lvLockNote(nn, n.l, local, chord());
         emitNote(
           t,
           tone ? clamp(nn, 0, 127) : nn,

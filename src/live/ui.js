@@ -658,6 +658,24 @@ export function liveInit() {
           'Epic builds: resonance, reverb wash and pump climb into every drop'
         ),
         el(
+          'label',
+          {
+            class: 'lvf',
+            style: 'margin:2px 0 6px',
+            title:
+              'Lead and pluck notes that land on a beat or ring on, and rub against the chord playing, move to the nearest note of that chord'
+          },
+          el('input', {
+            type: 'checkbox',
+            id: 'lvChordLock',
+            onchange: e => {
+              LV.chordLock = e.target.checked;
+              saveLive();
+            }
+          }),
+          'Chord lock: leads and plucks keep to the chord playing'
+        ),
+        el(
           'div',
           { class: 'lvBtns' },
           ...[

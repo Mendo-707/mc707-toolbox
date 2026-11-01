@@ -14487,7 +14487,7 @@ html.os-darwin.native-menu #menubar .mproj {
         [7, "7"]
       ]
     };
-    const progOf = (n) => {
+    const progOf2 = (n) => {
       const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(n);
       return m ? m[1] : null;
     };
@@ -14518,7 +14518,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const used = /* @__PURE__ */ new Map();
       FAC.forEach((f) => {
         if (f.genre === g && f.pool === "chords") {
-          const p = progOf(f.name);
+          const p = progOf2(f.name);
           if (p && PR[p]) used.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
         }
       });
@@ -49308,6 +49308,93 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
 
+  // src/library/melody-fit.js
+  var progOf = (f) => {
+    const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(f.name);
+    return m ? m[1] : null;
+  };
+  var CHORDS2 = null;
+  function chordsFor(f, p) {
+    if (!CHORDS2) {
+      CHORDS2 = /* @__PURE__ */ new Map();
+      for (const g of FAC) {
+        if (g.type !== "tone" || g.pool !== "chords" || !g.key) continue;
+        const q = progOf(g);
+        if (!q) continue;
+        for (const k2 of [g.genre + "|" + q + "|" + g.bars, "*|" + q + "|" + g.bars]) if (!CHORDS2.has(k2)) CHORDS2.set(k2, g);
+      }
+    }
+    return CHORDS2.get(f.genre + "|" + p + "|" + f.bars) || CHORDS2.get("*|" + p + "|" + f.bars) || null;
+  }
+  function harmonyGrid(g, root) {
+    const n = g.bars * 16, sh = ((root - g.key.root) % 12 + 12) % 12, grid = Array.from({ length: n }, () => /* @__PURE__ */ new Set());
+    for (const x of g.notes)
+      for (let s = Math.floor(x.s); s < Math.min(n, Math.ceil(x.s + x.l)); s++) grid[s].add((x.n + sh) % 12);
+    let last3 = null;
+    for (let pass2 = 0; pass2 < 2; pass2++)
+      for (let s = 0; s < n; s++) {
+        if (grid[s].size) last3 = grid[s];
+        else if (last3) grid[s] = last3;
+      }
+    return grid;
+  }
+  var SCORE = /* @__PURE__ */ new Map();
+  function melodyFitReset() {
+    CHORDS2 = null;
+    SCORE.clear();
+  }
+  function melodyScore(f) {
+    if (SCORE.has(f.id)) return SCORE.get(f.id);
+    let out2 = null;
+    const p = f.type === "tone" && f.key && progOf(f), g = p && chordsFor(f, p);
+    if (g) {
+      const grid = harmonyGrid(g, f.key.root);
+      let all = 0, tones = 0, clash = 0;
+      for (const x of f.notes) {
+        if (!(x.s % 4 === 0 || x.l >= 2)) continue;
+        const ch = grid[Math.floor(x.s) % grid.length];
+        if (!ch || !ch.size) continue;
+        const pc2 = x.n % 12, w = Math.min(x.l, 8);
+        all += w;
+        if (ch.has(pc2)) tones += w;
+        else if ([...ch].some((c) => (pc2 - c + 12) % 12 === 1 || (c - pc2 + 12) % 12 === 1)) clash += w;
+      }
+      if (all) out2 = { tones: tones / all, clash: clash / all };
+    }
+    SCORE.set(f.id, out2);
+    return out2;
+  }
+  var melodyClashes = (f) => {
+    const s = melodyScore(f);
+    return !!s && (s.clash > 0.2 || s.tones < 0.5);
+  };
+  var TRIPLET_STYLES = /* @__PURE__ */ new Set([
+    "trap",
+    "drill",
+    "phonk",
+    "memphis",
+    "boombap",
+    "lofi",
+    "gfunk",
+    "neosoul",
+    "halftime",
+    "dubstep",
+    "riddim",
+    "afrobeats",
+    "dancehall",
+    "reggaeton",
+    "ambient",
+    "cinematic"
+  ]);
+  var DOTTED_STYLES = /* @__PURE__ */ new Set(["trance", "progtrance", "synthwave", "pop", "indie", "ambient", "cinematic"]);
+  var isTriplet = (f) => /triplet/i.test(f.name) || f.notes.some((x) => Math.abs(x.s - Math.round(x.s)) > 0.01);
+  var isDotted = (f) => /dotted/i.test(f.name);
+  function melodyFeelOk(f, styleId) {
+    if (isTriplet(f)) return TRIPLET_STYLES.has(styleId);
+    if (isDotted(f)) return DOTTED_STYLES.has(styleId);
+    return true;
+  }
+
   // src/library/pools.js
   var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck", "acid"];
   var LV_POOLCACHE = {};
@@ -49334,6 +49421,7 @@ html.os-darwin.native-menu #menubar .mproj {
     addMelodicPack(BB_GENRE);
     addFillPack();
     for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
+    melodyFitReset();
     for (const k2 in LV_POOLCACHE) delete LV_POOLCACHE[k2];
     for (const k2 in FULLKITS) if (!FULLKITS[k2].length) delete FULLKITS[k2];
   }
@@ -49394,7 +49482,15 @@ html.os-darwin.native-menu #menubar .mproj {
       (f) => f.genre === g && f.pool === pool && (!f.styles || f.styles.includes(st.id) || tone2 && !(f.notFor && f.notFor.includes(st.id))) && (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone2 ? 30 : 24)) && /* harmony-pack patterns with the busier chord timings are for picking by hand, not for auto-picks */
       !f.busy
     ).map((f) => f.id);
-    return LV_POOLCACHE[key] = [.../* @__PURE__ */ new Set([...hand, ...lib])].filter((id) => facById(id));
+    let ids = [.../* @__PURE__ */ new Set([...hand, ...lib])].filter((id) => facById(id));
+    if (pool === "lead" || pool === "pluck") {
+      const ok = ids.filter((id) => {
+        const f = facById(id);
+        return !melodyClashes(f) && melodyFeelOk(f, st.id);
+      });
+      if (ok.length) ids = ok;
+    }
+    return LV_POOLCACHE[key] = ids;
   }
   function lvLively(f) {
     if (!f) return 0;
@@ -51895,6 +51991,7 @@ html.os-darwin.native-menu #menubar .mproj {
     "vary",
     "flavor",
     "buildFx",
+    "chordLock",
     "custom",
     "revRest",
     "brkStyle",
@@ -51941,6 +52038,7 @@ html.os-darwin.native-menu #menubar .mproj {
       vary: 50,
       flavor: "lively",
       buildFx: true,
+      chordLock: true,
       custom: false,
       revRest: 0,
       brkStyle: "mix",
@@ -52014,6 +52112,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (i >= 0) LV.acts[i] = "brk";
     }
     if (!["mix", "hits", "stutter", "drop", "roll", "gate", "half", "wash"].includes(LV.brkStyle)) LV.brkStyle = "mix";
+    LV.chordLock = LV.chordLock !== false;
     if (![16, 32, 64].includes(+LV.brkLen)) LV.brkLen = 32;
     else LV.brkLen = +LV.brkLen;
     if (!STYLES.some((s) => s.id === LV.style)) LV.style = "liquid";
@@ -54371,6 +54470,7 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#lvBrkSt").value = LV.brkStyle;
     $("#lvBrkLen").value = LV.brkLen;
     $("#lvBuildFx").checked = LV.buildFx !== false;
+    $("#lvChordLock").checked = LV.chordLock !== false;
     $("#lvFlavor").value = LV.flavor;
     $("#lvVary").value = LV.vary;
     $("#lvVaryVal").textContent = lvVaryLabel();
@@ -54946,6 +55046,57 @@ html.os-darwin.native-menu #menubar .mproj {
       if (on2()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
       delete l[t];
     }
+  }
+
+  // src/live/chord-lock.js
+  var modeNote = (n) => {
+    const r = ((n - LV.key) % 12 + 12) % 12;
+    if (LV.mode === "major") return r === 3 || r === 8 || r === 10 ? n + 1 : n;
+    return r === 4 || r === 9 || r === 11 ? n - 1 : n;
+  };
+  var GRID = /* @__PURE__ */ new Map();
+  function gridOf(f) {
+    const sh = shiftFor(f, LV.key), conv = !!(f.key && lvModeFam(f.key.scale) !== LV.mode), key = f.id + "|" + LV.key + "|" + LV.mode;
+    let g = GRID.get(key);
+    if (g) return g;
+    const n = f.bars * 32;
+    g = Array.from({ length: n }, () => null);
+    for (const x of f.notes) {
+      const nn = conv ? modeNote(x.n + sh) : x.n + sh, pc2 = (nn % 12 + 12) % 12;
+      for (let t = Math.floor(x.s * 2); t < Math.min(n, Math.ceil((x.s + x.l) * 2)); t++)
+        (g[t] = g[t] || /* @__PURE__ */ new Set()).add(pc2);
+    }
+    let last3 = null;
+    for (let pass2 = 0; pass2 < 2; pass2++)
+      for (let t = 0; t < n; t++) {
+        if (g[t]) last3 = g[t];
+        else g[t] = last3;
+      }
+    if (GRID.size > 400) GRID.clear();
+    GRID.set(key, g);
+    return g;
+  }
+  function lvChordNow(ft) {
+    const out2 = /* @__PURE__ */ new Set();
+    for (const t of tracksFor([3, 4, 5])) {
+      const vs = LV.voices[t] || [], v = vs.filter((x) => x.env.v1 > 0).pop();
+      if (!v || v.f.type !== "tone" || !v.f.key) continue;
+      const L2 = v.f.bars * 32, g = gridOf(v.f)[((ft - v.start) % L2 + L2) % L2];
+      if (g) for (const pc2 of g) out2.add(pc2);
+    }
+    return out2.size >= 2 ? out2 : null;
+  }
+  function lvLockNote(nn, len, local, chord2) {
+    if (!chord2) return nn;
+    const pc2 = (nn % 12 + 12) % 12;
+    if (chord2.has(pc2)) return nn;
+    const strong = local % 8 === 0, held3 = len >= 2, rub = chord2.has((pc2 + 1) % 12) || chord2.has((pc2 + 11) % 12);
+    if (!(rub && (strong || held3) || len >= 4)) return nn;
+    for (let d = 1; d <= 6; d++) {
+      if (chord2.has(((pc2 - d) % 12 + 12) % 12)) return nn - d;
+      if (chord2.has((pc2 + d) % 12)) return nn + d;
+    }
+    return nn;
   }
 
   // src/live/extreme.js
@@ -55823,6 +55974,8 @@ html.os-darwin.native-menu #menubar .mproj {
     if (fl && (fl.kind === "roll" || fl.kind === "drop")) lvRollTick(fl, tick, nt, td);
     const fk = fl && fl.loop ? fl.kind : "", fr = fl ? tick - fl.start : 0;
     const hush = fk === "half" && fr % 2 !== 0 || fk === "gate" && LV_GATE[fr >> 1 & 15] !== "x" || fk === "wash" && fr >= 8;
+    let chordNow;
+    const chord2 = () => chordNow === void 0 ? chordNow = lvChordNow(ft) : chordNow;
     const durK = fk === "half" ? 2 : 1, durMax = fk === "gate" ? 1.6 * td : Infinity;
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
@@ -55874,6 +56027,7 @@ html.os-darwin.native-menu #menubar .mproj {
           let nn = tone2 ? conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0) : n.n;
           if (tone2 && (vt === "oct" && last3 && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
             nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
+          if (tone2 && slotOf(t) >= 6 && LV.chordLock !== false) nn = lvLockNote(nn, n.l, local, chord2());
           emitNote(
             t,
             tone2 ? clamp(nn, 0, 127) : nn,
@@ -57991,6 +58145,23 @@ html.os-darwin.native-menu #menubar .mproj {
               }
             }),
             "Epic builds: resonance, reverb wash and pump climb into every drop"
+          ),
+          el(
+            "label",
+            {
+              class: "lvf",
+              style: "margin:2px 0 6px",
+              title: "Lead and pluck notes that land on a beat or ring on, and rub against the chord playing, move to the nearest note of that chord"
+            },
+            el("input", {
+              type: "checkbox",
+              id: "lvChordLock",
+              onchange: (e) => {
+                LV.chordLock = e.target.checked;
+                saveLive();
+              }
+            }),
+            "Chord lock: leads and plucks keep to the chord playing"
           ),
           el(
             "div",
@@ -66671,6 +66842,7 @@ html.os-darwin.native-menu #menubar .mproj {
         },
         labPageOf: pageOf
       },
+      melody: { score: melodyScore, clashes: melodyClashes, isTriplet, isDotted },
       seq: {
         clipPacked,
         encode: encodePattern,

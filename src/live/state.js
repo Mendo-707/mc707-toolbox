@@ -95,6 +95,7 @@ const LV_SAVE = [
   'vary',
   'flavor',
   'buildFx',
+  'chordLock',
   'custom',
   'revRest',
   'brkStyle',
@@ -141,6 +142,7 @@ export const LV = Object.assign(
     vary: 50,
     flavor: 'lively',
     buildFx: true,
+    chordLock: true,
     custom: false,
     revRest: 0,
     brkStyle: 'mix',
@@ -219,6 +221,7 @@ export const liveSwingAmt = () => LV.swing;
     if (i >= 0) LV.acts[i] = 'brk';
   }
   if (!['mix', 'hits', 'stutter', 'drop', 'roll', 'gate', 'half', 'wash'].includes(LV.brkStyle)) LV.brkStyle = 'mix';
+  LV.chordLock = LV.chordLock !== false;
   if (![16, 32, 64].includes(+LV.brkLen)) LV.brkLen = 32;
   else LV.brkLen = +LV.brkLen;
   if (!STYLES.some(s => s.id === LV.style)) LV.style = 'liquid';
