@@ -2220,6 +2220,140 @@ input[type='range'] {
   grid-template-columns: 1fr 1fr;
   gap: 4px 12px;
 }
+
+/* the start screen's way into the tutorial */
+.stTut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* Tutorial (src/ui/tutorial.js): chapters on the left, the chapter on the right */
+.tutBox {
+  width: min(980px, 100%);
+  max-height: min(88vh, 820px);
+  display: flex;
+  flex-direction: column;
+}
+.tutMain {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+}
+.tutNav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+}
+.tutCh {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.tutCh:hover,
+.tutCh:focus-visible {
+  background: var(--raise);
+}
+.tutCh.on {
+  background: var(--hot);
+  color: #fff;
+}
+.tutN {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--raise);
+  color: var(--ink);
+}
+.tutCh.on .tutN {
+  background: #fff;
+  color: var(--hot);
+}
+.tutBody {
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  padding-right: 4px;
+}
+.tutBody h3 {
+  margin: 0 0 4px;
+  font-size: 24px;
+}
+.tutWhy {
+  margin: 0 0 14px;
+  color: var(--mute);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tutCols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.tutPart {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+.tutPart h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+.tutPart ol {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.tutActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.tutFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 700px) {
+  .tutMain {
+    grid-template-columns: 1fr;
+  }
+  .tutNav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -51206,7 +51340,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return o;
   }
   function customRows(st, r, row2) {
-    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY10 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY11 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
       row2(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
@@ -51215,7 +51349,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
-      const k2 = poolOf(t) === "acid" ? "bass" : KEY10[slotOf(t)];
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY11[slotOf(t)];
       out2.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
@@ -62964,164 +63098,6 @@ html.os-darwin.native-menu #menubar .mproj {
     } else toast("You have the latest version (" + VERSION + ")");
   }
 
-  // src/ui/start-screen.js
-  var KEY8 = "mc707-start";
-  function startOnOpen() {
-    try {
-      return localStorage.getItem(KEY8) !== "0";
-    } catch (e) {
-      return true;
-    }
-  }
-  var TEMPLATE = [
-    [0, "Intro"],
-    [8, "Build"],
-    [16, "Drop"],
-    [32, "Break"],
-    [40, "Build 2"],
-    [48, "Drop 2"],
-    [56, "Outro"]
-  ];
-  function fresh(template) {
-    pushUndo();
-    const m = S.midiOut;
-    replaceState(newState());
-    S.midiOut = m;
-    if (template) {
-      S.bars = 64;
-      S.markers = TEMPLATE.map(([bar2, name]) => ({ bar: bar2, name }));
-    }
-    UI.sel = null;
-    afterReplaceKeepUndo();
-  }
-  function startOpen(last3 = true) {
-    if ($("#startOv")) return;
-    const has2 = !!last3;
-    const close = () => ov.remove();
-    const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
-    let found = null;
-    const show = (u, asked) => {
-      found = u;
-      upd.classList.toggle("new", !!(u && u.newer));
-      upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
-      updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
-    };
-    const updBtn = el(
-      "button",
-      {
-        type: "button",
-        class: "btn sm",
-        title: "See whether a newer version is out",
-        onclick: async () => {
-          if (found && found.newer) return openLink(found.url);
-          upd.textContent = "Checking…";
-          show(await checkUpdate(true), true);
-        }
-      },
-      "Check for updates"
-    );
-    checkUpdate().then((u) => show(u, false));
-    const card = (icon, title, text2, fn, on3) => el(
-      "button",
-      {
-        type: "button",
-        class: "stCard" + (on3 ? " on" : ""),
-        onclick: () => {
-          close();
-          fn();
-        }
-      },
-      el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
-      el("b", {}, title),
-      el("small", {}, text2)
-    );
-    const ov = el(
-      "div",
-      { id: "startOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Start" },
-      el(
-        "div",
-        { class: "ptBox stBox" },
-        el(
-          "div",
-          { class: "stHead" },
-          el("h2", {}, "MC707 / 101 Toolbox"),
-          el("span", { class: "stVer" }, "Version " + VERSION),
-          upd,
-          updBtn
-        ),
-        el("p", { class: "hint" }, "What would you like to do?"),
-        el(
-          "div",
-          { class: "stGrid" },
-          has2 ? card(
-            "↻",
-            last3 === "menu" ? "Back to this song" : "Load last session",
-            (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
-            () => {
-            },
-            true
-          ) : null,
-          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
-          card(
-            "▤",
-            "Empty template",
-            "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
-            () => fresh(true)
-          ),
-          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
-          card(
-            "▦",
-            "Scene Mode",
-            "Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.",
-            () => setMode("scene")
-          ),
-          card(
-            "◉",
-            "Live Mode",
-            "Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.",
-            () => setMode("live")
-          ),
-          card(
-            "≋",
-            "Synth Mode",
-            "The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.",
-            () => setMode("synth")
-          ),
-          card(
-            "◈",
-            "ZenCore editor",
-            "Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.",
-            /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
-            () => zenOpen(DEVS[DEV].tracks.find((t) => S.tracks[t].type !== "drum") ?? DEVS[DEV].tracks[0], 0)
-          )
-        ),
-        el(
-          "label",
-          { class: "stShow" },
-          el("input", {
-            type: "checkbox",
-            checked: true,
-            onchange: (e) => {
-              try {
-                localStorage.setItem(KEY8, e.target.checked ? "1" : "0");
-              } catch (er) {
-              }
-            }
-          }),
-          " Show this when the app opens (also in File › Start screen)"
-        )
-      )
-    );
-    ov.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
-    });
-    document.body.append(ov);
-    setTimeout(() => {
-      const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
-      if (b) b.focus();
-    }, 30);
-  }
-
   // src/ui/track-setup.js
   var DEF_NAMES = ["Drums 1", "Drums 2", "Drums 3", "Bass", "Chords", "Pad", "Lead", "Pluck"];
   var SHORT2 = {
@@ -63305,6 +63281,406 @@ html.os-darwin.native-menu #menubar .mproj {
         )
       )
     );
+  }
+
+  // src/ui/tutorial.js
+  var KEY8 = "mc707-tutorial";
+  var chapters = (dn2) => [
+    [
+      "connect",
+      "Connect",
+      "Every mode starts here: one USB cable carries every track’s notes, the sounds and (if you like) the audio.",
+      [
+        "Use a data USB cable in the " + dn2 + "’s COMPUTER port, then switch it on.",
+        "USB driver: hold SHIFT and press KNOB ASSIGN, choose SET, and under USB DRIVER pick VENDOR (with Roland’s driver installed) or GENERIC. Restart the " + dn2 + " after changing it.",
+        "In the same SET screen, open the MIDI tab and set MIDI Rx Auto Channel to OFF, so each track only hears its own channel.",
+        "Track Channel 1-8: CH1 to CH8 (track 1 on channel 1 … track 8 on channel 8).",
+        "Device ID: 17 (the default), for the ZenCore editor."
+      ],
+      [
+        "Open MC-707 › Set up your MC-707 and press Auto-connect MC-707.",
+        "Press Play tracks 1 → 8: each track should sound in turn. If one doesn’t, change its channel there.",
+        "Not showing up? Close other programs using the MIDI port (a DAW, another browser tab), try the other USB driver, then Rescan."
+      ],
+      [["Set up your MC-707…", () => openSetup2()]]
+    ],
+    [
+      "tracks",
+      "Tracks",
+      "The app and the " + dn2 + " must agree on which tracks are drums and which play tones. The app can’t change that on the " + dn2 + ", so you set it once by hand.",
+      [
+        "Each drum track holds a drum kit, each tone track a tone (select the track and choose its sound), unmuted with its level up.",
+        "Easiest: load a project template with the tracks already set up. Copy it to the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it and straight away PROJECT › WRITE it under a new name.",
+        "Clips that hold a sound but no notes work best: the app plays the notes."
+      ],
+      [
+        "Settings › Track setup: pick how many drum and tone tracks you use (3 drums + 5 tones is the default) and what each one is for.",
+        "MC-707 › Project templates says which template matches your Track setup.",
+        "An MC-101: Settings › Device › MC-101 (it also switches by itself when it finds one)."
+      ],
+      [
+        ["Track setup…", () => trackSetupOpen()],
+        ["Project templates…", () => templatesOpen()]
+      ]
+    ],
+    [
+      "song",
+      "Song Mode",
+      "Write a whole song on the timeline and play it on the " + dn2 + " note for note.",
+      [
+        "MIDI Sync: AUTO (or USB) in SET › MIDI, so the " + dn2 + " follows the app’s tempo.",
+        "RX Start Stop USB: OFF if your clips hold notes of their own and you only want the app’s parts.",
+        "To record every track’s audio over USB, set USB audio to send the tracks separately (see the " + dn2 + " manual)."
+      ],
+      [
+        "Start from the start screen: Song wizard (a whole song in a style), Empty template, or Blank song.",
+        "Drag patterns from the library onto the tracks, or + New blank pattern at the top of the library; click a clip to edit it in the step grid or piano roll.",
+        "Tick Make the MC-707 follow this app (MC-707 › Set up your MC-707) to send clock and start/stop with Play.",
+        "Space plays. Record audio, or File › Export MIDI, when it’s done."
+      ],
+      [["Go to Song Mode", () => setMode("song")]]
+    ],
+    [
+      "scene",
+      "Scene Mode",
+      "Put the song on the " + dn2 + " as clips and a scene chain, so it plays by itself with no computer.",
+      [
+        "System 1.71 or later (the scene chain came in 1.71).",
+        "Call Scene: TYPE2 (UTILITY › SET › CTRL tab), so scenes are numbered as in the app.",
+        "Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON (the app can’t switch it).",
+        "After writing: call up the first scene and press PLAY, and save the project on the " + dn2 + " to keep it.",
+        "A track silent on every clip? In its track settings (GENERAL tab) set Sound Source to TRACK, or give each clip its own tone."
+      ],
+      [
+        "Start from a project template that matches your Track setup, written under a new name: use a project you can lose the first time.",
+        "Make them from the song, or fill the clips board yourself: click an empty clip to choose its pattern.",
+        "Add scenes to the chain: each plays a clip per track for so many bars.",
+        "Write sends what changed (✓ written · ● changed · + not written yet), or turn on Auto-write. ? How it works has the whole list."
+      ],
+      [["Go to Scene Mode", () => setMode("scene")]]
+    ],
+    [
+      "live",
+      "Live Mode",
+      "Play a looping set from 16 pads: scenes, breaks, builds and drops that land on the beat.",
+      [
+        "For the pads: select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON. The pads then work while that track is selected.",
+        "MIDI Sync: AUTO (or USB) if you want the " + dn2 + " to follow the set’s tempo."
+      ],
+      [
+        "Pick a genre when Live Mode opens (Live › Pick a genre changes it).",
+        "Press ▶ Start Jam. Pads 1–7 are the scenes, pad 8 is Break; the bottom row swaps parts, fills, stutters and builds into a drop.",
+        "Auto-pilot runs the set by itself; Variation and Chaos set how much it changes. 🎲 New patterns brings fresh parts in without stopping.",
+        "Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode)."
+      ],
+      [["Go to Live Mode", () => setMode("live")]]
+    ],
+    [
+      "synth",
+      "Synth Mode",
+      "The " + dn2 + " as an 8-track synth for your DAW: the DAW plays and records it, the app picks, edits and mixes the sounds.",
+      [
+        "Set USB audio to send the tracks separately (see the " + dn2 + " manual); on Windows install Roland’s driver. The DAW then sees one input per track."
+      ],
+      [
+        "In the DAW: one MIDI track per " + dn2 + " track on the channel shown on its strip, and one audio track recording each input.",
+        "Windows lets one program use the MIDI port at a time: let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share it. Macs share it anyway.",
+        "Read sounds shows each track’s sound; Expand a track to edit it beside the others."
+      ],
+      [["Go to Synth Mode", () => setMode("synth")]]
+    ],
+    [
+      "zen",
+      "ZenCore editor and Slime Lab",
+      "Edit the sounds inside your " + dn2 + " on a big screen, or shape them the easy way in the Slime Lab.",
+      [
+        "Device ID 17 (the default) and the USB connection from Connect.",
+        "The editor changes the sound in the " + dn2 + "’s memory: save the project on the " + dn2 + " to keep it.",
+        "Optional: the factory tones come from the " + dn2 + "’s system update file (MC707_UPA_up.bin from Roland), read on your computer."
+      ],
+      [
+        "Open MC-707 › Your MC-707 clips & ZenCore, pick a clip and press Edit ZenCore (or right-click a clip anywhere).",
+        "With Live on, every change goes to the " + dn2 + " as you make it; play from the editor’s keyboard or the pads.",
+        "Sounds opens the Sound browser: your sounds, starters, factory tones and expansions (Grab from › …).",
+        "Slime Lab (in the editor’s header, tones): start from a sound, turn the five knobs, grow variations, then Fine-tune."
+      ],
+      []
+    ]
+  ];
+  function tutorialOpen(at2) {
+    if ($("#tutOv")) return;
+    const dn2 = DEVS[DEV].name, list2 = chapters(dn2);
+    let cur2 = list2.findIndex((c) => c[0] === at2);
+    if (cur2 < 0) {
+      try {
+        cur2 = Math.max(
+          0,
+          list2.findIndex((c) => c[0] === localStorage.getItem(KEY8))
+        );
+      } catch (e) {
+        cur2 = 0;
+      }
+    }
+    const close = () => ov.remove();
+    const nav = el("nav", { class: "tutNav", "aria-label": "Chapters" }), body = el("div", { class: "tutBody", tabindex: "-1" });
+    const go = (i) => {
+      cur2 = Math.max(0, Math.min(list2.length - 1, i));
+      try {
+        localStorage.setItem(KEY8, list2[cur2][0]);
+      } catch (e) {
+      }
+      draw2();
+    };
+    const part = (title, items) => items.length ? el("section", { class: "tutPart" }, el("h4", {}, title), el("ol", {}, ...items.map((x) => el("li", {}, x)))) : null;
+    function draw2() {
+      nav.replaceChildren(
+        ...list2.map(
+          (c, i) => el(
+            "button",
+            {
+              type: "button",
+              class: "tutCh" + (i === cur2 ? " on" : ""),
+              "aria-current": i === cur2 ? "step" : "false",
+              onclick: () => go(i)
+            },
+            el("span", { class: "tutN" }, String(i + 1)),
+            c[1]
+          )
+        )
+      );
+      const [, title, why, dev, app, acts] = list2[cur2];
+      body.replaceChildren(
+        ...[
+          el("h3", {}, title),
+          el("p", { class: "tutWhy" }, why),
+          el("div", { class: "tutCols" }, part("On the " + dn2, dev), part("In the app", app)),
+          acts.length ? el(
+            "div",
+            { class: "tutActs" },
+            ...acts.map(
+              ([label2, fn]) => el("button", { type: "button", class: "btn", onclick: () => (close(), fn()) }, label2)
+            )
+          ) : null,
+          el(
+            "div",
+            { class: "tutFoot" },
+            el("button", { type: "button", class: "btn", disabled: cur2 === 0, onclick: () => go(cur2 - 1) }, "‹ Back"),
+            el("span", { class: "hint" }, cur2 + 1 + " of " + list2.length),
+            cur2 < list2.length - 1 ? el(
+              "button",
+              { type: "button", class: "btn on", onclick: () => go(cur2 + 1) },
+              "Next: " + list2[cur2 + 1][1] + " ›"
+            ) : el("button", { type: "button", class: "btn on", onclick: close }, "Done")
+          )
+        ].filter(Boolean)
+      );
+      body.scrollTop = 0;
+    }
+    const ov = el(
+      "div",
+      {
+        id: "tutOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Tutorial",
+        onclick: (e) => e.target === ov && close(),
+        onkeydown: (e) => {
+          if (e.key === "Escape") e.stopPropagation(), close();
+          else if (e.key === "ArrowRight" && e.target.tagName !== "INPUT") go(cur2 + 1);
+          else if (e.key === "ArrowLeft" && e.target.tagName !== "INPUT") go(cur2 - 1);
+        }
+      },
+      el(
+        "div",
+        { class: "ptBox tutBox" },
+        el(
+          "div",
+          { class: "cmHead" },
+          el("h3", {}, "Tutorial: setting up"),
+          el("button", { type: "button", class: "btn sm on", onclick: close }, "Close")
+        ),
+        el("div", { class: "tutMain" }, nav, body)
+      )
+    );
+    document.body.append(ov);
+    draw2();
+    body.focus();
+  }
+
+  // src/ui/start-screen.js
+  var KEY9 = "mc707-start";
+  function startOnOpen() {
+    try {
+      return localStorage.getItem(KEY9) !== "0";
+    } catch (e) {
+      return true;
+    }
+  }
+  var TEMPLATE = [
+    [0, "Intro"],
+    [8, "Build"],
+    [16, "Drop"],
+    [32, "Break"],
+    [40, "Build 2"],
+    [48, "Drop 2"],
+    [56, "Outro"]
+  ];
+  function fresh(template) {
+    pushUndo();
+    const m = S.midiOut;
+    replaceState(newState());
+    S.midiOut = m;
+    if (template) {
+      S.bars = 64;
+      S.markers = TEMPLATE.map(([bar2, name]) => ({ bar: bar2, name }));
+    }
+    UI.sel = null;
+    afterReplaceKeepUndo();
+  }
+  function startOpen(last3 = true) {
+    if ($("#startOv")) return;
+    const has2 = !!last3;
+    const close = () => ov.remove();
+    const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
+    let found = null;
+    const show = (u, asked) => {
+      found = u;
+      upd.classList.toggle("new", !!(u && u.newer));
+      upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
+      updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
+    };
+    const updBtn = el(
+      "button",
+      {
+        type: "button",
+        class: "btn sm",
+        title: "See whether a newer version is out",
+        onclick: async () => {
+          if (found && found.newer) return openLink(found.url);
+          upd.textContent = "Checking…";
+          show(await checkUpdate(true), true);
+        }
+      },
+      "Check for updates"
+    );
+    checkUpdate().then((u) => show(u, false));
+    const card = (icon, title, text2, fn, on3) => el(
+      "button",
+      {
+        type: "button",
+        class: "stCard" + (on3 ? " on" : ""),
+        onclick: () => {
+          close();
+          fn();
+        }
+      },
+      el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
+      el("b", {}, title),
+      el("small", {}, text2)
+    );
+    const ov = el(
+      "div",
+      { id: "startOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Start" },
+      el(
+        "div",
+        { class: "ptBox stBox" },
+        el(
+          "div",
+          { class: "stHead" },
+          el("h2", {}, "MC707 / 101 Toolbox"),
+          el("span", { class: "stVer" }, "Version " + VERSION),
+          upd,
+          updBtn
+        ),
+        el("p", { class: "hint" }, "What would you like to do?"),
+        el(
+          "div",
+          { class: "stGrid" },
+          has2 ? card(
+            "↻",
+            last3 === "menu" ? "Back to this song" : "Load last session",
+            (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
+            () => {
+            },
+            true
+          ) : null,
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
+          card(
+            "▤",
+            "Empty template",
+            "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
+            () => fresh(true)
+          ),
+          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
+          card(
+            "▦",
+            "Scene Mode",
+            "Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.",
+            () => setMode("scene")
+          ),
+          card(
+            "◉",
+            "Live Mode",
+            "Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.",
+            () => setMode("live")
+          ),
+          card(
+            "≋",
+            "Synth Mode",
+            "The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.",
+            () => setMode("synth")
+          ),
+          card(
+            "◈",
+            "ZenCore editor",
+            "Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.",
+            /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
+            () => zenOpen(DEVS[DEV].tracks.find((t) => S.tracks[t].type !== "drum") ?? DEVS[DEV].tracks[0], 0)
+          )
+        ),
+        el(
+          "div",
+          { class: "stTut" },
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              onclick: () => {
+                close();
+                tutorialOpen();
+              }
+            },
+            "📖 Tutorial: set up the MC-707 and the app"
+          ),
+          el("span", { class: "hint" }, "What to set on the MC-707 and in the app, for each mode")
+        ),
+        el(
+          "label",
+          { class: "stShow" },
+          el("input", {
+            type: "checkbox",
+            checked: true,
+            onchange: (e) => {
+              try {
+                localStorage.setItem(KEY9, e.target.checked ? "1" : "0");
+              } catch (er) {
+              }
+            }
+          }),
+          " Show this when the app opens (also in File › Start screen)"
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+    document.body.append(ov);
+    setTimeout(() => {
+      const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
+      if (b) b.focus();
+    }, 30);
   }
 
   // src/ui/grabber.js
@@ -64485,7 +64861,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/ui/fill-tones.js
-  var KEY9 = "mc707-tone-pools";
+  var KEY10 = "mc707-tone-pools";
   var GKEY = "mc707-fill-genre";
   var ROLES2 = CLIP_TYPES.map((c) => c[0]);
   var EXTRA = {
@@ -64496,7 +64872,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function pools() {
     if (POOLS) return POOLS;
     try {
-      POOLS = JSON.parse(localStorage.getItem(KEY9) || "{}") || {};
+      POOLS = JSON.parse(localStorage.getItem(KEY10) || "{}") || {};
     } catch (e) {
       POOLS = {};
     }
@@ -64504,7 +64880,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function savePools() {
     try {
-      localStorage.setItem(KEY9, JSON.stringify(POOLS));
+      localStorage.setItem(KEY10, JSON.stringify(POOLS));
     } catch (e) {
       toast("Could not keep the pools: the browser storage is full");
     }
@@ -65222,6 +65598,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "",
         [
           ["Shortcuts and tips", go("#bHelp"), "", null, null, "song"],
+          ["Tutorial: setting up", () => tutorialOpen()],
           ["Guide", () => openLink(LINKS.guide)],
           0,
           [

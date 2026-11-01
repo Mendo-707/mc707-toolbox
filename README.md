@@ -109,7 +109,7 @@ The app opens in Song Mode with a **start screen**:
 - **Song wizard**: a full arrangement in a style you pick.
 - **Live Mode**: choose a genre and jam.
 
-Untick *Show this when the app opens* to skip it; **File › Start screen** brings it back. Live Mode asks for a genre when it opens; keep the one you had, or pick another any time from **Live › Pick a genre**.
+At its foot, **📖 Tutorial** (also **Help › Tutorial: setting up**) walks through what to set on the MC-707 and in the app: connecting, the tracks, and each mode (Song, Scene, Live, Synth, the ZenCore editor and the Slime Lab), with buttons that take you to each place. Untick *Show this when the app opens* to skip it; **File › Start screen** brings it back. Live Mode asks for a genre when it opens; keep the one you had, or pick another any time from **Live › Pick a genre**.
 
 ## Song Mode
 
