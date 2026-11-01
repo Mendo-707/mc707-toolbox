@@ -37,7 +37,9 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   const ch = (await page.evaluate('window.__app.S.tracks[3].ch')) - 1;
   assert.ok(await ccSent(page, ch, 7, 80), 'level sent as CC 7');
   assert.ok(await ccSent(page, ch, 10, 30), 'pan sent as CC 10');
-  /* undo takes the reverb back, and the window follows */
+  /* undo takes the reverb back, and the window follows (the song's window in front for the key: with the
+     mixer's in front, a browser can hold back the key) */
+  await page.bringToFront();
   await page.keyboard.press('Control+z');
   /* the window redraws on its animation frames, which a browser can hold back for a window behind */
   await win.bringToFront();
