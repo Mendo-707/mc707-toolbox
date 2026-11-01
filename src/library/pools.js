@@ -9,6 +9,7 @@ import { addHarmonyPack } from './harmony-pack.js';
 import { addMelodicPack } from './melodic-pack.js';
 import { BB_GENRE, addBigBeatPack } from './bigbeat-pack.js';
 import { addFillPack } from './fill-pack.js';
+import { addLeadPack } from './lead-pack.js';
 import { melodyClashes, melodyFeelOk, melodyFitReset } from './melody-fit.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
@@ -44,6 +45,7 @@ export function finishLibrary(styles) {
   addBigBeatPack();
   addMelodicPack(BB_GENRE);
   addFillPack();
+  addLeadPack();
   for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
   melodyFitReset();
   for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];

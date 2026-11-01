@@ -22,7 +22,8 @@ export function lvMoodMove(m) {
   let t1 = lvBoundary(1);
   if (t1 - TR.tick < 8) t1 += 32;
   const t2 = t1 + 32;
-  LV.cues = LV.cues.filter(c => !['scene', 'gap', 'thin', 'bov', 'blend'].includes(c.type) && c.type !== 'fill');
+  /* a break waiting to play would fight the change (and its filter move this one): it goes too */
+  LV.cues = LV.cues.filter(c => !['scene', 'gap', 'thin', 'bov', 'blend', 'brk'].includes(c.type) && c.type !== 'fill');
   LV.blend = null;
   /* the drums: a roll into it, or the beat falling away */
   const fills = LV.fillIds.map(facById).filter(Boolean),

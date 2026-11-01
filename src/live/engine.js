@@ -24,6 +24,7 @@ import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
 import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
+import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
 import { liveBuild, liveSwapIds } from './set-builder.js';
@@ -419,19 +420,6 @@ function liveFire(c, tick) {
   }
   LV.ver++;
 }
-function lvAutoNext() {
-  const n = LV.scenes.length,
-    reg = [...Array(n).keys()].filter(i => !lvIsFlash(LV.scenes[i]));
-  if (!reg.length) return LV.cur;
-  let nx = LV.cur + 1;
-  while (nx < n && lvIsFlash(LV.scenes[nx])) nx++;
-  if (nx >= n) nx = reg.length > 2 ? reg[1] : reg[0];
-  if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 80) {
-    const cand = reg.filter(i => i !== LV.cur && i !== reg[0]);
-    if (cand.length) nx = lvRand(cand);
-  }
-  return nx;
-}
 export function lvSwapCue(group, tick) {
   const ids = {};
   tracksFor(SWG[group]).forEach(t => {
@@ -458,22 +446,41 @@ function liveAutoStep(tick, rel) {
   if (!sc || LV.stopAt != null) return;
   const loop = sc.bars * 32,
     total = loop * LV.autoReps;
-  const pend = LV.cues.some(c => c.type === 'scene');
+  const pend = LV.cues.some(c => c.type === 'scene' || c.type === 'blend');
   if (!pend && rel === total - 64) {
-    const idx = lvAutoNext(),
+    /* the next scene on the journey (or, now and then at a breakdown, fresh patterns) */
+    const idx = lvAutoPick(),
       fire = LV.sceneStart + total,
       nx = LV.scenes[idx];
+    if (lvAutoFresh(nx.kind)) {
+      LV.ver++;
+      return;
+    }
+    lvAutoPlayed(idx);
+    const built = lvAutoBuild(sc, nx, fire);
     const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
     LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined });
-    if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
+    lvAutoKey(sc, nx, fire);
+    if (nx.kind === 'strip') lvAutoMove(sc, fire, true);
+    if (
+      !hard &&
+      !built &&
+      LV.fills &&
+      sc.cells[trackOf(0)] &&
+      nx.cells[trackOf(0)] &&
+      nx.e >= sc.e &&
+      LV.fillIds.length
+    ) {
       const f = facById(lvRand(LV.fillIds));
       if (f) LV.cues.push({ type: 'fill', tick: fire - 32, end: fire, f, auto: true });
     }
     lvSortCues();
     LV.ver++;
-  } else if (rel > 0 && rel % loop === 0 && rel < total - 64 && Math.random() < (LV.chaos / 100) * 0.6) {
-    /* everything lands on the end of this loop: a break or fill leads into the next pass, a swap starts with it */
+  } else if (rel > 0 && rel % loop === 0 && rel < total - 64) {
     const nxt = tick + loop;
+    lvAutoMove(sc, nxt, false);
+    if (Math.random() >= (LV.chaos / 100) * 0.6) return;
+    /* everything lands on the end of this loop: a break or fill leads into the next pass, a swap starts with it */
     if (Math.random() < 0.3 && lvAutoFlash(nxt)) LV.ver++;
     else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
       const f = facById(lvRand(LV.fillIds));
@@ -720,6 +727,7 @@ export function liveStart(idx) {
     if (j >= 0) i = j;
   }
   const sc = LV.scenes[i];
+  lvAutoReset();
   lvHumApply(true);
   lvMoodApply();
   Object.assign(TR, { late: 0, lateMax: 0, gapMax: 0, lastRun: 0 });
