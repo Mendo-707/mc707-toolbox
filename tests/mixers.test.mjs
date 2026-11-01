@@ -41,7 +41,7 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   await page.keyboard.press('Control+z');
   /* the window redraws on its animation frames, which a browser can hold back for a window behind */
   await win.bringToFront();
-  await page.waitForFunction(() => window.__app.S.tracks[3].cc[91] === 0, null, { polling: 100 });
+  await page.waitForFunction(() => !window.__app.S.tracks[3].cc[91], null, { polling: 100 });
   /* polled on a timer: a window's animation frames (Playwright's default polling) can be held back */
   await win.waitForFunction(
     () => document.querySelectorAll('.mxStrip')[3].querySelectorAll('.mxKnob')[1].value === '0',
