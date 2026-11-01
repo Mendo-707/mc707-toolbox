@@ -57,7 +57,11 @@ jobs:
           while pgrep -q XProtect; do sleep 3; done
       - run: |
           for i in 1 2 3; do
-            npm run ${{ matrix.dist }} && exit 0
+            if [ "$RUNNER_OS" = macOS ]; then
+              npx electron-builder --mac --arm64 --publish never && npx electron-builder --mac --x64 --publish never && exit 0
+            else
+              npm run ${{ matrix.dist }} && exit 0
+            fi
             echo "Build failed (try $i), trying again"
             if [ "$RUNNER_OS" = macOS ]; then
               for v in /Volumes/MC707*; do hdiutil detach -force "$v" || true; done
