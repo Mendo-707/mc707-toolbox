@@ -63292,10 +63292,11 @@ html.os-darwin.native-menu #menubar .mproj {
       "Every mode starts here: one USB cable carries every track’s notes, the sounds and (if you like) the audio.",
       [
         "Use a data USB cable in the " + dn2 + "’s COMPUTER port, then switch it on.",
-        "USB driver: hold SHIFT and press KNOB ASSIGN, choose SET, and under USB DRIVER pick VENDOR (with Roland’s driver installed) or GENERIC. Restart the " + dn2 + " after changing it.",
-        "In the same SET screen, open the MIDI tab and set MIDI Rx Auto Channel to OFF, so each track only hears its own channel.",
+        "Open the settings: hold SHIFT and press KNOB ASSIGN (the UTILITY menu), then press the C4 knob for SYSTEM SETTING. Everything below is in there.",
+        "USB Driver (turn C3 to find it, C4 to change it): VENDOR, with Roland’s driver on your computer (Windows 10 and 11 install it themselves when online), or GENERIC. Switch the " + dn2 + " off and on after changing it.",
+        "MIDI tab: MIDI Rx Auto Channel OFF, so each track only hears its own channel.",
         "Track Channel 1-8: CH1 to CH8 (track 1 on channel 1 … track 8 on channel 8).",
-        "Device ID: 17 (the default), for the ZenCore editor."
+        "Device ID 17 (the default), for the ZenCore editor."
       ],
       [
         "Open MC-707 › Set up your MC-707 and press Auto-connect MC-707.",
@@ -63328,9 +63329,9 @@ html.os-darwin.native-menu #menubar .mproj {
       "Song Mode",
       "Write a whole song on the timeline and play it on the " + dn2 + " note for note.",
       [
-        "MIDI Sync: AUTO (or USB) in SET › MIDI, so the " + dn2 + " follows the app’s tempo.",
+        "MIDI Sync: AUTO (or USB) in SYSTEM SETTING, MIDI tab, so the " + dn2 + " follows the app’s tempo.",
         "RX Start Stop USB: OFF if your clips hold notes of their own and you only want the app’s parts.",
-        "To record every track’s audio over USB, set USB audio to send the tracks separately (see the " + dn2 + " manual)."
+        "Recording every track’s audio over USB needs nothing more on the " + dn2 + " from system 1.60 on (before that, USB Driver VENDOR): it sends the mix and each track as inputs of their own."
       ],
       [
         "Start from the start screen: Song wizard (a whole song in a style), Empty template, or Blank song.",
@@ -63346,7 +63347,7 @@ html.os-darwin.native-menu #menubar .mproj {
       "Put the song on the " + dn2 + " as clips and a scene chain, so it plays by itself with no computer.",
       [
         "System 1.71 or later (the scene chain came in 1.71).",
-        "Call Scene: TYPE2 (UTILITY › SET › CTRL tab), so scenes are numbered as in the app.",
+        "Call Scene: TYPE2 (SYSTEM SETTING, CTRL tab), so scenes are numbered as in the app.",
         "Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON (the app can’t switch it).",
         "After writing: call up the first scene and press PLAY, and save the project on the " + dn2 + " to keep it.",
         "A track silent on every clip? In its track settings (GENERAL tab) set Sound Source to TRACK, or give each clip its own tone."
@@ -63380,10 +63381,11 @@ html.os-darwin.native-menu #menubar .mproj {
       "Synth Mode",
       "The " + dn2 + " as an 8-track synth for your DAW: the DAW plays and records it, the app picks, edits and mixes the sounds.",
       [
-        "Set USB audio to send the tracks separately (see the " + dn2 + " manual); on Windows install Roland’s driver. The DAW then sees one input per track."
+        "Nothing to set from system 1.60 on (before that, USB Driver VENDOR in SYSTEM SETTING): over USB the " + dn2 + " sends the mix and each track as audio inputs of their own.",
+        "Windows: Roland’s driver (Windows 10 and 11 install it themselves when online)."
       ],
       [
-        "In the DAW: one MIDI track per " + dn2 + " track on the channel shown on its strip, and one audio track recording each input.",
+        "In the DAW: choose the " + dn2 + " as the audio device, then one MIDI track per " + dn2 + " track on the channel shown on its strip, and one audio track recording each input.",
         "Windows lets one program use the MIDI port at a time: let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share it. Macs share it anyway.",
         "Read sounds shows each track’s sound; Expand a track to edit it beside the others."
       ],
