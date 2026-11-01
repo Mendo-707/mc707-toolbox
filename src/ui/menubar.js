@@ -266,7 +266,9 @@ function initMenubar() {
       '',
       [
         ['Shortcuts and tips', go('#bHelp'), '', null, null, 'song'],
-        ['Tutorial: setting up', () => tutorialOpen()],
+        ['Tutorials', () => tutorialOpen()],
+        ['Tutorial: basic setup', () => tutorialOpen('setup')],
+        ['Tutorial: this mode', () => tutorialOpen(document.body.dataset.mode)],
         ['Guide', () => openLink(LINKS.guide)],
         0,
         [

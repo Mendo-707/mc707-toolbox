@@ -175,9 +175,9 @@ export function startOpen(last = true) {
               tutorialOpen();
             }
           },
-          '📖 Tutorial: set up the MC-707 and the app'
+          '📖 Tutorials: basic setup, then each mode'
         ),
-        el('span', { class: 'hint' }, 'What to set on the MC-707 and in the app, for each mode')
+        el('span', { class: 'hint' }, 'What to set on the MC-707 and in the app')
       ),
       el(
         'label',

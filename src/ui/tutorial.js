@@ -1,9 +1,11 @@
-// The tutorial: what to set up on the MC-707 (or MC-101) and in the app, chapter by chapter: getting
-// connected, the tracks, then each mode (Song, Scene, Live, Synth, the ZenCore editor and the Slime Lab).
-// Each chapter has what to do on the MC-707, what to do in the app, and buttons that open the place it
-// talks about. From the start screen's foot and Help › Tutorial.
+// The tutorials: Basic setup (getting connected, the tracks), then one for each mode (Song, Scene, Live,
+// Synth, the ZenCore editor and the Slime Lab), each on its own, from a page that lists them all. A tutorial
+// goes page by page: what to do on the MC-707 (or MC-101), then what to do in the app, with buttons that open
+// the place it talks about. Tick each step as you do it (each tutorial shows how far you are); Show me goes
+// to the place a step talks about and points at it. From the start screen's foot, and Help (Basic setup, the
+// mode you are in, or all of them).
 //
-// Owns: localStorage 'mc707-tutorial' (the chapter open last).
+// Owns: localStorage 'mc707-tutorial-done' (the steps ticked).
 import { $, el } from '../core/dom.js';
 import { DEV, DEVS } from '../core/device.js';
 import { openSetup } from './setup-wizard.js';
@@ -11,7 +13,60 @@ import { trackSetupOpen } from './track-setup.js';
 import { templatesOpen } from './templates.js';
 import { setMode } from './mode.js';
 
-const KEY = 'mc707-tutorial';
+const DONE = 'mc707-tutorial-done';
+let done = new Set();
+try {
+  done = new Set(JSON.parse(localStorage.getItem(DONE) || '[]'));
+} catch (e) {}
+const saveDone = () => {
+  try {
+    localStorage.setItem(DONE, JSON.stringify([...done]));
+  } catch (e) {}
+};
+/* a step: its text and, for some, where Show me points ({mode, sel} or {mode, text}: a button's words) */
+const stepOf = x => (Array.isArray(x) ? { text: x[0], show: x[1] } : { text: x, show: null });
+const stepKeys = c => [...c[3].map((_, i) => c[0] + ':d' + i), ...c[4].map((_, i) => c[0] + ':a' + i)];
+
+/* Show me: to the step's mode, then a ring round the thing it talks about, and a way back */
+function showMe(spec, back) {
+  if (spec.mode && document.body.dataset.mode !== spec.mode) setMode(spec.mode);
+  setTimeout(() => {
+    const t = spec.sel
+      ? $(spec.sel)
+      : [...document.querySelectorAll('button')].find(b => b.offsetParent && b.textContent.trim().includes(spec.text));
+    $('#tutSpot')?.remove();
+    if (!t || !t.offsetParent) return back();
+    t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const r = t.getBoundingClientRect();
+    const spot = el(
+      'div',
+      { id: 'tutSpot', 'aria-live': 'polite' },
+      el('div', {
+        class: 'tutRing',
+        style: `left:${r.left - 6}px;top:${r.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px`
+      }),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn on tutBack',
+          style: `left:${Math.min(innerWidth - 220, Math.max(8, r.left))}px;top:${r.bottom + 14 > innerHeight - 50 ? r.top - 48 : r.bottom + 14}px`,
+          onclick: () => (spot.remove(), back())
+        },
+        '‹ Back to the tutorial'
+      )
+    );
+    document.body.append(spot);
+    /* the ring goes with the next click anywhere else, or after a while */
+    const away = e => {
+      if (e.target.closest && e.target.closest('.tutBack')) return;
+      spot.remove();
+      removeEventListener('pointerdown', away, true);
+    };
+    setTimeout(() => addEventListener('pointerdown', away, true), 50);
+    setTimeout(() => spot.remove(), 9000);
+  }, 250);
+}
 /* a chapter: [id, title, what it is for, [on the device], [in the app], [[button, action]]] */
 const chapters = dn => [
   [
@@ -71,9 +126,12 @@ const chapters = dn => [
     ],
     [
       'Start from the start screen: Song wizard (a whole song in a style), Empty template, or Blank song.',
-      'Drag patterns from the library onto the tracks, or + New blank pattern at the top of the library; click a clip to edit it in the step grid or piano roll.',
+      [
+        'Drag patterns from the library onto the tracks, or + New blank pattern at the top of the library; click a clip to edit it in the step grid or piano roll.',
+        { mode: 'song', sel: '#libNew' }
+      ],
       'Tick Make the MC-707 follow this app (MC-707 › Set up your MC-707) to send clock and start/stop with Play.',
-      'Space plays. Record audio, or File › Export MIDI, when it’s done.'
+      ['Space plays. Record audio, or File › Export MIDI, when it’s done.', { mode: 'song', sel: '#bPlay' }]
     ],
     [['Go to Song Mode', () => setMode('song')]]
   ],
@@ -90,7 +148,10 @@ const chapters = dn => [
     ],
     [
       'Start from a project template that matches your Track setup, written under a new name: use a project you can lose the first time.',
-      'Make them from the song, or fill the clips board yourself: click an empty clip to choose its pattern.',
+      [
+        'Make them from the song, or fill the clips board yourself: click an empty clip to choose its pattern.',
+        { mode: 'scene', text: 'Make them from the song' }
+      ],
       'Add scenes to the chain: each plays a clip per track for so many bars.',
       'Write sends what changed (✓ written · ● changed · + not written yet), or turn on Auto-write. ? How it works has the whole list.'
     ],
@@ -106,8 +167,14 @@ const chapters = dn => [
     ],
     [
       'Pick a genre when Live Mode opens (Live › Pick a genre changes it).',
-      'Press ▶ Start Jam. Pads 1–7 are the scenes, pad 8 is Break; the bottom row swaps parts, fills, stutters and builds into a drop.',
-      'Auto-pilot runs the set by itself; Variation and Chaos set how much it changes. 🎲 New patterns brings fresh parts in without stopping.',
+      [
+        'Press ▶ Start Jam. Pads 1–7 are the scenes, pad 8 is Break; the bottom row swaps parts, fills, stutters and builds into a drop.',
+        { mode: 'live', sel: '#lvStart' }
+      ],
+      [
+        'Auto-pilot runs the set by itself; Variation and Chaos set how much it changes. 🎲 New patterns brings fresh parts in without stopping.',
+        { mode: 'live', sel: '#lvAuto' }
+      ],
       'Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode).'
     ],
     [['Go to Live Mode', () => setMode('live')]]
@@ -131,7 +198,10 @@ const chapters = dn => [
         dn +
         ' track on the channel shown on its strip, and one audio track recording each input.',
       'Windows lets one program use the MIDI port at a time: let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share it. Macs share it anyway.',
-      'Read sounds shows each track’s sound; Expand a track to edit it beside the others.'
+      [
+        'Read sounds shows each track’s sound; Expand a track to edit it beside the others.',
+        { mode: 'synth', text: 'Read sounds' }
+      ]
     ],
     [['Go to Synth Mode', () => setMode('synth')]]
   ],
@@ -147,7 +217,10 @@ const chapters = dn => [
         '’s system update file (MC707_UPA_up.bin from Roland), read on your computer.'
     ],
     [
-      'Open MC-707 › Your MC-707 clips & ZenCore, pick a clip and press Edit ZenCore (or right-click a clip anywhere).',
+      [
+        'Open MC-707 › Your MC-707 clips & ZenCore, pick a clip and press Edit ZenCore (or right-click a clip anywhere).',
+        { mode: 'song', sel: '#bClips' }
+      ],
       'With Live on, every change goes to the ' + dn + ' as you make it; play from the editor’s keyboard or the pads.',
       'Sounds opens the Sound browser: your sounds, starters, factory tones and expansions (Grab from › …).',
       'Slime Lab (in the editor’s header, tones): start from a sound, turn the five knobs, grow variations, then Fine-tune.'
@@ -156,63 +229,188 @@ const chapters = dn => [
   ]
 ];
 
-/** Open the tutorial (at a chapter, or the one open last). */
-export function tutorialOpen(at) {
+/*
+ * The tutorials, from the chapters: Basic setup is Connect and Tracks, every other chapter a mode's tutorial.
+ * Each chapter gives two pages, on the device then in the app (a side with no steps gives none).
+ */
+const tutorials = dn => {
+  const ch = chapters(dn),
+    pages = (c, prefix) =>
+      [
+        { c, side: 'd', title: (prefix ? c[1] + ': ' : '') + 'On the ' + dn, steps: c[3], why: c[2] },
+        { c, side: 'a', title: (prefix ? c[1] + ': ' : '') + 'In the app', steps: c[4], acts: c[5] }
+      ].filter(p => p.steps.length);
+  const setup = ch.filter(c => c[0] === 'connect' || c[0] === 'tracks');
+  return [
+    {
+      id: 'setup',
+      title: 'Basic setup',
+      blurb: 'Do this first: connect the ' + dn + ' and match its tracks to the app’s. Every mode needs it.',
+      pages: setup.flatMap(c => pages(c, true)),
+      keys: setup.flatMap(stepKeys)
+    },
+    ...ch
+      .filter(c => !setup.includes(c))
+      .map(c => ({ id: c[0], title: c[1], blurb: c[2], pages: pages(c, false), keys: stepKeys(c) }))
+  ];
+};
+const doneOf = t => t.keys.filter(k => done.has(k)).length;
+
+/**
+ * Open the tutorials: at one ('setup', or a mode: 'song', 'scene', 'live', 'synth', 'zen'), at a page of
+ * it, or at the list of them all.
+ */
+export function tutorialOpen(at, page = 0) {
   if ($('#tutOv')) return;
   const dn = DEVS[DEV].name,
-    list = chapters(dn);
-  let cur = list.findIndex(c => c[0] === at);
-  if (cur < 0) {
-    try {
-      cur = Math.max(
-        0,
-        list.findIndex(c => c[0] === localStorage.getItem(KEY))
-      );
-    } catch (e) {
-      cur = 0;
-    }
-  }
+    list = tutorials(dn);
+  let tut = list.find(t => t.id === at) || null,
+    cur = page;
   const close = () => ov.remove();
-  const nav = el('nav', { class: 'tutNav', 'aria-label': 'Chapters' }),
+  const head = el('div', { class: 'cmHead' }),
     body = el('div', { class: 'tutBody', tabindex: '-1' });
-  const go = i => {
-    cur = Math.max(0, Math.min(list.length - 1, i));
-    try {
-      localStorage.setItem(KEY, list[cur][0]);
-    } catch (e) {}
+  const open = (t, p = 0) => {
+    tut = t;
+    cur = Math.max(0, Math.min(t ? t.pages.length - 1 : 0, p));
     draw();
   };
-  const part = (title, items) =>
-    items.length
-      ? el('section', { class: 'tutPart' }, el('h4', {}, title), el('ol', {}, ...items.map(x => el('li', {}, x))))
-      : null;
-  function draw() {
-    nav.replaceChildren(
-      ...list.map((c, i) =>
-        el(
-          'button',
-          {
-            type: 'button',
-            class: 'tutCh' + (i === cur ? ' on' : ''),
-            'aria-current': i === cur ? 'step' : 'false',
-            onclick: () => go(i)
-          },
-          el('span', { class: 'tutN' }, String(i + 1)),
-          c[1]
-        )
-      )
+  const bar = t => {
+    const n = doneOf(t);
+    return el(
+      'div',
+      { class: 'tutProg', title: n + ' of ' + t.keys.length + ' steps done' },
+      el('i', { style: 'width:' + Math.round((n / t.keys.length) * 100) + '%' }),
+      el('span', {}, n === t.keys.length ? '✓ Done' : n + ' of ' + t.keys.length + ' steps')
     );
-    const [, title, why, dev, app, acts] = list[cur];
+  };
+  const closeBtn = () => el('button', { type: 'button', class: 'btn sm on', onclick: close }, 'Close');
+  const stepList = pg =>
+    el(
+      'ol',
+      { class: 'tutSteps' },
+      ...pg.steps.map((x, i) => {
+        const st = stepOf(x),
+          k = pg.c[0] + ':' + pg.side + i;
+        return el(
+          'li',
+          { class: done.has(k) ? 'did' : '' },
+          el(
+            'label',
+            { class: 'tutStep' },
+            el('input', {
+              type: 'checkbox',
+              checked: done.has(k),
+              'aria-label': 'Done',
+              onchange: e => {
+                if (e.target.checked) done.add(k);
+                else done.delete(k);
+                saveDone();
+                draw(true);
+              }
+            }),
+            el('span', {}, st.text)
+          ),
+          st.show
+            ? el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'tutShow',
+                  onclick: () => {
+                    const id = tut.id,
+                      p = cur;
+                    close();
+                    showMe(st.show, () => tutorialOpen(id, p));
+                  }
+                },
+                'Show me ›'
+              )
+            : null
+        );
+      })
+    );
+
+  /* the list of tutorials */
+  function drawHub() {
+    head.replaceChildren(el('h3', {}, 'Tutorials'), closeBtn());
+    const [setup, ...modes] = list;
+    const card = (t, big) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'tutCard' + (big ? ' big' : '') + (doneOf(t) === t.keys.length ? ' ok' : ''),
+          onclick: () => open(t)
+        },
+        el('b', {}, t.title),
+        el('span', { class: 'tutBlurb' }, t.blurb),
+        bar(t)
+      );
+    body.replaceChildren(
+      el(
+        'p',
+        { class: 'tutWhy' },
+        'Short guides to what to set on the ' +
+          dn +
+          ' and in the app. Start with Basic setup, then the mode you want to use.'
+      ),
+      card(setup, true),
+      el('h4', { class: 'tutSub' }, 'Each mode'),
+      el('div', { class: 'tutCards' }, ...modes.map(t => card(t)))
+    );
+  }
+  /* one tutorial, at a page */
+  function drawTut() {
+    const pg = tut.pages[cur],
+      last = cur === tut.pages.length - 1,
+      setupLeft = tut.id !== 'setup' && doneOf(list[0]) < list[0].keys.length;
+    head.replaceChildren(
+      el('button', { type: 'button', class: 'btn sm', onclick: () => open(null) }, '‹ All tutorials'),
+      el('h3', {}, tut.title),
+      bar(tut),
+      closeBtn()
+    );
     body.replaceChildren(
       ...[
-        el('h3', {}, title),
-        el('p', { class: 'tutWhy' }, why),
-        el('div', { class: 'tutCols' }, part('On the ' + dn, dev), part('In the app', app)),
-        acts.length
+        tut.pages.length > 1
+          ? el(
+              'nav',
+              { class: 'tutPages', 'aria-label': 'Pages' },
+              ...tut.pages.map((p, i) =>
+                el(
+                  'button',
+                  {
+                    type: 'button',
+                    class: 'tutPg' + (i === cur ? ' on' : ''),
+                    'aria-current': i === cur ? 'step' : 'false',
+                    onclick: () => open(tut, i)
+                  },
+                  el(
+                    'span',
+                    { class: 'tutN' + (p.steps.every((_, j) => done.has(p.c[0] + ':' + p.side + j)) ? ' ok' : '') },
+                    p.steps.every((_, j) => done.has(p.c[0] + ':' + p.side + j)) ? '✓' : String(i + 1)
+                  ),
+                  p.title
+                )
+              )
+            )
+          : null,
+        setupLeft && cur === 0
+          ? el(
+              'p',
+              { class: 'tutNote' },
+              'Haven’t done Basic setup yet? ',
+              el('button', { type: 'button', class: 'tutShow', onclick: () => open(list[0]) }, 'Start there ›')
+            )
+          : null,
+        el('h4', { class: 'tutSub' }, pg.title),
+        pg.why ? el('p', { class: 'tutWhy' }, pg.why) : null,
+        stepList(pg),
+        pg.acts && pg.acts.length
           ? el(
               'div',
               { class: 'tutActs' },
-              ...acts.map(([label, fn]) =>
+              ...pg.acts.map(([label, fn]) =>
                 el('button', { type: 'button', class: 'btn', onclick: () => (close(), fn()) }, label)
               )
             )
@@ -220,19 +418,31 @@ export function tutorialOpen(at) {
         el(
           'div',
           { class: 'tutFoot' },
-          el('button', { type: 'button', class: 'btn', disabled: cur === 0, onclick: () => go(cur - 1) }, '‹ Back'),
-          el('span', { class: 'hint' }, cur + 1 + ' of ' + list.length),
-          cur < list.length - 1
+          el(
+            'button',
+            { type: 'button', class: 'btn', disabled: cur === 0, onclick: () => open(tut, cur - 1) },
+            '‹ Back'
+          ),
+          el('span', { class: 'hint' }, 'Page ' + (cur + 1) + ' of ' + tut.pages.length),
+          !last
             ? el(
                 'button',
-                { type: 'button', class: 'btn on', onclick: () => go(cur + 1) },
-                'Next: ' + list[cur + 1][1] + ' ›'
+                { type: 'button', class: 'btn on', onclick: () => open(tut, cur + 1) },
+                'Next: ' + tut.pages[cur + 1].title + ' ›'
               )
-            : el('button', { type: 'button', class: 'btn on', onclick: close }, 'Done')
+            : tut.id === 'setup'
+              ? el('button', { type: 'button', class: 'btn on', onclick: () => open(null) }, 'Done: pick a mode ›')
+              : el('button', { type: 'button', class: 'btn on', onclick: () => open(null) }, 'Done ›')
         )
       ].filter(Boolean)
     );
-    body.scrollTop = 0;
+  }
+  function draw(keepScroll) {
+    const top = body.scrollTop;
+    ov.querySelector('.tutBox').classList.toggle('hub', !tut);
+    if (tut) drawTut();
+    else drawHub();
+    body.scrollTop = keepScroll ? top : 0;
   }
   const ov = el(
     'div',
@@ -241,25 +451,18 @@ export function tutorialOpen(at) {
       class: 'ptOv',
       role: 'dialog',
       'aria-modal': 'true',
-      'aria-label': 'Tutorial',
+      'aria-label': 'Tutorials',
       onclick: e => e.target === ov && close(),
       onkeydown: e => {
+        const typing = e.target.tagName === 'INPUT';
         if (e.key === 'Escape') (e.stopPropagation(), close());
-        else if (e.key === 'ArrowRight' && e.target.tagName !== 'INPUT') go(cur + 1);
-        else if (e.key === 'ArrowLeft' && e.target.tagName !== 'INPUT') go(cur - 1);
+        else if (!tut || typing) return;
+        else if (e.key === 'ArrowRight') open(tut, cur + 1);
+        else if (e.key === 'ArrowLeft') open(tut, cur - 1);
+        else if (/^[1-9]$/.test(e.key)) open(tut, +e.key - 1);
       }
     },
-    el(
-      'div',
-      { class: 'ptBox tutBox' },
-      el(
-        'div',
-        { class: 'cmHead' },
-        el('h3', {}, 'Tutorial: setting up'),
-        el('button', { type: 'button', class: 'btn sm on', onclick: close }, 'Close')
-      ),
-      el('div', { class: 'tutMain' }, nav, body)
-    )
+    el('div', { class: 'ptBox tutBox' }, head, body)
   );
   document.body.append(ov);
   draw();

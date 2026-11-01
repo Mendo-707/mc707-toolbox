@@ -4,7 +4,7 @@
 
 Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and design sounds, all from your computer. One USB cable carries every track, and the app can record the audio that comes back.
 
-> **Version 1.7.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
+> **Version 1.7.1.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 
@@ -109,7 +109,7 @@ The app opens in Song Mode with a **start screen**:
 - **Song wizard**: a full arrangement in a style you pick.
 - **Live Mode**: choose a genre and jam.
 
-At its foot, **📖 Tutorial** (also **Help › Tutorial: setting up**) walks through what to set on the MC-707 and in the app: connecting, the tracks, and each mode (Song, Scene, Live, Synth, the ZenCore editor and the Slime Lab), with buttons that take you to each place. Untick *Show this when the app opens* to skip it; **File › Start screen** brings it back. Live Mode asks for a genre when it opens; keep the one you had, or pick another any time from **Live › Pick a genre**.
+At its foot, **📖 Tutorials** (also in **Help**) walk through what to set on the MC-707 and in the app: **Basic setup** (connecting and the tracks) first, then a short tutorial for each mode (Song, Scene, Live, Synth, the ZenCore editor and the Slime Lab), page by page. Tick each step as you go, press **Show me** to see the control a step talks about, and **Help › Tutorial: this mode** opens the one for the mode you are in. Untick *Show this when the app opens* to skip it; **File › Start screen** brings it back. Live Mode asks for a genre when it opens; keep the one you had, or pick another any time from **Live › Pick a genre**.
 
 ## Song Mode
 
