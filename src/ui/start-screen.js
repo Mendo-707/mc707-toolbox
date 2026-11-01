@@ -13,6 +13,7 @@ import { DEVS, DEV } from '../core/device.js';
 import { zenOpen } from '../zen/zc-editor.js';
 import { VERSION, openLink } from '../core/version.js';
 import { checkUpdate } from './update-check.js';
+import { tutorialOpen } from './tutorial.js';
 
 const KEY = 'mc707-start';
 /** True unless the start screen was turned off. */
@@ -160,6 +161,23 @@ export function startOpen(last = true) {
           /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
           () => zenOpen(DEVS[DEV].tracks.find(t => S.tracks[t].type !== 'drum') ?? DEVS[DEV].tracks[0], 0)
         )
+      ),
+      el(
+        'div',
+        { class: 'stTut' },
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'btn',
+            onclick: () => {
+              close();
+              tutorialOpen();
+            }
+          },
+          '📖 Tutorials: basic setup, then each mode'
+        ),
+        el('span', { class: 'hint' }, 'What to set on the MC-707 and in the app')
       ),
       el(
         'label',

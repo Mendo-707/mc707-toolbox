@@ -47,6 +47,7 @@ export function liveRender() {
   $('#lvBrkSt').value = LV.brkStyle;
   $('#lvBrkLen').value = LV.brkLen;
   $('#lvBuildFx').checked = LV.buildFx !== false;
+  $('#lvChordLock').checked = LV.chordLock !== false;
   $('#lvFlavor').value = LV.flavor;
   $('#lvVary').value = LV.vary;
   $('#lvVaryVal').textContent = lvVaryLabel();

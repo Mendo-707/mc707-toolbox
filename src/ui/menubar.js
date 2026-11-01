@@ -25,6 +25,7 @@ import { LINKS, openLink } from '../core/version.js';
 import { synthAct, synthViewOpen, synthViewSet } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { templatesOpen } from './templates.js';
+import { tutorialOpen } from './tutorial.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
 import { mpjPick } from './mpj-open.js';
@@ -265,6 +266,9 @@ function initMenubar() {
       '',
       [
         ['Shortcuts and tips', go('#bHelp'), '', null, null, 'song'],
+        ['Tutorials', () => tutorialOpen()],
+        ['Tutorial: basic setup', () => tutorialOpen('setup')],
+        ['Tutorial: this mode', () => tutorialOpen(document.body.dataset.mode)],
         ['Guide', () => openLink(LINKS.guide)],
         0,
         [

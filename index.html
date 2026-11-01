@@ -2220,6 +2220,289 @@ input[type='range'] {
   grid-template-columns: 1fr 1fr;
   gap: 4px 12px;
 }
+
+/* the start screen's way into the tutorial */
+.stTut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* Tutorials (src/ui/tutorial.js): the list of them, and one at a time, page by page */
+.tutBox {
+  width: min(760px, 100%);
+  max-height: min(88vh, 820px);
+  display: flex;
+  flex-direction: column;
+}
+.tutBox .cmHead {
+  gap: 10px;
+}
+.tutBox .cmHead h3 {
+  margin-right: auto;
+}
+.tutBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  margin-top: 12px;
+  padding-right: 4px;
+}
+.tutWhy {
+  margin: 0 0 14px;
+  color: var(--mute);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tutSub {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+.tutProg {
+  position: relative;
+  flex: none;
+  width: 150px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--raise);
+  overflow: hidden;
+  font-size: 12px;
+}
+.tutProg i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--hot);
+  opacity: 0.55;
+  transition: width 0.25s;
+}
+.tutProg span {
+  position: relative;
+  display: block;
+  text-align: center;
+  line-height: 22px;
+  color: var(--ink);
+}
+/* the list */
+.tutCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.tutCard {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.tutCard:hover,
+.tutCard:focus-visible {
+  border-color: var(--hot);
+}
+.tutCard b {
+  font-size: 16px;
+}
+.tutCard.big {
+  width: 100%;
+  border-color: var(--hot);
+  border-width: 2px;
+}
+.tutCard.big b {
+  font-size: 19px;
+}
+.tutCard.ok b::after {
+  content: ' ✓';
+  color: #2e9e5b;
+}
+.tutBlurb {
+  flex: 1;
+  font-weight: 400;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--mute);
+}
+.tutCard .tutProg {
+  width: 100%;
+  height: 18px;
+}
+.tutCard .tutProg span {
+  line-height: 18px;
+}
+/* one tutorial: its pages */
+.tutPages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tutPg {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 18px;
+  background: var(--raise);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.tutPg:hover,
+.tutPg:focus-visible {
+  outline: 1px solid var(--hot);
+}
+.tutPg.on {
+  background: var(--hot);
+  color: #fff;
+}
+.tutN {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--panel);
+  color: var(--ink);
+}
+.tutPg.on .tutN {
+  background: #fff;
+  color: var(--hot);
+}
+.tutN.ok {
+  background: #2e9e5b;
+  color: #fff;
+}
+.tutPg.on .tutN.ok {
+  background: #fff;
+  color: #2e9e5b;
+}
+.tutNote {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--raise);
+  font-size: 14px;
+}
+.tutSteps {
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  display: grid;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tutSteps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 10px;
+}
+.tutStep {
+  flex: 1 1 260px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.tutStep input {
+  margin-top: 3px;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: #2e9e5b;
+}
+.tutSteps li.did .tutStep span {
+  color: var(--mute);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--mute) 60%, transparent);
+}
+.tutShow {
+  all: unset;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hot);
+}
+.tutSteps .tutShow {
+  margin-left: 24px;
+}
+.tutShow:hover,
+.tutShow:focus-visible {
+  text-decoration: underline;
+}
+.tutActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.tutFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+/* Show me: a ring round the control, the rest dimmed, and the way back */
+#tutSpot {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+}
+.tutRing {
+  position: fixed;
+  border: 3px solid var(--hot);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  animation: tutPulse 1.2s ease-in-out infinite;
+}
+.tutBack {
+  position: fixed;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+@keyframes tutPulse {
+  50% {
+    border-color: #fff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutRing {
+    animation: none;
+  }
+}
+@media (max-width: 700px) {
+  .tutBox .cmHead {
+    flex-wrap: wrap;
+  }
+  .tutBox .cmHead .tutProg {
+    order: 9;
+    width: 100%;
+  }
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -14487,7 +14770,7 @@ html.os-darwin.native-menu #menubar .mproj {
         [7, "7"]
       ]
     };
-    const progOf = (n) => {
+    const progOf2 = (n) => {
       const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(n);
       return m ? m[1] : null;
     };
@@ -14518,7 +14801,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const used = /* @__PURE__ */ new Map();
       FAC.forEach((f) => {
         if (f.genre === g && f.pool === "chords") {
-          const p = progOf(f.name);
+          const p = progOf2(f.name);
           if (p && PR[p]) used.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
         }
       });
@@ -15841,8 +16124,8 @@ html.os-darwin.native-menu #menubar .mproj {
               let v = sg.v;
               const t3 = Q2[sg.q][1];
               if (h[4] === "sus" && (t3 === 3 || t3 === 4)) {
-                const pc2 = (R3 + sg.off + t3) % 12;
-                v = sg.v.map((n2) => (n2 % 12 + 12) % 12 === pc2 ? n2 + (t3 === 3 ? 2 : 1) : n2);
+                const pc3 = (R3 + sg.off + t3) % 12;
+                v = sg.v.map((n2) => (n2 % 12 + 12) % 12 === pc3 ? n2 + (t3 === 3 ? 2 : 1) : n2);
               }
               v.forEach((n2) => notes.push({ s, l, n: n2, v: h[2] }));
             });
@@ -16815,11 +17098,11 @@ html.os-darwin.native-menu #menubar .mproj {
     return seed / 2147483647;
   };
   var hum = (v) => Math.max(1, Math.min(127, Math.round(v + (rnd() - 0.5) * 10)));
-  function voice(pc2, q, prev) {
+  function voice(pc3, q, prev) {
     const iv = Q[q];
     let best = null, bd = 1e9;
     for (let inv = 0; inv < iv.length; inv++) {
-      const pcs = iv.map((x, i) => (pc2 + iv[(i + inv) % iv.length]) % 12);
+      const pcs = iv.map((x, i) => (pc3 + iv[(i + inv) % iv.length]) % 12);
       let n = 55 + (pcs[0] - 55 + 1200) % 12;
       const notes = pcs.map((p, i) => {
         if (i) while (n % 12 !== p) n++;
@@ -16833,9 +17116,9 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     return best;
   }
-  var ladder = (pc2, q, oct) => (idx) => {
+  var ladder = (pc3, q, oct) => (idx) => {
     const t = Q[q].slice(0, 3), o = Math.floor(idx / 3), i = (idx % 3 + 3) % 3;
-    return 12 * (oct + 1) + pc2 + t[i] + 12 * o;
+    return 12 * (oct + 1) + pc3 + t[i] + 12 * o;
   };
   function run(root, from, n, dir, q, deg) {
     const sc = deg === 7 && q !== "m" ? MINOR.map((x) => x === 10 ? 11 : x) : MINOR, ins = (x) => sc.includes(((x - root) % 12 + 12) % 12), out2 = [];
@@ -20905,17 +21188,17 @@ html.os-darwin.native-menu #menubar .mproj {
         style: "position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9600;padding:16px"
       });
       let inp = null;
-      const done2 = (v) => {
+      const done3 = (v) => {
         back.remove();
         removeEventListener("keydown", kd, true);
         res(v);
       };
       const ok = el(
         "button",
-        { class: "btn on", onclick: () => done2(o.input ? inp.value.trim() || null : true) },
+        { class: "btn on", onclick: () => done3(o.input ? inp.value.trim() || null : true) },
         o.ok || "OK"
       );
-      const no = el("button", { class: "btn", onclick: () => done2(o.input ? null : false) }, o.cancel || "Cancel");
+      const no = el("button", { class: "btn", onclick: () => done3(o.input ? null : false) }, o.cancel || "Cancel");
       const box = el(
         "div",
         {
@@ -20941,7 +21224,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const kd = (e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
-          done2(o.input ? null : false);
+          done3(o.input ? null : false);
         } else if (e.key === "Enter") {
           e.stopPropagation();
           e.preventDefault();
@@ -23452,14 +23735,14 @@ html.os-darwin.native-menu #menubar .mproj {
     for (const c of S.clips) {
       const s0 = Math.max(c.start, a), e0 = Math.min(c.start + c.len, b);
       if (e0 - s0 < 1e-9) continue;
-      const pc2 = {
+      const pc3 = {
         ...c,
         id: void 0,
         start: qBar(s0 - a),
         len: qBar(e0 - s0),
         off: wrapOff(c.off + (s0 - c.start), loopLen(c))
       };
-      out2.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc2, shapeSlice(c, s0, e0)) : pc2);
+      out2.push(s0 > c.start + 1e-9 || e0 < c.start + c.len - 1e-9 ? applyShape(pc3, shapeSlice(c, s0, e0)) : pc3);
     }
     return out2;
   }
@@ -30547,7 +30830,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   async function readSound(snd, base, keys2, progress) {
     const rs = runs(snd.kind, keys2);
-    let ok = 0, bad = 0, done2 = 0, silent = 0;
+    let ok = 0, bad = 0, done3 = 0, silent = 0;
     const take = (it, bytes) => {
       const v = decode(it[1], bytes);
       if (v == null) return false;
@@ -30581,7 +30864,7 @@ html.os-darwin.native-menu #menubar .mproj {
           snd.known.delete(it[0]);
           bad++;
         }
-      if (progress) progress(++done2, rs.length);
+      if (progress) progress(++done3, rs.length);
     }
     return { ok, bad, total: ok + bad };
   }
@@ -31891,7 +32174,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const todo = o.clips === false ? [] : plan2.flatMap((r) => r.items.filter((i) => !i.skip).map((i) => ({ t: r.t, ...i })));
     const secs = o.scenes ? songSections(plan2) : [];
     const lines = [];
-    let done2 = 0, left = 0, bad = 0, stopped = false, sc = null;
+    let done3 = 0, left = 0, bad = 0, stopped = false, sc = null;
     const ran = await writeSession(
       o.scenes ? "Sending the song to MC-707 scenes" : "Sending the song’s patterns to MC-707 clips",
       async (ui) => {
@@ -31909,7 +32192,7 @@ html.os-darwin.native-menu #menubar .mproj {
             cancel: () => ui.cancelled
           });
           if (r.ok) {
-            done2++;
+            done3++;
             if (!r.checked) bad++;
             lines.push(where2 + ": " + it.label + (r.checked ? "" : " (read-back did not match: " + r.diff + ")"));
           } else {
@@ -31934,7 +32217,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const f = o.scenes ? o.scenes.first : 0, last3 = f + secs.length - 1;
     const scLine = !o.scenes ? "" : stopped ? "Scenes not written (stopped).\n" : !sc.ok ? "Scenes not written: " + sc.why + ".\n" : "Scenes " + sceneName(f) + " to " + sceneName(last3) + " written" + (sc.checked ? ", read back and checked" : " (the read-back did not match: check them on the MC-707)") + ". Turn CHAIN on in the SCENE CHAIN screen, then play from scene " + sceneName(f) + ".\n";
     await askDlg({
-      title: o.scenes ? stopped ? "Stopped after " + done2 + " clips" : "Sent the song to MC-707 scenes" : (stopped ? "Stopped after " : "Sent ") + done2 + " pattern" + (done2 === 1 ? "" : "s") + " to MC-707 clips",
+      title: o.scenes ? stopped ? "Stopped after " + done3 + " clips" : "Sent the song to MC-707 scenes" : (stopped ? "Stopped after " : "Sent ") + done3 + " pattern" + (done3 === 1 ? "" : "s") + " to MC-707 clips",
       text: scLine + (bad ? bad + " clips did not read back the same; check those clips. " : "") + (left ? left + " were not sent. " : "") + "Save the project on the " + DEVS[DEV].name + " to keep it.\n\n" + lines.join("\n"),
       ok: "OK",
       cancel: "Close"
@@ -32083,7 +32366,7 @@ html.os-darwin.native-menu #menubar .mproj {
       },
       "Read every lane"
     );
-    const write = el(
+    const write2 = el(
       "button",
       {
         type: "button",
@@ -32169,7 +32452,7 @@ html.os-darwin.native-menu #menubar .mproj {
       },
       "Copy results"
     );
-    const btns = [readAll, write, clear];
+    const btns = [readAll, write2, clear];
     const close = () => !busy4 && ov.remove();
     const heard = el(
       "select",
@@ -32243,7 +32526,7 @@ html.os-darwin.native-menu #menubar .mproj {
           3,
           "Write the test shape",
           'Pick a lane and press Write test shape, then Write to confirm. The lane gets a slow move: from nothing at the start of the clip, up to full halfway through, and back down to nothing at the end. The results say "read back the same" when it went in.',
-          row2(lane, write)
+          row2(lane, write2)
         ),
         step(
           4,
@@ -38865,7 +39148,7 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/zen/zc-factory-ui.js
   var frame = () => new Promise((r) => setTimeout(r, 30));
-  function factoryImport(done2) {
+  function factoryImport(done3) {
     const i = el("input", {
       type: "file",
       accept: ".bin",
@@ -38881,7 +39164,7 @@ html.os-darwin.native-menu #menubar .mproj {
           toast(
             n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
           );
-          done2(n);
+          done3(n);
         } catch (e) {
           toast("That file could not be read");
         }
@@ -38906,7 +39189,7 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     return ok ? folderAdd(sel.value || stem) : null;
   }
-  function expansionImport(done2) {
+  function expansionImport(done3) {
     const i = el("input", {
       type: "file",
       accept: ".svz",
@@ -38940,25 +39223,25 @@ html.os-darwin.native-menu #menubar .mproj {
         }
         if (moved)
           toast("Took " + moved + " of them out of the extra factory bank, where an earlier import had put them");
-        done2(total, last3 ? "u:" + last3 : null);
+        done3(total, last3 ? "u:" + last3 : null);
       }
     });
     i.click();
   }
-  function factoryItems(done2) {
+  function factoryItems(done3) {
     const have = ZS.list.some((e) => e.src === "factory");
     return [
       {
         label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
-        action: () => factoryImport(done2)
+        action: () => factoryImport(done3)
       },
-      { label: "Expansion tones from .svz files, into a folder…", action: () => expansionImport(done2) },
+      { label: "Expansion tones from .svz files, into a folder…", action: () => expansionImport(done3) },
       have ? {
         label: "Remove the factory tones",
         action: async () => {
           const n = await soundsRemoveSrc("factory");
           toast("Removed " + n + " factory tones");
-          done2(0);
+          done3(0);
         }
       } : null
     ].filter(Boolean);
@@ -39308,7 +39591,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function load3(e) {
     B.cur = e.id;
-    const done2 = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
+    const done3 = zeLoad(e.src === "starter" ? e.make() : soundOf(e), "Loaded " + e.name);
     const box = $("#zbOv .zbList");
     if (box) {
       box.querySelectorAll(".zbItem.cur").forEach((r2) => r2.classList.remove("cur"));
@@ -39316,7 +39599,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (r) r.classList.add("cur"), r.scrollIntoView({ block: "nearest" });
       box.focus({ preventScroll: true });
     }
-    return done2;
+    return done3;
   }
   async function play(e, x) {
     x.stopPropagation();
@@ -39328,7 +39611,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!up) audition2(e.type === "bass" || /bass/i.test(catOf(e)) ? 36 : 60);
   }
   var chip = (label2, on3, fn, title) => el("button", { type: "button", class: "zbChip" + (on3 ? " on" : ""), title: title || "", onclick: fn }, label2);
-  function form(e, done2) {
+  function form(e, done3) {
     const name = el("input", { class: "zbName", value: e.name, "aria-label": "Name", maxlength: 40 });
     const type = el(
       "select",
@@ -39363,11 +39646,11 @@ html.os-darwin.native-menu #menubar .mproj {
           {
             type: "button",
             class: "btn sm on",
-            onclick: () => done2({ name: name.value.trim() || e.name, type: type.value, tags: [...tags] })
+            onclick: () => done3({ name: name.value.trim() || e.name, type: type.value, tags: [...tags] })
           },
           "Save"
         ),
-        el("button", { type: "button", class: "btn sm", onclick: () => done2(null) }, "Cancel")
+        el("button", { type: "button", class: "btn sm", onclick: () => done3(null) }, "Cancel")
       )
     );
   }
@@ -42784,7 +43067,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return Object.entries(by).map(([pg, xs]) => el("div", {}, el("b", {}, pg + ": "), xs.join(", ")));
   }
   function drawGuide(box) {
-    const g = LAB.guide, r = g.r, done2 = g.done >= r.steps.length, busy4 = g.i > g.done;
+    const g = LAB.guide, r = g.r, done3 = g.done >= r.steps.length, busy4 = g.i > g.done;
     const last3 = [...LAB.log].reverse().find((x) => x.guide);
     const step = g.done ? r.steps[g.done - 1] : null;
     box.style.removeProperty("--kc");
@@ -42819,8 +43102,8 @@ html.os-darwin.native-menu #menubar .mproj {
         { class: "llGo" },
         btn("Taste " + noteName3(r.note), () => {
         }, "Hold to hear it"),
-        done2 ? btn("Done", () => (LAB.guide = null, drawLearn()), "Close the guide", true) : g.auto || busy4 ? el("span", { class: "hint" }, "Building…") : btn("Next: " + r.steps[g.i].title, () => blendStep(r, g.i), "Take the next step", true),
-        done2 || g.auto ? null : btn("Finish", () => finish(r), "Do the remaining steps in one go")
+        done3 ? btn("Done", () => (LAB.guide = null, drawLearn()), "Close the guide", true) : g.auto || busy4 ? el("span", { class: "hint" }, "Building…") : btn("Next: " + r.steps[g.i].title, () => blendStep(r, g.i), "Take the next step", true),
+        done3 || g.auto ? null : btn("Finish", () => finish(r), "Do the remaining steps in one go")
       )
     );
     box.querySelector(".llGo .btn").addEventListener("pointerdown", (e) => keyDown(r.note, e.currentTarget));
@@ -44305,10 +44588,10 @@ html.os-darwin.native-menu #menubar .mproj {
     ZE.redo = [];
     ZE.snd = snd;
     const live3 = sending();
-    let done2 = Promise.resolve();
+    let done3 = Promise.resolve();
     if (live3) {
       const base = zeBase(), t = ZE.t, k2 = ZE.k;
-      done2 = zeQuietly(
+      done3 = zeQuietly(
         () => sendSound(snd, base, new Set(Object.keys(snd.v))),
         t,
         () => reselect(t, k2)
@@ -44317,7 +44600,7 @@ html.os-darwin.native-menu #menubar .mproj {
     remember();
     zeRender();
     if (why) toast(why + (live3 ? " and sent to the " + DEVS[DEV].name : ""));
-    return done2;
+    return done3;
   }
   function mfxType(type, vals) {
     const keys2 = ["MFX.mfxType", ...MFX_PARAMS], d = vals || mfxDefaults(type);
@@ -45071,7 +45354,7 @@ html.os-darwin.native-menu #menubar .mproj {
     m.bpm ? m.bpm + " BPM" : "",
     m.keyName || ""
   ].filter(Boolean).join(" · ");
-  function pickPattern(t, title, done2, cur2) {
+  function pickPattern(t, title, done3, cur2) {
     if ($("#spOv")) return;
     const type = S.tracks[t].type, parts4 = PARTS[type];
     if (!P.part || P.part !== "all" && !parts4.some((x) => x[0] === P.part))
@@ -45083,7 +45366,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     const choose = (m) => {
       close();
-      done2(P.src === "proj" ? m.id : instFactory(m));
+      done3(P.src === "proj" ? m.id : instFactory(m));
     };
     const draw2 = () => {
       const all = list(type);
@@ -45225,14 +45508,14 @@ html.os-darwin.native-menu #menubar .mproj {
     kind: e.kind,
     d: e.src === "starter" ? diffOf(e.make()) : diffOf(soundOf(e))
   });
-  async function pickTone(t, title, done2, curName) {
+  async function pickTone(t, title, done3, curName) {
     if ($("#stOv")) return;
     await soundsLoad();
     const kind = S.tracks[t].type === "drum" ? "kit" : "tone";
     const all = () => [...ZS.list, ...starters2()].filter((e) => e.kind === kind);
     const body = el("div", { class: "spList", role: "listbox", "aria-label": "Sounds" }), count = el("span", { class: "hint" }), filt2 = el("div", { class: "spFilt" });
     const close = () => ov.remove();
-    const choose = (e) => (close(), done2(toneOf2(e)));
+    const choose = (e) => (close(), done3(toneOf2(e)));
     const draw2 = () => {
       const list2 = sortList(filterList(all(), { ...T2, cat: "", tag: "" }), "bank", 1);
       body.textContent = "";
@@ -45332,7 +45615,7 @@ html.os-darwin.native-menu #menubar .mproj {
               type: "button",
               class: "btn",
               title: "Send no sound: the clip keeps the one it has",
-              onclick: () => (close(), done2(null))
+              onclick: () => (close(), done3(null))
             },
             "Keep the clip’s sound"
           ),
@@ -46313,7 +46596,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/core/version.js
-  var VERSION = "1.7.0";
+  var VERSION = "1.7.1";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
@@ -49141,9 +49424,9 @@ html.os-darwin.native-menu #menubar .mproj {
         });
         return out2;
       };
-      const voice4 = (pc2, q, center) => {
+      const voice4 = (pc3, q, center) => {
         const iv = q === "m" ? [0, 3, 7] : q === "M" ? [0, 4, 7] : [0, 7, 12];
-        let r = pc2 + 48;
+        let r = pc3 + 48;
         while (r + 4 < center) r += 12;
         while (r + 4 > center + 6) r -= 12;
         return iv.map((x) => r + x);
@@ -49155,8 +49438,8 @@ html.os-darwin.native-menu #menubar .mproj {
           role: "Chords",
           pool: "chords",
           notes: each(
-            (o, s0, pc2, q) => cells.forEach(([p, l, oct]) => {
-              const v = voice4(pc2, q, 62);
+            (o, s0, pc3, q) => cells.forEach(([p, l, oct]) => {
+              const v = voice4(pc3, q, 62);
               (oct ? [...v, v[0] + 12] : v).forEach((n, i) => o.push({ s: s0 + p, l, n, v: i ? 96 : 108 }));
             })
           )
@@ -49168,8 +49451,8 @@ html.os-darwin.native-menu #menubar .mproj {
           role: "Bass",
           pool: "bass",
           lively: nm === "Acid squelch" || nm === "Gallop",
-          notes: each((o, s0, pc2) => {
-            const r = 31 + (pc2 + 5) % 12;
+          notes: each((o, s0, pc3) => {
+            const r = 31 + (pc3 + 5) % 12;
             cells.forEach(([p, l, d]) => o.push({ s: s0 + p, l, n: r + d, v: p % 4 === 0 ? 118 : 100 }));
           })
         });
@@ -49179,8 +49462,8 @@ html.os-darwin.native-menu #menubar .mproj {
           name: "Pluck: " + nm + tag,
           role: "Lead",
           pool: "pluck",
-          notes: each((o, s0, pc2, q) => {
-            const v = voice4(pc2, q, 66);
+          notes: each((o, s0, pc3, q) => {
+            const v = voice4(pc3, q, 66);
             cells.forEach(
               ([p, l, i, up]) => o.push({ s: s0 + p, l, n: v[i] + (up ? 12 : 0), v: p % 4 === 0 ? 100 : 84 })
             );
@@ -49191,7 +49474,7 @@ html.os-darwin.native-menu #menubar .mproj {
         name: "Pad: Organ drone" + tag,
         role: "Pad",
         pool: "pad",
-        notes: each((o, s0, pc2, q) => voice4(pc2, q, 60).forEach((n) => o.push({ s: s0, l: 16, n, v: 80 })))
+        notes: each((o, s0, pc3, q) => voice4(pc3, q, 60).forEach((n) => o.push({ s: s0, l: 16, n, v: 80 })))
       });
       push({
         ...base,
@@ -49199,7 +49482,7 @@ html.os-darwin.native-menu #menubar .mproj {
         role: "Pad",
         pool: "pad",
         notes: each(
-          (o, s0, pc2, q) => voice4(pc2, q, 64).forEach((n) => o.push({ s: s0, l: 8, n, v: 56 }, { s: s0 + 8, l: 8, n, v: 84 }))
+          (o, s0, pc3, q) => voice4(pc3, q, 64).forEach((n) => o.push({ s: s0, l: 8, n, v: 56 }, { s: s0 + 8, l: 8, n, v: 84 }))
         )
       });
       const pent = scale === "minor" ? [0, 3, 5, 7, 10] : [0, 4, 5, 7, 10], deg = (d) => 60 + root + pent[(d % 5 + 5) % 5] + 12 * Math.floor(d / 5);
@@ -49308,6 +49591,218 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
 
+  // src/library/lead-pack.js
+  var PROG2 = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/;
+  var pc2 = (n) => (n % 12 + 12) % 12;
+  var LEADS = [
+    ["Chord hook", "x--x--x---x-x---", [0, 1, 2, 1, 0]],
+    ["Rising call", "x-x-x---x-x-x---", [0, 1, 2, 2, 1, 3]],
+    ["Answer", "x---x-x-........", [2, 1, 0]],
+    ["Long tones", "x-------x---x---", [2, 1, 0]],
+    ["Stab hook", "x--x....x--x....", [1, 1, 2, 0]],
+    ["Offbeat hook", "..x-..x-..x-.x--", [0, 1, 2, 1]],
+    ["Walk up", "x-xpx-xpx-x-x---", [0, "p", 1, "p", 2, 1, 0]],
+    ["Fall", "x--x--x-x-x-x---", [3, 2, 1, 1, 0, 0]],
+    ["Two-note", "x-x-x-x-x-x-x-x-", [0, 1]],
+    ["Arch", "x-xpx-x-x-x-x---", [0, "p", 1, 2, 3, 2, 1]]
+  ];
+  var PLUCKS = [
+    ["Pluck 8ths", "x.x.x.x.x.x.x.x.", [0, 1, 2, 1]],
+    ["Pluck offbeats", "..x...x...x...x.", [1, 2, 1, 0]],
+    ["Pluck roll", "x.xx.xx.x.xx.xx.", [0, 1, 2, 0, 1, 2]],
+    ["Pluck 16ths", "xxxxxxxxxxxxxxxx", [0, 1, 2, 3]],
+    ["Pluck skip", "x..x..x.x..x..x.", [2, 1, 0]],
+    ["Pluck stabs", "x..x....x..x..x.", [0, 2, 1]]
+  ];
+  var PER2 = { lead: 3, pluck: 2 };
+  function addLeadPack() {
+    let seed4 = 20261101;
+    const rnd6 = () => (seed4 = Math.imul(seed4, 1103515245) + 12345 >>> 0) / 4294967296;
+    const pick3 = (list2, n) => {
+      const a = list2.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd6() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a.slice(0, n);
+    };
+    let uid = 0;
+    for (const src of sources()) {
+      const chords = chordsOf(src);
+      if (!chords) continue;
+      const prog = PROG2.exec(src.name)[1], scale = SCALES[src.key.scale] || SCALES.minor;
+      const base = {
+        type: "tone",
+        genre: src.genre,
+        bpm: src.bpm ?? null,
+        bars: src.bars,
+        key: src.key,
+        keyName: src.keyName,
+        styles: src.styles || null,
+        lp: true
+      };
+      const add = (pool, role, name, notes) => {
+        if (notes.length)
+          FAC.push({ ...base, id: "lp" + uid++, name: role + ": " + name + " " + prog, notes, role, pool });
+      };
+      for (const [name, rh, motif] of pick3(LEADS, PER2.lead))
+        add(
+          "lead",
+          "Lead",
+          name,
+          write({ chords, rh, motif, scale, root: src.key.root, low: 60, bars: src.bars, held: true })
+        );
+      for (const [name, rh, motif] of pick3(PLUCKS, PER2.pluck))
+        add(
+          "pluck",
+          "Lead",
+          name,
+          write({ chords, rh, motif, scale, root: src.key.root, low: 48, bars: src.bars, held: false })
+        );
+    }
+  }
+  function sources() {
+    const seen2 = /* @__PURE__ */ new Set(), out2 = [];
+    for (const f of FAC) {
+      if (f.type !== "tone" || f.pool !== "chords" || f.busy || f.lp || !f.key || !PROG2.test(f.name)) continue;
+      const k2 = f.genre + "|" + PROG2.exec(f.name)[1] + "|" + f.bars;
+      if (seen2.has(k2)) continue;
+      seen2.add(k2);
+      out2.push(f);
+    }
+    return out2;
+  }
+  function chordsOf(f) {
+    const n = f.bars * 16, grid = Array(n).fill(null);
+    for (const x of f.notes)
+      for (let s = Math.floor(x.s); s < Math.min(n, Math.ceil(x.s + x.l)); s++)
+        (grid[s] = grid[s] || /* @__PURE__ */ new Set()).add(pc2(x.n));
+    let last3 = null;
+    for (let pass2 = 0; pass2 < 2; pass2++)
+      for (let s = 0; s < n; s++) {
+        if (grid[s] && grid[s].size >= 3) last3 = grid[s];
+        else grid[s] = last3;
+      }
+    return grid.every(Boolean) ? grid : null;
+  }
+  var tonesFrom = (set2, low2) => {
+    const out2 = [];
+    for (let n = low2; n < low2 + 24; n++) if (set2.has(pc2(n))) out2.push(n);
+    return out2;
+  };
+  function write({ chords, rh, motif, scale, root, low: low2, bars: bars2, held: held3 }) {
+    const notes = [], total = bars2 * 16, inScale = (n) => scale.includes(pc2(n - root));
+    let k2 = 0, prev = null;
+    for (let s = 0; s < total; s++) {
+      const ch = rh[s % 16];
+      if (ch !== "x" && ch !== "p") continue;
+      let len = 1;
+      if (held3) while (s + len < total && rh[(s + len) % 16] === "-") len++;
+      const step = motif[k2++ % motif.length];
+      const tones = tonesFrom(chords[s], low2);
+      let n;
+      if (step === "p" && prev != null) {
+        const next = tones.find((t) => t > prev) ?? prev + 2;
+        n = prev + 1;
+        while (n < next && !inScale(n)) n++;
+        if (n >= next) n = next;
+      } else {
+        const i = step === "p" ? 0 : step;
+        n = tones[Math.max(0, Math.min(tones.length - 1, i))];
+      }
+      notes.push({ s, l: held3 ? len : 1, n, v: s % 4 === 0 ? 104 : 86 });
+      prev = n;
+    }
+    return notes;
+  }
+
+  // src/library/melody-fit.js
+  var progOf = (f) => {
+    const m = /((?:b?[ivIV]{1,3}[A-Za-z0-9]*-){3,}b?[ivIV]{1,3}[A-Za-z0-9]*)/.exec(f.name);
+    return m ? m[1] : null;
+  };
+  var CHORDS2 = null;
+  function chordsFor(f, p) {
+    if (!CHORDS2) {
+      CHORDS2 = /* @__PURE__ */ new Map();
+      for (const g of FAC) {
+        if (g.type !== "tone" || g.pool !== "chords" || !g.key) continue;
+        const q = progOf(g);
+        if (!q) continue;
+        for (const k2 of [g.genre + "|" + q + "|" + g.bars, "*|" + q + "|" + g.bars]) if (!CHORDS2.has(k2)) CHORDS2.set(k2, g);
+      }
+    }
+    return CHORDS2.get(f.genre + "|" + p + "|" + f.bars) || CHORDS2.get("*|" + p + "|" + f.bars) || null;
+  }
+  function harmonyGrid(g, root) {
+    const n = g.bars * 16, sh = ((root - g.key.root) % 12 + 12) % 12, grid = Array.from({ length: n }, () => /* @__PURE__ */ new Set());
+    for (const x of g.notes)
+      for (let s = Math.floor(x.s); s < Math.min(n, Math.ceil(x.s + x.l)); s++) grid[s].add((x.n + sh) % 12);
+    let last3 = null;
+    for (let pass2 = 0; pass2 < 2; pass2++)
+      for (let s = 0; s < n; s++) {
+        if (grid[s].size) last3 = grid[s];
+        else if (last3) grid[s] = last3;
+      }
+    return grid;
+  }
+  var SCORE = /* @__PURE__ */ new Map();
+  function melodyFitReset() {
+    CHORDS2 = null;
+    SCORE.clear();
+  }
+  function melodyScore(f) {
+    if (SCORE.has(f.id)) return SCORE.get(f.id);
+    let out2 = null;
+    const p = f.type === "tone" && f.key && progOf(f), g = p && chordsFor(f, p);
+    if (g) {
+      const grid = harmonyGrid(g, f.key.root);
+      let all = 0, tones = 0, clash = 0;
+      for (const x of f.notes) {
+        if (!(x.s % 4 === 0 || x.l >= 2)) continue;
+        const ch = grid[Math.floor(x.s) % grid.length];
+        if (!ch || !ch.size) continue;
+        const pc3 = x.n % 12, w = Math.min(x.l, 8);
+        all += w;
+        if (ch.has(pc3)) tones += w;
+        else if ([...ch].some((c) => (pc3 - c + 12) % 12 === 1 || (c - pc3 + 12) % 12 === 1)) clash += w;
+      }
+      if (all) out2 = { tones: tones / all, clash: clash / all };
+    }
+    SCORE.set(f.id, out2);
+    return out2;
+  }
+  var melodyClashes = (f) => {
+    const s = melodyScore(f);
+    return !!s && (s.clash > 0.2 || s.tones < 0.5);
+  };
+  var TRIPLET_STYLES = /* @__PURE__ */ new Set([
+    "trap",
+    "drill",
+    "phonk",
+    "memphis",
+    "boombap",
+    "lofi",
+    "gfunk",
+    "neosoul",
+    "halftime",
+    "dubstep",
+    "riddim",
+    "afrobeats",
+    "dancehall",
+    "reggaeton",
+    "ambient",
+    "cinematic"
+  ]);
+  var DOTTED_STYLES = /* @__PURE__ */ new Set(["trance", "progtrance", "synthwave", "pop", "indie", "ambient", "cinematic"]);
+  var isTriplet = (f) => /triplet/i.test(f.name) || f.notes.some((x) => Math.abs(x.s - Math.round(x.s)) > 0.01);
+  var isDotted = (f) => /dotted/i.test(f.name);
+  function melodyFeelOk(f, styleId) {
+    if (isTriplet(f)) return TRIPLET_STYLES.has(styleId);
+    if (isDotted(f)) return DOTTED_STYLES.has(styleId);
+    return true;
+  }
+
   // src/library/pools.js
   var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck", "acid"];
   var LV_POOLCACHE = {};
@@ -49333,7 +49828,9 @@ html.os-darwin.native-menu #menubar .mproj {
     addBigBeatPack();
     addMelodicPack(BB_GENRE);
     addFillPack();
+    addLeadPack();
     for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
+    melodyFitReset();
     for (const k2 in LV_POOLCACHE) delete LV_POOLCACHE[k2];
     for (const k2 in FULLKITS) if (!FULLKITS[k2].length) delete FULLKITS[k2];
   }
@@ -49394,7 +49891,15 @@ html.os-darwin.native-menu #menubar .mproj {
       (f) => f.genre === g && f.pool === pool && (!f.styles || f.styles.includes(st.id) || tone2 && !(f.notFor && f.notFor.includes(st.id))) && (f.bpm == null || Math.abs(f.bpm - bpm) <= (tone2 ? 30 : 24)) && /* harmony-pack patterns with the busier chord timings are for picking by hand, not for auto-picks */
       !f.busy
     ).map((f) => f.id);
-    return LV_POOLCACHE[key] = [.../* @__PURE__ */ new Set([...hand, ...lib])].filter((id) => facById(id));
+    let ids = [.../* @__PURE__ */ new Set([...hand, ...lib])].filter((id) => facById(id));
+    if (pool === "lead" || pool === "pluck") {
+      const ok = ids.filter((id) => {
+        const f = facById(id);
+        return !melodyClashes(f) && melodyFeelOk(f, st.id);
+      });
+      if (ok.length) ids = ok;
+    }
+    return LV_POOLCACHE[key] = ids;
   }
   function lvLively(f) {
     if (!f) return 0;
@@ -51895,6 +52400,7 @@ html.os-darwin.native-menu #menubar .mproj {
     "vary",
     "flavor",
     "buildFx",
+    "chordLock",
     "custom",
     "revRest",
     "brkStyle",
@@ -51941,6 +52447,7 @@ html.os-darwin.native-menu #menubar .mproj {
       vary: 50,
       flavor: "lively",
       buildFx: true,
+      chordLock: true,
       custom: false,
       revRest: 0,
       brkStyle: "mix",
@@ -52014,6 +52521,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (i >= 0) LV.acts[i] = "brk";
     }
     if (!["mix", "hits", "stutter", "drop", "roll", "gate", "half", "wash"].includes(LV.brkStyle)) LV.brkStyle = "mix";
+    LV.chordLock = LV.chordLock !== false;
     if (![16, 32, 64].includes(+LV.brkLen)) LV.brkLen = 32;
     else LV.brkLen = +LV.brkLen;
     if (!STYLES.some((s) => s.id === LV.style)) LV.style = "liquid";
@@ -53157,15 +53665,15 @@ html.os-darwin.native-menu #menubar .mproj {
     const ov = $("#ptOv");
     if (!ov) return;
     ov.textContent = "";
-    const done2 = PT.i >= 16, grid = el("div", { class: "ptGrid" });
+    const done3 = PT.i >= 16, grid = el("div", { class: "ptGrid" });
     for (let i = 0; i < 16; i++) {
       const x = PT.res[i];
       grid.append(
         el(
           "div",
-          { class: "ptPad" + (i === PT.i && !done2 ? " now" : "") + (x ? " got" : "") },
+          { class: "ptPad" + (i === PT.i && !done3 ? " now" : "") + (x ? " got" : "") },
           el("b", {}, String(i + 1)),
-          el("span", {}, x ? noteLbl(x.n) + " (" + x.n + ")" : i === PT.i && !done2 ? "press" : ""),
+          el("span", {}, x ? noteLbl(x.n) + " (" + x.n + ")" : i === PT.i && !done3 ? "press" : ""),
           x ? el("small", {}, "ch " + x.ch) : ""
         )
       );
@@ -53177,7 +53685,7 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "p",
         {},
-        done2 ? "Done. Copy the result and paste it to Claude, or use it now." : "Select a drum track on the " + DEVS[DEV].name + ", then press pad " + (PT.i + 1) + " (" + (PT.i < 8 ? "top row, " : "bottom row, ") + (PT.i % 8 + 1) + (["st", "nd", "rd"][PT.i % 8] || "th") + " from the left)."
+        done3 ? "Done. Copy the result and paste it to Claude, or use it now." : "Select a drum track on the " + DEVS[DEV].name + ", then press pad " + (PT.i + 1) + " (" + (PT.i < 8 ? "top row, " : "bottom row, ") + (PT.i % 8 + 1) + (["st", "nd", "rd"][PT.i % 8] || "th") + " from the left)."
       ),
       MIDI.inp ? "" : el("p", { class: "ptWarn" }, "No MC-707 input is connected. Press Connect MC-707 first."),
       el(
@@ -53186,11 +53694,11 @@ html.os-darwin.native-menu #menubar .mproj {
         "Nothing arriving? On the MC-707 hold SHIFT and press that track's TRACK SEL button, open the MIDI page, and turn TxMIDI Note ON with output set to USB."
       ),
       grid,
-      done2 ? el("textarea", { readonly: true, class: "ptOut", rows: 3 }, padTestText()) : "",
+      done3 ? el("textarea", { readonly: true, class: "ptOut", rows: 3 }, padTestText()) : "",
       el(
         "div",
         { class: "lvBtns" },
-        done2 ? el(
+        done3 ? el(
           "button",
           {
             class: "btn on",
@@ -53217,7 +53725,7 @@ html.os-darwin.native-menu #menubar .mproj {
           },
           "Skip (pad sends nothing)"
         ),
-        done2 ? el(
+        done3 ? el(
           "button",
           {
             class: "btn",
@@ -53359,8 +53867,8 @@ html.os-darwin.native-menu #menubar .mproj {
     if (t >= 0) lvUserNote(t, on3);
   }
   function lvFollowOctave(n) {
-    const pc2 = (n % 12 + 12) % 12;
-    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc2);
+    const pc3 = (n % 12 + 12) % 12;
+    const offs = LV_KBD_OFF.filter((o) => o != null && o % 12 === pc3);
     if (!offs.length) return false;
     let base = n - offs[0];
     if (offs.length > 1 && n - 12 === LV.padBase) base = LV.padBase;
@@ -54065,15 +54573,15 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.ver++;
   }
   function ctlTranspose(k2) {
-    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc2 = k2 == null ? home : c.trMode === "rel" ? (home + k2) % 12 : k2;
+    const c = LV.ctl, home = LV.homeKey == null ? LV.key : LV.homeKey, pc3 = k2 == null ? home : c.trMode === "rel" ? (home + k2) % 12 : k2;
     if (!lvOn()) {
-      LV.key = pc2;
+      LV.key = pc3;
       LV.ver++;
       liveRender();
       return;
     }
     LV.cues = LV.cues.filter((x) => x.type !== "key");
-    if (pc2 !== LV.key) LV.cues.push({ type: "key", key: pc2, mode: LV.mode, tick: ctlWhen(c.trWhen) });
+    if (pc3 !== LV.key) LV.cues.push({ type: "key", key: pc3, mode: LV.mode, tick: ctlWhen(c.trWhen) });
     lvSortCues();
     LV.ver++;
   }
@@ -54325,11 +54833,11 @@ html.os-darwin.native-menu #menubar .mproj {
     let wx = 0;
     const W2 = 16;
     for (let n = lo; n <= hi; n++) {
-      const pc2 = n % 12, isB = blk.includes(pc2), [zn, i] = ctlZoneOf(n);
+      const pc3 = n % 12, isB = blk.includes(pc3), [zn, i] = ctlZoneOf(n);
       let lab = "";
       if (zn === "mute") lab = i < 8 ? String(i + 1) : ["All", "Fill", "Drop", "Brk"][i - 8];
       else if (zn === "key") lab = c.trMode === "rel" ? i === 0 ? "0" : "+" + i : NOTEN[i];
-      else if (pc2 === 0) lab = noteLbl(n);
+      else if (pc3 === 0) lab = noteLbl(n);
       const k2 = el(
         "i",
         {
@@ -54371,6 +54879,7 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#lvBrkSt").value = LV.brkStyle;
     $("#lvBrkLen").value = LV.brkLen;
     $("#lvBuildFx").checked = LV.buildFx !== false;
+    $("#lvChordLock").checked = LV.chordLock !== false;
     $("#lvFlavor").value = LV.flavor;
     $("#lvVary").value = LV.vary;
     $("#lvVaryVal").textContent = lvVaryLabel();
@@ -54432,11 +54941,11 @@ html.os-darwin.native-menu #menubar .mproj {
     const st = lvStyle();
     b.textContent = "";
     b.append(el("small", {}, "Try"));
-    st.keys.forEach(([pc2, why]) => {
+    st.keys.forEach(([pc3, why]) => {
       const m = lvModeFam(st.scale);
-      const on3 = LV.key === pc2 && LV.mode === m;
+      const on3 = LV.key === pc3 && LV.mode === m;
       b.append(
-        el("button", { class: "lvkr" + (on3 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc2, m) }, NK(pc2, m))
+        el("button", { class: "lvkr" + (on3 ? " on" : ""), title: why, onclick: () => liveKeyCue(pc3, m) }, NK(pc3, m))
       );
     });
   }
@@ -54704,7 +55213,7 @@ html.os-darwin.native-menu #menubar .mproj {
     let t1 = lvBoundary(1);
     if (t1 - TR.tick < 8) t1 += 32;
     const t2 = t1 + 32;
-    LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend"].includes(c.type) && c.type !== "fill");
+    LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend", "brk"].includes(c.type) && c.type !== "fill");
     LV.blend = null;
     const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick3 = fills.filter((f) => want.test(f.name));
     const fill2 = pick3.length ? lvRand(pick3) : fills.length ? lvRand(fills) : null;
@@ -54946,6 +55455,155 @@ html.os-darwin.native-menu #menubar .mproj {
       if (on2()) sendMidi([176 | S.tracks[t].ch - 1, EXPR, lvRestCC(+t, EXPR)], nt);
       delete l[t];
     }
+  }
+
+  // src/live/chord-lock.js
+  var modeNote = (n) => {
+    const r = ((n - LV.key) % 12 + 12) % 12;
+    if (LV.mode === "major") return r === 3 || r === 8 || r === 10 ? n + 1 : n;
+    return r === 4 || r === 9 || r === 11 ? n - 1 : n;
+  };
+  var GRID = /* @__PURE__ */ new Map();
+  function gridOf(f) {
+    const sh = shiftFor(f, LV.key), conv = !!(f.key && lvModeFam(f.key.scale) !== LV.mode), key = f.id + "|" + LV.key + "|" + LV.mode;
+    let g = GRID.get(key);
+    if (g) return g;
+    const n = f.bars * 32;
+    g = Array.from({ length: n }, () => null);
+    for (const x of f.notes) {
+      const nn = conv ? modeNote(x.n + sh) : x.n + sh, pc3 = (nn % 12 + 12) % 12;
+      for (let t = Math.floor(x.s * 2); t < Math.min(n, Math.ceil((x.s + x.l) * 2)); t++)
+        (g[t] = g[t] || /* @__PURE__ */ new Set()).add(pc3);
+    }
+    let last3 = null;
+    for (let pass2 = 0; pass2 < 2; pass2++)
+      for (let t = 0; t < n; t++) {
+        if (g[t]) last3 = g[t];
+        else g[t] = last3;
+      }
+    if (GRID.size > 400) GRID.clear();
+    GRID.set(key, g);
+    return g;
+  }
+  function lvChordNow(ft) {
+    const out2 = /* @__PURE__ */ new Set();
+    for (const t of tracksFor([3, 4, 5])) {
+      const vs = LV.voices[t] || [], v = vs.filter((x) => x.env.v1 > 0).pop();
+      if (!v || v.f.type !== "tone" || !v.f.key) continue;
+      const L2 = v.f.bars * 32, g = gridOf(v.f)[((ft - v.start) % L2 + L2) % L2];
+      if (g) for (const pc3 of g) out2.add(pc3);
+    }
+    return out2.size >= 2 ? out2 : null;
+  }
+  function lvLockNote(nn, len, local, chord2) {
+    if (!chord2) return nn;
+    const pc3 = (nn % 12 + 12) % 12;
+    if (chord2.has(pc3)) return nn;
+    const strong = local % 8 === 0, held3 = len >= 2, rub = chord2.has((pc3 + 1) % 12) || chord2.has((pc3 + 11) % 12);
+    if (!(rub && (strong || held3) || len >= 4)) return nn;
+    for (let d = 1; d <= 6; d++) {
+      if (chord2.has(((pc3 - d) % 12 + 12) % 12)) return nn - d;
+      if (chord2.has((pc3 + d) % 12)) return nn + d;
+    }
+    return nn;
+  }
+
+  // src/live/autopilot.js
+  var ARC = ["groove", "build", "peak", "peak", "strip", "groove", "tool", "build", "peak", "strip"];
+  var FRESH_EVERY = 12;
+  var ap = () => LV.ap || (LV.ap = { step: 1, played: {}, changes: 0, home: LV.key });
+  function lvAutoReset() {
+    LV.ap = { step: 1, played: {}, changes: 0, home: LV.key };
+  }
+  function lvAutoPick() {
+    const A = ap(), reg = LV.scenes.map((s, i) => i).filter((i) => !lvIsFlash(LV.scenes[i]) && i !== LV.cur);
+    if (!reg.length) return LV.cur;
+    if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 100) return lvRand(reg);
+    for (let k2 = 0; k2 < ARC.length; k2++) {
+      const kind = ARC[(A.step + k2) % ARC.length], cand = reg.filter((i) => LV.scenes[i].kind === kind);
+      if (!cand.length) continue;
+      A.step = (A.step + k2 + 1) % ARC.length;
+      return cand.reduce((b, i) => (A.played[i] || 0) < (A.played[b] || 0) ? i : b, cand[0]);
+    }
+    return lvRand(reg);
+  }
+  function lvAutoPlayed(idx) {
+    const A = ap();
+    A.played[idx] = (A.played[idx] || 0) + 1;
+    A.changes++;
+  }
+  function lvAutoBuild(sc, nx, fire) {
+    if (!(nx.kind === "peak" && sc.kind === "build") || LV.cues.some((c) => c.type === "bov")) return false;
+    const bars2 = Math.max(1, Math.min(2, Math.floor((fire - TR.tick) / 32))), t1 = fire - bars2 * 32;
+    const bp = lvPool(lvStyle(), "build").map(facById).filter(Boolean), fit = bp.filter((f) => f.bars >= bars2), bf = fit.length ? lvRand(fit) : bp.length ? lvRand(bp) : null;
+    if (bf) LV.cues.push({ type: "bov", tick: t1, end: fire, f: bf, off: Math.max(0, (bf.bars - bars2) * 32) });
+    LV.rise = { start: t1, end: fire, from: LV.rest[0], to: 127, cc: 80, target: "all" };
+    LV.cues.push({ type: "moves", tick: t1, end: fire });
+    return true;
+  }
+  function lvAutoFresh(nextKind) {
+    const A = ap();
+    if (LV.custom || A.changes < FRESH_EVERY || !["strip", "groove"].includes(nextKind)) return false;
+    A.changes = 0;
+    A.played = {};
+    A.step = ARC.indexOf("strip") + 1;
+    if (LV.key !== A.home)
+      LV.cues.push({ type: "key", key: A.home, mode: LV.mode, tick: Math.ceil(TR.tick / 32) * 32 + 32 });
+    liveNewSet();
+    lvBlendIn();
+    return true;
+  }
+  function lvAutoKey(sc, nx, fire) {
+    const A = ap();
+    if (LV.chaos < 50 || sc.kind !== "strip" || nx.kind === "strip" || Math.random() > 0.35) return;
+    const up = ((LV.key - A.home) % 12 + 12) % 12;
+    if (up >= 4) return;
+    LV.cues.push({ type: "key", key: (LV.key + 2) % 12, mode: LV.mode, tick: fire });
+  }
+  function lvAutoMove(sc, end, intoBreak) {
+    if (!LV.buildFx) return;
+    if (intoBreak) {
+      lvMove({
+        id: "apthrow",
+        tag: "ap",
+        tracks: toneTracksAll(),
+        cc: 91,
+        kind: "ramp",
+        from: 118,
+        to: "rest",
+        curve: "log",
+        start: end - 8,
+        end: end + 24
+      });
+      return;
+    }
+    if (sc.kind !== "peak" || Math.random() > 0.15 + LV.chaos / 250) return;
+    if (Math.random() < 0.5)
+      lvMove({
+        id: "apdip",
+        tag: "ap",
+        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+        cc: 80,
+        kind: "ramp",
+        from: lvFilterAway(0.8),
+        to: "rest",
+        curve: "exp",
+        start: end - 32,
+        end
+      });
+    else
+      lvMove({
+        id: "apthrow",
+        tag: "ap",
+        tracks: tracksFor([4, 5, 6, 7]),
+        cc: 91,
+        kind: "ramp",
+        from: 120,
+        to: "rest",
+        curve: "log",
+        start: end - 8,
+        end: end + 16
+      });
   }
 
   // src/live/extreme.js
@@ -55655,18 +56313,6 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     LV.ver++;
   }
-  function lvAutoNext() {
-    const n = LV.scenes.length, reg = [...Array(n).keys()].filter((i) => !lvIsFlash(LV.scenes[i]));
-    if (!reg.length) return LV.cur;
-    let nx = LV.cur + 1;
-    while (nx < n && lvIsFlash(LV.scenes[nx])) nx++;
-    if (nx >= n) nx = reg.length > 2 ? reg[1] : reg[0];
-    if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 80) {
-      const cand = reg.filter((i) => i !== LV.cur && i !== reg[0]);
-      if (cand.length) nx = lvRand(cand);
-    }
-    return nx;
-  }
   function lvSwapCue(group2, tick) {
     const ids = {};
     tracksFor(SWG[group2]).forEach((t) => {
@@ -55691,19 +56337,29 @@ html.os-darwin.native-menu #menubar .mproj {
     const sc = LV.scenes[LV.cur];
     if (!sc || LV.stopAt != null) return;
     const loop2 = sc.bars * 32, total = loop2 * LV.autoReps;
-    const pend = LV.cues.some((c) => c.type === "scene");
+    const pend = LV.cues.some((c) => c.type === "scene" || c.type === "blend");
     if (!pend && rel === total - 64) {
-      const idx = lvAutoNext(), fire = LV.sceneStart + total, nx = LV.scenes[idx];
+      const idx = lvAutoPick(), fire = LV.sceneStart + total, nx = LV.scenes[idx];
+      if (lvAutoFresh(nx.kind)) {
+        LV.ver++;
+        return;
+      }
+      lvAutoPlayed(idx);
+      const built = lvAutoBuild(sc, nx, fire);
       const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
       LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0 });
-      if (!hard && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
+      lvAutoKey(sc, nx, fire);
+      if (nx.kind === "strip") lvAutoMove(sc, fire, true);
+      if (!hard && !built && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
         const f = facById(lvRand(LV.fillIds));
         if (f) LV.cues.push({ type: "fill", tick: fire - 32, end: fire, f, auto: true });
       }
       lvSortCues();
       LV.ver++;
-    } else if (rel > 0 && rel % loop2 === 0 && rel < total - 64 && Math.random() < LV.chaos / 100 * 0.6) {
+    } else if (rel > 0 && rel % loop2 === 0 && rel < total - 64) {
       const nxt = tick + loop2;
+      lvAutoMove(sc, nxt, false);
+      if (Math.random() >= LV.chaos / 100 * 0.6) return;
       if (Math.random() < 0.3 && lvAutoFlash(nxt)) LV.ver++;
       else if (Math.random() < 0.25 && LV.fillIds.length && sc.cells[trackOf(0)]) {
         const f = facById(lvRand(LV.fillIds));
@@ -55823,6 +56479,8 @@ html.os-darwin.native-menu #menubar .mproj {
     if (fl && (fl.kind === "roll" || fl.kind === "drop")) lvRollTick(fl, tick, nt, td);
     const fk = fl && fl.loop ? fl.kind : "", fr = fl ? tick - fl.start : 0;
     const hush = fk === "half" && fr % 2 !== 0 || fk === "gate" && LV_GATE[fr >> 1 & 15] !== "x" || fk === "wash" && fr >= 8;
+    let chordNow;
+    const chord2 = () => chordNow === void 0 ? chordNow = lvChordNow(ft) : chordNow;
     const durK = fk === "half" ? 2 : 1, durMax = fk === "gate" ? 1.6 * td : Infinity;
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
@@ -55874,6 +56532,7 @@ html.os-darwin.native-menu #menubar .mproj {
           let nn = tone2 ? conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0) : n.n;
           if (tone2 && (vt === "oct" && last3 && local >> 2 & 1 || vt === "up" && slotOf(t) >= 6))
             nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
+          if (tone2 && slotOf(t) >= 6 && LV.chordLock !== false) nn = lvLockNote(nn, n.l, local, chord2());
           emitNote(
             t,
             tone2 ? clamp(nn, 0, 127) : nn,
@@ -55902,6 +56561,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (j >= 0) i = j;
     }
     const sc = LV.scenes[i];
+    lvAutoReset();
     lvHumApply(true);
     lvMoodApply();
     Object.assign(TR, { late: 0, lateMax: 0, gapMax: 0, lastRun: 0 });
@@ -56762,11 +57422,11 @@ html.os-darwin.native-menu #menubar .mproj {
     lvSortCues();
     LV.ver++;
   }
-  function liveKeyCue(pc2, mode) {
+  function liveKeyCue(pc3, mode) {
     mode = mode || (LV.cues.find((c) => c.type === "key") || {}).mode || LV.mode;
-    LV.homeKey = pc2;
+    LV.homeKey = pc3;
     if (!lvOn()) {
-      LV.key = pc2;
+      LV.key = pc3;
       LV.mode = mode;
       saveLive();
       LV.ver++;
@@ -56774,11 +57434,11 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     LV.cues = LV.cues.filter((c) => c.type !== "key");
-    if (pc2 === LV.key && mode === LV.mode) {
+    if (pc3 === LV.key && mode === LV.mode) {
       LV.ver++;
       return;
     }
-    LV.cues.push({ type: "key", key: pc2, mode, tick: lvBoundary(1) });
+    LV.cues.push({ type: "key", key: pc3, mode, tick: lvBoundary(1) });
     lvSortCues();
     LV.ver++;
     saveLive();
@@ -56988,15 +57648,15 @@ html.os-darwin.native-menu #menubar .mproj {
     const val = /* @__PURE__ */ new Map(), fade = /* @__PURE__ */ new Map();
     for (const a of LV.autos) {
       if (tick < a.start) continue;
-      const done2 = tick >= a.end;
-      if (done2 && a.restore === false) continue;
+      const done3 = tick >= a.end;
+      if (done3 && a.restore === false) continue;
       a.tracks.forEach((t) => {
-        const k2 = t + ":" + a.cc, v = done2 ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
+        const k2 = t + ":" + a.cc, v = done3 ? lvRestCC(t, a.cc) : lvMoveVal(a, t, tick);
         if (a.tag === "fade") fade.set(k2, { t, cc: a.cc, v });
-        else if (!done2 || !val.has(k2)) val.set(k2, { t, cc: a.cc, v });
+        else if (!done3 || !val.has(k2)) val.set(k2, { t, cc: a.cc, v });
       });
       if (a.cc >= 80 && a.cc <= 83) {
-        if (done2) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
+        if (done3) knobUI(a.cc - 80, LV.knobs[a.cc - 80]);
         else if (a.tracks.length) knobUI(a.cc - 80, Math.round(lvMoveVal(a, a.tracks[0], tick)));
       }
     }
@@ -57991,6 +58651,23 @@ html.os-darwin.native-menu #menubar .mproj {
               }
             }),
             "Epic builds: resonance, reverb wash and pump climb into every drop"
+          ),
+          el(
+            "label",
+            {
+              class: "lvf",
+              style: "margin:2px 0 6px",
+              title: "Lead and pluck notes that land on a beat or ring on, and rub against the chord playing, move to the nearest note of that chord"
+            },
+            el("input", {
+              type: "checkbox",
+              id: "lvChordLock",
+              onchange: (e) => {
+                LV.chordLock = e.target.checked;
+                saveLive();
+              }
+            }),
+            "Chord lock: leads and plucks keep to the chord playing"
           ),
           el(
             "div",
@@ -62570,164 +63247,6 @@ html.os-darwin.native-menu #menubar .mproj {
     } else toast("You have the latest version (" + VERSION + ")");
   }
 
-  // src/ui/start-screen.js
-  var KEY8 = "mc707-start";
-  function startOnOpen() {
-    try {
-      return localStorage.getItem(KEY8) !== "0";
-    } catch (e) {
-      return true;
-    }
-  }
-  var TEMPLATE = [
-    [0, "Intro"],
-    [8, "Build"],
-    [16, "Drop"],
-    [32, "Break"],
-    [40, "Build 2"],
-    [48, "Drop 2"],
-    [56, "Outro"]
-  ];
-  function fresh(template) {
-    pushUndo();
-    const m = S.midiOut;
-    replaceState(newState());
-    S.midiOut = m;
-    if (template) {
-      S.bars = 64;
-      S.markers = TEMPLATE.map(([bar2, name]) => ({ bar: bar2, name }));
-    }
-    UI.sel = null;
-    afterReplaceKeepUndo();
-  }
-  function startOpen(last3 = true) {
-    if ($("#startOv")) return;
-    const has2 = !!last3;
-    const close = () => ov.remove();
-    const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
-    let found = null;
-    const show = (u, asked) => {
-      found = u;
-      upd.classList.toggle("new", !!(u && u.newer));
-      upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
-      updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
-    };
-    const updBtn = el(
-      "button",
-      {
-        type: "button",
-        class: "btn sm",
-        title: "See whether a newer version is out",
-        onclick: async () => {
-          if (found && found.newer) return openLink(found.url);
-          upd.textContent = "Checking…";
-          show(await checkUpdate(true), true);
-        }
-      },
-      "Check for updates"
-    );
-    checkUpdate().then((u) => show(u, false));
-    const card = (icon, title, text2, fn, on3) => el(
-      "button",
-      {
-        type: "button",
-        class: "stCard" + (on3 ? " on" : ""),
-        onclick: () => {
-          close();
-          fn();
-        }
-      },
-      el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
-      el("b", {}, title),
-      el("small", {}, text2)
-    );
-    const ov = el(
-      "div",
-      { id: "startOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Start" },
-      el(
-        "div",
-        { class: "ptBox stBox" },
-        el(
-          "div",
-          { class: "stHead" },
-          el("h2", {}, "MC707 / 101 Toolbox"),
-          el("span", { class: "stVer" }, "Version " + VERSION),
-          upd,
-          updBtn
-        ),
-        el("p", { class: "hint" }, "What would you like to do?"),
-        el(
-          "div",
-          { class: "stGrid" },
-          has2 ? card(
-            "↻",
-            last3 === "menu" ? "Back to this song" : "Load last session",
-            (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
-            () => {
-            },
-            true
-          ) : null,
-          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
-          card(
-            "▤",
-            "Empty template",
-            "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
-            () => fresh(true)
-          ),
-          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
-          card(
-            "▦",
-            "Scene Mode",
-            "Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.",
-            () => setMode("scene")
-          ),
-          card(
-            "◉",
-            "Live Mode",
-            "Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.",
-            () => setMode("live")
-          ),
-          card(
-            "≋",
-            "Synth Mode",
-            "The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.",
-            () => setMode("synth")
-          ),
-          card(
-            "◈",
-            "ZenCore editor",
-            "Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.",
-            /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
-            () => zenOpen(DEVS[DEV].tracks.find((t) => S.tracks[t].type !== "drum") ?? DEVS[DEV].tracks[0], 0)
-          )
-        ),
-        el(
-          "label",
-          { class: "stShow" },
-          el("input", {
-            type: "checkbox",
-            checked: true,
-            onchange: (e) => {
-              try {
-                localStorage.setItem(KEY8, e.target.checked ? "1" : "0");
-              } catch (er) {
-              }
-            }
-          }),
-          " Show this when the app opens (also in File › Start screen)"
-        )
-      )
-    );
-    ov.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
-    });
-    document.body.append(ov);
-    setTimeout(() => {
-      const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
-      if (b) b.focus();
-    }, 30);
-  }
-
   // src/ui/track-setup.js
   var DEF_NAMES = ["Drums 1", "Drums 2", "Drums 3", "Bass", "Chords", "Pad", "Lead", "Pluck"];
   var SHORT2 = {
@@ -62911,6 +63430,575 @@ html.os-darwin.native-menu #menubar .mproj {
         )
       )
     );
+  }
+
+  // src/ui/tutorial.js
+  var DONE = "mc707-tutorial-done";
+  var done2 = /* @__PURE__ */ new Set();
+  try {
+    done2 = new Set(JSON.parse(localStorage.getItem(DONE) || "[]"));
+  } catch (e) {
+  }
+  var saveDone = () => {
+    try {
+      localStorage.setItem(DONE, JSON.stringify([...done2]));
+    } catch (e) {
+    }
+  };
+  var stepOf = (x) => Array.isArray(x) ? { text: x[0], show: x[1] } : { text: x, show: null };
+  var stepKeys = (c) => [...c[3].map((_, i) => c[0] + ":d" + i), ...c[4].map((_, i) => c[0] + ":a" + i)];
+  function showMe(spec, back) {
+    if (spec.mode && document.body.dataset.mode !== spec.mode) setMode(spec.mode);
+    setTimeout(() => {
+      const t = spec.sel ? $(spec.sel) : [...document.querySelectorAll("button")].find((b) => b.offsetParent && b.textContent.trim().includes(spec.text));
+      $("#tutSpot")?.remove();
+      if (!t || !t.offsetParent) return back();
+      t.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = t.getBoundingClientRect();
+      const spot = el(
+        "div",
+        { id: "tutSpot", "aria-live": "polite" },
+        el("div", {
+          class: "tutRing",
+          style: `left:${r.left - 6}px;top:${r.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px`
+        }),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn on tutBack",
+            style: `left:${Math.min(innerWidth - 220, Math.max(8, r.left))}px;top:${r.bottom + 14 > innerHeight - 50 ? r.top - 48 : r.bottom + 14}px`,
+            onclick: () => (spot.remove(), back())
+          },
+          "‹ Back to the tutorial"
+        )
+      );
+      document.body.append(spot);
+      const away = (e) => {
+        if (e.target.closest && e.target.closest(".tutBack")) return;
+        spot.remove();
+        removeEventListener("pointerdown", away, true);
+      };
+      setTimeout(() => addEventListener("pointerdown", away, true), 50);
+      setTimeout(() => spot.remove(), 9e3);
+    }, 250);
+  }
+  var chapters = (dn2) => [
+    [
+      "connect",
+      "Connect",
+      "Every mode starts here: one USB cable carries every track’s notes, the sounds and (if you like) the audio.",
+      [
+        "Use a data USB cable in the " + dn2 + "’s COMPUTER port, then switch it on.",
+        "Open the settings: hold SHIFT and press KNOB ASSIGN (the UTILITY menu), then press the C4 knob for SYSTEM SETTING. Everything below is in there.",
+        "USB Driver (turn C3 to find it, C4 to change it): VENDOR, with Roland’s driver on your computer (Windows 10 and 11 install it themselves when online), or GENERIC. Switch the " + dn2 + " off and on after changing it.",
+        "MIDI tab: MIDI Rx Auto Channel OFF, so each track only hears its own channel.",
+        "Track Channel 1-8: CH1 to CH8 (track 1 on channel 1 … track 8 on channel 8).",
+        "Device ID 17 (the default), for the ZenCore editor."
+      ],
+      [
+        "Open MC-707 › Set up your MC-707 and press Auto-connect MC-707.",
+        "Press Play tracks 1 → 8: each track should sound in turn. If one doesn’t, change its channel there.",
+        "Not showing up? Close other programs using the MIDI port (a DAW, another browser tab), try the other USB driver, then Rescan."
+      ],
+      [["Set up your MC-707…", () => openSetup2()]]
+    ],
+    [
+      "tracks",
+      "Tracks",
+      "The app and the " + dn2 + " must agree on which tracks are drums and which play tones. The app can’t change that on the " + dn2 + ", so you set it once by hand.",
+      [
+        "Each drum track holds a drum kit, each tone track a tone (select the track and choose its sound), unmuted with its level up.",
+        "Easiest: load a project template with the tracks already set up. Copy it to the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it and straight away PROJECT › WRITE it under a new name.",
+        "Clips that hold a sound but no notes work best: the app plays the notes."
+      ],
+      [
+        "Settings › Track setup: pick how many drum and tone tracks you use (3 drums + 5 tones is the default) and what each one is for.",
+        "MC-707 › Project templates says which template matches your Track setup.",
+        "An MC-101: Settings › Device › MC-101 (it also switches by itself when it finds one)."
+      ],
+      [
+        ["Track setup…", () => trackSetupOpen()],
+        ["Project templates…", () => templatesOpen()]
+      ]
+    ],
+    [
+      "song",
+      "Song Mode",
+      "Write a whole song on the timeline and play it on the " + dn2 + " note for note.",
+      [
+        "MIDI Sync: AUTO (or USB) in SYSTEM SETTING, MIDI tab, so the " + dn2 + " follows the app’s tempo.",
+        "RX Start Stop USB: OFF if your clips hold notes of their own and you only want the app’s parts.",
+        "Recording every track’s audio over USB needs nothing more on the " + dn2 + " from system 1.60 on (before that, USB Driver VENDOR): it sends the mix and each track as inputs of their own."
+      ],
+      [
+        "Start from the start screen: Song wizard (a whole song in a style), Empty template, or Blank song.",
+        [
+          "Drag patterns from the library onto the tracks, or + New blank pattern at the top of the library; click a clip to edit it in the step grid or piano roll.",
+          { mode: "song", sel: "#libNew" }
+        ],
+        "Tick Make the MC-707 follow this app (MC-707 › Set up your MC-707) to send clock and start/stop with Play.",
+        ["Space plays. Record audio, or File › Export MIDI, when it’s done.", { mode: "song", sel: "#bPlay" }]
+      ],
+      [["Go to Song Mode", () => setMode("song")]]
+    ],
+    [
+      "scene",
+      "Scene Mode",
+      "Put the song on the " + dn2 + " as clips and a scene chain, so it plays by itself with no computer.",
+      [
+        "System 1.71 or later (the scene chain came in 1.71).",
+        "Call Scene: TYPE2 (SYSTEM SETTING, CTRL tab), so scenes are numbered as in the app.",
+        "Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON (the app can’t switch it).",
+        "After writing: call up the first scene and press PLAY, and save the project on the " + dn2 + " to keep it.",
+        "A track silent on every clip? In its track settings (GENERAL tab) set Sound Source to TRACK, or give each clip its own tone."
+      ],
+      [
+        "Start from a project template that matches your Track setup, written under a new name: use a project you can lose the first time.",
+        [
+          "Make them from the song, or fill the clips board yourself: click an empty clip to choose its pattern.",
+          { mode: "scene", text: "Make them from the song" }
+        ],
+        "Add scenes to the chain: each plays a clip per track for so many bars.",
+        "Write sends what changed (✓ written · ● changed · + not written yet), or turn on Auto-write. ? How it works has the whole list."
+      ],
+      [["Go to Scene Mode", () => setMode("scene")]]
+    ],
+    [
+      "live",
+      "Live Mode",
+      "Play a looping set from 16 pads: scenes, breaks, builds and drops that land on the beat.",
+      [
+        "For the pads: select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON. The pads then work while that track is selected.",
+        "MIDI Sync: AUTO (or USB) if you want the " + dn2 + " to follow the set’s tempo."
+      ],
+      [
+        "Pick a genre when Live Mode opens (Live › Pick a genre changes it).",
+        [
+          "Press ▶ Start Jam. Pads 1–7 are the scenes, pad 8 is Break; the bottom row swaps parts, fills, stutters and builds into a drop.",
+          { mode: "live", sel: "#lvStart" }
+        ],
+        [
+          "Auto-pilot runs the set by itself; Variation and Chaos set how much it changes. 🎲 New patterns brings fresh parts in without stopping.",
+          { mode: "live", sel: "#lvAuto" }
+        ],
+        "Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode)."
+      ],
+      [["Go to Live Mode", () => setMode("live")]]
+    ],
+    [
+      "synth",
+      "Synth Mode",
+      "The " + dn2 + " as an 8-track synth for your DAW: the DAW plays and records it, the app picks, edits and mixes the sounds.",
+      [
+        "Nothing to set from system 1.60 on (before that, USB Driver VENDOR in SYSTEM SETTING): over USB the " + dn2 + " sends the mix and each track as audio inputs of their own.",
+        "Windows: Roland’s driver (Windows 10 and 11 install it themselves when online)."
+      ],
+      [
+        "In the DAW: choose the " + dn2 + " as the audio device, then one MIDI track per " + dn2 + " track on the channel shown on its strip, and one audio track recording each input.",
+        "Windows lets one program use the MIDI port at a time: let the DAW send to a virtual port (loopMIDI) and pick it under Notes in, or use Windows 11’s MIDI Services to share it. Macs share it anyway.",
+        [
+          "Read sounds shows each track’s sound; Expand a track to edit it beside the others.",
+          { mode: "synth", text: "Read sounds" }
+        ]
+      ],
+      [["Go to Synth Mode", () => setMode("synth")]]
+    ],
+    [
+      "zen",
+      "ZenCore editor and Slime Lab",
+      "Edit the sounds inside your " + dn2 + " on a big screen, or shape them the easy way in the Slime Lab.",
+      [
+        "Device ID 17 (the default) and the USB connection from Connect.",
+        "The editor changes the sound in the " + dn2 + "’s memory: save the project on the " + dn2 + " to keep it.",
+        "Optional: the factory tones come from the " + dn2 + "’s system update file (MC707_UPA_up.bin from Roland), read on your computer."
+      ],
+      [
+        [
+          "Open MC-707 › Your MC-707 clips & ZenCore, pick a clip and press Edit ZenCore (or right-click a clip anywhere).",
+          { mode: "song", sel: "#bClips" }
+        ],
+        "With Live on, every change goes to the " + dn2 + " as you make it; play from the editor’s keyboard or the pads.",
+        "Sounds opens the Sound browser: your sounds, starters, factory tones and expansions (Grab from › …).",
+        "Slime Lab (in the editor’s header, tones): start from a sound, turn the five knobs, grow variations, then Fine-tune."
+      ],
+      []
+    ]
+  ];
+  var tutorials = (dn2) => {
+    const ch = chapters(dn2), pages = (c, prefix) => [
+      { c, side: "d", title: (prefix ? c[1] + ": " : "") + "On the " + dn2, steps: c[3], why: c[2] },
+      { c, side: "a", title: (prefix ? c[1] + ": " : "") + "In the app", steps: c[4], acts: c[5] }
+    ].filter((p) => p.steps.length);
+    const setup = ch.filter((c) => c[0] === "connect" || c[0] === "tracks");
+    return [
+      {
+        id: "setup",
+        title: "Basic setup",
+        blurb: "Do this first: connect the " + dn2 + " and match its tracks to the app’s. Every mode needs it.",
+        pages: setup.flatMap((c) => pages(c, true)),
+        keys: setup.flatMap(stepKeys)
+      },
+      ...ch.filter((c) => !setup.includes(c)).map((c) => ({ id: c[0], title: c[1], blurb: c[2], pages: pages(c, false), keys: stepKeys(c) }))
+    ];
+  };
+  var doneOf = (t) => t.keys.filter((k2) => done2.has(k2)).length;
+  function tutorialOpen(at2, page = 0) {
+    if ($("#tutOv")) return;
+    const dn2 = DEVS[DEV].name, list2 = tutorials(dn2);
+    let tut = list2.find((t) => t.id === at2) || null, cur2 = page;
+    const close = () => ov.remove();
+    const head3 = el("div", { class: "cmHead" }), body = el("div", { class: "tutBody", tabindex: "-1" });
+    const open2 = (t, p = 0) => {
+      tut = t;
+      cur2 = Math.max(0, Math.min(t ? t.pages.length - 1 : 0, p));
+      draw2();
+    };
+    const bar2 = (t) => {
+      const n = doneOf(t);
+      return el(
+        "div",
+        { class: "tutProg", title: n + " of " + t.keys.length + " steps done" },
+        el("i", { style: "width:" + Math.round(n / t.keys.length * 100) + "%" }),
+        el("span", {}, n === t.keys.length ? "✓ Done" : n + " of " + t.keys.length + " steps")
+      );
+    };
+    const closeBtn = () => el("button", { type: "button", class: "btn sm on", onclick: close }, "Close");
+    const stepList = (pg) => el(
+      "ol",
+      { class: "tutSteps" },
+      ...pg.steps.map((x, i) => {
+        const st = stepOf(x), k2 = pg.c[0] + ":" + pg.side + i;
+        return el(
+          "li",
+          { class: done2.has(k2) ? "did" : "" },
+          el(
+            "label",
+            { class: "tutStep" },
+            el("input", {
+              type: "checkbox",
+              checked: done2.has(k2),
+              "aria-label": "Done",
+              onchange: (e) => {
+                if (e.target.checked) done2.add(k2);
+                else done2.delete(k2);
+                saveDone();
+                draw2(true);
+              }
+            }),
+            el("span", {}, st.text)
+          ),
+          st.show ? el(
+            "button",
+            {
+              type: "button",
+              class: "tutShow",
+              onclick: () => {
+                const id = tut.id, p = cur2;
+                close();
+                showMe(st.show, () => tutorialOpen(id, p));
+              }
+            },
+            "Show me ›"
+          ) : null
+        );
+      })
+    );
+    function drawHub() {
+      head3.replaceChildren(el("h3", {}, "Tutorials"), closeBtn());
+      const [setup, ...modes] = list2;
+      const card = (t, big) => el(
+        "button",
+        {
+          type: "button",
+          class: "tutCard" + (big ? " big" : "") + (doneOf(t) === t.keys.length ? " ok" : ""),
+          onclick: () => open2(t)
+        },
+        el("b", {}, t.title),
+        el("span", { class: "tutBlurb" }, t.blurb),
+        bar2(t)
+      );
+      body.replaceChildren(
+        el(
+          "p",
+          { class: "tutWhy" },
+          "Short guides to what to set on the " + dn2 + " and in the app. Start with Basic setup, then the mode you want to use."
+        ),
+        card(setup, true),
+        el("h4", { class: "tutSub" }, "Each mode"),
+        el("div", { class: "tutCards" }, ...modes.map((t) => card(t)))
+      );
+    }
+    function drawTut() {
+      const pg = tut.pages[cur2], last3 = cur2 === tut.pages.length - 1, setupLeft = tut.id !== "setup" && doneOf(list2[0]) < list2[0].keys.length;
+      head3.replaceChildren(
+        el("button", { type: "button", class: "btn sm", onclick: () => open2(null) }, "‹ All tutorials"),
+        el("h3", {}, tut.title),
+        bar2(tut),
+        closeBtn()
+      );
+      body.replaceChildren(
+        ...[
+          tut.pages.length > 1 ? el(
+            "nav",
+            { class: "tutPages", "aria-label": "Pages" },
+            ...tut.pages.map(
+              (p, i) => el(
+                "button",
+                {
+                  type: "button",
+                  class: "tutPg" + (i === cur2 ? " on" : ""),
+                  "aria-current": i === cur2 ? "step" : "false",
+                  onclick: () => open2(tut, i)
+                },
+                el(
+                  "span",
+                  { class: "tutN" + (p.steps.every((_, j) => done2.has(p.c[0] + ":" + p.side + j)) ? " ok" : "") },
+                  p.steps.every((_, j) => done2.has(p.c[0] + ":" + p.side + j)) ? "✓" : String(i + 1)
+                ),
+                p.title
+              )
+            )
+          ) : null,
+          setupLeft && cur2 === 0 ? el(
+            "p",
+            { class: "tutNote" },
+            "Haven’t done Basic setup yet? ",
+            el("button", { type: "button", class: "tutShow", onclick: () => open2(list2[0]) }, "Start there ›")
+          ) : null,
+          el("h4", { class: "tutSub" }, pg.title),
+          pg.why ? el("p", { class: "tutWhy" }, pg.why) : null,
+          stepList(pg),
+          pg.acts && pg.acts.length ? el(
+            "div",
+            { class: "tutActs" },
+            ...pg.acts.map(
+              ([label2, fn]) => el("button", { type: "button", class: "btn", onclick: () => (close(), fn()) }, label2)
+            )
+          ) : null,
+          el(
+            "div",
+            { class: "tutFoot" },
+            el(
+              "button",
+              { type: "button", class: "btn", disabled: cur2 === 0, onclick: () => open2(tut, cur2 - 1) },
+              "‹ Back"
+            ),
+            el("span", { class: "hint" }, "Page " + (cur2 + 1) + " of " + tut.pages.length),
+            !last3 ? el(
+              "button",
+              { type: "button", class: "btn on", onclick: () => open2(tut, cur2 + 1) },
+              "Next: " + tut.pages[cur2 + 1].title + " ›"
+            ) : tut.id === "setup" ? el("button", { type: "button", class: "btn on", onclick: () => open2(null) }, "Done: pick a mode ›") : el("button", { type: "button", class: "btn on", onclick: () => open2(null) }, "Done ›")
+          )
+        ].filter(Boolean)
+      );
+    }
+    function draw2(keepScroll) {
+      const top = body.scrollTop;
+      ov.querySelector(".tutBox").classList.toggle("hub", !tut);
+      if (tut) drawTut();
+      else drawHub();
+      body.scrollTop = keepScroll ? top : 0;
+    }
+    const ov = el(
+      "div",
+      {
+        id: "tutOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Tutorials",
+        onclick: (e) => e.target === ov && close(),
+        onkeydown: (e) => {
+          const typing = e.target.tagName === "INPUT";
+          if (e.key === "Escape") e.stopPropagation(), close();
+          else if (!tut || typing) return;
+          else if (e.key === "ArrowRight") open2(tut, cur2 + 1);
+          else if (e.key === "ArrowLeft") open2(tut, cur2 - 1);
+          else if (/^[1-9]$/.test(e.key)) open2(tut, +e.key - 1);
+        }
+      },
+      el("div", { class: "ptBox tutBox" }, head3, body)
+    );
+    document.body.append(ov);
+    draw2();
+    body.focus();
+  }
+
+  // src/ui/start-screen.js
+  var KEY8 = "mc707-start";
+  function startOnOpen() {
+    try {
+      return localStorage.getItem(KEY8) !== "0";
+    } catch (e) {
+      return true;
+    }
+  }
+  var TEMPLATE = [
+    [0, "Intro"],
+    [8, "Build"],
+    [16, "Drop"],
+    [32, "Break"],
+    [40, "Build 2"],
+    [48, "Drop 2"],
+    [56, "Outro"]
+  ];
+  function fresh(template) {
+    pushUndo();
+    const m = S.midiOut;
+    replaceState(newState());
+    S.midiOut = m;
+    if (template) {
+      S.bars = 64;
+      S.markers = TEMPLATE.map(([bar2, name]) => ({ bar: bar2, name }));
+    }
+    UI.sel = null;
+    afterReplaceKeepUndo();
+  }
+  function startOpen(last3 = true) {
+    if ($("#startOv")) return;
+    const has2 = !!last3;
+    const close = () => ov.remove();
+    const upd = el("span", { class: "stUpd", role: "status", "aria-live": "polite" }, "");
+    let found = null;
+    const show = (u, asked) => {
+      found = u;
+      upd.classList.toggle("new", !!(u && u.newer));
+      upd.textContent = !u ? asked ? "Could not reach GitHub to check" : "" : u.newer ? "Version " + u.latest + " is out" : asked ? "Up to date" : "";
+      updBtn.textContent = u && u.newer ? "Get " + u.latest : "Check for updates";
+    };
+    const updBtn = el(
+      "button",
+      {
+        type: "button",
+        class: "btn sm",
+        title: "See whether a newer version is out",
+        onclick: async () => {
+          if (found && found.newer) return openLink(found.url);
+          upd.textContent = "Checking…";
+          show(await checkUpdate(true), true);
+        }
+      },
+      "Check for updates"
+    );
+    checkUpdate().then((u) => show(u, false));
+    const card = (icon, title, text2, fn, on3) => el(
+      "button",
+      {
+        type: "button",
+        class: "stCard" + (on3 ? " on" : ""),
+        onclick: () => {
+          close();
+          fn();
+        }
+      },
+      el("span", { class: "stIcon", "aria-hidden": "true" }, icon),
+      el("b", {}, title),
+      el("small", {}, text2)
+    );
+    const ov = el(
+      "div",
+      { id: "startOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Start" },
+      el(
+        "div",
+        { class: "ptBox stBox" },
+        el(
+          "div",
+          { class: "stHead" },
+          el("h2", {}, "MC707 / 101 Toolbox"),
+          el("span", { class: "stVer" }, "Version " + VERSION),
+          upd,
+          updBtn
+        ),
+        el("p", { class: "hint" }, "What would you like to do?"),
+        el(
+          "div",
+          { class: "stGrid" },
+          has2 ? card(
+            "↻",
+            last3 === "menu" ? "Back to this song" : "Load last session",
+            (PROJ.name || "Your last song") + " · " + (S.clips.length ? S.clips.length + " clips" : "empty") + " at " + Math.round(S.bpm) + " BPM",
+            () => {
+            },
+            true
+          ) : null,
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
+          card(
+            "▤",
+            "Empty template",
+            "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
+            () => fresh(true)
+          ),
+          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
+          card(
+            "▦",
+            "Scene Mode",
+            "Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.",
+            () => setMode("scene")
+          ),
+          card(
+            "◉",
+            "Live Mode",
+            "Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.",
+            () => setMode("live")
+          ),
+          card(
+            "≋",
+            "Synth Mode",
+            "The MC-707 as an 8-track synth for your DAW: pick, edit and mix each track’s sound.",
+            () => setMode("synth")
+          ),
+          card(
+            "◈",
+            "ZenCore editor",
+            "Edit a sound on the MC-707: every parameter, the Sound browser and the factory tones.",
+            /* the first tone track's clip 1; the editor's own Track and Clip menus pick another */
+            () => zenOpen(DEVS[DEV].tracks.find((t) => S.tracks[t].type !== "drum") ?? DEVS[DEV].tracks[0], 0)
+          )
+        ),
+        el(
+          "div",
+          { class: "stTut" },
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              onclick: () => {
+                close();
+                tutorialOpen();
+              }
+            },
+            "📖 Tutorials: basic setup, then each mode"
+          ),
+          el("span", { class: "hint" }, "What to set on the MC-707 and in the app")
+        ),
+        el(
+          "label",
+          { class: "stShow" },
+          el("input", {
+            type: "checkbox",
+            checked: true,
+            onchange: (e) => {
+              try {
+                localStorage.setItem(KEY8, e.target.checked ? "1" : "0");
+              } catch (er) {
+              }
+            }
+          }),
+          " Show this when the app opens (also in File › Start screen)"
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+    document.body.append(ov);
+    setTimeout(() => {
+      const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
+      if (b) b.focus();
+    }, 30);
   }
 
   // src/ui/grabber.js
@@ -64453,7 +65541,7 @@ html.os-darwin.native-menu #menubar .mproj {
           const r = c.on && c.item && resolve(c.item);
           if (r && r.snd.kind !== "kit") jobs.push({ t, k: k2, r });
         });
-      let done2 = 0, extra = 0;
+      let done3 = 0, extra = 0;
       const ran = await writeSession("Filling tones", async (ui) => {
         const tracks3 = /* @__PURE__ */ new Set();
         const lead2 = [...new Set(jobs.map((j) => j.t))];
@@ -64484,7 +65572,7 @@ html.os-darwin.native-menu #menubar .mproj {
           );
           cmFix()[j.t].names[j.k] = j.r.name.slice(0, 16);
           tracks3.add(j.t);
-          done2++;
+          done3++;
         }
         await zxFlush();
         for (const t of tracks3) await reselect(t, 0);
@@ -64493,7 +65581,7 @@ html.os-darwin.native-menu #menubar .mproj {
       scheduleSave();
       close();
       toast(
-        "Sent " + done2 + " sound" + (done2 === 1 ? "" : "s") + (extra ? " (" + extra + " to more clips that hold notes, so none goes quiet)" : "") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
+        "Sent " + done3 + " sound" + (done3 === 1 ? "" : "s") + (extra ? " (" + extra + " to more clips that hold notes, so none goes quiet)" : "") + ". Save the project on the " + DEVS[DEV].name + " to keep them."
       );
     };
     draw2();
@@ -64828,6 +65916,9 @@ html.os-darwin.native-menu #menubar .mproj {
         "",
         [
           ["Shortcuts and tips", go("#bHelp"), "", null, null, "song"],
+          ["Tutorials", () => tutorialOpen()],
+          ["Tutorial: basic setup", () => tutorialOpen("setup")],
+          ["Tutorial: this mode", () => tutorialOpen(document.body.dataset.mode)],
           ["Guide", () => openLink(LINKS.guide)],
           0,
           [
@@ -65776,10 +66867,10 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     }
     const mem = /* @__PURE__ */ new Map(), total = regions.reduce((n, r) => n + r.blocks, 0);
-    let done2 = 0;
+    let done3 = 0;
     for (const r of regions)
-      for (let b = 0; b < r.blocks; b++, done2++) {
-        if (onStep) onStep("Reading " + r.label + " " + hexAddr(r.from + b * BLOCK), done2 / total);
+      for (let b = 0; b < r.blocks; b++, done3++) {
+        if (onStep) onStep("Reading " + r.label + " " + hexAddr(r.from + b * BLOCK), done3 / total);
         const at2 = r.from + b * BLOCK, got = await zxRead(at2, BLOCK, ms, true);
         if (Array.isArray(got)) got.forEach((v, i) => mem.set(at2 + i, v));
       }
@@ -66671,6 +67762,7 @@ html.os-darwin.native-menu #menubar .mproj {
         },
         labPageOf: pageOf
       },
+      melody: { score: melodyScore, clashes: melodyClashes, isTriplet, isDotted },
       seq: {
         clipPacked,
         encode: encodePattern,

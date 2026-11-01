@@ -1095,3 +1095,286 @@
   grid-template-columns: 1fr 1fr;
   gap: 4px 12px;
 }
+
+/* the start screen's way into the tutorial */
+.stTut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* Tutorials (src/ui/tutorial.js): the list of them, and one at a time, page by page */
+.tutBox {
+  width: min(760px, 100%);
+  max-height: min(88vh, 820px);
+  display: flex;
+  flex-direction: column;
+}
+.tutBox .cmHead {
+  gap: 10px;
+}
+.tutBox .cmHead h3 {
+  margin-right: auto;
+}
+.tutBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  margin-top: 12px;
+  padding-right: 4px;
+}
+.tutWhy {
+  margin: 0 0 14px;
+  color: var(--mute);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tutSub {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+.tutProg {
+  position: relative;
+  flex: none;
+  width: 150px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--raise);
+  overflow: hidden;
+  font-size: 12px;
+}
+.tutProg i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--hot);
+  opacity: 0.55;
+  transition: width 0.25s;
+}
+.tutProg span {
+  position: relative;
+  display: block;
+  text-align: center;
+  line-height: 22px;
+  color: var(--ink);
+}
+/* the list */
+.tutCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.tutCard {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.tutCard:hover,
+.tutCard:focus-visible {
+  border-color: var(--hot);
+}
+.tutCard b {
+  font-size: 16px;
+}
+.tutCard.big {
+  width: 100%;
+  border-color: var(--hot);
+  border-width: 2px;
+}
+.tutCard.big b {
+  font-size: 19px;
+}
+.tutCard.ok b::after {
+  content: ' ✓';
+  color: #2e9e5b;
+}
+.tutBlurb {
+  flex: 1;
+  font-weight: 400;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--mute);
+}
+.tutCard .tutProg {
+  width: 100%;
+  height: 18px;
+}
+.tutCard .tutProg span {
+  line-height: 18px;
+}
+/* one tutorial: its pages */
+.tutPages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tutPg {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 18px;
+  background: var(--raise);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.tutPg:hover,
+.tutPg:focus-visible {
+  outline: 1px solid var(--hot);
+}
+.tutPg.on {
+  background: var(--hot);
+  color: #fff;
+}
+.tutN {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--panel);
+  color: var(--ink);
+}
+.tutPg.on .tutN {
+  background: #fff;
+  color: var(--hot);
+}
+.tutN.ok {
+  background: #2e9e5b;
+  color: #fff;
+}
+.tutPg.on .tutN.ok {
+  background: #fff;
+  color: #2e9e5b;
+}
+.tutNote {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--raise);
+  font-size: 14px;
+}
+.tutSteps {
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  display: grid;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tutSteps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 10px;
+}
+.tutStep {
+  flex: 1 1 260px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.tutStep input {
+  margin-top: 3px;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: #2e9e5b;
+}
+.tutSteps li.did .tutStep span {
+  color: var(--mute);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--mute) 60%, transparent);
+}
+.tutShow {
+  all: unset;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hot);
+}
+.tutSteps .tutShow {
+  margin-left: 24px;
+}
+.tutShow:hover,
+.tutShow:focus-visible {
+  text-decoration: underline;
+}
+.tutActs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.tutFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+/* Show me: a ring round the control, the rest dimmed, and the way back */
+#tutSpot {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+}
+.tutRing {
+  position: fixed;
+  border: 3px solid var(--hot);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  animation: tutPulse 1.2s ease-in-out infinite;
+}
+.tutBack {
+  position: fixed;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+@keyframes tutPulse {
+  50% {
+    border-color: #fff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutRing {
+    animation: none;
+  }
+}
+@media (max-width: 700px) {
+  .tutBox .cmHead {
+    flex-wrap: wrap;
+  }
+  .tutBox .cmHead .tutProg {
+    order: 9;
+    width: 100%;
+  }
+}

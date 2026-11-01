@@ -9,6 +9,8 @@ import { addHarmonyPack } from './harmony-pack.js';
 import { addMelodicPack } from './melodic-pack.js';
 import { BB_GENRE, addBigBeatPack } from './bigbeat-pack.js';
 import { addFillPack } from './fill-pack.js';
+import { addLeadPack } from './lead-pack.js';
+import { melodyClashes, melodyFeelOk, melodyFitReset } from './melody-fit.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
@@ -43,7 +45,9 @@ export function finishLibrary(styles) {
   addBigBeatPack();
   addMelodicPack(BB_GENRE);
   addFillPack();
+  addLeadPack();
   for (let i = n; i < FAC.length; i++) FACMAP.set(FAC[i].id, FAC[i]);
+  melodyFitReset();
   for (const k in LV_POOLCACHE) delete LV_POOLCACHE[k];
   /* styles whose patterns only arrive with the packs (Big Beat) build their full kits now */
   for (const k in FULLKITS) if (!FULLKITS[k].length) delete FULLKITS[k];
@@ -133,7 +137,17 @@ export function lvPool(st, pool) {
       /* harmony-pack patterns with the busier chord timings are for picking by hand, not for auto-picks */
       !f.busy
   ).map(f => f.id);
-  return (LV_POOLCACHE[key] = [...new Set([...hand, ...lib])].filter(id => facById(id)));
+  let ids = [...new Set([...hand, ...lib])].filter(id => facById(id));
+  /* leads and plucks: none that clash with their chords or run in triplets across a straight beat (they stay
+     in the library to pick by hand); if that would leave none, keep them all */
+  if (pool === 'lead' || pool === 'pluck') {
+    const ok = ids.filter(id => {
+      const f = facById(id);
+      return !melodyClashes(f) && melodyFeelOk(f, st.id);
+    });
+    if (ok.length) ids = ok;
+  }
+  return (LV_POOLCACHE[key] = ids);
 }
 /* How lively a pattern is (0-1): note density, syncopation, pitch variety; drums: density and ghost notes. */
 export function lvLively(f) {

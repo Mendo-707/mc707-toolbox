@@ -149,6 +149,7 @@ import { startOnOpen, startOpen } from './ui/start-screen.js';
 import { projTitle } from './ui/projects.js';
 import { ZE, zeSendAll, zenOpen } from './zen/zc-editor.js';
 import { pageOf } from './zen/zc-lab-fine.js';
+import { isDotted, isTriplet, melodyClashes, melodyScore } from './library/melody-fit.js';
 import {
   clipNotesToMine,
   clipPacked,
@@ -290,6 +291,7 @@ PROJ.t = projTitle;
       },
       labPageOf: pageOf
     },
+    melody: { score: melodyScore, clashes: melodyClashes, isTriplet, isDotted },
     seq: {
       clipPacked,
       encode: encodePattern,
