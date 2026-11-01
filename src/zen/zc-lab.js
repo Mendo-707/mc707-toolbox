@@ -9,7 +9,8 @@
 //              (zc-lab-bench.js); the Learn side explains whatever you touch.
 //   Fine-tune  the real settings behind it all, a few to a page, and Morph (zc-lab-fine.js).
 // Taste keys play the tone on the MC-707 (changes go to it as they are made when the editor is live), and
-// Before plays the tone as it was when the lab opened. Every change is one undo step in the editor.
+// Before plays the tone as it was when the lab opened. Every change is one undo step in the editor. Save
+// (Ctrl+S) names the tone and keeps it in My sounds, in the Sound browser.
 //
 // Reads and changes: ZE.snd (through zeBrew and the editor's ctx). Owns: LAB (the lab's state),
 // localStorage 'mc707-lab' (blends made, Show me how, the side and page shown).
@@ -23,6 +24,8 @@ import { KNOBS, knob, knobEl, knobWord } from './zc-lab-knobs.js';
 import { scopeDraw, scopeEl, scopeStale } from './zc-lab-scope.js';
 import { morphBox, varsBox, varsForget } from './zc-lab-bench.js';
 import { FINE_PAGES, fineBox, pageName, pageOf } from './zc-lab-fine.js';
+import { soundAdd, soundsLoad } from './zc-sounds.js';
+import { DEV, DEVS } from '../core/device.js';
 
 const LAB = {
   log: [],
@@ -257,6 +260,7 @@ function headEl() {
       btn('Redo', redo, 'Put it back (Ctrl+Shift+Z)'),
       before,
       btn('Start over', startOver, 'Back to the tone as it was when the lab opened'),
+      btn('Save…', saveOpen, 'Name the tone and keep it in My sounds (Ctrl+S)'),
       btn('Back to editor', () => labClose(), 'Back to the editor (Esc)', true)
     )
   );
@@ -826,6 +830,56 @@ function finish(r) {
   runSteps(r, g.i);
 }
 
+/* ---- saving: the tone takes the name (on the MC-707 too, when live) and goes into My sounds ---- */
+function saveOpen() {
+  if ($('#labSave')) return $('#labSave input').focus();
+  const at = [...document.querySelectorAll('#labOv .labTools button')].find(b => b.textContent === 'Save…');
+  const name = el('input', {
+    type: 'text',
+    maxlength: 16,
+    value: (ZE.snd.v['CMN.NAME'] || '').trim(),
+    placeholder: 'Name (up to 16 letters)',
+    'aria-label': 'Name'
+  });
+  const shut = () => box.remove();
+  const go = async () => {
+    const n = name.value.trim() || 'My Tone';
+    shut();
+    if (n !== (ZE.snd.v['CMN.NAME'] || '').trim()) {
+      const c = zeCtx();
+      c.set('CMN.NAME', n, true);
+      after();
+    }
+    await soundsLoad();
+    const e = await soundAdd(ZE.snd, { name: n, src: 'mine', mine: true });
+    toast(e ? 'Saved ' + n + ' to My sounds' : n + ' is already in My sounds, just as it is');
+  };
+  const box = el(
+    'div',
+    {
+      id: 'labSave',
+      class: 'labSave',
+      onkeydown: e => {
+        if (e.key === 'Enter') (e.preventDefault(), e.stopPropagation(), go());
+        else if (e.key === 'Escape') (e.preventDefault(), e.stopPropagation(), shut());
+      }
+    },
+    el('b', {}, 'Save this tone'),
+    name,
+    el(
+      'p',
+      { class: 'hint' },
+      'It goes into My sounds (the Sound browser), to use on any track or song. To keep it in this project on the ' +
+        DEVS[DEV].name +
+        ' too, save the project there.'
+    ),
+    el('div', { class: 'labSaveBtns' }, btn('Cancel', shut), btn('Save', go, 'Save to My sounds', true))
+  );
+  (at ? at.parentElement : $('#labOv')).append(box);
+  name.focus();
+  name.select();
+}
+
 /* ---- keys ---- */
 function onKey(e) {
   if (!$('#labOv')) return removeEventListener('keydown', onKey, true);
@@ -836,7 +890,11 @@ function onKey(e) {
   const stop = () => (e.stopPropagation(), e.preventDefault());
   if (e.key === 'Escape') {
     stop();
-    labClose();
+    if ($('#labSave')) $('#labSave').remove();
+    else labClose();
+  } else if ((e.ctrlKey || e.metaKey) && k === 's') {
+    stop();
+    saveOpen();
   } else if ((e.ctrlKey || e.metaKey) && k === 'z') {
     if (typing) return;
     stop();

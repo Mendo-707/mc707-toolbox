@@ -7621,6 +7621,39 @@ body[data-mode='synth'] #synth {
 #labOv .lfPage canvas {
   max-width: 100%;
 }
+/* Save: a little box under the lab's tools */
+.labTools {
+  position: relative;
+}
+.labSave {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(320px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--zc-line, var(--line));
+  border-radius: 10px;
+  background: var(--zc-panel, var(--panel));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.labSave input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.labSave .hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.labSaveBtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
 </style>
     <style>
 /* The mixers (song/song-mixer.js, live/live-mixer.js, services/mixer-strip.js) and the tool windows
@@ -42604,6 +42637,7 @@ html.os-darwin.native-menu #menubar .mproj {
         btn("Redo", redo2, "Put it back (Ctrl+Shift+Z)"),
         before,
         btn("Start over", startOver, "Back to the tone as it was when the lab opened"),
+        btn("Save…", saveOpen, "Name the tone and keep it in My sounds (Ctrl+S)"),
         btn("Back to editor", () => labClose(), "Back to the editor (Esc)", true)
       )
     );
@@ -43117,6 +43151,52 @@ html.os-darwin.native-menu #menubar .mproj {
     drawLearn();
     runSteps(r, g.i);
   }
+  function saveOpen() {
+    if ($("#labSave")) return $("#labSave input").focus();
+    const at2 = [...document.querySelectorAll("#labOv .labTools button")].find((b) => b.textContent === "Save…");
+    const name = el("input", {
+      type: "text",
+      maxlength: 16,
+      value: (ZE.snd.v["CMN.NAME"] || "").trim(),
+      placeholder: "Name (up to 16 letters)",
+      "aria-label": "Name"
+    });
+    const shut = () => box.remove();
+    const go = async () => {
+      const n = name.value.trim() || "My Tone";
+      shut();
+      if (n !== (ZE.snd.v["CMN.NAME"] || "").trim()) {
+        const c = zeCtx();
+        c.set("CMN.NAME", n, true);
+        after();
+      }
+      await soundsLoad();
+      const e = await soundAdd(ZE.snd, { name: n, src: "mine", mine: true });
+      toast(e ? "Saved " + n + " to My sounds" : n + " is already in My sounds, just as it is");
+    };
+    const box = el(
+      "div",
+      {
+        id: "labSave",
+        class: "labSave",
+        onkeydown: (e) => {
+          if (e.key === "Enter") e.preventDefault(), e.stopPropagation(), go();
+          else if (e.key === "Escape") e.preventDefault(), e.stopPropagation(), shut();
+        }
+      },
+      el("b", {}, "Save this tone"),
+      name,
+      el(
+        "p",
+        { class: "hint" },
+        "It goes into My sounds (the Sound browser), to use on any track or song. To keep it in this project on the " + DEVS[DEV].name + " too, save the project there."
+      ),
+      el("div", { class: "labSaveBtns" }, btn("Cancel", shut), btn("Save", go, "Save to My sounds", true))
+    );
+    (at2 ? at2.parentElement : $("#labOv")).append(box);
+    name.focus();
+    name.select();
+  }
   function onKey(e) {
     if (!$("#labOv")) return removeEventListener("keydown", onKey, true);
     const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== "range" && e.target.type !== "checkbox";
@@ -43124,7 +43204,11 @@ html.os-darwin.native-menu #menubar .mproj {
     const stop = () => (e.stopPropagation(), e.preventDefault());
     if (e.key === "Escape") {
       stop();
-      labClose();
+      if ($("#labSave")) $("#labSave").remove();
+      else labClose();
+    } else if ((e.ctrlKey || e.metaKey) && k2 === "s") {
+      stop();
+      saveOpen();
     } else if ((e.ctrlKey || e.metaKey) && k2 === "z") {
       if (typing) return;
       stop();

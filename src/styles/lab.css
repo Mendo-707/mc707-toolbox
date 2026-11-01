@@ -855,3 +855,36 @@
 #labOv .lfPage canvas {
   max-width: 100%;
 }
+/* Save: a little box under the lab's tools */
+.labTools {
+  position: relative;
+}
+.labSave {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(320px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--zc-line, var(--line));
+  border-radius: 10px;
+  background: var(--zc-panel, var(--panel));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.labSave input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.labSave .hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.labSaveBtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
