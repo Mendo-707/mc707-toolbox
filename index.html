@@ -2503,6 +2503,33 @@ input[type='range'] {
     width: 100%;
   }
 }
+
+/* File › Recover a backup (src/ui/backups.js) */
+.bkList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 40vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+}
+.bkRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.bkRow:hover {
+  background: var(--raise);
+}
+.bkRow small {
+  color: var(--mute);
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -10599,18 +10626,25 @@ html.os-darwin.native-menu #menubar .mproj {
   var APP_NAME = HOST ? { darwin: "Mac app", linux: "Linux app" }[HOST.platform] || "Windows app" : null;
   var PROJ = { name: "", path: "", dirty: false, t: null };
   var saveT = 0;
+  var BACKUP = { hold: false };
   function scheduleSave() {
     PROJ.dirty = true;
     if (PROJ.t) PROJ.t();
     clearTimeout(saveT);
     saveT = setTimeout(() => {
+      const text2 = JSON.stringify(S);
+      const backed = !!(HOST && HOST.backupWrite);
+      if (backed && !BACKUP.hold) HOST.backupWrite(text2).catch(() => {
+      });
       try {
-        localStorage.setItem(STORE, JSON.stringify(S));
+        localStorage.setItem(STORE, text2);
         scheduleSave.warned = false;
       } catch (e) {
         if (!scheduleSave.warned) {
           scheduleSave.warned = true;
-          toast("Autosave failed: storage is full. Use File > Save to keep your work.");
+          toast(
+            backed ? "The app’s own storage is full, but your song is still backed up (File › Recover a backup). File › Save keeps it in a file of your own." : "Autosave failed: storage is full. Use File > Save to keep your work."
+          );
         }
       }
     }, 400);
@@ -53291,7 +53325,7 @@ html.os-darwin.native-menu #menubar .mproj {
         )
       )
     );
-    const when = [
+    const when2 = [
       ["now", "Now", "Straight away"],
       ["beat", "Beat", "On the next beat"],
       ["bar", "Bar", "On the next bar"]
@@ -53397,7 +53431,7 @@ html.os-darwin.native-menu #menubar .mproj {
               c.muteMode = v;
             }
           ),
-          seg("They land", c.muteWhen, when, (v) => {
+          seg("They land", c.muteWhen, when2, (v) => {
             c.muteWhen = v;
           })
         ),
@@ -53427,7 +53461,7 @@ html.os-darwin.native-menu #menubar .mproj {
               c.trHold = !!v;
             }
           ),
-          seg("They land", c.trWhen, when, (v) => {
+          seg("They land", c.trWhen, when2, (v) => {
             c.trWhen = v;
           })
         ),
@@ -64414,7 +64448,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     );
     const playing2 = TR.playing && (TR.mode === "song" || TR.mode === "live"), live3 = document.body.dataset.mode === "live";
-    const when = playing2 ? "from the next bar" : live3 ? "starting the set" : "from bar " + (Math.floor(S.cursor) + 1);
+    const when2 = playing2 ? "from the next bar" : live3 ? "starting the set" : "from bar " + (Math.floor(S.cursor) + 1);
     p.append(
       el(
         "div",
@@ -64438,7 +64472,7 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "button",
         { class: "btn grabGo" + (GRAB.on ? " on" : ""), onclick: grabStart },
-        GRAB.on ? "■ Stop grabbing" : "● Grab " + GRAB.bars + (GRAB.bars === 1 ? " bar " : " bars ") + when
+        GRAB.on ? "■ Stop grabbing" : "● Grab " + GRAB.bars + (GRAB.bars === 1 ? " bar " : " bars ") + when2
       ),
       el(
         "p",
@@ -64704,6 +64738,89 @@ html.os-darwin.native-menu #menubar .mproj {
     document.body.append(back);
     addEventListener("keydown", kd, true);
     back.querySelector(".abFoot button").focus();
+  }
+
+  // src/ui/backups.js
+  var when = (at2) => new Date(at2).toLocaleString(void 0, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  var backupsOn = () => !!(HOST && HOST.backupList);
+  async function restore(b) {
+    try {
+      const text2 = await HOST.backupRead(b.name);
+      if (projLoadText(text2, "Recovered song", ""))
+        toast("Brought back the song from " + when(b.at) + ". Undo takes it back.");
+    } catch (e) {
+      toast("Could not read that backup");
+    }
+  }
+  async function backupsOpen() {
+    if (!backupsOn()) return toast("Backups are kept by the desktop app");
+    let list2 = [];
+    try {
+      list2 = await HOST.backupList();
+    } catch (e) {
+    }
+    if (!list2.length) return toast("No backups yet: they start with your next change");
+    let pick3 = list2[0];
+    const rows2 = el(
+      "div",
+      { class: "bkList", role: "listbox", "aria-label": "Backups" },
+      ...list2.map(
+        (b, i) => el(
+          "label",
+          { class: "bkRow" },
+          el("input", { type: "radio", name: "bk", checked: i === 0, onchange: () => pick3 = b }),
+          el("span", {}, b.name === "latest.json" ? "Latest autosave" : "Saved copy"),
+          el("small", {}, when(b.at) + " · " + Math.max(1, Math.round(b.size / 1024)) + " KB")
+        )
+      )
+    );
+    const body = el(
+      "div",
+      {},
+      rows2,
+      el(
+        "button",
+        { type: "button", class: "btn sm", style: "margin-top:8px", onclick: () => HOST.backupFolder().catch(() => {
+        }) },
+        "Open the backups folder"
+      )
+    );
+    const ok = await askDlg({
+      title: "Recover a backup",
+      text: "The app backs up your song as you work. Bring one back to replace the song open now (Undo takes you back).",
+      body,
+      ok: "Bring it back"
+    });
+    if (ok) await restore(pick3);
+  }
+  async function backupsOffer() {
+    if (!backupsOn()) return;
+    let list2 = [];
+    try {
+      list2 = await HOST.backupList();
+    } catch (e) {
+    }
+    const b = list2[0];
+    if (!b) return backupsResume();
+    const ok = await askDlg({
+      title: "Bring back your last song?",
+      text: "The song you were working on did not load, but the app has a backup of it from " + when(b.at) + ".",
+      ok: "Bring it back",
+      cancel: "Start fresh"
+    });
+    if (ok) await restore(b);
+    backupsResume();
+  }
+  function backupsResume() {
+    if (!BACKUP.hold) return;
+    BACKUP.hold = false;
+    scheduleSave();
   }
 
   // src/core/mpj.js
@@ -65821,6 +65938,7 @@ html.os-darwin.native-menu #menubar .mproj {
           "recent",
           ["Save", projSave, "Ctrl+S"],
           ["Save as…", projSaveAs, "Ctrl+Shift+S"],
+          ...backupsOn() ? [["Recover a backup…", backupsOpen]] : [],
           0,
           ["Start screen…", () => startOpen("menu")],
           ["Saved songs (quick slots)…", go("#bFile")],
@@ -67815,7 +67933,11 @@ html.os-darwin.native-menu #menubar .mproj {
     finishLibrary(STYLES);
     const saved = loadSaved();
     if (saved) replaceState(saved);
-    else makeDemo();
+    else {
+      BACKUP.hold = !!(HOST && HOST.backupList);
+      makeDemo();
+      setTimeout(backupsOffer, 1500);
+    }
     addEventListener("pagehide", () => {
       try {
         stopAll();
@@ -67890,6 +68012,8 @@ html.os-darwin.native-menu #menubar .mproj {
       get S() {
         return S;
       },
+      autosave: scheduleSave,
+      undoSong: undo,
       get LV() {
         return LV;
       },

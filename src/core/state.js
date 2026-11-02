@@ -143,19 +143,30 @@ export const BUSY = { write: '' };
 export const APP_NAME = HOST ? { darwin: 'Mac app', linux: 'Linux app' }[HOST.platform] || 'Windows app' : null;
 export const PROJ = { name: '', path: '', dirty: false, t: null };
 let saveT = 0;
+/** hold: no backup files written (as the app starts with no song it could load, until the latest backup has
+ * been offered back, so the demo song does not take its place). */
+export const BACKUP = { hold: false };
 /** Autosave soon (debounced), and mark the project as changed. Call after changing the song. */
 export function scheduleSave() {
   PROJ.dirty = true;
   if (PROJ.t) PROJ.t();
   clearTimeout(saveT);
   saveT = setTimeout(() => {
+    const text = JSON.stringify(S);
+    /* the desktop app also keeps a backup file, with no size limit (File › Recover a backup) */
+    const backed = !!(HOST && HOST.backupWrite);
+    if (backed && !BACKUP.hold) HOST.backupWrite(text).catch(() => {});
     try {
-      localStorage.setItem(STORE, JSON.stringify(S));
+      localStorage.setItem(STORE, text);
       scheduleSave.warned = false;
     } catch (e) {
       if (!scheduleSave.warned) {
         scheduleSave.warned = true;
-        toast('Autosave failed: storage is full. Use File > Save to keep your work.');
+        toast(
+          backed
+            ? 'The app’s own storage is full, but your song is still backed up (File › Recover a backup). File › Save keeps it in a file of your own.'
+            : 'Autosave failed: storage is full. Use File > Save to keep your work.'
+        );
       }
     }
   }, 400);

@@ -216,7 +216,46 @@ ipcMain.handle('open-dialog', async () => {
   return { path: p, name: path.basename(p), text: fs.readFileSync(p, 'utf8') };
 });
 ipcMain.handle('read-file', async (_e, p) => ({ path: p, name: path.basename(p), text: fs.readFileSync(p, 'utf8') }));
-ipcMain.handle('write-file', async (_e, p, text) => { fs.writeFileSync(p, text, 'utf8'); return true; });
+/* written whole or not at all: to a temporary file first, then swapped in, the previous version kept as .bak,
+   so a crash or a full disk mid-save never leaves a half-written project */
+function writeSafe(p, text, bak = true) {
+  const tmp = p + '.tmp';
+  fs.writeFileSync(tmp, text, 'utf8');
+  try { if (bak && fs.existsSync(p)) fs.copyFileSync(p, p + '.bak'); } catch (e) {}
+  fs.renameSync(tmp, p);
+}
+ipcMain.handle('write-file', async (_e, p, text) => { writeSafe(p, text); return true; });
+
+/* Backups of the song, beside the browser's own autosave (which has a size limit and goes if the app's data
+   is cleared): latest.json on every autosave, and a dated copy at most every ten minutes, the newest 30 kept.
+   File › Recover a backup lists them, and a song that will not load at start is offered back from them. */
+const BACKUPS = () => { const d = path.join(app.getPath('userData'), 'Backups'); fs.mkdirSync(d, { recursive: true }); return d; };
+let lastSnap = 0;
+ipcMain.handle('backup-write', async (_e, text) => {
+  const dir = BACKUPS();
+  writeSafe(path.join(dir, 'latest.json'), text, false);
+  if (Date.now() - lastSnap > 10 * 60 * 1000) {
+    lastSnap = Date.now();
+    const d = new Date(), z = n => String(n).padStart(2, '0');
+    const name = `song-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.json`;
+    writeSafe(path.join(dir, name), text, false);
+    const old = fs.readdirSync(dir).filter(f => /^song-.*\.json$/.test(f)).sort().reverse().slice(30);
+    for (const f of old) try { fs.unlinkSync(path.join(dir, f)); } catch (e) {}
+  }
+  return true;
+});
+ipcMain.handle('backup-list', async () => {
+  const dir = BACKUPS();
+  return fs.readdirSync(dir).filter(f => /^(latest|song-.*)\.json$/.test(f)).map(f => {
+    const st = fs.statSync(path.join(dir, f));
+    return { name: f, at: st.mtimeMs, size: st.size };
+  }).sort((a, b) => b.at - a.at);
+});
+ipcMain.handle('backup-read', async (_e, name) => {
+  if (!/^(latest|song-[\d_-]+)\.json$/.test(String(name))) throw new Error('not a backup');
+  return fs.readFileSync(path.join(BACKUPS(), name), 'utf8');
+});
+ipcMain.handle('backup-folder', async () => { const d = BACKUPS(); await shell.openPath(d); return d; });
 ipcMain.handle('open-folder', async (_e, kind) => {
   const dir = folderFor(kind);
   const err = await shell.openPath(dir);

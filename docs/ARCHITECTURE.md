@@ -390,6 +390,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | Module | What it does | Owns |
 | --- | --- | --- |
 | `ui/about.js` | Help › About: the app's name and version, what it is, the licence and the people whose work it builds on, which device it is set for and whether it can reach it, and links to the guide, releases and problem reports. |  |
+| `ui/backups.js` | Song backups in the desktop app: every autosave also goes to a backup file (core/state.js scheduleSave), with a dated copy at most every ten minutes (main.js keeps the newest 30). File › Recover a backup lists them, newest first, to bring one back (an undo step: Undo takes you back to the song you had). When the saved song will not load as the app starts (the app's data cleared, or a crash mid-write), the latest backup is offered back. |  |
 | `ui/context-menus.js` | Right-click menus for the transport, Play pattern, the sample grabber and the clips screen, and the one listener that opens them. |  |
 | `ui/controls.js` | The Song Mode toolbar and keyboard shortcuts, and redrawing everything after big changes (renderAll). |  |
 | `ui/desktop.js` | The desktop app's native feel: classes on <html> for its look (desktop.css: no text selection on the controls, no bounce, no web cursors, the top bar as the window's title bar), the page's colours sent to the title bar's buttons, and on a Mac the app's menus in the Mac's own menu bar. |  |

@@ -26,6 +26,7 @@ import { synthAct, synthViewOpen, synthViewSet } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
 import { templatesOpen } from './templates.js';
 import { tutorialOpen } from './tutorial.js';
+import { backupsOn, backupsOpen } from './backups.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
 import { mpjPick } from './mpj-open.js';
@@ -84,6 +85,7 @@ function initMenubar() {
         'recent',
         ['Save', projSave, 'Ctrl+S'],
         ['Save as…', projSaveAs, 'Ctrl+Shift+S'],
+        ...(backupsOn() ? [['Recover a backup…', backupsOpen]] : []),
         0,
         ['Start screen…', () => startOpen('menu')],
         ['Saved songs (quick slots)…', go('#bFile')],
