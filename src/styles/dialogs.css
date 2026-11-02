@@ -1378,3 +1378,30 @@
     width: 100%;
   }
 }
+
+/* File › Recover a backup (src/ui/backups.js) */
+.bkList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 40vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+}
+.bkRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.bkRow:hover {
+  background: var(--raise);
+}
+.bkRow small {
+  color: var(--mute);
+}

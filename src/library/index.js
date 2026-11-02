@@ -13,6 +13,7 @@ import './groove-pack.js';
 import './acid.js';
 import { FAC } from './factory.js';
 import { userById } from './user-lib.js';
+import { demoClips } from './demo-song.js';
 import { S, addPattern, newState, replaceState } from '../core/state.js';
 
 /* Punk and rock were taken out in 1.2: their patterns leave the library. Every other pattern keeps its id. */
@@ -31,27 +32,17 @@ export function instFactory(f) {
     role: f.role
   });
 }
-/** Replace the song with the demo arrangement (174 BPM drum and bass in F minor). */
+/** Replace the song with the demo: its clips spell MC 707 / 101 TOOLBOX (library/demo-song.js), 124 BPM house in F minor. */
 export function makeDemo() {
   replaceState(newState());
-  S.bpm = 174;
-  S.loop = { on: true, start: 0, end: 8 };
+  const { clips, bars } = demoClips();
+  S.bpm = 124;
   S.key = 5;
   S.scale = 'minor';
-  const put = (t, start, len, fid) => {
-    const pid = instFactory(FAC.find(x => x.id === fid));
-    S.clips.push({ id: 'c' + S.nextId++, t, start, len, off: 0, pat: pid });
-  };
-  put(0, 0, 7, 'dnb-twostep');
-  put(0, 7, 1, 'dnb-fill');
-  put(0, 8, 8, 'dnb-neuro');
-  put(3, 0, 8, 'dnb-sub');
-  put(3, 8, 8, 'dnb-reese');
-  put(4, 4, 4, 'dnb-stabs');
-  put(4, 8, 8, 'dnb-liquid-ch');
-  put(5, 0, 8, 'dnb-pad');
-  put(6, 12, 4, 'dnb-arp');
-  put(7, 8, 8, 'dnb-pluck');
+  S.bars = Math.ceil(bars / 8) * 8;
+  S.loop = { on: true, start: 0, end: bars };
+  for (const [t, start, len, f] of clips)
+    S.clips.push({ id: 'c' + S.nextId++, t, start, len, off: 0, pat: instFactory(f) });
 }
 /** The pattern behind a library or drag source {kind: 'fac'|'user'|'proj', id}. */
 export const metaOf = src =>

@@ -107,7 +107,14 @@ export async function openApp(o = {}) {
   const errors = [];
   page.on('pageerror', e => errors.push(String((e && e.message) || e)));
   await page.addInitScript(MIDI_MOCK + SEEDED_RANDOM);
-  const storage = { 'mc707-awake': '0', 'mc707-start': '0', 'mc707-live-pick': '0', ...(o.storage || {}) };
+  /* connecting by itself is off, so each test connects when it means to (autoconnect.test.mjs turns it on) */
+  const storage = {
+    'mc707-awake': '0',
+    'mc707-start': '0',
+    'mc707-live-pick': '0',
+    'mc707-autoconnect': '0',
+    ...(o.storage || {})
+  };
   await page.addInitScript(s => {
     try {
       if (!sessionStorage.getItem('__seeded')) {

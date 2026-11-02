@@ -125,7 +125,10 @@ export function refreshIns() {
   const pick = ins.find(i => i.id === S.midiIn) || mcFind(ins);
   if (pick) {
     sel.value = pick.id;
-    if (!MIDI.inp || MIDI.inp.id !== pick.id) setMidiIn(pick.id);
+    /* a port that was unplugged and came back is listened to again (a fresh connection) */
+    const back = MIDI.inLost && pick.state === 'connected';
+    if (!MIDI.inp || MIDI.inp.id !== pick.id || back) setMidiIn(pick.id);
+    MIDI.inLost = pick.state === 'disconnected';
   } else sel.value = '';
   if (LV.ctl && LV.ctl.map && typeof ctlAttach === 'function') ctlAttach();
 }

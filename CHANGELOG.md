@@ -2,6 +2,10 @@
 
 Every release of MC707 / 101 Toolbox (called MC-707 Toolbox before 1.7), newest first.
 
+## New in 1.8
+
+- **1.8.0: Connects by itself, safer saving, and new moves for Live Mode**: the app connects to the MC-707 or MC-101 by itself as it opens or when it is plugged in (notes, pads and keys, clock and the ZenCore editor; Settings › Connect to the MC-707 by itself turns it off). The desktop app keeps backup copies of your song as you work (File › Recover a backup, and offered back if a song ever fails to load), and File › Save writes the whole file or nothing, keeping the previous version as a .bak. When the MC-707 drops off USB and comes back, Song and Synth Mode send their mix again, an MC-707 following the clock picks up in step, and its pads and keys work again. Live Mode has three new breaks, Tape stop, Vinyl brake and Spinback, and ● Record riff: play 1, 2 or 4 bars on a keyboard or the MC-707's keys and it loops as that track's part, exactly as played. The demo song's clips spell MC 707 / 101 TOOLBOX.
+
 ## New in 1.7
 
 - **1.7.2: Save your tone in the Slime Lab**: **Save…** in the lab's top bar (or Ctrl+S) names the tone and keeps it in My sounds, in the Sound browser, to use on any track or song; when the editor is live the tone takes the name on the MC-707 too. The Mac apps build reliably again.

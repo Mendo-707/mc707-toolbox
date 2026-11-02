@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('toolbox', {
   openDialog: () => ipcRenderer.invoke('open-dialog'),
   readFile: (p) => ipcRenderer.invoke('read-file', p),
   writeFile: (p, text) => ipcRenderer.invoke('write-file', p, text),
+  // backups of the song beside the autosave: written on every autosave, listed and read back to recover
+  backupWrite: (text) => ipcRenderer.invoke('backup-write', text),
+  backupList: () => ipcRenderer.invoke('backup-list'),
+  backupRead: (name) => ipcRenderer.invoke('backup-read', name),
+  backupFolder: () => ipcRenderer.invoke('backup-folder'),
   openFolder: (kind) => ipcRenderer.invoke('open-folder', kind),
   chooseFolder: (kind) => ipcRenderer.invoke('choose-folder', kind),
   saveRecording: (files, sub) => ipcRenderer.invoke('save-recording', files, sub),

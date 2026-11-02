@@ -22,8 +22,9 @@ import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } fro
 import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
-import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
+import { LV_BENDS, LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick, lvTapeAt, lvTapeBend } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
+import { RIFF, riffTick } from './riff.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -549,6 +550,7 @@ export function liveTick(tick, nt, td) {
   lvFadeTick(tick, nt);
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
   if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
+  if (RIFF.state !== 'off') riffTick(tick);
   if (tick % 32 === 0) lvBarSnap(tick);
   if (LV.flash && tick >= LV.flash.end) {
     const fe = LV.flash.end;
@@ -627,12 +629,18 @@ export function liveTick(tick, nt, td) {
      wash plays its first beat and lets the reverb ring */
   const fk = fl && fl.loop ? fl.kind : '',
     fr = fl ? tick - fl.start : 0;
+  /* Tape stop, vinyl brake and spinback: the loop slowing to a stop, or running backwards, and the bend */
+  const tape = LV_BENDS.includes(fk) ? lvTapeAt(fl, fr) : null;
+  if (LV_BENDS.includes(fk)) lvTapeBend(fl, fr, nt);
   const hush =
-    (fk === 'half' && fr % 2 !== 0) || (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x') || (fk === 'wash' && fr >= 8);
+    (fk === 'half' && fr % 2 !== 0) ||
+    (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x') ||
+    (fk === 'wash' && fr >= 8) ||
+    (LV_BENDS.includes(fk) && !tape);
   /* Chord lock: the chord playing now, worked out once this tick when a lead or pluck needs it */
   let chordNow;
   const chord = () => (chordNow === undefined ? (chordNow = lvChordNow(ft)) : chordNow);
-  const durK = fk === 'half' ? 2 : 1,
+  const durK = fk === 'half' ? 2 : tape ? Math.min(4, 1 / tape.rate) : 1,
     durMax = fk === 'gate' ? 1.6 * td : Infinity;
   for (let t = 0; t < 8; t++) {
     const trk = S.tracks[t];
@@ -664,8 +672,11 @@ export function liveTick(tick, nt, td) {
     }
     if ((!fl || fl.loop) && lvMaskOff(t, tick)) continue;
     if (hush) continue;
-    if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT) continue;
-    const vft = fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : ft;
+    /* the solo track left to you (but your own riff plays) */
+    if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT && !(LV.voices[t][0] && LV.voices[t][0].f.riff))
+      continue;
+    const vft =
+      fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
     for (const v of fl
       ? fl.loop
         ? fl.keep.includes(t)
@@ -679,7 +690,8 @@ export function liveTick(tick, nt, td) {
       if (g <= 0.02) continue;
       const L = v.f.bars * 32,
         local = (((vft - v.start) % L) + L) % L;
-      const vt = quiet ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L), L),
+      /* variations change the app's parts, never your own riff */
+      const vt = quiet || v.f.riff ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L), L),
         last = local >= L - 32;
       if (vt) {
         lvVarExtra(t, v, vt, local, L, nt, td, g);
@@ -698,7 +710,7 @@ export function liveTick(tick, nt, td) {
         let nn = tone ? (conv ? lvModeNote(n.n + (v.sh || 0)) : n.n + (v.sh || 0)) : n.n;
         if (tone && ((vt === 'oct' && last && (local >> 2) & 1) || (vt === 'up' && slotOf(t) >= 6)))
           nn = slotOf(t) === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
-        if (tone && slotOf(t) >= 6 && LV.chordLock !== false) nn = lvLockNote(nn, n.l, local, chord());
+        if (tone && slotOf(t) >= 6 && LV.chordLock !== false && !v.f.riff) nn = lvLockNote(nn, n.l, local, chord());
         emitNote(
           t,
           tone ? clamp(nn, 0, 127) : nn,
@@ -821,6 +833,7 @@ export function liveCleanup() {
 }
 export function liveStop() {
   LV.jam = null;
+  RIFF.state = 'off';
   if (TR.playing && TR.mode === 'live') stopPlay();
 }
 /** The Start Jam / End Jam button (and Space): an intro into the first scene, or an outro to the end. */

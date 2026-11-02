@@ -39,7 +39,7 @@ const SOAK = `async ({ style, seed, minutes }) => {
       else if (x < 0.70) { hold = pick(['stut:4', 'stut:8', 'stut:16']); safe(hold, () => L.down(hold)); }
       else if (x < 0.78) { const m = pick(MOVES); safe('move ' + m, () => L.move(m)); }
       else if (x < 0.84) { LV.vary = pick([0, 30, 60, 100, 125]); LV.entry = pick(['hard', 'smooth', 'slow', 'long', 'vlong']); }
-      else if (x < 0.88) { LV.dropStyle = pick(['smooth', 'hard', 'gap']); LV.brkLen = pick([16, 32, 64]); LV.brkStyle = pick(['mix', 'hits', 'stutter', 'roll', 'drop', 'gate', 'half', 'wash']); }
+      else if (x < 0.88) { LV.dropStyle = pick(['smooth', 'hard', 'gap']); LV.brkLen = pick([16, 32, 64]); LV.brkStyle = pick(['mix', 'hits', 'stutter', 'roll', 'drop', 'gate', 'half', 'wash', 'tape', 'brake', 'spin']); }
       else if (x < 0.92) safe('blend', () => L.blend());
       else if (x < 0.95) safe('jamEnd', () => L.jamEnd());
       else if (x < 0.97) { LV.chaos = pick([0, 40, 80]); LV.buildFx = rnd() < 0.8; LV.human = pick([0, 30, 70, 100]); LV.feel = pick(['natural', 'laidback', 'pushed', 'drunk']); L.humApply(); L.moodSet(pick([null, { i: 95, c: 8 }, { i: 18, c: 68 }, { i: 88, c: 92 }, { i: 50, c: 20 }]), true); }

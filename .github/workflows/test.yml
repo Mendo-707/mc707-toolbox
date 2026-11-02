@@ -1,25 +1,32 @@
-# Runs the automated tests on every push and pull request.
+# Runs the automated tests on every push to a branch and on pull requests (not on tags: a release's
+# commit has been tested on its branch already).
+# The checks run on one machine; the tests are split across three machines for the built app and three for
+# the source (ES modules from a local server), all at once, so a run takes minutes rather than half an hour.
+# A newer push to the same branch cancels a run still going.
 # The tools (Playwright, esbuild, Prettier) are installed into .ci-tools so they stay out of the
 # Windows app's package.json and lock file.
 name: Tests
 
 on:
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  checks:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install the test and build tools
-        run: |
-          npm install --prefix .ci-tools --no-audit --no-fund playwright@1.56.1 esbuild@0.28.2 prettier@3.8.1
-          npx --prefix .ci-tools playwright install --with-deps chromium
+      - name: Install the build tools
+        run: npm install --prefix .ci-tools --no-audit --no-fund esbuild@0.28.2 prettier@3.8.1
       - name: Check formatting
         run: npx --prefix .ci-tools prettier --check src scripts tests
       - name: Check the modules only import down the layers
@@ -32,15 +39,35 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
         run: node scripts/build.mjs --check
+
+  test:
+    name: test (${{ matrix.app }} ${{ matrix.shard }}/3)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [built, source]
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the test tools
+        run: |
+          npm install --prefix .ci-tools --no-audit --no-fund playwright@1.56.1 esbuild@0.28.2
+          npx --prefix .ci-tools playwright install --with-deps chromium
       - name: Run the tests on the built app
+        if: matrix.app == 'built'
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
-        run: node --test tests/*.test.mjs
+        run: node --test --test-shard=${{ matrix.shard }}/3 tests/*.test.mjs
       - name: Run the tests on the source (ES modules from a local server)
+        if: matrix.app == 'source'
         env:
           NODE_PATH: ${{ github.workspace }}/.ci-tools/node_modules
           APP_URL: http://localhost:8707
         run: |
           node scripts/dev.mjs &
           sleep 1
-          node --test tests/*.test.mjs
+          node --test --test-shard=${{ matrix.shard }}/3 tests/*.test.mjs
