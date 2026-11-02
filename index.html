@@ -12143,7 +12143,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const all = Object.keys(F.styles);
       const bpm = F.styles[all[0]].bpm;
       const tag = (F.tag || GTAG[F.genre] || F.genre) + " ";
-      const put3 = (name, role, pool, lanes, bars2) => add({
+      const put4 = (name, role, pool, lanes, bars2) => add({
         name: tag + name,
         type: "drum",
         genre: F.genre,
@@ -12155,20 +12155,20 @@ html.os-darwin.native-menu #menubar .mproj {
         pool
       });
       F.K.forEach(([n, d]) => {
-        put3("Kick: " + n, "Kick", "", d, 1);
+        put4("Kick: " + n, "Kick", "", d, 1);
         [0, 1].forEach(
-          (i) => put3("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
+          (i) => put4("Kick: " + n + " + Turn " + (i + 1), "Kick", "", concat(d, F.K2[(i * 2 + n.length) % F.K2.length]), 2)
         );
       });
       F.S.forEach(([n, d]) => {
-        put3("Snare: " + n, "Snare", "", d, 1);
-        put3("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
+        put4("Snare: " + n, "Snare", "", d, 1);
+        put4("Snare: " + n + " + Turn", "Snare", "", concat(d, F.S2[n.length % F.S2.length]), 2);
       });
-      F.H.forEach(([n, d]) => put3("Hats: " + n, "Hats", "hats", d, 1));
+      F.H.forEach(([n, d]) => put4("Hats: " + n, "Hats", "hats", d, 1));
       F.H.forEach(([n, d], i) => {
-        if (i % 2 === 0) put3("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
+        if (i % 2 === 0) put4("Hats: " + n + " + Variation", "Hats", "hats", concat(d, F.H[(i + 3) % F.H.length][1]), 2);
       });
-      F.perc.forEach(([n, d]) => put3("Perc: " + n, "Perc", "perc", d, 1));
+      F.perc.forEach(([n, d]) => put4("Perc: " + n, "Perc", "perc", d, 1));
     }
     function genFills(F) {
       const all = Object.keys(F.styles);
@@ -14913,11 +14913,11 @@ html.os-darwin.native-menu #menubar .mproj {
         }
       });
       const pairs2 = pickN([...used.values()], 6);
-      const four = FOUR.has(g);
+      const four2 = FOUR.has(g);
       pairs2.forEach(({ p, bars: bars2, keyName: keyName2 }) => {
         const kn2 = keyName2 && KEYS[keyName2] ? keyName2 : /^[iv]/.test(p) ? "Am" : "C";
         const R4 = KEYS[kn2].root, prog = PR[p];
-        const BR = four ? {
+        const BR = four2 ? {
           A: [
             [2, 2, 0],
             [6, 2, 12],
@@ -15184,12 +15184,12 @@ html.os-darwin.native-menu #menubar .mproj {
       MOT.forEach(([mn, mot]) => {
         const notes = [];
         const deg = (d) => 60 + R3 + SC2[(d % 7 + 7) % 7] + 12 * Math.floor(d / 7);
-        const put3 = (bar2, shift, vel) => mot.forEach(
+        const put4 = (bar2, shift, vel) => mot.forEach(
           ([s, l, d], i) => notes.push({ s: bar2 * 16 + s, l, n: deg(d + shift), v: i === 0 ? vel : vel - 12 })
         );
-        put3(0, 0, 104);
-        put3(1, 2, 98);
-        put3(2, 0, 104);
+        put4(0, 0, 104);
+        put4(1, 2, 98);
+        put4(2, 0, 104);
         [
           [0, 2, 4],
           [2, 2, 3],
@@ -19161,6 +19161,69 @@ html.os-darwin.native-menu #menubar .mproj {
     save();
   }
 
+  // src/library/demo-song.js
+  var DEMO_TEXT = "MC 707 / 101 TOOLBOX";
+  var GLYPH = {
+    M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
+    C: ["###", "#..", "#..", "#..", "###"],
+    7: ["###", "..#", ".#.", ".#.", ".#."],
+    0: [".#.", "#.#", "#.#", "#.#", ".#."],
+    1: [".#.", "##.", ".#.", ".#.", "###"],
+    "/": ["..#", "..#", ".#.", "#..", "#.."],
+    T: ["###", ".#.", ".#.", ".#.", ".#."],
+    O: ["###", "#.#", "#.#", "#.#", "###"],
+    L: ["#..", "#..", "#..", "#..", "###"],
+    B: ["##.", "#.#", "##.", "#.#", "##."],
+    X: ["#...#", ".#.#.", "..#..", ".#.#.", "#...#"]
+  };
+  var four = (g) => g === GLYPH.B ? ["##.", "###", "#.#", "##."] : [g[0], g[1], g[3], g[4]];
+  function demoPixels(text2 = DEMO_TEXT, h = 5) {
+    const rows2 = Array.from({ length: h }, () => []);
+    let first = true;
+    for (const ch of text2) {
+      if (ch === " ") {
+        rows2.forEach((r) => r.push(false, false));
+        continue;
+      }
+      const g = GLYPH[ch];
+      if (!g) continue;
+      if (!first) rows2.forEach((r) => r.push(false));
+      first = false;
+      (h === 4 ? four(g) : g).forEach((line, y) => rows2[y].push(...[...line].map((c) => c === "#")));
+    }
+    return rows2;
+  }
+  var runs = (row2) => {
+    const out2 = [];
+    for (let x = 0; x < row2.length; x++) {
+      if (!row2[x]) continue;
+      const s = x;
+      while (row2[x + 1]) x++;
+      out2.push([s, x - s + 1]);
+    }
+    return out2;
+  };
+  function patternFor(pool) {
+    const house = FAC.filter(
+      (f) => f.genre === "house" && !f.busy && (f.pool === pool || pool === "full" && f.pool === "kit")
+    );
+    return house.find((f) => /i-iv-VII-III/.test(f.name) && f.key && f.key.root === 5) || house.find((f) => f.key && f.key.root === 5) || house.find((f) => /i-iv-VII-III/.test(f.name)) || house[0] || FAC.find((f) => f.pool === pool);
+  }
+  function demoClips() {
+    const vis = DEVS[DEV].tracks, h = vis.length >= 5 ? 5 : 4, px = demoPixels(DEMO_TEXT, h), lead2 = 1, len = px[0].length + lead2 * 2;
+    const rows2 = vis.length >= 7 ? vis.slice(1, 6) : vis.slice(0, h), above = vis.length >= 7 ? vis[0] : -1, below = vis.length >= 7 ? vis[6] : -1;
+    const out2 = [];
+    rows2.forEach((t, y) => {
+      const f = patternFor(poolOf(t));
+      if (f) for (const [s, n] of runs(px[y])) out2.push([t, s + lead2, n, f]);
+    });
+    for (const t of [above, below]) {
+      const f = t >= 0 && patternFor(poolOf(t));
+      if (f) out2.push([t, 0, len, f]);
+    }
+    return { clips: out2, bars: len };
+  }
+
   // src/library/index.js
   for (let i = FAC.length - 1; i >= 0; i--) if (FAC[i].genre === "rock") FAC.splice(i, 1);
   function instFactory(f) {
@@ -19177,24 +19240,14 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function makeDemo() {
     replaceState(newState());
-    S.bpm = 174;
-    S.loop = { on: true, start: 0, end: 8 };
+    const { clips, bars: bars2 } = demoClips();
+    S.bpm = 124;
     S.key = 5;
     S.scale = "minor";
-    const put3 = (t, start, len, fid) => {
-      const pid = instFactory(FAC.find((x) => x.id === fid));
-      S.clips.push({ id: "c" + S.nextId++, t, start, len, off: 0, pat: pid });
-    };
-    put3(0, 0, 7, "dnb-twostep");
-    put3(0, 7, 1, "dnb-fill");
-    put3(0, 8, 8, "dnb-neuro");
-    put3(3, 0, 8, "dnb-sub");
-    put3(3, 8, 8, "dnb-reese");
-    put3(4, 4, 4, "dnb-stabs");
-    put3(4, 8, 8, "dnb-liquid-ch");
-    put3(5, 0, 8, "dnb-pad");
-    put3(6, 12, 4, "dnb-arp");
-    put3(7, 8, 8, "dnb-pluck");
+    S.bars = Math.ceil(bars2 / 8) * 8;
+    S.loop = { on: true, start: 0, end: bars2 };
+    for (const [t, start, len, f] of clips)
+      S.clips.push({ id: "c" + S.nextId++, t, start, len, off: 0, pat: instFactory(f) });
   }
   var metaOf = (src) => src.kind === "fac" ? FACMAP.get(src.id) : src.kind === "user" ? userById(src.id) : S.patterns[src.id];
   var FACMAP = new Map(FAC.map((f) => [f.id, f]));
@@ -19526,6 +19579,8 @@ html.os-darwin.native-menu #menubar .mproj {
     } else if (pick3 && MIDI.lost) {
       MIDI.lost = null;
       hooks.midiBack(pick3.name);
+    } else if (pick3 && isMcName(pick3.name) && !(had && isMcName(had.name))) {
+      hooks.midiFound(pick3.name);
     }
     $("#midiStat").textContent = pick3 ? "Sending to " + pick3.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
     hooks.refreshIns();
@@ -30882,7 +30937,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (base != null) zxWrite(base + off, encode(p, val));
   }
   var blockOf = (k2) => k2.slice(0, k2.indexOf("."));
-  function runs(kind, keys2) {
+  function runs2(kind, keys2) {
     const ps = allParams(kind).filter(([k2]) => !keys2 || keys2.has(k2)).sort((a, b) => a[2] - b[2]);
     const out2 = [];
     for (const it of ps) {
@@ -30895,7 +30950,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return out2;
   }
   function writeRuns(snd, base, keys2) {
-    for (const r of runs(snd.kind, keys2)) {
+    for (const r of runs2(snd.kind, keys2)) {
       const data = [];
       for (const [k2, p] of r.items) data.push(...encode(p, snd.v[k2]));
       zxWrite(base + r.start, data);
@@ -30937,7 +30992,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return later2.length ? mfxAfterReset(snd, base, later2) : Promise.resolve();
   }
   async function readSound(snd, base, keys2, progress) {
-    const rs = runs(snd.kind, keys2);
+    const rs = runs2(snd.kind, keys2);
     let ok = 0, bad = 0, done3 = 0, silent = 0;
     const take = (it, bytes) => {
       const v = decode(it[1], bytes);
@@ -37700,7 +37755,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ...[1, 2, 3, 4].map((i) => num4("T" + i, "Time " + i)),
       ...levels.map((id, i) => id ? num4(id, "Level " + i) : null).filter(Boolean)
     );
-    const put3 = (e, pt, T3, Lf) => {
+    const put4 = (e, pt, T3, Lf) => {
       const k2 = (id) => e + pt + "." + id, ls = LEVELS2[e];
       T3.forEach((t, i) => ctx2.set(k2("T" + (i + 1)), t, false));
       ls.forEach((id, i) => {
@@ -37726,7 +37781,7 @@ html.os-darwin.native-menu #menubar .mproj {
           const s = SHAPES2[KIND[env]][+e.target.value];
           e.target.value = "";
           if (!s) return;
-          put3(env, part, s[1], s[2]);
+          put4(env, part, s[1], s[2]);
           ctx2.commit();
         }
       },
@@ -37742,8 +37797,8 @@ html.os-darwin.native-menu #menubar .mproj {
           const v = e.target.value;
           e.target.value = "";
           const [T3, L2] = shape();
-          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put3(env, i, T3, L2));
-          else if (KIND[v]) put3(v, part, T3, L2);
+          if (v === "parts") [0, 1, 2, 3].filter((i) => i !== part).forEach((i) => put4(env, i, T3, L2));
+          else if (KIND[v]) put4(v, part, T3, L2);
           else return;
           ctx2.commit();
         }
@@ -39233,11 +39288,11 @@ html.os-darwin.native-menu #menubar .mproj {
     E: "XV Collection"
   };
   function fwTones(b) {
-    const out2 = [], runs2 = fwScan(b), used = /* @__PURE__ */ new Set();
-    const banks = runs2.map(([o]) => BANKS2[nameAt(b, o)] || null);
+    const out2 = [], runs3 = fwScan(b), used = /* @__PURE__ */ new Set();
+    const banks = runs3.map(([o]) => BANKS2[nameAt(b, o)] || null);
     banks.forEach((x) => x && used.add(x));
     let next = "F";
-    runs2.forEach(([o, n], r) => {
+    runs3.forEach(([o, n], r) => {
       let bank = banks[r];
       if (!bank || banks.indexOf(bank) !== r) {
         while (used.has(next)) next = String.fromCharCode(next.charCodeAt(0) + 1);
@@ -41068,7 +41123,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function brewer(ps) {
     const out2 = {};
     const def = (k2) => paramOf("tone", k2);
-    const get = (k2) => {
+    const get2 = (k2) => {
       if (k2 in out2) return out2[k2];
       const v = ZE.snd.v[k2];
       if (typeof v === "number") return v;
@@ -41081,14 +41136,14 @@ html.os-darwin.native-menu #menubar .mproj {
       const p = d[0];
       out2[k2] = Math.round(Math.max(p[3], Math.min(p[4], v)));
     };
-    const add = (k2, dv) => set2(k2, get(k2) + dv);
-    const toward = (k2, target, amt) => set2(k2, get(k2) + (target - get(k2)) * Math.min(1, amt));
+    const add = (k2, dv) => set2(k2, get2(k2) + dv);
+    const toward = (k2, target, amt) => set2(k2, get2(k2) + (target - get2(k2)) * Math.min(1, amt));
     const each = (fn) => ps.forEach((i, n) => fn((b) => b + i, n));
     const free = () => {
-      const i = [0, 1, 2, 3].find((i2) => get("PMT.PMT" + (i2 + 1) + "_PTL_SW") !== 1);
+      const i = [0, 1, 2, 3].find((i2) => get2("PMT.PMT" + (i2 + 1) + "_PTL_SW") !== 1);
       return i == null ? null : i;
     };
-    return { get, set: set2, add, toward, each, free, out: out2, n: ps.length, src: ps[0], v: ZE.snd.v };
+    return { get: get2, set: set2, add, toward, each, free, out: out2, n: ps.length, src: ps[0], v: ZE.snd.v };
   }
   var GROUPS = [
     [
@@ -50160,12 +50215,12 @@ html.os-darwin.native-menu #menubar .mproj {
     order.forEach(([j], idx) => out2[j] = order.length > 1 ? idx / (order.length - 1) : 0.5);
     return out2;
   }
-  function moodFilter(ids, mood, get) {
+  function moodFilter(ids, mood, get2) {
     if (!mood || ids.length < 5) return ids;
     const ti = mood.i / 100, tc = mood.c / 100, si = Math.abs(ti - 0.5) * 2, sc = Math.abs(tc - 0.5) * 2;
     if (si < 0.1 && sc < 0.1) return ids;
     const fs = ids.map((id) => {
-      const f = get(id);
+      const f = get2(id);
       return f && f.notes && f.notes.length ? f : null;
     }), ri = ranks(fs, "i"), rc = ranks(fs, "c");
     const score = fs.map((f, j) => {
@@ -51648,7 +51703,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return o;
   }
   function customRows(st, r, row2) {
-    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY10 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY11 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
       row2(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
@@ -51657,7 +51712,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
-      const k2 = poolOf(t) === "acid" ? "bass" : KEY10[slotOf(t)];
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY11[slotOf(t)];
       out2.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
@@ -63882,7 +63937,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "Device ID 17 (the default), for the ZenCore editor."
       ],
       [
-        "Open MC-707 › Set up your MC-707 and press Auto-connect MC-707.",
+        "The app connects by itself as it opens or when the " + dn2 + " is plugged in, and says so. If it doesn’t: MC-707 › Set up your MC-707 › Auto-connect MC-707.",
         "Press Play tracks 1 → 8: each track should sound in turn. If one doesn’t, change its channel there.",
         "Not showing up? Close other programs using the MIDI port (a DAW, another browser tab), try the other USB driver, then Rescan."
       ],
@@ -65088,6 +65143,67 @@ html.os-darwin.native-menu #menubar .mproj {
     scheduleSave();
   }
 
+  // src/ui/auto-connect.js
+  var KEY9 = "mc707-autoconnect";
+  var CLOCK = "mc707-autoconnect-clock";
+  var get = (k2) => {
+    try {
+      return localStorage.getItem(k2);
+    } catch (e) {
+      return null;
+    }
+  };
+  var put3 = (k2, v) => {
+    try {
+      localStorage.setItem(k2, v);
+    } catch (e) {
+    }
+  };
+  var autoConnectOn = () => get(KEY9) !== "0";
+  function autoConnectSet(on3) {
+    put3(KEY9, on3 ? "1" : "0");
+    toast(on3 ? "The app connects to the MC-707 by itself" : "Connect to the MC-707 with the Connect button");
+    if (on3) autoConnectAtLaunch(true);
+  }
+  async function allowed(sysex) {
+    if (HOST) return true;
+    try {
+      const p = await navigator.permissions.query({ name: "midi", sysex });
+      return p.state === "granted";
+    } catch (e) {
+      return false;
+    }
+  }
+  async function autoConnectAtLaunch(now) {
+    if (!autoConnectOn() || !navigator.requestMIDIAccess || MIDI.access) return;
+    if (!now && !await allowed(false)) return;
+    await connectMidi();
+  }
+  async function midiFound(name) {
+    if (!autoConnectOn()) return;
+    const ins = MIDI.access ? [...MIDI.access.inputs.values()].filter((i) => i.state !== "disconnected") : [];
+    const mi = mcFind(ins);
+    if (mi && (!MIDI.inp || MIDI.inp.id !== mi.id)) setMidiIn(mi.id);
+    const parts4 = ["notes"];
+    if (mi) parts4.push("pads and keys");
+    if (!get(CLOCK)) {
+      put3(CLOCK, "1");
+      if (!S.clock) {
+        S.clock = true;
+        syncControls();
+        scheduleSave();
+      }
+    }
+    if (S.clock) parts4.push("clock");
+    if (await allowed(true)) {
+      try {
+        if (await zxConnect()) parts4.push("sounds");
+      } catch (e) {
+      }
+    }
+    toast(name + " connected: " + parts4.join(", ").replace(/, ([^,]*)$/, " and $1"));
+  }
+
   // src/core/mpj.js
   var PRJ_CLIPS = 4336;
   var CLIP_SIZE = 23616;
@@ -65407,7 +65523,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }))
         return;
       pushUndo();
-      let dropped = 0, put3 = 0, skipped = 0;
+      let dropped = 0, put4 = 0, skipped = 0;
       const clips = emptyClips();
       for (const t of DEVS[DEV].tracks)
         for (let k2 = 0; k2 < 16; k2++) {
@@ -65421,7 +65537,7 @@ html.os-darwin.native-menu #menubar .mproj {
           if (!r.pattern.notes.length) continue;
           const p = r.pattern;
           clips[t][k2] = { pat: addPattern(p.type, p.name, p.bars, p.notes, { role: p.role || "" }) };
-          put3++;
+          put4++;
         }
       S.scn = S.scn || { v: 2, first: 0, rows: [], tones: {}, done: { c: {}, s: {}, p: {} } };
       S.scn.clips = clips;
@@ -65443,7 +65559,7 @@ html.os-darwin.native-menu #menubar .mproj {
       hooks.setMode("scene");
       hooks.renderAll();
       toast(
-        "Brought in " + plural3(put3, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
+        "Brought in " + plural3(put4, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
     };
     const toMine = () => {
@@ -65647,7 +65763,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/ui/fill-tones.js
-  var KEY9 = "mc707-tone-pools";
+  var KEY10 = "mc707-tone-pools";
   var GKEY = "mc707-fill-genre";
   var ROLES2 = CLIP_TYPES.map((c) => c[0]);
   var EXTRA = {
@@ -65658,7 +65774,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function pools() {
     if (POOLS) return POOLS;
     try {
-      POOLS = JSON.parse(localStorage.getItem(KEY9) || "{}") || {};
+      POOLS = JSON.parse(localStorage.getItem(KEY10) || "{}") || {};
     } catch (e) {
       POOLS = {};
     }
@@ -65666,7 +65782,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function savePools() {
     try {
-      localStorage.setItem(KEY9, JSON.stringify(POOLS));
+      localStorage.setItem(KEY10, JSON.stringify(POOLS));
     } catch (e) {
       toast("Could not keep the pools: the browser storage is full");
     }
@@ -66354,6 +66470,7 @@ html.os-darwin.native-menu #menubar .mproj {
             ].map(([v, label2]) => ({ label: label2, checked: synthViewOpen() === v, action: () => synthViewSet(v) }))
           ],
           0,
+          ["Connect to the MC-707 by itself", () => autoConnectSet(!autoConnectOn()), "", () => autoConnectOn()],
           ["MIDI and sound…", go("#bMidi")],
           ["Track MIDI controls…", go("#bTrackCtl")],
           ["Audio inputs…", go("#bAudSet")],
@@ -68171,6 +68288,7 @@ html.os-darwin.native-menu #menubar .mproj {
     liveTick,
     matchDevice,
     midiBack,
+    midiFound,
     midiLost,
     recMidi,
     recStop,
@@ -68352,6 +68470,7 @@ html.os-darwin.native-menu #menubar .mproj {
       () => requestAnimationFrame(() => {
         document.documentElement.classList.remove("boot");
         if (HOST && HOST.appReady) HOST.appReady();
+        autoConnectAtLaunch();
       })
     );
     (async () => {

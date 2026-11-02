@@ -27,6 +27,7 @@ import { songToClipsOpen } from '../zen/zc-seq.js';
 import { templatesOpen } from './templates.js';
 import { tutorialOpen } from './tutorial.js';
 import { backupsOn, backupsOpen } from './backups.js';
+import { autoConnectOn, autoConnectSet } from './auto-connect.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
 import { mpjPick } from './mpj-open.js';
@@ -237,6 +238,7 @@ function initMenubar() {
             ].map(([v, label]) => ({ label, checked: synthViewOpen() === v, action: () => synthViewSet(v) }))
         ],
         0,
+        ['Connect to the MC-707 by itself', () => autoConnectSet(!autoConnectOn()), '', () => autoConnectOn()],
         ['MIDI and sound…', go('#bMidi')],
         ['Track MIDI controls…', go('#bTrackCtl')],
         ['Audio inputs…', go('#bAudSet')],

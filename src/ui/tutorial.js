@@ -84,7 +84,9 @@ const chapters = dn => [
       'Device ID 17 (the default), for the ZenCore editor.'
     ],
     [
-      'Open MC-707 › Set up your MC-707 and press Auto-connect MC-707.',
+      'The app connects by itself as it opens or when the ' +
+        dn +
+        ' is plugged in, and says so. If it doesn’t: MC-707 › Set up your MC-707 › Auto-connect MC-707.',
       'Press Play tracks 1 → 8: each track should sound in turn. If one doesn’t, change its channel there.',
       'Not showing up? Close other programs using the MIDI port (a DAW, another browser tab), try the other USB driver, then Rescan.'
     ],

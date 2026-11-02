@@ -116,6 +116,7 @@ import { TICKER, TR, advance, processTick, sched, startSong, stopAll } from './s
 import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
 import { midiBack, midiLost } from './ui/link-watch.js';
+import { autoConnectAtLaunch, midiFound } from './ui/auto-connect.js';
 import { backupsOffer } from './ui/backups.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
@@ -223,6 +224,7 @@ Object.assign(hooks, {
   liveTick,
   matchDevice,
   midiBack,
+  midiFound,
   midiLost,
   recMidi,
   recStop,
@@ -408,6 +410,8 @@ PROJ.t = projTitle;
     requestAnimationFrame(() => {
       document.documentElement.classList.remove('boot');
       if (HOST && HOST.appReady) HOST.appReady();
+      /* then the MC-707 or MC-101, if it is plugged in (and the app may) */
+      autoConnectAtLaunch();
     })
   );
   (async () => {

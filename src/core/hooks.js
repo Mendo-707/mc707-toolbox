@@ -22,6 +22,7 @@
 //   liveTick           src/live/engine.js
 //   matchDevice        src/ui/device.js
 //   midiBack           src/ui/link-watch.js
+//   midiFound          src/ui/auto-connect.js
 //   midiLost           src/ui/link-watch.js
 //   recMidi            src/song/recording-midi.js
 //   recStop            src/song/recording-midi.js

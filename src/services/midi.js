@@ -5,7 +5,7 @@
 // Calls up the layers through hooks (core/hooks.js).
 import { $, el } from '../core/dom.js';
 import { S } from '../core/state.js';
-import { mcFind } from '../core/device.js';
+import { isMcName, mcFind } from '../core/device.js';
 import { AU } from './synth.js';
 import { hooks } from '../core/hooks.js';
 
@@ -86,6 +86,9 @@ export function refreshOuts() {
   } else if (pick && MIDI.lost) {
     MIDI.lost = null;
     hooks.midiBack(pick.name);
+  } else if (pick && isMcName(pick.name) && !(had && isMcName(had.name))) {
+    /* an MC-707 or MC-101 just found (at launch, plugged in, or picked): connect the rest */
+    hooks.midiFound(pick.name);
   }
   $('#midiStat').textContent = pick
     ? 'Sending to ' + pick.name + '.'
