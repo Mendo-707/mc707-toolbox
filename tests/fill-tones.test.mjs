@@ -110,11 +110,12 @@ test('Fill tones: suggestions by genre and job, sent into the clips with Sound S
   });
   /* send */
   await page.click('#ftOv .ftActs .btn.on');
+  /* eight whole sounds over SysEx: a minute or more on GitHub's machines running the source */
   await page.waitForFunction(
     () => /Sent 8 sounds \(1 to more clips that hold notes/.test(document.getElementById('toast').textContent),
     null,
     {
-      timeout: 60000
+      timeout: 120000
     }
   );
   const src = await page.evaluate(TRK => [3, 4, 5, 0].map(t => window.__zcMem.get(TRK + t * 0x100 + 4)), TRK);
