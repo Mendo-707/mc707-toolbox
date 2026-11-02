@@ -2,6 +2,7 @@
 // keyboard.
 //
 // Reads: LV, MIDI, DEV.
+import { riffKey } from './riff.js';
 import { S } from '../core/state.js';
 import { lvUserNote } from './moves.js';
 import { $, clamp, el, toast } from '../core/dom.js';
@@ -200,7 +201,7 @@ export function liveMidi(ev) {
         return true;
       }
     }
-    lvPlayedHere(ch, n, false);
+    lvPlayedHere(ch, n, false, 0);
     return false;
   }
   if (!isOn) return false;
@@ -255,15 +256,17 @@ export function liveMidi(ev) {
       return true;
     }
   }
-  lvPlayedHere(ch, n, true);
+  lvPlayedHere(ch, n, true, d[2]);
   return false;
 }
 /* Any other note from the MC-707 is you playing a track yourself (Raven mode takes it over for a while). */
-function lvPlayedHere(ch, n, on) {
+function lvPlayedHere(ch, n, on, v) {
   if (!LV.perfOn || !ch) return;
   if (on && sentRecently(ch, n)) return;
   const t = S.tracks.findIndex(tr => tr.ch === ch);
-  if (t >= 0) lvUserNote(t, on);
+  if (t < 0) return;
+  lvUserNote(t, on);
+  riffKey(t, n, v, on);
 }
 /* The MC-707's Oct buttons shift every pad by 12. Follow them so the pads keep working. */
 function lvFollowOctave(n) {

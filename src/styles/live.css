@@ -1756,3 +1756,43 @@ input[type='number'] {
 .lvMore[open] > summary {
   color: var(--ink);
 }
+/* Record riff (live/riff.js), in the keyboard's bar */
+.ctlBar .riffBox {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: 12px;
+}
+.ctlBar .riffBtn.rec {
+  background: #d93a3a;
+  border-color: #d93a3a;
+  color: #fff;
+  animation: riffBlink 1s steps(2) infinite;
+}
+@keyframes riffBlink {
+  50% {
+    opacity: 0.7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctlBar .riffBtn.rec {
+    animation: none;
+  }
+}
+.lvRiffRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 6px;
+}
+.lvRiffRow .riffBox,
+.ctlBar .riffBox {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.riffBtn.rec {
+  background: #d93a3a !important;
+  border-color: #d93a3a !important;
+  color: #fff !important;
+}

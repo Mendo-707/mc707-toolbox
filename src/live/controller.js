@@ -14,6 +14,7 @@ import { LV, NOTEN, mkEnv, noteLbl, saveLive } from './state.js';
 import { actLabel, lvNow } from './themes.js';
 import { lvSendCC, lvUserNote } from './moves.js';
 import { liveBreak } from './breaks.js';
+import { riffArm, riffControls, riffNote } from './riff.js';
 import { liveStart, liveStop, lvTarget } from './engine.js';
 import {
   liveBuildDrop,
@@ -137,7 +138,12 @@ export function ctlTargets() {
     out.push(['b' + (i + 1), 'Fader button ' + (i + 1), i < 8 ? 'Mute ' + S.tracks[i].name : 'Unmute all']);
   for (let i = 0; i < Math.max(p[7], 8); i++)
     out.push(['p' + (i + 1), 'Pad ' + (i + 1), 'Live pad ' + (i + 1) + ': ' + actLabel(LV.acts[i])]);
-  out.push(['play', 'Play button', 'Start / stop'], ['stop', 'Stop button', 'Stop'], ['brk', 'Any button', 'Break']);
+  out.push(
+    ['play', 'Play button', 'Start / stop'],
+    ['stop', 'Stop button', 'Stop'],
+    ['brk', 'Any button', 'Break'],
+    ['riff', 'Any button', 'Record riff']
+  );
   return out;
 }
 export const ctlKeyName = k => {
@@ -209,6 +215,7 @@ function ctlSolo(n, v, on) {
     CTL.held[n] = { nn, t, ch: tr.ch };
     lvUserNote(t, true);
     if (MIDI.out) sendMidi([0x90 | (tr.ch - 1), nn, v], now);
+    riffNote(nn, v, true);
     if (typeof vizNote === 'function' && TR.mode === 'live') vizNote(t, nn, v, now, 0.25);
     if (S.preview) voice(t, nn, now, 0.35, v);
     LV.pulse[t] = { time: now, v: v / 127 };
@@ -218,6 +225,7 @@ function ctlSolo(n, v, on) {
     delete CTL.held[n];
     lvUserNote(h.t, false);
     if (MIDI.out) sendMidi([0x80 | (h.ch - 1), h.nn, 0], now);
+    riffNote(h.nn, 0, false);
   }
 }
 export function ctlAllOff() {
@@ -314,6 +322,8 @@ function ctlDo(tg, val, press, release) {
     if (press && lvOn()) liveStop();
   } else if (tg === 'brk') {
     if (press) liveBreak();
+  } else if (tg === 'riff') {
+    if (press) riffArm();
   }
 }
 function onCtlIn(ev) {
@@ -447,7 +457,7 @@ export function liveRenderCtlBar() {
     );
   else if (z === 'keysolo') parts.push('key ' + noteLbl(b) + '–' + noteLbl(b + 11), 'solo on ' + solo + ' elsewhere');
   else parts.push('solo on ' + solo);
-  bar.append(el('b', {}, '🎹 '), parts.join(' · '), el('span', { class: 'ctlAct', id: 'ctlAct' }, ''));
+  bar.append(el('b', {}, '🎹 '), parts.join(' · '), el('span', { class: 'ctlAct', id: 'ctlAct' }, ''), riffControls());
 }
 export function ctlKeyboard() {
   const c = LV.ctl,

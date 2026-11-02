@@ -2,6 +2,7 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
+import { riffControls } from './riff.js';
 import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
@@ -674,6 +675,15 @@ export function liveInit() {
             }
           }),
           'Chord lock: leads and plucks keep to the chord playing'
+        ),
+        el(
+          'div',
+          {
+            class: 'lvf lvRiffRow',
+            title: 'Play a riff on the MC-707 or a keyboard and it loops as that track’s part'
+          },
+          riffControls(),
+          el('span', { class: 'hint' }, 'on the MC-707 keys or a keyboard')
         ),
         el(
           'div',
