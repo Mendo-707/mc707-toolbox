@@ -17,7 +17,9 @@ apart from `lamejs` for MP3.
 npm run tools      once: installs esbuild, Prettier and Playwright into .ci-tools/ (kept out of the app's packages)
 npm run dev        serve src/ at http://localhost:8707 (Chrome or Edge); edit a file, reload the page
 npm run build      build the single-file app: index.html at the repo root
-npm test           the full test suite on the built index.html (about 2 minutes)
+npm test           the full test suite on the built index.html (about 25 minutes; GitHub runs it split over 6 machines)
+npm run smoke      builds, then a quick check that every mode opens and plays, with random clicks (about 15 seconds)
+node scripts/release.mjs 1.7.3 "Title: notes"   version in all four places, CHANGELOG entry, build, checks, smoke, then what is left
 npm run check      index.html is up to date, and the modules follow the layer rules
 npm run format     Prettier on src/, scripts/ and tests/
 npm start          run the Windows app (Electron) from the repo (after npm install)
