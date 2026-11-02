@@ -199,18 +199,20 @@ export function liveRenderLanes(b0, force) {
       );
       prevId = id;
     }
+    /* a swap waiting: a slim tag along the bottom of the lane from the point it happens (never over a part's
+       name, even when it lands in the bar playing now) */
     pendSw.forEach(c => {
       if (c.ids[ti]) {
-        const k = Math.floor(c.tick / 32) - b0;
-        if (k >= 0 && k < W + 2) {
+        const x = (c.tick / 32 - b0) * bw;
+        if (x >= 0 && x < (W + 2) * bw) {
           const nf = facById(c.ids[ti]);
           row.append(
             el(
               'div',
               {
                 class: 'lvSwap',
-                style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px',
-                title: 'Swap to ' + (nf ? nf.name : '')
+                style: 'left:' + Math.round(x) + 'px;width:' + Math.max(bw - 1, 2 * bw - 1) + 'px',
+                title: 'Swaps to ' + (nf ? nf.name : '') + ' on this beat'
               },
               '→ ' + (nf ? nf.name : '')
             )

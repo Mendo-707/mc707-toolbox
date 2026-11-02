@@ -3563,16 +3563,20 @@ body[data-mode='live'] #live {
 }
 .lvSwap {
   position: absolute;
-  top: 3px;
-  height: 28px;
-  border: 2px dashed var(--swap);
-  border-radius: 5px;
-  font-size: 11px;
-  padding: 4px 5px;
+  top: 18px;
+  height: 13px;
+  border: 1px dashed var(--swap);
+  border-radius: 3px;
+  font-size: 9.5px;
+  line-height: 11px;
+  padding: 0 4px;
   overflow: hidden;
   white-space: nowrap;
-  background: color-mix(in srgb, #a283ff 22%, transparent);
+  text-overflow: ellipsis;
+  color: #fff;
+  background: color-mix(in srgb, #a283ff 55%, var(--panel));
   z-index: 2;
+  pointer-events: none;
 }
 .lvLine {
   position: absolute;
@@ -60057,16 +60061,16 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       pendSw.forEach((c) => {
         if (c.ids[ti]) {
-          const k2 = Math.floor(c.tick / 32) - b0;
-          if (k2 >= 0 && k2 < W2 + 2) {
+          const x = (c.tick / 32 - b0) * bw2;
+          if (x >= 0 && x < (W2 + 2) * bw2) {
             const nf = facById(c.ids[ti]);
             row2.append(
               el(
                 "div",
                 {
                   class: "lvSwap",
-                  style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
-                  title: "Swap to " + (nf ? nf.name : "")
+                  style: "left:" + Math.round(x) + "px;width:" + Math.max(bw2 - 1, 2 * bw2 - 1) + "px",
+                  title: "Swaps to " + (nf ? nf.name : "") + " on this beat"
                 },
                 "→ " + (nf ? nf.name : "")
               )

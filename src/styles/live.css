@@ -754,16 +754,20 @@ body[data-mode='live'] #live {
 }
 .lvSwap {
   position: absolute;
-  top: 3px;
-  height: 28px;
-  border: 2px dashed var(--swap);
-  border-radius: 5px;
-  font-size: 11px;
-  padding: 4px 5px;
+  top: 18px;
+  height: 13px;
+  border: 1px dashed var(--swap);
+  border-radius: 3px;
+  font-size: 9.5px;
+  line-height: 11px;
+  padding: 0 4px;
   overflow: hidden;
   white-space: nowrap;
-  background: color-mix(in srgb, #a283ff 22%, transparent);
+  text-overflow: ellipsis;
+  color: #fff;
+  background: color-mix(in srgb, #a283ff 55%, var(--panel));
   z-index: 2;
+  pointer-events: none;
 }
 .lvLine {
   position: absolute;
