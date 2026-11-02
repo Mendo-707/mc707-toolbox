@@ -8,6 +8,7 @@ import { LV, MUG } from './state.js';
 import { tracksFor } from '../core/tracks.js';
 import { lvIsFlash, lvSend, lvTracksFor } from './themes.js';
 import { liveBreak } from './breaks.js';
+import { scatDown, scatUp } from './scatter.js';
 import {
   liveAuto,
   liveBuildDrop,
@@ -24,18 +25,21 @@ import {
 } from './cues.js';
 
 /* ---- hardware sends: scatter and knobs ---- */
+/**
+ * A Scatter pad, held (on) or let go: the app's own Scatter on the parts it plays (live/scatter.js), and the
+ * MC-707's Scatter pad too when that is switched on (notes 60-75 on the control channel).
+ */
 export function scatter(i, on) {
-  if (!MIDI.out) {
-    if (on) toast('Connect the MC-707 first');
-    return;
-  }
-  const ch = (S.ctrlCh || 16) - 1;
   if (on) {
     LV.held['sc' + i] = 1;
-    lvSend([0x90 | ch, LV.scBase + i, 110]);
+    scatDown(i);
   } else {
     delete LV.held['sc' + i];
-    lvSend([0x80 | ch, LV.scBase + i, 0]);
+    scatUp(i);
+  }
+  if (LV.scHw && MIDI.out) {
+    const ch = (S.ctrlCh || 16) - 1;
+    lvSend(on ? [0x90 | ch, LV.scBase + i, 110] : [0x80 | ch, LV.scBase + i, 0]);
   }
   const b = $('#lvSc' + i);
   if (b) b.classList.toggle('on', on);

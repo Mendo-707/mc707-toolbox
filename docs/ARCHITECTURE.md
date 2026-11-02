@@ -306,6 +306,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `live/raven.js` | Raven mode: the mute and key keys on the MC-707 and a controller keyboard, the presets and their settings area. |  |
 | `live/resync.js` | Bringing a Live set back in line after the MIDI connection drops and returns (a USB hiccup): the MC-707 may have missed clip changes, effect moves and level fades, so everything is sent again. |  |
 | `live/riff.js` | Loop rec: record your own riff into the set, and choose when it plays. |  |
+| `live/scatter.js` | Scatter, in the app: while you hold a Scatter pad, Live Mode plays its own loop out of order, the way the MC-707's Scatter does to its loop: repeats, reverses, swaps, skips, speed changes and scrambles. It works on the parts the app plays (all of them, the drums or the melodic parts, as chosen), so it needs nothing set up on the MC-707. Letting go puts the loop straight back where it would have been. The MC-707's own Scatter can still be played as well (Settings: notes 60-75 on the control channel), for its audio effects. |  |
 | `live/scene-editor.js` | Editing Live scenes: parts, when each plays, its MC-707 clip, and saving custom scenes. |  |
 | `live/scene-templates.js` | The Live scene templates (Groove, Lift, Peak …) and the play patterns that let parts come and go. |  |
 | `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part on the chords' progression and the lead and pluck kept out of each other's way. |  |

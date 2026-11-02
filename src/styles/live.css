@@ -1477,11 +1477,20 @@ body[data-dev='101'] .lvmap {
 }
 .lvSc {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 5px;
+  margin-top: 6px;
 }
 .lvScB {
-  aspect-ratio: 1;
+  min-height: 44px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 11.5px;
+  line-height: 1.15;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel2);
@@ -1489,6 +1498,10 @@ body[data-dev='101'] .lvmap {
   font-weight: 700;
   touch-action: none;
   user-select: none;
+}
+.lvScB small {
+  font-size: 10px;
+  opacity: 0.6;
 }
 .lvScB.on {
   background: #4dd0e1;

@@ -2,6 +2,7 @@
 // keyboard.
 //
 // Reads: S, LV, MIDI.
+import { SCATTERS } from './scatter.js';
 import { riffSettings } from './riff.js';
 import { $, clamp, el } from '../core/dom.js';
 import { S } from '../core/state.js';
@@ -207,7 +208,7 @@ export function liveRenderSettings() {
   ].forEach(a => opts.push([a, LV_LABEL[a]]));
   NOTEN.forEach((n, i) => opts.push(['key:' + i, 'Key ' + n]));
   S.tracks.forEach((t, i) => opts.push(['mt:' + i, 'Mute ' + t.name]));
-  for (let i = 0; i < 16; i++) opts.push(['sc:' + i, 'Scatter ' + (i + 1) + ' (hold)']);
+  for (let i = 0; i < 16; i++) opts.push(['sc:' + i, 'Scatter: ' + SCATTERS[i][1] + ' (hold)']);
   for (let i = 0; i < 16; i++) {
     const s = el('select', {
       'aria-label': 'Action for pad ' + (i + 1),

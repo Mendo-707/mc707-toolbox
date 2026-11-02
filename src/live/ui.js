@@ -774,6 +774,17 @@ export function liveInit() {
       'scatter',
       'Scatter (hold)',
       false,
+      el(
+        'div',
+        { class: 'riffRow' },
+        el('label', { class: 'lvf' }, 'On', el('select', { id: 'lvScTo', 'aria-label': 'Scatter works on' })),
+        el(
+          'label',
+          { class: 'lvf', title: 'Also press the MC-707’s own Scatter pad (needs Scatter set up on the MC-707)' },
+          el('input', { type: 'checkbox', id: 'lvScHw' }),
+          'MC-707’s Scatter too'
+        )
+      ),
       el('div', { class: 'lvSc', id: 'lvScG' }),
       el('div', { class: 'hint', id: 'lvScHint' })
     ),

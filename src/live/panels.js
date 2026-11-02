@@ -1,6 +1,7 @@
 // The Live page panels: scene cards, pads, keys and mutes, knobs, and keeping the toolbar in step.
 //
 // Reads: S, LV, MIDI, DEV.
+import { SCATTERS, SCAT_TO } from './scatter.js';
 import { humanizeSync, lvHumApply } from './humanize-ui.js';
 import { lvMoodApply, moodSync } from './mood-ui.js';
 import { $, el } from '../core/dom.js';
@@ -11,7 +12,7 @@ import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
 import { FLASH_RH } from '../library/flash.js';
 import { NK } from '../library/styles.js';
-import { LV, LV_TOPFN, NOTEN, lvStyle, noteLbl } from './state.js';
+import { LV, LV_TOPFN, NOTEN, lvStyle, noteLbl, saveLive } from './state.js';
 import { LV_FLASHC, actColor, actLabel, lvIsFlash, lvScCol } from './themes.js';
 import { LV_SCFX } from './moves.js';
 import { liveEditScene, liveRenderSceneEd } from './scene-editor.js';
@@ -413,14 +414,17 @@ export function liveRenderKnobs() {
   if (sg) {
     sg.textContent = '';
     for (let i = 0; i < 16; i++) {
+      const [, name, what] = SCATTERS[i];
       const b = el(
         'button',
         {
+          type: 'button',
           class: 'lvScB',
           id: 'lvSc' + i,
-          title: 'Scatter pad ' + (i + 1) + ' (MIDI note ' + (LV.scBase + i) + ' on the control channel)'
+          title: name + ': ' + what + ' (hold)'
         },
-        String(i + 1)
+        el('small', {}, String(i + 1)),
+        el('span', {}, name)
       );
       b.addEventListener('pointerdown', ev => {
         ev.preventDefault();
@@ -434,16 +438,26 @@ export function liveRenderKnobs() {
       sg.append(b);
     }
   }
+  const so = $('#lvScTo');
+  if (so && !so.childNodes.length) {
+    SCAT_TO.forEach(([v, l]) => so.append(el('option', { value: v }, l)));
+    so.onchange = e => ((LV.scatTo = e.target.value), saveLive());
+  }
+  if (so) so.value = LV.scatTo || 'all';
+  const hw = $('#lvScHw');
+  if (hw) {
+    hw.checked = !!LV.scHw;
+    hw.onchange = e => ((LV.scHw = e.target.checked), saveLive());
+  }
   const sh = $('#lvScHint');
   if (sh)
     sh.textContent =
-      'Sends notes ' +
+      'Hold a pad: the set plays out of order while you hold it, and carries on from where it would have been when you let go. ' +
+      'The MC-707’s own Scatter (notes ' +
       LV.scBase +
       '–' +
       (LV.scBase + 15) +
       ' on control channel ' +
       (S.ctrlCh || 16) +
-      ', the MC-707’s Scatter pads (Roland’s MIDI chart: notes 60–75 on the control channel). For it to work on Live Mode’s parts too, on the MC-707 set the Control Channel in SYSTEM SETTING (MIDI tab) to ' +
-      (S.ctrlCh || 16) +
-      ' and Scatter’s POS (SCATTER › SET) to MIXOUT, or to one track (TRACK 1–8).';
+      ') works on its own sequencer and audio, set up on the MC-707.';
 }

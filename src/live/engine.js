@@ -25,6 +25,7 @@ import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOw
 import { LV_BENDS, LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick, lvTapeAt, lvTapeBend } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
 import { riffBusy, riffQuiet, riffStopped, riffTick } from './riff.js';
+import { scatAt, scatOn } from './scatter.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -640,6 +641,8 @@ export function liveTick(tick, nt, td) {
   /* Chord lock: the chord playing now, worked out once this tick when a lead or pluck needs it */
   let chordNow;
   const chord = () => (chordNow === undefined ? (chordNow = lvChordNow(ft)) : chordNow);
+  /* Scatter held: the loop out of order on the parts it plays (worked out once this tick) */
+  const sc = LV.scat && !fl ? scatAt(LV.scat, tick) : null;
   const durK = fk === 'half' ? 2 : tape ? Math.min(4, 1 / tape.rate) : 1,
     durMax = fk === 'gate' ? 1.6 * td : Infinity;
   for (let t = 0; t < 8; t++) {
@@ -674,11 +677,20 @@ export function liveTick(tick, nt, td) {
     if (hush) continue;
     /* Loop rec: the track you record to is quiet while you play */
     if (riffQuiet(t)) continue;
+    const scT = sc && scatOn(t);
+    if (scT && sc.hush) continue;
     /* the solo track left to you (but your own riff plays) */
     if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT && !(LV.voices[t][0] && LV.voices[t][0].f.riff))
       continue;
-    const vft =
-      fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
+    const vft = scT
+      ? sc.pos
+      : fl && fl.kind === 'stutter'
+        ? fft
+        : fk === 'half'
+          ? fl.start + (fr >> 1)
+          : tape
+            ? fl.start + tape.pos
+            : ft;
     for (const v of fl
       ? fl.loop
         ? fl.keep.includes(t)
@@ -718,7 +730,7 @@ export function liveTick(tick, nt, td) {
           tone ? clamp(nn, 0, 127) : nn,
           clamp(n.v * g, 1, 127),
           nt + subTick(n) * (TR.subTd || td),
-          Math.min(n.l * 2 * td * durK, durMax)
+          Math.min(n.l * 2 * td * durK * (scT ? sc.dur : 1), durMax)
         );
         if (slotOf(t) === 3) v._last = nn;
         if (vt === 'echo' && last && tone)
