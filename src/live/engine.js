@@ -24,7 +24,7 @@ import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
 import { LV_BENDS, LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick, lvTapeAt, lvTapeBend } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
-import { RIFF, riffBusy, riffTick } from './riff.js';
+import { riffBusy, riffQuiet, riffStopped, riffTick } from './riff.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -672,6 +672,8 @@ export function liveTick(tick, nt, td) {
     }
     if ((!fl || fl.loop) && lvMaskOff(t, tick)) continue;
     if (hush) continue;
+    /* Loop rec: the track you record to is quiet while you play */
+    if (riffQuiet(t)) continue;
     /* the solo track left to you (but your own riff plays) */
     if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT && !(LV.voices[t][0] && LV.voices[t][0].f.riff))
       continue;
@@ -833,8 +835,7 @@ export function liveCleanup() {
 }
 export function liveStop() {
   LV.jam = null;
-  RIFF.state = 'off';
-  RIFF.cued = [];
+  riffStopped();
   if (TR.playing && TR.mode === 'live') stopPlay();
 }
 /** The Start Jam / End Jam button (and Space): an intro into the first scene, or an outro to the end. */

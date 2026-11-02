@@ -443,5 +443,7 @@ export function liveRenderKnobs() {
       (LV.scBase + 15) +
       ' on control channel ' +
       (S.ctrlCh || 16) +
-      '. Turn Scatter on in the MC-707.';
+      ', the MC-707’s Scatter pads (Roland’s MIDI chart: notes 60–75 on the control channel). For it to work on Live Mode’s parts too, on the MC-707 set the Control Channel in SYSTEM SETTING (MIDI tab) to ' +
+      (S.ctrlCh || 16) +
+      ' and Scatter’s POS (SCATTER › SET) to MIXOUT, or to one track (TRACK 1–8).';
 }

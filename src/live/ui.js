@@ -2,7 +2,7 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
-import { riffPanel } from './riff.js';
+import { riffPanel, riffShow } from './riff.js';
 import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
@@ -439,7 +439,15 @@ export function liveInit() {
       el('b', { id: 'lvNowName', class: 'big' }, 'Stopped'),
       el('div', { class: 'lvProg', id: 'lvProg' }),
       el('div', { class: 'lvbeats', id: 'lvBeats' }, ...[0, 1, 2, 3].map(i => el('i', { id: 'lvBeat' + i }))),
-      el('span', { id: 'lvNowBar', class: 'hint' }, '')
+      el('span', { id: 'lvNowBar', class: 'hint' }, ''),
+      el('button', {
+        type: 'button',
+        id: 'lvRecBadge',
+        class: 'lvRecBadge',
+        hidden: true,
+        title: 'Loop rec is recording: show it',
+        onclick: () => riffShow()
+      })
     ),
     el(
       'div',
@@ -770,15 +778,8 @@ export function liveInit() {
       el('div', { class: 'hint', id: 'lvScHint' })
     ),
     fold('looprec', 'Loop rec', true, riffPanel()),
-    fold(
-      'keys',
-      'Key and parts',
-      false,
-      el('div', { class: 'hint', id: 'lvPerfHint' }),
-      el('div', { class: 'lvKeysRow', id: 'lvKeys' }),
-      el('div', { class: 'lvStrips', id: 'lvMutes' }),
-      el('div', { class: 'ctlBar', id: 'lvCtlBar', hidden: true })
-    )
+    /* a controller keyboard's zones, while one is connected */
+    el('div', { class: 'ctlBar', id: 'lvCtlBar', hidden: true })
   );
   const sets = el(
     'details',

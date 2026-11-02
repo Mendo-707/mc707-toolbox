@@ -1756,8 +1756,11 @@ input[type='number'] {
 .lvMore[open] > summary {
   color: var(--ink);
 }
-/* Loop rec (live/riff.js): track and length, ● Rec, and the takes */
+/* Loop rec (live/riff.js): the choices, ● Rec, the recording as it happens, the take, the takes */
 .riffPanel {
+  --rec: #ef4444;
+  --wait: #f59e0b;
+  --ok: #22c55e;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1771,26 +1774,125 @@ input[type='number'] {
 .riffPanel .riffBtn {
   min-width: 84px;
   font-weight: 700;
+  color: var(--rec);
+  border-color: color-mix(in srgb, var(--rec) 55%, transparent);
 }
-.riffPanel .riffBtn.rec {
-  background: #d93a3a;
-  border-color: #d93a3a;
+.riffPanel .riffBtn:hover {
+  background: var(--rec);
   color: #fff;
-  animation: riffBlink 1s steps(2) infinite;
-}
-@keyframes riffBlink {
-  50% {
-    opacity: 0.7;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .riffPanel .riffBtn.rec {
-    animation: none;
-  }
 }
 .riffStat {
   flex: 1;
   min-width: 140px;
+}
+.riffCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid var(--wait);
+  background: color-mix(in srgb, var(--wait) 10%, transparent);
+}
+.riffCard.rec {
+  border-color: var(--rec);
+  background: color-mix(in srgb, var(--rec) 12%, transparent);
+}
+.riffCard.done {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 9%, transparent);
+}
+.riffTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.riffBig {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+  background: var(--wait);
+}
+.riffCard.rec .riffBig {
+  background: var(--rec);
+  color: #fff;
+  animation: riffBlink 1s steps(2) infinite;
+}
+.riffCard.done .riffBig {
+  background: var(--ok);
+}
+.riffCount {
+  height: 4px;
+  border-radius: 2px;
+  background: #ffffff14;
+  overflow: hidden;
+}
+.riffCount i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--wait);
+}
+.riffCard.rec .riffCount i {
+  background: var(--rec);
+}
+.riffWarn {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--wait) 18%, transparent);
+  font-size: 13px;
+}
+.riffRoll {
+  height: 54px;
+  border-radius: 6px;
+  background: #0006;
+  overflow: hidden;
+}
+.riffRoll.mini {
+  height: 26px;
+}
+.riffRoll svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.riffRoll .rlBar {
+  stroke: #ffffff40;
+  stroke-width: 0.15;
+}
+.riffRoll .rlBeat {
+  stroke: #ffffff14;
+  stroke-width: 0.1;
+}
+.riffRoll .rlNote {
+  fill: var(--lv-acc, #4ade80);
+}
+.riffCard.rec .riffRoll .rlNote {
+  fill: #fca5a5;
+}
+.riffRoll .rlNote.open {
+  fill: #fff;
+}
+.riffRoll .rlDone {
+  fill: color-mix(in srgb, var(--rec) 16%, transparent);
+}
+.riffRoll .rlHead {
+  stroke: var(--rec);
+  stroke-width: 0.35;
+}
+.riffH {
+  margin: 4px 0 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.7;
 }
 .riffTakes {
   list-style: none;
@@ -1798,21 +1900,78 @@ input[type='number'] {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .riffTakes li {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto auto;
+  grid-template-columns: minmax(70px, auto) 1fr;
+  grid-template-areas: 'name roll' 'acts acts';
   align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 6px;
+  gap: 4px 8px;
+  padding: 6px;
+  border-radius: 8px;
   background: #ffffff08;
+  border: 1px solid transparent;
 }
 .riffTakes li.on {
-  outline: 1px solid var(--lv-acc, #4ade80);
+  border-color: var(--lv-acc, #4ade80);
+}
+.riffTakes li.last {
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+}
+.riffName {
+  grid-area: name;
+  display: flex;
+  flex-direction: column;
+}
+.riffTakes .riffRoll {
+  grid-area: roll;
+}
+.riffActs {
+  grid-area: acts;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
 }
 .riffTakes .riffQ {
   font-size: 12px;
   padding: 2px 4px;
+  margin-right: auto;
+}
+.riffPanel .btn.wait {
+  border-color: var(--wait);
+  color: var(--wait);
+}
+.lvRecBadge {
+  margin-top: 6px;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  color: #111;
+  background: #f59e0b;
+}
+.lvRecBadge.rec {
+  color: #fff;
+  background: #ef4444;
+  animation: riffBlink 1s steps(2) infinite;
+}
+.lvRecBadge[hidden] {
+  display: none;
+}
+@keyframes riffBlink {
+  50% {
+    opacity: 0.65;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .riffCard.rec .riffBig,
+  .lvRecBadge.rec {
+    animation: none;
+  }
 }

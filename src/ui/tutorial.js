@@ -170,6 +170,7 @@ const chapters = dn => [
     [
       'For the pads: select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON. The pads then work while that track is selected.',
       'MIDI Sync: AUTO (or USB) if you want the ' + dn + ' to follow the set’s tempo.',
+      'For the Scatter pads: Control Channel 16 in SYSTEM SETTING (MIDI tab, the same as the app’s), and Scatter’s POS set to MIXOUT (SCATTER › SET) so it works on everything you hear.',
       'To record riffs on the ' +
         dn +
         '’s own keys (Loop rec): turn Tx MIDI Note and Tx USB MIDI ON for that melody track too, the same way as for the pads, and play above the C4–B5 keys Raven mode uses.'
@@ -185,7 +186,7 @@ const chapters = dn => [
         { mode: 'live', sel: '#lvAuto' }
       ],
       [
-        'Loop rec: choose the track to record to, how long and the Quantize, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it, and its own Quantize changes it later. The count-in is in Settings and mapping › Loop rec.',
+        'Loop rec: choose the track to record to, how long and the Quantize, then press ● Rec (it starts the jam if it’s stopped). Come in when the count-down reaches the start; the track goes quiet while you record and your notes appear as you play. The take then waits, with the set unchanged, until you press ▶ Play; ★ makes the scene keep it.',
         { mode: 'live', sel: '.riffPanel .riffBtn' }
       ],
       'Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode).'
