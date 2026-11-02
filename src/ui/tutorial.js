@@ -31,8 +31,12 @@ const stepKeys = c => [...c[3].map((_, i) => c[0] + ':d' + i), ...c[4].map((_, i
 function showMe(spec, back) {
   if (spec.mode && document.body.dataset.mode !== spec.mode) setMode(spec.mode);
   setTimeout(() => {
+    /* a target inside a folded panel: unfold it first */
+    const raw = spec.sel ? $(spec.sel) : null;
+    for (let d = raw && raw.closest('details'); d; d = d.parentElement && d.parentElement.closest('details'))
+      d.open = true;
     const t = spec.sel
-      ? $(spec.sel)
+      ? raw
       : [...document.querySelectorAll('button')].find(b => b.offsetParent && b.textContent.trim().includes(spec.text));
     $('#tutSpot')?.remove();
     if (!t || !t.offsetParent) return back();
@@ -165,7 +169,10 @@ const chapters = dn => [
     'Play a looping set from 16 pads: scenes, breaks, builds and drops that land on the beat.',
     [
       'For the pads: select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON. The pads then work while that track is selected.',
-      'MIDI Sync: AUTO (or USB) if you want the ' + dn + ' to follow the set’s tempo.'
+      'MIDI Sync: AUTO (or USB) if you want the ' + dn + ' to follow the set’s tempo.',
+      'To record riffs on the ' +
+        dn +
+        '’s own keys (Loop rec): turn Tx MIDI Note and Tx USB MIDI ON for that melody track too, the same way as for the pads, and play above the C4–B5 keys Raven mode uses.'
     ],
     [
       'Pick a genre when Live Mode opens (Live › Pick a genre changes it).',
@@ -176,6 +183,10 @@ const chapters = dn => [
       [
         'Auto-pilot runs the set by itself; Variation and Chaos set how much it changes. 🎲 New patterns brings fresh parts in without stopping.',
         { mode: 'live', sel: '#lvAuto' }
+      ],
+      [
+        'Loop rec: choose the track to record to and how long, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it. Timing and count-in are in Settings and mapping › Loop rec.',
+        { mode: 'live', sel: '.riffPanel .riffBtn' }
       ],
       'Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode).'
     ],

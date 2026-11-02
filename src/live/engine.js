@@ -24,7 +24,7 @@ import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
 import { LV_BENDS, LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick, lvTapeAt, lvTapeBend } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
-import { RIFF, riffTick } from './riff.js';
+import { RIFF, riffBusy, riffTick } from './riff.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -550,7 +550,7 @@ export function liveTick(tick, nt, td) {
   lvFadeTick(tick, nt);
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
   if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
-  if (RIFF.state !== 'off') riffTick(tick);
+  if (riffBusy()) riffTick(tick);
   if (tick % 32 === 0) lvBarSnap(tick);
   if (LV.flash && tick >= LV.flash.end) {
     const fe = LV.flash.end;
@@ -834,6 +834,7 @@ export function liveCleanup() {
 export function liveStop() {
   LV.jam = null;
   RIFF.state = 'off';
+  RIFF.cued = [];
   if (TR.playing && TR.mode === 'live') stopPlay();
 }
 /** The Start Jam / End Jam button (and Space): an intro into the first scene, or an outro to the end. */

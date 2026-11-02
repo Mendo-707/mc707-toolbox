@@ -1756,14 +1756,23 @@ input[type='number'] {
 .lvMore[open] > summary {
   color: var(--ink);
 }
-/* Record riff (live/riff.js), in the keyboard's bar */
-.ctlBar .riffBox {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  margin-left: 12px;
+/* Loop rec (live/riff.js): track and length, ● Rec, and the takes */
+.riffPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.ctlBar .riffBtn.rec {
+.riffRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.riffPanel .riffBtn {
+  min-width: 84px;
+  font-weight: 700;
+}
+.riffPanel .riffBtn.rec {
   background: #d93a3a;
   border-color: #d93a3a;
   color: #fff;
@@ -1775,24 +1784,31 @@ input[type='number'] {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ctlBar .riffBtn.rec {
+  .riffPanel .riffBtn.rec {
     animation: none;
   }
 }
-.lvRiffRow {
+.riffStat {
+  flex: 1;
+  min-width: 140px;
+}
+.riffTakes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 2px 0 6px;
+  flex-direction: column;
+  gap: 4px;
 }
-.lvRiffRow .riffBox,
-.ctlBar .riffBox {
-  display: inline-flex;
+.riffTakes li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
   gap: 6px;
-  align-items: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: #ffffff08;
 }
-.riffBtn.rec {
-  background: #d93a3a !important;
-  border-color: #d93a3a !important;
-  color: #fff !important;
+.riffTakes li.on {
+  outline: 1px solid var(--lv-acc, #4ade80);
 }
