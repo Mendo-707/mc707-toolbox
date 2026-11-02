@@ -220,7 +220,10 @@ export const liveSwingAmt = () => LV.swing;
     const i = LV.acts.indexOf('s7');
     if (i >= 0) LV.acts[i] = 'brk';
   }
-  if (!['mix', 'hits', 'stutter', 'drop', 'roll', 'gate', 'half', 'wash'].includes(LV.brkStyle)) LV.brkStyle = 'mix';
+  if (
+    !['mix', 'hits', 'stutter', 'drop', 'roll', 'gate', 'half', 'wash', 'tape', 'brake', 'spin'].includes(LV.brkStyle)
+  )
+    LV.brkStyle = 'mix';
   LV.chordLock = LV.chordLock !== false;
   if (![16, 32, 64].includes(+LV.brkLen)) LV.brkLen = 32;
   else LV.brkLen = +LV.brkLen;

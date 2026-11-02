@@ -105,6 +105,8 @@ export function panic(hard) {
       o.send([0xb0 | ch, 123, 0], ms);
       o.send([0xb0 | ch, 64, 0], ms);
       if (hard) o.send([0xb0 | ch, 120, 0], ms);
+      /* the pitch back to the middle (a tape stop or spinback cut short) */
+      o.send([0xe0 | ch, 0, 64], ms);
     }
     NOTEHIST.forEach(k => o.send([0x80 | (k >> 7), k & 127, 0], ms));
   };

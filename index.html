@@ -19500,6 +19500,7 @@ html.os-darwin.native-menu #menubar .mproj {
         o.send([176 | ch, 123, 0], ms);
         o.send([176 | ch, 64, 0], ms);
         if (hard) o.send([176 | ch, 120, 0], ms);
+        o.send([224 | ch, 0, 64], ms);
       }
       NOTEHIST.forEach((k2) => o.send([128 | k2 >> 7, k2 & 127, 0], ms));
     };
@@ -52638,7 +52639,8 @@ html.os-darwin.native-menu #menubar .mproj {
       const i = LV.acts.indexOf("s7");
       if (i >= 0) LV.acts[i] = "brk";
     }
-    if (!["mix", "hits", "stutter", "drop", "roll", "gate", "half", "wash"].includes(LV.brkStyle)) LV.brkStyle = "mix";
+    if (!["mix", "hits", "stutter", "drop", "roll", "gate", "half", "wash", "tape", "brake", "spin"].includes(LV.brkStyle))
+      LV.brkStyle = "mix";
     LV.chordLock = LV.chordLock !== false;
     if (![16, 32, 64].includes(+LV.brkLen)) LV.brkLen = 32;
     else LV.brkLen = +LV.brkLen;
@@ -56596,10 +56598,12 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     if (fl && (fl.kind === "roll" || fl.kind === "drop")) lvRollTick(fl, tick, nt, td);
     const fk = fl && fl.loop ? fl.kind : "", fr = fl ? tick - fl.start : 0;
-    const hush = fk === "half" && fr % 2 !== 0 || fk === "gate" && LV_GATE[fr >> 1 & 15] !== "x" || fk === "wash" && fr >= 8;
+    const tape = LV_BENDS.includes(fk) ? lvTapeAt(fl, fr) : null;
+    if (LV_BENDS.includes(fk)) lvTapeBend(fl, fr, nt);
+    const hush = fk === "half" && fr % 2 !== 0 || fk === "gate" && LV_GATE[fr >> 1 & 15] !== "x" || fk === "wash" && fr >= 8 || LV_BENDS.includes(fk) && !tape;
     let chordNow;
     const chord2 = () => chordNow === void 0 ? chordNow = lvChordNow(ft) : chordNow;
-    const durK = fk === "half" ? 2 : 1, durMax = fk === "gate" ? 1.6 * td : Infinity;
+    const durK = fk === "half" ? 2 : tape ? Math.min(4, 1 / tape.rate) : 1, durMax = fk === "gate" ? 1.6 * td : Infinity;
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
       if (trk.mute || solo2 && !trk.solo || lvUserOwns(t)) continue;
@@ -56627,7 +56631,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if ((!fl || fl.loop) && lvMaskOff(t, tick)) continue;
       if (hush) continue;
       if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT) continue;
-      const vft = fl && fl.kind === "stutter" ? fft : fk === "half" ? fl.start + (fr >> 1) : ft;
+      const vft = fl && fl.kind === "stutter" ? fft : fk === "half" ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
       for (const v of fl ? fl.loop ? fl.keep.includes(t) ? LV.voices[t] : [] : fl.v[t] ? [fl.v[t]] : [] : LV.voices[t]) {
         const g = envAt2(v.env, tick) * tg;
         if (g <= 0.02) continue;
@@ -56809,8 +56813,12 @@ html.os-darwin.native-menu #menubar .mproj {
     ["drop", "Drop-out"],
     ["gate", "Gate chop"],
     ["half", "Half-time"],
-    ["wash", "Reverb wash"]
+    ["wash", "Reverb wash"],
+    ["tape", "Tape stop"],
+    ["brake", "Vinyl brake"],
+    ["spin", "Spinback"]
   ];
+  var LV_BENDS = ["tape", "brake", "spin"];
   var LV_GATE = "x.xx.x.xx.x.xxx.";
   var LV_BRKLEN = [
     [16, "½ bar"],
@@ -56821,8 +56829,22 @@ html.os-darwin.native-menu #menubar .mproj {
     const st = lvStyle();
     if (kind === "mix") {
       const x = Math.random();
-      kind = x < 0.3 ? "hits" : x < 0.42 ? "stutter" : x < 0.54 ? "roll" : x < 0.66 ? "drop" : x < 0.78 ? "gate" : x < 0.9 ? "half" : "wash";
+      const MIX = [
+        ["hits", 27],
+        ["stutter", 11],
+        ["roll", 11],
+        ["drop", 10],
+        ["gate", 10],
+        ["half", 9],
+        ["wash", 8],
+        ["tape", 6],
+        ["brake", 4],
+        ["spin", 4]
+      ];
+      let acc = 0;
+      kind = MIX.find(([, w]) => (acc += w / 100) > x)?.[0] || "hits";
     }
+    if (kind === "tape" && len < 32) kind = "brake";
     if (kind === "drop" && len < 32) kind = "roll";
     const b = { kind, len, v: {} };
     if (kind === "hits") {
@@ -56844,7 +56866,10 @@ html.os-darwin.native-menu #menubar .mproj {
       drop: "Drop-out",
       gate: "Gate chop",
       half: "Half-time",
-      wash: "Reverb wash"
+      wash: "Reverb wash",
+      tape: "Tape stop",
+      brake: "Vinyl brake",
+      spin: "Spinback"
     }[b.kind];
     return b;
   }
@@ -56884,7 +56909,7 @@ html.os-darwin.native-menu #menubar .mproj {
     b.start = tick;
     b.end = tick + b.len;
     b.loop = b.kind !== "hits";
-    b.keep = ["stutter", "gate", "half", "wash"].includes(b.kind) ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === "drop" ? tracksFor([4, 5, 6, 7]) : [];
+    b.keep = ["stutter", "gate", "half", "wash", ...LV_BENDS].includes(b.kind) ? [0, 1, 2, 3, 4, 5, 6, 7] : b.kind === "drop" ? tracksFor([4, 5, 6, 7]) : [];
     if (b.kind === "hits")
       for (const t in b.v) {
         const P2 = b.v[t].f.bars * 32;
@@ -56947,6 +56972,32 @@ html.os-darwin.native-menu #menubar .mproj {
           start: tick,
           end: b.end
         });
+      else if (b.kind === "tape" || b.kind === "brake")
+        lvMove({
+          id: "brkfx",
+          tag: "flash",
+          tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+          cc: 80,
+          kind: "ramp",
+          from: "rest",
+          to: 18,
+          curve: "exp",
+          start: tick,
+          end: tick + Math.round(lvTapeStop(b))
+        });
+      else if (b.kind === "spin")
+        lvMove({
+          id: "brkfx",
+          tag: "flash",
+          tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+          cc: 91,
+          kind: "ramp",
+          from: 120,
+          to: "rest",
+          curve: "log",
+          start: tick,
+          end: b.end
+        });
       else if (b.kind === "stutter")
         lvMove({
           id: "brkfx",
@@ -56975,6 +57026,24 @@ html.os-darwin.native-menu #menubar .mproj {
         });
     }
     lvLog(tick);
+  }
+  var lvTapeStop = (b) => b.len * (b.kind === "brake" ? 0.4 : 0.75);
+  function lvTapeAt(b, fr) {
+    if (b.kind === "spin") return fr < b.len / 2 ? { pos: -2 * (fr + 1), rate: 2 } : null;
+    const stop = lvTapeStop(b), p = (x) => x - x * x / (2 * stop);
+    if (fr >= stop) return null;
+    const at2 = Math.floor(p(fr));
+    return fr === 0 || at2 > Math.floor(p(fr - 1)) ? { pos: at2, rate: Math.max(0.15, 1 - fr / stop) } : null;
+  }
+  function lvTapeBend(b, fr, nt) {
+    if (fr % 2 || !MIDI.out) return;
+    const stop = b.kind === "spin" ? b.len / 2 : lvTapeStop(b), u = Math.min(1, fr / stop);
+    if (u >= 1 && b.bent) return;
+    b.bent = u >= 1;
+    const v = u >= 1 ? 8192 : b.kind === "spin" ? Math.round(8192 + 8191 * u * u) : Math.round(8192 - 8192 * u * u);
+    const at2 = nt + (S.midiOffset || 0) / 1e3;
+    for (const t of toneTracksAll())
+      if (!S.tracks[t].mute) sendMidi([224 | S.tracks[t].ch - 1, v & 127, v >> 7 & 127], at2);
   }
   function lvRollTick(b, tick, nt, td) {
     const t = b.kind === "roll" ? kitTrack() : lvBT(), k2 = kitTrack();
