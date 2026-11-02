@@ -2,7 +2,6 @@
 // groups).
 //
 // Reads: S, LV, MIDI, AU.
-import { SCATTERS } from './scatter.js';
 import { $ } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { AU, ensureAudio } from '../services/synth.js';
@@ -67,7 +66,6 @@ export function actLabel(a) {
   }
   if (a.startsWith('key:')) return 'Key ' + NOTEN[+a.slice(4)];
   if (a.startsWith('mt:')) return S.tracks[+a.slice(3)].name + ' mute';
-  if (a.startsWith('sc:')) return 'Scatter: ' + ((SCATTERS[+a.slice(3)] || [])[1] || +a.slice(3) + 1);
   return LV_LABEL[a] || a;
 }
 export function actColor(a) {
@@ -80,7 +78,7 @@ export function actColor(a) {
   if (a === 'fill') return '#ffa629';
   if (a.startsWith('mu:') || a.startsWith('mt:')) return '#2fd3c0';
   if (a.startsWith('key:')) return '#84d95b';
-  if (a.startsWith('stut:') || a.startsWith('sc:')) return '#ff6fa3';
+  if (a.startsWith('stut:')) return '#ff6fa3';
   if (a.startsWith('rise:') || a === 'bd') return '#ff5f45';
   if (a.startsWith('en:') || a === 'auto' || a === 'lock') return '#e9d94a';
   return '#8f929c';

@@ -715,3 +715,20 @@ test('an MC-101 on the MIDI port switches the app to MC-101 mode by itself', asy
   assert.deepEqual(r.chans.slice(0, 1), [1]);
   assert.deepEqual(errors, []);
 });
+
+test('Live Mode: no Scatter any more; a pad saved as a Scatter pad goes back to its own action', async () => {
+  const live = JSON.parse(SAVED['mc707-live']);
+  live.acts = Array.from({ length: 16 }, (_, i) => (i === 5 ? 'sc:3' : 'brk'));
+  const { page, errors } = await openApp({ storage: { ...SAVED, 'mc707-live': JSON.stringify(live) } });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(() => ({
+    panel: !!document.querySelector('#lvF-scatter, #lvScG'),
+    pad5: window.__app.LV.acts[5],
+    words: /scatter/i.test(document.body.textContent)
+  }));
+  assert.equal(r.panel, false, 'no Scatter panel');
+  assert.ok(!r.pad5.startsWith('sc:'), 'the pad has an action of its own again (' + r.pad5 + ')');
+  assert.equal(r.words, false, 'Scatter is not mentioned anywhere');
+  assert.deepEqual(errors, []);
+});

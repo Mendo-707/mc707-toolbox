@@ -88,9 +88,6 @@ const LV_SAVE = [
   'ktarget',
   'rest',
   'restV',
-  'scBase',
-  'scatTo',
-  'scHw',
   'riseBars',
   'dropStyle',
   'mode',
@@ -137,9 +134,6 @@ export const LV = Object.assign(
     chaos: 30,
     ktarget: 'all',
     rest: [64, 0, 64, 64],
-    scBase: 60,
-    scatTo: 'all',
-    scHw: false,
     riseBars: 4,
     dropStyle: 'gap',
     mode: null,
@@ -220,6 +214,8 @@ export const liveSwingAmt = () => LV.swing;
     LV.padNotes = lvLayoutNotes();
   if (!Array.isArray(LV.acts) || LV.acts.length !== 16 || LV.acts.some(a => typeof a !== 'string'))
     LV.acts = LV_ACTS.slice();
+  /* Scatter pads (gone in 1.8.3): back to the pad's own action */
+  LV.acts = LV.acts.map((a, i) => (a.startsWith('sc:') ? LV_ACTS[i] : a));
   if (!LV.acts.includes('brk')) {
     const i = LV.acts.indexOf('s7');
     if (i >= 0) LV.acts[i] = 'brk';
@@ -244,7 +240,6 @@ export const liveSwingAmt = () => LV.swing;
   LV.keyCh = clamp(Math.round(+LV.keyCh || 0), 0, 16);
   LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
   LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
-  LV.scBase = clamp(Math.round(+LV.scBase || 60), 0, 112);
   if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
   if (!['lively', 'mixed', 'classic'].includes(LV.flavor)) LV.flavor = 'lively';
   if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;

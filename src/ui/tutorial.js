@@ -188,7 +188,6 @@ const chapters = dn => [
         'Loop rec: choose the track to record to, how long and the Quantize, then press ● Rec (it starts the jam if it’s stopped). Come in when the count-down reaches the start; the track goes quiet while you record and your notes appear as you play. The take then waits, with the set unchanged, until you press ▶ Play; ★ makes the scene keep it.',
         { mode: 'live', sel: '.riffPanel .riffBtn' }
       ],
-      'Scatter (hold): hold one of the 16 pads and the set plays out of order (repeats, reverses, skips, half and double speed) until you let go; choose every part, the drums or the melodic parts.',
       'Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode).'
     ],
     [['Go to Live Mode', () => setMode('live')]]

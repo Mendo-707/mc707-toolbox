@@ -117,7 +117,6 @@ import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
 import { midiBack, midiLost } from './ui/link-watch.js';
 import { autoConnectAtLaunch, midiFound } from './ui/auto-connect.js';
-import { SCATTERS } from './live/scatter.js';
 import { backupsOffer } from './ui/backups.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
@@ -287,7 +286,6 @@ PROJ.t = projTitle;
   window.__app = {
     wiz: { plan: wizPlan, def: defaultWiz },
     STYLES,
-    SCATTERS,
     zen: {
       open: zenOpen,
       sendAll: zeSendAll,

@@ -1,4 +1,4 @@
-// The 16 Live pads: press and release, knobs and scatter sent to the MC-707.
+// The 16 Live pads: press and release, and the knobs sent to the MC-707.
 //
 // Reads: S, LV, MIDI.
 import { $, toast } from '../core/dom.js';
@@ -8,7 +8,6 @@ import { LV, MUG } from './state.js';
 import { tracksFor } from '../core/tracks.js';
 import { lvIsFlash, lvSend, lvTracksFor } from './themes.js';
 import { liveBreak } from './breaks.js';
-import { scatDown, scatUp } from './scatter.js';
 import {
   liveAuto,
   liveBuildDrop,
@@ -24,26 +23,7 @@ import {
   liveSwap
 } from './cues.js';
 
-/* ---- hardware sends: scatter and knobs ---- */
-/**
- * A Scatter pad, held (on) or let go: the app's own Scatter on the parts it plays (live/scatter.js), and the
- * MC-707's Scatter pad too when that is switched on (notes 60-75 on the control channel).
- */
-export function scatter(i, on) {
-  if (on) {
-    LV.held['sc' + i] = 1;
-    scatDown(i);
-  } else {
-    delete LV.held['sc' + i];
-    scatUp(i);
-  }
-  if (LV.scHw && MIDI.out) {
-    const ch = (S.ctrlCh || 16) - 1;
-    lvSend(on ? [0x90 | ch, LV.scBase + i, 110] : [0x80 | ch, LV.scBase + i, 0]);
-  }
-  const b = $('#lvSc' + i);
-  if (b) b.classList.toggle('on', on);
-}
+/* ---- hardware sends: the knobs ---- */
 export function sendKnob(i, val) {
   LV.knobs[i] = val;
   lvTracksFor(LV.ktarget).forEach(t => lvSend([0xb0 | (S.tracks[t].ch - 1), 80 + i, val]));
@@ -77,14 +57,10 @@ export function livePadDown(i) {
   if (b) b.classList.add('flash');
   liveActDown(a);
 }
-/** Press an action: held ones (stutter, scatter) start, the rest run. */
+/** Press an action: held ones (stutter) start, the rest run. */
 export function liveActDown(a) {
   if (a.startsWith('stut:')) {
     liveStutter(a === 'stut:4' ? 8 : a === 'stut:8' ? 4 : 2, true);
-    return;
-  }
-  if (a.startsWith('sc:')) {
-    scatter(+a.slice(3), true);
     return;
   }
   liveAct(a);
@@ -95,10 +71,9 @@ export function livePadUp(i) {
   if (b) b.classList.remove('flash');
   liveActUp(a);
 }
-/** Let go of a held action (stutter, scatter). */
+/** Let go of a held action (stutter). */
 export function liveActUp(a) {
   if (a.startsWith('stut:')) liveStutter(0, false);
-  else if (a.startsWith('sc:')) scatter(+a.slice(3), false);
 }
 /** Run a pad action by name ('s0'-'s6', 'brk', 'fill', 'bd', 'next', 'sw:bass', 'key:5', …). */
 export function liveAct(a) {

@@ -2,7 +2,6 @@
 // keyboard.
 //
 // Reads: S, LV, MIDI.
-import { SCATTERS } from './scatter.js';
 import { riffSettings } from './riff.js';
 import { $, clamp, el } from '../core/dom.js';
 import { S } from '../core/state.js';
@@ -208,7 +207,6 @@ export function liveRenderSettings() {
   ].forEach(a => opts.push([a, LV_LABEL[a]]));
   NOTEN.forEach((n, i) => opts.push(['key:' + i, 'Key ' + n]));
   S.tracks.forEach((t, i) => opts.push(['mt:' + i, 'Mute ' + t.name]));
-  for (let i = 0; i < 16; i++) opts.push(['sc:' + i, 'Scatter: ' + SCATTERS[i][1] + ' (hold)']);
   for (let i = 0; i < 16; i++) {
     const s = el('select', {
       'aria-label': 'Action for pad ' + (i + 1),
@@ -241,7 +239,7 @@ export function liveRenderSettings() {
   b.append(
     el('h4', {}, 'Loop rec'),
     riffSettings(),
-    el('h4', {}, 'Knobs and scatter'),
+    el('h4', {}, 'Knobs'),
     el(
       'div',
       { class: 'lvrow' },
@@ -282,16 +280,6 @@ export function liveRenderSettings() {
             LV.revRest = clamp(Math.round(+e.target.value) || 0, 0, 127);
             saveLive();
           }
-        })
-      ),
-      el(
-        'label',
-        { class: 'lvf' },
-        'Scatter notes start at',
-        noteIn(LV.scBase, v => {
-          LV.scBase = clamp(v, 0, 112);
-          saveLive();
-          liveRenderKnobs();
         })
       )
     ),

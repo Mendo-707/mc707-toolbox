@@ -1,7 +1,6 @@
 // The Live page panels: scene cards, pads, keys and mutes, knobs, and keeping the toolbar in step.
 //
 // Reads: S, LV, MIDI, DEV.
-import { SCATTERS, SCAT_TO } from './scatter.js';
 import { humanizeSync, lvHumApply } from './humanize-ui.js';
 import { lvMoodApply, moodSync } from './mood-ui.js';
 import { $, el } from '../core/dom.js';
@@ -19,7 +18,7 @@ import { liveEditScene, liveRenderSceneEd } from './scene-editor.js';
 import { LV_PLAY } from './scene-templates.js';
 import { lvModeFam } from '../library/pools.js';
 import { liveCue, liveKeyCue, liveMute, lvOn, lvVaryLabel } from './cues.js';
-import { knobUI, livePadDown, livePadUp, scatter, sendKnob } from './pads.js';
+import { knobUI, livePadDown, livePadUp, sendKnob } from './pads.js';
 import { liveRenderCtlBar } from './controller.js';
 import { LV_KEYROWS, lvPadIndex } from './midi-in.js';
 import { liveRenderLanes, liveStatus } from './lanes.js';
@@ -223,7 +222,6 @@ function lvActKind(a) {
       key: 'Key',
       en: 'Energy',
       auto: 'Auto',
-      sc: 'Scatter',
       next: 'Scene',
       prev: 'Scene',
       stop: 'Stop'
@@ -410,54 +408,4 @@ export function liveRenderKnobs() {
     S.tracks.forEach((t, i) => kt.append(el('option', { value: i }, t.name)));
     kt.value = String(LV.ktarget);
   }
-  const sg = $('#lvScG');
-  if (sg) {
-    sg.textContent = '';
-    for (let i = 0; i < 16; i++) {
-      const [, name, what] = SCATTERS[i];
-      const b = el(
-        'button',
-        {
-          type: 'button',
-          class: 'lvScB',
-          id: 'lvSc' + i,
-          title: name + ': ' + what + ' (hold)'
-        },
-        el('small', {}, String(i + 1)),
-        el('span', {}, name)
-      );
-      b.addEventListener('pointerdown', ev => {
-        ev.preventDefault();
-        try {
-          b.setPointerCapture(ev.pointerId);
-        } catch (_) {}
-        scatter(i, true);
-      });
-      b.addEventListener('pointerup', () => scatter(i, false));
-      b.addEventListener('pointercancel', () => scatter(i, false));
-      sg.append(b);
-    }
-  }
-  const so = $('#lvScTo');
-  if (so && !so.childNodes.length) {
-    SCAT_TO.forEach(([v, l]) => so.append(el('option', { value: v }, l)));
-    so.onchange = e => ((LV.scatTo = e.target.value), saveLive());
-  }
-  if (so) so.value = LV.scatTo || 'all';
-  const hw = $('#lvScHw');
-  if (hw) {
-    hw.checked = !!LV.scHw;
-    hw.onchange = e => ((LV.scHw = e.target.checked), saveLive());
-  }
-  const sh = $('#lvScHint');
-  if (sh)
-    sh.textContent =
-      'Hold a pad: the set plays out of order while you hold it, and carries on from where it would have been when you let go. ' +
-      'The MC-707’s own Scatter (notes ' +
-      LV.scBase +
-      '–' +
-      (LV.scBase + 15) +
-      ' on control channel ' +
-      (S.ctrlCh || 16) +
-      ') works on its own sequencer and audio, set up on the MC-707.';
 }

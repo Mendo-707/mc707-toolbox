@@ -4284,39 +4284,6 @@ body[data-dev='101'] .lvmap {
   transition: none;
   background: #fff;
 }
-.lvSc {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
-  margin-top: 6px;
-}
-.lvScB {
-  min-height: 44px;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  font-size: 11.5px;
-  line-height: 1.15;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel2);
-  color: var(--mute);
-  font-weight: 700;
-  touch-action: none;
-  user-select: none;
-}
-.lvScB small {
-  font-size: 10px;
-  opacity: 0.6;
-}
-.lvScB.on {
-  background: #4dd0e1;
-  color: #0e0f16;
-  box-shadow: 0 0 14px #4dd0e1;
-}
 .lvSet summary {
   cursor: pointer;
   font-weight: 800;
@@ -52799,9 +52766,6 @@ html.os-darwin.native-menu #menubar .mproj {
     "ktarget",
     "rest",
     "restV",
-    "scBase",
-    "scatTo",
-    "scHw",
     "riseBars",
     "dropStyle",
     "mode",
@@ -52848,9 +52812,6 @@ html.os-darwin.native-menu #menubar .mproj {
       chaos: 30,
       ktarget: "all",
       rest: [64, 0, 64, 64],
-      scBase: 60,
-      scatTo: "all",
-      scHw: false,
       riseBars: 4,
       dropStyle: "gap",
       mode: null,
@@ -52926,6 +52887,7 @@ html.os-darwin.native-menu #menubar .mproj {
       LV.padNotes = lvLayoutNotes();
     if (!Array.isArray(LV.acts) || LV.acts.length !== 16 || LV.acts.some((a) => typeof a !== "string"))
       LV.acts = LV_ACTS.slice();
+    LV.acts = LV.acts.map((a, i) => a.startsWith("sc:") ? LV_ACTS[i] : a);
     if (!LV.acts.includes("brk")) {
       const i = LV.acts.indexOf("s7");
       if (i >= 0) LV.acts[i] = "brk";
@@ -52948,7 +52910,6 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.keyCh = clamp(Math.round(+LV.keyCh || 0), 0, 16);
     LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
     LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
-    LV.scBase = clamp(Math.round(+LV.scBase || 60), 0, 112);
     if (!["smooth", "hard", "gap"].includes(LV.dropStyle)) LV.dropStyle = "gap";
     if (!["lively", "mixed", "classic"].includes(LV.flavor)) LV.flavor = "lively";
     if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
@@ -53040,93 +53001,6 @@ html.os-darwin.native-menu #menubar .mproj {
     return { v0, v1, t0, t1: t0 + Math.max(0, dur) };
   }
   var lvHue = (e) => Math.round(215 - e * 19);
-
-  // src/live/scatter.js
-  var SCATTERS = [
-    ["rep4", "Repeat ¼", "The beat you hit, over and over"],
-    ["rep8", "Repeat ⅛", "An eighth over and over"],
-    ["rep16", "Repeat 1/16", "A sixteenth over and over"],
-    ["roll", "Roll", "A 32nd roll on the note you hit"],
-    ["build", "Build", "Repeats getting shorter every beat: ¼, ⅛, 1/16, 1/32"],
-    ["dot", "Dotted", "A dotted-8th repeat that runs across the beat"],
-    ["rev4", "Reverse beat", "Each beat played backwards"],
-    ["rev1", "Reverse bar", "The bar played backwards"],
-    ["swap", "Swap beats", "Beats 1 and 2, 3 and 4 trade places"],
-    ["scram", "Scramble", "The bar’s sixteenths in a new order"],
-    ["skip", "Skip", "Every other sixteenth left out"],
-    ["gate", "Gate", "Short hits on the eighths only"],
-    ["stop", "Stop-go", "A beat on, a beat off"],
-    ["half", "Half speed", "The loop at half speed, notes longer"],
-    ["dbl", "Double", "The loop at double speed, notes shorter"],
-    ["back", "Backspin", "The loop rewinding at double speed"]
-  ];
-  var SCAT_TO = [
-    ["all", "Every part"],
-    ["drums", "Drums"],
-    ["tone", "Melodic parts"]
-  ];
-  var SCRAM = [0, 6, 3, 9, 12, 2, 15, 5, 8, 14, 1, 11, 4, 10, 7, 13];
-  function scatDown(i) {
-    const kind = SCATTERS[i] && SCATTERS[i][0];
-    if (!kind) return;
-    const to = LV.scatTo || "all";
-    LV.scat = {
-      i,
-      kind,
-      press: TR.tick,
-      tracks: to === "drums" ? tracksFor([0, 1, 2]) : to === "tone" ? tracksFor([3, 4, 5, 6, 7]) : [0, 1, 2, 3, 4, 5, 6, 7]
-    };
-    LV.ver++;
-  }
-  function scatUp(i) {
-    if (LV.scat && LV.scat.i === i) LV.scat = null;
-    LV.ver++;
-  }
-  function scatAt(s, tick) {
-    const p = s.press, rel = tick - p, beat = Math.floor(tick / 8) * 8, bar2 = Math.floor(tick / 32) * 32;
-    const rep2 = (len) => {
-      const base = Math.floor(p / len) * len;
-      return { pos: base + ((tick - base) % len + len) % len, dur: Math.min(1, len / 8) };
-    };
-    switch (s.kind) {
-      case "rep4":
-        return rep2(8);
-      case "rep8":
-        return rep2(4);
-      case "rep16":
-        return rep2(2);
-      case "roll":
-        return { pos: Math.floor(p / 2) * 2, dur: 0.25 };
-      case "build":
-        return rep2([8, 4, 2, 1][Math.min(3, Math.floor(rel / 8))]);
-      case "dot":
-        return rep2(6);
-      case "rev4":
-        return { pos: beat + 7 - (tick - beat), dur: 0.5 };
-      case "rev1":
-        return { pos: bar2 + 31 - (tick - bar2), dur: 0.5 };
-      case "swap":
-        return { pos: tick + (Math.floor(tick / 8) % 2 ? -8 : 8), dur: 1 };
-      case "scram": {
-        const st = Math.floor((tick - bar2) / 2);
-        return { pos: bar2 + SCRAM[st] * 2 + tick % 2, dur: 0.5 };
-      }
-      case "skip":
-        return Math.floor(tick / 2) % 2 ? { hush: true } : { pos: tick, dur: 0.5 };
-      case "gate":
-        return tick % 4 < 1 ? { pos: tick, dur: 0.3 } : { hush: true };
-      case "stop":
-        return Math.floor(rel / 8) % 2 ? { hush: true } : { pos: tick, dur: 1 };
-      case "half":
-        return rel % 2 ? { hush: true } : { pos: p + rel / 2, dur: 2 };
-      case "dbl":
-        return { pos: p + rel * 2, dur: 0.5 };
-      case "back":
-        return { pos: p - rel * 2, dur: 0.4 };
-    }
-    return { pos: tick, dur: 1 };
-  }
-  var scatOn = (t) => !!(LV.scat && LV.scat.tracks.includes(t));
 
   // src/live/humanize-ui.js
   function lvHumApply(reset) {
@@ -53393,21 +53267,6 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/live/pads.js
-  function scatter(i, on3) {
-    if (on3) {
-      LV.held["sc" + i] = 1;
-      scatDown(i);
-    } else {
-      delete LV.held["sc" + i];
-      scatUp(i);
-    }
-    if (LV.scHw && MIDI.out) {
-      const ch = (S.ctrlCh || 16) - 1;
-      lvSend(on3 ? [144 | ch, LV.scBase + i, 110] : [128 | ch, LV.scBase + i, 0]);
-    }
-    const b = $("#lvSc" + i);
-    if (b) b.classList.toggle("on", on3);
-  }
   function sendKnob(i, val) {
     LV.knobs[i] = val;
     lvTracksFor(LV.ktarget).forEach((t) => lvSend([176 | S.tracks[t].ch - 1, 80 + i, val]));
@@ -53439,10 +53298,6 @@ html.os-darwin.native-menu #menubar .mproj {
       liveStutter(a === "stut:4" ? 8 : a === "stut:8" ? 4 : 2, true);
       return;
     }
-    if (a.startsWith("sc:")) {
-      scatter(+a.slice(3), true);
-      return;
-    }
     liveAct(a);
   }
   function livePadUp(i) {
@@ -53453,7 +53308,6 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function liveActUp(a) {
     if (a.startsWith("stut:")) liveStutter(0, false);
-    else if (a.startsWith("sc:")) scatter(+a.slice(3), false);
   }
   function liveAct(a) {
     if (/^s\d$/.test(a)) return liveCue(+a.slice(1));
@@ -54316,7 +54170,6 @@ html.os-darwin.native-menu #menubar .mproj {
     ].forEach((a) => opts.push([a, LV_LABEL[a]]));
     NOTEN.forEach((n, i) => opts.push(["key:" + i, "Key " + n]));
     S.tracks.forEach((t, i) => opts.push(["mt:" + i, "Mute " + t.name]));
-    for (let i = 0; i < 16; i++) opts.push(["sc:" + i, "Scatter: " + SCATTERS[i][1] + " (hold)"]);
     for (let i = 0; i < 16; i++) {
       const s = el("select", {
         "aria-label": "Action for pad " + (i + 1),
@@ -54341,7 +54194,7 @@ html.os-darwin.native-menu #menubar .mproj {
     b.append(
       el("h4", {}, "Loop rec"),
       riffSettings(),
-      el("h4", {}, "Knobs and scatter"),
+      el("h4", {}, "Knobs"),
       el(
         "div",
         { class: "lvrow" },
@@ -54379,16 +54232,6 @@ html.os-darwin.native-menu #menubar .mproj {
               LV.revRest = clamp(Math.round(+e.target.value) || 0, 0, 127);
               saveLive();
             }
-          })
-        ),
-        el(
-          "label",
-          { class: "lvf" },
-          "Scatter notes start at",
-          noteIn(LV.scBase, (v) => {
-            LV.scBase = clamp(v, 0, 112);
-            saveLive();
-            liveRenderKnobs();
           })
         )
       ),
@@ -54849,7 +54692,6 @@ html.os-darwin.native-menu #menubar .mproj {
       key: "Key",
       en: "Energy",
       auto: "Auto",
-      sc: "Scatter",
       next: "Scene",
       prev: "Scene",
       stop: "Stop"
@@ -54996,49 +54838,6 @@ html.os-darwin.native-menu #menubar .mproj {
       S.tracks.forEach((t2, i) => kt.append(el("option", { value: i }, t2.name)));
       kt.value = String(LV.ktarget);
     }
-    const sg = $("#lvScG");
-    if (sg) {
-      sg.textContent = "";
-      for (let i = 0; i < 16; i++) {
-        const [, name, what] = SCATTERS[i];
-        const b = el(
-          "button",
-          {
-            type: "button",
-            class: "lvScB",
-            id: "lvSc" + i,
-            title: name + ": " + what + " (hold)"
-          },
-          el("small", {}, String(i + 1)),
-          el("span", {}, name)
-        );
-        b.addEventListener("pointerdown", (ev) => {
-          ev.preventDefault();
-          try {
-            b.setPointerCapture(ev.pointerId);
-          } catch (_) {
-          }
-          scatter(i, true);
-        });
-        b.addEventListener("pointerup", () => scatter(i, false));
-        b.addEventListener("pointercancel", () => scatter(i, false));
-        sg.append(b);
-      }
-    }
-    const so = $("#lvScTo");
-    if (so && !so.childNodes.length) {
-      SCAT_TO.forEach(([v, l]) => so.append(el("option", { value: v }, l)));
-      so.onchange = (e) => (LV.scatTo = e.target.value, saveLive());
-    }
-    if (so) so.value = LV.scatTo || "all";
-    const hw = $("#lvScHw");
-    if (hw) {
-      hw.checked = !!LV.scHw;
-      hw.onchange = (e) => (LV.scHw = e.target.checked, saveLive());
-    }
-    const sh = $("#lvScHint");
-    if (sh)
-      sh.textContent = "Hold a pad: the set plays out of order while you hold it, and carries on from where it would have been when you let go. The MC-707’s own Scatter (notes " + LV.scBase + "–" + (LV.scBase + 15) + " on control channel " + (S.ctrlCh || 16) + ") works on its own sequencer and audio, set up on the MC-707.";
   }
 
   // src/live/mood-move.js
@@ -56318,7 +56117,6 @@ html.os-darwin.native-menu #menubar .mproj {
     const hush = fk === "half" && fr % 2 !== 0 || fk === "gate" && LV_GATE[fr >> 1 & 15] !== "x" || fk === "wash" && fr >= 8 || LV_BENDS.includes(fk) && !tape;
     let chordNow;
     const chord2 = () => chordNow === void 0 ? chordNow = lvChordNow(ft) : chordNow;
-    const sc = LV.scat && !fl ? scatAt(LV.scat, tick) : null;
     const durK = fk === "half" ? 2 : tape ? Math.min(4, 1 / tape.rate) : 1, durMax = fk === "gate" ? 1.6 * td : Infinity;
     for (let t = 0; t < 8; t++) {
       const trk = S.tracks[t];
@@ -56347,11 +56145,9 @@ html.os-darwin.native-menu #menubar .mproj {
       if ((!fl || fl.loop) && lvMaskOff(t, tick)) continue;
       if (hush) continue;
       if (riffQuiet(t)) continue;
-      const scT = sc && scatOn(t);
-      if (scT && sc.hush) continue;
       if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT && !(LV.voices[t][0] && LV.voices[t][0].f.riff))
         continue;
-      const vft = scT ? sc.pos : fl && fl.kind === "stutter" ? fft : fk === "half" ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
+      const vft = fl && fl.kind === "stutter" ? fft : fk === "half" ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
       for (const v of fl ? fl.loop ? fl.keep.includes(t) ? LV.voices[t] : [] : fl.v[t] ? [fl.v[t]] : [] : LV.voices[t]) {
         const g = envAt2(v.env, tick) * tg;
         if (g <= 0.02) continue;
@@ -56380,7 +56176,7 @@ html.os-darwin.native-menu #menubar .mproj {
             tone2 ? clamp(nn, 0, 127) : nn,
             clamp(n.v * g, 1, 127),
             nt + subTick(n) * (TR.subTd || td),
-            Math.min(n.l * 2 * td * durK * (scT ? sc.dur : 1), durMax)
+            Math.min(n.l * 2 * td * durK, durMax)
           );
           if (slotOf(t) === 3) v._last = nn;
           if (vt === "echo" && last3 && tone2)
@@ -56488,12 +56284,6 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
     LV.stut = null;
-    Object.keys(LV.held).forEach((k2) => {
-      if (k2.startsWith("sc")) {
-        const i = +k2.slice(2);
-        sendMidi([128 | (S.ctrlCh || 16) - 1, LV.scBase + i, 0], AU.ctx.currentTime);
-      }
-    });
     LV.held = {};
   }
   function liveStop() {
@@ -59970,24 +59760,6 @@ html.os-darwin.native-menu #menubar .mproj {
           el("span", {}, "FILTER ↔ · FX ↕")
         )
       ),
-      fold(
-        "scatter",
-        "Scatter (hold)",
-        false,
-        el(
-          "div",
-          { class: "riffRow" },
-          el("label", { class: "lvf" }, "On", el("select", { id: "lvScTo", "aria-label": "Scatter works on" })),
-          el(
-            "label",
-            { class: "lvf", title: "Also press the MC-707’s own Scatter pad (needs Scatter set up on the MC-707)" },
-            el("input", { type: "checkbox", id: "lvScHw" }),
-            "MC-707’s Scatter too"
-          )
-        ),
-        el("div", { class: "lvSc", id: "lvScG" }),
-        el("div", { class: "hint", id: "lvScHint" })
-      ),
       fold("looprec", "Loop rec", true, riffPanel()),
       /* a controller keyboard's zones, while one is connected */
       el("div", { class: "ctlBar", id: "lvCtlBar", hidden: true })
@@ -60095,7 +59867,6 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     if (a.startsWith("key:")) return "Key " + NOTEN[+a.slice(4)];
     if (a.startsWith("mt:")) return S.tracks[+a.slice(3)].name + " mute";
-    if (a.startsWith("sc:")) return "Scatter: " + ((SCATTERS[+a.slice(3)] || [])[1] || +a.slice(3) + 1);
     return LV_LABEL[a] || a;
   }
   function actColor(a) {
@@ -60108,7 +59879,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (a === "fill") return "#ffa629";
     if (a.startsWith("mu:") || a.startsWith("mt:")) return "#2fd3c0";
     if (a.startsWith("key:")) return "#84d95b";
-    if (a.startsWith("stut:") || a.startsWith("sc:")) return "#ff6fa3";
+    if (a.startsWith("stut:")) return "#ff6fa3";
     if (a.startsWith("rise:") || a === "bd") return "#ff5f45";
     if (a.startsWith("en:") || a === "auto" || a === "lock") return "#e9d94a";
     return "#8f929c";
@@ -64812,7 +64583,6 @@ html.os-darwin.native-menu #menubar .mproj {
           "Loop rec: choose the track to record to, how long and the Quantize, then press ● Rec (it starts the jam if it’s stopped). Come in when the count-down reaches the start; the track goes quiet while you record and your notes appear as you play. The take then waits, with the set unchanged, until you press ▶ Play; ★ makes the scene keep it.",
           { mode: "live", sel: ".riffPanel .riffBtn" }
         ],
-        "Scatter (hold): hold one of the 16 pads and the set plays out of order (repeats, reverses, skips, half and double speed) until you let go; choose every part, the drums or the melodic parts.",
         "Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode)."
       ],
       [["Go to Live Mode", () => setMode("live")]]
@@ -67784,10 +67554,6 @@ html.os-darwin.native-menu #menubar .mproj {
       grp(
         "Key",
         NOTEN.map((_, k2) => "key:" + k2)
-      ),
-      grp(
-        "Scatter (hold)",
-        Array.from({ length: 16 }, (_, k2) => "sc:" + k2)
       )
     ];
     if (a === "brk")
@@ -69139,7 +68905,6 @@ html.os-darwin.native-menu #menubar .mproj {
     window.__app = {
       wiz: { plan: wizPlan, def: defaultWiz },
       STYLES,
-      SCATTERS,
       zen: {
         open: zenOpen,
         sendAll: zeSendAll,

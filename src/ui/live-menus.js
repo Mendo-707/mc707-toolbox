@@ -324,10 +324,6 @@ export function lvPadMenu(i) {
     grp(
       'Key',
       NOTEN.map((_, k) => 'key:' + k)
-    ),
-    grp(
-      'Scatter (hold)',
-      Array.from({ length: 16 }, (_, k) => 'sc:' + k)
     )
   ];
   if (a === 'brk')
