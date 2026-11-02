@@ -4611,7 +4611,7 @@ input[type='number'] {
 }
 .riffTakes li {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto auto;
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
@@ -4620,6 +4620,10 @@ input[type='number'] {
 }
 .riffTakes li.on {
   outline: 1px solid var(--lv-acc, #4ade80);
+}
+.riffTakes .riffQ {
+  font-size: 12px;
+  padding: 2px 4px;
 }
 </style>
     <style>
@@ -58191,10 +58195,26 @@ html.os-darwin.native-menu #menubar .mproj {
   var KEEP = 24;
   var RIFF_BARS = [1, 2, 4, 8];
   var RIFF_QUANT = [
-    ["16", "16ths"],
-    ["8", "8ths"],
-    ["off", "As played"]
+    ["off", "Off"],
+    ["16", "1/16"],
+    ["8", "1/8"],
+    ["16t", "1/16 triplets"],
+    ["8t", "1/8 triplets"]
   ];
+  var GRID2 = { off: 0, 16: 1, 8: 2, "16t": 2 / 3, "8t": 4 / 3 };
+  function riffQuantize(raw, q, bars2) {
+    const g = GRID2[q] || 0, steps2 = bars2 * 16, seen2 = /* @__PURE__ */ new Set(), out2 = [];
+    for (const x of raw) {
+      let s = g ? Math.round(x.s / g) * g : x.s;
+      if (s >= steps2 - 1e-6) s -= steps2;
+      s = Math.round(s * 1e4) / 1e4;
+      const l = g ? Math.max(g, Math.round(x.l / g) * g) : x.l, k2 = s + ":" + x.n;
+      if (s < 0 || seen2.has(k2)) continue;
+      seen2.add(k2);
+      out2.push({ s, l: Math.round(l * 1e4) / 1e4, n: x.n, v: x.v });
+    }
+    return out2.sort((a, b) => a.s - b.s || a.n - b.n);
+  }
   var RIFF_COUNT = [
     ["bar", "On the next bar"],
     ["count", "After a bar’s count-in"]
@@ -58299,15 +58319,15 @@ html.os-darwin.native-menu #menubar .mproj {
     if (RIFF.t === t) riffAt(nn, v, on3);
   }
   function riffAt(nn, v, on3) {
-    const now = TR.tick - (TR.nextTime - lvNow()) / tickDur(), q = RIFF.quant === "8" ? 4 : RIFF.quant === "off" ? 1 : 2, steps2 = RIFF.bars * 16, at2 = Math.round((now - RIFF.start) / q) * q / 2;
+    const now = TR.tick - (TR.nextTime - lvNow()) / tickDur(), steps2 = RIFF.bars * 16, at2 = Math.round(now - RIFF.start) / 2;
     if (on3) {
-      if (at2 < -q / 2 || at2 >= steps2) return;
+      if (at2 < -0.5 || at2 >= steps2) return;
       RIFF.held[nn] = { s: Math.max(0, at2), v };
     } else {
       const h = RIFF.held[nn];
       if (!h) return;
       delete RIFF.held[nn];
-      RIFF.notes.push({ s: h.s, l: Math.max(q / 2, Math.min(steps2, at2) - h.s), n: nn, v: h.v });
+      RIFF.notes.push({ s: h.s, l: Math.max(0.5, Math.min(steps2, at2) - h.s), n: nn, v: h.v });
     }
   }
   function riffTick(tick) {
@@ -58335,7 +58355,11 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     RIFF.held = {};
     RIFF.state = "off";
-    const seen2 = /* @__PURE__ */ new Set(), notes = RIFF.notes.filter((x) => x.s < steps2 && !seen2.has(x.s + ":" + x.n) && seen2.add(x.s + ":" + x.n)).sort((a, b) => a.s - b.s || a.n - b.n);
+    const raw = riffQuantize(
+      RIFF.notes.filter((x) => x.s < steps2),
+      "off",
+      RIFF.bars
+    ), notes = riffQuantize(raw, RIFF.quant, RIFF.bars);
     if (!notes.length || t < 0 || !S.tracks[t]) {
       changed();
       return void toast("Nothing was played, so no take");
@@ -58348,6 +58372,8 @@ html.os-darwin.native-menu #menubar .mproj {
       bars: RIFF.bars,
       key: { root: RIFF.key, scale: RIFF.mode },
       notes,
+      raw,
+      q: RIFF.quant,
       pool: poolOf(t),
       track: t,
       riff: true
@@ -58400,6 +58426,16 @@ html.os-darwin.native-menu #menubar .mproj {
     } else sc.cells[f.track] = { id, pool: f.pool };
     lvSaveScenes();
     toast(kept2 ? "The scene plays its own part again" : `This scene keeps ${f.name} on ${S.tracks[f.track].name}`);
+    changed();
+  }
+  function riffRequant(id, q) {
+    const f = FACMAP.get(id);
+    if (!f) return;
+    f.raw = f.raw || f.notes;
+    f.q = q;
+    f.notes = riffQuantize(f.raw, q, f.bars);
+    touch(f);
+    storeTakes();
     changed();
   }
   var riffKept = (id) => {
@@ -58472,7 +58508,8 @@ html.os-darwin.native-menu #menubar .mproj {
             RIFF.bars,
             RIFF_BARS.map((n) => [n, n + (n > 1 ? " bars" : " bar")]),
             (v) => riffSet("bars", +v)
-          )
+          ),
+          sel("Quantize", RIFF.quant, RIFF_QUANT, (v) => riffSet("quant", v))
         ),
         el("div", { class: "riffRow" }, rec, el("span", { class: "hint riffStat" }, status3())),
         takes.length ? el(
@@ -58488,6 +58525,18 @@ html.os-darwin.native-menu #menubar .mproj {
                 "span",
                 { class: "hint" },
                 (S.tracks[t] ? S.tracks[t].name : "Track " + (t + 1)) + " · " + f.bars + (f.bars > 1 ? " bars" : " bar")
+              ),
+              el(
+                "select",
+                {
+                  class: "riffQ",
+                  "aria-label": "Quantize " + f.name,
+                  title: "Quantize this take (from the notes as you played them)",
+                  onchange: (e) => riffRequant(f.id, e.target.value)
+                },
+                ...RIFF_QUANT.map(
+                  ([v, l]) => el("option", { value: v, selected: v === (f.q || "off") }, l.replace(" triplets", "T"))
+                )
               ),
               el(
                 "button",
@@ -58530,7 +58579,6 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "div",
         { class: "lvrow" },
-        sel("Timing", RIFF.quant, RIFF_QUANT, (v) => riffSet("quant", v)),
         sel("Recording starts", RIFF.count, RIFF_COUNT, (v) => riffSet("count", v)),
         el(
           "label",
@@ -58547,7 +58595,7 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "p",
         { class: "hint" },
-        "Timing snaps your notes to 16ths or 8ths, or keeps them as played (to a 32nd). Takes are kept between sessions; a scene that keeps one (★) still has it next time."
+        "Quantize (in the Loop rec panel) snaps a take to 16ths, 8ths or triplets, or leaves it as played; each take keeps what you played, so its own Quantize can change it any time. Takes are kept between sessions; a scene that keeps one (★) still has it next time."
       )
     );
   }
@@ -64272,7 +64320,7 @@ html.os-darwin.native-menu #menubar .mproj {
           { mode: "live", sel: "#lvAuto" }
         ],
         [
-          "Loop rec: choose the track to record to and how long, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it. Timing and count-in are in Settings and mapping › Loop rec.",
+          "Loop rec: choose the track to record to, how long and the Quantize, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it, and its own Quantize changes it later. The count-in is in Settings and mapping › Loop rec.",
           { mode: "live", sel: ".riffPanel .riffBtn" }
         ],
         "Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode)."

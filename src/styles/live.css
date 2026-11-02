@@ -1802,7 +1802,7 @@ input[type='number'] {
 }
 .riffTakes li {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto auto;
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
@@ -1811,4 +1811,8 @@ input[type='number'] {
 }
 .riffTakes li.on {
   outline: 1px solid var(--lv-acc, #4ade80);
+}
+.riffTakes .riffQ {
+  font-size: 12px;
+  padding: 2px 4px;
 }

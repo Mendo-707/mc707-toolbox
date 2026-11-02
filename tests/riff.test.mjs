@@ -121,14 +121,14 @@ test('Loop rec: a take from the keyboard leaves the set alone until ▶ Play, th
   assert.deepEqual(errors, []);
 });
 
-test('Loop rec: count-in, 8ths, play straight away; cancel or nothing played makes no take', async () => {
+test('Loop rec: count-in, Quantize 1/8, play straight away; cancel or nothing played makes no take', async () => {
   const { page, errors } = await setUp(SAVED);
-  /* Settings › Loop rec */
+  /* Quantize in the panel; count-in and straight away in Settings › Loop rec */
+  await page.locator('.riffPanel select[aria-label="Quantize"]').selectOption('8');
   await page.evaluate(() => {
     document.querySelector('#lvSetDet').open = true;
   });
   const set = page.locator('#lvSetBody');
-  await set.locator('select[aria-label="Timing"]').selectOption('8');
   await set.locator('select[aria-label="Recording starts"]').selectOption('count');
   await set.locator('label', { hasText: 'Play a take straight away' }).locator('input').check();
   const r = await page.evaluate(() => {
@@ -220,5 +220,56 @@ test('Loop rec on the MC-707’s own keys: “The track I play” records the tr
     [8, 88],
     [12, 90]
   ]);
+  assert.deepEqual(errors, []);
+});
+
+test('Loop rec: Quantize a take again, from the notes as played (triplets too, and back to Off)', async () => {
+  const { page, errors } = await setUp(SAVED);
+  await page.locator('.riffPanel select[aria-label="Quantize"]').selectOption('off');
+  const played = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV;
+    __pick('Record to', 6);
+    __pick('Length', 1);
+    __step(8);
+    __btn('● Rec').click();
+    const key = LV.ctl.base + 24;
+    /* a bit loose: a 32nd late, on time, a 32nd early, and the last a 32nd before the loop comes round */
+    for (const [at, d] of [
+      [1, 0],
+      [8, 2],
+      [15, 4],
+      [31, 5]
+    ]) {
+      __to(32 + at);
+      window.__key([0x90, key + d, 100]);
+      __step(1);
+      window.__key([0x80, key + d, 0]);
+    }
+    __to(64 + 1);
+    a.stopAll();
+    return JSON.parse(localStorage.getItem('mc707-live-riffs'))
+      .pop()
+      .notes.map(n => n.s);
+  });
+  assert.deepEqual(played, [0.5, 4, 7.5, 15.5], 'Off: as played, to a 32nd');
+  const q = page.locator('.riffTakes li').first().locator('select.riffQ');
+  const notes = () =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem('mc707-live-riffs'))
+        .pop()
+        .notes.map(n => n.s)
+    );
+  await q.selectOption('16');
+  /* 7.5 rounds up to 8; the last goes round to the loop's start */
+  assert.deepEqual(await notes(), [0, 1, 4, 8]);
+  await q.selectOption('16t');
+  assert.deepEqual(
+    (await notes()).map(x => Math.round(x * 3)),
+    [2, 12, 22, 46],
+    'onto 16th triplets (thirds of a 16th: the last stays on the final triplet)'
+  );
+  await q.selectOption('off');
+  assert.deepEqual(await notes(), [0.5, 4, 7.5, 15.5], 'back as played');
   assert.deepEqual(errors, []);
 });

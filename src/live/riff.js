@@ -3,8 +3,9 @@
 // starts on the next bar line (or after a bar's count-in) and records what you play on a keyboard (its solo
 // track follows the choice) or the MC-707's own keys while the set carries on. When the bars are up the take
 // is kept, and the set is left as it was: ▶ Play puts a take on its track at the next bar, ■ Back brings the
-// set's own part back, ★ Keep makes the playing scene keep it, ✕ deletes it. Settings › Loop rec sets the
-// timing (16ths, 8ths or as played), the count-in, and whether a take plays straight away.
+// set's own part back, ★ Keep makes the playing scene keep it, ✕ deletes it. Quantize snaps a take to 16ths,
+// 8ths or triplets (or leaves it as played), for new takes and again for any take (each keeps the notes as
+// played). Settings › Loop rec sets the count-in, and whether a take plays straight away.
 // A take follows key changes like any part (it is written down in the key it was played in), and chord
 // lock and variations leave it as you played it.
 //
@@ -15,6 +16,7 @@ import { CTL } from './controller.js';
 import { S } from '../core/state.js';
 import { poolOf } from '../core/tracks.js';
 import { FACMAP } from '../library/index.js';
+import { touch } from '../core/song-model.js';
 import { TR, tickDur } from '../services/transport.js';
 import { LV } from './state.js';
 import { lvNow } from './themes.js';
@@ -26,11 +28,39 @@ const STORE = 'mc707-live-riffs',
   OPTS = 'mc707-live-loop-rec',
   KEEP = 24;
 export const RIFF_BARS = [1, 2, 4, 8];
+/** Quantize: the grid a take's notes snap to, in 16ths (0: as played, to a 32nd). */
 export const RIFF_QUANT = [
-  ['16', '16ths'],
-  ['8', '8ths'],
-  ['off', 'As played']
+  ['off', 'Off'],
+  ['16', '1/16'],
+  ['8', '1/8'],
+  ['16t', '1/16 triplets'],
+  ['8t', '1/8 triplets']
 ];
+const GRID = { off: 0, 16: 1, 8: 2, '16t': 2 / 3, '8t': 4 / 3 };
+/**
+ * A take's notes snapped to a grid (Quantize), from the notes as played: positions to the nearest step (one
+ * landing on the loop's end goes round to its start), lengths to whole steps, one note per pitch and step.
+ * @param {{s:number,l:number,n:number,v:number}[]} raw
+ * @param {string} q  a RIFF_QUANT value
+ * @param {number} bars
+ */
+export function riffQuantize(raw, q, bars) {
+  const g = GRID[q] || 0,
+    steps = bars * 16,
+    seen = new Set(),
+    out = [];
+  for (const x of raw) {
+    let s = g ? Math.round(x.s / g) * g : x.s;
+    if (s >= steps - 1e-6) s -= steps;
+    s = Math.round(s * 1e4) / 1e4;
+    const l = g ? Math.max(g, Math.round(x.l / g) * g) : x.l,
+      k = s + ':' + x.n;
+    if (s < 0 || seen.has(k)) continue;
+    seen.add(k);
+    out.push({ s, l: Math.round(l * 1e4) / 1e4, n: x.n, v: x.v });
+  }
+  return out.sort((a, b) => a.s - b.s || a.n - b.n);
+}
 export const RIFF_COUNT = [
   ['bar', 'On the next bar'],
   ['count', 'After a bar’s count-in']
@@ -150,22 +180,21 @@ export function riffKey(t, nn, v, on) {
   if (RIFF.t < 0 && on) RIFF.t = t;
   if (RIFF.t === t) riffAt(nn, v, on);
 }
-/* where a note falls, in 16ths from the start (snapped to the timing chosen) */
+/* where a note falls, in 16ths from the start, as played (to a 32nd); Quantize snaps it afterwards */
 function riffAt(nn, v, on) {
   /* where the clock is now, in ticks (the scheduler runs a little ahead of what you hear) */
   const now = TR.tick - (TR.nextTime - lvNow()) / tickDur(),
-    q = RIFF.quant === '8' ? 4 : RIFF.quant === 'off' ? 1 : 2,
     steps = RIFF.bars * 16,
-    at = (Math.round((now - RIFF.start) / q) * q) / 2;
+    at = Math.round(now - RIFF.start) / 2;
   if (on) {
     /* a note a touch early for the first beat counts as on it */
-    if (at < -q / 2 || at >= steps) return;
+    if (at < -0.5 || at >= steps) return;
     RIFF.held[nn] = { s: Math.max(0, at), v };
   } else {
     const h = RIFF.held[nn];
     if (!h) return;
     delete RIFF.held[nn];
-    RIFF.notes.push({ s: h.s, l: Math.max(q / 2, Math.min(steps, at) - h.s), n: nn, v: h.v });
+    RIFF.notes.push({ s: h.s, l: Math.max(0.5, Math.min(steps, at) - h.s), n: nn, v: h.v });
   }
 }
 
@@ -199,11 +228,13 @@ function riffDone(tick) {
   }
   RIFF.held = {};
   RIFF.state = 'off';
-  /* one note per pitch and step */
-  const seen = new Set(),
-    notes = RIFF.notes
-      .filter(x => x.s < steps && !seen.has(x.s + ':' + x.n) && seen.add(x.s + ':' + x.n))
-      .sort((a, b) => a.s - b.s || a.n - b.n);
+  /* as played (kept, so Quantize can change later), and snapped to the grid chosen */
+  const raw = riffQuantize(
+      RIFF.notes.filter(x => x.s < steps),
+      'off',
+      RIFF.bars
+    ),
+    notes = riffQuantize(raw, RIFF.quant, RIFF.bars);
   if (!notes.length || t < 0 || !S.tracks[t]) {
     changed();
     return void toast('Nothing was played, so no take');
@@ -216,6 +247,8 @@ function riffDone(tick) {
     bars: RIFF.bars,
     key: { root: RIFF.key, scale: RIFF.mode },
     notes,
+    raw,
+    q: RIFF.quant,
     pool: poolOf(t),
     track: t,
     riff: true
@@ -277,6 +310,17 @@ export function riffKeep(id) {
   } else sc.cells[f.track] = { id, pool: f.pool };
   lvSaveScenes();
   toast(kept ? 'The scene plays its own part again' : `This scene keeps ${f.name} on ${S.tracks[f.track].name}`);
+  changed();
+}
+/** Quantize a take again (from the notes as played): it changes as it plays, from its next note. */
+export function riffRequant(id, q) {
+  const f = FACMAP.get(id);
+  if (!f) return;
+  f.raw = f.raw || f.notes;
+  f.q = q;
+  f.notes = riffQuantize(f.raw, q, f.bars);
+  touch(f);
+  storeTakes();
   changed();
 }
 /** True when the playing scene keeps this take. */
@@ -359,7 +403,8 @@ export function riffPanel() {
           RIFF.bars,
           RIFF_BARS.map(n => [n, n + (n > 1 ? ' bars' : ' bar')]),
           v => riffSet('bars', +v)
-        )
+        ),
+        sel('Quantize', RIFF.quant, RIFF_QUANT, v => riffSet('quant', v))
       ),
       el('div', { class: 'riffRow' }, rec, el('span', { class: 'hint riffStat' }, status())),
       takes.length
@@ -382,6 +427,18 @@ export function riffPanel() {
                     ' · ' +
                     f.bars +
                     (f.bars > 1 ? ' bars' : ' bar')
+                ),
+                el(
+                  'select',
+                  {
+                    class: 'riffQ',
+                    'aria-label': 'Quantize ' + f.name,
+                    title: 'Quantize this take (from the notes as you played them)',
+                    onchange: e => riffRequant(f.id, e.target.value)
+                  },
+                  ...RIFF_QUANT.map(([v, l]) =>
+                    el('option', { value: v, selected: v === (f.q || 'off') }, l.replace(' triplets', 'T'))
+                  )
                 ),
                 el(
                   'button',
@@ -428,7 +485,6 @@ export function riffSettings() {
     el(
       'div',
       { class: 'lvrow' },
-      sel('Timing', RIFF.quant, RIFF_QUANT, v => riffSet('quant', v)),
       sel('Recording starts', RIFF.count, RIFF_COUNT, v => riffSet('count', v)),
       el(
         'label',
@@ -445,7 +501,7 @@ export function riffSettings() {
     el(
       'p',
       { class: 'hint' },
-      'Timing snaps your notes to 16ths or 8ths, or keeps them as played (to a 32nd). Takes are kept between sessions; a scene that keeps one (★) still has it next time.'
+      'Quantize (in the Loop rec panel) snaps a take to 16ths, 8ths or triplets, or leaves it as played; each take keeps what you played, so its own Quantize can change it any time. Takes are kept between sessions; a scene that keeps one (★) still has it next time.'
     )
   );
 }

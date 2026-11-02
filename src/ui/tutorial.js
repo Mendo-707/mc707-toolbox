@@ -185,7 +185,7 @@ const chapters = dn => [
         { mode: 'live', sel: '#lvAuto' }
       ],
       [
-        'Loop rec: choose the track to record to and how long, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it. Timing and count-in are in Settings and mapping › Loop rec.',
+        'Loop rec: choose the track to record to, how long and the Quantize, press ● Rec and play from the next bar. The take waits in the list until you press ▶ Play; ★ makes the scene keep it, and its own Quantize changes it later. The count-in is in Settings and mapping › Loop rec.',
         { mode: 'live', sel: '.riffPanel .riffBtn' }
       ],
       'Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode).'
