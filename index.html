@@ -61976,7 +61976,9 @@ html.os-darwin.native-menu #menubar .mproj {
     const pick3 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
     if (pick3) {
       sel.value = pick3.id;
-      if (!MIDI.inp || MIDI.inp.id !== pick3.id) setMidiIn(pick3.id);
+      const back = MIDI.inLost && pick3.state === "connected";
+      if (!MIDI.inp || MIDI.inp.id !== pick3.id || back) setMidiIn(pick3.id);
+      MIDI.inLost = pick3.state === "disconnected";
     } else sel.value = "";
     if (LV.ctl && LV.ctl.map && typeof ctlAttach === "function") ctlAttach();
   }
@@ -66871,6 +66873,14 @@ html.os-darwin.native-menu #menubar .mproj {
     for (const k2 in PCLAST) delete PCLAST[k2];
     for (const k2 in AUTOLAST) delete AUTOLAST[k2];
     if (TR.playing && TR.mode === "live") lvResync();
+    else if (TR.playing) sendTrackCCs();
+    if (document.body.dataset.mode === "synth") sendMix();
+    if (TR.playing && S.clock && MIDI.out) {
+      const spp = Math.round(TR.tick / 2) & 16383;
+      sendMidi([242, spp & 127, spp >> 7], TR.nextTime);
+      sendMidi([251], TR.nextTime);
+    }
+    if (S.midiIn) setMidiIn(S.midiIn);
     toast((name || devNm()) + " is back" + (TR.playing ? ", in time with the set" : "") + ".");
   }
 
