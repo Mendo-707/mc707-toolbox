@@ -2,6 +2,7 @@
 // keyboard.
 //
 // Reads: S, LV, MIDI.
+import { riffSettings } from './riff.js';
 import { $, clamp, el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { MIDI } from '../services/midi.js';
@@ -237,6 +238,8 @@ export function liveRenderSettings() {
   b.append(grid);
   b.append(ravenSection(chSel, noteIn));
   b.append(
+    el('h4', {}, 'Loop rec'),
+    riffSettings(),
     el('h4', {}, 'Knobs and scatter'),
     el(
       'div',

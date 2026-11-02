@@ -2,7 +2,7 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
-import { riffControls } from './riff.js';
+import { riffPanel } from './riff.js';
 import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
@@ -678,15 +678,6 @@ export function liveInit() {
         ),
         el(
           'div',
-          {
-            class: 'lvf lvRiffRow',
-            title: 'Play a riff on the MC-707 or a keyboard and it loops as that track’s part'
-          },
-          riffControls(),
-          el('span', { class: 'hint' }, 'on the MC-707 keys or a keyboard')
-        ),
-        el(
-          'div',
           { class: 'lvBtns' },
           ...[
             ['Stutter ¼', 8],
@@ -778,6 +769,7 @@ export function liveInit() {
       el('div', { class: 'lvSc', id: 'lvScG' }),
       el('div', { class: 'hint', id: 'lvScHint' })
     ),
+    fold('looprec', 'Loop rec', true, riffPanel()),
     fold(
       'keys',
       'Key and parts',

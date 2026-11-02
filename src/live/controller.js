@@ -14,7 +14,7 @@ import { LV, NOTEN, mkEnv, noteLbl, saveLive } from './state.js';
 import { actLabel, lvNow } from './themes.js';
 import { lvSendCC, lvUserNote } from './moves.js';
 import { liveBreak } from './breaks.js';
-import { riffArm, riffControls, riffNote } from './riff.js';
+import { riffArm, riffNote } from './riff.js';
 import { liveStart, liveStop, lvTarget } from './engine.js';
 import {
   liveBuildDrop,
@@ -457,7 +457,7 @@ export function liveRenderCtlBar() {
     );
   else if (z === 'keysolo') parts.push('key ' + noteLbl(b) + '–' + noteLbl(b + 11), 'solo on ' + solo + ' elsewhere');
   else parts.push('solo on ' + solo);
-  bar.append(el('b', {}, '🎹 '), parts.join(' · '), el('span', { class: 'ctlAct', id: 'ctlAct' }, ''), riffControls());
+  bar.append(el('b', {}, '🎹 '), parts.join(' · '), el('span', { class: 'ctlAct', id: 'ctlAct' }, ''));
 }
 export function ctlKeyboard() {
   const c = LV.ctl,

@@ -47,32 +47,34 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # the two Mac disk images are made one after the other (dist:mac), as both mount under the app's name;
-      # GitHub's Macs can also hold a new one open (XProtect, Spotlight): stop those, and try up to 3 times
-      - name: Let go of new disk images (Mac)
+      # The Mac apps: electron-builder makes the .app for each chip, then the disk image is made here without
+      # ever mounting it (electron-builder's own disk images mount and unmount, which GitHub's Macs keep failing:
+      # "hdiutil detach … resource busy"). makehybrid writes the image straight from a folder (the app and a
+      # shortcut to Applications), and convert compresses it.
+      - name: Build the Mac apps
         if: runner.os == 'macOS'
-        run: |
-          sudo mdutil -a -i off || true
-          sudo pkill -9 XProtect || true
-          while pgrep -q XProtect; do sleep 3; done
-      - run: |
-          for i in 1 2 3; do
-            if [ "$RUNNER_OS" = macOS ]; then
-              npx electron-builder --mac --arm64 --publish never && npx electron-builder --mac --x64 --publish never && exit 0
-            else
-              npm run ${{ matrix.dist }} && exit 0
-            fi
-            echo "Build failed (try $i), trying again"
-            if [ "$RUNNER_OS" = macOS ]; then
-              for v in /Volumes/MC707*; do hdiutil detach -force "$v" || true; done
-              sudo pkill -9 XProtect || true
-            fi
-            sleep 20
-          done
-          exit 1
         shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          set -e
+          npx electron-builder --mac dir --arm64 --x64 --publish never
+          for arch in arm64 x64; do
+            dir=dist/mac-$arch; [ -d "$dir" ] || dir=dist/mac
+            app=$(ls -d "$dir"/*.app | head -1)
+            stage=$(mktemp -d)
+            cp -R "$app" "$stage/"
+            ln -s /Applications "$stage/Applications"
+            raw=dist/raw-$arch.dmg
+            hdiutil makehybrid -hfs -hfs-volume-name "MC707-101 Toolbox" -o "$raw" "$stage"
+            hdiutil convert "$raw" -format UDZO -o "dist/MC-707-Toolbox-mac-$arch.dmg"
+            rm -f "$raw"
+            rm -rf "$stage"
+          done
+          ls -la dist/*.dmg
+      - name: Build the Linux apps
+        if: runner.os == 'Linux'
+        run: npm run ${{ matrix.dist }}
       - uses: actions/upload-artifact@v4
         with:
           name: MC-707-Toolbox-${{ runner.os }}
