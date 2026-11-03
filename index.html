@@ -46339,7 +46339,8 @@ html.os-darwin.native-menu #menubar .mproj {
         const slots = clipSteps2(u8, base, steps2);
         clips.push({ size, steps: steps2, sound: text(u8, base, 16), slots, notes: slots.reduce((n, s) => n + s.length, 0) });
       }
-      tracks3.push({ kind, sound: text(u8, P2 + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips });
+      const tb = P2 + 512 + t * 256, on3 = u8[tb + 21] === 1 ? u8[tb + 24] : -1;
+      tracks3.push({ kind, sound: text(u8, P2 + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips, on: on3 });
     }
     const samples = [];
     if (sec.USDa) {
@@ -46378,6 +46379,8 @@ html.os-darwin.native-menu #menubar .mproj {
     return {
       name: text(u8, P2 + 16, 16),
       scenes,
+      /* the scene chain switched on (CHAIN ON) */
+      chain: u8[P2 + 323] === 1,
       bpm: dv.getUint16(P2 + 32, true) / 100,
       tracks: tracks3,
       samples,
@@ -46501,6 +46504,14 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     }
     const first = song.first || 0;
+    const open2 = song.scenes[0];
+    if (open2)
+      for (let t = 0; t < 8; t++) {
+        const k2 = open2.pick[t], b = P2 + 512 + t * 256;
+        u8[b + 21] = k2 >= 0 ? 1 : 0;
+        if (k2 >= 0) u8[b + 24] = k2;
+      }
+    if (song.scenes.length > 1) u8[P2 + 323] = 1;
     song.scenes.forEach((sc, i) => {
       const s = first + i;
       if (s > 127) return;

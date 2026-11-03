@@ -3,7 +3,8 @@
 // and the bytes another layout changes; a drum track takes its blocks from the 8-drum project), then sets
 // what core/mpj.js reads back: the project name and tempo, each clip's step size, number of steps and steps,
 // which clip each track plays in each scene, and each scene's chain LENGTH (the last OFF, so the chain stops
-// there, as Scene Mode writes them). The sounds stay the template's (each track's default tone or kit), and
+// there, as Scene Mode writes them); the first scene's clips switched on and the chain switched on, as the
+// MC-707 saves a project that was playing its chain (a template has no clip on, so nothing would play). The sounds stay the template's (each track's default tone or kit), and
 // so does motion: their place in the file is not mapped yet.
 //
 // A step is 0x60 bytes, 16 slots each: notes (FF empty), velocities (80 empty), starts (signed hundredths of
@@ -114,6 +115,18 @@ export function mpjFill(u8, song) {
     }
   }
   const first = song.first || 0;
+  /* the project opens on the first scene: each track's clip in it switched on (+15 on, +18 the clip), as
+     the MC-707 saves a project with its clips playing; a track with none stays off */
+  const open = song.scenes[0];
+  if (open)
+    for (let t = 0; t < 8; t++) {
+      const k = open.pick[t],
+        b = P + 0x200 + t * 0x100;
+      u8[b + 0x15] = k >= 0 ? 1 : 0;
+      if (k >= 0) u8[b + 0x18] = k;
+    }
+  /* the scene chain switched on (CHAIN ON, +143), so the scenes follow one another by themselves */
+  if (song.scenes.length > 1) u8[P + 0x143] = 1;
   song.scenes.forEach((sc, i) => {
     const s = first + i;
     if (s > 127) return;

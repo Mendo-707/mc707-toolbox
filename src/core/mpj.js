@@ -3,7 +3,8 @@
 // (Save as MC-707 project) is core/mpj-write.js.
 //
 //   header      2 bytes, "PRJ5", then at 16 a table of sections: 4-letter tag, "MC77", offset, size (LE)
-//   PRJa        the project: name (16 chars) at +10, tempo (BPM × 100, 16 bits) at +20; each scene's
+//   PRJa        the project: name (16 chars) at +10, tempo (BPM × 100, 16 bits) at +20, the scene chain
+//               switched on at +143 (1); each scene's
 //               chain length (bars, 0 OFF) at +50 + scene; per track t a block at +200 + t × 100 with
 //               its kind at +14 (0 tone, 1 drum, 2 looper) and the clip it plays in each of the 128
 //               scenes at +90 + scene (1-16, 0 none); then 8 tracks ×
@@ -105,7 +106,10 @@ export function readMpj(u8) {
       const slots = clipSteps(u8, base, steps);
       clips.push({ size, steps, sound: text(u8, base, 16), slots, notes: slots.reduce((n, s) => n + s.length, 0) });
     }
-    tracks.push({ kind, sound: text(u8, P + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips });
+    /* the clip switched on as the project was saved (+15 on, +18 the clip), or -1 */
+    const tb = P + 0x200 + t * 0x100,
+      on = u8[tb + 0x15] === 1 ? u8[tb + 0x18] : -1;
+    tracks.push({ kind, sound: text(u8, P + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips, on });
   }
   /* samples */
   const samples = [];
@@ -156,6 +160,8 @@ export function readMpj(u8) {
   return {
     name: text(u8, P + 0x10, 16),
     scenes,
+    /* the scene chain switched on (CHAIN ON) */
+    chain: u8[P + 0x143] === 1,
     bpm: dv.getUint16(P + 0x20, true) / 100,
     tracks,
     samples,

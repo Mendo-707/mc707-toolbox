@@ -117,8 +117,7 @@ export async function saveMpjOpen() {
       li('Connect the USB cable: the SD card shows up as a drive.'),
       li('Copy the .mpj file into the folder with the MC-707’s other projects (under ROLAND), then eject the drive.'),
       li('Leave storage mode, press PROJECT, choose LOAD and pick ' + name.slice(0, 16) + '.'),
-      li(
-        'For the scenes to follow on by themselves, turn the scene chain on (C1 CHAIN ON). Save the project on the MC-707 once you have chosen its sounds.'
+      li('Press PLAY: it opens on the first scene with the scene chain on, so the scenes follow one another. Choose the sounds, then save the project on the MC-707.'). Save the project on the MC-707 once you have chosen its sounds.'
       )
     ),
     ok: 'OK',
