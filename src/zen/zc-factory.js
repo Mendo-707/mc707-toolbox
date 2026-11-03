@@ -253,3 +253,28 @@ export function fwTones(b) {
   });
   return out;
 }
+
+/**
+ * A tone as a 1632-byte record, the way the update file and an MC-707 project (.mpj) store it: the
+ * tone's values written over `base` (another tone's record, for the few bytes no parameter covers,
+ * which are the same in every factory tone). fwTone(fwRecord(snd, base), 0) gives the tone back.
+ * @param {{v:object}} snd  a tone (kind 'tone')
+ * @param {Uint8Array} base  a record of FW_REC bytes
+ */
+export function fwRecord(snd, base) {
+  const r = base.slice(0, FW_REC);
+  for (const [k, o, t] of fwFields()) {
+    const x = snd.v[k];
+    if (x === undefined) continue;
+    if (t === 'a')
+      for (let i = 0; i < 16; i++) {
+        const c = String(x).charCodeAt(i);
+        r[o + i] = c >= 32 && c < 127 ? c : 32;
+      }
+    else {
+      r[o] = x & 0xff;
+      if (t === 'w' || t === 's') r[o + 1] = (x >> 8) & 0xff;
+    }
+  }
+  return r;
+}

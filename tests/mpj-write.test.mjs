@@ -48,7 +48,11 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
       headers: song.clips.map(c => {
         const b = 0xa0 + 0x10f0 + (c.t * 17 + c.k) * 0x5c40,
           drum = back.tracks[c.t].kind === 'drum';
-        return [bytes[b + 0x12] === (drum ? 1 : 0), bytes[b + 0xac] === 9, bytes[b + 0xf4] === (drum ? 12 : 160)].join();
+        return [
+          bytes[b + 0x12] === (drum ? 1 : 0),
+          bytes[b + 0xac] === 9,
+          bytes[b + 0xf4] === (drum ? 12 : 160)
+        ].join();
       })
     };
   }, b64);
@@ -61,5 +65,37 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
   assert.deepEqual(r.backScenes, r.scenes, 'the scenes: clips picked and chain lengths, the last OFF');
   assert.equal(r.chain, true, 'the scene chain is on');
   for (const h of r.headers) assert.equal(h, 'true,true,true', 'every clip has its header, so the MC-707 sees a clip');
+  assert.deepEqual(errors, []);
+});
+
+test('Save as MC-707 project: Scene Mode’s clip tones go in their slots, the track playing its clips’ sounds', async () => {
+  const { page, errors } = await openApp({ storage: { 'mc707-song-mode-v1': readFixture('song-v0.10.json') } });
+  const r = await page.evaluate(async () => {
+    const A = window.__app,
+      made = A.scene.fromSong();
+    A.scene.setMode('scene');
+    A.scene.edit(q => ((q.rows = made.rows), (q.clips = made.clips)));
+    const t = A.S.tracks.findIndex((x, i) => x.type !== 'drum' && made.clips[i] && made.clips[i][0]);
+    A.scene.setTone(t, 0, { name: 'Scene Lead', kind: 'tone', d: { 'CMN.NAME': 'Scene Lead', 'CMN.LEVEL': 90 } });
+    const { bytes } = await A.mpj.bytes('Tones'),
+      P = 0xa0,
+      slot = s => P + 0x3178f0 + t * 0x6c60 + s * 0x660,
+      name = at => String.fromCharCode(...bytes.subarray(at, at + 16)).trim(),
+      other = A.S.tracks.findIndex((x, i) => i !== t && x.type !== 'drum');
+    return {
+      clip: name(slot(1)),
+      level: bytes[slot(1) + 20],
+      own: name(slot(0)),
+      source: bytes[P + 0x200 + t * 0x100 + 0x15],
+      otherSource: bytes[P + 0x200 + other * 0x100 + 0x15],
+      otherOwn: name(P + 0x3178f0 + other * 0x6c60)
+    };
+  });
+  assert.equal(r.clip, 'Scene Lead', 'clip 1’s tone in its slot (k + 1)');
+  assert.equal(r.level, 90, 'with its values');
+  assert.equal(r.own, 'Scene Lead', 'and as the track’s own sound');
+  assert.equal(r.source, 1, 'the track plays its clips’ sounds (Sound Source CLIP)');
+  assert.equal(r.otherSource, 0, 'a track with no tones keeps the template’s Sound Source');
+  assert.equal(r.otherOwn, 'JD-800 Piano', 'and its sound');
   assert.deepEqual(errors, []);
 });

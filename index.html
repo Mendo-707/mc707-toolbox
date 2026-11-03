@@ -39471,6 +39471,23 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     return out2;
   }
+  function fwRecord(snd, base) {
+    const r = base.slice(0, FW_REC);
+    for (const [k2, o, t] of fwFields()) {
+      const x = snd.v[k2];
+      if (x === void 0) continue;
+      if (t === "a")
+        for (let i = 0; i < 16; i++) {
+          const c = String(x).charCodeAt(i);
+          r[o + i] = c >= 32 && c < 127 ? c : 32;
+        }
+      else {
+        r[o] = x & 255;
+        if (t === "w" || t === "s") r[o + 1] = x >> 8 & 255;
+      }
+    }
+    return r;
+  }
 
   // src/zen/zc-factory-ui.js
   var frame = () => new Promise((r) => setTimeout(r, 30));
@@ -46435,6 +46452,9 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/core/mpj-write.js
   var PRJ_CLIPS2 = 4336;
+  var TONES = 3242224;
+  var TONE_BLOCK = 27744;
+  var TONE_REC = 1632;
   var CLIP_SIZE2 = 23616;
   var STEP02 = 976;
   var STEP_SIZE2 = 96;
@@ -46480,6 +46500,7 @@ html.os-darwin.native-menu #menubar .mproj {
     applyRuns(u8, await gunzip(DIFF[8]), (at2) => kinds[trackAt(at2, P2)] === "drum");
     return u8;
   }
+  var mpjToneAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + TONES + t * TONE_BLOCK + slot2 * TONE_REC;
   var putText = (u8, at2, s, n) => {
     for (let i = 0; i < n; i++) {
       const c = String(s || "").charCodeAt(i);
@@ -46506,6 +46527,15 @@ html.os-darwin.native-menu #menubar .mproj {
           u8[o + 64 + j] = x ? x.sub || 0 : 0;
         }
       }
+    }
+    for (let t = 0; t < 8; t++) {
+      const mine = (song.tones || []).filter((x) => x.t === t);
+      if (!mine.length) continue;
+      const own = u8.slice(mpjToneAt(u8, t, 0), mpjToneAt(u8, t, 0) + TONE_REC);
+      for (const c of song.clips) if (c.t === t) u8.set(own, mpjToneAt(u8, t, c.k + 1));
+      for (const x of mine) u8.set(x.rec, mpjToneAt(u8, t, x.k + 1));
+      u8.set(mine[0].rec, mpjToneAt(u8, t, 0));
+      u8[P2 + 512 + t * 256 + 21] = 1;
     }
     const first = song.first || 0;
     if (song.scenes.length > 1) u8[P2 + 323] = 1;
@@ -46743,7 +46773,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (DEV !== "707") return { error: "MC-707 project files are for the MC-707 (8 tracks): switch Settings › Device" };
     const own = !!(S.scn && S.scn.rows.length), made3 = own ? { rows: S.scn.rows, clips: S.scn.clips } : songToRows();
     if (!made3.rows.length) return { error: "The song has nothing to play yet" };
-    const clips = [], lost = [];
+    const clips = [], tones = [], lost = [];
     for (const t of DEVS[DEV].tracks)
       for (let k2 = 0; k2 < 16; k2++) {
         const c = made3.clips[t] && made3.clips[t][k2];
@@ -46760,11 +46790,20 @@ html.os-darwin.native-menu #menubar .mproj {
         }
         if (enc.skipped) lost.push(S.tracks[t].name + " clip " + (k2 + 1) + ": " + lostText(enc));
         clips.push({ t, k: k2, size: enc.size, steps: enc.steps, slots: enc.slots });
+        const tn = own && toneOf(c);
+        if (tn && tn.kind === "tone" && type === "tone") {
+          const snd = soundFrom({ zencore: 1, kind: "tone", v: tn.d });
+          if (snd) tones.push({ t, k: k2, snd, name: tn.name });
+        } else if (tn && tn.kind === "kit")
+          lost.push(
+            S.tracks[t].name + " clip " + (k2 + 1) + ": the kit " + tn.name + " (the track keeps the template’s kit)"
+          );
       }
     return {
       name: (name || PROJ.name || "Toolbox song").slice(0, 16),
       bpm: S.bpm,
       clips,
+      tones,
       scenes: made3.rows.map((r) => ({ bars: r.bars, pick: r.pick })),
       first: own ? S.scn.first || 0 : 0,
       from: own ? "Scene Mode’s clips and scenes" : "the song (as Scene Mode would make its scenes)",
@@ -46774,15 +46813,19 @@ html.os-darwin.native-menu #menubar .mproj {
   async function mpjBytes(name) {
     const song = mpjSong(name);
     if (song.error) return song;
-    const kinds = S.tracks.map((t) => t.type === "drum" ? "drum" : "tone");
-    return { bytes: mpjFill(await mpjBlank(kinds), song), song };
+    const kinds = S.tracks.map((t) => t.type === "drum" ? "drum" : "tone"), u8 = await mpjBlank(kinds);
+    const tones = song.tones.map((x) => {
+      const at2 = mpjToneAt(u8, x.t, 0);
+      return { t: x.t, k: x.k, rec: fwRecord(x.snd, u8.subarray(at2, at2 + FW_REC)) };
+    });
+    return { bytes: mpjFill(u8, { ...song, tones }), song };
   }
   async function saveMpjOpen() {
     const first = mpjSong();
     if (first.error) return void toast(first.error);
     const name = await askDlg({
       title: "Save as MC-707 project",
-      text: "A project file to copy onto the MC-707’s SD card and load there, with no computer. It holds " + first.clips.length + " clips and " + first.scenes.length + " scenes from " + first.from + ", and the tempo (" + first.bpm + " BPM).\n\nThe sounds are not in it yet: each track starts with the template’s default sound, so choose them on the MC-707 (or write the song over USB in Scene Mode, which sends them). Pump and other motion are not in it either.\n\nThe project’s name on the MC-707 (up to 16 letters):",
+      text: "A project file to copy onto the MC-707’s SD card and load there, with no computer. It holds " + first.clips.length + " clips and " + first.scenes.length + " scenes from " + first.from + ", and the tempo (" + first.bpm + " BPM).\n\n" + (first.tones.length ? "Sounds: the " + first.tones.length + " tone" + (first.tones.length === 1 ? "" : "s") + " you gave clips in Scene Mode go in. Drum tracks keep the template’s kit (TR-808 or TR-909), and tracks with no tone chosen keep its piano." : "Sounds: each track starts with the template’s (TR-808 or TR-909 kits and a piano). Give clips tones in Scene Mode and they go in the file.") + " Pump and other motion are not in it yet.\n\nThe project’s name on the MC-707 (up to 16 letters):",
       input: true,
       def: first.name,
       ok: "Save"
@@ -46817,7 +46860,7 @@ html.os-darwin.native-menu #menubar .mproj {
         li("Copy the .mpj file into the folder with the MC-707’s other projects (under ROLAND), then eject the drive."),
         li("Leave storage mode, press PROJECT, choose LOAD and pick " + name.slice(0, 16) + "."),
         li(
-          "Press PLAY: it opens on the first scene with the scene chain on, so the scenes follow one another. Choose the sounds, then save the project on the MC-707."
+          "Press PLAY: it opens on the first scene with the scene chain on, so the scenes follow one another. Change any sounds you like, then save the project on the MC-707."
         )
       ),
       ok: "OK",
@@ -69142,7 +69185,7 @@ html.os-darwin.native-menu #menubar .mproj {
       },
       motion: zc_motion_exports,
       pump: pump_exports,
-      mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong },
+      mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
       get S() {
         return S;
       },

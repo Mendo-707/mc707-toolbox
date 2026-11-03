@@ -4,8 +4,9 @@
 // what core/mpj.js reads back: the project name and tempo, each clip's header (so the MC-707 sees a clip), step size, number of steps and steps,
 // which clip each track plays in each scene, and each scene's chain LENGTH (the last OFF, so the chain stops
 // there, as Scene Mode writes them), and the chain switched on (+143, as the MC-707 saves a project that
-// was playing its chain). The sounds stay the template's (each track's default tone or kit), and
-// so does motion: their place in the file is not mapped yet.
+// was playing its chain). A clip's tone goes in its slot (mpjToneAt) with the track set to play its
+// clips' sounds; other tracks keep the template's sound (its default tone or kit: kits are not written
+// yet), and motion stays the template's: its place in the file is not mapped yet.
 //
 // A step is 0x60 bytes, 16 slots each: notes (FF empty), velocities (80 empty), starts (signed hundredths of
 // a step), ends (hundredths, 100 carries on into the next step; 80 empty), sub steps, then 16 bytes left as
@@ -16,6 +17,9 @@ import { BASE, DIFF, MPJ_SIZE } from './mpj-templates.js';
 import { mpjSections } from './mpj.js';
 
 const PRJ_CLIPS = 0x10f0,
+  TONES = 0x3178f0,
+  TONE_BLOCK = 0x6c60,
+  TONE_REC = 0x660,
   CLIP_SIZE = 0x5c40,
   STEP0 = 0x3d0,
   STEP_SIZE = 0x60;
@@ -80,6 +84,13 @@ export async function mpjBlank(kinds) {
   return u8;
 }
 
+/**
+ * Where a tone track's sound slot starts in a project: slot 0 is the track's own sound (played with the
+ * track's Sound Source on TRACK, as Roland's templates have it), slot k + 1 clip k's (Sound Source CLIP).
+ * Each holds a tone as a 1632-byte record, the layout of the MC-707's update file (zen/zc-factory.js).
+ */
+export const mpjToneAt = (u8, t, slot) => mpjSections(u8).PRJa.at + TONES + t * TONE_BLOCK + slot * TONE_REC;
+
 /** Printable ASCII, padded with spaces. */
 const putText = (u8, at, s, n) => {
   for (let i = 0; i < n; i++) {
@@ -93,8 +104,9 @@ const putText = (u8, at, s, n) => {
  * @param {Uint8Array} u8  from mpjBlank
  * @param {{name:string, bpm:number,
  *   clips: {t:number, k:number, size:number, steps:number, slots:{note,vel,start,end,sub}[][]}[],
- *   scenes: {bars:number, pick:number[]}[], first?:number}} song  pick: the clip (0-15) each of the 8 tracks
- *   plays, -1 none; scenes go in from scene `first` (0-127)
+ *   scenes: {bars:number, pick:number[]}[], first?:number, tones?: {t:number, k:number, rec:Uint8Array}[]}} song
+ *   pick: the clip (0-15) each of the 8 tracks plays, -1 none; scenes go in from scene `first` (0-127);
+ *   tones: a clip's tone as a record (zen/zc-factory.js fwRecord), on a tone track
  * @returns {Uint8Array} u8
  */
 export function mpjFill(u8, song) {
@@ -122,6 +134,17 @@ export function mpjFill(u8, song) {
         u8[o + 0x40 + j] = x ? x.sub || 0 : 0;
       }
     }
+  }
+  /* the clips' tones: a track with any plays its clips' sounds (Sound Source CLIP, +15); its other clips
+     get the track's own sound, so none is silent */
+  for (let t = 0; t < 8; t++) {
+    const mine = (song.tones || []).filter(x => x.t === t);
+    if (!mine.length) continue;
+    const own = u8.slice(mpjToneAt(u8, t, 0), mpjToneAt(u8, t, 0) + TONE_REC);
+    for (const c of song.clips) if (c.t === t) u8.set(own, mpjToneAt(u8, t, c.k + 1));
+    for (const x of mine) u8.set(x.rec, mpjToneAt(u8, t, x.k + 1));
+    u8.set(mine[0].rec, mpjToneAt(u8, t, 0));
+    u8[P + 0x200 + t * 0x100 + 0x15] = 1;
   }
   const first = song.first || 0;
   /* the scene chain switched on (CHAIN ON, +143), so the scenes follow one another by themselves */
