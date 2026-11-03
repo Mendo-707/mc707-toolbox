@@ -47,7 +47,7 @@ export function mpjSong(name) {
         continue;
       }
       if (enc.skipped) lost.push(S.tracks[t].name + ' clip ' + (k + 1) + ': ' + lostText(enc));
-      clips.push({ t, k, size: enc.size, steps: enc.steps, slots: enc.slots });
+      clips.push({ t, k, size: enc.size, steps: enc.steps, slots: enc.slots, name: p.name || '' });
       /* the clip's tone or kit from Scene Mode: a factory kit as its bytes; another kit (its keys are not
          mapped) leaves the clip with the template's */
       const tn = own && toneOf(c);
@@ -89,7 +89,7 @@ export async function mpjBytes(name) {
   /* each tone over the track's template tone, for the few bytes no parameter covers; kits as they are */
   const sounds = song.tones.map(x => {
     if (x.kind === 'kit') return x;
-    const at = mpjToneAt(u8, x.t, 0);
+    const at = mpjToneAt(u8, x.t, 16);
     return { t: x.t, k: x.k, kind: 'tone', rec: fwRecord(x.snd, u8.subarray(at, at + FW_REC)) };
   });
   return { bytes: mpjFill(u8, { ...song, sounds }), song };

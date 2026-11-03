@@ -45,6 +45,10 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
       lost: song.lost,
       chain: back.chain,
       /* each clip's header as the MC-707 saves a recorded clip (FF in an empty one, which shows no clip) */
+      names: song.clips.map(c => {
+        const b = 0xa0 + 0x10f0 + (c.t * 17 + c.k) * 0x5c40;
+        return [String.fromCharCode(...bytes.subarray(b, b + 16)).trim(), c.name.slice(0, 16).trim()];
+      }),
       headers: song.clips.map(c => {
         const b = 0xa0 + 0x10f0 + (c.t * 17 + c.k) * 0x5c40,
           drum = back.tracks[c.t].kind === 'drum';
@@ -64,6 +68,11 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
   assert.deepEqual(r.backClips, r.clips, 'every clip reads back with its step size, steps and notes');
   assert.deepEqual(r.backScenes, r.scenes, 'the scenes: clips picked and chain lengths, the last OFF');
   assert.equal(r.chain, true, 'the scene chain is on');
+  for (const [got, want] of r.names) assert.equal(got, want, 'each clip named after its pattern');
+  assert.ok(
+    r.names.every(([, w]) => w),
+    'the clips have names'
+  );
   for (const h of r.headers) assert.equal(h, 'true,true,true', 'every clip has its header, so the MC-707 sees a clip');
   assert.deepEqual(errors, []);
 });
@@ -79,22 +88,22 @@ test('Save as MC-707 project: Scene Mode’s clip tones go in their slots, the t
     A.scene.setTone(t, 0, { name: 'Scene Lead', kind: 'tone', d: { 'CMN.NAME': 'Scene Lead', 'CMN.LEVEL': 90 } });
     const { bytes } = await A.mpj.bytes('Tones'),
       P = 0xa0,
-      slot = s => P + 0x3178f0 + t * 0x6c60 + s * 0x660,
+      slot = s => P + 0x3112f0 + t * 0x6c60 + s * 0x660,
       name = at => String.fromCharCode(...bytes.subarray(at, at + 16)).trim(),
       other = A.S.tracks.findIndex((x, i) => i !== t && x.type !== 'drum');
     return {
-      clip: name(slot(1)),
-      level: bytes[slot(1) + 20],
-      own: name(slot(0)),
+      clip: name(slot(0)),
+      level: bytes[slot(0) + 20],
+      own: name(slot(16)),
       source: bytes[P + 0x200 + t * 0x100 + 0x15],
       otherSource: bytes[P + 0x200 + other * 0x100 + 0x15],
-      otherOwn: name(P + 0x3178f0 + other * 0x6c60),
-      otherClip: name(P + 0x3178f0 + other * 0x6c60 + 0x660)
+      otherOwn: name(P + 0x3112f0 + other * 0x6c60 + 16 * 0x660),
+      otherClip: name(P + 0x3112f0 + other * 0x6c60)
     };
   });
-  assert.equal(r.clip, 'Scene Lead', 'clip 1’s tone in its slot (k + 1)');
+  assert.equal(r.clip, 'Scene Lead', 'clip 1’s tone in its slot (k)');
   assert.equal(r.level, 90, 'with its values');
-  assert.equal(r.own, 'Scene Lead', 'and as the track’s own sound');
+  assert.equal(r.own, 'Scene Lead', 'and as the track’s own sound (slot 16)');
   assert.equal(r.source, 1, 'the track plays its clips’ sounds (Sound Source CLIP)');
   assert.equal(r.otherSource, 1, 'every track with clips plays its clips’ sounds');
   assert.equal(r.otherOwn, 'JD-800 Piano', 'a track with no tones keeps the template’s sound');
@@ -124,20 +133,20 @@ test('Save as MC-707 project: a factory kit on a drum clip goes in its slot, rec
     const { bytes, song } = await A.mpj.bytes('Kits'),
       P = 0xa0,
       name = at => String.fromCharCode(...bytes.subarray(at, at + 16)).trim(),
-      kit = s => P + 0x3545f0 + t * 0xdd00 + s * 0xd00,
-      keys = s => P + 0x4001f0 + t * 0x4ee40 + s * 0x4a40;
+      kit = s => P + 0x3475f0 + t * 0xdd00 + s * 0xd00,
+      keys = s => P + 0x3b5df0 + t * 0x4ee40 + s * 0x4a40;
     return {
-      kit: name(kit(1)),
-      own: name(kit(0)),
-      key0: name(keys(1)),
-      key21: name(keys(1) + 21 * 216),
+      kit: name(kit(0)),
+      own: name(kit(16)),
+      key0: name(keys(0)),
+      key21: name(keys(0) + 21 * 216),
       source: bytes[P + 0x200 + t * 0x100 + 0x15],
       lost: song.lost,
       /* a reload keeps the kit's bytes */
       kept: !!Object.values(A.S.scn.tones).find(x => x.kind === 'kit').mpj
     };
   });
-  assert.equal(r.kit, 'Test Kit', 'clip 1’s kit record in its slot (k + 1)');
+  assert.equal(r.kit, 'Test Kit', 'clip 1’s kit record in its slot (k)');
   assert.equal(r.own, 'Test Kit', 'and as the track’s own kit');
   assert.deepEqual([r.key0, r.key21], ['Off', 'Test Kick'], 'each key’s instrument copied in');
   assert.equal(r.source, 1, 'the drum track plays its clips’ sounds');

@@ -46545,13 +46545,14 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/core/mpj-write.js
   var PRJ_CLIPS2 = 4336;
-  var TONES = 3242224;
+  var TONES = 3216112;
   var TONE_BLOCK = 27744;
   var TONE_REC = 1632;
-  var KITS = 3491312;
+  var KITS = 3438064;
   var KIT_BLOCK = 56576;
   var KIT_REC2 = 3328;
-  var KEYS3 = 4194800;
+  var KEYS3 = 3890672;
+  var OWN = 16;
   var KEYS_BLOCK = 323136;
   var KEYS_REC = 19008;
   var CLIP_SIZE2 = 23616;
@@ -46579,9 +46580,9 @@ html.os-darwin.native-menu #menubar .mproj {
     if (x >= 512 && x < 2560) return x - 512 >> 8;
     if (x >= PRJ_CLIPS2 && x < PRJ_CLIPS2 + 136 * CLIP_SIZE2) return Math.floor((x - PRJ_CLIPS2) / CLIP_SIZE2 / 17);
     for (const [start, stride] of [
-      [3242224, 27744],
-      [3491312, 56576],
-      [4194800, 323136]
+      [TONES, TONE_BLOCK],
+      [KITS, KIT_BLOCK],
+      [KEYS3, KEYS_BLOCK]
     ])
       if (x >= start && x < start + 8 * stride) return Math.floor((x - start) / stride);
     return -1;
@@ -46631,17 +46632,18 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     for (let t = 0; t < 8; t++) {
       const mine = song.clips.filter((c) => c.t === t);
+      for (const c of mine) if (c.name) putText(u8, P2 + PRJ_CLIPS2 + (c.t * 17 + c.k) * CLIP_SIZE2, c.name, 16);
       if (!mine.length) continue;
       const drum = u8[P2 + 512 + t * 256 + 20] === 1, parts4 = drum ? [
         [mpjKitAt, KIT_REC2, "rec"],
         [mpjKeysAt, KEYS_REC, "keys"]
       ] : [[mpjToneAt, TONE_REC, "rec"]], given = (song.sounds || []).filter((x) => x.t === t && x.kind === "kit" === drum);
       for (const [at2, size] of parts4) {
-        const own = u8.slice(at2(u8, t, 0), at2(u8, t, 0) + size);
-        for (const c of mine) u8.set(own, at2(u8, t, c.k + 1));
+        const own = u8.slice(at2(u8, t, OWN), at2(u8, t, OWN) + size);
+        for (const c of mine) u8.set(own, at2(u8, t, c.k));
       }
-      for (const x of given) for (const [at2, , key] of parts4) u8.set(x[key], at2(u8, t, x.k + 1));
-      if (given.length) for (const [at2, , key] of parts4) u8.set(given[0][key], at2(u8, t, 0));
+      for (const x of given) for (const [at2, , key] of parts4) u8.set(x[key], at2(u8, t, x.k));
+      if (given.length) for (const [at2, , key] of parts4) u8.set(given[0][key], at2(u8, t, OWN));
       u8[P2 + 512 + t * 256 + 21] = 1;
     }
     const first = song.first || 0;
@@ -46896,7 +46898,7 @@ html.os-darwin.native-menu #menubar .mproj {
           continue;
         }
         if (enc.skipped) lost.push(S.tracks[t].name + " clip " + (k2 + 1) + ": " + lostText(enc));
-        clips.push({ t, k: k2, size: enc.size, steps: enc.steps, slots: enc.slots });
+        clips.push({ t, k: k2, size: enc.size, steps: enc.steps, slots: enc.slots, name: p.name || "" });
         const tn = own && toneOf(c);
         if (tn && tn.kind === "tone" && type === "tone") {
           const snd = soundFrom({ zencore: 1, kind: "tone", v: tn.d });
@@ -46927,7 +46929,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const kinds = S.tracks.map((t) => t.type === "drum" ? "drum" : "tone"), u8 = await mpjBlank(kinds);
     const sounds = song.tones.map((x) => {
       if (x.kind === "kit") return x;
-      const at2 = mpjToneAt(u8, x.t, 0);
+      const at2 = mpjToneAt(u8, x.t, 16);
       return { t: x.t, k: x.k, kind: "tone", rec: fwRecord(x.snd, u8.subarray(at2, at2 + FW_REC)) };
     });
     return { bytes: mpjFill(u8, { ...song, sounds }), song };

@@ -17,13 +17,14 @@ import { BASE, DIFF, MPJ_SIZE } from './mpj-templates.js';
 import { mpjSections } from './mpj.js';
 
 const PRJ_CLIPS = 0x10f0,
-  TONES = 0x3178f0,
+  TONES = 0x3112f0,
   TONE_BLOCK = 0x6c60,
   TONE_REC = 0x660,
-  KITS = 0x3545f0,
+  KITS = 0x3475f0,
   KIT_BLOCK = 0xdd00,
   KIT_REC = 0xd00,
-  KEYS = 0x4001f0,
+  KEYS = 0x3b5df0,
+  OWN = 16,
   KEYS_BLOCK = 0x4ee40,
   KEYS_REC = 0x4a40,
   CLIP_SIZE = 0x5c40,
@@ -61,9 +62,9 @@ function trackAt(off, P) {
   if (x >= 0x200 && x < 0xa00) return (x - 0x200) >> 8;
   if (x >= PRJ_CLIPS && x < PRJ_CLIPS + 136 * CLIP_SIZE) return Math.floor((x - PRJ_CLIPS) / CLIP_SIZE / 17);
   for (const [start, stride] of [
-    [0x3178f0, 0x6c60],
-    [0x3545f0, 0xdd00],
-    [0x4001f0, 0x4ee40]
+    [TONES, TONE_BLOCK],
+    [KITS, KIT_BLOCK],
+    [KEYS, KEYS_BLOCK]
   ])
     if (x >= start && x < start + 8 * stride) return Math.floor((x - start) / stride);
   return -1;
@@ -91,8 +92,10 @@ export async function mpjBlank(kinds) {
 }
 
 /**
- * Where a tone track's sound slot starts in a project: slot 0 is the track's own sound (played with the
- * track's Sound Source on TRACK, as Roland's templates have it), slot k + 1 clip k's (Sound Source CLIP).
+ * Where a tone track's sound slot starts in a project: slot k (0-15) is clip k's sound (played with the
+ * track's Sound Source on CLIP), slot 16 the track's own (Sound Source TRACK, as Roland's templates have
+ * it). The same numbering as over USB (zen/zc-sysex.js slotAddr); an MC-707 showed track 1 the name
+ * written one track's 17 slots further on when the own sound was taken to come first.
  * Each holds a tone as a 1632-byte record, the layout of the MC-707's update file (zen/zc-factory.js).
  */
 export const mpjToneAt = (u8, t, slot) => mpjSections(u8).PRJa.at + TONES + t * TONE_BLOCK + slot * TONE_REC;
@@ -115,7 +118,7 @@ const putText = (u8, at, s, n) => {
  * Fill a project: its name and tempo, the clips' steps, and the scenes.
  * @param {Uint8Array} u8  from mpjBlank
  * @param {{name:string, bpm:number,
- *   clips: {t:number, k:number, size:number, steps:number, slots:{note,vel,start,end,sub}[][]}[],
+ *   clips: {t:number, k:number, size:number, steps:number, slots:{note,vel,start,end,sub}[][], name?:string}[],
  *   scenes: {bars:number, pick:number[]}[], first?:number,
  *   sounds?: {t:number, k:number, kind:'tone'|'kit', rec:Uint8Array, keys?:Uint8Array}[]}} song
  *   pick: the clip (0-15) each of the 8 tracks plays, -1 none; scenes go in from scene `first` (0-127);
@@ -154,6 +157,8 @@ export function mpjFill(u8, song) {
      (the template's), so none is silent. A track's own sound becomes its first given one. */
   for (let t = 0; t < 8; t++) {
     const mine = song.clips.filter(c => c.t === t);
+    /* the clip's name, as the MC-707 shows it on the pads */
+    for (const c of mine) if (c.name) putText(u8, P + PRJ_CLIPS + (c.t * 17 + c.k) * CLIP_SIZE, c.name, 16);
     if (!mine.length) continue;
     const drum = u8[P + 0x200 + t * 0x100 + 0x14] === 1,
       parts = drum
@@ -164,11 +169,11 @@ export function mpjFill(u8, song) {
         : [[mpjToneAt, TONE_REC, 'rec']],
       given = (song.sounds || []).filter(x => x.t === t && (x.kind === 'kit') === drum);
     for (const [at, size] of parts) {
-      const own = u8.slice(at(u8, t, 0), at(u8, t, 0) + size);
-      for (const c of mine) u8.set(own, at(u8, t, c.k + 1));
+      const own = u8.slice(at(u8, t, OWN), at(u8, t, OWN) + size);
+      for (const c of mine) u8.set(own, at(u8, t, c.k));
     }
-    for (const x of given) for (const [at, , key] of parts) u8.set(x[key], at(u8, t, x.k + 1));
-    if (given.length) for (const [at, , key] of parts) u8.set(given[0][key], at(u8, t, 0));
+    for (const x of given) for (const [at, , key] of parts) u8.set(x[key], at(u8, t, x.k));
+    if (given.length) for (const [at, , key] of parts) u8.set(given[0][key], at(u8, t, OWN));
     u8[P + 0x200 + t * 0x100 + 0x15] = 1;
   }
   const first = song.first || 0;
