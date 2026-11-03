@@ -1,7 +1,9 @@
-// Factory tones from the MC-707's own system update file (MC707_UPA_up.bin, from Roland's support
-// page). The file holds every preset tone as a 1632-byte record; this reads them on your computer and
-// turns each into a ZenCore tone the editor can load and send. Nothing from the file is kept in the
-// app or sent anywhere: only the tones you import go into this browser's Sound library.
+// Factory tones and drum kits from the MC-707's own system update file (MC707_UPA_up.bin, from Roland's
+// support page). The file holds every preset tone as a 1632-byte record; this reads them on your computer
+// and turns each into a ZenCore tone the editor can load and send (and back into a record for project
+// files, fwRecord). Kits are kept as their bytes, for Scene Mode's drum clips and project files (fwKits).
+// Nothing from the file is kept in the app or sent anywhere: only the sounds you import go into this
+// browser's Sound library.
 //
 // Reads: nothing shared. Pure functions over the file's bytes.
 import { newSound, paramOf } from './zc-tone.js';
@@ -223,7 +225,9 @@ export const FW_BANK_NAMES = {
   B: 'AX Collection',
   C: 'Synth Legend',
   D: 'Basic Synth',
-  E: 'XV Collection'
+  E: 'XV Collection',
+  K: 'Drum Kits',
+  L: 'More Drum Kits'
 };
 
 /**
@@ -277,4 +281,107 @@ export function fwRecord(snd, base) {
     }
   }
   return r;
+}
+
+/* ---- drum kits ----
+   A factory kit is a 3328-byte record (its name at 0, then for each of the 88 keys from 0xa0 a 20-byte
+   entry starting with the number of the key's drum instrument, u16), and the instruments are 216-byte
+   records in a table of their own (number 0 is Off). An MC-707 project keeps a kit as the same record
+   plus a copy of each key's instrument (core/mpj-write.js). Worked out from the update file and projects
+   saved on an MC-707, where they match byte for byte. */
+export const KIT_REC = 0xd00,
+  INST_REC = 216,
+  KIT_KEYS = 88;
+const KEY0 = 0xa0,
+  KEY_SIZE = 20;
+const printable = (b, o) => {
+  for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+  return true;
+};
+const instOf = (b, o, i) => b[o + KEY0 + i * KEY_SIZE] | (b[o + KEY0 + i * KEY_SIZE + 1] << 8);
+function looksLikeKit(b, o) {
+  if (o + KIT_REC > b.length || !printable(b, o)) return false;
+  for (let i = 0; i < KIT_KEYS; i++) if (instOf(b, o, i) > 4000) return false;
+  return true;
+}
+/* the instrument table: 216-byte records with printable names, the first one Off */
+function instTable(b, need) {
+  const off = [79, 102, 102, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32];
+  for (let o = 0; o + INST_REC * need <= b.length; o += 4) {
+    if (b[o] !== 79 || b[o + 1] !== 102) continue;
+    if (off.some((c, i) => b[o + i] !== c)) continue;
+    let n = 0;
+    while (n < need && printable(b, o + n * INST_REC)) n++;
+    if (n >= need) return o;
+  }
+  return -1;
+}
+const b64 = u => {
+  let s = '';
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+/**
+ * The factory drum kits in an update file: [{name, snd, bank: 'K' (the MC-707's kits) or 'L', no, mpj}], mpj holding the kit as a
+ * project needs it ({rec: base64 record, inst: {number: base64 instrument}}, the instruments its keys use).
+ * @param {Uint8Array} b
+ */
+export function fwKits(b) {
+  const runs = [];
+  for (let o = 0; o + KIT_REC * 8 <= b.length; o += 4) {
+    if (!looksLikeKit(b, o)) continue;
+    let n = 0;
+    while (looksLikeKit(b, o + n * KIT_REC)) n++;
+    if (n < 8) continue;
+    runs.push([o, n]);
+    o += n * KIT_REC - 4;
+  }
+  if (!runs.length) return [];
+  let most = 0;
+  for (const [o, n] of runs)
+    for (let k = 0; k < n; k++) for (let i = 0; i < KIT_KEYS; i++) most = Math.max(most, instOf(b, o + k * KIT_REC, i));
+  const table = instTable(b, most + 1);
+  if (table < 0) return [];
+  /* the MC-707's own kits (the run ending in INIT KIT) first, as bank K; any others after, as bank L */
+  const own = ([o, n]) => nameAt(b, o + (n - 1) * KIT_REC) === 'INIT KIT';
+  runs.sort((x, y) => own(y) - own(x));
+  const out = [];
+  runs.forEach(([start, count], r) => {
+    for (let k = 0; k < count; k++) {
+      const o = start + k * KIT_REC,
+        name = nameAt(b, o);
+      if (!name || name === 'INIT KIT') continue;
+      const inst = {};
+      for (let i = 0; i < KIT_KEYS; i++) {
+        const n = instOf(b, o, i);
+        if (!(n in inst)) inst[n] = b64(b.subarray(table + n * INST_REC, table + (n + 1) * INST_REC));
+      }
+      const snd = newSound('kit');
+      snd.v['KCMN.NAME'] = name;
+      out.push({ name, snd, bank: r ? 'L' : 'K', no: k + 1, mpj: { rec: b64(b.subarray(o, o + KIT_REC)), inst } });
+    }
+  });
+  return out;
+}
+/**
+ * A factory kit's bytes for a project: its record and its 88 keys' instruments one after another, or null
+ * when mpj is not a whole kit.
+ * @returns {{rec: Uint8Array, keys: Uint8Array} | null}
+ */
+export function fwKitBytes(mpj) {
+  try {
+    const rec = unb64(mpj.rec);
+    if (rec.length !== KIT_REC) return null;
+    const keys = new Uint8Array(KIT_KEYS * INST_REC);
+    for (let i = 0; i < KIT_KEYS; i++) {
+      const x = unb64(mpj.inst[instOf(rec, 0, i)]);
+      if (x.length !== INST_REC) return null;
+      keys.set(x, i * INST_REC);
+    }
+    return { rec, keys };
+  } catch (e) {
+    return null;
+  }
 }

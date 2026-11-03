@@ -9,7 +9,7 @@
 //             clips: [[clip or null] × 16] × 8,     clip = { pat: song pattern id, tr?, tone?: key in tones,
 //                                                    pump?: {mode, depth, rel, rest} (core/pump.js) }
 //             rows: [{ id, name, bars (1-127), pick: [clip 0-15 or -1] × 8 }],
-//             tones: { key: { name, kind: 'tone'|'kit', d: {param: value} } },
+//             tones: { key: { name, kind: 'tone'|'kit', d: {param: value}, mpj?: a factory kit's bytes } },
 //             done: { c: { 't:k': mark }, s: { scene: mark }, p: { 't:k': pump mode } } }   what was written
 //                   (p: the motion lane a pump was written into, to clear it when the pump goes)
 //
@@ -133,8 +133,13 @@ export function fixScenes(s, pats) {
   if (q.tones && typeof q.tones === 'object')
     for (const k in q.tones) {
       const t = q.tones[k];
-      if (t && (t.kind === 'tone' || t.kind === 'kit') && t.d && typeof t.d === 'object')
+      if (t && (t.kind === 'tone' || t.kind === 'kit') && t.d && typeof t.d === 'object') {
         tones[k] = { name: String(t.name || 'Tone').slice(0, 16), kind: t.kind, d: t.d };
+        /* a factory kit's bytes for project files: {rec, inst} of base64 strings */
+        const m = t.mpj;
+        if (t.kind === 'kit' && m && typeof m.rec === 'string' && m.inst && typeof m.inst === 'object')
+          tones[k].mpj = { rec: m.rec, inst: m.inst };
+      }
     }
   const clips = emptyClips();
   for (let t = 0; t < 8; t++)

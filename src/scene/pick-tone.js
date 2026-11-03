@@ -38,7 +38,9 @@ function starters() {
 const toneOf = e => ({
   name: e.name,
   kind: e.kind,
-  d: e.src === 'starter' ? diffOf(e.make()) : diffOf(soundOf(e))
+  d: e.src === 'starter' ? diffOf(e.make()) : diffOf(soundOf(e)),
+  /* a factory kit: its bytes, for project files */
+  ...(e.mpj ? { mpj: e.mpj } : {})
 });
 
 /**

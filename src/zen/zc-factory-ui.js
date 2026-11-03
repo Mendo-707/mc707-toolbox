@@ -1,11 +1,11 @@
-// The Sound browser's factory tone items: add the MC-707's preset tones from its system update file
-// (read here on your computer, see zc-factory.js), or take them out of the library again; and add the
+// The Sound browser's factory tone items: add the MC-707's preset tones and drum kits from its system update
+// file (read here on your computer, see zc-factory.js), or take them out of the library again; and add the
 // tones of expansion files (.svz, the same tone records) into one of your folders, one folder per file.
 //
 // Reads: ZS.
 import { el, toast } from '../core/dom.js';
 import { askDlg } from '../ui/dialogs.js';
-import { FW_BANK_NAMES, fwTones } from './zc-factory.js';
+import { FW_BANK_NAMES, fwKits, fwTones } from './zc-factory.js';
 import { ZS, folderAdd, folderList, soundAddMany, soundsRemoveSrc, soundsRemoveWhere } from './zc-sounds.js';
 
 const frame = () => new Promise(r => setTimeout(r, 30));
@@ -21,13 +21,24 @@ export function factoryImport(done) {
       toast('Reading ' + f.name + '…');
       await frame();
       try {
-        const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+        const bytes = new Uint8Array(await f.arrayBuffer()),
+          tones = fwTones(bytes);
         if (!tones.length) return toast('No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).');
-        const n = await soundAddMany(tones.map(t => ({ ...t, src: 'factory' })));
+        /* the drum kits too, for Scene Mode's drum clips and MC-707 project files */
+        const kits = fwKits(bytes),
+          all = [...tones, ...kits],
+          n = await soundAddMany(all.map(t => ({ ...t, src: 'factory' })));
         toast(
           n
-            ? 'Added ' + n + ' factory tones' + (n < tones.length ? ' (' + (tones.length - n) + ' already here)' : '')
-            : 'The factory tones are already in the library'
+            ? 'Added ' +
+                n +
+                ' factory sounds (' +
+                tones.length +
+                ' tones, ' +
+                kits.length +
+                ' kits)' +
+                (n < all.length ? ', ' + (all.length - n) + ' already here' : '')
+            : 'The factory sounds are already in the library'
         );
         done(n);
       } catch (e) {
@@ -111,19 +122,25 @@ export function expansionImport(done) {
 }
 /** Menu items for the browser: add the factory tones, and remove them when they are in. */
 export function factoryItems(done) {
-  const have = ZS.list.some(e => e.src === 'factory');
+  const have = ZS.list.some(e => e.src === 'factory'),
+    kits = ZS.list.some(e => e.src === 'factory' && e.mpj);
   return [
     {
-      label: (have ? 'Add the factory tones again' : 'Factory tones from the MC-707 update file') + '…',
+      label:
+        (have && !kits
+          ? 'Add the factory drum kits too (from the update file again)'
+          : have
+            ? 'Add the factory tones and kits again'
+            : 'Factory tones and kits from the MC-707 update file') + '…',
       action: () => factoryImport(done)
     },
     { label: 'Expansion tones from .svz files, into a folder…', action: () => expansionImport(done) },
     have
       ? {
-          label: 'Remove the factory tones',
+          label: 'Remove the factory tones and kits',
           action: async () => {
             const n = await soundsRemoveSrc('factory');
-            toast('Removed ' + n + ' factory tones');
+            toast('Removed ' + n + ' factory sounds');
             done(0);
           }
         }

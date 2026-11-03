@@ -89,7 +89,8 @@ function starters() {
     }
   return STARTS;
 }
-const entries = () => [...ZS.list, ...starters()].filter(e => e.kind === ZE.kind);
+/* factory kits (e.mpj) are only for Scene Mode's drum clips and project files: their keys are not editor values */
+const entries = () => [...ZS.list, ...starters()].filter(e => e.kind === ZE.kind && !e.mpj);
 const shown = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
 
 /** Open the browser over the editor. */
@@ -723,7 +724,7 @@ function tagsPart(inBank) {
 
 function emptyText(all) {
   if (B.bank === 'factory' && !all.some(e => e.src === 'factory'))
-    return 'Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).';
+    return 'Add the factory tones with Grab ▾ › Factory tones and kits from the MC-707 update file (MC707_UPA_up.bin from Roland).';
   if (B.bank === 'mc707' && !all.some(e => e.src === 'mc707'))
     return 'Nothing grabbed yet. Pick sounds into clips on the ' + DEVS[DEV].name + ', then use Grab.';
   /* a search that finds nothing here, but would elsewhere: say so (the button searches everything) */

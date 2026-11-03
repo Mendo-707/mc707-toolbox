@@ -88,14 +88,60 @@ test('Save as MC-707 project: Scene Mode’s clip tones go in their slots, the t
       own: name(slot(0)),
       source: bytes[P + 0x200 + t * 0x100 + 0x15],
       otherSource: bytes[P + 0x200 + other * 0x100 + 0x15],
-      otherOwn: name(P + 0x3178f0 + other * 0x6c60)
+      otherOwn: name(P + 0x3178f0 + other * 0x6c60),
+      otherClip: name(P + 0x3178f0 + other * 0x6c60 + 0x660)
     };
   });
   assert.equal(r.clip, 'Scene Lead', 'clip 1’s tone in its slot (k + 1)');
   assert.equal(r.level, 90, 'with its values');
   assert.equal(r.own, 'Scene Lead', 'and as the track’s own sound');
   assert.equal(r.source, 1, 'the track plays its clips’ sounds (Sound Source CLIP)');
-  assert.equal(r.otherSource, 0, 'a track with no tones keeps the template’s Sound Source');
-  assert.equal(r.otherOwn, 'JD-800 Piano', 'and its sound');
+  assert.equal(r.otherSource, 1, 'every track with clips plays its clips’ sounds');
+  assert.equal(r.otherOwn, 'JD-800 Piano', 'a track with no tones keeps the template’s sound');
+  assert.equal(r.otherClip, 'JD-800 Piano', 'and its clips get it, so none is silent');
+  assert.deepEqual(errors, []);
+});
+
+test('Save as MC-707 project: a factory kit on a drum clip goes in its slot, record and keys', async () => {
+  const { page, errors } = await openApp({ storage: { 'mc707-song-mode-v1': readFixture('song-v0.10.json') } });
+  const r = await page.evaluate(async () => {
+    const A = window.__app,
+      made = A.scene.fromSong();
+    A.scene.setMode('scene');
+    A.scene.edit(q => ((q.rows = made.rows), (q.clips = made.clips)));
+    const t = A.S.tracks.findIndex((x, i) => x.type === 'drum' && made.clips[i] && made.clips[i][0]);
+    const rec = new Uint8Array(0xd00);
+    [...'Test Kit'.padEnd(16)].forEach((c, i) => (rec[i] = c.charCodeAt(0)));
+    rec[0xa0 + 21 * 20] = 1;
+    const inst = n => btoa(String.fromCharCode(...[...(n.padEnd(16) + ' '.repeat(200))].map(c => c.charCodeAt(0))));
+    const b64 = u => btoa(String.fromCharCode(...u));
+    A.scene.setTone(t, 0, {
+      name: 'Test Kit',
+      kind: 'kit',
+      d: { 'KCMN.NAME': 'Test Kit' },
+      mpj: { rec: b64(rec), inst: { 0: inst('Off'), 1: inst('Test Kick') } }
+    });
+    const { bytes, song } = await A.mpj.bytes('Kits'),
+      P = 0xa0,
+      name = at => String.fromCharCode(...bytes.subarray(at, at + 16)).trim(),
+      kit = s => P + 0x3545f0 + t * 0xdd00 + s * 0xd00,
+      keys = s => P + 0x4001f0 + t * 0x4ee40 + s * 0x4a40;
+    return {
+      kit: name(kit(1)),
+      own: name(kit(0)),
+      key0: name(keys(1)),
+      key21: name(keys(1) + 21 * 216),
+      source: bytes[P + 0x200 + t * 0x100 + 0x15],
+      lost: song.lost,
+      /* a reload keeps the kit's bytes */
+      kept: !!Object.values(A.S.scn.tones).find(x => x.kind === 'kit').mpj
+    };
+  });
+  assert.equal(r.kit, 'Test Kit', 'clip 1’s kit record in its slot (k + 1)');
+  assert.equal(r.own, 'Test Kit', 'and as the track’s own kit');
+  assert.deepEqual([r.key0, r.key21], ['Off', 'Test Kick'], 'each key’s instrument copied in');
+  assert.equal(r.source, 1, 'the drum track plays its clips’ sounds');
+  assert.deepEqual(r.lost, []);
+  assert.ok(r.kept, 'Scene Mode keeps the kit’s bytes');
   assert.deepEqual(errors, []);
 });

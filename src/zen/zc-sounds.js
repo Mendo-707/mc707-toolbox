@@ -221,8 +221,8 @@ export async function soundAdd(snd, meta = {}) {
   return e;
 }
 /**
- * Add many sounds in one go (one store write): [{snd, name, src, bank?, no?}] (bank and no: a factory
- * tone's bank letter and number; folder: one of your folders). Sounds already in the library (or, with among,
+ * Add many sounds in one go (one store write): [{snd, name, src, bank?, no?, mpj?}] (bank and no: a factory
+ * tone's bank letter and number; folder: one of your folders; mpj: a factory kit's bytes). Sounds already in the library (or, with among,
  * among the sounds it picks) are skipped. Returns how many were added.
  */
 export async function soundAddMany(items, among = null) {
@@ -230,7 +230,7 @@ export async function soundAddMany(items, among = null) {
   const seen = new Set((among ? ZS.list.filter(among) : ZS.list).map(e => e.h)),
     at = Date.now(),
     add = [];
-  items.forEach(({ snd, name, src, bank, no, folder }, i) => {
+  items.forEach(({ snd, name, src, bank, no, folder, mpj }, i) => {
     const d = diffOf(snd),
       h = hashOf(snd.kind, d);
     if (seen.has(h)) return;
@@ -246,6 +246,8 @@ export async function soundAddMany(items, among = null) {
       src: src || 'mine',
       ...(bank ? { bank, no } : {}),
       ...(folder ? { folder } : {}),
+      /* a factory kit's bytes for MC-707 project files (zc-factory.js fwKits) */
+      ...(mpj ? { mpj } : {}),
       h,
       d
     });

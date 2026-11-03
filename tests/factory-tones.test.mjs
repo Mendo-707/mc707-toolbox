@@ -43,7 +43,7 @@ test('Factory tones: read tones from an update file into the Sound browser, and 
   await page.evaluate(`${z}.browse()`);
   await page.locator('#zbOv button', { hasText: 'Grab from' }).click();
   const chooser = page.waitForEvent('filechooser');
-  await page.locator('.cmenu >> text=Factory tones from the MC-707 update file').click();
+  await page.locator('.cmenu >> text=Factory tones and kits from the MC-707 update file').click();
   await (await chooser).setFiles(file);
   for (let t = 0; t < 100 && !(await page.evaluate(`${z}.ZS.list.some(e => e.src === 'factory')`)); t++)
     await page.waitForTimeout(100);
@@ -93,8 +93,56 @@ test('Factory tones: read tones from an update file into the Sound browser, and 
   );
   /* remove them */
   await page.locator('#zbOv button', { hasText: 'Grab from' }).click();
-  await page.locator('.cmenu >> text=Remove the factory tones').click();
+  await page.locator('.cmenu >> text=Remove the factory tones and kits').click();
   await page.waitForTimeout(300);
   assert.equal(await page.evaluate(`${z}.ZS.list.filter(e => e.src === 'factory').length`), 0);
+  assert.deepEqual(errors, []);
+});
+
+test('Factory kits: read from an update file as their bytes (record and each key’s instrument)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { fwKits, fwKitBytes } = window.__app.zen.fw,
+      KIT = 0xd00,
+      INST = 216,
+      name = (b, o, s) => [...s.padEnd(16)].forEach((c, i) => (b[o + i] = c.charCodeAt(0)));
+    /* an instrument table (Off, then 4 drums) and 9 kits (the last INIT KIT), among other bytes */
+    const b = new Uint8Array(4096 + 5 * INST + 512 + 9 * KIT + 512).fill(0xff),
+      table = 4096,
+      kits = table + 5 * INST + 512;
+    ['Off', 'Kick A', 'Snare A', 'Hat A', 'Clap A'].forEach((n, i) => {
+      b.fill(i, table + i * INST, table + (i + 1) * INST);
+      name(b, table + i * INST, n);
+    });
+    for (let k = 0; k < 9; k++) {
+      const o = kits + k * KIT;
+      b.fill(0, o, o + KIT);
+      name(b, o, k === 8 ? 'INIT KIT' : 'Kit ' + k);
+      /* keys 36-39 play instruments 1-4 (rotated by kit) */
+      for (let i = 0; i < 4; i++) b[o + 0xa0 + (21 + i) * 20] = ((i + k) % 4) + 1;
+    }
+    const got = fwKits(b),
+      k2 = got.find(x => x.name === 'Kit 2'),
+      bytes = fwKitBytes(k2.mpj),
+      instName = i => String.fromCharCode(...bytes.keys.subarray(i * INST, i * INST + 16)).trim();
+    return {
+      names: got.map(x => x.name),
+      banks: [...new Set(got.map(x => x.bank))],
+      rec: String.fromCharCode(...bytes.rec.subarray(0, 16)).trim(),
+      recSize: bytes.rec.length,
+      keys: [0, 21, 22, 23, 24, 87].map(instName),
+      keysSize: bytes.keys.length
+    };
+  });
+  assert.deepEqual(
+    r.names,
+    ['Kit 0', 'Kit 1', 'Kit 2', 'Kit 3', 'Kit 4', 'Kit 5', 'Kit 6', 'Kit 7'],
+    'INIT KIT left out'
+  );
+  assert.deepEqual(r.banks, ['K']);
+  assert.equal(r.rec, 'Kit 2');
+  assert.equal(r.recSize, 0xd00);
+  assert.deepEqual(r.keys, ['Off', 'Hat A', 'Clap A', 'Kick A', 'Snare A', 'Off'], 'each key gets its instrument');
+  assert.equal(r.keysSize, 88 * 216);
   assert.deepEqual(errors, []);
 });

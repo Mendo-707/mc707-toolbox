@@ -4,9 +4,9 @@
 // what core/mpj.js reads back: the project name and tempo, each clip's header (so the MC-707 sees a clip), step size, number of steps and steps,
 // which clip each track plays in each scene, and each scene's chain LENGTH (the last OFF, so the chain stops
 // there, as Scene Mode writes them), and the chain switched on (+143, as the MC-707 saves a project that
-// was playing its chain). A clip's tone goes in its slot (mpjToneAt) with the track set to play its
-// clips' sounds; other tracks keep the template's sound (its default tone or kit: kits are not written
-// yet), and motion stays the template's: its place in the file is not mapped yet.
+// was playing its chain). Every track with clips plays its clips' sounds (Sound Source CLIP): a clip's
+// tone or kit goes in its slot (mpjToneAt, mpjKitAt), the others get the template's (a piano, the TR-808
+// and TR-909 kits). Motion stays the template's: its place in the file is not mapped yet.
 //
 // A step is 0x60 bytes, 16 slots each: notes (FF empty), velocities (80 empty), starts (signed hundredths of
 // a step), ends (hundredths, 100 carries on into the next step; 80 empty), sub steps, then 16 bytes left as
@@ -20,6 +20,12 @@ const PRJ_CLIPS = 0x10f0,
   TONES = 0x3178f0,
   TONE_BLOCK = 0x6c60,
   TONE_REC = 0x660,
+  KITS = 0x3545f0,
+  KIT_BLOCK = 0xdd00,
+  KIT_REC = 0xd00,
+  KEYS = 0x4001f0,
+  KEYS_BLOCK = 0x4ee40,
+  KEYS_REC = 0x4a40,
   CLIP_SIZE = 0x5c40,
   STEP0 = 0x3d0,
   STEP_SIZE = 0x60;
@@ -90,6 +96,12 @@ export async function mpjBlank(kinds) {
  * Each holds a tone as a 1632-byte record, the layout of the MC-707's update file (zen/zc-factory.js).
  */
 export const mpjToneAt = (u8, t, slot) => mpjSections(u8).PRJa.at + TONES + t * TONE_BLOCK + slot * TONE_REC;
+/**
+ * A drum track's kit slot, numbered the same way: the kit's 3328-byte record (mpjKitAt) and a copy of
+ * each of its 88 keys' drum instruments, 216 bytes each (mpjKeysAt). See zen/zc-factory.js fwKits.
+ */
+export const mpjKitAt = (u8, t, slot) => mpjSections(u8).PRJa.at + KITS + t * KIT_BLOCK + slot * KIT_REC;
+export const mpjKeysAt = (u8, t, slot) => mpjSections(u8).PRJa.at + KEYS + t * KEYS_BLOCK + slot * KEYS_REC;
 
 /** Printable ASCII, padded with spaces. */
 const putText = (u8, at, s, n) => {
@@ -104,9 +116,11 @@ const putText = (u8, at, s, n) => {
  * @param {Uint8Array} u8  from mpjBlank
  * @param {{name:string, bpm:number,
  *   clips: {t:number, k:number, size:number, steps:number, slots:{note,vel,start,end,sub}[][]}[],
- *   scenes: {bars:number, pick:number[]}[], first?:number, tones?: {t:number, k:number, rec:Uint8Array}[]}} song
+ *   scenes: {bars:number, pick:number[]}[], first?:number,
+ *   sounds?: {t:number, k:number, kind:'tone'|'kit', rec:Uint8Array, keys?:Uint8Array}[]}} song
  *   pick: the clip (0-15) each of the 8 tracks plays, -1 none; scenes go in from scene `first` (0-127);
- *   tones: a clip's tone as a record (zen/zc-factory.js fwRecord), on a tone track
+ *   sounds: a clip's tone as a record (zen/zc-factory.js fwRecord) on a tone track, or its kit (record
+ *   and keys, fwKitBytes) on a drum track
  * @returns {Uint8Array} u8
  */
 export function mpjFill(u8, song) {
@@ -135,15 +149,26 @@ export function mpjFill(u8, song) {
       }
     }
   }
-  /* the clips' tones: a track with any plays its clips' sounds (Sound Source CLIP, +15); its other clips
-     get the track's own sound, so none is silent */
+  /* the sounds: every track with clips plays its clips' sounds (Sound Source CLIP, +15, so each clip can
+     have its own tone or kit). A clip given a sound gets it in its slot; the others get the track's own
+     (the template's), so none is silent. A track's own sound becomes its first given one. */
   for (let t = 0; t < 8; t++) {
-    const mine = (song.tones || []).filter(x => x.t === t);
+    const mine = song.clips.filter(c => c.t === t);
     if (!mine.length) continue;
-    const own = u8.slice(mpjToneAt(u8, t, 0), mpjToneAt(u8, t, 0) + TONE_REC);
-    for (const c of song.clips) if (c.t === t) u8.set(own, mpjToneAt(u8, t, c.k + 1));
-    for (const x of mine) u8.set(x.rec, mpjToneAt(u8, t, x.k + 1));
-    u8.set(mine[0].rec, mpjToneAt(u8, t, 0));
+    const drum = u8[P + 0x200 + t * 0x100 + 0x14] === 1,
+      parts = drum
+        ? [
+            [mpjKitAt, KIT_REC, 'rec'],
+            [mpjKeysAt, KEYS_REC, 'keys']
+          ]
+        : [[mpjToneAt, TONE_REC, 'rec']],
+      given = (song.sounds || []).filter(x => x.t === t && (x.kind === 'kit') === drum);
+    for (const [at, size] of parts) {
+      const own = u8.slice(at(u8, t, 0), at(u8, t, 0) + size);
+      for (const c of mine) u8.set(own, at(u8, t, c.k + 1));
+    }
+    for (const x of given) for (const [at, , key] of parts) u8.set(x[key], at(u8, t, x.k + 1));
+    if (given.length) for (const [at, , key] of parts) u8.set(given[0][key], at(u8, t, 0));
     u8[P + 0x200 + t * 0x100 + 0x15] = 1;
   }
   const first = song.first || 0;

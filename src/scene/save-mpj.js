@@ -3,16 +3,17 @@
 // none, the ones it would make from the song (the song is not changed). Each clip's notes, step size and
 // steps are encoded as Scene Mode writes them over USB (zen/zc-seq.js), the scenes and chain as it does
 // (zen/zc-scenes.js), with the song's name and tempo, into Roland's empty project for the Track setup
-// (core/mpj-write.js). The clips' tones from Scene Mode go in as the MC-707 stores them (zen/zc-factory.js
-// fwRecord). Not in the file yet: kits (a drum track keeps the template's) and motion (Pump, knob
-// recording); writing over USB still sends the pump.
+// (core/mpj-write.js). The clips' tones and factory kits from Scene Mode go in as the MC-707 stores them
+// (zen/zc-factory.js fwRecord, fwKitBytes), every track playing its clips' sounds. Not in the file yet:
+// other kits (the clip keeps the template's) and motion (Pump, knob recording); writing over USB still
+// sends the pump.
 //
 // Reads: S, PROJ, DEV, HOST.
 import { el, toast } from '../core/dom.js';
 import { HOST, PROJ, S } from '../core/state.js';
 import { DEV, DEVS } from '../core/device.js';
 import { mpjBlank, mpjFill, mpjToneAt } from '../core/mpj-write.js';
-import { FW_REC, fwRecord } from '../zen/zc-factory.js';
+import { FW_REC, fwKitBytes, fwRecord } from '../zen/zc-factory.js';
 import { soundFrom } from '../zen/zc-tone.js';
 import { toneOf } from './model.js';
 import { saveFile } from '../song/export.js';
@@ -47,15 +48,25 @@ export function mpjSong(name) {
       }
       if (enc.skipped) lost.push(S.tracks[t].name + ' clip ' + (k + 1) + ': ' + lostText(enc));
       clips.push({ t, k, size: enc.size, steps: enc.steps, slots: enc.slots });
-      /* the clip's tone from Scene Mode; a kit stays the template's (its keys are not mapped yet) */
+      /* the clip's tone or kit from Scene Mode: a factory kit as its bytes; another kit (its keys are not
+         mapped) leaves the clip with the template's */
       const tn = own && toneOf(c);
       if (tn && tn.kind === 'tone' && type === 'tone') {
         const snd = soundFrom({ zencore: 1, kind: 'tone', v: tn.d });
-        if (snd) tones.push({ t, k, snd, name: tn.name });
-      } else if (tn && tn.kind === 'kit')
-        lost.push(
-          S.tracks[t].name + ' clip ' + (k + 1) + ': the kit ' + tn.name + ' (the track keeps the template’s kit)'
-        );
+        if (snd) tones.push({ t, k, kind: 'tone', snd, name: tn.name });
+      } else if (tn && tn.kind === 'kit' && type === 'drum') {
+        const kit = tn.mpj && fwKitBytes(tn.mpj);
+        if (kit) tones.push({ t, k, kind: 'kit', ...kit, name: tn.name });
+        else
+          lost.push(
+            S.tracks[t].name +
+              ' clip ' +
+              (k + 1) +
+              ': the kit ' +
+              tn.name +
+              ' (only factory kits go in a project file; the clip keeps the template’s kit)'
+          );
+      }
     }
   return {
     name: (name || PROJ.name || 'Toolbox song').slice(0, 16),
@@ -75,12 +86,13 @@ export async function mpjBytes(name) {
   if (song.error) return song;
   const kinds = S.tracks.map(t => (t.type === 'drum' ? 'drum' : 'tone')),
     u8 = await mpjBlank(kinds);
-  /* each tone over the track's template tone, for the few bytes no parameter covers */
-  const tones = song.tones.map(x => {
+  /* each tone over the track's template tone, for the few bytes no parameter covers; kits as they are */
+  const sounds = song.tones.map(x => {
+    if (x.kind === 'kit') return x;
     const at = mpjToneAt(u8, x.t, 0);
-    return { t: x.t, k: x.k, rec: fwRecord(x.snd, u8.subarray(at, at + FW_REC)) };
+    return { t: x.t, k: x.k, kind: 'tone', rec: fwRecord(x.snd, u8.subarray(at, at + FW_REC)) };
   });
-  return { bytes: mpjFill(u8, { ...song, tones }), song };
+  return { bytes: mpjFill(u8, { ...song, sounds }), song };
 }
 
 /** File › Save as MC-707 project: a name, the file, then how to load it on the MC-707. */
@@ -102,10 +114,9 @@ export async function saveMpjOpen() {
       (first.tones.length
         ? 'Sounds: the ' +
           first.tones.length +
-          ' tone' +
-          (first.tones.length === 1 ? '' : 's') +
-          ' you gave clips in Scene Mode go in. Drum tracks keep the template’s kit (TR-808 or TR-909), and tracks with no tone chosen keep its piano.'
-        : 'Sounds: each track starts with the template’s (TR-808 or TR-909 kits and a piano). Give clips tones in Scene Mode and they go in the file.') +
+          ' tones and kits you gave clips in Scene Mode go in. Clips without one keep the template’s sound (TR-808 or TR-909 kits, a piano).'
+        : 'Sounds: each track starts with the template’s (TR-808 or TR-909 kits and a piano). Give clips tones and factory kits in Scene Mode and they go in the file.') +
+      ' Every track plays its clips’ sounds (Sound Source CLIP), so each clip can have its own.' +
       ' Pump and other motion are not in it yet.\n\nThe project’s name on the MC-707 (up to 16 letters):',
     input: true,
     def: first.name,

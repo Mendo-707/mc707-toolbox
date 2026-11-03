@@ -123,8 +123,9 @@ export function setTone(t, k, tone) {
   edit(q => {
     const x = q.clips[t][k];
     if (!tone) return void delete x.tone;
-    const key = hashOf(tone.kind, tone.d);
+    const key = hashOf(tone.kind, tone.d) + (tone.mpj ? ':kit' : '');
     q.tones[key] = { name: String(tone.name || 'Tone').slice(0, 16), kind: tone.kind, d: tone.d };
+    if (tone.mpj) q.tones[key].mpj = tone.mpj;
     x.tone = key;
   });
 }

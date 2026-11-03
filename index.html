@@ -10567,8 +10567,12 @@ html.os-darwin.native-menu #menubar .mproj {
     if (q.tones && typeof q.tones === "object")
       for (const k2 in q.tones) {
         const t = q.tones[k2];
-        if (t && (t.kind === "tone" || t.kind === "kit") && t.d && typeof t.d === "object")
+        if (t && (t.kind === "tone" || t.kind === "kit") && t.d && typeof t.d === "object") {
           tones[k2] = { name: String(t.name || "Tone").slice(0, 16), kind: t.kind, d: t.d };
+          const m = t.mpj;
+          if (t.kind === "kit" && m && typeof m.rec === "string" && m.inst && typeof m.inst === "object")
+            tones[k2].mpj = { rec: m.rec, inst: m.inst };
+        }
       }
     const clips = emptyClips();
     for (let t = 0; t < 8; t++)
@@ -31398,7 +31402,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   async function soundAddMany(items, among = null) {
     const seen2 = new Set((among ? ZS.list.filter(among) : ZS.list).map((e) => e.h)), at2 = Date.now(), add = [];
-    items.forEach(({ snd, name, src, bank, no, folder }, i) => {
+    items.forEach(({ snd, name, src, bank, no, folder, mpj }, i) => {
       const d = diffOf(snd), h = hashOf(snd.kind, d);
       if (seen2.has(h)) return;
       seen2.add(h);
@@ -31413,6 +31417,8 @@ html.os-darwin.native-menu #menubar .mproj {
         src: src || "mine",
         ...bank ? { bank, no } : {},
         ...folder ? { folder } : {},
+        /* a factory kit's bytes for MC-707 project files (zc-factory.js fwKits) */
+        ...mpj ? { mpj } : {},
         h,
         d
       });
@@ -31624,8 +31630,9 @@ html.os-darwin.native-menu #menubar .mproj {
     edit((q) => {
       const x = q.clips[t][k2];
       if (!tone2) return void delete x.tone;
-      const key = hashOf(tone2.kind, tone2.d);
+      const key = hashOf(tone2.kind, tone2.d) + (tone2.mpj ? ":kit" : "");
       q.tones[key] = { name: String(tone2.name || "Tone").slice(0, 16), kind: tone2.kind, d: tone2.d };
+      if (tone2.mpj) q.tones[key].mpj = tone2.mpj;
       x.tone = key;
     });
   }
@@ -39448,7 +39455,9 @@ html.os-darwin.native-menu #menubar .mproj {
     B: "AX Collection",
     C: "Synth Legend",
     D: "Basic Synth",
-    E: "XV Collection"
+    E: "XV Collection",
+    K: "Drum Kits",
+    L: "More Drum Kits"
   };
   function fwTones(b) {
     const out2 = [], runs3 = fwScan(b), used = /* @__PURE__ */ new Set();
@@ -39488,6 +39497,88 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     return r;
   }
+  var KIT_REC = 3328;
+  var INST_REC = 216;
+  var KIT_KEYS = 88;
+  var KEY0 = 160;
+  var KEY_SIZE = 20;
+  var printable = (b, o) => {
+    for (let i = 0; i < 16; i++) if (b[o + i] < 32 || b[o + i] > 126) return false;
+    return true;
+  };
+  var instOf = (b, o, i) => b[o + KEY0 + i * KEY_SIZE] | b[o + KEY0 + i * KEY_SIZE + 1] << 8;
+  function looksLikeKit(b, o) {
+    if (o + KIT_REC > b.length || !printable(b, o)) return false;
+    for (let i = 0; i < KIT_KEYS; i++) if (instOf(b, o, i) > 4e3) return false;
+    return true;
+  }
+  function instTable(b, need) {
+    const off = [79, 102, 102, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32];
+    for (let o = 0; o + INST_REC * need <= b.length; o += 4) {
+      if (b[o] !== 79 || b[o + 1] !== 102) continue;
+      if (off.some((c, i) => b[o + i] !== c)) continue;
+      let n = 0;
+      while (n < need && printable(b, o + n * INST_REC)) n++;
+      if (n >= need) return o;
+    }
+    return -1;
+  }
+  var b64 = (u) => {
+    let s = "";
+    for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode(...u.subarray(i, i + 32768));
+    return btoa(s);
+  };
+  var unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  function fwKits(b) {
+    const runs3 = [];
+    for (let o = 0; o + KIT_REC * 8 <= b.length; o += 4) {
+      if (!looksLikeKit(b, o)) continue;
+      let n = 0;
+      while (looksLikeKit(b, o + n * KIT_REC)) n++;
+      if (n < 8) continue;
+      runs3.push([o, n]);
+      o += n * KIT_REC - 4;
+    }
+    if (!runs3.length) return [];
+    let most = 0;
+    for (const [o, n] of runs3)
+      for (let k2 = 0; k2 < n; k2++) for (let i = 0; i < KIT_KEYS; i++) most = Math.max(most, instOf(b, o + k2 * KIT_REC, i));
+    const table = instTable(b, most + 1);
+    if (table < 0) return [];
+    const own = ([o, n]) => nameAt(b, o + (n - 1) * KIT_REC) === "INIT KIT";
+    runs3.sort((x, y) => own(y) - own(x));
+    const out2 = [];
+    runs3.forEach(([start, count], r) => {
+      for (let k2 = 0; k2 < count; k2++) {
+        const o = start + k2 * KIT_REC, name = nameAt(b, o);
+        if (!name || name === "INIT KIT") continue;
+        const inst = {};
+        for (let i = 0; i < KIT_KEYS; i++) {
+          const n = instOf(b, o, i);
+          if (!(n in inst)) inst[n] = b64(b.subarray(table + n * INST_REC, table + (n + 1) * INST_REC));
+        }
+        const snd = newSound("kit");
+        snd.v["KCMN.NAME"] = name;
+        out2.push({ name, snd, bank: r ? "L" : "K", no: k2 + 1, mpj: { rec: b64(b.subarray(o, o + KIT_REC)), inst } });
+      }
+    });
+    return out2;
+  }
+  function fwKitBytes(mpj) {
+    try {
+      const rec = unb64(mpj.rec);
+      if (rec.length !== KIT_REC) return null;
+      const keys2 = new Uint8Array(KIT_KEYS * INST_REC);
+      for (let i = 0; i < KIT_KEYS; i++) {
+        const x = unb64(mpj.inst[instOf(rec, 0, i)]);
+        if (x.length !== INST_REC) return null;
+        keys2.set(x, i * INST_REC);
+      }
+      return { rec, keys: keys2 };
+    } catch (e) {
+      return null;
+    }
+  }
 
   // src/zen/zc-factory-ui.js
   var frame = () => new Promise((r) => setTimeout(r, 30));
@@ -39501,11 +39592,11 @@ html.os-darwin.native-menu #menubar .mproj {
         toast("Reading " + f.name + "…");
         await frame();
         try {
-          const tones = fwTones(new Uint8Array(await f.arrayBuffer()));
+          const bytes = new Uint8Array(await f.arrayBuffer()), tones = fwTones(bytes);
           if (!tones.length) return toast("No tones found. Pick the MC-707 system update file (MC707_UPA_up.bin).");
-          const n = await soundAddMany(tones.map((t) => ({ ...t, src: "factory" })));
+          const kits = fwKits(bytes), all = [...tones, ...kits], n = await soundAddMany(all.map((t) => ({ ...t, src: "factory" })));
           toast(
-            n ? "Added " + n + " factory tones" + (n < tones.length ? " (" + (tones.length - n) + " already here)" : "") : "The factory tones are already in the library"
+            n ? "Added " + n + " factory sounds (" + tones.length + " tones, " + kits.length + " kits)" + (n < all.length ? ", " + (all.length - n) + " already here" : "") : "The factory sounds are already in the library"
           );
           done3(n);
         } catch (e) {
@@ -39572,18 +39663,18 @@ html.os-darwin.native-menu #menubar .mproj {
     i.click();
   }
   function factoryItems(done3) {
-    const have = ZS.list.some((e) => e.src === "factory");
+    const have = ZS.list.some((e) => e.src === "factory"), kits = ZS.list.some((e) => e.src === "factory" && e.mpj);
     return [
       {
-        label: (have ? "Add the factory tones again" : "Factory tones from the MC-707 update file") + "…",
+        label: (have && !kits ? "Add the factory drum kits too (from the update file again)" : have ? "Add the factory tones and kits again" : "Factory tones and kits from the MC-707 update file") + "…",
         action: () => factoryImport(done3)
       },
       { label: "Expansion tones from .svz files, into a folder…", action: () => expansionImport(done3) },
       have ? {
-        label: "Remove the factory tones",
+        label: "Remove the factory tones and kits",
         action: async () => {
           const n = await soundsRemoveSrc("factory");
-          toast("Removed " + n + " factory tones");
+          toast("Removed " + n + " factory sounds");
           done3(0);
         }
       } : null
@@ -39902,7 +39993,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     return STARTS;
   }
-  var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind);
+  var entries = () => [...ZS.list, ...starters()].filter((e) => e.kind === ZE.kind && !e.mpj);
   var shown2 = () => sortList(filterList(entries(), B), B.sort.by, B.sort.dir);
   async function browserOpen() {
     if (ZE.kind === "kit") return;
@@ -40460,7 +40551,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function emptyText(all) {
     if (B.bank === "factory" && !all.some((e) => e.src === "factory"))
-      return "Add the factory tones with Grab ▾ › Factory tones from the MC-707 update file (MC707_UPA_up.bin from Roland).";
+      return "Add the factory tones with Grab ▾ › Factory tones and kits from the MC-707 update file (MC707_UPA_up.bin from Roland).";
     if (B.bank === "mc707" && !all.some((e) => e.src === "mc707"))
       return "Nothing grabbed yet. Pick sounds into clips on the " + DEVS[DEV].name + ", then use Grab.";
     if (B.q.trim() && (B.bank !== "all" || B.cat || B.group || B.tag)) {
@@ -45900,7 +45991,9 @@ html.os-darwin.native-menu #menubar .mproj {
   var toneOf2 = (e) => ({
     name: e.name,
     kind: e.kind,
-    d: e.src === "starter" ? diffOf(e.make()) : diffOf(soundOf(e))
+    d: e.src === "starter" ? diffOf(e.make()) : diffOf(soundOf(e)),
+    /* a factory kit: its bytes, for project files */
+    ...e.mpj ? { mpj: e.mpj } : {}
   });
   async function pickTone(t, title, done3, curName) {
     if ($("#stOv")) return;
@@ -46455,6 +46548,12 @@ html.os-darwin.native-menu #menubar .mproj {
   var TONES = 3242224;
   var TONE_BLOCK = 27744;
   var TONE_REC = 1632;
+  var KITS = 3491312;
+  var KIT_BLOCK = 56576;
+  var KIT_REC2 = 3328;
+  var KEYS3 = 4194800;
+  var KEYS_BLOCK = 323136;
+  var KEYS_REC = 19008;
   var CLIP_SIZE2 = 23616;
   var STEP02 = 976;
   var STEP_SIZE2 = 96;
@@ -46462,8 +46561,8 @@ html.os-darwin.native-menu #menubar .mproj {
     drum: { 18: 1, 172: 9, 173: 32, 244: 12, 245: 32, 316: 20, 317: 32, 388: 2, 389: 32 },
     tone: { 18: 0, 172: 9, 173: 32, 244: 160, 245: 32, 316: 20, 317: 32, 388: 12, 389: 32 }
   };
-  async function gunzip(b64) {
-    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  async function gunzip(b642) {
+    const bin = Uint8Array.from(atob(b642), (c) => c.charCodeAt(0));
     const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
@@ -46501,6 +46600,8 @@ html.os-darwin.native-menu #menubar .mproj {
     return u8;
   }
   var mpjToneAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + TONES + t * TONE_BLOCK + slot2 * TONE_REC;
+  var mpjKitAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + KITS + t * KIT_BLOCK + slot2 * KIT_REC2;
+  var mpjKeysAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + KEYS3 + t * KEYS_BLOCK + slot2 * KEYS_REC;
   var putText = (u8, at2, s, n) => {
     for (let i = 0; i < n; i++) {
       const c = String(s || "").charCodeAt(i);
@@ -46529,12 +46630,18 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     }
     for (let t = 0; t < 8; t++) {
-      const mine = (song.tones || []).filter((x) => x.t === t);
+      const mine = song.clips.filter((c) => c.t === t);
       if (!mine.length) continue;
-      const own = u8.slice(mpjToneAt(u8, t, 0), mpjToneAt(u8, t, 0) + TONE_REC);
-      for (const c of song.clips) if (c.t === t) u8.set(own, mpjToneAt(u8, t, c.k + 1));
-      for (const x of mine) u8.set(x.rec, mpjToneAt(u8, t, x.k + 1));
-      u8.set(mine[0].rec, mpjToneAt(u8, t, 0));
+      const drum = u8[P2 + 512 + t * 256 + 20] === 1, parts4 = drum ? [
+        [mpjKitAt, KIT_REC2, "rec"],
+        [mpjKeysAt, KEYS_REC, "keys"]
+      ] : [[mpjToneAt, TONE_REC, "rec"]], given = (song.sounds || []).filter((x) => x.t === t && x.kind === "kit" === drum);
+      for (const [at2, size] of parts4) {
+        const own = u8.slice(at2(u8, t, 0), at2(u8, t, 0) + size);
+        for (const c of mine) u8.set(own, at2(u8, t, c.k + 1));
+      }
+      for (const x of given) for (const [at2, , key] of parts4) u8.set(x[key], at2(u8, t, x.k + 1));
+      if (given.length) for (const [at2, , key] of parts4) u8.set(given[0][key], at2(u8, t, 0));
       u8[P2 + 512 + t * 256 + 21] = 1;
     }
     const first = song.first || 0;
@@ -46793,11 +46900,15 @@ html.os-darwin.native-menu #menubar .mproj {
         const tn = own && toneOf(c);
         if (tn && tn.kind === "tone" && type === "tone") {
           const snd = soundFrom({ zencore: 1, kind: "tone", v: tn.d });
-          if (snd) tones.push({ t, k: k2, snd, name: tn.name });
-        } else if (tn && tn.kind === "kit")
-          lost.push(
-            S.tracks[t].name + " clip " + (k2 + 1) + ": the kit " + tn.name + " (the track keeps the template’s kit)"
-          );
+          if (snd) tones.push({ t, k: k2, kind: "tone", snd, name: tn.name });
+        } else if (tn && tn.kind === "kit" && type === "drum") {
+          const kit2 = tn.mpj && fwKitBytes(tn.mpj);
+          if (kit2) tones.push({ t, k: k2, kind: "kit", ...kit2, name: tn.name });
+          else
+            lost.push(
+              S.tracks[t].name + " clip " + (k2 + 1) + ": the kit " + tn.name + " (only factory kits go in a project file; the clip keeps the template’s kit)"
+            );
+        }
       }
     return {
       name: (name || PROJ.name || "Toolbox song").slice(0, 16),
@@ -46814,18 +46925,19 @@ html.os-darwin.native-menu #menubar .mproj {
     const song = mpjSong(name);
     if (song.error) return song;
     const kinds = S.tracks.map((t) => t.type === "drum" ? "drum" : "tone"), u8 = await mpjBlank(kinds);
-    const tones = song.tones.map((x) => {
+    const sounds = song.tones.map((x) => {
+      if (x.kind === "kit") return x;
       const at2 = mpjToneAt(u8, x.t, 0);
-      return { t: x.t, k: x.k, rec: fwRecord(x.snd, u8.subarray(at2, at2 + FW_REC)) };
+      return { t: x.t, k: x.k, kind: "tone", rec: fwRecord(x.snd, u8.subarray(at2, at2 + FW_REC)) };
     });
-    return { bytes: mpjFill(u8, { ...song, tones }), song };
+    return { bytes: mpjFill(u8, { ...song, sounds }), song };
   }
   async function saveMpjOpen() {
     const first = mpjSong();
     if (first.error) return void toast(first.error);
     const name = await askDlg({
       title: "Save as MC-707 project",
-      text: "A project file to copy onto the MC-707’s SD card and load there, with no computer. It holds " + first.clips.length + " clips and " + first.scenes.length + " scenes from " + first.from + ", and the tempo (" + first.bpm + " BPM).\n\n" + (first.tones.length ? "Sounds: the " + first.tones.length + " tone" + (first.tones.length === 1 ? "" : "s") + " you gave clips in Scene Mode go in. Drum tracks keep the template’s kit (TR-808 or TR-909), and tracks with no tone chosen keep its piano." : "Sounds: each track starts with the template’s (TR-808 or TR-909 kits and a piano). Give clips tones in Scene Mode and they go in the file.") + " Pump and other motion are not in it yet.\n\nThe project’s name on the MC-707 (up to 16 letters):",
+      text: "A project file to copy onto the MC-707’s SD card and load there, with no computer. It holds " + first.clips.length + " clips and " + first.scenes.length + " scenes from " + first.from + ", and the tempo (" + first.bpm + " BPM).\n\n" + (first.tones.length ? "Sounds: the " + first.tones.length + " tones and kits you gave clips in Scene Mode go in. Clips without one keep the template’s sound (TR-808 or TR-909 kits, a piano)." : "Sounds: each track starts with the template’s (TR-808 or TR-909 kits and a piano). Give clips tones and factory kits in Scene Mode and they go in the file.") + " Every track plays its clips’ sounds (Sound Source CLIP), so each clip can have its own. Pump and other motion are not in it yet.\n\nThe project’s name on the MC-707 (up to 16 letters):",
       input: true,
       def: first.name,
       ok: "Save"
@@ -69149,7 +69261,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ZS,
         libraryJSON,
         slotAddr,
-        fw: { FW_REC, fwFields, newSound },
+        fw: { FW_REC, fwFields, fwKits, fwKitBytes, newSound },
         get ZE() {
           return ZE;
         },
