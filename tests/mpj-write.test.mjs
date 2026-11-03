@@ -43,7 +43,13 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
       scenes: song.scenes.map((s, i) => [i === song.scenes.length - 1 ? 0 : s.bars, ...s.pick].join()),
       backScenes: back.scenes.slice(0, song.scenes.length).map(s => [s.bars, ...s.pick].join()),
       lost: song.lost,
-      chain: back.chain
+      chain: back.chain,
+      /* each clip's header as the MC-707 saves a recorded clip (FF in an empty one, which shows no clip) */
+      headers: song.clips.map(c => {
+        const b = 0xa0 + 0x10f0 + (c.t * 17 + c.k) * 0x5c40,
+          drum = back.tracks[c.t].kind === 'drum';
+        return [bytes[b + 0x12] === (drum ? 1 : 0), bytes[b + 0xac] === 9, bytes[b + 0xf4] === (drum ? 12 : 160)].join();
+      })
     };
   }, b64);
   assert.equal(r.size, 8153568, 'a whole MC-707 project');
@@ -54,5 +60,6 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
   assert.deepEqual(r.backClips, r.clips, 'every clip reads back with its step size, steps and notes');
   assert.deepEqual(r.backScenes, r.scenes, 'the scenes: clips picked and chain lengths, the last OFF');
   assert.equal(r.chain, true, 'the scene chain is on');
+  for (const h of r.headers) assert.equal(h, 'true,true,true', 'every clip has its header, so the MC-707 sees a clip');
   assert.deepEqual(errors, []);
 });

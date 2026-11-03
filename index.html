@@ -46438,6 +46438,10 @@ html.os-darwin.native-menu #menubar .mproj {
   var CLIP_SIZE2 = 23616;
   var STEP02 = 976;
   var STEP_SIZE2 = 96;
+  var CLIP_ON = {
+    drum: { 18: 1, 172: 9, 173: 32, 244: 12, 245: 32, 316: 20, 317: 32, 388: 2, 389: 32 },
+    tone: { 18: 0, 172: 9, 173: 32, 244: 160, 245: 32, 316: 20, 317: 32, 388: 12, 389: 32 }
+  };
   async function gunzip(b64) {
     const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"));
@@ -46487,7 +46491,8 @@ html.os-darwin.native-menu #menubar .mproj {
     putText(u8, P2 + 16, song.name, 16);
     dv.setUint16(P2 + 32, Math.max(2e3, Math.min(3e4, Math.round(song.bpm * 100))), true);
     for (const c of song.clips) {
-      const base = P2 + PRJ_CLIPS2 + (c.t * 17 + c.k) * CLIP_SIZE2;
+      const base = P2 + PRJ_CLIPS2 + (c.t * 17 + c.k) * CLIP_SIZE2, drum = u8[P2 + 512 + c.t * 256 + 20] === 1;
+      for (const [o, v] of Object.entries(drum ? CLIP_ON.drum : CLIP_ON.tone)) u8[base + +o] = v;
       u8[base + 768] = c.size;
       u8[base + 769] = c.steps;
       for (let s = 0; s < 128; s++) {

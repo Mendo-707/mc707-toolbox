@@ -1,7 +1,7 @@
 // Writing an MC-707 project file (.mpj), to load on the MC-707 with no computer (PROJECT › LOAD). It starts
 // from Roland's empty project for the track layout (core/mpj-templates.js: the project with 8 tone tracks,
 // and the bytes another layout changes; a drum track takes its blocks from the 8-drum project), then sets
-// what core/mpj.js reads back: the project name and tempo, each clip's step size, number of steps and steps,
+// what core/mpj.js reads back: the project name and tempo, each clip's header (so the MC-707 sees a clip), step size, number of steps and steps,
 // which clip each track plays in each scene, and each scene's chain LENGTH (the last OFF, so the chain stops
 // there, as Scene Mode writes them), and the chain switched on (+143, as the MC-707 saves a project that
 // was playing its chain). The sounds stay the template's (each track's default tone or kit), and
@@ -19,6 +19,11 @@ const PRJ_CLIPS = 0x10f0,
   CLIP_SIZE = 0x5c40,
   STEP0 = 0x3d0,
   STEP_SIZE = 0x60;
+/* the bytes of a clip's header that make it a clip (offset: value), by track kind */
+const CLIP_ON = {
+  drum: { 0x12: 1, 0xac: 9, 0xad: 32, 0xf4: 12, 0xf5: 32, 0x13c: 20, 0x13d: 32, 0x184: 2, 0x185: 32 },
+  tone: { 0x12: 0, 0xac: 9, 0xad: 32, 0xf4: 160, 0xf5: 32, 0x13c: 20, 0x13d: 32, 0x184: 12, 0x185: 32 }
+};
 
 async function gunzip(b64) {
   const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -98,7 +103,11 @@ export function mpjFill(u8, song) {
   putText(u8, P + 0x10, song.name, 16);
   dv.setUint16(P + 0x20, Math.max(2000, Math.min(30000, Math.round(song.bpm * 100))), true);
   for (const c of song.clips) {
-    const base = P + PRJ_CLIPS + (c.t * 17 + c.k) * CLIP_SIZE;
+    const base = P + PRJ_CLIPS + (c.t * 17 + c.k) * CLIP_SIZE,
+      drum = u8[P + 0x200 + c.t * 0x100 + 0x14] === 1;
+    /* the clip's header as the MC-707 saves a clip it recorded (FF throughout in an empty clip, which the
+       MC-707 shows as no clip, notes or not): read from projects saved on the MC-707 */
+    for (const [o, v] of Object.entries(drum ? CLIP_ON.drum : CLIP_ON.tone)) u8[base + +o] = v;
     u8[base + 0x300] = c.size;
     u8[base + 0x301] = c.steps;
     for (let s = 0; s < 128; s++) {
