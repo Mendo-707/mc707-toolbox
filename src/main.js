@@ -117,6 +117,7 @@ import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
 import { midiBack, midiLost } from './ui/link-watch.js';
 import { autoConnectAtLaunch, midiFound } from './ui/auto-connect.js';
+import { mpjSong } from './scene/save-mpj.js';
 import { backupsOffer } from './ui/backups.js';
 import { frame, updPlayhead, updTransport } from './ui/transport-view.js';
 import { initArr } from './song/arrangement-input.js';
@@ -329,7 +330,7 @@ PROJ.t = projTitle;
     },
     motion,
     pump,
-    mpj: { open: mpjOpen, read: readMpj, loopAudio },
+    mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong },
     get S() {
       return S;
     },

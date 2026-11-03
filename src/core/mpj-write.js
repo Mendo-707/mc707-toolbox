@@ -1,0 +1,125 @@
+// Writing an MC-707 project file (.mpj), to load on the MC-707 with no computer (PROJECT › LOAD). It starts
+// from Roland's empty project for the track layout (core/mpj-templates.js: the project with 8 tone tracks,
+// and the bytes another layout changes; a drum track takes its blocks from the 8-drum project), then sets
+// what core/mpj.js reads back: the project name and tempo, each clip's step size, number of steps and steps,
+// which clip each track plays in each scene, and each scene's chain LENGTH (the last OFF, so the chain stops
+// there, as Scene Mode writes them). The sounds stay the template's (each track's default tone or kit), and
+// so does motion: their place in the file is not mapped yet.
+//
+// A step is 0x60 bytes, 16 slots each: notes (FF empty), velocities (80 empty), starts (signed hundredths of
+// a step), ends (hundredths, 100 carries on into the next step; 80 empty), sub steps, then 16 bytes left as
+// the MC-707 saves them (0). The same layout Scene Mode writes over USB (zen/zc-seq.js stepWrites).
+//
+// Plain data only (gzip through the browser's DecompressionStream). Reads: nothing.
+import { BASE, DIFF, MPJ_SIZE } from './mpj-templates.js';
+import { mpjSections } from './mpj.js';
+
+const PRJ_CLIPS = 0x10f0,
+  CLIP_SIZE = 0x5c40,
+  STEP0 = 0x3d0,
+  STEP_SIZE = 0x60;
+
+async function gunzip(b64) {
+  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+/* apply [offset u32, length u16, bytes] runs to u8; keep(offset) picks which */
+function applyRuns(u8, runs, keep) {
+  const dv = new DataView(runs.buffer, runs.byteOffset, runs.byteLength);
+  for (let p = 0; p + 6 <= runs.length; ) {
+    const at = dv.getUint32(p, true),
+      n = dv.getUint16(p + 4, true);
+    if (!keep || keep(at)) u8.set(runs.subarray(p + 6, p + 6 + n), at);
+    p += 6 + n;
+  }
+}
+/*
+ * The track a byte of the project belongs to (for a drum track taken from the 8-drum project), or -1: its
+ * block in PRJa (+200 + t × 100), its 17 clips, and its three sound blocks further on (worked out from
+ * Roland's templates: the 0- and 8-drum projects only differ there, and putting them together this way
+ * gives back the 2-drum project byte for byte).
+ */
+function trackAt(off, P) {
+  const x = off - P;
+  if (x >= 0x200 && x < 0xa00) return (x - 0x200) >> 8;
+  if (x >= PRJ_CLIPS && x < PRJ_CLIPS + 136 * CLIP_SIZE) return Math.floor((x - PRJ_CLIPS) / CLIP_SIZE / 17);
+  for (const [start, stride] of [
+    [0x3178f0, 0x6c60],
+    [0x3545f0, 0xdd00],
+    [0x4001f0, 0x4ee40]
+  ])
+    if (x >= start && x < start + 8 * stride) return Math.floor((x - start) / stride);
+  return -1;
+}
+
+/**
+ * An empty project for a track layout: Roland's template when there is one (drums first), otherwise put
+ * together track by track.
+ * @param {('drum'|'tone')[]} kinds  the 8 tracks
+ * @returns {Promise<Uint8Array>}
+ */
+export async function mpjBlank(kinds) {
+  const u8 = await gunzip(BASE);
+  if (u8.length !== MPJ_SIZE) throw new Error('The project template did not unpack');
+  const n = kinds.filter(k => k === 'drum').length,
+    first = kinds.every((k, i) => (k === 'drum') === i < n);
+  if (!n) return u8;
+  if (first && DIFF[n]) {
+    applyRuns(u8, await gunzip(DIFF[n]));
+    return u8;
+  }
+  const P = mpjSections(u8).PRJa.at;
+  applyRuns(u8, await gunzip(DIFF[8]), at => kinds[trackAt(at, P)] === 'drum');
+  return u8;
+}
+
+/** Printable ASCII, padded with spaces. */
+const putText = (u8, at, s, n) => {
+  for (let i = 0; i < n; i++) {
+    const c = String(s || '').charCodeAt(i);
+    u8[at + i] = c >= 32 && c < 127 ? c : 32;
+  }
+};
+
+/**
+ * Fill a project: its name and tempo, the clips' steps, and the scenes.
+ * @param {Uint8Array} u8  from mpjBlank
+ * @param {{name:string, bpm:number,
+ *   clips: {t:number, k:number, size:number, steps:number, slots:{note,vel,start,end,sub}[][]}[],
+ *   scenes: {bars:number, pick:number[]}[], first?:number}} song  pick: the clip (0-15) each of the 8 tracks
+ *   plays, -1 none; scenes go in from scene `first` (0-127)
+ * @returns {Uint8Array} u8
+ */
+export function mpjFill(u8, song) {
+  const P = mpjSections(u8).PRJa.at,
+    dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  putText(u8, P + 0x10, song.name, 16);
+  dv.setUint16(P + 0x20, Math.max(2000, Math.min(30000, Math.round(song.bpm * 100))), true);
+  for (const c of song.clips) {
+    const base = P + PRJ_CLIPS + (c.t * 17 + c.k) * CLIP_SIZE;
+    u8[base + 0x300] = c.size;
+    u8[base + 0x301] = c.steps;
+    for (let s = 0; s < 128; s++) {
+      const o = base + STEP0 + s * STEP_SIZE,
+        slots = (s < c.steps && c.slots[s]) || [];
+      for (let j = 0; j < 16; j++) {
+        const x = slots[j];
+        u8[o + j] = x ? x.note : 0xff;
+        u8[o + 0x10 + j] = x ? x.vel : 0x50;
+        u8[o + 0x20 + j] = x ? x.start & 0xff : 0;
+        u8[o + 0x30 + j] = x ? x.end : 0x50;
+        u8[o + 0x40 + j] = x ? x.sub || 0 : 0;
+      }
+    }
+  }
+  const first = song.first || 0;
+  song.scenes.forEach((sc, i) => {
+    const s = first + i;
+    if (s > 127) return;
+    /* the chain moves on after LENGTH bars; the last scene is OFF, so it stays there */
+    u8[P + 0x50 + s] = i === song.scenes.length - 1 ? 0 : Math.max(1, Math.min(127, sc.bars));
+    for (let t = 0; t < 8; t++) u8[P + 0x200 + t * 0x100 + 0x90 + s] = sc.pick[t] >= 0 ? sc.pick[t] + 1 : 0;
+  });
+  return u8;
+}

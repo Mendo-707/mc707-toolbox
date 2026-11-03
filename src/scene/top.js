@@ -3,6 +3,7 @@
 // with its choices (what to write, Auto-write and the write settings).
 //
 // Reads: S, WO, MIDI.
+import { saveMpjOpen } from './save-mpj.js';
 import { el } from '../core/dom.js';
 import { songMixerOpen } from '../song/song-mixer.js';
 import { S, scheduleSave } from '../core/state.js';
@@ -31,6 +32,7 @@ export function writeMenu(x, y) {
     tick('Name clips after their patterns', 'names'),
     tick('Set the MC-707’s tempo with the scenes', 'tempo'),
     '-',
+    { label: 'Save as an MC-707 project file (.mpj)…', action: () => saveMpjOpen() },
     { label: 'Check the new clips on the MC-707 (read-only)', action: checkNew },
     { label: 'Show the last write report', action: showReport },
     { label: 'Forget what was written (another project on the MC-707)', action: forgetWritten }

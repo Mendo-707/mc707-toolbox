@@ -27,6 +27,7 @@ import { songToClipsOpen } from '../zen/zc-seq.js';
 import { templatesOpen } from './templates.js';
 import { tutorialOpen } from './tutorial.js';
 import { backupsOn, backupsOpen } from './backups.js';
+import { saveMpjOpen } from '../scene/save-mpj.js';
 import { autoConnectOn, autoConnectSet } from './auto-connect.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
@@ -86,6 +87,7 @@ function initMenubar() {
         'recent',
         ['Save', projSave, 'Ctrl+S'],
         ['Save as…', projSaveAs, 'Ctrl+Shift+S'],
+        ['Save as MC-707 project (.mpj)…', () => saveMpjOpen()],
         ...(backupsOn() ? [['Recover a backup…', backupsOpen]] : []),
         0,
         ['Start screen…', () => startOpen('menu')],
@@ -203,6 +205,7 @@ function initMenubar() {
         ['Mixer…', () => (document.body.dataset.mode === 'live' ? liveMixerOpen() : songMixerOpen())],
         0,
         ['Open an MC-707 project file (.mpj)…', () => mpjPick()],
+        ['Save as MC-707 project (.mpj)…', () => saveMpjOpen()],
         ['Project templates…', () => templatesOpen()],
         0,
         ['Set up your MC-707…', go('#bSetup')],

@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('toolbox', {
   openDialog: () => ipcRenderer.invoke('open-dialog'),
   readFile: (p) => ipcRenderer.invoke('read-file', p),
   writeFile: (p, text) => ipcRenderer.invoke('write-file', p, text),
+  // a binary file (an MC-707 project): asks where, writes it, gives back the path (null if cancelled)
+  saveBinary: (name, data, ext) => ipcRenderer.invoke('save-binary', name, data, ext),
   // backups of the song beside the autosave: written on every autosave, listed and read back to recover
   backupWrite: (text) => ipcRenderer.invoke('backup-write', text),
   backupList: () => ipcRenderer.invoke('backup-list'),

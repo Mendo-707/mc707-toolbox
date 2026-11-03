@@ -159,7 +159,10 @@ const chapters = dn => [
         { mode: 'scene', text: 'Make them from the song' }
       ],
       'Add scenes to the chain: each plays a clip per track for so many bars.',
-      'Write sends what changed (✓ written · ● changed · + not written yet), or turn on Auto-write. ? How it works has the whole list.'
+      'Write sends what changed (✓ written · ● changed · + not written yet), or turn on Auto-write. ? How it works has the whole list.',
+      'Or skip the cable: File › Save as MC-707 project (.mpj) makes a project file to copy onto the SD card and load on the ' +
+        dn +
+        ' (PROJECT › LOAD). The sounds are not in it yet: choose them there.'
     ],
     [['Go to Scene Mode', () => setMode('scene')]]
   ],

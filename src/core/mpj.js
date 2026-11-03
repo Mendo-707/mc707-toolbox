@@ -1,6 +1,6 @@
 // Reading an MC-707 project file (.mpj, as the MC-707 saves projects on its SD card). Not documented by
-// Roland; worked out from empty projects with known track layouts and a full project (2026). Read only:
-// the app never writes one.
+// Roland; worked out from empty projects with known track layouts and a full project (2026). Writing one
+// (Save as MC-707 project) is core/mpj-write.js.
 //
 //   header      2 bytes, "PRJ5", then at 16 a table of sections: 4-letter tag, "MC77", offset, size (LE)
 //   PRJa        the project: name (16 chars) at +10, tempo (BPM × 100, 16 bits) at +20; each scene's

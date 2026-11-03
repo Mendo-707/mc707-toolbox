@@ -225,6 +225,16 @@ function writeSafe(p, text, bak = true) {
   fs.renameSync(tmp, p);
 }
 ipcMain.handle('write-file', async (_e, p, text) => { writeSafe(p, text); return true; });
+/* a file that is not text (an MC-707 project, .mpj): asks where, then writes it whole; the path, or null */
+ipcMain.handle('save-binary', async (_e, name, data, ext) => {
+  const kinds = { mpj: { name: 'MC-707 project', extensions: ['mpj'] } };
+  const r = await dialog.showSaveDialog(win, { defaultPath: path.join(folderFor('projects'), name || 'project'), filters: [kinds[ext] || { name: 'File', extensions: [ext || '*'] }] });
+  if (r.canceled || !r.filePath) return null;
+  const tmp = r.filePath + '.tmp';
+  fs.writeFileSync(tmp, Buffer.from(data));
+  fs.renameSync(tmp, r.filePath);
+  return r.filePath;
+});
 
 /* Backups of the song, beside the browser's own autosave (which has a size limit and goes if the app's data
    is cleared): latest.json on every autosave, and a dated copy at most every ten minutes, the newest 30 kept.
