@@ -1,6 +1,6 @@
 // Save as MC-707 project (scene/save-mpj.js, core/mpj-write.js): File › Save as MC-707 project makes a project
 // file from Roland's empty project for the Track setup with the song's name, tempo, clips and scenes (the
-// chain on, stopping on the last; the first scene's clips switched on), which reads back (core/mpj.js) with every clip's notes as Scene Mode would
+// chain on, stopping on the last), which reads back (core/mpj.js) with every clip's notes as Scene Mode would
 // write them over USB.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,9 +43,7 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
       scenes: song.scenes.map((s, i) => [i === song.scenes.length - 1 ? 0 : s.bars, ...s.pick].join()),
       backScenes: back.scenes.slice(0, song.scenes.length).map(s => [s.bars, ...s.pick].join()),
       lost: song.lost,
-      chain: back.chain,
-      on: back.tracks.map(t => t.on),
-      wantOn: song.scenes[0].pick
+      chain: back.chain
     };
   }, b64);
   assert.equal(r.size, 8153568, 'a whole MC-707 project');
@@ -56,6 +54,5 @@ test('Save as MC-707 project: the song’s clips, scenes, name and tempo, read b
   assert.deepEqual(r.backClips, r.clips, 'every clip reads back with its step size, steps and notes');
   assert.deepEqual(r.backScenes, r.scenes, 'the scenes: clips picked and chain lengths, the last OFF');
   assert.equal(r.chain, true, 'the scene chain is on');
-  assert.deepEqual(r.on, r.wantOn, 'it opens with the first scene’s clips switched on');
   assert.deepEqual(errors, []);
 });

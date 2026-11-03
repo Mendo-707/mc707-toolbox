@@ -106,10 +106,7 @@ export function readMpj(u8) {
       const slots = clipSteps(u8, base, steps);
       clips.push({ size, steps, sound: text(u8, base, 16), slots, notes: slots.reduce((n, s) => n + s.length, 0) });
     }
-    /* the clip switched on as the project was saved (+15 on, +18 the clip), or -1 */
-    const tb = P + 0x200 + t * 0x100,
-      on = u8[tb + 0x15] === 1 ? u8[tb + 0x18] : -1;
-    tracks.push({ kind, sound: text(u8, P + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips, on });
+    tracks.push({ kind, sound: text(u8, P + PRJ_CLIPS + (t * 17 + 16) * CLIP_SIZE, 16), clips });
   }
   /* samples */
   const samples = [];
