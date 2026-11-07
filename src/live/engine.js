@@ -473,12 +473,18 @@ function liveAutoStep(tick, rel) {
   const loop = sc.bars * 32,
     total = loop * LV.autoReps;
   const pend = LV.cues.some(c => c.type === 'scene' || c.type === 'blend');
-  if (!pend && rel === total - 64) {
+  /* two bars before the scene's planned end; or, when that moment was missed (auto-pilot switched on
+     late, or a cue of yours was waiting then), at the next bar line, landing on a loop's end at least two
+     bars away, so a scene never plays on forever */
+  if (!pend && rel >= total - 64 && LV.apCued !== LV.sceneStart) {
+    LV.apCued = LV.sceneStart;
     /* the next scene on the journey (or, now and then at a breakdown, fresh patterns) */
     const idx = lvAutoPick(),
-      fire = LV.sceneStart + total,
+      fire = LV.sceneStart + Math.max(total, Math.ceil((rel + 64) / loop) * loop),
       nx = LV.scenes[idx];
     if (lvAutoFresh(nx.kind)) {
+      /* the blend brings the new set in; the journey picks up again after it */
+      LV.apCued = null;
       LV.ver++;
       return;
     }
@@ -806,7 +812,8 @@ export function liveStart(idx) {
     flash: null,
     jam: null,
     bars: new Map(),
-    maskSig: ''
+    maskSig: '',
+    apCued: null
   });
   autoClipReset();
   for (let t = 0; t < 8; t++) {

@@ -65,3 +65,48 @@ test('Live Mode, Patterns: Composed: a set written from one progression, played 
   assert.ok(r.scenes >= 3, 'auto-pilot moves through the set: ' + r.scenes + ' scenes');
   assert.deepEqual(errors, []);
 });
+
+test('Auto-pilot switched on late, or with a cue of yours waiting at its moment, still moves on', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV;
+    Object.assign(LV, { style: 'liquid', seed: 3, custom: false, auto: false, chaos: 30, flavor: 'lively' });
+    a.liveBuild();
+    a.ensureAudio();
+    a.TICKER.stop();
+    a.live.jamStart();
+    const step = n => {
+      for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    /* 40 bars with auto-pilot off (the jam's intro, then past the moment it picks the next scene), then on */
+    step(40 * 32);
+    const first = LV.cur;
+    LV.auto = true;
+    let moved = null;
+    for (let b = 0; b < 32 && moved == null; b++) {
+      step(32);
+      if (LV.cur !== first) moved = b + 1;
+    }
+    /* a cue waiting at the moment: auto-pilot picks up once it has gone */
+    const at = LV.cur,
+      sc = LV.scenes[at],
+      total = sc.bars * 32 * LV.autoReps;
+    while (a.TR.tick - LV.sceneStart < total - 64 - 1) step(1);
+    LV.cues.push({ type: 'blend', tick: a.TR.tick + 1e9 });
+    step(4 * 32);
+    LV.cues = LV.cues.filter(c => c.type !== 'blend');
+    let again = null;
+    for (let b = 0; b < 32 && again == null; b++) {
+      step(32);
+      if (LV.cur !== at) again = b + 1;
+    }
+    a.stopAll();
+    return { moved, again };
+  });
+  assert.ok(r.moved && r.moved <= 8, 'moves on at the end of the loop playing: ' + r.moved);
+  assert.ok(r.again && r.again <= 8, 'moves on once the cue has gone: ' + r.again);
+  assert.deepEqual(errors, []);
+});

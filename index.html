@@ -59223,9 +59223,11 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!sc || LV.stopAt != null) return;
     const loop2 = sc.bars * 32, total = loop2 * LV.autoReps;
     const pend = LV.cues.some((c) => c.type === "scene" || c.type === "blend");
-    if (!pend && rel === total - 64) {
-      const idx = lvAutoPick(), fire = LV.sceneStart + total, nx = LV.scenes[idx];
+    if (!pend && rel >= total - 64 && LV.apCued !== LV.sceneStart) {
+      LV.apCued = LV.sceneStart;
+      const idx = lvAutoPick(), fire = LV.sceneStart + Math.max(total, Math.ceil((rel + 64) / loop2) * loop2), nx = LV.scenes[idx];
       if (lvAutoFresh(nx.kind)) {
+        LV.apCued = null;
         LV.ver++;
         return;
       }
@@ -59491,7 +59493,8 @@ html.os-darwin.native-menu #menubar .mproj {
       flash: null,
       jam: null,
       bars: /* @__PURE__ */ new Map(),
-      maskSig: ""
+      maskSig: "",
+      apCued: null
     });
     autoClipReset();
     for (let t = 0; t < 8; t++) {
