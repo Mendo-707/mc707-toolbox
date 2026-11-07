@@ -7,6 +7,7 @@ import { chooseStyle } from './wizard-styles.js';
 import { closeWiz, styleDemo, wizApply, wizSyncPreview } from './wizard-plan.js';
 import { wizStep3 } from './wizard-structure.js';
 import { wizStep4 } from './wizard-review.js';
+import { hooks } from '../core/hooks.js';
 
 export const WIZ = {
   step: 1,
@@ -100,6 +101,22 @@ function wizStep1(b) {
       'p',
       { class: 'wlead' },
       'Pick a starting style. The wizard builds a full arrangement from the pattern library, with tempo, key, structure and layers. You can hear it and change every part before anything is created.'
+    ),
+    el(
+      'p',
+      { class: 'hint', style: 'margin:-4px 0 10px' },
+      'Or let the app write the whole song for the style you pick, every part from one chord progression: ',
+      el(
+        'button',
+        {
+          class: 'btn sm',
+          onclick: () => {
+            closeWiz();
+            hooks.composeOpen(WIZ.style);
+          }
+        },
+        '♫ Compose a song…'
+      )
     )
   );
   const chips = el('div', { class: 'chips', style: 'margin-bottom:12px' });

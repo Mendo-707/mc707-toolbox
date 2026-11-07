@@ -8,6 +8,7 @@ import { $, el } from '../core/dom.js';
 import { PROJ, S, UI, pushUndo, replaceState, newState } from '../core/state.js';
 import { afterReplaceKeepUndo } from './controls.js';
 import { openWiz } from '../song/wizard-ui.js';
+import { composeOpen } from '../scene/compose.js';
 import { setMode } from './mode.js';
 import { DEVS, DEV } from '../core/device.js';
 import { zenOpen } from '../zen/zc-editor.js';
@@ -137,6 +138,9 @@ export function startOpen(last = true) {
         card('＋', 'Blank song', 'An empty arrangement: drag patterns in from the library.', () => fresh(false), !has),
         card('▤', 'Empty template', '64 bars with the sections marked: intro, build, drop, break, drop 2, outro.', () =>
           fresh(true)
+        ),
+        card('♫', 'Compose a song', 'Pick a style and the app writes every part, start to finish.', () =>
+          composeOpen()
         ),
         card('✦', 'Song wizard', 'Pick a style and get a full arrangement to start from.', () => openWiz()),
         card(
