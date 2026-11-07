@@ -22087,12 +22087,12 @@ html.os-darwin.native-menu #menubar .mproj {
   function alternate(t, from, to, x, y, each) {
     pushUndo();
     const back = cmAtBar(t, to);
-    const keep3 = cmMarks().filter((m) => !(m.t === t && m.bar >= from && m.bar < to));
-    for (let b = from, i = 0; b < to; b += each, i++) keep3.push({ t, bar: b, k: i % 2 ? y : x });
-    if (back != null && back >= 0 && to < songEnd() && !keep3.some((m) => m.t === t && m.bar === to))
-      keep3.push({ t, bar: to, k: back });
-    keep3.sort((p, q) => p.bar - q.bar || p.t - q.t);
-    S.clipMarks = keep3;
+    const keep2 = cmMarks().filter((m) => !(m.t === t && m.bar >= from && m.bar < to));
+    for (let b = from, i = 0; b < to; b += each, i++) keep2.push({ t, bar: b, k: i % 2 ? y : x });
+    if (back != null && back >= 0 && to < songEnd() && !keep2.some((m) => m.t === t && m.bar === to))
+      keep2.push({ t, bar: to, k: back });
+    keep2.sort((p, q) => p.bar - q.bar || p.t - q.t);
+    S.clipMarks = keep2;
     scheduleSave();
     hooks.renderArr();
     toast(
@@ -26873,8 +26873,8 @@ html.os-darwin.native-menu #menubar .mproj {
   function randomize(p) {
     const N = p.bars * 16;
     if (p.type === "drum") {
-      const keep3 = /* @__PURE__ */ new Set([0, 2, 3]);
-      p.notes = p.notes.filter((n) => keep3.has(n.n));
+      const keep2 = /* @__PURE__ */ new Set([0, 2, 3]);
+      p.notes = p.notes.filter((n) => keep2.has(n.n));
       const dens = { 1: 0.1, 4: 0.55, 5: 0.1, 6: 0.04, 7: 0.04, 8: 0.05, 10: 0.15, 11: 0.1 };
       for (const lane in dens)
         for (let s = 0; s < N; s++)
@@ -46573,11 +46573,11 @@ html.os-darwin.native-menu #menubar .mproj {
     const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  function applyRuns(u8, runs3, keep3) {
+  function applyRuns(u8, runs3, keep2) {
     const dv = new DataView(runs3.buffer, runs3.byteOffset, runs3.byteLength);
     for (let p = 0; p + 6 <= runs3.length; ) {
       const at2 = dv.getUint32(p, true), n = dv.getUint16(p + 4, true);
-      if (!keep3 || keep3(at2)) u8.set(runs3.subarray(p + 6, p + 6 + n), at2);
+      if (!keep2 || keep2(at2)) u8.set(runs3.subarray(p + 6, p + 6 + n), at2);
       p += 6 + n;
     }
   }
@@ -48580,7 +48580,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function sceneRender() {
     const host2 = $("#scene");
     if (!host2) return;
-    const keep3 = (sel2) => host2.querySelector(sel2) ? host2.querySelector(sel2).scrollTop : 0, sc = [keep3(".scList"), keep3(".sBoardWrap")];
+    const keep2 = (sel2) => host2.querySelector(sel2) ? host2.querySelector(sel2).scrollTop : 0, sc = [keep2(".scList"), keep2(".sBoardWrap")];
     host2.textContent = "";
     host2.append(sceneTop(sceneToggle));
     if (DEV !== "707")
@@ -51110,7 +51110,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const drum = f.type === "drum", w = drum ? si : si + sc;
       return w ? -(si * Math.abs(ri[j] - ti) + (drum ? 0 : sc * Math.abs(rc[j] - tc))) / w : 0;
     });
-    const keep3 = Math.max(3, Math.round(ids.length * (1 - 0.8 * Math.max(si, sc)))), cut = score.slice().sort((a, b) => b - a)[Math.min(keep3, score.length) - 1];
+    const keep2 = Math.max(3, Math.round(ids.length * (1 - 0.8 * Math.max(si, sc)))), cut = score.slice().sort((a, b) => b - a)[Math.min(keep2, score.length) - 1];
     return ids.filter((id, j) => score[j] >= cut);
   }
 
@@ -52960,29 +52960,102 @@ html.os-darwin.native-menu #menubar .mproj {
         el("button", { class: "btn on", onclick: wizApply }, w.mode === "replace" ? "Create song" : "Add to song")
       );
   }
+  var CMP2 = { minutes: 0, take: 1, sounds: true };
+  function composePanel() {
+    const st = curStyle();
+    const box = el("div", { class: "wcard wCompose", style: "margin:0 0 12px" });
+    if (!st) {
+      box.append(el("b", {}, "♫ Compose it now"), el("span", { class: "hint" }, "  Pick a style below first."));
+      return box;
+    }
+    const big = st.fam === "dnb" || st.fam === "edm";
+    if (!CMP2.minutes) CMP2.minutes = big ? 5 : 3.5;
+    const lab = (t, x) => el("label", { style: "display:inline-flex;gap:6px;align-items:center" }, t, x);
+    const key = el(
+      "select",
+      { "aria-label": "Key", onchange: (e) => WIZ.key = +e.target.value },
+      ...Array.from({ length: 12 }, (_, i) => el("option", { value: i }, NK(i, st.scale)))
+    );
+    key.value = WIZ.key;
+    const bpm = el("input", {
+      type: "number",
+      min: 40,
+      max: 300,
+      value: WIZ.bpm,
+      "aria-label": "Tempo",
+      style: "width:64px",
+      onchange: (e) => WIZ.bpm = Math.max(40, Math.min(300, +e.target.value || WIZ.bpm))
+    });
+    const mins = el(
+      "select",
+      { "aria-label": "Length", onchange: (e) => CMP2.minutes = +e.target.value },
+      ...[2, 3, 3.5, 4, 5, 6, 8].map((m) => el("option", { value: m }, m + " min"))
+    );
+    mins.value = String(CMP2.minutes);
+    const take = el("input", {
+      type: "number",
+      min: 1,
+      max: 9999,
+      value: CMP2.take,
+      "aria-label": "Take",
+      style: "width:64px",
+      onchange: (e) => CMP2.take = +e.target.value || 1
+    });
+    const snd = el("input", { type: "checkbox", onchange: (e) => CMP2.sounds = e.target.checked });
+    snd.checked = CMP2.sounds;
+    box.append(
+      el("b", {}, "♫ Compose it now: " + st.name),
+      el(
+        "div",
+        { class: "hint", style: "margin:4px 0 8px;line-height:1.4" },
+        "The app writes every part itself from one chord progression: drums from the style’s groove, a bass locked to the kick, chords, pads, a hook that develops, builds that stop dead before the drop, and something new in every drop or chorus. It replaces the song (Undo brings it back) and sets up Scene Mode the same way."
+      ),
+      el(
+        "div",
+        { style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center" },
+        lab("Key", key),
+        lab("Tempo", bpm),
+        lab("Length", mins),
+        lab("Take", take),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            title: "A different song in the same style",
+            onclick: () => {
+              CMP2.take = 1 + Math.floor(Math.random() * 9999);
+              take.value = CMP2.take;
+            }
+          },
+          "Another take"
+        ),
+        lab(snd, "Choose sounds (factory tones and kits for every clip)"),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn on",
+            onclick: () => {
+              const o = { key: WIZ.key, bpm: WIZ.bpm, minutes: CMP2.minutes, seed: CMP2.take, sounds: CMP2.sounds };
+              closeWiz();
+              hooks.composeNow(st.id, o);
+            }
+          },
+          "♫ Compose it now"
+        )
+      )
+    );
+    return box;
+  }
   function wizStep1(b) {
     b.append(
       el(
         "p",
         { class: "wlead" },
-        "Pick a starting style. The wizard builds a full arrangement from the pattern library, with tempo, key, structure and layers. You can hear it and change every part before anything is created."
+        "Pick a style. Compose it now and the app writes the whole song in one go, or go step by step (Next) to choose the sound, structure and layers from the pattern library and hear it before anything is created."
       ),
-      el(
-        "p",
-        { class: "hint", style: "margin:-4px 0 10px" },
-        "Or let the app write the whole song for the style you pick, every part from one chord progression: ",
-        el(
-          "button",
-          {
-            class: "btn sm",
-            onclick: () => {
-              closeWiz();
-              hooks.composeOpen(WIZ.style);
-            }
-          },
-          "♫ Compose a song…"
-        )
-      )
+      composePanel()
     );
     const chips = el("div", { class: "chips", style: "margin-bottom:12px" });
     [
@@ -56442,7 +56515,7 @@ html.os-darwin.native-menu #menubar .mproj {
     pluck: ["drop", "break", "intro"],
     acid: ["A", "B", "C"]
   };
-  var CMP2 = { ids: {} };
+  var CMP3 = { ids: {} };
   function cmpRole(t) {
     if (oneKit() && t === trackOf(0)) return "full";
     const pool = poolOf(t);
@@ -56472,7 +56545,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       return id;
     };
-    CMP2.ids = {};
+    CMP3.ids = {};
     const scenes = CMP_TPL.map(([name, kind, bars3, e, fx, parts4]) => {
       const cells = {};
       for (let t = 0; t < 8; t++) {
@@ -56490,7 +56563,7 @@ html.os-darwin.native-menu #menubar .mproj {
     for (let t = 0; t < 8; t++) {
       const role = cmpRole(t);
       if (!role) continue;
-      CMP2.ids[t] = (CMP_SWAP[role === "full" ? "kit" : role] || []).map((v) => entry(t, role, v)).filter(Boolean);
+      CMP3.ids[t] = (CMP_SWAP[role === "full" ? "kit" : role] || []).map((v) => entry(t, role, v)).filter(Boolean);
     }
     LV.scenes = scenes;
     LV.fillIds = lvPool(st, "fill");
@@ -56498,7 +56571,7 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.ver++;
   }
   function liveSwapIds(t) {
-    if (LV.flavor === "composed" && CMP2.ids[t] && CMP2.ids[t].length) return CMP2.ids[t].slice();
+    if (LV.flavor === "composed" && CMP3.ids[t] && CMP3.ids[t].length) return CMP3.ids[t].slice();
     const st = lvStyle(), pool = t === trackOf(0) && oneKit() ? "full" : poolOf(t);
     return moodFilter(lvFlavor(lvPool(st, pool), LV.flavor), LV.mood, facById).filter((id) => {
       const f = facById(id);
@@ -58595,10 +58668,10 @@ html.os-darwin.native-menu #menubar .mproj {
         { s: 0, l: 8, n: 9, v: 118 }
       ];
     if (kind === "build") {
-      const keep3 = n2.filter((n) => n.s < 16 || n.n === 0 && n.s < 24 || HATS.includes(n.n));
+      const keep2 = n2.filter((n) => n.s < 16 || n.n === 0 && n.s < 24 || HATS.includes(n.n));
       const trap = lvTrapRolls();
       return [
-        ...keep3,
+        ...keep2,
         ...rollNotes(trap ? "t16" : "16", 24, 2, 84),
         ...rollNotes(trap ? pick2(["32", "64"]) : pick2(["32", "h32"]), 28, 2, 118)
       ];
@@ -60557,15 +60630,15 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.autos = LV.autos.filter((a) => tick < a.end);
   }
   function lvSlam(nt, filter) {
-    const keep3 = [];
+    const keep2 = [];
     LV.autos.forEach((a) => {
       if (filter && !filter(a)) {
-        keep3.push(a);
+        keep2.push(a);
         return;
       }
       a.tracks.forEach((t) => lvSendCC(t, a.cc, lvRestCC(t, a.cc), nt));
     });
-    LV.autos = keep3;
+    LV.autos = keep2;
     LV.ver++;
   }
   function lvBuildMoves(t1, t2, tag) {
@@ -63904,7 +63977,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const e = new lamejs.Mp3Encoder(2, sr, kbps);
     const parts4 = [];
     let frames = 0;
-    const keep3 = (out2) => {
+    const keep2 = (out2) => {
       if (out2 && out2.length) {
         const u = new Uint8Array(out2.length);
         for (let i = 0; i < out2.length; i++) u[i] = out2[i];
@@ -63923,11 +63996,11 @@ html.os-darwin.native-menu #menubar .mproj {
           x = x < -1 ? -1 : x > 1 ? 1 : x;
           r[i] = x < 0 ? x * 32768 : x * 32767;
         }
-        keep3(e.encodeBuffer(l, r));
+        keep2(e.encodeBuffer(l, r));
         frames += n;
       },
       finish() {
-        keep3(e.flush());
+        keep2(e.flush());
         let size = 0, crc = 4294967295;
         parts4.forEach((p) => {
           size += p.length;
@@ -65476,7 +65549,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     renderSetup(true);
   }
-  function renderSetup(keep3) {
+  function renderSetup(keep2) {
     const sc = $("#setupBody").scrollTop;
     const head3 = $("#setupHead");
     head3.textContent = "";
@@ -65758,7 +65831,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     );
     b.append(help);
-    b.scrollTop = keep3 ? sc : 0;
+    b.scrollTop = keep2 ? sc : 0;
     const f = $("#setupFoot");
     f.textContent = "";
     f.append(el("div", { class: "sp" }), el("button", { class: "btn on", onclick: closeSetup }, "Done"));
@@ -67078,208 +67151,6 @@ html.os-darwin.native-menu #menubar .mproj {
     updLoopUI();
   }
 
-  // src/scene/compose.js
-  var LS = "mc707-compose";
-  var DRUM_ROLES = ["kit", "hats", "perc"];
-  var famOf = (st) => st.fam === "all" ? "song" : st.fam;
-  var defMinutes = (st) => famOf(st) === "dnb" || famOf(st) === "edm" ? 5 : 3.5;
-  var load4 = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LS)) || {};
-    } catch (e) {
-      return {};
-    }
-  };
-  var keep2 = (o) => {
-    try {
-      localStorage.setItem(LS, JSON.stringify(o));
-    } catch (e) {
-    }
-  };
-  function factorySounds() {
-    const tone2 = /* @__PURE__ */ new Map(), kit2 = /* @__PURE__ */ new Map();
-    for (const e of ZS.list) {
-      if (e.src !== "factory") continue;
-      if (e.kind === "kit" && e.mpj && !kit2.has(e.name)) kit2.set(e.name, e);
-      else if (e.kind === "tone" && !tone2.has(e.name)) tone2.set(e.name, e);
-    }
-    return { tone: tone2, kit: kit2 };
-  }
-  function applyComposed(song, o) {
-    const tracks3 = DEVS[DEV].tracks, role = (t) => roleOf(t), first = (r) => tracks3.find((t) => role(t) === r), kitT = first("kit"), has2 = (r) => first(r) !== void 0;
-    const merge = DRUM_ROLES.filter((r) => r !== "kit" && !has2(r));
-    const fs = o.sounds ? factorySounds() : null, missing = /* @__PURE__ */ new Set();
-    let scenes = true, nSounds = 0;
-    const total = song.sections.reduce((a, s) => a + s.bars, 0);
-    edit((q) => {
-      S.clips = [];
-      S.patterns = {};
-      S.markers = [];
-      S.clipMarks = [];
-      S.cursor = 0;
-      S.loop = { on: false, start: 0, end: 8 };
-      S.bpm = song.bpm;
-      S.swing = song.swing;
-      S.key = song.key;
-      S.scale = song.scale;
-      UI.sel = null;
-      ED.selNotes.clear();
-      const made3 = {};
-      const patOf2 = (keys2) => {
-        const id = keys2.join("+");
-        if (made3[id]) return made3[id];
-        const ps = keys2.map((k2) => song.patterns[k2]), p = ps[0];
-        const notes = ps.flatMap((x) => x.notes);
-        made3[id] = addPattern(p.type, p.name, p.bars, notes, {
-          role: p.role,
-          key: p.type === "tone" ? { root: song.key, scale: song.scale } : null,
-          composed: o.style.id
-        });
-        return made3[id];
-      };
-      const order = {};
-      let at2 = 0;
-      const rows2 = [];
-      for (const sec of song.sections) {
-        S.markers.push({ bar: at2, name: sec.name.slice(0, 20) });
-        const pick3 = Array(8).fill(-1);
-        for (const t of tracks3) {
-          const r = role(t);
-          let keys2 = [];
-          if (t === kitT) keys2 = ["kit", ...merge].map((x) => sec.parts[x]).filter(Boolean);
-          else if (sec.parts[r] && first(r) === t) keys2 = [sec.parts[r]];
-          if (!keys2.length) continue;
-          const pid = patOf2(keys2);
-          S.clips.push({ id: "c" + S.nextId++, t, start: at2, len: sec.bars, off: 0, pat: pid });
-          const list2 = order[t] = order[t] || [];
-          if (!list2.some((x) => x.pid === pid)) list2.push({ pid, keys: keys2 });
-          const k2 = list2.findIndex((x) => x.pid === pid);
-          if (k2 > 15) scenes = false;
-          pick3[t] = k2;
-        }
-        rows2.push({ name: sec.name, bars: sec.bars, pick: pick3 });
-        at2 += sec.bars;
-      }
-      ensureBars(total);
-      if (!scenes || rows2.length > 128) {
-        scenes = false;
-        return;
-      }
-      q.first = 0;
-      q.rows = rows2.map((r, i) => ({
-        id: "r" + S.nextId++,
-        name: r.name.slice(0, 16),
-        bars: Math.min(127, r.bars),
-        pick: r.pick
-      }));
-      q.clips = Array.from({ length: 8 }, () => Array(16).fill(null));
-      q.tones = {};
-      for (const t in order)
-        order[t].forEach(({ pid, keys: keys2 }, k2) => {
-          const clip = { pat: pid };
-          if (fs) {
-            const name = song.sounds[keys2[0]], drum = song.patterns[keys2[0]].type === "drum", e = name && (drum ? fs.kit : fs.tone).get(name);
-            if (e) {
-              const tone2 = { name: e.name.slice(0, 16), kind: e.kind, d: e.d };
-              if (e.mpj) tone2.mpj = e.mpj;
-              const key = hashOf(e.kind, e.d) + (e.mpj ? ":kit" : "");
-              q.tones[key] = tone2;
-              clip.tone = key;
-              nSounds++;
-            } else if (name) missing.add(name);
-          }
-          q.clips[t][k2] = clip;
-        });
-    });
-    return { sections: song.sections.length, bars: total, sounds: nSounds, missing: [...missing], scenes };
-  }
-  async function composeOpen(styleId) {
-    const was = load4();
-    const list2 = STYLES.filter((s) => s.fam !== "all");
-    let st = list2.find((s) => s.id === (styleId || was.style)) || list2[0];
-    const sel2 = el("select", { style: "width:100%" });
-    for (const fam of ["dnb", "edm", "hh", "song"]) {
-      const g = el("optgroup", { label: FAMLABEL[fam] || fam });
-      list2.filter((s) => famOf(s) === fam).forEach((s) => g.append(el("option", { value: s.id }, s.name)));
-      sel2.append(g);
-    }
-    sel2.value = st.id;
-    const key = el("select", {}, ...NOTE_NAMES.map((n, i) => el("option", { value: i }, n)));
-    const bpm = el("input", { type: "number", min: 40, max: 300, style: "width:70px" });
-    const mins = el("select", {}, ...[2, 3, 3.5, 4, 5, 6, 8].map((m) => el("option", { value: m }, m + " min")));
-    const take = el("input", { type: "number", min: 1, max: 9999, value: 1, style: "width:70px" });
-    const fs = factorySounds();
-    const snd = el("input", { type: "checkbox" });
-    snd.checked = was.sounds !== false && fs.tone.size > 0;
-    snd.disabled = !fs.tone.size;
-    const vibe = el("div", { class: "hint", style: "line-height:1.4" });
-    const fill2 = () => {
-      st = list2.find((s) => s.id === sel2.value) || st;
-      key.value = st.keys && st.keys[0] ? st.keys[0][0] : 9;
-      bpm.value = st.bpm ? st.bpm[2] : 120;
-      mins.value = String(defMinutes(st));
-      vibe.textContent = st.vibe || "";
-    };
-    sel2.onchange = fill2;
-    fill2();
-    if (was.style === st.id && was.mins) mins.value = String(was.mins);
-    const row2 = (label2, ...x) => el(
-      "label",
-      { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" },
-      el("span", { style: "min-width:64px" }, label2),
-      ...x
-    );
-    const body = el(
-      "div",
-      { style: "display:flex;flex-direction:column;gap:8px" },
-      row2("Style", sel2),
-      vibe,
-      row2("Key", key, el("span", {}, "Tempo"), bpm, el("span", {}, "BPM")),
-      row2(
-        "Length",
-        mins,
-        el("span", {}, "Take"),
-        take,
-        el(
-          "button",
-          { class: "btn sm", type: "button", onclick: () => take.value = 1 + Math.floor(Math.random() * 9999) },
-          "Another take"
-        )
-      ),
-      el(
-        "label",
-        { style: "display:flex;gap:8px;align-items:flex-start;line-height:1.4" },
-        snd,
-        el(
-          "span",
-          {},
-          "Choose sounds: every clip gets a factory tone or kit picked for its part, so Save as MC-707 project plays with real sounds. " + (!fs.tone.size ? "(Add the factory sounds first: Sound browser › Grab from › Factory tones and kits.)" : !fs.kit.size ? "(No factory kits yet: add the factory sounds again to get them; the drums keep the project’s own kits.)" : "")
-        )
-      )
-    );
-    const ok = await askDlg({
-      title: "Compose a song",
-      text: "The app writes every part itself from one chord progression: drums from the style’s groove, a bass locked to the kick, chords, pads, a hook that develops, arps, builds that stop dead before the drop, and something new in every drop or chorus. It replaces the song (Undo brings it back) and sets up Scene Mode the same way.",
-      body,
-      ok: "Compose"
-    });
-    if (!ok) return;
-    const opts = {
-      key: +key.value,
-      bpm: Math.max(40, Math.min(300, +bpm.value || 120)),
-      minutes: +mins.value,
-      seed: +take.value || 1
-    };
-    keep2({ style: st.id, mins: opts.minutes, sounds: snd.checked });
-    hooks.stopAll && hooks.stopAll();
-    const song = compose(st, opts);
-    const r = applyComposed(song, { style: st, sounds: snd.checked && !snd.disabled });
-    hooks.renderAll && hooks.renderAll();
-    toast(
-      "Composed " + st.name + ": " + r.sections + " sections, " + Math.round(r.bars * 4 * 10 / song.bpm) / 10 + " minutes in " + NOTE_NAMES[song.key] + " " + song.scale + "." + (r.scenes ? " Scene Mode has the same scenes." : "") + (snd.checked && r.sounds ? " " + r.sounds + " clips have sounds." : "") + (r.missing.length ? " Not in your library: " + r.missing.slice(0, 4).join(", ") + "." : "") + " Press Space to play."
-    );
-  }
-
   // src/live/genre-picker.js
   var KEY6 = "mc707-live-pick";
   function livePickOnOpen() {
@@ -68130,12 +68001,11 @@ html.os-darwin.native-menu #menubar .mproj {
             () => fresh(true)
           ),
           card(
-            "♫",
-            "Compose a song",
-            "Pick a style and the app writes every part, start to finish.",
-            () => composeOpen()
+            "✦",
+            "Song wizard",
+            "Pick a style: compose a whole song in one go, or build it step by step.",
+            () => openWiz()
           ),
-          card("✦", "Song wizard", "Pick a style and get a full arrangement to start from.", () => openWiz()),
           card(
             "▦",
             "Scene Mode",
@@ -68227,7 +68097,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var grabName = (k2) => k2 === "mix" ? "Mix" : k2 === "ext" ? "Ext In" : "Track " + devNum(+k2.slice(1)) + ": " + S.tracks[+k2.slice(1)].name;
   var grabPv = () => AUD.source === "preview";
   function grabDef(k2) {
-    const keep3 = { stems: AUD.stems, mix: AUD.mix, extIn: AUD.extIn };
+    const keep2 = { stems: AUD.stems, mix: AUD.mix, extIn: AUD.extIn };
     AUD.stems = "channels";
     AUD.mix = true;
     AUD.extIn = true;
@@ -68235,7 +68105,7 @@ html.os-darwin.native-menu #menubar .mproj {
     try {
       sinks = audioJobs().flatMap((j) => j.sinks);
     } finally {
-      Object.assign(AUD, keep3);
+      Object.assign(AUD, keep2);
     }
     if (grabPv()) {
       const m = sinks.find((x) => x.key === "mix");
@@ -69975,7 +69845,6 @@ html.os-darwin.native-menu #menubar .mproj {
         "Song",
         "song",
         [
-          ["Compose a song…", () => composeOpen()],
           ["Song wizard…", go("#bWiz")],
           ["Transpose…", go("#bXpose")],
           ["Structure tools…", go("#bStruct")],
@@ -70547,7 +70416,7 @@ html.os-darwin.native-menu #menubar .mproj {
         label: "Replace with the loop playing now",
         disabled: !on3 || i === LV.cur,
         action: () => {
-          const keep3 = LV.cur;
+          const keep2 = LV.cur;
           LV.cur = i;
           const ids = lvIds(), cells = {};
           ids.forEach((id, t) => {
@@ -70556,7 +70425,7 @@ html.os-darwin.native-menu #menubar .mproj {
               cells[t] = { id, pool: f && f.pool || poolOf(t) };
             }
           });
-          LV.cur = keep3;
+          LV.cur = keep2;
           if (Object.keys(cells).length) {
             sc.cells = cells;
             lvSaveScenes();
@@ -70997,6 +70866,125 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     if (S.midiIn) setMidiIn(S.midiIn);
     toast((name || devNm()) + " is back" + (TR.playing ? ", in time with the set" : "") + ".");
+  }
+
+  // src/scene/compose.js
+  var DRUM_ROLES = ["kit", "hats", "perc"];
+  function factorySounds() {
+    const tone2 = /* @__PURE__ */ new Map(), kit2 = /* @__PURE__ */ new Map();
+    for (const e of ZS.list) {
+      if (e.src !== "factory") continue;
+      if (e.kind === "kit" && e.mpj && !kit2.has(e.name)) kit2.set(e.name, e);
+      else if (e.kind === "tone" && !tone2.has(e.name)) tone2.set(e.name, e);
+    }
+    return { tone: tone2, kit: kit2 };
+  }
+  function applyComposed(song, o) {
+    const tracks3 = DEVS[DEV].tracks, role = (t) => roleOf(t), first = (r) => tracks3.find((t) => role(t) === r), kitT = first("kit"), has2 = (r) => first(r) !== void 0;
+    const merge = DRUM_ROLES.filter((r) => r !== "kit" && !has2(r));
+    const fs = o.sounds ? factorySounds() : null, missing = /* @__PURE__ */ new Set();
+    let scenes = true, nSounds = 0;
+    const total = song.sections.reduce((a, s) => a + s.bars, 0);
+    edit((q) => {
+      S.clips = [];
+      S.patterns = {};
+      S.markers = [];
+      S.clipMarks = [];
+      S.cursor = 0;
+      S.loop = { on: false, start: 0, end: 8 };
+      S.bpm = song.bpm;
+      S.swing = song.swing;
+      S.key = song.key;
+      S.scale = song.scale;
+      UI.sel = null;
+      ED.selNotes.clear();
+      const made3 = {};
+      const patOf2 = (keys2) => {
+        const id = keys2.join("+");
+        if (made3[id]) return made3[id];
+        const ps = keys2.map((k2) => song.patterns[k2]), p = ps[0];
+        const notes = ps.flatMap((x) => x.notes);
+        made3[id] = addPattern(p.type, p.name, p.bars, notes, {
+          role: p.role,
+          key: p.type === "tone" ? { root: song.key, scale: song.scale } : null,
+          composed: o.style.id
+        });
+        return made3[id];
+      };
+      const order = {};
+      let at2 = 0;
+      const rows2 = [];
+      for (const sec of song.sections) {
+        S.markers.push({ bar: at2, name: sec.name.slice(0, 20) });
+        const pick3 = Array(8).fill(-1);
+        for (const t of tracks3) {
+          const r = role(t);
+          let keys2 = [];
+          if (t === kitT) keys2 = ["kit", ...merge].map((x) => sec.parts[x]).filter(Boolean);
+          else if (sec.parts[r] && first(r) === t) keys2 = [sec.parts[r]];
+          if (!keys2.length) continue;
+          const pid = patOf2(keys2);
+          S.clips.push({ id: "c" + S.nextId++, t, start: at2, len: sec.bars, off: 0, pat: pid });
+          const list2 = order[t] = order[t] || [];
+          if (!list2.some((x) => x.pid === pid)) list2.push({ pid, keys: keys2 });
+          const k2 = list2.findIndex((x) => x.pid === pid);
+          if (k2 > 15) scenes = false;
+          pick3[t] = k2;
+        }
+        rows2.push({ name: sec.name, bars: sec.bars, pick: pick3 });
+        at2 += sec.bars;
+      }
+      ensureBars(total);
+      if (!scenes || rows2.length > 128) {
+        scenes = false;
+        return;
+      }
+      q.first = 0;
+      q.rows = rows2.map((r, i) => ({
+        id: "r" + S.nextId++,
+        name: r.name.slice(0, 16),
+        bars: Math.min(127, r.bars),
+        pick: r.pick
+      }));
+      q.clips = Array.from({ length: 8 }, () => Array(16).fill(null));
+      q.tones = {};
+      for (const t in order)
+        order[t].forEach(({ pid, keys: keys2 }, k2) => {
+          const clip = { pat: pid };
+          if (fs) {
+            const name = song.sounds[keys2[0]], drum = song.patterns[keys2[0]].type === "drum", e = name && (drum ? fs.kit : fs.tone).get(name);
+            if (e) {
+              const tone2 = { name: e.name.slice(0, 16), kind: e.kind, d: e.d };
+              if (e.mpj) tone2.mpj = e.mpj;
+              const key = hashOf(e.kind, e.d) + (e.mpj ? ":kit" : "");
+              q.tones[key] = tone2;
+              clip.tone = key;
+              nSounds++;
+            } else if (name) missing.add(name);
+          }
+          q.clips[t][k2] = clip;
+        });
+    });
+    return { sections: song.sections.length, bars: total, sounds: nSounds, missing: [...missing], scenes };
+  }
+  function composeNow(styleId, o) {
+    const st = STYLES.find((s) => s.id === styleId);
+    if (!st) return null;
+    const fs = factorySounds();
+    hooks.stopAll && hooks.stopAll();
+    const song = compose(st, {
+      key: o.key,
+      bpm: Math.max(40, Math.min(300, +o.bpm || 120)),
+      minutes: +o.minutes || 4,
+      seed: +o.seed || 1
+    });
+    const sounds = !!o.sounds && fs.tone.size > 0;
+    const r = applyComposed(song, { style: st, sounds });
+    hooks.renderAll && hooks.renderAll();
+    toast(
+      "Composed " + st.name + ": " + r.sections + " sections, " + Math.round(r.bars * 4 * 10 / song.bpm) / 10 + " minutes in " + NOTE_NAMES[song.key] + " " + song.scale + "." + (r.scenes ? " Scene Mode has the same scenes." : "") + (sounds && r.sounds ? " " + r.sounds + " clips have sounds." : "") + (o.sounds && !fs.tone.size ? " No factory sounds yet: Sound browser › Grab from › Factory tones and kits." : "") + (r.missing.length ? " Not in your library: " + r.missing.slice(0, 4).join(", ") + "." : "") + " Press Space to play."
+    );
+    return r;
   }
 
   // src/ui/grab-pattern.js
@@ -71876,7 +71864,7 @@ html.os-darwin.native-menu #menubar .mproj {
   addEventListener("scroll", () => (scrollX || scrollY) && scrollTo(0, 0), { passive: true });
   initDesktop();
   Object.assign(hooks, {
-    composeOpen,
+    composeNow,
     fillTones: fillTonesOpen,
     fx: {
       choices: fxChoices,
@@ -72008,7 +71996,7 @@ html.os-darwin.native-menu #menubar .mproj {
       motion: zc_motion_exports,
       pump: pump_exports,
       mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
-      compose: { compose, apply: applyComposed, open: composeOpen },
+      compose: { compose, apply: applyComposed, now: composeNow },
       get S() {
         return S;
       },

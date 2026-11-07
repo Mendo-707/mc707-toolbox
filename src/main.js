@@ -117,7 +117,7 @@ import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
 import { midiBack, midiLost } from './ui/link-watch.js';
 import { autoConnectAtLaunch, midiFound } from './ui/auto-connect.js';
-import { applyComposed, composeOpen } from './scene/compose.js';
+import { applyComposed, composeNow } from './scene/compose.js';
 import { compose } from './library/compose.js';
 import { mpjBytes, mpjSong } from './scene/save-mpj.js';
 import { backupsOffer } from './ui/backups.js';
@@ -200,7 +200,7 @@ initDesktop();
 
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
-  composeOpen,
+  composeNow,
   fillTones: fillTonesOpen,
   fx: {
     choices: fxChoices,
@@ -334,7 +334,7 @@ PROJ.t = projTitle;
     motion,
     pump,
     mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
-    compose: { compose, apply: applyComposed, open: composeOpen },
+    compose: { compose, apply: applyComposed, now: composeNow },
     get S() {
       return S;
     },

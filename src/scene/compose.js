@@ -1,5 +1,5 @@
-// Song › Compose a song: the composer (library/compose.js) writes a whole song for a style, and this puts
-// it in the app. The song is replaced (one undo step): its patterns, clips over the sections, markers,
+// The Song wizard's Compose it now: the composer (library/compose.js) writes a whole song for a style, and
+// this puts it in the app. The song is replaced (one undo step): its patterns, clips over the sections, markers,
 // tempo, swing and key, each part on the track whose Track setup role plays it (with one drum track, the
 // hats and perc go in with the kit). Scene Mode gets the same song as scenes, one for each section, with
 // the scene chain, so Write to the MC-707 and Save as MC-707 project play it as it is. With Choose sounds,
@@ -7,7 +7,7 @@
 // library (Sound browser › Grab from › Factory tones and kits).
 //
 // Reads: S, ZS, DEV.
-import { el, toast } from '../core/dom.js';
+import { toast } from '../core/dom.js';
 import { S, UI, ED, addPattern } from '../core/state.js';
 import { DEV, DEVS } from '../core/device.js';
 import { ensureBars } from '../core/song-model.js';
@@ -15,29 +15,11 @@ import { NOTE_NAMES } from '../core/theory.js';
 import { roleOf } from '../core/tracks.js';
 import { hooks } from '../core/hooks.js';
 import { compose } from '../library/compose.js';
-import { FAMLABEL, STYLES } from '../library/styles.js';
+import { STYLES } from '../library/styles.js';
 import { ZS, hashOf } from '../zen/zc-sounds.js';
-import { askDlg } from '../ui/dialogs.js';
 import { edit } from './model.js';
 
-const LS = 'mc707-compose';
 const DRUM_ROLES = ['kit', 'hats', 'perc'];
-const famOf = st => (st.fam === 'all' ? 'song' : st.fam);
-const defMinutes = st => (famOf(st) === 'dnb' || famOf(st) === 'edm' ? 5 : 3.5);
-const load = () => {
-  try {
-    return JSON.parse(localStorage.getItem(LS)) || {};
-  } catch (e) {
-    return {};
-  }
-};
-const keep = o => {
-  try {
-    localStorage.setItem(LS, JSON.stringify(o));
-  } catch (e) {
-    /* nothing to keep */
-  }
-};
 
 /** The factory sounds in the library by name: {tone: Map, kit: Map} (kits only with their bytes). */
 function factorySounds() {
@@ -158,94 +140,25 @@ export function applyComposed(song, o) {
   return { sections: song.sections.length, bars: total, sounds: nSounds, missing: [...missing], scenes };
 }
 
-/** Song › Compose a song: style, key, tempo, length and sounds, then the song. */
-export async function composeOpen(styleId) {
-  const was = load();
-  const list = STYLES.filter(s => s.fam !== 'all');
-  let st = list.find(s => s.id === (styleId || was.style)) || list[0];
-  const sel = el('select', { style: 'width:100%' });
-  for (const fam of ['dnb', 'edm', 'hh', 'song']) {
-    const g = el('optgroup', { label: FAMLABEL[fam] || fam });
-    list.filter(s => famOf(s) === fam).forEach(s => g.append(el('option', { value: s.id }, s.name)));
-    sel.append(g);
-  }
-  sel.value = st.id;
-  const key = el('select', {}, ...NOTE_NAMES.map((n, i) => el('option', { value: i }, n)));
-  const bpm = el('input', { type: 'number', min: 40, max: 300, style: 'width:70px' });
-  const mins = el('select', {}, ...[2, 3, 3.5, 4, 5, 6, 8].map(m => el('option', { value: m }, m + ' min')));
-  const take = el('input', { type: 'number', min: 1, max: 9999, value: 1, style: 'width:70px' });
+/**
+ * The Song wizard's Compose it now: the composer writes the whole song for a style, it goes in (replacing
+ * the song, one undo step) and a toast says what came out.
+ * @param {string} styleId
+ * @param {{key:number, bpm:number, minutes:number, seed:number, sounds:boolean}} o
+ */
+export function composeNow(styleId, o) {
+  const st = STYLES.find(s => s.id === styleId);
+  if (!st) return null;
   const fs = factorySounds();
-  const snd = el('input', { type: 'checkbox' });
-  snd.checked = was.sounds !== false && fs.tone.size > 0;
-  snd.disabled = !fs.tone.size;
-  const vibe = el('div', { class: 'hint', style: 'line-height:1.4' });
-  const fill = () => {
-    st = list.find(s => s.id === sel.value) || st;
-    key.value = st.keys && st.keys[0] ? st.keys[0][0] : 9;
-    bpm.value = st.bpm ? st.bpm[2] : 120;
-    mins.value = String(defMinutes(st));
-    vibe.textContent = st.vibe || '';
-  };
-  sel.onchange = fill;
-  fill();
-  if (was.style === st.id && was.mins) mins.value = String(was.mins);
-  const row = (label, ...x) =>
-    el(
-      'label',
-      { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' },
-      el('span', { style: 'min-width:64px' }, label),
-      ...x
-    );
-  const body = el(
-    'div',
-    { style: 'display:flex;flex-direction:column;gap:8px' },
-    row('Style', sel),
-    vibe,
-    row('Key', key, el('span', {}, 'Tempo'), bpm, el('span', {}, 'BPM')),
-    row(
-      'Length',
-      mins,
-      el('span', {}, 'Take'),
-      take,
-      el(
-        'button',
-        { class: 'btn sm', type: 'button', onclick: () => (take.value = 1 + Math.floor(Math.random() * 9999)) },
-        'Another take'
-      )
-    ),
-    el(
-      'label',
-      { style: 'display:flex;gap:8px;align-items:flex-start;line-height:1.4' },
-      snd,
-      el(
-        'span',
-        {},
-        'Choose sounds: every clip gets a factory tone or kit picked for its part, so Save as MC-707 project plays with real sounds. ' +
-          (!fs.tone.size
-            ? '(Add the factory sounds first: Sound browser › Grab from › Factory tones and kits.)'
-            : !fs.kit.size
-              ? '(No factory kits yet: add the factory sounds again to get them; the drums keep the project’s own kits.)'
-              : '')
-      )
-    )
-  );
-  const ok = await askDlg({
-    title: 'Compose a song',
-    text: 'The app writes every part itself from one chord progression: drums from the style’s groove, a bass locked to the kick, chords, pads, a hook that develops, arps, builds that stop dead before the drop, and something new in every drop or chorus. It replaces the song (Undo brings it back) and sets up Scene Mode the same way.',
-    body,
-    ok: 'Compose'
-  });
-  if (!ok) return;
-  const opts = {
-    key: +key.value,
-    bpm: Math.max(40, Math.min(300, +bpm.value || 120)),
-    minutes: +mins.value,
-    seed: +take.value || 1
-  };
-  keep({ style: st.id, mins: opts.minutes, sounds: snd.checked });
   hooks.stopAll && hooks.stopAll();
-  const song = compose(st, opts);
-  const r = applyComposed(song, { style: st, sounds: snd.checked && !snd.disabled });
+  const song = compose(st, {
+    key: o.key,
+    bpm: Math.max(40, Math.min(300, +o.bpm || 120)),
+    minutes: +o.minutes || 4,
+    seed: +o.seed || 1
+  });
+  const sounds = !!o.sounds && fs.tone.size > 0;
+  const r = applyComposed(song, { style: st, sounds });
   hooks.renderAll && hooks.renderAll();
   toast(
     'Composed ' +
@@ -260,8 +173,10 @@ export async function composeOpen(styleId) {
       song.scale +
       '.' +
       (r.scenes ? ' Scene Mode has the same scenes.' : '') +
-      (snd.checked && r.sounds ? ' ' + r.sounds + ' clips have sounds.' : '') +
+      (sounds && r.sounds ? ' ' + r.sounds + ' clips have sounds.' : '') +
+      (o.sounds && !fs.tone.size ? ' No factory sounds yet: Sound browser › Grab from › Factory tones and kits.' : '') +
       (r.missing.length ? ' Not in your library: ' + r.missing.slice(0, 4).join(', ') + '.' : '') +
       ' Press Space to play.'
   );
+  return r;
 }

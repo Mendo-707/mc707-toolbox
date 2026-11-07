@@ -28,7 +28,6 @@ import { templatesOpen } from './templates.js';
 import { tutorialOpen } from './tutorial.js';
 import { backupsOn, backupsOpen } from './backups.js';
 import { saveMpjOpen } from '../scene/save-mpj.js';
-import { composeOpen } from '../scene/compose.js';
 import { autoConnectOn, autoConnectSet } from './auto-connect.js';
 import { checkUpdateNow } from './update-check.js';
 import { macMenus } from './desktop.js';
@@ -128,7 +127,6 @@ function initMenubar() {
       'Song',
       'song',
       [
-        ['Compose a song…', () => composeOpen()],
         ['Song wizard…', go('#bWiz')],
         ['Transpose…', go('#bXpose')],
         ['Structure tools…', go('#bStruct')],

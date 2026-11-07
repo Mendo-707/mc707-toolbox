@@ -557,7 +557,6 @@ test('the start screen opens the last session or Live Mode, which asks for a gen
     'Load last session',
     'Blank song',
     'Empty template',
-    'Compose a song',
     'Song wizard',
     'Scene Mode',
     'Live Mode',

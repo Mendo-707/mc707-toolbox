@@ -1,4 +1,4 @@
-// The composer (Song › Compose a song): every style writes a song that fits the MC-707 (Scene Mode's
+// The composer (the Song wizard's Compose it now): every style writes a song that fits the MC-707 (Scene Mode's
 // 16 clips a track, valid notes), the window puts it in the song and Scene Mode, and the song saves as
 // an MC-707 project with every note in.
 import { test, after } from 'node:test';
@@ -59,15 +59,15 @@ test('Compose: every style writes a whole song that fits the MC-707', async () =
   assert.deepEqual(errors, []);
 });
 
-test('Compose a song: the window writes the song and its scenes, and it saves as an MC-707 project', async () => {
+test('Song wizard › Compose it now: writes the song and its scenes, and it saves as an MC-707 project', async () => {
   const { page, errors } = await openApp();
   const before = await page.evaluate(() => JSON.stringify(window.__app.S.clips));
   await page.locator('#menubar .mb', { hasText: 'Song' }).click();
-  await page.locator('#menubar .mdrop:not([hidden]) button', { hasText: 'Compose a song' }).click();
-  const dlg = page.locator('[role=dialog]', { hasText: 'Compose a song' });
-  await dlg.locator('select').first().selectOption('neuro');
-  await dlg.locator('select').nth(2).selectOption('3');
-  await dlg.locator('button', { hasText: 'Compose' }).last().click();
+  await page.locator('#menubar .mdrop:not([hidden]) button', { hasText: 'Song wizard' }).click();
+  await page.locator('.scard', { hasText: 'Neurofunk' }).click();
+  const box = page.locator('.wCompose');
+  await box.locator('select[aria-label=Length]').selectOption('3');
+  await box.locator('button', { hasText: 'Compose it now' }).click();
   await page.waitForTimeout(300);
   const r = await page.evaluate(async () => {
     const A = window.__app,

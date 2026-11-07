@@ -10,7 +10,7 @@
 //   applyDevice        src/ui/device.js
 //   audRender          src/song/audio-dialog.js
 //   closePops          src/ui/controls.js
-//   composeOpen        src/scene/compose.js
+//   composeNow         src/scene/compose.js
 //   cmChipSet          src/clips/clip-map.js
 //   grabOpen           src/ui/grabber.js
 //   grabPattern        src/ui/grab-pattern.js

@@ -95,29 +95,104 @@ export function renderWiz(keepScroll) {
       el('button', { class: 'btn on', onclick: wizApply }, w.mode === 'replace' ? 'Create song' : 'Add to song')
     );
 }
+/* Compose it now: the whole song for the style picked, written by the composer, every part from one chord
+   progression (builds that stop dead, a switch, something new in every drop or chorus) */
+const CMP = { minutes: 0, take: 1, sounds: true };
+function composePanel() {
+  const st = curStyle();
+  const box = el('div', { class: 'wcard wCompose', style: 'margin:0 0 12px' });
+  if (!st) {
+    box.append(el('b', {}, '♫ Compose it now'), el('span', { class: 'hint' }, '  Pick a style below first.'));
+    return box;
+  }
+  const big = st.fam === 'dnb' || st.fam === 'edm';
+  if (!CMP.minutes) CMP.minutes = big ? 5 : 3.5;
+  const lab = (t, x) => el('label', { style: 'display:inline-flex;gap:6px;align-items:center' }, t, x);
+  const key = el(
+    'select',
+    { 'aria-label': 'Key', onchange: e => (WIZ.key = +e.target.value) },
+    ...Array.from({ length: 12 }, (_, i) => el('option', { value: i }, NK(i, st.scale)))
+  );
+  key.value = WIZ.key;
+  const bpm = el('input', {
+    type: 'number',
+    min: 40,
+    max: 300,
+    value: WIZ.bpm,
+    'aria-label': 'Tempo',
+    style: 'width:64px',
+    onchange: e => (WIZ.bpm = Math.max(40, Math.min(300, +e.target.value || WIZ.bpm)))
+  });
+  const mins = el(
+    'select',
+    { 'aria-label': 'Length', onchange: e => (CMP.minutes = +e.target.value) },
+    ...[2, 3, 3.5, 4, 5, 6, 8].map(m => el('option', { value: m }, m + ' min'))
+  );
+  mins.value = String(CMP.minutes);
+  const take = el('input', {
+    type: 'number',
+    min: 1,
+    max: 9999,
+    value: CMP.take,
+    'aria-label': 'Take',
+    style: 'width:64px',
+    onchange: e => (CMP.take = +e.target.value || 1)
+  });
+  const snd = el('input', { type: 'checkbox', onchange: e => (CMP.sounds = e.target.checked) });
+  snd.checked = CMP.sounds;
+  box.append(
+    el('b', {}, '♫ Compose it now: ' + st.name),
+    el(
+      'div',
+      { class: 'hint', style: 'margin:4px 0 8px;line-height:1.4' },
+      'The app writes every part itself from one chord progression: drums from the style’s groove, a bass locked to the kick, chords, pads, a hook that develops, builds that stop dead before the drop, and something new in every drop or chorus. It replaces the song (Undo brings it back) and sets up Scene Mode the same way.'
+    ),
+    el(
+      'div',
+      { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center' },
+      lab('Key', key),
+      lab('Tempo', bpm),
+      lab('Length', mins),
+      lab('Take', take),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn sm',
+          title: 'A different song in the same style',
+          onclick: () => {
+            CMP.take = 1 + Math.floor(Math.random() * 9999);
+            take.value = CMP.take;
+          }
+        },
+        'Another take'
+      ),
+      lab(snd, 'Choose sounds (factory tones and kits for every clip)'),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn on',
+          onclick: () => {
+            const o = { key: WIZ.key, bpm: WIZ.bpm, minutes: CMP.minutes, seed: CMP.take, sounds: CMP.sounds };
+            closeWiz();
+            hooks.composeNow(st.id, o);
+          }
+        },
+        '♫ Compose it now'
+      )
+    )
+  );
+  return box;
+}
 function wizStep1(b) {
   b.append(
     el(
       'p',
       { class: 'wlead' },
-      'Pick a starting style. The wizard builds a full arrangement from the pattern library, with tempo, key, structure and layers. You can hear it and change every part before anything is created.'
+      'Pick a style. Compose it now and the app writes the whole song in one go, or go step by step (Next) to choose the sound, structure and layers from the pattern library and hear it before anything is created.'
     ),
-    el(
-      'p',
-      { class: 'hint', style: 'margin:-4px 0 10px' },
-      'Or let the app write the whole song for the style you pick, every part from one chord progression: ',
-      el(
-        'button',
-        {
-          class: 'btn sm',
-          onclick: () => {
-            closeWiz();
-            hooks.composeOpen(WIZ.style);
-          }
-        },
-        '♫ Compose a song…'
-      )
-    )
+    composePanel()
   );
   const chips = el('div', { class: 'chips', style: 'margin-bottom:12px' });
   [
