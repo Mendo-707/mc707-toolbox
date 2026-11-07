@@ -252,6 +252,8 @@ function renderSetup(keep) {
         'aria-label': 'MIDI output',
         onchange: e => {
           S.midiOut = e.target.value;
+          /* your own choice holds over auto-connect for the rest of the session */
+          MIDI.picked = !!e.target.value;
           refreshOuts();
           renderSetup(true);
         }

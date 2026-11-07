@@ -4,7 +4,7 @@
 // app never asks for MIDI as it opens.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { openApp, closeBrowser } from './helpers.mjs';
+import { openApp, closeBrowser, readFixture } from './helpers.mjs';
 
 after(closeBrowser);
 
@@ -90,4 +90,36 @@ test('Auto-connect: an MC-707 plugged in later is connected the same way; a brow
   if (granted !== 'granted') assert.equal(asked, false, 'no MIDI asked for (' + granted + ')');
   assert.deepEqual(errors, []);
   assert.deepEqual(b.errors, []);
+});
+
+test('Auto-connect: an MC-707 plugged in wins over a remembered port that is now a keyboard; your own pick stays', async () => {
+  const song = JSON.parse(readFixture('song-v0.10.json'));
+  song.midiOut = 'k1';
+  const { page, errors } = await openApp({
+    storage: { 'mc707-autoconnect': '1', 'mc707-song-mode-v1': JSON.stringify(song) }
+  });
+  await page.addInitScript(() => {
+    window.toolbox = {};
+    /* a keyboard on the port id the song remembers, listed before the MC-707 */
+    const req = navigator.requestMIDIAccess;
+    navigator.requestMIDIAccess = async o => {
+      const acc = await req(o);
+      const kb = { id: 'k1', name: 'KeyLab 49 MIDI', state: 'connected', send() {}, open: async () => {} };
+      acc.outputs = new Map([['k1', kb], ...acc.outputs]);
+      return acc;
+    };
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__app && window.__app.MIDI && window.__app.MIDI.out, null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => window.__app.MIDI.out.name), 'MC-707 MIDI 1', 'the MC-707, not the keyboard');
+  /* picked by hand: it stays, even when the ports are looked at again */
+  const kept = await page.evaluate(() => {
+    const sel = document.querySelector('#midiOut');
+    sel.value = 'k1';
+    sel.dispatchEvent(new Event('change'));
+    window.__app.refreshOuts();
+    return window.__app.MIDI.out.name;
+  });
+  assert.equal(kept, 'KeyLab 49 MIDI');
+  assert.deepEqual(errors, []);
 });

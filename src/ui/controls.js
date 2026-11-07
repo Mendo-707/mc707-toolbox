@@ -231,6 +231,8 @@ export function initControls() {
   $('#midiOut').addEventListener('change', e => {
     const o = MIDI.access ? MIDI.access.outputs.get(e.target.value) : null;
     MIDI.out = o || null;
+    /* your own choice holds over auto-connect for the rest of the session */
+    MIDI.picked = !!o;
     S.midiOut = o ? o.id : '';
     scheduleSave();
     $('#midiStat').textContent = o ? 'Sending to ' + o.name + '.' : 'No output selected.';

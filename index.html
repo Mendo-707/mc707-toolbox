@@ -19735,7 +19735,13 @@ html.os-darwin.native-menu #menubar .mproj {
     sel2.textContent = "";
     sel2.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
     outs.forEach((o) => sel2.append(el("option", { value: o.id }, o.name)));
-    let pick3 = outs.find((o) => o.id === S.midiOut) || mcFind(outs);
+    let auto = true;
+    try {
+      auto = localStorage.getItem("mc707-autoconnect") !== "0";
+    } catch (e) {
+    }
+    const saved = outs.find((o) => o.id === S.midiOut), mc = mcFind(outs);
+    let pick3 = MIDI.picked && saved ? saved : auto && mc ? mc : saved || mc;
     sel2.value = pick3 ? pick3.id : "";
     MIDI.out = pick3 || null;
     if (pick3) S.midiOut = pick3.id;
@@ -65525,6 +65531,7 @@ html.os-darwin.native-menu #menubar .mproj {
           "aria-label": "MIDI output",
           onchange: (e) => {
             S.midiOut = e.target.value;
+            MIDI.picked = !!e.target.value;
             refreshOuts();
             renderSetup(true);
           }
@@ -66303,6 +66310,7 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#midiOut").addEventListener("change", (e) => {
       const o = MIDI.access ? MIDI.access.outputs.get(e.target.value) : null;
       MIDI.out = o || null;
+      MIDI.picked = !!o;
       S.midiOut = o ? o.id : "";
       scheduleSave();
       $("#midiStat").textContent = o ? "Sending to " + o.name + "." : "No output selected.";
@@ -72053,6 +72061,7 @@ html.os-darwin.native-menu #menubar .mproj {
       startSong,
       ensureAudio,
       connectMidi,
+      refreshOuts,
       fixState,
       setClipMark,
       glueRun,

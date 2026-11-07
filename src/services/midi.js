@@ -73,7 +73,16 @@ export function refreshOuts() {
   sel.textContent = '';
   sel.append(el('option', { value: '' }, outs.length ? 'No output' : 'No devices found'));
   outs.forEach(o => sel.append(el('option', { value: o.id }, o.name)));
-  let pick = outs.find(o => o.id === S.midiOut) || mcFind(outs);
+  /* with Connect to the MC-707 by itself on, an MC-707 or MC-101 plugged in wins over the port the song
+     remembers: port ids are given out afresh, so a remembered one can belong to another device (a
+     keyboard) next time. A port you picked yourself in this session stays picked. */
+  let auto = true;
+  try {
+    auto = localStorage.getItem('mc707-autoconnect') !== '0';
+  } catch (e) {}
+  const saved = outs.find(o => o.id === S.midiOut),
+    mc = mcFind(outs);
+  let pick = MIDI.picked && saved ? saved : auto && mc ? mc : saved || mc;
   sel.value = pick ? pick.id : '';
   MIDI.out = pick || null;
   if (pick) S.midiOut = pick.id;
