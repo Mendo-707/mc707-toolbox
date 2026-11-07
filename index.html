@@ -53520,6 +53520,9 @@ html.os-darwin.native-menu #menubar .mproj {
   var LV = Object.assign(
     {
       style: "liquid",
+      /* Loop rec: takes pinned on their tracks, and what the set would play there (live/engine.js lvPinned) */
+      pin: {},
+      pinUnder: {},
       seed: 1,
       key: 2,
       bpm: 174,
@@ -53805,7 +53808,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return true;
   }
   function lvMaskOff(t, tick) {
-    if (LV.jam) return false;
+    if (LV.jam || LV.pin && LV.pin[t]) return false;
     const sc = LV.scenes[LV.cur], c = sc && sc.cells[t];
     if (!c || !c.play || c.play === "all") return false;
     const rel = tick - LV.sceneStart;
@@ -56274,7 +56277,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const id = l.ids[t];
       const top = lvTop(t);
       if (!id) {
-        LV.voices[t] = [];
+        lvClear(t);
         continue;
       }
       if (top && top.f.id === id) continue;
@@ -56378,7 +56381,12 @@ html.os-darwin.native-menu #menubar .mproj {
     const v = lvTop(t);
     return v ? v.f.id : null;
   });
-  var lvEmute = (t) => LV_PRI.indexOf(slotOf(t)) >= LV.energy || !!LV.blend && S.tracks[t].type === "tone";
+  var lvPinned = (t) => !!(LV.pin && LV.pin[t]);
+  function lvClear(t) {
+    if (lvPinned(t)) LV.pinUnder[t] = null;
+    else LV.voices[t] = [];
+  }
+  var lvEmute = (t) => !lvPinned(t) && (LV_PRI.indexOf(slotOf(t)) >= LV.energy || !!LV.blend && S.tracks[t].type === "tone");
   var lvTarget = (t) => LV.mute[t] || lvEmute(t) ? 0 : 1;
   function lvApplyGain(tick) {
     for (let t = 0; t < 8; t++) {
@@ -56403,6 +56411,12 @@ html.os-darwin.native-menu #menubar .mproj {
     return s === 5 ? "pad" : s === 4 ? "chords" : "cut";
   }
   function liveReplace(t, id, tick, fade, entry) {
+    if (lvPinned(t) && id !== LV.pin[t]) {
+      LV.pinUnder[t] = id;
+      const top = LV.voices[t] && LV.voices[t][0];
+      if (top && top.f.id === LV.pin[t]) return;
+      id = LV.pin[t];
+    }
     const f = facById(id);
     if (!f) return;
     const was = LV.voices[t].some((v) => v.env.v1 > 0), tone2 = S.tracks[t].type === "tone";
@@ -56510,6 +56524,12 @@ html.os-darwin.native-menu #menubar .mproj {
     const down = !hard && LV.entry !== "hard" && (jump < 0 || parts4(sc.cells) < parts4(prev && prev.cells)), leaving = [];
     for (let t = 0; t < 8; t++) {
       const cell = sc.cells[t], tone2 = S.tracks[t].type === "tone", top = lvTop(t);
+      if (lvPinned(t)) {
+        LV.pinUnder[t] = cell ? cell.id : null;
+        if (!(top && top.f.id === LV.pin[t])) liveReplace(t, LV.pin[t], tick, 0, 0);
+        LV.pinUnder[t] = cell ? cell.id : null;
+        continue;
+      }
       lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
       if (!cell && down && top && !tone2) {
         LV.voices[t].forEach((v) => {
@@ -56979,6 +56999,10 @@ html.os-darwin.native-menu #menubar .mproj {
       const c = sc.cells[t];
       lvCellClip(t, c, TR.nextTime);
       if (c) liveReplace(t, c.id, 0, 0, 0);
+      else if (lvPinned(t)) {
+        LV.pinUnder[t] = null;
+        liveReplace(t, LV.pin[t], 0, 0, 0);
+      }
     }
     lvFadesReset(TR.nextTime);
     LV.autos = [];
@@ -59069,7 +59093,10 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
   };
-  var usedIds = () => new Set(LV.scenes.flatMap((s) => Object.values(s.cells || {}).map((c) => c && c.id)));
+  var usedIds = () => /* @__PURE__ */ new Set([
+    ...LV.scenes.flatMap((s) => Object.values(s.cells || {}).map((c) => c && c.id)),
+    ...Object.values(LV.pin || {})
+  ]);
   function keep(f) {
     kept.push(f);
     const used = usedIds();
@@ -59236,10 +59263,14 @@ html.os-darwin.native-menu #menubar .mproj {
   function put2(t, id, tick) {
     const top = LV.voices[t] && LV.voices[t][0], cur2 = top ? top.f.id : null;
     if (id) {
-      if (!(cur2 && FACMAP.get(cur2) && FACMAP.get(cur2).riff)) RIFF.was[t] = cur2;
+      if (!LV.pin[t] && !(cur2 && FACMAP.get(cur2) && FACMAP.get(cur2).riff)) LV.pinUnder[t] = cur2;
+      delete LV.pin[t];
       liveReplace(t, id, tick, 0, 0);
+      LV.pin[t] = id;
     } else {
-      const back = RIFF.was[t];
+      const back = t in LV.pinUnder ? LV.pinUnder[t] : RIFF.was[t];
+      delete LV.pin[t];
+      delete LV.pinUnder[t];
       delete RIFF.was[t];
       if (back) liveReplace(t, back, tick, 0, 0);
       else LV.voices[t] = [];
@@ -59564,7 +59595,16 @@ html.os-darwin.native-menu #menubar .mproj {
     const on3 = riffPlaying(f.track) === f.id, cued = RIFF.cued.find((c) => c.t === f.track && (c.id === f.id || on3 && c.id === null));
     if (cued) return btn3("Next bar…", () => {
     }, "It changes on the next bar", "wait");
-    return on3 ? btn3("■ Back", () => riffBack(f.track), "The set’s own part again, from the next bar", "on") : btn3("▶ Play", () => riffPlay(f.id), "Play this take on " + trackName(f.track) + " from the next bar");
+    return on3 ? btn3(
+      "■ Back",
+      () => riffBack(f.track),
+      "Take it off: the part of the scene playing then comes back, from the next bar",
+      "on"
+    ) : btn3(
+      "▶ Play",
+      () => riffPlay(f.id),
+      "Play this take on " + trackName(f.track) + " from the next bar. It stays there through scene changes and auto-pilot until ■ Back"
+    );
   }
   function riffSettings() {
     const check = (label2, k2, title) => el(
@@ -71944,6 +71984,7 @@ html.os-darwin.native-menu #menubar .mproj {
       liveBuild,
       liveStart,
       liveScene,
+      lvEmute,
       lvFadeKind,
       lvUserOwns,
       /* Live Mode as the pads drive it, for the soak test */

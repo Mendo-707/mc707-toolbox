@@ -142,7 +142,7 @@ import { initWizard } from './song/sound-suggestions.js';
 import { LV, liveSwingAmt, liveTempo } from './live/state.js';
 import { liveRenderSceneEd } from './live/scene-editor.js';
 import { liveBuild } from './live/set-builder.js';
-import { liveCleanup, lvFadeKind, liveScene, liveStart, liveTick } from './live/engine.js';
+import { liveCleanup, lvEmute, lvFadeKind, liveScene, liveStart, liveTick } from './live/engine.js';
 import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
@@ -364,6 +364,7 @@ PROJ.t = projTitle;
     liveBuild,
     liveStart,
     liveScene,
+    lvEmute,
     lvFadeKind,
     lvUserOwns,
     /* Live Mode as the pads drive it, for the soak test */

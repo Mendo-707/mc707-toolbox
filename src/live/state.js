@@ -109,6 +109,9 @@ const LV_SAVE = [
 export const LV = Object.assign(
   {
     style: 'liquid',
+    /* Loop rec: takes pinned on their tracks, and what the set would play there (live/engine.js lvPinned) */
+    pin: {},
+    pinUnder: {},
     seed: 1,
     key: 2,
     bpm: 174,

@@ -15,7 +15,7 @@ import { LV, mkEnv } from './state.js';
 import { lvFadeOut } from './fades.js';
 import { lvTrapRolls } from './extreme.js';
 import { lvFilterAway, lvMove } from './moves.js';
-import { liveReplace, liveScene, liveStart, liveStop, lvHistMark, lvLog, lvTop } from './engine.js';
+import { liveReplace, liveScene, liveStart, liveStop, lvClear, lvHistMark, lvLog, lvTop } from './engine.js';
 import { lvBoundary, lvOn, lvSortCues } from './cues.js';
 import { bySlot, slotOf, toneTracksAll, tracksOf } from '../core/tracks.js';
 
@@ -265,7 +265,7 @@ export function lvJamStep(tick) {
     const id = l.ids[t];
     const top = lvTop(t);
     if (!id) {
-      LV.voices[t] = [];
+      lvClear(t);
       continue;
     }
     if (top && top.f.id === id) continue;

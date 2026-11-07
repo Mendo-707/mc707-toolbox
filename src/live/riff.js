@@ -12,7 +12,9 @@
 //   4. The take    the track's own part comes back and nothing else changes: the take waits in a card with
 //                  ▶ Play (on its track from the next bar), ↺ Again and ✕ Discard, and joins the takes list.
 //                  With "Play a take straight away" on, it plays at once instead.
-//   5. Takes       ▶ Play / ■ Back (the set's own part again) from the next bar, ★ the scene keeps it, its own
+//   5. Takes       ▶ Play / ■ Back (the set's own part again) from the next bar: a take you play stays on its
+//                  track through scene changes, auto-pilot, new patterns and the energy (it is pinned,
+//                  live/engine.js lvPinned) until you press ■ Back; ★ the scene keeps it, its own
 //                  Quantize (from the notes as you played them), ✕ deletes it. A take follows key changes like
 //                  any part (it is written down in the key it was played in); chord lock and variations leave
 //                  it as you played it.
@@ -124,7 +126,11 @@ const storeTakes = () => {
     localStorage.setItem(STORE, JSON.stringify(kept));
   } catch (e) {}
 };
-const usedIds = () => new Set(LV.scenes.flatMap(s => Object.values(s.cells || {}).map(c => c && c.id)));
+const usedIds = () =>
+  new Set([
+    ...LV.scenes.flatMap(s => Object.values(s.cells || {}).map(c => c && c.id)),
+    ...Object.values(LV.pin || {})
+  ]);
 function keep(f) {
   kept.push(f);
   /* the newest, and any a scene still keeps */
@@ -333,10 +339,16 @@ function put(t, id, tick) {
   const top = LV.voices[t] && LV.voices[t][0],
     cur = top ? top.f.id : null;
   if (id) {
-    if (!(cur && FACMAP.get(cur) && FACMAP.get(cur).riff)) RIFF.was[t] = cur;
+    /* pinned: it plays on through scene changes, auto-pilot and new patterns until ■ Back */
+    if (!LV.pin[t] && !(cur && FACMAP.get(cur) && FACMAP.get(cur).riff)) LV.pinUnder[t] = cur;
+    delete LV.pin[t];
     liveReplace(t, id, tick, 0, 0);
+    LV.pin[t] = id;
   } else {
-    const back = RIFF.was[t];
+    /* back to what the set plays there now (the scene may have changed since) */
+    const back = t in LV.pinUnder ? LV.pinUnder[t] : RIFF.was[t];
+    delete LV.pin[t];
+    delete LV.pinUnder[t];
     delete RIFF.was[t];
     if (back) liveReplace(t, back, tick, 0, 0);
     else LV.voices[t] = [];
@@ -724,8 +736,19 @@ function takeBtn(f) {
     cued = RIFF.cued.find(c => c.t === f.track && (c.id === f.id || (on && c.id === null)));
   if (cued) return btn('Next bar…', () => {}, 'It changes on the next bar', 'wait');
   return on
-    ? btn('■ Back', () => riffBack(f.track), 'The set’s own part again, from the next bar', 'on')
-    : btn('▶ Play', () => riffPlay(f.id), 'Play this take on ' + trackName(f.track) + ' from the next bar');
+    ? btn(
+        '■ Back',
+        () => riffBack(f.track),
+        'Take it off: the part of the scene playing then comes back, from the next bar',
+        'on'
+      )
+    : btn(
+        '▶ Play',
+        () => riffPlay(f.id),
+        'Play this take on ' +
+          trackName(f.track) +
+          ' from the next bar. It stays there through scene changes and auto-pilot until ■ Back'
+      );
 }
 /** Settings › Loop rec: count-in, the track while recording, play straight away, and tidying the takes. */
 export function riffSettings() {

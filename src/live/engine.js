@@ -56,7 +56,19 @@ export const lvIds = () =>
     return v ? v.f.id : null;
   });
 /* muted by the energy level, or a tone part while New patterns blends in on the drums */
-export const lvEmute = t => LV_PRI.indexOf(slotOf(t)) >= LV.energy || (!!LV.blend && S.tracks[t].type === 'tone');
+/**
+ * A take you put on a track (Loop rec ▶ Play) is pinned there: scene changes, auto-pilot, swaps, new
+ * patterns, the energy and the scene's play pattern all leave it playing, until ■ Back. What the set
+ * would play there meanwhile is kept in LV.pinUnder, so ■ Back brings in the part of the scene playing then.
+ */
+export const lvPinned = t => !!(LV.pin && LV.pin[t]);
+/** Silence track t, unless a take is pinned there (then only note that the set has nothing there now). */
+export function lvClear(t) {
+  if (lvPinned(t)) LV.pinUnder[t] = null;
+  else LV.voices[t] = [];
+}
+export const lvEmute = t =>
+  !lvPinned(t) && (LV_PRI.indexOf(slotOf(t)) >= LV.energy || (!!LV.blend && S.tracks[t].type === 'tone'));
 export const lvTarget = t => (LV.mute[t] || lvEmute(t) ? 0 : 1);
 function lvApplyGain(tick) {
   for (let t = 0; t < 8; t++) {
@@ -93,6 +105,13 @@ export function lvFadeKind(t) {
  * quarter bar, and bass and melodies none, so they land on the beat with their full attack).
  */
 export function liveReplace(t, id, tick, fade, entry) {
+  /* a pinned take stays: the part is noted for ■ Back (and the take comes back if the track was cleared) */
+  if (lvPinned(t) && id !== LV.pin[t]) {
+    LV.pinUnder[t] = id;
+    const top = LV.voices[t] && LV.voices[t][0];
+    if (top && top.f.id === LV.pin[t]) return;
+    id = LV.pin[t];
+  }
   const f = facById(id);
   if (!f) return;
   const was = LV.voices[t].some(v => v.env.v1 > 0),
@@ -239,6 +258,12 @@ export function liveScene(idx, tick, hard) {
     const cell = sc.cells[t],
       tone = S.tracks[t].type === 'tone',
       top = lvTop(t);
+    if (lvPinned(t)) {
+      LV.pinUnder[t] = cell ? cell.id : null;
+      if (!(top && top.f.id === LV.pin[t])) liveReplace(t, LV.pin[t], tick, 0, 0);
+      LV.pinUnder[t] = cell ? cell.id : null;
+      continue;
+    }
     lvCellClip(t, cell, AU.ctx ? AU.ctx.currentTime + 0.1 : 0);
     if (!cell && down && top && !tone) {
       /* drums that leave fade over a beat instead of stopping dead (bass and melodies still stop cleanly on
@@ -788,6 +813,10 @@ export function liveStart(idx) {
     const c = sc.cells[t];
     lvCellClip(t, c, TR.nextTime);
     if (c) liveReplace(t, c.id, 0, 0, 0);
+    /* a pinned take comes back with the jam */ else if (lvPinned(t)) {
+      LV.pinUnder[t] = null;
+      liveReplace(t, LV.pin[t], 0, 0, 0);
+    }
   }
   lvFadesReset(TR.nextTime);
   LV.autos = [];

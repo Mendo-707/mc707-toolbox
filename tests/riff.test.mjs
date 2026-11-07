@@ -345,3 +345,60 @@ test('Loop rec: Quantize a take again, from the notes as played (triplets too, a
   assert.deepEqual(await notes(), [0.5, 4, 7.5, 15.5], 'back as played');
   assert.deepEqual(errors, []);
 });
+
+test('Loop rec: a take you play stays through scene changes, swaps, the energy and a restart, until ■ Back', async () => {
+  const { page, errors } = await setUp(SAVED);
+  await page.evaluate(() => {
+    document.querySelector('#lvSetDet').open = true;
+  });
+  await page.locator('#lvSetBody label', { hasText: 'Play a take straight away' }).locator('input').check();
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV,
+      t = 6;
+    __pick('Record to', t);
+    __pick('Length', 1);
+    __step(8);
+    const t1 = Math.ceil((a.TR.tick + 16) / 32) * 32;
+    __btn('● Rec').click();
+    __play(0, t1 + 2, 4);
+    __to(t1 + 40);
+    const take = LV.voices[t][0] && LV.voices[t][0].f;
+    const on = () => !!(LV.voices[t][0] && LV.voices[t][0].f.id === take.id);
+    const out = { take: !!(take && take.riff), pinned: LV.pin[t] === take.id };
+    /* another scene, a swap of every part, the energy right down, then stop and start again */
+    const other = (LV.cur + 1) % LV.scenes.length;
+    a.liveScene(other, a.TR.tick);
+    out.scene = on();
+    out.under = LV.pinUnder[t] === (LV.scenes[other].cells[t] ? LV.scenes[other].cells[t].id : null);
+    for (const sc of LV.scenes)
+      if (sc.cells[t] && sc.cells[t].id !== take.id) a.liveScene(LV.scenes.indexOf(sc), a.TR.tick);
+    out.scenes = on();
+    LV.energy = 0;
+    out.energy = !a.lvEmute(t);
+    a.stopAll();
+    a.liveStart(0);
+    out.restart = on();
+    /* ■ Back: the part of the scene playing now, from the next bar */
+    const want = LV.scenes[LV.cur].cells[t] ? LV.scenes[LV.cur].cells[t].id : null;
+    LV.energy = 9;
+    __btn('■ Back').click();
+    __to(Math.ceil((a.TR.tick + 2) / 32) * 32 + 4);
+    out.back = !on() && !LV.pin[t];
+    out.backTo = want ? !!(LV.voices[t][0] && LV.voices[t][0].f.id === want) : !LV.voices[t].length;
+    a.stopAll();
+    return out;
+  });
+  assert.deepEqual(r, {
+    take: true,
+    pinned: true,
+    scene: true,
+    under: true,
+    scenes: true,
+    energy: true,
+    restart: true,
+    back: true,
+    backTo: true
+  });
+  assert.deepEqual(errors, []);
+});
