@@ -1,5 +1,6 @@
-# Runs the automated tests on every push to a branch and on pull requests (not on tags: a release's
-# commit has been tested on its branch already).
+# Runs the automated tests on every push to main and on pull requests (not on the release branches mac-dmg
+# and stable-fun, which only ever fast-forward to a commit main has tested, and not on tags), and not when
+# only the docs, README or changelog changed: Actions minutes are counted on this account.
 # The checks run on one machine; the tests are split across three machines for the built app and three for
 # the source (ES modules from a local server), all at once, so a run takes minutes rather than half an hour.
 # A newer push to the same branch cancels a run still going.
@@ -9,8 +10,10 @@ name: Tests
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'templates/**', 'screenshots/**']
   pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'templates/**', 'screenshots/**']
   workflow_dispatch:
 
 concurrency:
