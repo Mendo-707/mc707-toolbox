@@ -22,7 +22,7 @@ import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } fro
 import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
-import { LV_BENDS, LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick, lvTapeAt, lvTapeBend } from './breaks.js';
+import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
 import { riffBusy, riffQuiet, riffStopped, riffTick } from './riff.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
@@ -656,22 +656,14 @@ export function liveTick(tick, nt, td) {
     fft = fl.start - seg + ((((tick - fl.start) % seg) + seg) % seg);
   }
   if (fl && (fl.kind === 'roll' || fl.kind === 'drop')) lvRollTick(fl, tick, nt, td);
-  /* Gate chop plays the loop only on the gate's 16ths, cut short; Half-time plays it at half speed; Reverb
-     wash plays its first beat and lets the reverb ring */
+  /* Gate chop plays the loop only on the gate's 16ths, cut short; Half-time plays it at half speed */
   const fk = fl && fl.loop ? fl.kind : '',
     fr = fl ? tick - fl.start : 0;
-  /* Tape stop, vinyl brake and spinback: the loop slowing to a stop, or running backwards, and the bend */
-  const tape = LV_BENDS.includes(fk) ? lvTapeAt(fl, fr) : null;
-  if (LV_BENDS.includes(fk)) lvTapeBend(fl, fr, nt);
-  const hush =
-    (fk === 'half' && fr % 2 !== 0) ||
-    (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x') ||
-    (fk === 'wash' && fr >= 8) ||
-    (LV_BENDS.includes(fk) && !tape);
+  const hush = (fk === 'half' && fr % 2 !== 0) || (fk === 'gate' && LV_GATE[(fr >> 1) & 15] !== 'x');
   /* Chord lock: the chord playing now, worked out once this tick when a lead or pluck needs it */
   let chordNow;
   const chord = () => (chordNow === undefined ? (chordNow = lvChordNow(ft)) : chordNow);
-  const durK = fk === 'half' ? 2 : tape ? Math.min(4, 1 / tape.rate) : 1,
+  const durK = fk === 'half' ? 2 : 1,
     durMax = fk === 'gate' ? 1.6 * td : Infinity;
   for (let t = 0; t < 8; t++) {
     const trk = S.tracks[t];
@@ -708,8 +700,7 @@ export function liveTick(tick, nt, td) {
     /* the solo track left to you (but your own riff plays) */
     if (LV.ctl && LV.ctl.soloOwn && CTL.inp && t === LV.ctl.soloT && !(LV.voices[t][0] && LV.voices[t][0].f.riff))
       continue;
-    const vft =
-      fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : tape ? fl.start + tape.pos : ft;
+    const vft = fl && fl.kind === 'stutter' ? fft : fk === 'half' ? fl.start + (fr >> 1) : ft;
     for (const v of fl
       ? fl.loop
         ? fl.keep.includes(t)

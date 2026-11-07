@@ -6,7 +6,6 @@ import { clamp, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { facById } from '../library/index.js';
 import { TR, emitNote } from '../services/transport.js';
-import { MIDI, sendMidi } from '../services/midi.js';
 import { FLASH_RH } from '../library/flash.js';
 import { LV, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
 import { lvMove, lvUserOwns } from './moves.js';
@@ -46,14 +45,8 @@ export const LV_BRK = [
   ['roll', 'Snare roll'],
   ['drop', 'Drop-out'],
   ['gate', 'Gate chop'],
-  ['half', 'Half-time'],
-  ['wash', 'Reverb wash'],
-  ['tape', 'Tape stop'],
-  ['brake', 'Vinyl brake'],
-  ['spin', 'Spinback']
+  ['half', 'Half-time']
 ];
-/** The breaks that bend the pitch (tape stop and vinyl brake down, spinback up). */
-export const LV_BENDS = ['tape', 'brake', 'spin'];
 /** The Gate chop's rhythm, a 16th per character: x plays, . is silent. */
 export const LV_GATE = 'x.xx.x.xx.x.xxx.';
 export const LV_BRKLEN = [
@@ -67,22 +60,16 @@ function lvMakeBreak(kind, len) {
     const x = Math.random();
     /* chances out of 100: unison hits most, the bigger moves now and then */
     const MIX = [
-      ['hits', 27],
-      ['stutter', 11],
-      ['roll', 11],
-      ['drop', 10],
-      ['gate', 10],
-      ['half', 9],
-      ['wash', 8],
-      ['tape', 6],
-      ['brake', 4],
-      ['spin', 4]
+      ['hits', 34],
+      ['stutter', 14],
+      ['roll', 14],
+      ['drop', 13],
+      ['gate', 13],
+      ['half', 12]
     ];
     let acc = 0;
     kind = MIX.find(([, w]) => (acc += w / 100) > x)?.[0] || 'hits';
   }
-  /* a tape stop needs a bar to wind down: a vinyl brake in half a bar */
-  if (kind === 'tape' && len < 32) kind = 'brake';
   if (kind === 'drop' && len < 32) kind = 'roll';
   const b = { kind, len, v: {} };
   if (kind === 'hits') {
@@ -98,7 +85,6 @@ function lvMakeBreak(kind, len) {
       b.name = R[1];
     } else b.kind = 'roll';
   }
-  if (kind === 'wash' && len < 32) kind = b.kind = 'gate';
   b.name =
     b.name ||
     {
@@ -106,11 +92,7 @@ function lvMakeBreak(kind, len) {
       roll: 'Snare roll',
       drop: 'Drop-out',
       gate: 'Gate chop',
-      half: 'Half-time',
-      wash: 'Reverb wash',
-      tape: 'Tape stop',
-      brake: 'Vinyl brake',
-      spin: 'Spinback'
+      half: 'Half-time'
     }[b.kind];
   return b;
 }
@@ -157,7 +139,7 @@ export function lvBreakStart(b, tick) {
   b.start = tick;
   b.end = tick + b.len;
   b.loop = b.kind !== 'hits';
-  b.keep = ['stutter', 'gate', 'half', 'wash', ...LV_BENDS].includes(b.kind)
+  b.keep = ['stutter', 'gate', 'half'].includes(b.kind)
     ? [0, 1, 2, 3, 4, 5, 6, 7]
     : b.kind === 'drop'
       ? tracksFor([4, 5, 6, 7])
@@ -198,20 +180,6 @@ export function lvBreakStart(b, tick) {
         start: tick,
         end: b.end
       });
-    else if (b.kind === 'wash')
-      /* the one hit rings out in a wall of reverb, which falls back as the loop returns */
-      lvMove({
-        id: 'brkfx',
-        tag: 'flash',
-        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
-        cc: 91,
-        kind: 'ramp',
-        from: 124,
-        to: 'rest',
-        curve: 'log',
-        start: tick,
-        end: b.end
-      });
     else if (b.kind === 'half')
       /* half-time sinks: the filter closes a little, and opens again for the return */
       lvMove({
@@ -222,34 +190,6 @@ export function lvBreakStart(b, tick) {
         kind: 'ramp',
         from: 'rest',
         to: 40,
-        curve: 'log',
-        start: tick,
-        end: b.end
-      });
-    else if (b.kind === 'tape' || b.kind === 'brake')
-      /* the sound darkens as the tape slows, and opens again for the drop */
-      lvMove({
-        id: 'brkfx',
-        tag: 'flash',
-        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
-        cc: 80,
-        kind: 'ramp',
-        from: 'rest',
-        to: 18,
-        curve: 'exp',
-        start: tick,
-        end: tick + Math.round(lvTapeStop(b))
-      });
-    else if (b.kind === 'spin')
-      /* the rewind flies off into reverb, which falls back as the loop drops */
-      lvMove({
-        id: 'brkfx',
-        tag: 'flash',
-        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
-        cc: 91,
-        kind: 'ramp',
-        from: 120,
-        to: 'rest',
         curve: 'log',
         start: tick,
         end: b.end
@@ -283,43 +223,6 @@ export function lvBreakStart(b, tick) {
   }
   lvLog(tick);
 }
-/*
- * Tape stop, vinyl brake and spinback, tick by tick. The tape stop slows the loop to a stop over three
- * quarters of the break (the brake over two fifths), each step later than the last, notes stretching and the
- * pitch sinking; then silence, and the loop drops back in on the downbeat. The spinback runs the loop
- * backwards at double speed for half the break, the pitch rising, then silence.
- */
-/** Where a tape stop or brake comes to a stop, in ticks from the break's start. */
-export const lvTapeStop = b => b.len * (b.kind === 'brake' ? 0.4 : 0.75);
-/**
- * This tick of a tape stop, brake or spinback: the loop's step to play (ticks from the break's start,
- * negative running backwards) and how fast it is going, or null when nothing plays (between steps, stopped).
- * @returns {{pos:number, rate:number}|null}
- */
-export function lvTapeAt(b, fr) {
-  if (b.kind === 'spin') return fr < b.len / 2 ? { pos: -2 * (fr + 1), rate: 2 } : null;
-  const stop = lvTapeStop(b),
-    p = x => x - (x * x) / (2 * stop);
-  if (fr >= stop) return null;
-  const at = Math.floor(p(fr));
-  return fr === 0 || at > Math.floor(p(fr - 1)) ? { pos: at, rate: Math.max(0.15, 1 - fr / stop) } : null;
-}
-/**
- * The pitch bend for this tick of a tape stop, brake or spinback (0 to 16383, 8192 in the middle), sent to the
- * tone tracks every other tick, and back to the middle once it has stopped.
- */
-export function lvTapeBend(b, fr, nt) {
-  if (fr % 2 || !MIDI.out) return;
-  const stop = b.kind === 'spin' ? b.len / 2 : lvTapeStop(b),
-    u = Math.min(1, fr / stop);
-  if (u >= 1 && b.bent) return;
-  b.bent = u >= 1;
-  const v = u >= 1 ? 8192 : b.kind === 'spin' ? Math.round(8192 + 8191 * u * u) : Math.round(8192 - 8192 * u * u);
-  const at = nt + (S.midiOffset || 0) / 1000;
-  for (const t of toneTracksAll())
-    if (!S.tracks[t].mute) sendMidi([0xe0 | (S.tracks[t].ch - 1), v & 127, (v >> 7) & 127], at);
-}
-
 /* Snare roll for the Roll and Drop-out breaks: 8ths, then 16ths, then 32nds, getting louder, with a breath of silence before the loop slams back. */
 export function lvRollTick(b, tick, nt, td) {
   const t = b.kind === 'roll' ? kitTrack() : lvBT(),
