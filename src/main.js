@@ -108,7 +108,7 @@ import { $ } from './core/dom.js';
 import { FAC } from './library/factory.js';
 import { BACKUP, HOST, PROJ, S, fixState, loadSaved, replaceState, scheduleSave, undo } from './core/state.js';
 import { renderArr, scheduleUI } from './song/arrangement.js';
-import { makeDemo } from './library/index.js';
+import { facById, makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
 import { AU, ensureAudio } from './services/synth.js';
 import { MIDI, connectMidi, panic } from './services/midi.js';
@@ -141,7 +141,7 @@ import { wizCellAt } from './song/wizard-plan.js';
 import { initWizard } from './song/sound-suggestions.js';
 import { LV, liveSwingAmt, liveTempo } from './live/state.js';
 import { liveRenderSceneEd } from './live/scene-editor.js';
-import { liveBuild } from './live/set-builder.js';
+import { liveBuild, liveSwapIds } from './live/set-builder.js';
 import { liveCleanup, lvEmute, lvFadeKind, liveScene, liveStart, liveTick } from './live/engine.js';
 import { liveCapture } from './ui/live-capture.js';
 import { liveInit } from './live/ui.js';
@@ -362,6 +362,8 @@ PROJ.t = projTitle;
     TICKER,
     liveTick,
     liveBuild,
+    liveSwapIds,
+    facById,
     liveStart,
     liveScene,
     lvEmute,

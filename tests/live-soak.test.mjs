@@ -9,13 +9,13 @@ import { openApp, closeBrowser } from './helpers.mjs';
 after(closeBrowser);
 const MINUTES = +(process.env.SOAK_MINUTES || 8);
 
-const SOAK = `async ({ style, seed, minutes }) => {
+const SOAK = `async ({ style, seed, minutes, flavor }) => {
   const a = window.__app, LV = a.LV, S = a.S, TR = a.TR, L = a.live;
   a.ensureAudio(); await a.connectMidi();
   let r = seed >>> 0;
   const rnd = () => ((r = (Math.imul(r, 1664525) + 1013904223) >>> 0) / 4294967296);
   const pick = x => x[Math.floor(rnd() * x.length)];
-  Object.assign(LV, { style, seed: 1 + (seed % 9), custom: false, auto: true, vary: 60, buildFx: true });
+  Object.assign(LV, { style, seed: 1 + (seed % 9), custom: false, auto: true, vary: 60, buildFx: true, flavor: flavor || 'lively' });
   a.liveBuild();
   window.__out.length = 0; window.__times = [];
   const errors = [], grew = [], held = [];
@@ -95,25 +95,31 @@ const SOAK = `async ({ style, seed, minutes }) => {
   return { ticks, presses, restarts, errors, grew, held, offRest, stuckClock, messages: out.length };
 }`;
 
-for (const [style, seed] of [
+for (const [style, seed, flavor] of [
   ['deephouse', 11],
   ['trap', 23],
   ['liquid', 37],
   ['acidtechno', 41],
   ['pop', 53],
-  ['bigbeat', 67]
+  ['bigbeat', 67],
+  ['neuro', 71, 'composed'],
+  ['techhouse', 79, 'composed'],
+  ['boombap', 83, 'composed']
 ]) {
-  test('Live soak: ' + MINUTES + ' minutes of ' + style + ' with random pad presses', async () => {
-    const { page, errors } = await openApp();
-    await page.click('#menubar .mtab[data-mode=live]');
-    const r = await page.evaluate(`(${SOAK})(${JSON.stringify({ style, seed, minutes: MINUTES })})`);
-    console.log(style, JSON.stringify({ presses: r.presses, restarts: r.restarts, messages: r.messages }));
-    assert.deepEqual(r.errors, [], 'nothing throws');
-    assert.equal(r.stuckClock, 0, 'the clock always moves');
-    assert.deepEqual(r.held, [], 'every note is released');
-    assert.deepEqual(r.offRest, [], 'every effect is back at rest after Stop');
-    assert.deepEqual(r.grew, [], 'nothing grows without limit');
-    assert.ok(r.presses > 50);
-    assert.deepEqual(errors, []);
-  });
+  test(
+    'Live soak: ' + MINUTES + ' minutes of ' + style + (flavor ? ' (' + flavor + ')' : '') + ' with random pad presses',
+    async () => {
+      const { page, errors } = await openApp();
+      await page.click('#menubar .mtab[data-mode=live]');
+      const r = await page.evaluate(`(${SOAK})(${JSON.stringify({ style, seed, minutes: MINUTES, flavor })})`);
+      console.log(style, JSON.stringify({ presses: r.presses, restarts: r.restarts, messages: r.messages }));
+      assert.deepEqual(r.errors, [], 'nothing throws');
+      assert.equal(r.stuckClock, 0, 'the clock always moves');
+      assert.deepEqual(r.held, [], 'every note is released');
+      assert.deepEqual(r.offRest, [], 'every effect is back at rest after Stop');
+      assert.deepEqual(r.grew, [], 'nothing grows without limit');
+      assert.ok(r.presses > 50);
+      assert.deepEqual(errors, []);
+    }
+  );
 }

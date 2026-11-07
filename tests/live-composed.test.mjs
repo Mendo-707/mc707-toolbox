@@ -1,0 +1,67 @@
+// Live Mode with Patterns set to Composed (live/set-builder.js): the set is written by the composer, every
+// tone part on one progression, the seven scenes with their jobs (a build in the Lift, a hook in the Peaks,
+// a halftime Switch), swaps moving between the composed variants, and the jam playing it with auto-pilot.
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { openApp, closeBrowser } from './helpers.mjs';
+
+after(closeBrowser);
+
+test('Live Mode, Patterns: Composed: a set written from one progression, played with auto-pilot', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    document.querySelector('#lvSetDet').open = true;
+  });
+  await page.locator('#lvFlavor').selectOption('composed');
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV,
+      S = a.S;
+    a.ensureAudio();
+    a.TICKER.stop();
+    const sc = LV.scenes,
+      f = id => a.facById(id),
+      progs = new Set(),
+      names = sc.map(s => s.name);
+    for (const s of sc)
+      for (const t in s.cells) {
+        const p = f(s.cells[t].id);
+        if (p && p.type === 'tone') progs.add(p._prog);
+      }
+    const lift = sc.find(s => s.kind === 'build'),
+      peak = sc.find(s => s.name === 'Peak'),
+      tone = t => S.tracks[t].type === 'tone';
+    const swaps = [0, 1, 2, 3, 4, 5, 6, 7].map(t => a.liveSwapIds(t).every(id => f(id) && f(id).composed));
+    /* play it: auto-pilot on, 64 bars */
+    LV.auto = true;
+    a.live.jamStart();
+    const seen = new Set();
+    let notes = 0;
+    for (let n = 0; n < 64 * 32; n++) {
+      a.processTick(a.TR.tick, a.TR.nextTime);
+      a.advance();
+      seen.add(LV.cur);
+    }
+    notes = window.__out ? window.__out.length : 0;
+    a.stopAll();
+    return {
+      names,
+      progs: progs.size,
+      composed: sc.every(s => Object.values(s.cells).every(c => f(c.id) && f(c.id).composed)),
+      liftEnds: lift && Object.values(lift.cells).every(c => !f(c.id).notes.some(x => x.s >= f(c.id).bars * 16 - 4)),
+      hook: peak && Object.keys(peak.cells).some(t => tone(+t) && f(peak.cells[t].id).name.startsWith('Hook')),
+      swaps: swaps.every(Boolean),
+      scenes: seen.size
+    };
+  });
+  assert.deepEqual(r.names, ['Groove', 'Lift', 'Peak', 'Stripped', 'Groove B', 'Switch', 'Peak B']);
+  assert.equal(r.progs, 1, 'every tone part on one progression');
+  assert.ok(r.composed, 'every part composed');
+  assert.ok(r.liftEnds, 'the Lift stops dead a beat before the drop');
+  assert.ok(r.hook, 'the Peak has the hook');
+  assert.ok(r.swaps, 'swaps move between composed parts');
+  assert.ok(r.scenes >= 3, 'auto-pilot moves through the set: ' + r.scenes + ' scenes');
+  assert.deepEqual(errors, []);
+});

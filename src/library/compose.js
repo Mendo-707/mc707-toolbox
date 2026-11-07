@@ -2512,6 +2512,37 @@ function soundFor(role, v, recipe, i) {
  *   sounds:Object<string,string>}}  parts: role → pattern key; sounds: pattern key → factory sound name
  */
 export function compose(style, opts = {}) {
+  const c = composer(style, opts),
+    out = [];
+  c.sections.forEach((sec, i) => {
+    const want = partsOf(sec, i, c.sections, c.fam, c.recipe),
+      parts = {};
+    for (const [role, v] of Object.entries(want)) {
+      if (!v) continue;
+      const k = c.make(role, v);
+      if (k) parts[role] = k;
+    }
+    out.push({ name: sec.name, kind: sec.kind, bars: sec.bars, parts });
+  });
+  return {
+    bpm: c.bpm,
+    swing: style.swing || 50,
+    key: c.key,
+    scale: c.scale,
+    prog: c.prog,
+    sections: out,
+    patterns: c.patterns,
+    sounds: c.sounds
+  };
+}
+/**
+ * The composer for a style without the song: make(role, variant) writes one part (kept in .patterns under
+ * 'role:variant', which make returns, or null when the part is silent), all from the same progression,
+ * motif and groove. Live Mode builds its scenes from these (live/set-builder.js).
+ * @returns {{make:(role:string, v:string)=>string|null, patterns:object, sounds:object, sections:object[],
+ *   bpm:number, key:number, scale:string, prog:string, fam:string, recipe:object}}
+ */
+export function composer(style, opts = {}) {
   const recipe = recipeOf(style),
     seed = (opts.seed ?? 1) >>> 0,
     r = mulberry(hashStr(style.id + ':compose') ^ seed);
@@ -2532,8 +2563,7 @@ export function compose(style, opts = {}) {
   };
   const gr = GR[recipe.gr] || GR.pop;
   const patterns = {},
-    sounds = {},
-    out = [];
+    sounds = {};
   const make = (role, v) => {
     const k = role + ':' + v;
     if (patterns[k]) return k;
@@ -2569,17 +2599,7 @@ export function compose(style, opts = {}) {
     if (snd) sounds[k] = snd;
     return k;
   };
-  sections.forEach((sec, i) => {
-    const want = partsOf(sec, i, sections, fam, recipe),
-      parts = {};
-    for (const [role, v] of Object.entries(want)) {
-      if (!v) continue;
-      const k = make(role, v);
-      if (k) parts[role] = k;
-    }
-    out.push({ name: sec.name, kind: sec.kind, bars: sec.bars, parts });
-  });
-  return { bpm, swing: style.swing || 50, key, scale, prog: progId, sections: out, patterns, sounds };
+  return { make, patterns, sounds, sections, bpm, key, scale, prog: progId, fam, recipe };
 }
 /** Every factory sound name the composer may ask for (for checks). */
 export function composeSoundNames() {

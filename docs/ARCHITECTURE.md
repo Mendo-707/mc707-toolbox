@@ -311,7 +311,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `live/riff.js` | Loop rec: record your own riff into the set, and choose when it plays. |  |
 | `live/scene-editor.js` | Editing Live scenes: parts, when each plays, its MC-707 clip, and saving custom scenes. |  |
 | `live/scene-templates.js` | The Live scene templates (Groove, Lift, Peak …) and the play patterns that let parts come and go. |  |
-| `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part on the chords' progression and the lead and pluck kept out of each other's way. |  |
+| `live/set-builder.js` | Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part on the chords' progression and the lead and pluck kept out of each other's way. With Patterns set to Composed, the composer (library/compose.js) writes the set instead: every part from one progression, the Lift a build that speeds up and stops dead, a halftime Switch, a hook in the Peaks, a new bass and beat in the B scenes; swaps then move between the composed variants. |  |
 | `live/settings-panel.js` | The Live Mapping panel: pad layout and actions, Raven mode, knob rest values and the controller keyboard. |  |
 | `live/state.js` | Live Mode's state LV (style, key, tempo, scenes, pads, settings) and saving it. | LV (Live Mode state) |
 | `live/themes.js` | Live Mode colour themes, scene colours and small shared helpers (action labels and colours, track groups). |  |

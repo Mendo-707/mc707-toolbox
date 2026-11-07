@@ -244,7 +244,7 @@ export const liveSwingAmt = () => LV.swing;
   LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
   LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
   if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
-  if (!['lively', 'mixed', 'classic'].includes(LV.flavor)) LV.flavor = 'lively';
+  if (!['lively', 'mixed', 'classic', 'composed'].includes(LV.flavor)) LV.flavor = 'lively';
   if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
   else LV.mood = { i: clamp(Math.round(+LV.mood.i), 0, 100), c: clamp(Math.round(+LV.mood.c), 0, 100) };
   LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);

@@ -1,5 +1,8 @@
 // Builds a Live set: picks matching patterns for each scene from the style's pools, every tone part
-// on the chords' progression and the lead and pluck kept out of each other's way.
+// on the chords' progression and the lead and pluck kept out of each other's way. With Patterns set to
+// Composed, the composer (library/compose.js) writes the set instead: every part from one progression,
+// the Lift a build that speeds up and stops dead, a halftime Switch, a hook in the Peaks, a new bass and
+// beat in the B scenes; swaps then move between the composed variants.
 //
 // Reads: S, LV, DEV.
 import { DEV, devOn, oneKit } from '../core/device.js';
@@ -14,6 +17,8 @@ import { lvLoadScenes } from './scene-editor.js';
 import { LV_TPL, LV_TPL101, LV_TPL1K } from './scene-templates.js';
 import { lvFlavor, lvLively, lvModeFam, lvPool, lvProg } from '../library/pools.js';
 import { moodFilter } from '../library/mood.js';
+import { composer } from '../library/compose.js';
+import { FACMAP } from '../library/index.js';
 
 const avgPitch = f => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
 /** Two melodic parts that can play together: not both busy, and at least a fifth apart on average. */
@@ -30,6 +35,7 @@ export function liveBuild() {
     return;
   }
   LV.custom = false;
+  if (LV.flavor === 'composed') return buildComposed(st);
   const r = mulberry(LV.seed ^ 0x5bd1e995),
     P = {},
     A = {},
@@ -182,7 +188,124 @@ export function liveBuild() {
   if (LV.cur >= scenes.length) LV.cur = 0;
   LV.ver++;
 }
+/* ---- composed sets ----
+   The Live scenes (the same names, kinds and energies as the templates, so auto-pilot plays its journey)
+   with the composer's parts: [name, kind, bars, energy, move, {role: variant}] */
+const CMP_TPL = [
+  ['Groove', 'groove', 8, 5, null, { kit: 'A', hats: 'A', bass: 'A', pluck: 'intro', pad: 'intro' }],
+  [
+    'Lift',
+    'build',
+    8,
+    4,
+    'build',
+    { kit: 'build', perc: 'build', bass: 'build', pad: 'intro', pluck: 'rise', chords: 'intro' }
+  ],
+  [
+    'Peak',
+    'peak',
+    8,
+    9,
+    null,
+    { kit: 'A', hats: 'A', perc: 'drop', bass: 'A', chords: 'A', lead: 'hook', pluck: 'drop' }
+  ],
+  ['Stripped', 'strip', 8, 3, 'wash', { pad: 'break', lead: 'break', pluck: 'break', bass: 'intro' }],
+  ['Groove B', 'groove', 8, 6, 'pump', { kit: 'B', hats: 'B', bass: 'B', chords: 'B', pad: 'drop' }],
+  ['Switch', 'tool', 8, 5, null, { kit: 'half', hats: 'half', perc: 'drop', bass: 'half', chords: 'B' }],
+  [
+    'Peak B',
+    'peak',
+    16,
+    10,
+    null,
+    { kit: 'C', hats: 'C', perc: 'drop', bass: 'C', chords: 'B', lead: 'hook', pluck: 'drop', pad: 'drop' }
+  ]
+];
+/* the variants a swap moves between, by role */
+const CMP_SWAP = {
+  kit: ['A', 'B', 'C', 'half'],
+  hats: ['A', 'B', 'C'],
+  perc: ['drop'],
+  bass: ['A', 'B', 'C', 'half'],
+  chords: ['A', 'B'],
+  pad: ['intro', 'break', 'drop'],
+  lead: ['hook', 'break'],
+  pluck: ['drop', 'break', 'intro'],
+  acid: ['A', 'B', 'C']
+};
+const CMP = { ids: {} };
+/* the job each track does in a composed set (the first track of a job plays it; one full kit plays all three drum parts) */
+function cmpRole(t) {
+  if (oneKit() && t === trackOf(0)) return 'full';
+  const pool = poolOf(t);
+  return trackOf(slotOf(t)) === t || pool === 'acid' ? pool : null;
+}
+function buildComposed(st) {
+  const c = composer(st, { key: LV.key, seed: LV.seed, minutes: 4 }),
+    tag = 'cmp-' + st.id + '-' + LV.seed + '-' + LV.key + '-',
+    prog = 'cmp:' + st.id + ':' + LV.seed;
+  /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up) */
+  const entry = (t, role, v) => {
+    const roles = role === 'full' ? ['kit', 'hats', 'perc'] : [role];
+    const keys = roles
+      .map(x => c.make(x, v === 'C' && x !== 'kit' && x !== 'bass' && x !== 'hats' ? 'B' : v))
+      .filter(Boolean);
+    if (!keys.length) return null;
+    const id = tag + t + '-' + v;
+    if (!FACMAP.has(id)) {
+      const ps = keys.map(k => c.patterns[k]),
+        p = ps[0];
+      FACMAP.set(id, {
+        id,
+        name: p.name + (role === 'full' ? '' : ' ' + role),
+        type: p.type,
+        genre: st.id,
+        bars: p.bars,
+        key: p.type === 'tone' ? { root: c.key, scale: c.scale } : null,
+        notes: ps.flatMap(x => x.notes),
+        pool: role === 'full' ? 'full' : role,
+        _prog: p.type === 'tone' ? prog : null,
+        composed: true
+      });
+    }
+    return id;
+  };
+  CMP.ids = {};
+  const scenes = CMP_TPL.map(([name, kind, bars, e, fx, parts]) => {
+    const cells = {};
+    for (let t = 0; t < 8; t++) {
+      const role = cmpRole(t);
+      if (!role || (DEV === '101' && (slotOf(t) === 5 || slotOf(t) === 7))) continue;
+      const v =
+        role === 'full'
+          ? parts.kit
+          : role === 'acid'
+            ? parts.bass && /^[ABC]$/.test(parts.bass)
+              ? parts.bass
+              : null
+            : parts[role];
+      if (!v) continue;
+      const id = entry(t, role, v);
+      if (id) cells[t] = { id, pool: role };
+    }
+    const sc = { kind, name, bars, e, cells };
+    if (fx) sc.fx = fx;
+    return sc;
+  });
+  /* the variants each track can swap to */
+  for (let t = 0; t < 8; t++) {
+    const role = cmpRole(t);
+    if (!role) continue;
+    CMP.ids[t] = (CMP_SWAP[role === 'full' ? 'kit' : role] || []).map(v => entry(t, role, v)).filter(Boolean);
+  }
+  LV.scenes = scenes;
+  LV.fillIds = lvPool(st, 'fill');
+  if (LV.cur >= scenes.length) LV.cur = 0;
+  LV.ver++;
+}
+
 export function liveSwapIds(t) {
+  if (LV.flavor === 'composed' && CMP.ids[t] && CMP.ids[t].length) return CMP.ids[t].slice();
   const st = lvStyle(),
     pool = t === trackOf(0) && oneKit() ? 'full' : poolOf(t);
   return moodFilter(lvFlavor(lvPool(st, pool), LV.flavor), LV.mood, facById).filter(id => {

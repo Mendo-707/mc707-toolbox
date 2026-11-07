@@ -373,7 +373,8 @@ export function liveInit() {
         {
           id: 'lvFlavor',
           'aria-label': 'Pattern style',
-          title: 'Lively picks busier, more syncopated parts. Classic keeps them simple.',
+          title:
+            'Composed: the app writes the set itself, every part from one chord progression (builds that stop dead, a halftime switch, a hook in the peaks). Lively picks busier, more syncopated library parts; Classic keeps them simple.',
           onchange: e => {
             LV.flavor = e.target.value;
             saveLive();
@@ -384,6 +385,7 @@ export function liveInit() {
             );
           }
         },
+        el('option', { value: 'composed' }, 'Composed'),
         el('option', { value: 'lively' }, 'Lively'),
         el('option', { value: 'mixed' }, 'Mixed'),
         el('option', { value: 'classic' }, 'Classic')
