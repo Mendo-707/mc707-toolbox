@@ -105,7 +105,8 @@ Empty MC-707 projects with the tracks already set as drum or tone tracks, one pe
 2. The app connects by itself: as it opens, or as soon as the MC-707 (or MC-101) is plugged in, it connects notes, the pads and keys, the clock (the first time) and the ZenCore editor, and says so. In a browser this happens once MIDI is allowed for the page; otherwise, or with **Settings › Connect to the MC-707 by itself** turned off, open **MC-707 › Set up your MC-707** and press **Auto-connect MC-707**.
 3. Press **Play tracks 1 → 8**. Each MC-707 track should sound in turn. If one is wrong, change its channel there.
 4. On the MC-707 (SHIFT + KNOB ASSIGN › SET › MIDI tab), set **MIDI Rx Auto Channel** to **OFF** and **Track Channel 1-8** to CH1–CH8. Quick setup walks through every setting that matters.
-5. Optional: tick **Make the MC-707 follow this app** to send MIDI clock and start/stop. On the MC-707, set sync to AUTO or USB.
+5. Set every track's **Sound Source** to **CLIP** (hold SHIFT and press the track's TRACK SEL, GENERAL tab), so each clip keeps its own sound, and give each clip a sound. Scene Mode, the clip switching and MC-707 project files all count on it.
+6. Optional: tick **Make the MC-707 follow this app** to send MIDI clock and start/stop. On the MC-707, set sync to AUTO or USB.
 
 ---
 

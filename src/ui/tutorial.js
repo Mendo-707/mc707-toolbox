@@ -106,6 +106,7 @@ const chapters = dn => [
       ', so you set it once by hand.',
     [
       'Each drum track holds a drum kit, each tone track a tone (select the track and choose its sound), unmuted with its level up.',
+      'Sound Source: CLIP on every track. Hold SHIFT and press the track’s TRACK SEL, open the GENERAL tab and set Sound Source to CLIP, so each clip keeps its own sound. Then select each clip and give it a sound (a new clip can be silent until you do). Scene Mode, the clip switching and MC-707 project files all count on it.',
       'Easiest: load a project template with the tracks already set up. Copy it to the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it and straight away PROJECT › WRITE it under a new name.',
       'Clips that hold a sound but no notes work best: the app plays the notes.'
     ],
@@ -150,7 +151,7 @@ const chapters = dn => [
       'Call Scene: TYPE2 (SYSTEM SETTING, CTRL tab), so scenes are numbered as in the app.',
       'Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON (the app can’t switch it).',
       'After writing: call up the first scene and press PLAY, and save the project on the ' + dn + ' to keep it.',
-      'A track silent on every clip? In its track settings (GENERAL tab) set Sound Source to TRACK, or give each clip its own tone.'
+      'A clip silent? With Sound Source on CLIP (as Basic setup has it) each clip plays its own sound: select the clip and choose one, or give it a tone in Scene Mode and write it.'
     ],
     [
       'Start from a project template that matches your Track setup, written under a new name: use a project you can lose the first time.',

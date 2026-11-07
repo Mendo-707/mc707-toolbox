@@ -461,6 +461,11 @@ function renderSetup(keep) {
         'select a drum track, hold SHIFT and press its TRACK SEL, open the MIDI tab, and turn Tx MIDI Note and Tx USB MIDI ON.'
       ),
       step(
+        'Sound Source: CLIP on every track.',
+        'Select the track, hold SHIFT and press its TRACK SEL, open the GENERAL tab and set Sound Source to CLIP, so each clip keeps its own sound. Then give each clip a sound (a new clip can be silent until you do).',
+        '(Scene Mode, the clip switching and MC-707 project files all count on it.)'
+      ),
+      step(
         'Sounds:',
         'tracks 1-3 hold drum kits and 4-8 tone sounds, unmuted with their levels up. Clips that hold a sound but no notes work best.'
       )

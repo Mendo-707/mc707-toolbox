@@ -29,7 +29,7 @@ const STEPS = () => {
         'Turn the chain on: press MUTE, hold SHIFT and press a step button for the SCENE CHAIN screen, then set C1 CHAIN to ON. (The app cannot switch it.)',
         'Call up scene ' + f + ' and press PLAY. Each scene plays its bars, then the next comes in.',
         'Save the project on the MC-707 to keep it. Then unplug the computer: the MC-707 plays the song by itself.',
-        'A track silent on every clip? Check its Sound Source (the track settings, GENERAL tab): a clip given its own tone here sets it to CLIP, and clips with no sound of their own then play nothing. Set it to TRACK, or give each clip a tone.'
+        'Every track’s Sound Source should be CLIP (hold SHIFT and press its TRACK SEL, GENERAL tab), so each clip plays its own sound. A clip silent? It has no sound of its own yet: select it on the MC-707 and choose one, or give it a tone here and write it.'
       ]
     ]
   ];
