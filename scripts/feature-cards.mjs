@@ -121,6 +121,7 @@ function card({ kicker, title, items, shot }) {
   </div><img class="shot" src="${png(shot)}">
   <div class="brand"><img src="${ICON}">${NAME}</div></body></html>`);
 }
+/* broad strokes only: what each part is for, not its details */
 const CARDS = [
   [
     'song',
@@ -128,16 +129,10 @@ const CARDS = [
     'Song Mode',
     'Make your own music',
     [
-      [
-        'Your own patterns',
-        'Write beats, basslines, chords and melodies in the step grid or piano roll, or play them in from your keys.'
-      ],
-      ['Arrange on a timeline', 'Build your track section by section and hear it on the MC-707 as you go.'],
-      [
-        'A head start when you want one',
-        '28,000+ patterns to drag in, or Compose it now to sketch a song in one of 42 styles, then make it yours.'
-      ],
-      ['Record and export', 'Record every track’s audio over USB as separate files, or save the song as MIDI.']
+      ['Write', 'Make beats, basslines, chords and melodies note by note, or play them in.'],
+      ['Arrange', 'Build a whole track on a timeline and hear it on the MC-707 as you go.'],
+      ['Get started fast', 'A huge pattern library and a song wizard when you want a head start.'],
+      ['Record', 'Record the MC-707’s audio or export your song.']
     ]
   ],
   [
@@ -146,13 +141,9 @@ const CARDS = [
     'Scene Mode',
     'Put the song on the MC-707',
     [
-      ['Laid out like the MC-707', 'A column per track with its 16 clips down it, just like the CLIP screen.'],
-      ['Song to scenes', 'The arrangement becomes MC-707 clips and a chain of scenes, one per section.'],
-      [
-        'Written over USB, or as a project',
-        'Write it over USB, or save an MC-707 project file with the sounds and kits in, to load from the SD card.'
-      ],
-      ['Fits the hardware', 'Every pattern is fitted to the MC-707’s clips, and Auto-write keeps it in step.']
+      ['Clips and scenes', 'Arrange your song the way the MC-707 does, laid out just like its screen.'],
+      ['Send it over', 'Write it to the MC-707 over USB, or save a project file for its SD card.'],
+      ['No computer needed', 'The MC-707 then plays your song all by itself.']
     ]
   ],
   [
@@ -161,10 +152,9 @@ const CARDS = [
     'Live Mode',
     'Play a set from 16 pads',
     [
-      ['Composed sets', 'The whole set written for the style: one progression, hooks in the peaks, a halftime switch.'],
-      ['Breaks, fills and moves', 'Unison hits, rolls, gate chops and half-time; Wobble, Chop and Lift on the filter.'],
-      ['Loop rec', 'Record a riff on the MC-707’s keys and it stays in the set until you take it out.'],
-      ['Tight and hands on', 'Auto-pilot when you want it, swing that stays tight, and the MC-707’s own pads.']
+      ['A set for any style', 'Pick a style and get a set of scenes ready to play.'],
+      ['Perform', 'Change scenes, drop breaks and fills, and shape the sound as you play.'],
+      ['Play along', 'Record your own riffs into the set, or let auto-pilot take over.']
     ]
   ],
   [
@@ -173,10 +163,9 @@ const CARDS = [
     'Synth Mode',
     'An 8-track synth for your DAW',
     [
-      ['Eight sounds', 'Pick, browse and mix the sound on each of the eight tracks.'],
-      ['Expand any track', 'Its ZenCore editor opens beside the others, and stays that way next time.'],
-      ['Setups', 'Save all eight sounds and the mix as one setup, and bring it back.'],
-      ['Notes through', 'Play the MC-707 from your DAW or a keyboard, each track on its own channel.']
+      ['Eight sounds', 'Pick, edit and mix the sound on every track.'],
+      ['Setups', 'Save all eight sounds and the mix, and bring them back.'],
+      ['Play from anywhere', 'Play the MC-707 from your DAW or a keyboard.']
     ]
   ],
   [
@@ -185,10 +174,9 @@ const CARDS = [
     'ZenCore editor',
     'Every setting on a big screen',
     [
-      ['Tones and kits', 'Every partial, filter, envelope, LFO and effect, with graphs you can drag.'],
-      ['Sound browser', 'Your sounds in folders, starters, factory tones and expansion files.'],
-      ['Named waves', 'PCM waves by name, and live previews of the wave, filter and LFO.'],
-      ['Anywhere', 'Copy a sound to any clip or track, or save it to your library.']
+      ['Tones and kits', 'Edit every part of the MC-707’s sounds, with graphs you can drag.'],
+      ['Sound library', 'Keep your own sounds alongside starters and factory tones.'],
+      ['Use them anywhere', 'Put a sound on any track or clip.']
     ]
   ],
   [
@@ -197,13 +185,9 @@ const CARDS = [
     'Slime Lab',
     'Sound design made simple',
     [
-      [
-        'Start from a sound',
-        'Ten classics, built from scratch in one go or step by step with the reason for each step.'
-      ],
-      ['Five knobs', 'Bright, Body, Shape, Motion and Space, the same on every sound, with a scope that draws it.'],
-      ['Variations', 'Grow six versions of your sound, pick one by ear, and grow again.'],
-      ['Fine-tune', 'The real settings behind it all, page by page, and morphing between two snapshots.']
+      ['Start from a sound', 'Begin with a classic, or watch one being built step by step.'],
+      ['Shape it', 'A few simple knobs that work the same on every sound.'],
+      ['Explore', 'Try variations, pick one by ear, and save your favourite.']
     ]
   ]
 ];
@@ -220,12 +204,12 @@ function banner() {
 /* one picture of the best of it: the name, then six features each with its screen */
 function promo(raw) {
   const tiles = [
-    ['song', 'Make your own music', 'Write, play in and arrange your own tracks'],
-    ['scene', 'On the MC-707, no computer', 'Clips and scenes like its own CLIP screen, as a project file'],
-    ['live', 'Play it live', 'Composed sets, breaks, moves and Loop rec from 16 pads'],
-    ['synth', 'An 8-track synth', 'Pick, edit and mix the sound on every track'],
-    ['zen', 'Every ZenCore setting', 'Tones and kits on a big screen, with factory sounds'],
-    ['lab', 'Slime Lab', 'Sound design made simple: five knobs and variations']
+    ['song', 'Make your own music', 'Write, arrange and record your songs'],
+    ['scene', 'Songs on the MC-707', 'It plays them by itself, no computer'],
+    ['live', 'Play live', 'A ready-to-play set in any style'],
+    ['synth', 'An 8-track synth', 'Every track’s sound, for your DAW'],
+    ['zen', 'Sound editor', 'Every setting of the MC-707’s sounds'],
+    ['lab', 'Slime Lab', 'Sound design made simple']
   ];
   return nb(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}
   body{width:1920px;height:1080px;background:radial-gradient(1200px 700px at 80% -10%,#ff5f4526,transparent 60%),#14151a}
@@ -248,7 +232,7 @@ function promo(raw) {
         `<div class="tile"><div class="img" style="background-image:url('${png(raw[k])}')"></div><div class="c"><b>${b}</b><span>${t}</span></div></div>`
     )
     .join('')}</div>
-  <div class="foot"><span>Windows · Mac · Linux · in the browser</span><span>One USB cable <i>·</i> every track <i>·</i> tight timing</span></div>
+  <div class="foot"><span>Windows · Mac · Linux · in the browser</span><span>One USB cable is all you need</span></div>
   </body></html>`);
 }
 

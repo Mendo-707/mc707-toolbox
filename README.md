@@ -12,37 +12,37 @@ Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and de
 
 ### Song Mode
 
-Make your own music and play it on the MC-707 note for note. Write your own patterns in the step grid or piano roll, record them from a keyboard or the MC-707's keys, and arrange them into a whole track on a timeline. Want a head start? Drag in any of over 28,000 patterns (drums, bass, chords, pads, arps, leads, fills and builds), or let the song wizard sketch a song in one of 42 styles with **Compose it now**, then make it yours. Record every track's audio, or export MIDI. [More](#song-mode-1)
+Make your own music: write beats, basslines, chords and melodies, arrange them into a whole track and hear it on the MC-707 as you go. A big pattern library and a song wizard are there when you want a head start, and you can record the audio or export your song. [More](#song-mode-1)
 
 ![Song Mode](docs/features/1-song-mode.png)
 
 ### Scene Mode
 
-Turn the song into MC-707 clips and a chain of scenes on a board laid out like the MC-707's own CLIP screen, then write them over USB or save an MC-707 project file with the sounds in, so the MC-707 plays it by itself with no computer. Every pattern is fitted to the MC-707's clips, and Auto-write keeps it in step as you change things. [More](#scene-mode-1)
+Arrange your song as MC-707 clips and scenes, laid out just like its own screen, and send it over USB or as a project file. The MC-707 then plays it by itself, no computer needed. [More](#scene-mode-1)
 
 ![Scene Mode](docs/features/2-scene-mode.png)
 
 ### Live Mode
 
-Play a looping set from 16 pads, laid out like the MC-707's, the whole set composed for the style you pick: scenes, swaps, fades, builds and drops that always land on the beat, breaks (unison hits, stutters, rolls, drop-outs, gate chops and half-time) and fills for every genre, riffs you record yourself with Loop rec, with an auto-pilot when you want one. [More](#live-mode-1)
+Play a live set from 16 pads: pick a style, change scenes, drop breaks and fills, and shape the sound as you go. Record your own riffs into the set, or let auto-pilot take over. [More](#live-mode-1)
 
 ![Live Mode](docs/features/3-live-mode.png)
 
 ### Synth Mode
 
-The MC-707 as an 8-track hardware synth for your DAW: pick, edit and mix the sound on each track, expand any track with its editor beside the others, and keep all eight sounds as a setup. [More](#synth-mode-1)
+Use the MC-707 as an 8-track synth for your DAW: pick, edit and mix the sound on every track, and save the whole setup. [More](#synth-mode-1)
 
 ![Synth Mode](docs/features/4-synth-mode.png)
 
 ### ZenCore editor
 
-Every setting of the sounds inside your MC-707 on a big screen: partials, filters, envelopes you can drag, LFOs, effects and drum kits, with a Sound browser for your own sounds, starters, factory tones and expansions. [More](#zencore-editor-1)
+Edit every setting of the MC-707's sounds on a big screen, and keep your own sound library alongside starters and factory tones. [More](#zencore-editor-1)
 
 ![ZenCore editor](docs/features/5-zencore-editor.png)
 
 ### Slime Lab
 
-Sound design made simple: start from a classic sound (built step by step if you like, with the reason for each step), shape it with five knobs that are the same on every sound while a scope draws it, grow variations and pick one by ear, fine-tune the real settings behind it, and save it to your sounds. [More](#slime-lab-1)
+Sound design made simple: start from a classic sound, shape it with a few easy knobs, try variations and save your favourite. [More](#slime-lab-1)
 
 ![Slime Lab](docs/features/6-slime-lab.png)
 
