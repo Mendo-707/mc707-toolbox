@@ -18,6 +18,10 @@
 //                  Quantize (from the notes as you played them), ✕ deletes it. A take follows key changes like
 //                  any part (it is written down in the key it was played in); chord lock and variations leave
 //                  it as you played it.
+//   6. Grow it     on the take's card (click a take's name for its card): ＋ Overdub plays over the take for
+//                  one time round and adds what you play as a layer (↶ Undo layer takes the last off); Vary
+//                  plays it a little differently some times round (a note left out, an octave jump, a quick
+//                  repeat); ½× and 2× change its speed; ⤓ My patterns keeps it for Song Mode.
 //
 // Owns: RIFF (the recording and the takes), localStorage 'mc707-live-riffs' (the takes, so scenes that keep
 // one still have it) and 'mc707-live-loop-rec' (its settings). Reads: LV, TR, S, CTL.
@@ -27,6 +31,8 @@ import { S } from '../core/state.js';
 import { poolOf } from '../core/tracks.js';
 import { FACMAP } from '../library/index.js';
 import { touch } from '../core/song-model.js';
+import { hashStr, mulberry } from '../core/random.js';
+import { userSave } from '../library/user-lib.js';
 import { TR, tickDur } from '../services/transport.js';
 import { LV } from './state.js';
 import { lvNow } from './themes.js';
@@ -148,6 +154,8 @@ const changed = () => {
   listeners.forEach(fn => fn());
   animate();
 };
+/* the length being recorded: the take's for an overdub, else the panel's Length */
+const recBars = () => (RIFF.dub && FACMAP.get(RIFF.dub) ? FACMAP.get(RIFF.dub).bars : RIFF.bars);
 const trackName = t => (t >= 0 && S.tracks[t] ? S.tracks[t].name : 'the track you play');
 /* where the music you hear is, in ticks (the scheduler runs a little ahead) */
 const heard = () => (lvOn() ? TR.tick - Math.max(0, TR.nextTime - lvNow()) / tickDur() : TR.tick);
@@ -205,6 +213,7 @@ export function riffCancel() {
   RIFF.state = 'off';
   RIFF.notes = [];
   RIFF.held = {};
+  RIFF.dub = null;
   handBack(t);
   changed();
   toast('Recording cancelled');
@@ -215,6 +224,7 @@ export function riffStopped() {
     RIFF.state = 'off';
     RIFF.notes = [];
     RIFF.held = {};
+    RIFF.dub = null;
   }
   RIFF.cued = [];
   changed();
@@ -222,12 +232,13 @@ export function riffStopped() {
 /** ■ Stop: end the recording now; the take is the shortest length that holds what you played. */
 export function riffStopEarly() {
   if (RIFF.state !== 'rec') return riffCancel();
+  if (RIFF.dub) return riffDone(TR.tick, recBars());
   const played = Math.max(1, Math.ceil((heard() - RIFF.start) / 32)),
     bars = RIFF_BARS.find(b => b >= played) || RIFF.bars;
   riffDone(Math.ceil(TR.tick / 32) * 32, Math.min(bars, RIFF.bars));
 }
 /** The track being recorded to is quiet while it records (the set's own part stops), unless set otherwise. */
-export const riffQuiet = t => RIFF.state === 'rec' && RIFF.quiet && t === RIFF.t;
+export const riffQuiet = t => RIFF.state === 'rec' && RIFF.quiet && t === RIFF.t && !RIFF.dub;
 
 /** A note from the keyboard on its solo track (as it sounds: octave and snap applied). */
 export function riffNote(nn, v, on) {
@@ -252,8 +263,16 @@ function miss(t, on) {
 }
 /* where a note falls, in 16ths from the start, as played (to a 32nd); Quantize snaps it afterwards */
 function riffAt(nn, v, on) {
-  const steps = RIFF.bars * 16,
-    at = Math.round(heard() - RIFF.start) / 2;
+  const steps = recBars() * 16;
+  let at = Math.round(heard() - RIFF.start) / 2;
+  /* an overdub: where the note falls in the take as it loops */
+  if (RIFF.dub) {
+    const top = LV.voices[RIFF.t] && LV.voices[RIFF.t][0],
+      L = steps * 2;
+    if (on && heard() < RIFF.start - 1) return;
+    if (top) at = Math.round((((heard() - top.start) % L) + L) % L) / 2;
+    if (!on && RIFF.held[nn] && at < RIFF.held[nn].s) at = steps;
+  }
   if (on) {
     /* a note a touch early for the first beat counts as on it */
     if (at < -0.5 || at >= steps) return;
@@ -275,7 +294,8 @@ export function riffTick(tick) {
     RIFF.state = 'rec';
     changed();
   }
-  if (RIFF.state === 'rec' && tick >= RIFF.end) riffDone(tick, RIFF.bars);
+  if (RIFF.state === 'rec' && tick >= RIFF.end) riffDone(tick, recBars());
+  varyTick(tick);
   if (RIFF.cued.length && RIFF.cued.some(c => tick >= c.tick)) {
     for (const c of RIFF.cued.filter(c => tick >= c.tick)) put(c.t, c.id, tick);
     RIFF.cued = RIFF.cued.filter(c => tick < c.tick);
@@ -283,7 +303,7 @@ export function riffTick(tick) {
   }
 }
 /** True while there is something for riffTick to do. */
-export const riffBusy = () => RIFF.state !== 'off' || RIFF.cued.length > 0;
+export const riffBusy = () => RIFF.state !== 'off' || RIFF.cued.length > 0 || varying();
 
 /* the track was yours while you played: its own part back now (unless a key is still down) */
 function handBack(t) {
@@ -291,6 +311,7 @@ function handBack(t) {
   LV.ver++;
 }
 function riffDone(tick, bars) {
+  if (RIFF.dub) return dubDone(bars);
   const steps = bars * 16,
     t = RIFF.t;
   /* notes still held run to the end */
@@ -396,7 +417,7 @@ export function riffRequant(id, q) {
   if (!f) return;
   f.raw = f.raw || f.notes;
   f.q = q;
-  f.notes = riffQuantize(f.raw, q, f.bars);
+  f.notes = f.clean = riffQuantize(f.raw, q, f.bars);
   touch(f);
   storeTakes();
   changed();
@@ -427,6 +448,157 @@ export function riffDeleteUnused() {
   storeTakes();
   changed();
   toast(n - kept.length ? 'Deleted ' + (n - kept.length) + ' takes' : 'No takes to delete');
+}
+
+/* ---- a take grows: overdub layers, speed, variations, My patterns ---- */
+/* the take from what was played first and each layer on top, snapped to its Quantize */
+function rebuild(f) {
+  const base = f.base || f.raw || f.notes;
+  f.raw = riffQuantize(
+    [...base, ...(f.layers || []).flat()].filter(n => n.s < f.bars * 16),
+    'off',
+    f.bars
+  );
+  f.notes = f.clean = riffQuantize(f.raw, f.q || 'off', f.bars);
+  touch(f);
+  storeTakes();
+  changed();
+}
+/** ＋ Overdub: record another layer over a playing take, for one time round, from the next bar. */
+export function riffDub(id) {
+  const f = FACMAP.get(id);
+  if (!f || RIFF.state !== 'off') return;
+  if (!lvOn() || riffPlaying(f.track) !== id) return void toast('▶ Play the take first, then overdub over it');
+  const start = nextBar();
+  Object.assign(RIFF, {
+    state: 'wait',
+    from: TR.tick,
+    start,
+    end: start + f.bars * 32,
+    take: f.bars,
+    t: f.track,
+    notes: [],
+    held: {},
+    miss: -1,
+    dub: id
+  });
+  if (CTL.inp && LV.ctl) LV.ctl.soloT = f.track;
+  changed();
+}
+function dubDone(bars) {
+  const f = FACMAP.get(RIFF.dub),
+    steps = bars * 16;
+  for (const nn in RIFF.held) {
+    const h = RIFF.held[nn];
+    RIFF.notes.push({ s: h.s, l: Math.max(0.5, steps - h.s), n: +nn, v: h.v });
+  }
+  const layer = riffQuantize(
+    RIFF.notes.filter(x => x.s < steps).map(x => ({ ...x, l: Math.min(x.l, steps - x.s) })),
+    'off',
+    bars
+  );
+  Object.assign(RIFF, { state: 'off', held: {}, notes: [], dub: null });
+  if (!f) return void changed();
+  RIFF.last = f.id;
+  if (!layer.length) {
+    changed();
+    return void toast('Nothing was played, so no new layer');
+  }
+  f.base = f.base || (f.raw || f.notes).slice();
+  f.layers = [...(f.layers || []), layer];
+  rebuild(f);
+  toast('Layer ' + f.layers.length + ' added to ' + f.name + ' (↶ Undo layer takes it off)');
+}
+/** ↶ Undo layer: the last overdub off again. */
+export function riffUndoLayer(id) {
+  const f = FACMAP.get(id);
+  if (!f || !(f.layers || []).length) return;
+  f.layers = f.layers.slice(0, -1);
+  rebuild(f);
+}
+/** ½× / 2×: the take at half speed (twice as long, up to 8 bars) or double speed (played twice). */
+export function riffSpeed(id, k) {
+  const f = FACMAP.get(id);
+  if (!f) return;
+  const steps = f.bars * 16,
+    nb = k === 2 ? f.bars : Math.min(8, f.bars * 2);
+  if (k !== 2 && f.bars >= 8) return void toast('It is 8 bars already, as long as a take can be');
+  const sp = ns =>
+    k === 2
+      ? [0, steps / 2].flatMap(o => ns.map(n => ({ ...n, s: n.s / 2 + o, l: Math.max(0.25, n.l / 2) })))
+      : ns.map(n => ({ ...n, s: n.s * 2, l: n.l * 2 })).filter(n => n.s < nb * 16);
+  f.base = sp(f.base || f.raw || f.notes);
+  f.layers = (f.layers || []).map(sp);
+  f.bars = nb;
+  rebuild(f);
+}
+/** Vary: 0 plays it as recorded, 1 a little different every other time round, 2 more and more often. */
+export function riffVary(id, lvl) {
+  const f = FACMAP.get(id);
+  if (!f) return;
+  f.vary = lvl;
+  f.notes = (f.clean || riffQuantize(f.raw || f.notes, f.q || 'off', f.bars)).slice();
+  touch(f);
+  storeTakes();
+  changed();
+}
+const varying = () =>
+  lvOn() &&
+  S.tracks.some((x, t) => {
+    const v = LV.voices[t] && LV.voices[t][0];
+    return v && v.f.riff && v.f.vary;
+  });
+/* a take with Vary on: each time round starts with its notes as recorded or with small changes (a note
+   left out, one up or down an octave, a quick repeat, a different accent), never on the first time */
+function varyTick(tick) {
+  S.tracks.forEach((x, t) => {
+    const v = LV.voices[t] && LV.voices[t][0];
+    if (!v || !v.f.riff || !v.f.vary) return;
+    const f = v.f,
+      L = f.bars * 32;
+    if (tick < v.start || (tick - v.start) % L) return;
+    const pass = (tick - v.start) / L,
+      plain = f.clean || f.notes;
+    f.clean = plain;
+    const keep = pass === 0 || (f.vary === 1 ? pass % 2 === 0 : pass % 4 === 0);
+    f.notes = keep ? plain.slice() : varied(plain, pass, f.vary, f.id, f.bars * 16);
+    touch(f);
+  });
+}
+function varied(ns, pass, lvl, id, steps) {
+  const r = mulberry(hashStr(id) ^ Math.imul(pass + 1, 2654435761)),
+    p = lvl === 2 ? 0.3 : 0.15,
+    at = new Set(ns.map(n => n.s + ':' + n.n)),
+    out = [];
+  for (const n of ns) {
+    const x = r();
+    if (x < p * 0.3 && n.s > 0) continue;
+    if (x < p * 0.6) out.push({ ...n, n: Math.max(24, Math.min(108, n.n + (r() < 0.5 ? 12 : -12))) });
+    else if (x < p && n.l <= 1.01 && !at.has(n.s + 1 + ':' + n.n)) {
+      out.push(n, { ...n, s: n.s + 1, v: Math.max(1, Math.round(n.v * 0.7)) });
+      at.add(n.s + 1 + ':' + n.n);
+    } else out.push({ ...n, v: Math.max(1, Math.min(127, n.v + Math.round((r() - 0.5) * 20))) });
+  }
+  return out.filter(n => n.s < steps).sort((a, b) => a.s - b.s || a.n - b.n);
+}
+/** ⤓ My patterns: keep a take in your own library, for Song Mode and every song. */
+export function riffSaveMine(id) {
+  const f = FACMAP.get(id);
+  if (!f) return;
+  const saved = userSave({
+    name: f.name + ' · ' + trackName(f.track),
+    type: 'tone',
+    bars: f.bars,
+    notes: f.clean || f.notes,
+    key: f.key,
+    role: f.pool || '',
+    genre: f.genre || ''
+  });
+  toast(
+    saved
+      ? 'Saved ' + f.name + ' to My patterns: it is in the library in Song Mode'
+      : 'Could not save: the browser storage is full'
+  );
 }
 
 /* ---- what you see ---- */
@@ -472,18 +644,29 @@ function now() {
       big: beats <= 4 ? String(Math.max(1, beats)) : '…',
       line:
         beats <= 4
-          ? 'Get ready: recording ' + tn + ' in ' + beats + (beats > 1 ? ' beats' : ' beat')
+          ? 'Get ready: ' +
+            (RIFF.dub ? 'overdubbing ' : 'recording ') +
+            tn +
+            ' in ' +
+            beats +
+            (beats > 1 ? ' beats' : ' beat')
           : 'Count-in: recording ' + tn + ' starts in a bar',
       badge: 'REC in ' + Math.max(1, Math.min(beats, 99)),
       cls: 'wait'
     };
   }
   if (RIFF.state === 'rec') {
-    const bar = Math.min(RIFF.bars, Math.floor((h - RIFF.start) / 32) + 1);
+    const nb = recBars(),
+      bar = Math.min(nb, Math.floor((h - RIFF.start) / 32) + 1);
     return {
       big: '●',
-      line: 'Recording ' + tn + ': bar ' + Math.max(1, bar) + ' of ' + RIFF.bars,
-      badge: '● REC ' + (RIFF.t >= 0 ? S.tracks[RIFF.t].name + ' ' : '') + Math.max(1, bar) + '/' + RIFF.bars,
+      line: (RIFF.dub ? 'Overdubbing ' : 'Recording ') + tn + ': bar ' + Math.max(1, bar) + ' of ' + nb,
+      badge:
+        (RIFF.dub ? '● DUB ' : '● REC ') +
+        (RIFF.t >= 0 ? S.tracks[RIFF.t].name + ' ' : '') +
+        Math.max(1, bar) +
+        '/' +
+        nb,
       cls: 'rec'
     };
   }
@@ -566,7 +749,11 @@ export function riffPanel() {
     } else fill.style.width = '100%';
     if (RIFF.state === 'rec' || RIFF.dirty) {
       RIFF.dirty = false;
-      strip.replaceChildren(roll(liveNotes(Math.max(0, at)), RIFF.bars, { at: RIFF.state === 'rec' ? at : null }));
+      const nb = recBars(),
+        under = RIFF.dub && FACMAP.get(RIFF.dub) ? FACMAP.get(RIFF.dub).notes : [];
+      strip.replaceChildren(
+        roll([...under, ...liveNotes(Math.max(0, at))], nb, { at: RIFF.state === 'rec' && !RIFF.dub ? at : null })
+      );
     }
   };
   views.add(tick);
@@ -657,7 +844,9 @@ export function riffPanel() {
                 el(
                   'span',
                   { class: 'riffStat' },
-                  `${last.name} is ready: ${last.notes.length} notes on ${trackName(last.track)}, ${bars(last.bars)}. ` +
+                  `${last.name}: ${(last.clean || last.notes).length} notes on ${trackName(last.track)}, ${bars(last.bars)}` +
+                    ((last.layers || []).length ? ', ' + (last.layers.length + 1) + ' layers' : '') +
+                    '. ' +
                     (riffPlaying(last.track) === last.id ? 'Playing in the set.' : 'The set is unchanged.')
                 )
               ),
@@ -668,6 +857,37 @@ export function riffPanel() {
                 takeBtn(last),
                 btn('↺ Again', () => riffArm(), 'Record it again (this take stays in the list)'),
                 btn('✕ Discard', () => riffDelete(last.id), 'Throw this take away')
+              ),
+              el(
+                'div',
+                { class: 'riffRow riffMore' },
+                btn(
+                  '＋ Overdub',
+                  () => riffDub(last.id),
+                  riffPlaying(last.track) === last.id
+                    ? 'Play over the take for one time round, from the next bar: what you play is added as a layer'
+                    : '▶ Play the take first, then add layers over it'
+                ),
+                (last.layers || []).length
+                  ? btn('↶ Undo layer', () => riffUndoLayer(last.id), 'Take the last layer off')
+                  : null,
+                sel(
+                  'Vary',
+                  last.vary || 0,
+                  [
+                    [0, 'As played'],
+                    [1, 'A little'],
+                    [2, 'More']
+                  ],
+                  v => riffVary(last.id, +v)
+                ),
+                btn('½×', () => riffSpeed(last.id, 0.5), 'Half speed: the take twice as long (up to 8 bars)'),
+                btn('2×', () => riffSpeed(last.id, 2), 'Double speed: the take played twice in its length'),
+                btn(
+                  '⤓ My patterns',
+                  () => riffSaveMine(last.id),
+                  'Keep it in My patterns, for Song Mode and every song'
+                )
               )
             )
           : null
@@ -690,7 +910,13 @@ export function riffPanel() {
                 { class: (on ? 'on' : '') + (f.id === RIFF.last ? ' last' : '') },
                 el(
                   'div',
-                  { class: 'riffName' },
+                  {
+                    class: 'riffName',
+                    role: 'button',
+                    tabindex: 0,
+                    title: 'Show this take’s card: overdub, vary, speed and save it',
+                    onclick: () => ((RIFF.last = f.id), changed())
+                  },
                   el('b', {}, f.name),
                   el('span', { class: 'hint' }, trackName(f.track) + ' · ' + bars(f.bars) + (on ? ' · playing' : ''))
                 ),

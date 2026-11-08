@@ -62030,6 +62030,7 @@ html.os-darwin.native-menu #menubar .mproj {
     listeners.forEach((fn) => fn());
     animate();
   };
+  var recBars = () => RIFF.dub && FACMAP.get(RIFF.dub) ? FACMAP.get(RIFF.dub).bars : RIFF.bars;
   var trackName = (t) => t >= 0 && S.tracks[t] ? S.tracks[t].name : "the track you play";
   var heard = () => lvOn() ? TR.tick - Math.max(0, TR.nextTime - lvNow()) / tickDur() : TR.tick;
   function riffSet(k2, v) {
@@ -62074,6 +62075,7 @@ html.os-darwin.native-menu #menubar .mproj {
     RIFF.state = "off";
     RIFF.notes = [];
     RIFF.held = {};
+    RIFF.dub = null;
     handBack(t);
     changed();
     toast("Recording cancelled");
@@ -62083,16 +62085,18 @@ html.os-darwin.native-menu #menubar .mproj {
       RIFF.state = "off";
       RIFF.notes = [];
       RIFF.held = {};
+      RIFF.dub = null;
     }
     RIFF.cued = [];
     changed();
   }
   function riffStopEarly() {
     if (RIFF.state !== "rec") return riffCancel();
+    if (RIFF.dub) return riffDone(TR.tick, recBars());
     const played = Math.max(1, Math.ceil((heard() - RIFF.start) / 32)), bars3 = RIFF_BARS.find((b) => b >= played) || RIFF.bars;
     riffDone(Math.ceil(TR.tick / 32) * 32, Math.min(bars3, RIFF.bars));
   }
-  var riffQuiet = (t) => RIFF.state === "rec" && RIFF.quiet && t === RIFF.t;
+  var riffQuiet = (t) => RIFF.state === "rec" && RIFF.quiet && t === RIFF.t && !RIFF.dub;
   function riffNote(nn, v, on3) {
     if (RIFF.state === "off") return;
     const solo2 = LV.ctl ? LV.ctl.soloT : -1;
@@ -62112,7 +62116,14 @@ html.os-darwin.native-menu #menubar .mproj {
     changed();
   }
   function riffAt(nn, v, on3) {
-    const steps2 = RIFF.bars * 16, at2 = Math.round(heard() - RIFF.start) / 2;
+    const steps2 = recBars() * 16;
+    let at2 = Math.round(heard() - RIFF.start) / 2;
+    if (RIFF.dub) {
+      const top = LV.voices[RIFF.t] && LV.voices[RIFF.t][0], L2 = steps2 * 2;
+      if (on3 && heard() < RIFF.start - 1) return;
+      if (top) at2 = Math.round(((heard() - top.start) % L2 + L2) % L2) / 2;
+      if (!on3 && RIFF.held[nn] && at2 < RIFF.held[nn].s) at2 = steps2;
+    }
     if (on3) {
       if (at2 < -0.5 || at2 >= steps2) return;
       RIFF.held[nn] = { s: Math.max(0, at2), v };
@@ -62130,19 +62141,21 @@ html.os-darwin.native-menu #menubar .mproj {
       RIFF.state = "rec";
       changed();
     }
-    if (RIFF.state === "rec" && tick >= RIFF.end) riffDone(tick, RIFF.bars);
+    if (RIFF.state === "rec" && tick >= RIFF.end) riffDone(tick, recBars());
+    varyTick(tick);
     if (RIFF.cued.length && RIFF.cued.some((c) => tick >= c.tick)) {
       for (const c of RIFF.cued.filter((c2) => tick >= c2.tick)) put2(c.t, c.id, tick);
       RIFF.cued = RIFF.cued.filter((c) => tick < c.tick);
       changed();
     }
   }
-  var riffBusy = () => RIFF.state !== "off" || RIFF.cued.length > 0;
+  var riffBusy = () => RIFF.state !== "off" || RIFF.cued.length > 0 || varying();
   function handBack(t) {
     if (t >= 0 && LV.userPlay && LV.userPlay[t] && !LV.userPlay[t].held) delete LV.userPlay[t];
     LV.ver++;
   }
   function riffDone(tick, bars3) {
+    if (RIFF.dub) return dubDone(bars3);
     const steps2 = bars3 * 16, t = RIFF.t;
     for (const nn in RIFF.held) {
       const h = RIFF.held[nn];
@@ -62232,7 +62245,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!f) return;
     f.raw = f.raw || f.notes;
     f.q = q;
-    f.notes = riffQuantize(f.raw, q, f.bars);
+    f.notes = f.clean = riffQuantize(f.raw, q, f.bars);
     touch(f);
     storeTakes();
     changed();
@@ -62259,6 +62272,133 @@ html.os-darwin.native-menu #menubar .mproj {
     changed();
     toast(n - kept.length ? "Deleted " + (n - kept.length) + " takes" : "No takes to delete");
   }
+  function rebuild(f) {
+    const base = f.base || f.raw || f.notes;
+    f.raw = riffQuantize(
+      [...base, ...(f.layers || []).flat()].filter((n) => n.s < f.bars * 16),
+      "off",
+      f.bars
+    );
+    f.notes = f.clean = riffQuantize(f.raw, f.q || "off", f.bars);
+    touch(f);
+    storeTakes();
+    changed();
+  }
+  function riffDub(id) {
+    const f = FACMAP.get(id);
+    if (!f || RIFF.state !== "off") return;
+    if (!lvOn() || riffPlaying(f.track) !== id) return void toast("▶ Play the take first, then overdub over it");
+    const start = nextBar();
+    Object.assign(RIFF, {
+      state: "wait",
+      from: TR.tick,
+      start,
+      end: start + f.bars * 32,
+      take: f.bars,
+      t: f.track,
+      notes: [],
+      held: {},
+      miss: -1,
+      dub: id
+    });
+    if (CTL.inp && LV.ctl) LV.ctl.soloT = f.track;
+    changed();
+  }
+  function dubDone(bars3) {
+    const f = FACMAP.get(RIFF.dub), steps2 = bars3 * 16;
+    for (const nn in RIFF.held) {
+      const h = RIFF.held[nn];
+      RIFF.notes.push({ s: h.s, l: Math.max(0.5, steps2 - h.s), n: +nn, v: h.v });
+    }
+    const layer = riffQuantize(
+      RIFF.notes.filter((x) => x.s < steps2).map((x) => ({ ...x, l: Math.min(x.l, steps2 - x.s) })),
+      "off",
+      bars3
+    );
+    Object.assign(RIFF, { state: "off", held: {}, notes: [], dub: null });
+    if (!f) return void changed();
+    RIFF.last = f.id;
+    if (!layer.length) {
+      changed();
+      return void toast("Nothing was played, so no new layer");
+    }
+    f.base = f.base || (f.raw || f.notes).slice();
+    f.layers = [...f.layers || [], layer];
+    rebuild(f);
+    toast("Layer " + f.layers.length + " added to " + f.name + " (↶ Undo layer takes it off)");
+  }
+  function riffUndoLayer(id) {
+    const f = FACMAP.get(id);
+    if (!f || !(f.layers || []).length) return;
+    f.layers = f.layers.slice(0, -1);
+    rebuild(f);
+  }
+  function riffSpeed(id, k2) {
+    const f = FACMAP.get(id);
+    if (!f) return;
+    const steps2 = f.bars * 16, nb = k2 === 2 ? f.bars : Math.min(8, f.bars * 2);
+    if (k2 !== 2 && f.bars >= 8) return void toast("It is 8 bars already, as long as a take can be");
+    const sp = (ns) => k2 === 2 ? [0, steps2 / 2].flatMap((o) => ns.map((n) => ({ ...n, s: n.s / 2 + o, l: Math.max(0.25, n.l / 2) }))) : ns.map((n) => ({ ...n, s: n.s * 2, l: n.l * 2 })).filter((n) => n.s < nb * 16);
+    f.base = sp(f.base || f.raw || f.notes);
+    f.layers = (f.layers || []).map(sp);
+    f.bars = nb;
+    rebuild(f);
+  }
+  function riffVary(id, lvl) {
+    const f = FACMAP.get(id);
+    if (!f) return;
+    f.vary = lvl;
+    f.notes = (f.clean || riffQuantize(f.raw || f.notes, f.q || "off", f.bars)).slice();
+    touch(f);
+    storeTakes();
+    changed();
+  }
+  var varying = () => lvOn() && S.tracks.some((x, t) => {
+    const v = LV.voices[t] && LV.voices[t][0];
+    return v && v.f.riff && v.f.vary;
+  });
+  function varyTick(tick) {
+    S.tracks.forEach((x, t) => {
+      const v = LV.voices[t] && LV.voices[t][0];
+      if (!v || !v.f.riff || !v.f.vary) return;
+      const f = v.f, L2 = f.bars * 32;
+      if (tick < v.start || (tick - v.start) % L2) return;
+      const pass2 = (tick - v.start) / L2, plain2 = f.clean || f.notes;
+      f.clean = plain2;
+      const keep2 = pass2 === 0 || (f.vary === 1 ? pass2 % 2 === 0 : pass2 % 4 === 0);
+      f.notes = keep2 ? plain2.slice() : varied(plain2, pass2, f.vary, f.id, f.bars * 16);
+      touch(f);
+    });
+  }
+  function varied(ns, pass2, lvl, id, steps2) {
+    const r = mulberry(hashStr(id) ^ Math.imul(pass2 + 1, 2654435761)), p = lvl === 2 ? 0.3 : 0.15, at2 = new Set(ns.map((n) => n.s + ":" + n.n)), out2 = [];
+    for (const n of ns) {
+      const x = r();
+      if (x < p * 0.3 && n.s > 0) continue;
+      if (x < p * 0.6) out2.push({ ...n, n: Math.max(24, Math.min(108, n.n + (r() < 0.5 ? 12 : -12))) });
+      else if (x < p && n.l <= 1.01 && !at2.has(n.s + 1 + ":" + n.n)) {
+        out2.push(n, { ...n, s: n.s + 1, v: Math.max(1, Math.round(n.v * 0.7)) });
+        at2.add(n.s + 1 + ":" + n.n);
+      } else out2.push({ ...n, v: Math.max(1, Math.min(127, n.v + Math.round((r() - 0.5) * 20))) });
+    }
+    return out2.filter((n) => n.s < steps2).sort((a, b) => a.s - b.s || a.n - b.n);
+  }
+  function riffSaveMine(id) {
+    const f = FACMAP.get(id);
+    if (!f) return;
+    const saved = userSave({
+      name: f.name + " · " + trackName(f.track),
+      type: "tone",
+      bars: f.bars,
+      notes: f.clean || f.notes,
+      key: f.key,
+      role: f.pool || "",
+      genre: f.genre || ""
+    });
+    toast(
+      saved ? "Saved " + f.name + " to My patterns: it is in the library in Song Mode" : "Could not save: the browser storage is full"
+    );
+  }
   function roll(notes, bars3, opts = {}) {
     const W2 = bars3 * 16, ns = notes.length ? notes : [], lo = Math.min(...ns.map((n) => n.n), 60) - 1, hi = Math.max(...ns.map((n) => n.n), lo + 12) + 1, H2 = hi - lo;
     const lines = [];
@@ -62284,17 +62424,17 @@ html.os-darwin.native-menu #menubar .mproj {
       const beats = Math.ceil((RIFF.start - h) / 8);
       return {
         big: beats <= 4 ? String(Math.max(1, beats)) : "…",
-        line: beats <= 4 ? "Get ready: recording " + tn + " in " + beats + (beats > 1 ? " beats" : " beat") : "Count-in: recording " + tn + " starts in a bar",
+        line: beats <= 4 ? "Get ready: " + (RIFF.dub ? "overdubbing " : "recording ") + tn + " in " + beats + (beats > 1 ? " beats" : " beat") : "Count-in: recording " + tn + " starts in a bar",
         badge: "REC in " + Math.max(1, Math.min(beats, 99)),
         cls: "wait"
       };
     }
     if (RIFF.state === "rec") {
-      const bar2 = Math.min(RIFF.bars, Math.floor((h - RIFF.start) / 32) + 1);
+      const nb = recBars(), bar2 = Math.min(nb, Math.floor((h - RIFF.start) / 32) + 1);
       return {
         big: "●",
-        line: "Recording " + tn + ": bar " + Math.max(1, bar2) + " of " + RIFF.bars,
-        badge: "● REC " + (RIFF.t >= 0 ? S.tracks[RIFF.t].name + " " : "") + Math.max(1, bar2) + "/" + RIFF.bars,
+        line: (RIFF.dub ? "Overdubbing " : "Recording ") + tn + ": bar " + Math.max(1, bar2) + " of " + nb,
+        badge: (RIFF.dub ? "● DUB " : "● REC ") + (RIFF.t >= 0 ? S.tracks[RIFF.t].name + " " : "") + Math.max(1, bar2) + "/" + nb,
         cls: "rec"
       };
     }
@@ -62361,7 +62501,10 @@ html.os-darwin.native-menu #menubar .mproj {
       } else fill2.style.width = "100%";
       if (RIFF.state === "rec" || RIFF.dirty) {
         RIFF.dirty = false;
-        strip2.replaceChildren(roll(liveNotes(Math.max(0, at2)), RIFF.bars, { at: RIFF.state === "rec" ? at2 : null }));
+        const nb = recBars(), under = RIFF.dub && FACMAP.get(RIFF.dub) ? FACMAP.get(RIFF.dub).notes : [];
+        strip2.replaceChildren(
+          roll([...under, ...liveNotes(Math.max(0, at2))], nb, { at: RIFF.state === "rec" && !RIFF.dub ? at2 : null })
+        );
       }
     };
     views.add(tick);
@@ -62443,7 +62586,7 @@ html.os-darwin.native-menu #menubar .mproj {
               el(
                 "span",
                 { class: "riffStat" },
-                `${last3.name} is ready: ${last3.notes.length} notes on ${trackName(last3.track)}, ${bars2(last3.bars)}. ` + (riffPlaying(last3.track) === last3.id ? "Playing in the set." : "The set is unchanged.")
+                `${last3.name}: ${(last3.clean || last3.notes).length} notes on ${trackName(last3.track)}, ${bars2(last3.bars)}` + ((last3.layers || []).length ? ", " + (last3.layers.length + 1) + " layers" : "") + ". " + (riffPlaying(last3.track) === last3.id ? "Playing in the set." : "The set is unchanged.")
               )
             ),
             roll(last3.notes, last3.bars),
@@ -62453,6 +62596,33 @@ html.os-darwin.native-menu #menubar .mproj {
               takeBtn(last3),
               btn3("↺ Again", () => riffArm(), "Record it again (this take stays in the list)"),
               btn3("✕ Discard", () => riffDelete(last3.id), "Throw this take away")
+            ),
+            el(
+              "div",
+              { class: "riffRow riffMore" },
+              btn3(
+                "＋ Overdub",
+                () => riffDub(last3.id),
+                riffPlaying(last3.track) === last3.id ? "Play over the take for one time round, from the next bar: what you play is added as a layer" : "▶ Play the take first, then add layers over it"
+              ),
+              (last3.layers || []).length ? btn3("↶ Undo layer", () => riffUndoLayer(last3.id), "Take the last layer off") : null,
+              sel(
+                "Vary",
+                last3.vary || 0,
+                [
+                  [0, "As played"],
+                  [1, "A little"],
+                  [2, "More"]
+                ],
+                (v) => riffVary(last3.id, +v)
+              ),
+              btn3("½×", () => riffSpeed(last3.id, 0.5), "Half speed: the take twice as long (up to 8 bars)"),
+              btn3("2×", () => riffSpeed(last3.id, 2), "Double speed: the take played twice in its length"),
+              btn3(
+                "⤓ My patterns",
+                () => riffSaveMine(last3.id),
+                "Keep it in My patterns, for Song Mode and every song"
+              )
             )
           ) : null
         );
@@ -62472,7 +62642,13 @@ html.os-darwin.native-menu #menubar .mproj {
               { class: (on3 ? "on" : "") + (f.id === RIFF.last ? " last" : "") },
               el(
                 "div",
-                { class: "riffName" },
+                {
+                  class: "riffName",
+                  role: "button",
+                  tabindex: 0,
+                  title: "Show this take’s card: overdub, vary, speed and save it",
+                  onclick: () => (RIFF.last = f.id, changed())
+                },
                 el("b", {}, f.name),
                 el("span", { class: "hint" }, trackName(f.track) + " · " + bars2(f.bars) + (on3 ? " · playing" : ""))
               ),
@@ -69645,6 +69821,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ],
         [
           "Loop rec: choose the track to record to, how long and the Quantize, then press ● Rec (it starts the jam if it’s stopped). Come in when the count-down reaches the start; the track goes quiet while you record and your notes appear as you play. The take then waits, with the set unchanged, until you press ▶ Play; ★ makes the scene keep it.",
+          "Grow a take on its card: ＋ Overdub adds a layer as it plays (↶ Undo layer takes it off), Vary plays it a little differently some times round, ½× and 2× change its speed, and ⤓ My patterns keeps it for Song Mode.",
           { mode: "live", sel: ".riffPanel .riffBtn" }
         ],
         "Optional: a USB controller keyboard as well, for mutes, key changes and live solos (Raven mode)."

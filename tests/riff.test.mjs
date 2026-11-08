@@ -403,3 +403,71 @@ test('Loop rec: a take you play stays through scene changes, swaps, the energy a
   });
   assert.deepEqual(errors, []);
 });
+
+test('Loop rec: overdub layers (and undo), Vary, half and double speed, and keep a take in My patterns', async () => {
+  const { page, errors } = await setUp(SAVED);
+  await page.evaluate(() => {
+    document.querySelector('#lvSetDet').open = true;
+  });
+  await page.locator('#lvSetBody label', { hasText: 'Play a take straight away' }).locator('input').check();
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV,
+      t = 6;
+    __pick('Record to', t);
+    __pick('Length', 1);
+    __pick('Quantize', '16');
+    __step(8);
+    const t1 = Math.ceil((a.TR.tick + 16) / 32) * 32;
+    __btn('● Rec').click();
+    __play(0, t1, 4);
+    __to(t1 + 40);
+    const f = LV.voices[t][0].f,
+      out = { first: f.notes.map(n => n.n - __key0()).join() };
+    /* ＋ Overdub: one time round from the next bar, the take still playing; a note at beat 3 */
+    __btn('＋ Overdub').click();
+    const d = Math.ceil((a.TR.tick + 2) / 32) * 32;
+    out.dubbing = a.LV.voices[t][0].f === f;
+    __play(4, d + 16, 4);
+    __to(d + 34);
+    out.layers = (f.layers || []).length;
+    out.after = f.notes.map(n => n.s + ':' + (n.n - __key0())).join();
+    out.still = LV.voices[t][0].f === f;
+    __btn('↶ Undo layer').click();
+    out.undone = f.notes.map(n => n.n - __key0()).join();
+    /* Vary a little: the first time round as played, then changes every other time round, never the take */
+    __pick('Vary', 1);
+    const seen = new Set();
+    for (let i = 0; i < 16; i++) {
+      __step(32);
+      seen.add(JSON.stringify(f.notes));
+    }
+    out.varies = seen.size > 1;
+    out.clean = f.clean.map(n => n.n - __key0()).join();
+    __pick('Vary', 0);
+    /* ½×: twice as long; 2×: back to one bar's worth played twice */
+    const s0 = f.notes.map(n => n.s);
+    __btn('½×').click();
+    out.half = [f.bars, f.notes.map(n => n.s).join() === s0.map(s => s * 2).join()];
+    __btn('2×').click();
+    out.double = [f.bars, f.notes.length];
+    /* ⤓ My patterns */
+    __btn('⤓ My patterns').click();
+    const mine = JSON.parse(localStorage.getItem('mc707-user-patterns') || '[]');
+    out.mine = mine.length && mine[0].name.startsWith(f.name) && mine[0].notes.length === f.notes.length;
+    a.stopAll();
+    return out;
+  });
+  assert.equal(r.first, '0');
+  assert.ok(r.dubbing, 'the take plays on while you overdub');
+  assert.equal(r.layers, 1);
+  assert.equal(r.after, '0:0,8:4', 'the new note joins the take where it was played');
+  assert.ok(r.still);
+  assert.equal(r.undone, '0', 'undo takes the layer off');
+  assert.ok(r.varies, 'it varies as it plays');
+  assert.equal(r.clean, '0', 'the take itself is unchanged');
+  assert.deepEqual(r.half, [2, true]);
+  assert.deepEqual(r.double, [2, 2]);
+  assert.ok(r.mine, 'saved to My patterns');
+  assert.deepEqual(errors, []);
+});
