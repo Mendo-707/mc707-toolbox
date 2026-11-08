@@ -110,7 +110,7 @@ test('Compose: every take plays its parts its own way (drums, bass and chords ar
         per = {};
       for (let seed = 1; seed <= 8; seed++)
         for (const p of Object.values(compose(st, { minutes: 3, seed }).patterns))
-          if (['kit', 'bass', 'chords'].includes(p.role) && /^[ABC]$/.test(p.variant))
+          if (['kit', 'bass', 'chords'].includes(p.role) && /^([ABC]|verse)$/.test(p.variant))
             (per[p.role] = per[p.role] || new Set()).add(p.variant + sig(p));
       out[id] = Object.fromEntries(Object.entries(per).map(([k, v]) => [k, v.size]));
     }
@@ -118,7 +118,7 @@ test('Compose: every take plays its parts its own way (drums, bass and chords ar
   });
   for (const [id, roles] of Object.entries(r))
     for (const [role, n] of Object.entries(roles)) {
-      /* the A, B and C parts over 8 takes: at most 24 */
+      /* the A, B, C and verse parts over 8 takes */
       assert.ok(n >= (role === 'kit' ? 14 : 10), id + ' ' + role + ': ' + n + ' different in 8 takes');
     }
   assert.deepEqual(errors, []);
@@ -137,7 +137,7 @@ test('Compose: new material for every take (progressions, basslines and melodies
       for (let seed = 1; seed <= 60; seed++) {
         const s = compose(st, { minutes: 2, seed });
         n.prog.add(s.prog);
-        n.bass.add(at(s.patterns['bass:A']));
+        n.bass.add(at(s.patterns['bass:A'] || s.patterns['bass:verse']));
         n.lead.add(all(s.patterns['lead:hook'] || s.patterns['lead:A']));
       }
       out[id] = [n.prog.size, n.bass.size, n.lead.size];
