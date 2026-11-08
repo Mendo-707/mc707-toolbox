@@ -12,37 +12,37 @@ Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and de
 
 ### Song Mode
 
-Make your own music: write beats, basslines, chords and melodies, arrange them into a whole track and hear it on the MC-707 as you go. A big pattern library and a song wizard are there when you want a head start, and you can record the audio or export your song. [More](#song-mode-1)
+Make your own music and play it on the MC-707 note for note. Write drums, bass, chords and melodies in a step grid or piano roll (or play them in on your keys), and arrange them on a timeline into a whole song. Over 28,000 patterns in 42 styles and a song wizard are there when you want a head start. Record every track's audio over USB, or export MIDI. [More](#song-mode-1)
 
 ![Song Mode](docs/features/1-song-mode.png)
 
 ### Scene Mode
 
-Arrange your song as MC-707 clips and scenes, laid out just like its own screen, and send it over USB or as a project file. The MC-707 then plays it by itself, no computer needed. [More](#scene-mode-1)
+Turn your song into MC-707 clips and a chain of scenes, on a board laid out just like the MC-707's own screen. Write it over USB or save a project file for the SD card, and the MC-707 plays the whole song by itself, sounds and all, with no computer. [More](#scene-mode-1)
 
 ![Scene Mode](docs/features/2-scene-mode.png)
 
 ### Live Mode
 
-Play a live set from 16 pads: pick a style, change scenes, drop breaks and fills, and shape the sound as you go. Record your own riffs into the set, or let auto-pilot take over. [More](#live-mode-1)
+Play a live set from 16 pads, laid out like the MC-707's. Pick a style and the app writes a set of scenes that fit together; change scenes, swap parts and drop breaks, fills and builds, all on the beat. Record your own riffs into the set with Loop rec, or let auto-pilot run it. [More](#live-mode-1)
 
 ![Live Mode](docs/features/3-live-mode.png)
 
 ### Synth Mode
 
-Use the MC-707 as an 8-track synth for your DAW: pick, edit and mix the sound on every track, and save the whole setup. [More](#synth-mode-1)
+The MC-707 as an 8-track synth for your DAW: pick, edit and mix the sound on each track, open any track's editor beside the others, and save all eight sounds as a setup. [More](#synth-mode-1)
 
 ![Synth Mode](docs/features/4-synth-mode.png)
 
 ### ZenCore editor
 
-Edit every setting of the MC-707's sounds on a big screen, and keep your own sound library alongside starters and factory tones. [More](#zencore-editor-1)
+Every setting of the MC-707's tones and drum kits on a big screen, with filters, envelopes and LFOs you can drag, and a sound library for your own sounds, starters and factory tones. [More](#zencore-editor-1)
 
 ![ZenCore editor](docs/features/5-zencore-editor.png)
 
 ### Slime Lab
 
-Sound design made simple: start from a classic sound, shape it with a few easy knobs, try variations and save your favourite. [More](#slime-lab-1)
+Sound design made simple: start from a classic sound, shape it with five knobs that work the same on every sound, grow variations and pick one by ear, then fine-tune it and save it to your sounds. [More](#slime-lab-1)
 
 ![Slime Lab](docs/features/6-slime-lab.png)
 
