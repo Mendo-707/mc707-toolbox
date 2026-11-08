@@ -201,8 +201,11 @@ export function startOpen(last = true) {
     if (e.key === 'Escape') close();
   });
   document.body.append(ov);
-  setTimeout(() => {
+  /* (focus once the app is showing: while it is still starting up, focus is lost) */
+  const focus = () => {
+    if (document.documentElement.classList.contains('boot')) return void setTimeout(focus, 50);
     const b = ov.querySelector('.stCard.on') || ov.querySelector('.stCard');
-    if (b) b.focus();
-  }, 30);
+    if (b && document.contains(b)) b.focus();
+  };
+  setTimeout(focus, 30);
 }

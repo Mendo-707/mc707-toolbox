@@ -8,6 +8,7 @@ import { templateBuilderOpen } from './template-builder.js';
 import { $, el, toast } from '../core/dom.js';
 import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
+import { fixScenes } from '../core/scene-model.js';
 import { DEF_ROLES, ROLES, roleInfo, roleOf } from '../core/tracks.js';
 import { cmFix } from '../services/clip-switch.js';
 import { askDlg } from './dialogs.js';
@@ -88,6 +89,8 @@ export async function applyRoles(roles) {
     if (rename[t]) tr.name = nameFor(roles, t);
   });
   S.clips = S.clips.filter(c => S.tracks[c.t].type === S.patterns[c.pat].type);
+  /* Scene Mode's clips too: a drum pattern cannot stay on what is now a tone track */
+  if (S.scn) fixScenes(S, S.patterns);
   /* the MC-707 clips screen: a track's clip kinds follow its type and role */
   cmFix().forEach((m, t) => {
     const drum = types[t] === 'drum',
@@ -113,7 +116,8 @@ export function trackSetupOpen() {
       'aria-label': 'Track setup',
       onpointerdown: e => {
         if (e.target.id === 'tsOv') ov.remove();
-      }
+      },
+      onkeydown: e => e.key === 'Escape' && ov.remove()
     });
     document.body.append(ov);
   }

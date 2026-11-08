@@ -149,11 +149,22 @@ let saveT = 0;
  * been offered back, so the demo song does not take its place). */
 export const BACKUP = { hold: false };
 /** Autosave soon (debounced), and mark the project as changed. Call after changing the song. */
+/** Write the waiting autosave now (the page is closing). */
+export function flushSave() {
+  if (!saveT) return;
+  clearTimeout(saveT);
+  saveT = 0;
+  saveNow();
+}
 export function scheduleSave() {
   PROJ.dirty = true;
   if (PROJ.t) PROJ.t();
   clearTimeout(saveT);
-  saveT = setTimeout(() => {
+  saveT = setTimeout(saveNow, 400);
+}
+function saveNow() {
+  saveT = 0;
+  {
     const text = JSON.stringify(S);
     /* the desktop app also keeps a backup file, with no size limit (File › Recover a backup) */
     const backed = !!(HOST && HOST.backupWrite);
@@ -171,20 +182,36 @@ export function scheduleSave() {
         );
       }
     }
-  }, 400);
+  }
 }
 /** The autosaved song from localStorage, checked by fixState(), or null if there is none. @returns {import('./types.js').Song|null} */
 export function loadSaved() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORE);
+    raw = localStorage.getItem(STORE);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    if (!s || s.v !== 1 || !Array.isArray(s.tracks) || s.tracks.length !== 8 || !s.patterns || !Array.isArray(s.clips))
-      return null;
-    return fixState(s);
+    if (s && s.v === 1 && Array.isArray(s.tracks) && s.tracks.length === 8 && s.patterns && Array.isArray(s.clips))
+      return fixState(s);
   } catch (e) {
-    return null;
+    /* kept below */
   }
+  /* a saved song that would not load: kept as it was (the next autosave would write over it) */
+  try {
+    if (raw && !localStorage.getItem(STORE + '.broken')) localStorage.setItem(STORE + '.broken', raw);
+    setTimeout(
+      () =>
+        toast(
+          'Your last song could not be opened, so a new one started. The old one is kept in the browser as ' +
+            STORE +
+            '.broken.'
+        ),
+      1500
+    );
+  } catch (e) {
+    /* storage off */
+  }
+  return null;
 }
 /** The clip with this id, or undefined. */
 export const getClip = id => S.clips.find(c => c.id === id);
@@ -311,7 +338,9 @@ export function fixState(s) {
             n.s >= 0 &&
             n.s < p.bars * 16
         )
-        .map(n => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) }));
+        .map(n => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) }))
+        /* a drum note is one of the 12 lanes, a tone note a MIDI note */
+        .filter(n => (p.type === 'drum' ? n.n >= 0 && n.n <= 11 : n.n >= 0 && n.n <= 127));
       if (p.key && !(Number.isFinite(+p.key.root) && SCALES[p.key.scale])) p.key = null;
       pats[id] = p;
       const m = /^p(\d+)$/.exec(id);
@@ -358,7 +387,7 @@ export function fixState(s) {
       return o;
     });
   s.clips.forEach(c => {
-    s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
+    s.bars = Math.min(512, Math.max(s.bars, Math.ceil(c.start + c.len)));
   });
   fixScenes(s, pats);
   s.nextId = Math.max(Math.round(num(s.nextId, 1, 1e9, 1)), maxId + 1);

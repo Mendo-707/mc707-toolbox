@@ -72,5 +72,6 @@ jobs:
           APP_URL: http://localhost:8707
         run: |
           node scripts/dev.mjs &
-          sleep 1
+          # (until it answers, not a fixed wait)
+          for i in $(seq 1 50); do curl -sf http://localhost:8707 >/dev/null && break; sleep 0.2; done
           node --test --test-shard=${{ matrix.shard }}/3 tests/*.test.mjs

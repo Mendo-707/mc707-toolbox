@@ -18,7 +18,11 @@ import { ctlAttach } from '../live/controller.js';
 const SLOT_KEY = 'mc707-song-slots';
 function readSlots() {
   try {
-    return JSON.parse(localStorage.getItem(SLOT_KEY) || '{}') || {};
+    const o = JSON.parse(localStorage.getItem(SLOT_KEY) || '{}');
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return {};
+    /* (only saved songs: anything else in there is left out) */
+    for (const k in o) if (!o[k] || typeof o[k] !== 'object') delete o[k];
+    return o;
   } catch (e) {
     return {};
   }

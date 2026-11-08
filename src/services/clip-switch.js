@@ -33,6 +33,7 @@ export const PCLAST = {};
 export function cmFix() {
   if (!Array.isArray(S.clipMap) || S.clipMap.length !== 8)
     S.clipMap = CT_DEF.map(t => ({ n: 1, types: [t], names: [] }));
+  S.clipMap = S.clipMap.map((m, i) => (m && typeof m === 'object' ? m : { n: 1, types: [CT_DEF[i]], names: [] }));
   S.clipMap.forEach((m, i) => {
     m.n = clamp(Math.round(+m.n || 1), 1, 16);
     if (!Array.isArray(m.types)) m.types = [];

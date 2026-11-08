@@ -13,9 +13,12 @@ export function askDlg(o) {
         'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9600;padding:16px'
     });
     let inp = null;
+    const was = document.activeElement;
     const done = v => {
       back.remove();
       removeEventListener('keydown', kd, true);
+      /* focus back where it was */
+      if (was && was.focus && document.contains(was)) was.focus();
       res(v);
     };
     const ok = el(
@@ -29,6 +32,7 @@ export function askDlg(o) {
       {
         role: 'dialog',
         'aria-modal': 'true',
+        'aria-label': o.title,
         style:
           'background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px'
       },
@@ -49,14 +53,14 @@ export function askDlg(o) {
     box.append(el('div', { style: 'display:flex;gap:8px;justify-content:flex-end' }, no, ok));
     back.append(box);
     document.body.append(back);
+    /* while it is open, keys are the dialog's (Space must not start the song behind it); Enter presses
+       the button that has the focus, or OK */
     const kd = e => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        done(o.input ? null : false);
-      } else if (e.key === 'Enter') {
-        e.stopPropagation();
+      e.stopPropagation();
+      if (e.key === 'Escape') done(o.input ? null : false);
+      else if (e.key === 'Enter') {
         e.preventDefault();
-        ok.click();
+        (e.target.tagName === 'BUTTON' && box.contains(e.target) ? e.target : ok).click();
       }
     };
     addEventListener('keydown', kd, true);

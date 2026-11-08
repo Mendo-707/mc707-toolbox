@@ -84,6 +84,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          # (the tag reaches the script as a variable, never as script text)
+          TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
         run: |
           shopt -s nullglob
-          gh release upload "${{ github.event.release.tag_name || github.event.inputs.tag }}" dist/*.dmg dist/*.AppImage dist/*.deb --clobber
+          gh release upload "$TAG" dist/*.dmg dist/*.AppImage dist/*.deb --clobber

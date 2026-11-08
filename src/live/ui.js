@@ -83,7 +83,8 @@ export const lvTickF = () => (lvOn() && TR.vis[0] ? TR.vis[0].tick : 0);
 const FOLD_KEY = 'mc707-live-fold';
 const folds = () => {
   try {
-    return JSON.parse(localStorage.getItem(FOLD_KEY) || '{}');
+    const o = JSON.parse(localStorage.getItem(FOLD_KEY) || '{}');
+    return o && typeof o === 'object' ? o : {};
   } catch (e) {
     return {};
   }

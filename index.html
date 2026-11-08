@@ -9866,8 +9866,17 @@ html.os-darwin.native-menu #menubar .mproj {
         location.reload();
       });
       btn('Reset autosave and reload', function () {
+        if (
+          !confirm(
+            'Start with a new song? The current one is kept as a backup in the browser (mc707-song-mode-v1.bak).'
+          )
+        )
+          return;
         try {
-          localStorage.removeItem('mc707-song-mode-v1');
+          var k = 'mc707-song-mode-v1',
+            v = localStorage.getItem(k);
+          if (v) localStorage.setItem(k + '.bak', v);
+          localStorage.removeItem(k);
         } catch (e) {}
         location.reload();
       });
@@ -10987,11 +10996,21 @@ html.os-darwin.native-menu #menubar .mproj {
   var PROJ = { name: "", path: "", dirty: false, t: null };
   var saveT = 0;
   var BACKUP = { hold: false };
+  function flushSave() {
+    if (!saveT) return;
+    clearTimeout(saveT);
+    saveT = 0;
+    saveNow();
+  }
   function scheduleSave() {
     PROJ.dirty = true;
     if (PROJ.t) PROJ.t();
     clearTimeout(saveT);
-    saveT = setTimeout(() => {
+    saveT = setTimeout(saveNow, 400);
+  }
+  function saveNow() {
+    saveT = 0;
+    {
       const text2 = JSON.stringify(S);
       const backed = !!(HOST && HOST.backupWrite);
       if (backed && !BACKUP.hold) HOST.backupWrite(text2).catch(() => {
@@ -11007,19 +11026,29 @@ html.os-darwin.native-menu #menubar .mproj {
           );
         }
       }
-    }, 400);
+    }
   }
   function loadSaved() {
+    let raw = null;
     try {
-      const raw = localStorage.getItem(STORE);
+      raw = localStorage.getItem(STORE);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (!s || s.v !== 1 || !Array.isArray(s.tracks) || s.tracks.length !== 8 || !s.patterns || !Array.isArray(s.clips))
-        return null;
-      return fixState(s);
+      if (s && s.v === 1 && Array.isArray(s.tracks) && s.tracks.length === 8 && s.patterns && Array.isArray(s.clips))
+        return fixState(s);
     } catch (e) {
-      return null;
     }
+    try {
+      if (raw && !localStorage.getItem(STORE + ".broken")) localStorage.setItem(STORE + ".broken", raw);
+      setTimeout(
+        () => toast(
+          "Your last song could not be opened, so a new one started. The old one is kept in the browser as " + STORE + ".broken."
+        ),
+        1500
+      );
+    } catch (e) {
+    }
+    return null;
   }
   var getClip = (id) => S.clips.find((c) => c.id === id);
   var curClip = () => UI.sel ? getClip(UI.sel) : null;
@@ -11106,7 +11135,7 @@ html.os-darwin.native-menu #menubar .mproj {
         p.name = String(p.name || "Pattern").slice(0, 40);
         p.notes = p.notes.filter(
           (n) => n && Number.isFinite(+n.s) && Number.isFinite(+n.l) && Number.isFinite(+n.n) && Number.isFinite(+n.v) && n.l > 0 && n.s >= 0 && n.s < p.bars * 16
-        ).map((n) => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) }));
+        ).map((n) => ({ s: +n.s, l: +n.l, n: Math.round(+n.n), v: Math.max(1, Math.min(127, Math.round(+n.v))) })).filter((n) => p.type === "drum" ? n.n >= 0 && n.n <= 11 : n.n >= 0 && n.n <= 127);
         if (p.key && !(Number.isFinite(+p.key.root) && SCALES[p.key.scale])) p.key = null;
         pats[id] = p;
         const m = /^p(\d+)$/.exec(id);
@@ -11141,7 +11170,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return o;
     });
     s.clips.forEach((c) => {
-      s.bars = Math.min(512, Math.max(s.bars, c.start + c.len));
+      s.bars = Math.min(512, Math.max(s.bars, Math.ceil(c.start + c.len)));
     });
     fixScenes(s, pats);
     s.nextId = Math.max(Math.round(num4(s.nextId, 1, 1e9, 1)), maxId + 1);
@@ -20001,6 +20030,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function cmFix() {
     if (!Array.isArray(S.clipMap) || S.clipMap.length !== 8)
       S.clipMap = CT_DEF.map((t) => ({ n: 1, types: [t], names: [] }));
+    S.clipMap = S.clipMap.map((m, i) => m && typeof m === "object" ? m : { n: 1, types: [CT_DEF[i]], names: [] });
     S.clipMap.forEach((m, i) => {
       m.n = clamp(Math.round(+m.n || 1), 1, 16);
       if (!Array.isArray(m.types)) m.types = [];
@@ -21729,9 +21759,11 @@ html.os-darwin.native-menu #menubar .mproj {
         style: "position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9600;padding:16px"
       });
       let inp = null;
+      const was = document.activeElement;
       const done3 = (v) => {
         back.remove();
         removeEventListener("keydown", kd, true);
+        if (was && was.focus && document.contains(was)) was.focus();
         res(v);
       };
       const ok = el(
@@ -21745,6 +21777,7 @@ html.os-darwin.native-menu #menubar .mproj {
         {
           role: "dialog",
           "aria-modal": "true",
+          "aria-label": o.title,
           style: "background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:10px"
         },
         el("b", { style: "font-size:16px" }, o.title),
@@ -21763,13 +21796,11 @@ html.os-darwin.native-menu #menubar .mproj {
       back.append(box);
       document.body.append(back);
       const kd = (e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          done3(o.input ? null : false);
-        } else if (e.key === "Enter") {
-          e.stopPropagation();
+        e.stopPropagation();
+        if (e.key === "Escape") done3(o.input ? null : false);
+        else if (e.key === "Enter") {
           e.preventDefault();
-          ok.click();
+          (e.target.tagName === "BUTTON" && box.contains(e.target) ? e.target : ok).click();
         }
       };
       addEventListener("keydown", kd, true);
@@ -63281,7 +63312,8 @@ html.os-darwin.native-menu #menubar .mproj {
   var FOLD_KEY = "mc707-live-fold";
   var folds = () => {
     try {
-      return JSON.parse(localStorage.getItem(FOLD_KEY) || "{}");
+      const o = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}");
+      return o && typeof o === "object" ? o : {};
     } catch (e) {
       return {};
     }
@@ -66406,6 +66438,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (rename[t]) tr.name = nameFor(roles, t);
     });
     S.clips = S.clips.filter((c) => S.tracks[c.t].type === S.patterns[c.pat].type);
+    if (S.scn) fixScenes(S, S.patterns);
     cmFix().forEach((m, t) => {
       const drum = types[t] === "drum", kind = drum ? "drums" : ["bass", "chords", "pad", "lead", "pluck", "acid"].includes(roles[t]) ? roles[t] : "lead";
       m.types = m.types.map((ty) => drum ? ty === "fx" ? ty : "drums" : ty === "drums" ? kind : ty);
@@ -66428,7 +66461,8 @@ html.os-darwin.native-menu #menubar .mproj {
         "aria-label": "Track setup",
         onpointerdown: (e) => {
           if (e.target.id === "tsOv") ov.remove();
-        }
+        },
+        onkeydown: (e) => e.key === "Escape" && ov.remove()
       });
       document.body.append(ov);
     }
@@ -68529,7 +68563,10 @@ html.os-darwin.native-menu #menubar .mproj {
   var SLOT_KEY = "mc707-song-slots";
   function readSlots() {
     try {
-      return JSON.parse(localStorage.getItem(SLOT_KEY) || "{}") || {};
+      const o = JSON.parse(localStorage.getItem(SLOT_KEY) || "{}");
+      if (!o || typeof o !== "object" || Array.isArray(o)) return {};
+      for (const k2 in o) if (!o[k2] || typeof o[k2] !== "object") delete o[k2];
+      return o;
     } catch (e) {
       return {};
     }
@@ -69194,6 +69231,8 @@ html.os-darwin.native-menu #menubar .mproj {
     scheduleSave();
   }
   function onKey2(e) {
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== "Escape" && e.key !== "F11" && document.querySelector(".ptOv"))
+      return;
     if (e.key === "F11") {
       if (canFull()) {
         e.preventDefault();
@@ -70573,10 +70612,12 @@ html.os-darwin.native-menu #menubar .mproj {
       if (e.key === "Escape") close();
     });
     document.body.append(ov);
-    setTimeout(() => {
+    const focus = () => {
+      if (document.documentElement.classList.contains("boot")) return void setTimeout(focus, 50);
       const b = ov.querySelector(".stCard.on") || ov.querySelector(".stCard");
-      if (b) b.focus();
-    }, 30);
+      if (b && document.contains(b)) b.focus();
+    };
+    setTimeout(focus, 30);
   }
 
   // src/ui/grabber.js
@@ -74434,6 +74475,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     addEventListener("pagehide", () => {
       try {
+        flushSave();
         stopAll();
         panic(true);
       } catch (e) {

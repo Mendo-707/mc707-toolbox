@@ -24,8 +24,17 @@
         location.reload();
       });
       btn('Reset autosave and reload', function () {
+        if (
+          !confirm(
+            'Start with a new song? The current one is kept as a backup in the browser (mc707-song-mode-v1.bak).'
+          )
+        )
+          return;
         try {
-          localStorage.removeItem('mc707-song-mode-v1');
+          var k = 'mc707-song-mode-v1',
+            v = localStorage.getItem(k);
+          if (v) localStorage.setItem(k + '.bak', v);
+          localStorage.removeItem(k);
         } catch (e) {}
         location.reload();
       });

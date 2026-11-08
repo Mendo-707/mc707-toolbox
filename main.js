@@ -6,7 +6,8 @@ let win = null;
 let closing = false;
 
 // Only one copy at a time (two copies would fight over the MIDI port).
-if (!app.requestSingleInstanceLock()) { app.quit(); }
+/* (exit, not quit: a second copy must never get as far as making a window) */
+if (!app.requestSingleInstanceLock()) { app.exit(0); }
 else {
   /* opening it again brings the window forward, and shows it if it somehow never appeared */
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
@@ -205,17 +206,29 @@ ipcMain.handle('toggle-fullscreen', () => { if (!win) return false; win.setFullS
 ipcMain.handle('is-fullscreen', () => !!(win && win.isFullScreen()));
 ipcMain.on('close-now', () => { closing = true; if (win) win.close(); });
 ipcMain.on('quit-now', () => { closing = true; app.quit(); });
+/* the project files the page may read and write: only .json, and writes only to ones the user picked in
+   a save or open window or opened this session (not any path the page names) */
+const OK_FILES = new Set();
+const isProject = p => typeof p === 'string' && path.isAbsolute(p) && /\.json$/i.test(p);
 ipcMain.handle('save-dialog', async (_e, name) => {
   const r = await dialog.showSaveDialog(win, { defaultPath: path.join(folderFor('projects'), name || 'project.json'), filters: [{ name: 'MC707 / 101 Toolbox project', extensions: ['json'] }] });
-  return r.canceled ? null : r.filePath;
+  if (r.canceled) return null;
+  OK_FILES.add(path.resolve(r.filePath));
+  return r.filePath;
 });
 ipcMain.handle('open-dialog', async () => {
   const r = await dialog.showOpenDialog(win, { defaultPath: folderFor('projects'), properties: ['openFile'], filters: [{ name: 'MC707 / 101 Toolbox project', extensions: ['json'] }] });
   if (r.canceled || !r.filePaths[0]) return null;
   const p = r.filePaths[0];
+  OK_FILES.add(path.resolve(p));
   return { path: p, name: path.basename(p), text: fs.readFileSync(p, 'utf8') };
 });
-ipcMain.handle('read-file', async (_e, p) => ({ path: p, name: path.basename(p), text: fs.readFileSync(p, 'utf8') }));
+ipcMain.handle('read-file', async (_e, p) => {
+  if (!isProject(p)) throw new Error('not a project file');
+  const text = fs.readFileSync(p, 'utf8');
+  OK_FILES.add(path.resolve(p));
+  return { path: p, name: path.basename(p), text };
+});
 /* written whole or not at all: to a temporary file first, then swapped in, the previous version kept as .bak,
    so a crash or a full disk mid-save never leaves a half-written project */
 function writeSafe(p, text, bak = true) {
@@ -224,7 +237,11 @@ function writeSafe(p, text, bak = true) {
   try { if (bak && fs.existsSync(p)) fs.copyFileSync(p, p + '.bak'); } catch (e) {}
   fs.renameSync(tmp, p);
 }
-ipcMain.handle('write-file', async (_e, p, text) => { writeSafe(p, text); return true; });
+ipcMain.handle('write-file', async (_e, p, text) => {
+  if (!isProject(p) || !OK_FILES.has(path.resolve(p))) throw new Error('not a project file this session opened or saved');
+  writeSafe(p, text);
+  return true;
+});
 /* a file that is not text (an MC-707 project, .mpj): asks where, then writes it whole; the path, or null */
 ipcMain.handle('save-binary', async (_e, name, data, ext) => {
   const kinds = { mpj: { name: 'MC-707 project', extensions: ['mpj'] } };
@@ -280,11 +297,14 @@ ipcMain.handle('choose-folder', async (_e, kind) => {
 });
 ipcMain.handle('save-recording', async (_e, files, sub) => {
   const base = folderFor('recordings');
-  const dir = sub ? path.join(base, String(sub).replace(/[^\w.\- ]+/g, '-')) : base;
+  /* a folder name of its own (not . or ..), and every file inside it */
+  const name = sub ? String(sub).replace(/[^\w.\- ]+/g, '-').replace(/^\.+$/, '') : '';
+  const dir = name ? path.join(base, name) : base;
   fs.mkdirSync(dir, { recursive: true });
   for (const f of files) {
-    const target = path.resolve(dir, f.name);
-    if (!target.startsWith(path.resolve(dir))) continue;
+    const target = path.resolve(dir, String(f.name)),
+      rel = path.relative(path.resolve(dir), target);
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) continue;
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, Buffer.from(f.data));
   }

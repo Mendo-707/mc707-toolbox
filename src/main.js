@@ -106,7 +106,18 @@ import './ui/projects.js';
 import './ui/dialogs.js';
 import { $ } from './core/dom.js';
 import { FAC } from './library/factory.js';
-import { BACKUP, HOST, PROJ, S, fixState, loadSaved, replaceState, scheduleSave, undo } from './core/state.js';
+import {
+  BACKUP,
+  HOST,
+  PROJ,
+  S,
+  fixState,
+  flushSave,
+  loadSaved,
+  replaceState,
+  scheduleSave,
+  undo
+} from './core/state.js';
 import { renderArr, scheduleUI } from './song/arrangement.js';
 import { facById, makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
@@ -270,6 +281,7 @@ PROJ.t = projTitle;
   }
   addEventListener('pagehide', () => {
     try {
+      flushSave();
       stopAll();
       panic(true);
     } catch (e) {}

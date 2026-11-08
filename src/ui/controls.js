@@ -357,6 +357,9 @@ export function afterReplaceKeepUndo() {
   scheduleSave();
 }
 function onKey(e) {
+  /* a window over the app (start screen, Track setup, a builder): its keys, not the song's */
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Escape' && e.key !== 'F11' && document.querySelector('.ptOv'))
+    return;
   if (e.key === 'F11') {
     if (canFull()) {
       e.preventDefault();

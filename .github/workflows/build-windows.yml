@@ -32,7 +32,7 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       # On GitHub's machines the exe also gets its icon and version details written in.
@@ -51,10 +51,13 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          # (the inputs reach the script as variables, never as script text)
+          TAG: ${{ github.event.release.tag_name || github.event.inputs.tag || github.event.inputs.attach }}
+          ATTACH: ${{ github.event.inputs.attach }}
         run: |
-          T="${{ github.event.release.tag_name || github.event.inputs.tag || github.event.inputs.attach }}"
+          T="$TAG"
           # a test build's draft release is made the first time (drafts are private to the repo's owners)
-          if [ -n "${{ github.event.inputs.attach }}" ] && ! gh release view "$T" >/dev/null 2>&1; then
+          if [ -n "$ATTACH" ] && ! gh release view "$T" >/dev/null 2>&1; then
             gh release create "$T" --draft --target "$GITHUB_SHA" --title "Test builds (draft, private)" --notes "Test builds for trying changes before a release. A draft: only the repo's owners see it. Not for publishing."
           fi
           gh release upload "$T" dist/MC-707-Toolbox-Setup.exe dist/MC-707-Toolbox.exe --clobber
