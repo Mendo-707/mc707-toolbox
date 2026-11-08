@@ -844,7 +844,7 @@ export function riffPanel() {
                 el(
                   'span',
                   { class: 'riffStat' },
-                  `${last.name}: ${(last.clean || last.notes).length} notes on ${trackName(last.track)}, ${bars(last.bars)}` +
+                  `${last.name} is ready: ${(last.clean || last.notes).length} notes on ${trackName(last.track)}, ${bars(last.bars)}` +
                     ((last.layers || []).length ? ', ' + (last.layers.length + 1) + ' layers' : '') +
                     '. ' +
                     (riffPlaying(last.track) === last.id ? 'Playing in the set.' : 'The set is unchanged.')

@@ -62586,7 +62586,7 @@ html.os-darwin.native-menu #menubar .mproj {
               el(
                 "span",
                 { class: "riffStat" },
-                `${last3.name}: ${(last3.clean || last3.notes).length} notes on ${trackName(last3.track)}, ${bars2(last3.bars)}` + ((last3.layers || []).length ? ", " + (last3.layers.length + 1) + " layers" : "") + ". " + (riffPlaying(last3.track) === last3.id ? "Playing in the set." : "The set is unchanged.")
+                `${last3.name} is ready: ${(last3.clean || last3.notes).length} notes on ${trackName(last3.track)}, ${bars2(last3.bars)}` + ((last3.layers || []).length ? ", " + (last3.layers.length + 1) + " layers" : "") + ". " + (riffPlaying(last3.track) === last3.id ? "Playing in the set." : "The set is unchanged.")
               )
             ),
             roll(last3.notes, last3.bars),
