@@ -16,6 +16,17 @@
 // Reads: nothing.
 import { hashStr, mulberry } from '../core/random.js';
 import { SCALES } from '../core/theory.js';
+import {
+  BASS_FEEL,
+  genArp,
+  genBassT,
+  genCell,
+  genComp,
+  genForm,
+  genProg,
+  genShape,
+  mutateBassT
+} from './compose-gen.js';
 
 /* drum lanes */
 const K = 0,
@@ -124,19 +135,27 @@ const PROGS = {
 /* the scale a progression wants (a minor-key style asked for a major progression keeps its own) */
 const progScale = (id, scale) => (id[0] === 'M' ? 'major' : id[0] === 'j' && scale === 'major' ? 'major' : 'minor');
 
-function chordsOf(progId, key, scale, extAll = 0) {
+/* a chord token: a degree, 'M'/'m' a major or minor chord where the scale has the other, 's' a sus4, a
+   'b' before it the degree a semitone down (a major chord: the flat seventh in a major key), '-7'/'-9'
+   sevenths and ninths. prog is a PROGS id or a list of tokens (a generated progression). */
+function chordsOf(prog, key, scale, extAll = 0) {
   const sc = SCALES[scale] || SCALES.minor;
-  return PROGS[progId].map(d => {
+  return (Array.isArray(prog) ? prog : PROGS[prog]).map(d => {
     const s = String(d),
-      deg = parseInt(s, 10) - 1,
-      major = s.includes('M'),
-      ext = Math.max(s.includes('-9') ? 9 : s.includes('-7') ? 7 : 0, major ? 0 : extAll);
+      flat = s[0] === 'b',
+      deg = parseInt(flat ? s.slice(1) : s, 10) - 1,
+      major = s.includes('M') || flat,
+      minor = /\dm/.test(s),
+      sus = /\ds/.test(s),
+      ext = Math.max(s.includes('-9') ? 9 : s.includes('-7') ? 7 : 0, major || sus ? 0 : extAll);
     const at = i => sc[(deg + i) % 7] + 12 * Math.floor((deg + i) / 7) - sc[deg];
     const tones = [0, at(2), at(4)];
-    if (major) tones[1] = 4;
-    if (ext >= 7) tones.push(at(6));
+    if (major) tones.splice(1, 2, 4, 7);
+    if (minor) tones.splice(1, 2, 3, 7);
+    if (sus) tones[1] = 5;
+    if (ext >= 7) tones.push(flat ? 10 : at(6));
     if (ext >= 9) tones.push(at(8));
-    return { root: (key + sc[deg]) % 12, tones, deg: deg + 1 };
+    return { root: (key + sc[deg] - (flat ? 1 : 0) + 12) % 12, tones, deg: deg + 1 };
   });
 }
 
@@ -2101,14 +2120,100 @@ const CONTOURS = [
   [0, -1, 1, 0, 2],
   [4, 3, 2, 1, 0]
 ];
+/* ---------- this take's own bass, chords and arp (from compose-gen.js) ---------- */
+/* the variants the generated parts write (the intro, builds, half-time and breaks keep the style's) */
+const GEN_V = new Set(['A', 'B', 'C', 'drop', 'hook', 'verse', 'pre', 'outro']);
+const BASS_LO = { roll: 40, off: 40, drive: 40, sparse: 36, 808: 34, funk: 40, walk: 40, reggae: 38, pop: 40 };
+const FOUR = new Set(['house', 'techhouse', 'afro', 'techno', 'minimal', 'trance', 'disco']);
+/* the take's bar templates: Main plays one, Main B the same changed a little, Main C another */
+function genBass(p, v, ctx) {
+  const feel = ctx.motif.bass,
+    tr = mulberry(hashStr('bass:' + feel) ^ ctx.motif.seed),
+    A = genBassT(tr, feel),
+    A2 = mutateBassT(tr, A),
+    C = genBassT(tr, feel),
+    bars =
+      v === 'B'
+        ? [A, A2]
+        : v === 'C'
+          ? [C, mutateBassT(tr, C)]
+          : v === 'drop' || v === 'hook'
+            ? [A2, mutateBassT(tr, A2)]
+            : [A, A];
+  const { ch, nb, r } = ctx,
+    lo = BASS_LO[feel] || 40,
+    thin = v === 'verse' || v === 'pre' || v === 'outro';
+  for (let b = 0; b < nb; b++) {
+    const c = ch[b % ch.length],
+      next = ch[(b + 1) % ch.length],
+      root = bassNote(c, lo);
+    for (const [s, len, iv] of bars[b % 2]) {
+      if (b === nb - 1 && s >= 12) continue;
+      if (thin && s % 8 && r() < 0.45) continue;
+      let n;
+      if (iv === 'A') {
+        const to = bassNote(next, lo);
+        n = to === root ? root + 7 : to + (to > root ? -1 : 1);
+      } else n = typeof iv === 'string' ? root + (c.tones[+iv.slice(1)] ?? 7) : root + iv;
+      p.add(b, s, len, n, hum(r, s % 4 === 0 ? 116 : 100, 5));
+    }
+  }
+}
+function genChords(p, v, ctx) {
+  const tr = mulberry(hashStr('comp') ^ ctx.motif.seed),
+    fam = FOUR.has(ctx.recipe.gr) ? 'four' : ctx.fam === 'edm' ? 'four' : ctx.fam,
+    A = genComp(tr, fam),
+    B = genComp(tr, fam),
+    C = genComp(tr, fam),
+    bars =
+      v === 'B' ? [B, A] : v === 'C' ? [C, B] : v === 'verse' || v === 'pre' ? [[[0, 16, 76]], [[0, 16, 72]]] : [A, A],
+    size = (ctx.recipe.ext || 0) >= 7 ? 4 : 3;
+  chordBars(p, { ...ctx, gap: true }, b => bars[b % 2], v === 'drop' ? 64 : 62, 96, size);
+}
+function genArpPart(p, v, ctx, center, step0) {
+  const { ch, nb, r } = ctx,
+    g = ctx.motif.arp,
+    step = Math.max(step0, g.rate),
+    tr = mulberry(hashStr('arp') ^ ctx.motif.seed);
+  let prev = null;
+  for (let b = 0; b < nb; b++) {
+    const vc = voice(ch[b % ch.length], center, prev, 3);
+    prev = vc;
+    const up = g.span > 1 ? [...vc, ...vc.map(x => x + 12)] : [...vc, vc[0] + 12];
+    const seq =
+      g.order === 'down'
+        ? [...up].reverse()
+        : g.order === 'updown'
+          ? [...up, ...up.slice(1, -1).reverse()]
+          : g.order === 'broken'
+            ? [up[0], up[2], up[1], up[3] ?? up[0] + 12]
+            : g.order === 'pedal'
+              ? up.slice(1).flatMap(x => [up[0], x])
+              : g.order === 'random'
+                ? up
+                    .map(x => [tr(), x])
+                    .sort((a, c) => a[0] - c[0])
+                    .map(x => x[1])
+                : up;
+    for (let i = 0, s = 0; s < 16; s += step, i++) {
+      if (g.gaps.includes(i % 8)) continue;
+      if (b === nb - 1 && s >= 12 && v === 'drop') continue;
+      p.add(b, s, step, seq[i % seq.length], hum(r, (s % 4 === 0 ? 76 : 64) - (v === 'drop' ? 8 : 0), 4));
+    }
+  }
+}
+
 function melody(p, v, ctx, center = 72) {
   const { ch, r, nb, scale, key, recipe, motif } = ctx;
   const sc = SCALES[scale] || SCALES.minor,
     inScale = n => sc.includes((((n - key) % 12) + 12) % 12);
   const cells = CELLS[recipe.lead] || CELLS.song;
-  const cellA = cells[motif.a % cells.length],
-    cellB = cells[motif.b % cells.length],
-    contour = CONTOURS[motif.c % CONTOURS.length];
+  const cellOf = x =>
+      motif.cells
+        ? motif.cells[x]
+        : cells[(x === 'A' ? motif.a : x === 'B' ? motif.b : motif.a + motif.b + 3) % cells.length],
+    contour = motif.shape || CONTOURS[motif.c % CONTOURS.length],
+    form = motif.form || ['A', 'A', 'B', 'A'];
   let last = center;
   const chordTone = (c, target) => {
     let best = null;
@@ -2155,19 +2260,18 @@ function melody(p, v, ctx, center = 72) {
   };
   const vel = v === 'break' ? 92 : v === 'verse' ? 96 : 110;
   const all = [];
-  for (let b = 0; b < nb; b += 8) {
-    all.push(...phrase(b, cellA, contour, false));
-    all.push(
-      ...phrase(
-        b + 2,
-        cellA,
-        contour.map(x => x + 1),
-        false
-      )
-    );
-    all.push(...phrase(b + 4, cellB, [...contour].reverse(), false));
-    all.push(...phrase(b + 6, cellA, contour, true));
-  }
+  /* four 2-bar phrases by the take's plan: an A again goes a step higher, B and C answer the other way,
+     the last comes home */
+  for (let b = 0; b < nb; b += 8)
+    form.forEach((x, i) => {
+      const shape =
+        x !== 'A'
+          ? [...contour].reverse()
+          : i && form.slice(0, i).includes('A') && i < 3
+            ? contour.map(y => y + 1)
+            : contour;
+      all.push(...phrase(b + i * 2, cellOf(x), shape, i === 3));
+    });
   for (const [b, s, len, n] of all) {
     if (b >= nb) continue;
     if (v === 'verse' && s % 8 === 6 && r() < 0.4) continue;
@@ -2190,6 +2294,7 @@ const arp = (p, v, ctx) => {
   }
   const step = v === 'break' || v === 'intro' ? 2 : 1,
     center = v === 'drop' ? 72 : 67;
+  if (ctx.motif.arp) return genArpPart(p, v, ctx, center, step);
   let prev = null;
   for (let b = 0; b < nb; b++) {
     const vc = voice(ch[b % ch.length], center, prev, 3);
@@ -2765,15 +2870,23 @@ export function composer(style, opts = {}) {
   const fam = recipe.form || style.fam;
   const bpm = Math.round(opts.bpm || (style.bpm && style.bpm[2]) || 120);
   const key = opts.key ?? (style.keys && style.keys[0] ? style.keys[0][0] : 9);
-  /* the style's own progressions most of the time, otherwise another of the same colour (minor,
-     major, jazzy or a vamp), sometimes starting further round the loop */
+  /* the progression: one of the style's own, another of the same colour (minor, major, jazzy or a
+     vamp), or a new one made for this take from how chords like to move (compose-gen.js), sometimes
+     starting further round the loop */
   const own = recipe.progs[Math.floor(r() * recipe.progs.length)],
     kin = Object.keys(PROGS).filter(id => id[0] === own[0] || (own[0] === 'v' && /^m[1-7]/.test(id))),
-    progId = r() < 0.55 || kin.length < 2 ? own : kin[Math.floor(r() * kin.length)],
-    turn = own[0] !== 'v' && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
-  const scale = style.scale === 'major' && progId[0] !== 'm' ? 'major' : progScale(progId, style.scale);
+    pr0 = r(),
+    made = pr0 >= 0.45 ? genProg(r, own[0]) : null,
+    progId = made
+      ? 'g' + own[0] + ':' + made.join('.')
+      : pr0 < 0.3 || kin.length < 2
+        ? own
+        : kin[Math.floor(r() * kin.length)],
+    turn = !made && own[0] !== 'v' && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
+  const colour = made ? own[0] : progId[0],
+    scale = style.scale === 'major' && colour !== 'm' ? 'major' : progScale(colour, style.scale);
   /* sevenths (and ninths) from the scale for the styles that like them */
-  const ch0 = chordsOf(progId, key, scale, recipe.ext || 0),
+  const ch0 = chordsOf(made || progId, key, scale, recipe.ext || 0),
     ch = ch0.slice(turn).concat(ch0.slice(0, turn));
   const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === 'dnb' || fam === 'edm' ? 5 : 3.5)));
   const sections = formOf(fam, Math.round((minutes * bpm) / 4));
@@ -2783,6 +2896,17 @@ export function composer(style, opts = {}) {
     c: Math.floor(r() * 9),
     lift: r() < 0.5 ? 1 : -1
   };
+  /* this take's own material (compose-gen.js): melody rhythms and contour, the phrase plan, a bassline
+     feel's templates, chord comping and an arp's way; otherwise the style's own writers */
+  if (r() < 0.6) {
+    motif.cells = { A: genCell(r, recipe.lead), B: genCell(r, recipe.lead), C: genCell(r, recipe.lead) };
+    motif.shape = genShape(r);
+  }
+  motif.form = r() < 0.6 ? genForm(r) : ['A', 'A', 'B', 'A'];
+  motif.bass = BASS_FEEL[recipe.bass] && r() < 0.55 ? BASS_FEEL[recipe.bass] : null;
+  motif.comp = recipe.chords !== 'long' && r() < 0.45;
+  motif.arp = r() < 0.5 ? genArp(r) : null;
+  motif.seed = Math.imul(seed + 3, 2654435761);
   const gr = GR[recipe.gr] || GR.pop;
   const patterns = {},
     sounds = {};
@@ -2796,9 +2920,10 @@ export function composer(style, opts = {}) {
     if (role === 'kit') gr.kit(p, pr, v, nb);
     else if (role === 'hats') gr.hats(p, pr, v, nb);
     else if (role === 'perc') gr.perc(p, pr, v, nb);
-    else if (role === 'bass') (BASS[recipe.bass] || BASS.pop)(p, v, ctx);
+    else if (role === 'bass') (motif.bass && GEN_V.has(v) ? genBass : BASS[recipe.bass] || BASS.pop)(p, v, ctx);
     else if (role === 'acid') acidLine(p, ctx, v === 'A' ? 'A' : v === 'B' ? 'B' : 'C', 48);
-    else if (role === 'chords') (CHORDS[recipe.chords] || CHORDS.pop)(p, v, ctx);
+    else if (role === 'chords')
+      (motif.comp && GEN_V.has(v) ? genChords : CHORDS[recipe.chords] || CHORDS.pop)(p, v, ctx);
     else if (role === 'pad') padPart(p, v, ctx);
     else if (role === 'lead') melody(p, v, ctx, recipe.lead === 'trap' || recipe.lead === 'whine' ? 74 : 72);
     else if (role === 'pluck') arp(p, v, ctx);

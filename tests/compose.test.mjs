@@ -123,3 +123,31 @@ test('Compose: every take plays its parts its own way (drums, bass and chords ar
     }
   assert.deepEqual(errors, []);
 });
+
+test('Compose: new material for every take (progressions, basslines and melodies are made, not just picked)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { compose } = window.__app.compose,
+      out = {};
+    const at = p => (p ? p.notes.map(n => n.s).join() : '');
+    const all = p => (p ? p.notes.map(n => n.s + ':' + n.n).join() : '');
+    for (const id of ['liquid', 'deephouse', 'boombap', 'pop']) {
+      const st = window.__app.STYLES.find(s => s.id === id),
+        n = { prog: new Set(), bass: new Set(), lead: new Set() };
+      for (let seed = 1; seed <= 60; seed++) {
+        const s = compose(st, { minutes: 2, seed });
+        n.prog.add(s.prog);
+        n.bass.add(at(s.patterns['bass:A']));
+        n.lead.add(all(s.patterns['lead:hook'] || s.patterns['lead:A']));
+      }
+      out[id] = [n.prog.size, n.bass.size, n.lead.size];
+    }
+    return out;
+  });
+  for (const [id, [prog, bass, lead]] of Object.entries(r)) {
+    assert.ok(prog >= 25, id + ': ' + prog + ' progressions in 60 takes');
+    assert.ok(bass >= 20, id + ': ' + bass + ' bass rhythms in 60 takes');
+    assert.ok(lead >= 55, id + ': ' + lead + ' melodies in 60 takes');
+  }
+  assert.deepEqual(errors, []);
+});
