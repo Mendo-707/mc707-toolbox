@@ -22,7 +22,8 @@ export function templateFor() {
   return { file: hit[1], drums: d, exact: types.every((x, i) => (x === 'drum') === i < d) };
 }
 
-export function templatesOpen() {
+/** The empty templates (no sounds): where to get them and how to put them on the MC-707. */
+export function templatesEmptyOpen() {
   document.getElementById('tplOv')?.remove();
   const close = () => ov.remove();
   const m = templateFor();

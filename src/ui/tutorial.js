@@ -10,7 +10,7 @@ import { $, el } from '../core/dom.js';
 import { DEV, DEVS } from '../core/device.js';
 import { openSetup } from './setup-wizard.js';
 import { trackSetupOpen } from './track-setup.js';
-import { templatesOpen } from './templates.js';
+import { templateBuilderOpen } from './template-builder.js';
 import { setMode } from './mode.js';
 
 const DONE = 'mc707-tutorial-done';
@@ -107,17 +107,17 @@ const chapters = dn => [
     [
       'Each drum track holds a drum kit, each tone track a tone (select the track and choose its sound), unmuted with its level up.',
       'Sound Source: CLIP on every track. Hold SHIFT and press the track’s TRACK SEL, open the GENERAL tab and set Sound Source to CLIP, so each clip keeps its own sound. Then select each clip and give it a sound (a new clip can be silent until you do). Scene Mode, the clip switching and MC-707 project files all count on it.',
-      'Easiest: load a project template with the tracks already set up. Copy it to the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it and straight away PROJECT › WRITE it under a new name.',
+      'Easiest: MC-707 › Template builder makes a project with your track layout and a sound in every clip. Save it onto the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it on the MC-707.',
       'Clips that hold a sound but no notes work best: the app plays the notes.'
     ],
     [
       'Settings › Track setup: pick how many drum and tone tracks you use (3 drums + 5 tones is the default) and what each one is for.',
-      'MC-707 › Project templates says which template matches your Track setup.',
+      'The Template builder can use the same layout as your Track setup, so the MC-707 matches the app.',
       'An MC-101: Settings › Device › MC-101 (it also switches by itself when it finds one).'
     ],
     [
       ['Track setup…', () => trackSetupOpen()],
-      ['Project templates…', () => templatesOpen()]
+      ['Template builder…', () => templateBuilderOpen()]
     ]
   ],
   [

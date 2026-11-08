@@ -178,13 +178,38 @@ export function mpjFill(u8, song) {
   }
   const first = song.first || 0;
   /* the scene chain switched on (CHAIN ON, +143), so the scenes follow one another by themselves */
-  if (song.scenes.length > 1) u8[P + 0x143] = 1;
+  if (song.scenes.length > 1 && song.chain !== false) u8[P + 0x143] = 1;
   song.scenes.forEach((sc, i) => {
     const s = first + i;
     if (s > 127) return;
-    /* the chain moves on after LENGTH bars; the last scene is OFF, so it stays there */
-    u8[P + 0x50 + s] = i === song.scenes.length - 1 ? 0 : Math.max(1, Math.min(127, sc.bars));
+    /* the chain moves on after LENGTH bars; the last scene is OFF, so it stays there (without the
+       chain, every scene keeps its length) */
+    u8[P + 0x50 + s] = i === song.scenes.length - 1 && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
     for (let t = 0; t < 8; t++) u8[P + 0x200 + t * 0x100 + 0x90 + s] = sc.pick[t] >= 0 ? sc.pick[t] + 1 : 0;
   });
   return u8;
+}
+
+/**
+ * What a project holds, read back (for checks): each track's kind ('drum'/'tone') and Sound Source
+ * (1 = CLIP), its clips' names (null where empty), and each scene's clip picks (1-16, 0 none).
+ */
+export function mpjRead(u8) {
+  const P = mpjSections(u8).PRJa.at,
+    text = o =>
+      String.fromCharCode(...u8.subarray(o, o + 16))
+        .replace(/[\0\xff]+$/, '')
+        .trimEnd();
+  return Array.from({ length: 8 }, (_, t) => {
+    const o = P + 0x200 + t * 0x100;
+    return {
+      kind: u8[o + 0x14] === 1 ? 'drum' : 'tone',
+      src: u8[o + 0x15],
+      clips: Array.from({ length: 16 }, (_, k) => {
+        const c = P + PRJ_CLIPS + (t * 17 + k) * CLIP_SIZE;
+        return u8[c + 0x12] === 0xff ? null : text(c);
+      }),
+      picks: Array.from(u8.subarray(o + 0x90, o + 0x90 + 16))
+    };
+  });
 }

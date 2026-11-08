@@ -2530,6 +2530,124 @@ input[type='range'] {
 .bkRow small {
   color: var(--mute);
 }
+/* MC-707 › Template builder (ui/template-builder.js) */
+.tbBox {
+  max-width: 980px;
+}
+.tbTop,
+.tbMore {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: flex-end;
+  margin: 10px 0;
+}
+.tbField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--mute);
+}
+.tbField input[type='text'] {
+  width: 170px;
+  text-transform: uppercase;
+}
+.tbField input[type='number'] {
+  width: 76px;
+}
+.tbSrcs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 4px 0 10px;
+  font-size: 13px;
+}
+.tbSrcs .btn {
+  margin-left: auto;
+}
+.tbWarn {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border: 1px solid var(--hot);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.tbWarn .btn {
+  flex: none;
+}
+.tbRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.tbRow {
+  display: grid;
+  grid-template-columns: 40px 210px 96px 92px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.tbNum {
+  font-variant-numeric: tabular-nums;
+}
+.tbRow.drum .tbNum {
+  color: var(--hot);
+}
+.tbNames {
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tbSame,
+.tbCheck {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.tbClips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 2px 0 8px 48px;
+  font-size: 12px;
+}
+.tbClips label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--mute);
+}
+.tbClips select {
+  width: 100%;
+}
+.tbFoot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+.tbFoot > .btn:first-child {
+  margin-right: auto;
+}
+@media (max-width: 760px) {
+  .tbRow {
+    grid-template-columns: 40px 1fr 1fr;
+  }
+  .tbNames {
+    grid-column: 1 / -1;
+  }
+  .tbClips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 0;
+  }
+}
 </style>
     <style>
 /* Later adjustments to rules in the files above (compact rows, splitter, small screens). Keep this after them. */
@@ -10239,7 +10357,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const root = el("div", { class: "popRoot" });
     doc.body.append(root);
     forwardKeys(win);
-    const save4 = () => {
+    const save5 = () => {
       try {
         if (!win.closed)
           keepPlace(o.id, {
@@ -10255,9 +10373,9 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     const watch5 = setInterval(() => {
       if (win.closed) h.close(true);
-      else save4();
+      else save5();
     }, 1e3);
-    win.addEventListener("beforeunload", save4);
+    win.addEventListener("beforeunload", save5);
     Object.assign(h, { win, doc, root, raf: (f) => win.requestAnimationFrame(f), stop: () => clearInterval(watch5) });
     return true;
   }
@@ -10479,8 +10597,8 @@ html.os-darwin.native-menu #menubar .mproj {
     rest: PUMP_REST[mode]
   });
   function fine(v, which) {
-    const [lo, hi, def] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
-    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def;
+    const [lo, hi, def2] = PUMP_TIME[which], x = typeof v === "string" && PUMP_REL.hasOwnProperty(v) ? PUMP_REL[v] : +v;
+    return Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x / PUMP_FINE) * PUMP_FINE)) : def2;
   }
   function fixPump(x) {
     if (!x || typeof x !== "object" || !PUMP_LANE.hasOwnProperty(x.mode)) return null;
@@ -10919,9 +11037,9 @@ html.os-darwin.native-menu #menubar .mproj {
   };
   function fixState(s) {
     const d = newState();
-    const num4 = (v, lo, hi, def) => {
+    const num4 = (v, lo, hi, def2) => {
       v = Number(v);
-      return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
+      return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def2;
     };
     if (!s || typeof s !== "object") return d;
     s.v = 1;
@@ -14694,7 +14812,7 @@ html.os-darwin.native-menu #menubar .mproj {
   // src/library/live-extras.js
   var ramp = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
   (function() {
-    const G = {
+    const G2 = {
       dnb: { k: [0, 10], s: [4, 12], fs: 12, roll: true },
       hiphop: { k: [0, 7, 10], s: [4, 12], fs: 12, roll: false },
       house: { four: 1, s: [4, 12], fs: 8, roll: true },
@@ -14730,7 +14848,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     let uid = 0;
     const push = (o) => FAC.push(Object.assign({ id: "lx" + uid++, key: null, keyName: null, styles: null, bpm: null }, o));
-    for (const g in G) liveExtrasFor(g, G[g], NAME[g], push);
+    for (const g in G2) liveExtrasFor(g, G2[g], NAME[g], push);
   })();
   function liveExtrasFor(g, q, nm, push) {
     const groove = (upto) => {
@@ -16647,7 +16765,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var SCL = { minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11] };
   var ramp2 = (i, n, a, b) => Math.round(a + (b - a) * (n <= 1 ? 1 : i / (n - 1)));
   (function() {
-    const G = {
+    const G2 = {
       dnb: { sn: 2, roll: true },
       hiphop: { sn: 2, roll: false },
       house: { sn: 3, roll: true },
@@ -16688,8 +16806,8 @@ html.os-darwin.native-menu #menubar .mproj {
         o
       )
     );
-    const genres2 = [...new Set(FAC.map((f) => f.genre))].filter((g) => G[g]);
-    for (const g of genres2) flashFor(g, G[g], NAME[g] || g, push);
+    const genres2 = [...new Set(FAC.map((f) => f.genre))].filter((g) => G2[g]);
+    for (const g of genres2) flashFor(g, G2[g], NAME[g] || g, push);
   })();
   function flashFor(g, q, nm, push) {
     for (const [rid, rl, bars3, hits, pick4] of FLASH_RH) {
@@ -19967,8 +20085,8 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/services/mc-controls.js
   var curveFn = { lin: (t) => t, exp: (t) => t * t, log: (t) => Math.sqrt(t), s: (t) => t * t * (3 - 2 * t) };
-  function envInterp(pts, x, def) {
-    if (!pts || !pts.length) return def;
+  function envInterp(pts, x, def2) {
+    if (!pts || !pts.length) return def2;
     if (x <= pts[0][0]) return pts[0][1];
     for (let i = 1; i < pts.length; i++)
       if (x <= pts[i][0]) {
@@ -38243,12 +38361,12 @@ html.os-darwin.native-menu #menubar .mproj {
   function lfoPreview(ctx2, n) {
     const W2 = 420, H2 = 84, M2 = H2 / 2, A = H2 / 2 - 6;
     const pre = pk("LFO", ctx2.part, "LFO" + n + "_");
-    const G = (id) => ctx2.get(pre + id);
+    const G2 = (id) => ctx2.get(pre + id);
     const svg = sv2("svg", { viewBox: `0 0 ${W2} ${H2}`, class: "zcEnv zcPrev", role: "img", "aria-label": "LFO preview" });
     const draw2 = () => {
       svg.textContent = "";
       svg.append(sv2("line", { x1: 0, x2: W2, y1: M2, y2: M2, class: "zero" }));
-      const form2 = LFO_FORMS[G("FORM")] || "SIN", cycles = 3, delay = G("DELAY") / 1023 * W2 * 0.3, fade = G("FADE") / 1023 * W2 * 0.4, mode = G("FADE_MODE"), off = G("OFST") / 100, r = rnd4(11), steps2 = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G("STEP_MAX") ?? 15) + 1;
+      const form2 = LFO_FORMS[G2("FORM")] || "SIN", cycles = 3, delay = G2("DELAY") / 1023 * W2 * 0.3, fade = G2("FADE") / 1023 * W2 * 0.4, mode = G2("FADE_MODE"), off = G2("OFST") / 100, r = rnd4(11), steps2 = Array.from({ length: 16 }, (_, i) => (ctx2.get(pre + "STEP_" + (i + 1)) || 0) / 72), nSteps = (G2("STEP_MAX") ?? 15) + 1;
       const rand = Array.from({ length: cycles * 4 + 2 }, () => r() * 2 - 1);
       const val = (ph) => {
         const c = Math.floor(ph), f = ph - c;
@@ -39695,13 +39813,13 @@ html.os-darwin.native-menu #menubar .mproj {
     i.click();
   }
   async function folderFor(file) {
-    const stem = file.name.replace(/\.svz$/i, "").trim().slice(0, 30) || "Expansion";
+    const stem2 = file.name.replace(/\.svz$/i, "").trim().slice(0, 30) || "Expansion";
     const have = folderList();
     const sel2 = el(
       "select",
       { style: "width:100%" },
-      el("option", { value: "" }, have.includes(stem) ? "The folder “" + stem + "”" : "A new folder: “" + stem + "”"),
-      ...have.filter((f) => f !== stem).map((f) => el("option", { value: f }, "📁 " + f))
+      el("option", { value: "" }, have.includes(stem2) ? "The folder “" + stem2 + "”" : "A new folder: “" + stem2 + "”"),
+      ...have.filter((f) => f !== stem2).map((f) => el("option", { value: f }, "📁 " + f))
     );
     const ok = await askDlg({
       title: "Add " + file.name + " to a folder",
@@ -39709,7 +39827,7 @@ html.os-darwin.native-menu #menubar .mproj {
       body: sel2,
       ok: "Add"
     });
-    return ok ? folderAdd(sel2.value || stem) : null;
+    return ok ? folderAdd(sel2.value || stem2) : null;
   }
   function expansionImport(done3) {
     const i = el("input", {
@@ -41481,16 +41599,16 @@ html.os-darwin.native-menu #menubar .mproj {
   // src/zen/zc-lab-moves.js
   function brewer(ps) {
     const out2 = {};
-    const def = (k2) => paramOf("tone", k2);
+    const def2 = (k2) => paramOf("tone", k2);
     const get2 = (k2) => {
       if (k2 in out2) return out2[k2];
       const v = ZE.snd.v[k2];
       if (typeof v === "number") return v;
-      const d = def(k2);
+      const d = def2(k2);
       return d ? d[0][5] : 0;
     };
     const set2 = (k2, v) => {
-      const d = def(k2);
+      const d = def2(k2);
       if (!d) return;
       const p = d[0];
       out2[k2] = Math.round(Math.max(p[3], Math.min(p[4], v)));
@@ -46735,14 +46853,29 @@ html.os-darwin.native-menu #menubar .mproj {
       u8[P2 + 512 + t * 256 + 21] = 1;
     }
     const first = song.first || 0;
-    if (song.scenes.length > 1) u8[P2 + 323] = 1;
+    if (song.scenes.length > 1 && song.chain !== false) u8[P2 + 323] = 1;
     song.scenes.forEach((sc, i) => {
       const s = first + i;
       if (s > 127) return;
-      u8[P2 + 80 + s] = i === song.scenes.length - 1 ? 0 : Math.max(1, Math.min(127, sc.bars));
+      u8[P2 + 80 + s] = i === song.scenes.length - 1 && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
       for (let t = 0; t < 8; t++) u8[P2 + 512 + t * 256 + 144 + s] = sc.pick[t] >= 0 ? sc.pick[t] + 1 : 0;
     });
     return u8;
+  }
+  function mpjRead(u8) {
+    const P2 = mpjSections(u8).PRJa.at, text2 = (o) => String.fromCharCode(...u8.subarray(o, o + 16)).replace(/[\0\xff]+$/, "").trimEnd();
+    return Array.from({ length: 8 }, (_, t) => {
+      const o = P2 + 512 + t * 256;
+      return {
+        kind: u8[o + 20] === 1 ? "drum" : "tone",
+        src: u8[o + 21],
+        clips: Array.from({ length: 16 }, (_2, k2) => {
+          const c = P2 + PRJ_CLIPS2 + (t * 17 + k2) * CLIP_SIZE2;
+          return u8[c + 18] === 255 ? null : text2(c);
+        }),
+        picks: Array.from(u8.subarray(o + 144, o + 144 + 16))
+      };
+    });
   }
 
   // src/core/crc.js
@@ -47084,7 +47217,7 @@ html.os-darwin.native-menu #menubar .mproj {
     ["fx", "FX", 82, "C3 · the track’s FX knob (CC 82): the slider turns it, the name above chooses what it controls"],
     ["snd", "Sound", 83, "C4 · the SOUND knob (CC 83): the slider turns it, the name above chooses what it controls"]
   ];
-  function knob2(label2, key, v, s, o, def = DEF2[key], tip = label2, unset = false, assign = null) {
+  function knob2(label2, key, v, s, o, def2 = DEF2[key], tip = label2, unset = false, assign = null) {
     const centre = key === "pan", out2 = el("b", {}, centre ? panText2(v) : String(v));
     const paint2 = (inp2, x) => {
       const p = x / 127 * 100;
@@ -47110,7 +47243,7 @@ html.os-darwin.native-menu #menubar .mproj {
       onpointerup: () => o.done && o.done(key),
       onpointercancel: () => o.done && o.done(key),
       ondblclick: (e) => {
-        e.target.value = def;
+        e.target.value = def2;
         e.target.dispatchEvent(new Event("input"));
         e.target.dispatchEvent(new Event("change"));
       }
@@ -47772,128 +47905,6 @@ html.os-darwin.native-menu #menubar .mproj {
     popout({ id: ID, title: "Song mixer", w: 980, h: 760, build });
   }
 
-  // src/core/version.js
-  var VERSION = "1.8.6";
-  var LINKS = {
-    home: "https://github.com/Mendo-707/mc707-toolbox",
-    releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
-    issues: "https://github.com/Mendo-707/mc707-toolbox/issues/new",
-    guide: "https://github.com/Mendo-707/mc707-toolbox#readme",
-    sysex: "https://github.com/Mendo-707/mc707-toolbox/blob/main/docs/MC707-SYSEX.md",
-    params: "https://github.com/Mendo-707/mc707-toolbox/blob/main/docs/ZENCORE-PARAMETERS.md",
-    diagnostics: "https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html",
-    web: "https://mendo-707.github.io/mc707-toolbox/",
-    licence: "https://github.com/Mendo-707/mc707-toolbox/blob/main/LICENSE.md",
-    /* the MC-707 project templates (made by the author: an empty project per track layout) */
-    templates: "https://github.com/Mendo-707/mc707-toolbox/raw/main/templates/MC707-Project-Templates.zip"
-  };
-  function openLink(url) {
-    try {
-      window.open(url, "_blank", "noopener");
-    } catch (e) {
-    }
-  }
-
-  // src/ui/templates.js
-  var TEMPLATES = [8, 6, 4, 3, 2, 1, 0].map((d) => [d, d + " Drum " + (8 - d) + " Tone Tracks.mpj"]);
-  function templateFor() {
-    if (DEV !== "707") return null;
-    const types = DEVS[DEV].tracks.map((t) => S.tracks[t].type), d = types.filter((x) => x === "drum").length, hit = TEMPLATES.find((x) => x[0] === d);
-    if (!hit) return { file: null, drums: d };
-    return { file: hit[1], drums: d, exact: types.every((x, i) => x === "drum" === i < d) };
-  }
-  function templatesOpen() {
-    document.getElementById("tplOv")?.remove();
-    const close = () => ov.remove();
-    const m = templateFor();
-    const which = DEV !== "707" ? el(
-      "p",
-      { class: "pmWarn" },
-      "These templates are for the MC-707 (8 tracks). Switch Settings › Device to MC-707 to use them."
-    ) : !m.file ? el(
-      "p",
-      { class: "hint" },
-      "Your Track setup has " + m.drums + " drum tracks: there is no template with exactly that. Load the nearest one and change the track types on the MC-707."
-    ) : el(
-      "p",
-      { class: "tplPick" },
-      "For your Track setup (" + m.drums + " drum, " + (8 - m.drums) + " tone): ",
-      el("b", {}, m.file.replace(".mpj", "")),
-      m.exact ? "." : ". Its drum tracks are tracks 1-" + m.drums + "; yours are elsewhere, so change the track types on the MC-707 or in Track setup to match."
-    );
-    const li = (...k2) => el("li", {}, ...k2);
-    const ov = el(
-      "div",
-      { id: "tplOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "MC-707 project templates" },
-      el(
-        "div",
-        { class: "ptBox tplBox" },
-        el("h3", {}, "MC-707 project templates"),
-        el(
-          "p",
-          { class: "hint" },
-          "Empty MC-707 projects with the tracks already set up as drum or tone tracks, from 8 drum tracks to 8 tone tracks, plus EMPTY. Start a new song from one so the MC-707 matches the app before you write clips and scenes."
-        ),
-        which,
-        el("h4", {}, "1. Download them"),
-        el(
-          "p",
-          { class: "hint" },
-          el(
-            "button",
-            { type: "button", class: "btn sm on", onclick: () => openLink(LINKS.templates) },
-            "Download the templates (zip)"
-          ),
-          " Unzip it: there are 8 .mpj files."
-        ),
-        el("h4", {}, "2. Copy them onto the MC-707"),
-        el(
-          "ol",
-          { class: "hint tplSteps" },
-          li("With the MC-707 not connected to the computer, turn it on."),
-          li("Hold ", el("b", {}, "SHIFT"), " and press ", el("b", {}, "KNOB ASSIGN"), " (the UTILITY menu)."),
-          li("Pick ", el("b", {}, "STORAGE MODE"), " with the cursor buttons and press ", el("b", {}, "ENTER"), "."),
-          li("Connect the USB cable. The SD card shows up on the computer as a drive."),
-          li(
-            "Copy the .mpj files into the folder where your MC-707’s projects are (the one with the other .mpj files, under ROLAND)."
-          ),
-          li(
-            "Eject the drive (Windows: right-click it › Eject; Mac: drag it to the Trash), then turn the MC-707 off and on again."
-          )
-        ),
-        el(
-          "p",
-          { class: "hint" },
-          "While the MC-707 is in storage mode it does nothing else, and the app cannot reach it over MIDI."
-        ),
-        el("h4", {}, "3. Start a song from one"),
-        el(
-          "ol",
-          { class: "hint tplSteps" },
-          li("Press ", el("b", {}, "PROJECT"), ", choose ", el("b", {}, "LOAD"), " and pick the template."),
-          li(
-            "Straight away, press ",
-            el("b", {}, "PROJECT"),
-            " › ",
-            el("b", {}, "WRITE"),
-            " and give it a new name, so the template stays empty for next time."
-          ),
-          li(
-            "Load a kit on each drum track and a tone on each tone track, then write your clips and scenes from the app."
-          )
-        ),
-        el(
-          "div",
-          { style: "display:flex;justify-content:flex-end" },
-          el("button", { type: "button", class: "btn", onclick: close }, "Close")
-        )
-      )
-    );
-    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
-    ov.addEventListener("pointerdown", (e) => e.target === ov && close());
-    document.body.append(ov);
-  }
-
   // src/scene/guide.js
   var STEPS = () => {
     const f = sceneName(firstScene());
@@ -47901,7 +47912,7 @@ html.os-darwin.native-menu #menubar .mproj {
       [
         "In the app",
         [
-          "0 · Start the MC-707 from a project template that matches your Track setup (MC-707 › Project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.",
+          "0 · Start the MC-707 from a project that matches your Track setup: MC-707 › Template builder (or the button below) makes one with a sound in every clip, so its tracks are drum and tone tracks where the app expects them.",
           "1 · Clips: fill the MC-707’s clips on the board. Click an empty clip to choose its pattern, a full one to edit its notes (Notes) and its sound (Sound: the ZenCore editor and the factory tones).",
           "2 · Scenes: add scenes to the chain. Each one plays a clip per track (its chips) for so many bars; the last keeps playing.",
           "3 · Write: Write sends what changed (✓ written · ● changed · + not written yet). Or write one clip, a track or a scene from its button or right-click, or turn on Auto-write. Use a project you can lose the first time."
@@ -47957,8 +47968,13 @@ html.os-darwin.native-menu #menubar .mproj {
           { style: "display:flex;justify-content:flex-end;gap:8px" },
           el(
             "button",
-            { type: "button", class: "btn", style: "margin-right:auto", onclick: () => (close(), templatesOpen()) },
-            "MC-707 project templates…"
+            {
+              type: "button",
+              class: "btn",
+              style: "margin-right:auto",
+              onclick: () => (close(), hooks.templateBuilder())
+            },
+            "Template builder…"
           ),
           el("button", { type: "button", class: "btn on", onclick: close }, "Got it")
         )
@@ -51816,9 +51832,9 @@ html.os-darwin.native-menu #menubar .mproj {
   })();
   function defaultSecs(st, presetId) {
     const list2 = STRUCT[st.fam];
-    const def = list2.find((x) => x.id === presetId) || list2.find((x) => x.id === (st.fam === "dnb" || st.fam === "edm" ? "club" : "full")) || list2[0];
+    const def2 = list2.find((x) => x.id === presetId) || list2.find((x) => x.id === (st.fam === "dnb" || st.fam === "edm" ? "club" : "full")) || list2[0];
     const K2 = kindsOf(st.fam);
-    return def.secs.map(([k2, b]) => ({ kind: k2, bars: b, name: K2[k2].name }));
+    return def2.secs.map(([k2, b]) => ({ kind: k2, bars: b, name: K2[k2].name }));
   }
   function defaultWiz(id) {
     const st = STYLES.find((s) => s.id === id);
@@ -52702,7 +52718,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return o;
   }
   function customRows(st, r, row2) {
-    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY11 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
+    const drums2 = [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => roleInfo(roleOf(t), t)[2] === "drum"), KEY12 = ["drums", "drums", "drums", "bass", "chords", "pad", "lead", "pluck"];
     const out2 = drums2.length ? [
       row2(
         "Drum kits (track" + (drums2.length > 1 ? "s " : " ") + drums2.map((t) => t + 1).join(", ") + ")",
@@ -52711,7 +52727,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     ] : [];
     [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => !drums2.includes(t)).forEach((t) => {
-      const k2 = poolOf(t) === "acid" ? "bass" : KEY11[slotOf(t)];
+      const k2 = poolOf(t) === "acid" ? "bass" : KEY12[slotOf(t)];
       out2.push(row2(trackLabel(st, t) + " (track " + (t + 1) + ")", r[k2].join(" · "), TRACK_COLORS[t]));
     });
     return out2;
@@ -60234,7 +60250,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     host2.hidden = false;
-    const st = lvStyle(), save4 = () => {
+    const st = lvStyle(), save5 = () => {
       lvSaveScenes();
       liveRenderCards();
       LV.ver++;
@@ -60246,7 +60262,7 @@ html.os-darwin.native-menu #menubar .mproj {
       "aria-label": "Scene name",
       onchange: (e) => {
         sc.name = e.target.value.trim() || sc.name;
-        save4();
+        save5();
       }
     });
     const isF = lvIsFlash(sc);
@@ -60256,7 +60272,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "aria-label": "Scene length",
         onchange: (e) => {
           sc.bars = +e.target.value;
-          save4();
+          save5();
         }
       },
       ...(isF ? [1, 2] : [1, 2, 4, 6, 8, 12, 16, 24, 32]).map(
@@ -60273,7 +60289,7 @@ html.os-darwin.native-menu #menubar .mproj {
         sc.e = +e.target.value;
         $("#lvScEdE").textContent = sc.e;
       },
-      onchange: () => save4()
+      onchange: () => save5()
     });
     const rh = isF ? el(
       "select",
@@ -60284,7 +60300,7 @@ html.os-darwin.native-menu #menubar .mproj {
           sc.rh = R4[0];
           sc.bars = R4[2];
           sc.cells = lvFlashIds(st, R4[0], LV.mode);
-          save4();
+          save5();
           liveRenderSceneEd();
         }
       },
@@ -60298,7 +60314,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "aria-label": "Scene move",
         onchange: (e) => {
           sc.fx = e.target.value;
-          save4();
+          save5();
           if (lvOn() && LV.cur === i) lvSceneFx(sc, Math.ceil(TR.tick / 32) * 32);
         }
       },
@@ -60319,7 +60335,7 @@ html.os-darwin.native-menu #menubar .mproj {
             sc.cells[ti] = { id: v, pool: c && c.pool || pool };
             if (c && c.play) sc.cells[ti].play = c.play;
           }
-          save4();
+          save5();
           liveRenderSceneEd();
           if (lvOn() && LV.cur === i) {
             if (v)
@@ -60380,7 +60396,7 @@ html.os-darwin.native-menu #menubar .mproj {
             if (!cc2) return;
             if (e.target.value === "all") delete cc2.play;
             else cc2.play = e.target.value;
-            save4();
+            save5();
           }
         },
         ...LV_PLAY.map(([v, l]) => el("option", { value: v, selected: (c && c.play || "all") === v }, l))
@@ -60397,7 +60413,7 @@ html.os-darwin.native-menu #menubar .mproj {
             if (!cc2) return;
             if (e.target.value === "") delete cc2.clip;
             else cc2.clip = e.target.value === "random" ? "random" : +e.target.value;
-            save4();
+            save5();
             if (lvOn() && LV.cur === i) lvCellClip(ti, cc2, AU.ctx.currentTime + 0.05);
           }
         },
@@ -60422,7 +60438,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (LV.cur === i) LV.cur = j;
       else if (LV.cur === j) LV.cur = i;
       LV.edIdx = j;
-      save4();
+      save5();
       liveRenderSceneEd();
     };
     host2.append(
@@ -60476,7 +60492,7 @@ html.os-darwin.native-menu #menubar .mproj {
             onclick: () => {
               LV.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify({ ...sc, name: (sc.name + " copy").slice(0, 24) })));
               LV.edIdx = i + 1;
-              save4();
+              save5();
               liveRenderSceneEd();
             }
           },
@@ -60492,7 +60508,7 @@ html.os-darwin.native-menu #menubar .mproj {
               if (LV.cur >= LV.scenes.length) LV.cur = LV.scenes.length - 1;
               LV.edIdx = -1;
               LV.cues = LV.cues.filter((c) => c.type !== "scene");
-              save4();
+              save5();
               liveRenderSceneEd();
             }
           },
@@ -64511,17 +64527,17 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/song/audio-record.js
-  function mkSink(def, sr) {
+  function mkSink(def2, sr) {
     const enc = AUD.format === "mp3" ? mp3Encoder(sr, AUD.kbps) : wavEncoder(sr, AUD.bits);
     const sk = {
-      name: def.name,
-      key: def.key,
-      track: def.track,
-      cap: def.cap,
-      l: def.l,
-      r: def.r,
+      name: def2.name,
+      key: def2.key,
+      track: def2.track,
+      cap: def2.cap,
+      l: def2.l,
+      r: def2.r,
       enc,
-      skip: Math.max(0, Math.round((PRE + (AUD.trimMs + (def.cap === "stem" ? AUD.stemTrimMs : 0)) / 1e3) * sr)),
+      skip: Math.max(0, Math.round((PRE + (AUD.trimMs + (def2.cap === "stem" ? AUD.stemTrimMs : 0)) / 1e3) * sr)),
       feed(L2, R4, n) {
         let a = 0;
         if (sk.skip > 0) {
@@ -65801,6 +65817,1744 @@ html.os-darwin.native-menu #menubar .mproj {
     audBtn();
   }
 
+  // src/core/version.js
+  var VERSION = "1.8.6";
+  var LINKS = {
+    home: "https://github.com/Mendo-707/mc707-toolbox",
+    releases: "https://github.com/Mendo-707/mc707-toolbox/releases",
+    issues: "https://github.com/Mendo-707/mc707-toolbox/issues/new",
+    guide: "https://github.com/Mendo-707/mc707-toolbox#readme",
+    sysex: "https://github.com/Mendo-707/mc707-toolbox/blob/main/docs/MC707-SYSEX.md",
+    params: "https://github.com/Mendo-707/mc707-toolbox/blob/main/docs/ZENCORE-PARAMETERS.md",
+    diagnostics: "https://mendo-707.github.io/mc707-toolbox/diagnostics/zencore-diagnostics.html",
+    web: "https://mendo-707.github.io/mc707-toolbox/",
+    licence: "https://github.com/Mendo-707/mc707-toolbox/blob/main/LICENSE.md",
+    /* the MC-707 project templates (made by the author: an empty project per track layout) */
+    templates: "https://github.com/Mendo-707/mc707-toolbox/raw/main/templates/MC707-Project-Templates.zip"
+  };
+  function openLink(url) {
+    try {
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+    }
+  }
+
+  // src/ui/track-setup.js
+  var DEF_NAMES = ["Drums 1", "Drums 2", "Drums 3", "Bass", "Chords", "Pad", "Lead", "Pluck"];
+  var SHORT2 = {
+    kit: "Kit",
+    hats: "Hats",
+    perc: "Perc",
+    bass: "Bass",
+    chords: "Chords",
+    pad: "Pad",
+    lead: "Lead",
+    pluck: "Pluck",
+    acid: "Acid"
+  };
+  var PRESETS = [
+    ["Default: 3 drums + 5 tone", DEF_ROLES],
+    ["8 drums", ["kit", "kit", "hats", "hats", "perc", "perc", "kit", "perc"]],
+    ["6 drums + 2 tone", ["kit", "kit", "hats", "perc", "perc", "kit", "bass", "lead"]],
+    ["4 drums + 4 tone", ["kit", "hats", "perc", "kit", "bass", "chords", "lead", "pluck"]],
+    ["2 drums + 6 tone", ["kit", "hats", "bass", "chords", "pad", "lead", "pluck", "acid"]],
+    ["1 drum + 7 tone", ["kit", "bass", "chords", "pad", "lead", "pluck", "acid", "lead"]],
+    ["8 tone", ["bass", "chords", "pad", "lead", "pluck", "acid", "chords", "lead"]]
+  ];
+  function nameFor(roles, t) {
+    if (roles.every((r, i) => r === DEF_ROLES[i])) return DEF_NAMES[t];
+    const same = roles.map((r, i) => i).filter((i) => SHORT2[roles[i]] === SHORT2[roles[t]]);
+    return SHORT2[roles[t]] + (same.length > 1 ? " " + (same.indexOf(t) + 1) : "");
+  }
+  var AUTO = new RegExp("^(" + [...DEF_NAMES, ...Object.values(SHORT2)].join("|") + ")( \\d)?$");
+  var autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
+  function matchTypes(types) {
+    const roles = S.tracks.map((x, t) => {
+      const r = roleOf(t);
+      if (types[t] !== "drum" && types[t] !== "tone") return r;
+      return roleInfo(r, t)[2] === types[t] ? r : types[t] === "drum" ? "kit" : "lead";
+    });
+    return applyRoles(roles);
+  }
+  async function applyRoles(roles) {
+    const old = S.tracks.map((x, t) => roleOf(t)), types = roles.map((r, t) => roleInfo(r, t)[2]);
+    const lose = S.clips.filter((c) => types[c.t] !== S.tracks[c.t].type);
+    if (lose.length) {
+      const ok = await askDlg({
+        title: "Change the track setup?",
+        text: lose.length + " clip" + (lose.length === 1 ? "" : "s") + " on tracks that change between drum and tone will be removed. Undo brings them back.",
+        ok: "Change and remove them"
+      });
+      if (!ok) return false;
+    }
+    stopAll();
+    pushUndo();
+    const rename = S.tracks.map((x, t) => autoNamed(t, old));
+    roles.forEach((r, t) => {
+      const tr = S.tracks[t];
+      if (r === DEF_ROLES[t]) delete tr.role;
+      else tr.role = r;
+      tr.type = types[t];
+      if (rename[t]) tr.name = nameFor(roles, t);
+    });
+    S.clips = S.clips.filter((c) => S.tracks[c.t].type === S.patterns[c.pat].type);
+    cmFix().forEach((m, t) => {
+      const drum = types[t] === "drum", kind = drum ? "drums" : ["bass", "chords", "pad", "lead", "pluck", "acid"].includes(roles[t]) ? roles[t] : "lead";
+      m.types = m.types.map((ty) => drum ? ty === "fx" ? ty : "drums" : ty === "drums" ? kind : ty);
+      if (roles[t] !== old[t] && m.n === 1) m.types[0] = drum ? "drums" : kind;
+    });
+    liveBuild();
+    renderAll();
+    liveRender();
+    scheduleSave();
+    return true;
+  }
+  function trackSetupOpen() {
+    let ov = $("#tsOv");
+    if (!ov) {
+      ov = el("div", {
+        id: "tsOv",
+        class: "ptOv",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Track setup",
+        onpointerdown: (e) => {
+          if (e.target.id === "tsOv") ov.remove();
+        }
+      });
+      document.body.append(ov);
+    }
+    render2(ov);
+  }
+  function render2(ov) {
+    ov.textContent = "";
+    const roles = S.tracks.map((x, t) => roleOf(t)), shown5 = DEVS[DEV].tracks, nD = shown5.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
+    const set2 = async (r) => {
+      if (await applyRoles(r)) {
+        toast("Track setup changed");
+        render2(ov);
+      }
+    };
+    const rows2 = shown5.map((t) => {
+      const sel2 = el("select", {
+        "aria-label": "Track " + devNum(t) + " role",
+        onchange: (e) => set2(roles.map((r, i) => i === t ? e.target.value : r))
+      });
+      for (const [lab, list2] of [
+        ["Drum track", ROLES.filter((r) => r[2] === "drum")],
+        ["Tone track", ROLES.filter((r) => r[2] === "tone")]
+      ]) {
+        const g = el("optgroup", { label: lab });
+        list2.forEach((r) => g.append(el("option", { value: r[0], selected: r[0] === roles[t] }, r[1])));
+        sel2.append(g);
+      }
+      const isD = roleInfo(roles[t], t)[2] === "drum";
+      return el(
+        "div",
+        { class: "tsRow", style: "--c:" + TRACK_COLORS[t] },
+        el("b", {}, "Track " + devNum(t)),
+        el("span", { class: "tsType " + (isD ? "d" : "t") }, isD ? "DRUM" : "TONE"),
+        sel2,
+        el("input", {
+          type: "text",
+          maxlength: 16,
+          value: S.tracks[t].name,
+          "aria-label": "Track " + devNum(t) + " name",
+          onchange: (e) => {
+            pushUndo();
+            S.tracks[t].name = e.target.value.trim().slice(0, 16) || nameFor(roles, t);
+            renderAll();
+            liveRender();
+            scheduleSave();
+          }
+        }),
+        el("small", { class: "hint" }, "MIDI ch " + S.tracks[t].ch)
+      );
+    });
+    ov.append(
+      el(
+        "div",
+        { class: "ptBox tsBox" },
+        el(
+          "div",
+          { class: "cmHead" },
+          el("h3", {}, "Track setup"),
+          el("button", { class: "btn sm on", onclick: () => ov.remove() }, "Done")
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown5.length - nD) + " tone tracks."
+        ),
+        /* the one thing the app cannot do for you: it says it up front, not as a footnote */
+        el(
+          "div",
+          { class: "tsMust", role: "note" },
+          el("b", {}, "Set the MC-707 to match, by hand"),
+          el(
+            "span",
+            {},
+            "The app can’t change what a track is on the MC-707. After choosing here, set each MC-707 track the same way: a drum kit on each drum track, a tone on each tone track (select the track on the MC-707 and choose its sound). If they don’t match, drum parts play notes on a tone, or melodies on a kit. Easiest: start from an "
+          ),
+          el(
+            "button",
+            { type: "button", class: "btn sm", onclick: () => (ov.remove(), templateBuilderOpen()) },
+            "MC-707 project from the Template builder…"
+          ),
+          el("span", {}, " with the tracks already set up, and a sound in every clip.")
+        ),
+        el(
+          "div",
+          { class: "tsPresets" },
+          ...PRESETS.map(
+            ([lab, r]) => el(
+              "button",
+              { class: "btn sm" + (r.every((x, t) => x === roles[t]) ? " on" : ""), onclick: () => set2(r.slice()) },
+              lab
+            )
+          )
+        ),
+        el("div", { class: "tsRows" }, ...rows2),
+        el(
+          "p",
+          { class: "hint" },
+          "Each app track sends on its own MIDI channel, set in MIDI and sound and the MC-707’s Track Channel settings."
+        )
+      )
+    );
+  }
+
+  // src/zen/zc-template.js
+  var TPL_ROLES = [
+    ["kit", "Main kit", true],
+    ["hats", "Hats and tops", true],
+    ["perc", "Percussion and FX", true],
+    ["bass", "Bass", false],
+    ["keys", "Keys and chords", false],
+    ["pads", "Pads and strings", false],
+    ["leads", "Leads", false],
+    ["pluck", "Plucks and arps", false],
+    ["fx", "Effects and risers", false],
+    ["any", "Anything", false]
+  ];
+  var roleIsDrum = (id) => !!(TPL_ROLES.find((r) => r[0] === id) || [])[2];
+  var TPL_LAYOUTS = [
+    ["3+5", "3 drum + 5 tone (the default)", ["kit", "hats", "perc", "bass", "keys", "pads", "leads", "pluck"]],
+    ["2+6", "2 drum + 6 tone", ["kit", "perc", "bass", "keys", "pads", "leads", "pluck", "fx"]],
+    ["4+4", "4 drum + 4 tone", ["kit", "kit", "hats", "perc", "bass", "keys", "pads", "leads"]],
+    ["1+7", "1 drum + 7 tone", ["kit", "bass", "bass", "keys", "pads", "leads", "pluck", "fx"]],
+    ["0+8", "8 tone tracks", ["bass", "bass", "keys", "keys", "pads", "leads", "pluck", "fx"]],
+    ["8+0", "8 drum tracks", ["kit", "kit", "kit", "hats", "hats", "perc", "perc", "perc"]]
+  ];
+  var CATS2 = {
+    bass: ["Synth Bass", "E.Bass", "Ac.Bass"],
+    keys: [
+      "Ac.Piano",
+      "Pop-Piano",
+      "E.Piano1",
+      "E.Piano2",
+      "E.Organ",
+      "Clav",
+      "Synth PolyKey",
+      "Synth Brass",
+      "Hit",
+      "E.Guitar"
+    ],
+    pads: ["Synth Pad/Str", "Ensemble Strs", "Vox/Choir", "Synth BellPad", "Orchestral"],
+    leads: ["Synth Lead", "Sax", "Flute", "Solo Brass", "Ensemble Brass", "Scat"],
+    pluck: ["Synth Seq/Pop", "Bell", "Mallet", "Pulsating", "Plucked/Stroke", "Synth BellPad"],
+    fx: ["Synth FX", "Sound FX", "Phrase", "Beat&Groove"]
+  };
+  var FX = [
+    ["Riser", "Nz Sweep Up", "Sweep Stab", "Rave Siren", "Zap"],
+    ["Riser", "Sweep", "Noise", "Nz", "FX", "Zap", "Siren", "Hit"]
+  ];
+  var G = (name, bpm, kits, tones) => ({ name, bpm, kits, tones });
+  var TPL_GENRES = {
+    dnb: G(
+      "Drum and bass",
+      174,
+      [
+        [
+          "Drum&Bass Kit 1",
+          "Drum&Bass Kit 2",
+          "Drum&Bass Kit",
+          "Drum&Bass Kit w",
+          "Drum&Bass KitLim",
+          "90's Kit 1",
+          "90's Kit 2",
+          "HipHop Kit 2",
+          "EDM Kit  5",
+          "EDM Kit  3",
+          "Techno Kit 2",
+          "TR-909 3",
+          "Studio Kit 2",
+          "90's Kit",
+          "Power Kit",
+          "R&B Kit 2"
+        ],
+        [
+          "HipHop Kit 2",
+          "HipHop Kit 1",
+          "90's Kit 2",
+          "R&B Kit 1",
+          "Studio Kit 1",
+          "TR-909 4",
+          "TR-808 3",
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "Jazz Kit",
+          "Brush Kit",
+          "Room Kit",
+          "TR-606 1",
+          "CR-78 1",
+          "Pop Kit 2",
+          "80's Kit 2"
+        ],
+        [
+          "EDM Kit  5",
+          "EDM Kit 10",
+          "EDM Kit  7",
+          "EDM Kit  9",
+          "EDM Kit 11",
+          "EDM Kit 12",
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "SFX Kit 3",
+          "Snare",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "Sine Bass",
+            "SC1 Growl Bass1",
+            "SC1 Growl Bass3",
+            "SC1 Growl Bass5",
+            "Razor BassLead1",
+            "X-MOD2 Bass1A",
+            "X-MOD2 Bass1B",
+            "Wub Bass",
+            "Step Growl Bass2",
+            "MG Deep Bass",
+            "Round Bass",
+            "Unison Bass 1"
+          ],
+          ["Growl", "Reese", "Sub", "Wub", "Neuro", "Dist", "Razor", "Sine"]
+        ],
+        keys: [
+          [
+            "Rave Stab",
+            "JUNO Stab",
+            "Horn Blast",
+            "AX Orchestra Hit",
+            "AX Vintage EP",
+            "Delicate EP",
+            "Spirit Tine",
+            "Phase EP 1",
+            "Stage EP",
+            "Min7 Hit"
+          ],
+          ["Stab", "Hit", "EP", "Rave", "Tine"]
+        ],
+        pads: [
+          [
+            "Boreal Pad",
+            "Heaven Pad 1",
+            "Soft Pad 2",
+            "AX Heaven Pad",
+            "Vox Pad 1",
+            "Horror Pad",
+            "Metal Pad",
+            "AX Mood Strings",
+            "Strings4Film"
+          ],
+          ["Pad", "Air", "Dark", "Vox", "Strings"]
+        ],
+        leads: [
+          [
+            "Growl Lead",
+            "Dist Sync Lead",
+            "X-Mod Lead",
+            "Hoover Lead",
+            "Voice Lead1",
+            "AX Soft Lead",
+            "Sine Lead 1",
+            "Juno Soft Ld"
+          ],
+          ["Lead", "Ld", "Hoover", "Sync"]
+        ],
+        pluck: [
+          ["Sine Seq MC", "Atmos Harp", "Sweep Stab", "Syn Atk Pluck", "Sine Pluck", "Pretty Bells"],
+          ["Seq", "Pluck", "Sweep", "Bell"]
+        ]
+      }
+    ),
+    trap: G(
+      "Trap and drill",
+      140,
+      [
+        [
+          "Trap Kit",
+          "TR-808 1",
+          "TR-808 2",
+          "TR-808 3",
+          "TR-808 4",
+          "TR-808",
+          "TR-808 comp",
+          "TR-808 w comp",
+          "Future Bass Kit",
+          "EDM Kit  5",
+          "HipHop Kit 1",
+          "HipHop Kit 2",
+          "Reggaeton Kit",
+          "R&B Kit 1",
+          "EDM Kit 10",
+          "HipHop Kit comp"
+        ],
+        [
+          "TR-808 2",
+          "Trap Kit",
+          "TR-808 3",
+          "TR-808 4",
+          "TR-606 1",
+          "TR-606 2",
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "CR-78 1",
+          "TR-707&727 1",
+          "R&B Kit 2",
+          "HipHop Kit",
+          "TR-626 1",
+          "TR-909 4",
+          "EDM Kit  2",
+          "Pop Kit 1"
+        ],
+        [
+          "EDM Kit  5",
+          "Future Bass Kit",
+          "EDM Kit  9",
+          "EDM Kit 12",
+          "Perc. Kit 1",
+          "Perc. Kit 3",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "SFX Kit 3",
+          "TR-727",
+          "Snare",
+          "Kick",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom",
+          "EDM Kit  8"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "Dist.808StyleBs1",
+            "Dist.808StyleBs2",
+            "Dist.808StyleBs3",
+            "Sine Bass",
+            "Round Bass",
+            "Soft Bass",
+            "MG Deep Bass",
+            "Wub Bass"
+          ],
+          ["808", "Sub", "Sine", "Boom", "Round", "Deep", "Dist"]
+        ],
+        keys: [
+          [
+            "Bright Piano",
+            "AX Piano",
+            "Nice Piano",
+            "Bell 1",
+            "Bell 2",
+            "AX Org Bell",
+            "Pop Synth Pluck",
+            "Wurly EP",
+            "AX Vintage EP",
+            "Min7 Hit"
+          ],
+          ["Piano", "Pno", "Bell", "EP", "Keys"]
+        ],
+        pads: [
+          [
+            "Horror Pad",
+            "Vox Pad 1",
+            "Vox Pad 2",
+            "AX Mood Strings",
+            "AX Choir 1",
+            "Soft Pad 1",
+            "Angels Pad",
+            "Strings 1"
+          ],
+          ["Dark", "Horror", "Vox", "Choir", "Pad", "Strings"]
+        ],
+        leads: [
+          [
+            "Bell Lead 1",
+            "Bell Lead 2",
+            "Pop Synth Pluck2",
+            "Sine Lead 1",
+            "Whistle Lead",
+            "Portament Ld",
+            "AX Soft Lead",
+            "Pop Flute"
+          ],
+          ["Bell", "Whistle", "Flute", "Lead", "Sine"]
+        ],
+        pluck: [
+          ["Bell 2", "Bell 3", "AX Marimba", "AX Kalimba", "Pop SynthMallet", "Pretty Bells", "AX Harp", "AX Koto"],
+          ["Bell", "Mallet", "Marimba", "Pluck", "Harp"]
+        ]
+      }
+    ),
+    edm: G(
+      "EDM and trance",
+      128,
+      [
+        [
+          "EDM Kit  1",
+          "EDM Kit  2",
+          "EDM Kit  3",
+          "EDM Kit  4",
+          "EDM Kit  5",
+          "EDM Kit  6",
+          "EDM Kit  7",
+          "EDM Kit  8",
+          "EDM Kit  9",
+          "EDM Kit 10",
+          "EDM Kit 11",
+          "EDM Kit 12",
+          "Future Bass Kit",
+          "Trance Kit",
+          "EDM Kit",
+          "EDM Kit Lim"
+        ],
+        [
+          "TR-909 1",
+          "TR-909 3",
+          "TR-909 4",
+          "Trance Kit",
+          "House Kit 1",
+          "Techno Kit 1",
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "TR-909 2",
+          "EDM Kit w",
+          "TR-909",
+          "TR-909 comp",
+          "TR-606 1",
+          "Techno Kit 2",
+          "Pop Kit 2",
+          "TR-707&727 2"
+        ],
+        [
+          "EDM Kit 10",
+          "EDM Kit  5",
+          "EDM Kit 12",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "SFX Kit 3",
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "Snare",
+          "Kick",
+          "RimStickClapTom",
+          "Other Perc 1",
+          "Other Perc 2",
+          "SFX Kit",
+          "EDM Kit  9"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "Fat Analog Bs",
+            "Unison Bass 1",
+            "Wub Bass",
+            "SC1 Growl Bass1",
+            "Saw Boost Bs",
+            "Hard House Bs",
+            "Rubber Bs 1",
+            "Punch MG Bs",
+            "Spike Bass",
+            "Dist Bass"
+          ],
+          ["Saw", "Fat", "Unison", "Growl", "Wub", "Dist", "Punch"]
+        ],
+        keys: [
+          [
+            "Super Saw Key 1",
+            "Super Saw Key 2",
+            "Phase Super Saw",
+            "Rave Stab",
+            "JUNO Stab",
+            "Rave Stab2",
+            "Brass Sect",
+            "AX Orchestra Hit",
+            "Bright Piano",
+            "House Piano"
+          ],
+          ["Saw", "Stab", "Key", "Hit", "Chord"]
+        ],
+        pads: [
+          [
+            "Trance Pad",
+            "Trance Sweep Pad",
+            "JP8 Strings1",
+            "JP-8 Pad 1",
+            "Chronic Pad",
+            "Glass Pad",
+            "Shimmer Pad",
+            "AX Choir 1",
+            "OB Strings"
+          ],
+          ["Trance", "Saw", "Pad", "Strings", "Sweep"]
+        ],
+        leads: [
+          [
+            "SuperSaw Ld",
+            "Super Saw Lead",
+            "AX Jupiter Ld 1",
+            "Pulse Lead 1",
+            "Square Ld 1",
+            "Tekno Ld 1",
+            "Growl Lead",
+            "Hoover Lead"
+          ],
+          ["Saw", "Lead", "Ld", "Super"]
+        ],
+        pluck: [
+          ["Super Saw Pluck", "Syn Atk Pluck", "SEQ 1", "SEQ 3", "SEQ 5", "SEQ 6", "JunoArpeggio MC", "Sweep Stab"],
+          ["Pluck", "Seq", "SEQ", "Sweep", "Arp"]
+        ]
+      }
+    ),
+    house: G(
+      "House and garage",
+      124,
+      [
+        [
+          "House Kit 1",
+          "House Kit 2",
+          "House Kit",
+          "House Kit w",
+          "TR-909 1",
+          "TR-909 2",
+          "TR-909 3",
+          "TR-909 4",
+          "TR-909",
+          "TR-909 comp",
+          "TR-909 w comp",
+          "TR-707&727 1",
+          "TR-707&727 2",
+          "Techno Kit 1",
+          "EDM Kit 10",
+          "TR-808 1"
+        ],
+        [
+          "TR-909 3",
+          "House Kit 2",
+          "TR-909 4",
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "TR-707&727 2",
+          "TR-626 1",
+          "TR-626 2",
+          "TR-606 1",
+          "Techno Kit 2",
+          "TR-808 3",
+          "Pop Kit 1",
+          "Studio Kit 1",
+          "CR-78 1",
+          "Trance Kit",
+          "80's Kit 1"
+        ],
+        [
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "TR-727",
+          "CR-78 2",
+          "TR-626 3",
+          "EDM Kit 10",
+          "EDM Kit  5",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "Snare",
+          "Kick",
+          "SFX Kit 3"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "House Bs",
+            "MG Deep Bass",
+            "Round Bass",
+            "Rubber Bs 1",
+            "Rubber Bs 2",
+            "AX Garage Bass",
+            "Garage Bs 1",
+            "Hard House Bs",
+            "Punch MG Bs",
+            "MG Bs 1",
+            "Soft Bass",
+            "Finger E Bs 1"
+          ],
+          ["House", "Deep", "Garage", "Rubber", "MG", "Round", "Organ"]
+        ],
+        keys: [
+          [
+            "House Piano",
+            "GarageChd MC",
+            "1Note GarageEP",
+            "Bright Piano",
+            "AX Vintage EP",
+            "1Note Organ MC",
+            "Rotary Org 1",
+            "JUNO Stab",
+            "AX Clav 1",
+            "Funk Gtr",
+            "Min7 Hit"
+          ],
+          ["House", "Piano", "Organ", "Chd", "EP", "Stab"]
+        ],
+        pads: [
+          [
+            "JP8 Strings1",
+            "OB Strings",
+            "Soft Pad 2",
+            "Reverie Pad",
+            "JUNO Str 1",
+            "AX JP Strings",
+            "Chronic Pad",
+            "Glass Pad",
+            "AX Choir 1"
+          ],
+          ["Strings", "Str", "Pad", "Choir"]
+        ],
+        leads: [
+          [
+            "Bell Lead 2",
+            "Syn VoiceLead 1",
+            "AX Vibraphone",
+            "Voice Lead1",
+            "AX Jupiter Ld 1",
+            "Pulse Lead 1",
+            "Funky Lead",
+            "Brass Sect"
+          ],
+          ["Voice", "Lead", "Brass", "Vox"]
+        ],
+        pluck: [
+          ["SEQ 6", "Syn Atk Pluck", "EP Belle", "AX Kalimba", "AX Marimba", "Sine Seq MC", "Echo Pluck", "PW-Echo Seq"],
+          ["Seq", "SEQ", "Pluck", "Mallet", "Marimba", "Bell"]
+        ]
+      }
+    ),
+    techno: G(
+      "Techno",
+      132,
+      [
+        [
+          "Techno Kit 1",
+          "Techno Kit 2",
+          "TR-909 3",
+          "TR-909 4",
+          "TR-909 1",
+          "TR-909",
+          "TR-909 comp",
+          "TR-808 1",
+          "TR-808 3",
+          "EDM Kit 10",
+          "EDM Kit  9",
+          "House Kit 2",
+          "TR-606 1",
+          "TR-707&727 2",
+          "Power Kit",
+          "EDM Kit 12"
+        ],
+        [
+          "TR-909 4",
+          "TR-909 3",
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "TR-606 1",
+          "TR-606 2",
+          "TR-626 1",
+          "TR-808 2",
+          "Techno Kit 2",
+          "CR-78 1",
+          "TR-707&727 1",
+          "House Kit 1",
+          "EDM Kit  2",
+          "Studio Kit 2",
+          "Room Kit",
+          "80's Kit 2"
+        ],
+        [
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "SFX Kit 3",
+          "TR-727",
+          "TR-626 3",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom",
+          "EDM Kit  5",
+          "Kick",
+          "Snare",
+          "CR-78 2",
+          "SFX Kit"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "TB Bass 1",
+            "TB Bass 2",
+            "Acid Bass",
+            "Rubber Bs 1",
+            "Punch MG Bs",
+            "MG Bs 1",
+            "Fat Analog Bs",
+            "Spike Bass",
+            "Sine Bass",
+            "Round Bass"
+          ],
+          ["TB", "Acid", "Rubber", "MG", "Punch", "Analog", "Sub"]
+        ],
+        keys: [
+          [
+            "Rave Stab",
+            "JUNO Stab",
+            "Min7 Hit",
+            "Dub Chord",
+            "Techno Stab",
+            "Rave Stab2",
+            "AX Orchestra Hit",
+            "Phase EP 1"
+          ],
+          ["Stab", "Chord", "Hit", "Dub", "Rave"]
+        ],
+        pads: [
+          [
+            "Metal Pad",
+            "Horror Pad",
+            "Chronic Pad",
+            "Glass Pad",
+            "Boreal Pad",
+            "Trance Sweep Pad",
+            "JP-8 Pad 1",
+            "Soft Pad 2"
+          ],
+          ["Dark", "Metal", "Pad", "Sweep", "Drone"]
+        ],
+        leads: [
+          [
+            "Tekno Ld 1",
+            "Square Ld 1",
+            "Pulse Lead 1",
+            "Dist Sync Lead",
+            "X-Mod Lead",
+            "Hoover Lead",
+            "Sine Lead 1",
+            "AX Jupiter Ld 1"
+          ],
+          ["Tekno", "Lead", "Ld", "Sync", "Square"]
+        ],
+        pluck: [
+          ["SEQ 1", "SEQ 3", "SEQ 5", "SEQ 6", "PW-Echo Seq", "Echo Pluck", "Syn Atk Pluck", "JunoArpeggio MC"],
+          ["SEQ", "Seq", "Pulse", "Echo", "Arp"]
+        ]
+      }
+    ),
+    boombap: G(
+      "Boom bap and lo-fi",
+      90,
+      [
+        [
+          "HipHop Kit 1",
+          "HipHop Kit 2",
+          "HipHop Kit",
+          "HipHop Kit comp",
+          "HipHop Kit w cmp",
+          "90's Kit 1",
+          "90's Kit 2",
+          "90's Kit",
+          "90's Kit comp",
+          "R&B Kit 1",
+          "R&B Kit 2",
+          "Studio Kit 1",
+          "Studio Kit 2",
+          "Room Kit",
+          "Jazz Kit",
+          "Pop Kit 1"
+        ],
+        [
+          "HipHop Kit 2",
+          "R&B Kit 2",
+          "Jazz Kit",
+          "Brush Kit",
+          "HiHat Cymbal",
+          "Studio Kit",
+          "Room Kit w",
+          "Jazz Kit w",
+          "Brush Kit w",
+          "TR-808 3",
+          "TR-707&727 1",
+          "CR-78 1",
+          "CR-78 2",
+          "80's Kit 1",
+          "Standard Kit",
+          "Pop Kit 2"
+        ],
+        [
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "HipHop Kit 1",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom",
+          "Snare",
+          "Kick",
+          "CR-78 1",
+          "TR-626 1",
+          "Orchestra Kit",
+          "SFX Kit 3",
+          "TR-727"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "Finger E Bs 1",
+            "Finger E Bs 2",
+            "Finger E Bs 3",
+            "Acoustic Bs 1",
+            "Acoustic Bs 2",
+            "AX Fretless Bs",
+            "Pick Bass 1",
+            "MG Bs 1",
+            "Round Bass",
+            "Sine Bass"
+          ],
+          ["Finger", "Acoustic", "Upright", "Fretless", "Pick", "Jazz", "MG"]
+        ],
+        keys: [
+          [
+            "AX Vintage EP",
+            "Wurly EP",
+            "AX Piano",
+            "Stage EP",
+            "Delicate EP",
+            "Rotary Org 1",
+            "AX Clav 1",
+            "Jazz Gtr",
+            "AX Clean Guitar",
+            "Brass Sect"
+          ],
+          ["EP", "Piano", "Wurly", "Rhodes", "Org", "Gtr", "Clav"]
+        ],
+        pads: [
+          [
+            "AX Mood Strings",
+            "Tape Strings",
+            "Strings 1",
+            "Soft Pad 1",
+            "AX Choir 1",
+            "Vox Pad 1",
+            "AX 60s Strings",
+            "AX Small Strings"
+          ],
+          ["Strings", "Str", "Choir", "Soft", "Tape"]
+        ],
+        leads: [
+          [
+            "Warm Vibes",
+            "AX Soft Lead",
+            "Breathy Sax",
+            "AX Tenor Sax",
+            "AX Mute Trumpet",
+            "Pop Flute",
+            "Syn VoiceLead 1",
+            "AX Alto Sax"
+          ],
+          ["Sax", "Trumpet", "Tp", "Flute", "Soft", "Vibe"]
+        ],
+        pluck: [
+          ["AX Kalimba", "AX Marimba", "AX Vibraphone", "AX Harp", "Bell 1", "AX Koto", "AX Sitar", "AX Nylon Gtr 1"],
+          ["Kalimba", "Marimba", "Vibe", "Harp", "Nylon", "Bell"]
+        ]
+      }
+    ),
+    pop: G(
+      "Pop and everything",
+      110,
+      [
+        [
+          "Pop Kit 1",
+          "Pop Kit 2",
+          "Studio Kit 1",
+          "Studio Kit 2",
+          "Standard Kit",
+          "Room Kit",
+          "80's Kit 1",
+          "80's Kit 2",
+          "Power Kit",
+          "R&B Kit 1",
+          "TR-808 1",
+          "TR-909 1",
+          "HipHop Kit 1",
+          "EDM Kit  5",
+          "House Kit 1",
+          "Jazz Kit"
+        ],
+        [
+          "HiHat Cymbal",
+          "HiHat Cymbal w",
+          "Pop Kit 2",
+          "Studio Kit",
+          "Brush Kit",
+          "TR-707&727 1",
+          "CR-78 1",
+          "TR-606 1",
+          "TR-808 2",
+          "TR-909 3",
+          "R&B Kit 2",
+          "Room Kit w",
+          "Jazz Kit w",
+          "TR-626 1",
+          "80's Kit",
+          "Standard Kit"
+        ],
+        [
+          "Perc. Kit 1",
+          "Perc. Kit 2",
+          "Perc. Kit 3",
+          "Orchestra Kit",
+          "SFX Kit 1",
+          "SFX Kit 2",
+          "Other Perc 1",
+          "Other Perc 2",
+          "RimStickClapTom",
+          "TR-727",
+          "CR-78 2",
+          "TR-626 3",
+          "Snare",
+          "Kick",
+          "SFX Kit 3",
+          "EDM Kit 10"
+        ]
+      ],
+      {
+        bass: [
+          [
+            "Finger E Bs 1",
+            "Pick Bass 1",
+            "MG Bs 1",
+            "Round Bass",
+            "Fat Analog Bs",
+            "Sine Bass",
+            "Soft Bass",
+            "Rubber Bs 1",
+            "Acoustic Bs 1",
+            "Punch MG Bs"
+          ],
+          ["Bass", "Bs", "Finger", "Pick", "MG", "Round"]
+        ],
+        keys: [
+          [
+            "Bright Piano",
+            "AX Piano",
+            "Nice Piano",
+            "Stage EP",
+            "AX Vintage EP",
+            "Wurly EP",
+            "Rotary Org 1",
+            "AX Clean Guitar",
+            "Brass Sect",
+            "JUNO Stab"
+          ],
+          ["Piano", "EP", "Org", "Gtr", "Keys"]
+        ],
+        pads: [
+          [
+            "Soft Pad 1",
+            "Soft Pad 2",
+            "Strings 1",
+            "AX Mood Strings",
+            "OB Strings",
+            "JP8 Strings1",
+            "Glass Pad",
+            "AX Choir 1"
+          ],
+          ["Pad", "Strings", "Str", "Choir"]
+        ],
+        leads: [
+          [
+            "AX Soft Lead",
+            "Sine Lead 1",
+            "Pop Flute",
+            "AX Alto Sax",
+            "Pulse Lead 1",
+            "Square Ld 1",
+            "Syn VoiceLead 1",
+            "Bell Lead 2"
+          ],
+          ["Lead", "Ld", "Sax", "Flute", "Voice"]
+        ],
+        pluck: [
+          ["Pop Synth Pluck", "Syn Atk Pluck", "AX Marimba", "AX Kalimba", "Bell 1", "AX Harp", "SEQ 6", "Pretty Bells"],
+          ["Pluck", "Bell", "Mallet", "Seq", "Harp"]
+        ]
+      }
+    )
+  };
+  var STARTS4 = null;
+  var starters3 = () => STARTS4 || (STARTS4 = starterMenu().flatMap(
+    ([, list2]) => list2.map(([name, make]) => {
+      const snd = make();
+      return { id: "st:" + name, name, kind: snd.kind, src: "starter", make, cat: null };
+    })
+  ));
+  var srcOf2 = (e) => e.src === "factory" ? "factory" : e.src === "starter" ? "starter" : "mine";
+  function tplPool(kind, srcs) {
+    const all = kind === "tone" && srcs.includes("starter") ? [...ZS.list, ...starters3()] : ZS.list;
+    return all.filter((e) => e.kind === kind && srcs.includes(srcOf2(e)) && (kind === "kit" ? !!e.mpj : !e.mpj));
+  }
+  var catName = (e) => e.make ? e.cat = e.cat || catOf({ make: e.make }) : catOf(e);
+  var stem = (n) => n.replace(/[\s\d]+[A-Za-z]?$/, "").toLowerCase();
+  function tplPick(genre, role, n, srcs, avoid = /* @__PURE__ */ new Set(), seed4 = 0) {
+    const g = TPL_GENRES[genre] || TPL_GENRES.pop, drum = roleIsDrum(role), pool = tplPool(drum ? "kit" : "tone", srcs), byName = new Map(pool.map((e) => [e.name, e])), r = seed4 ? mulberry(seed4) : null, out2 = [];
+    let series = true, others = false;
+    const take = (e) => {
+      if (!e || out2.includes(e) || !others && avoid.has(e.name) || out2.length >= n) return;
+      if (series && out2.filter((x) => stem(x.name) === stem(e.name)).length >= 2) return;
+      out2.push(e);
+    };
+    let first = [], cats = [], words = [];
+    if (drum) first = g.kits[role === "kit" ? 0 : role === "hats" ? 1 : 2];
+    else if (role === "fx") [first, words] = FX;
+    else if (role !== "any") [first, words] = g.tones[role];
+    if (!drum) cats = role === "any" ? Object.values(CATS2).flat() : CATS2[role];
+    const named = first.map((x) => byName.get(x)).filter(Boolean);
+    if (r)
+      for (let i = named.length - 1; i > 0; i--) {
+        const j = Math.floor(r() * (i + 1));
+        [named[i], named[j]] = [named[j], named[i]];
+      }
+    named.slice(0, r ? Math.ceil(n * 0.6) : n).forEach(take);
+    const score = (e) => words.reduce((s, w, i) => s + (e.name.toLowerCase().includes(w.toLowerCase()) ? 40 - i : 0), 0) + (srcOf2(e) === "mine" ? 6 : 0) + (r ? r() * 30 : 0);
+    const rest = pool.filter((e) => (drum ? true : cats.includes(catName(e))) && !/^SL-/.test(e.name)).sort((a, b) => score(b) - score(a));
+    rest.forEach(take);
+    named.forEach(take);
+    series = false;
+    rest.forEach(take);
+    others = true;
+    rest.forEach(take);
+    return out2;
+  }
+  async function tplBytes(cfg) {
+    const kinds = cfg.tracks.map((x) => x.kind), u8 = await mpjBlank(kinds), steps2 = Math.max(1, Math.min(8, cfg.clipBars || 1)) * 16, clips = [], sounds = [];
+    cfg.tracks.forEach(
+      (tr, t) => tr.sounds.forEach((e, k2) => {
+        if (!e || k2 > 15) return;
+        clips.push({ t, k: k2, size: 1, steps: steps2, slots: [], name: e.name.slice(0, 16) });
+        if (tr.kind === "drum") {
+          const kit2 = e.mpj && fwKitBytes(e.mpj);
+          if (kit2) sounds.push({ t, k: k2, kind: "kit", ...kit2 });
+        } else {
+          const snd = e.make ? e.make() : soundOf(e);
+          if (!snd) return;
+          const at2 = mpjToneAt(u8, t, 16);
+          sounds.push({ t, k: k2, kind: "tone", rec: fwRecord(snd, u8.subarray(at2, at2 + FW_REC)) });
+        }
+      })
+    );
+    mpjFill(u8, { name: cfg.name, bpm: cfg.bpm, clips, scenes: [], sounds });
+    return { bytes: u8, clips: clips.length };
+  }
+
+  // src/ui/templates.js
+  var TEMPLATES = [8, 6, 4, 3, 2, 1, 0].map((d) => [d, d + " Drum " + (8 - d) + " Tone Tracks.mpj"]);
+  function templateFor() {
+    if (DEV !== "707") return null;
+    const types = DEVS[DEV].tracks.map((t) => S.tracks[t].type), d = types.filter((x) => x === "drum").length, hit = TEMPLATES.find((x) => x[0] === d);
+    if (!hit) return { file: null, drums: d };
+    return { file: hit[1], drums: d, exact: types.every((x, i) => x === "drum" === i < d) };
+  }
+  function templatesEmptyOpen() {
+    document.getElementById("tplOv")?.remove();
+    const close = () => ov.remove();
+    const m = templateFor();
+    const which = DEV !== "707" ? el(
+      "p",
+      { class: "pmWarn" },
+      "These templates are for the MC-707 (8 tracks). Switch Settings › Device to MC-707 to use them."
+    ) : !m.file ? el(
+      "p",
+      { class: "hint" },
+      "Your Track setup has " + m.drums + " drum tracks: there is no template with exactly that. Load the nearest one and change the track types on the MC-707."
+    ) : el(
+      "p",
+      { class: "tplPick" },
+      "For your Track setup (" + m.drums + " drum, " + (8 - m.drums) + " tone): ",
+      el("b", {}, m.file.replace(".mpj", "")),
+      m.exact ? "." : ". Its drum tracks are tracks 1-" + m.drums + "; yours are elsewhere, so change the track types on the MC-707 or in Track setup to match."
+    );
+    const li = (...k2) => el("li", {}, ...k2);
+    const ov = el(
+      "div",
+      { id: "tplOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "MC-707 project templates" },
+      el(
+        "div",
+        { class: "ptBox tplBox" },
+        el("h3", {}, "MC-707 project templates"),
+        el(
+          "p",
+          { class: "hint" },
+          "Empty MC-707 projects with the tracks already set up as drum or tone tracks, from 8 drum tracks to 8 tone tracks, plus EMPTY. Start a new song from one so the MC-707 matches the app before you write clips and scenes."
+        ),
+        which,
+        el("h4", {}, "1. Download them"),
+        el(
+          "p",
+          { class: "hint" },
+          el(
+            "button",
+            { type: "button", class: "btn sm on", onclick: () => openLink(LINKS.templates) },
+            "Download the templates (zip)"
+          ),
+          " Unzip it: there are 8 .mpj files."
+        ),
+        el("h4", {}, "2. Copy them onto the MC-707"),
+        el(
+          "ol",
+          { class: "hint tplSteps" },
+          li("With the MC-707 not connected to the computer, turn it on."),
+          li("Hold ", el("b", {}, "SHIFT"), " and press ", el("b", {}, "KNOB ASSIGN"), " (the UTILITY menu)."),
+          li("Pick ", el("b", {}, "STORAGE MODE"), " with the cursor buttons and press ", el("b", {}, "ENTER"), "."),
+          li("Connect the USB cable. The SD card shows up on the computer as a drive."),
+          li(
+            "Copy the .mpj files into the folder where your MC-707’s projects are (the one with the other .mpj files, under ROLAND)."
+          ),
+          li(
+            "Eject the drive (Windows: right-click it › Eject; Mac: drag it to the Trash), then turn the MC-707 off and on again."
+          )
+        ),
+        el(
+          "p",
+          { class: "hint" },
+          "While the MC-707 is in storage mode it does nothing else, and the app cannot reach it over MIDI."
+        ),
+        el("h4", {}, "3. Start a song from one"),
+        el(
+          "ol",
+          { class: "hint tplSteps" },
+          li("Press ", el("b", {}, "PROJECT"), ", choose ", el("b", {}, "LOAD"), " and pick the template."),
+          li(
+            "Straight away, press ",
+            el("b", {}, "PROJECT"),
+            " › ",
+            el("b", {}, "WRITE"),
+            " and give it a new name, so the template stays empty for next time."
+          ),
+          li(
+            "Load a kit on each drum track and a tone on each tone track, then write your clips and scenes from the app."
+          )
+        ),
+        el(
+          "div",
+          { style: "display:flex;justify-content:flex-end" },
+          el("button", { type: "button", class: "btn", onclick: close }, "Close")
+        )
+      )
+    );
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    ov.addEventListener("pointerdown", (e) => e.target === ov && close());
+    document.body.append(ov);
+  }
+
+  // src/ui/template-builder.js
+  var KEY6 = "mc707-tplb";
+  var SRCS = [
+    ["factory", "Factory tones and kits"],
+    ["mine", "My sounds"],
+    ["starter", "Starters"]
+  ];
+  var COUNTS = [0, 1, 2, 4, 8, 12, 16];
+  var def = () => ({
+    name: "MY TEMPLATE",
+    bpm: 124,
+    genre: "house",
+    layout: "3+5",
+    srcs: ["factory", "mine"],
+    clipBars: 1,
+    useLayout: true,
+    tracks: TPL_LAYOUTS[0][2].map((role) => ({ role, n: 16, same: false, names: [] }))
+  });
+  var TB = (() => {
+    try {
+      const o = JSON.parse(localStorage.getItem(KEY6) || "null");
+      if (o && Array.isArray(o.tracks) && o.tracks.length === 8) return { ...def(), ...o };
+    } catch (e) {
+    }
+    return def();
+  })();
+  var save4 = () => {
+    try {
+      localStorage.setItem(KEY6, JSON.stringify(TB));
+    } catch (e) {
+    }
+  };
+  var kindOf2 = (tr) => roleIsDrum(tr.role) ? "drum" : "tone";
+  function tbFill(t, seed4 = 0) {
+    const tr = TB.tracks[t], kind = kindOf2(tr), avoid = new Set(
+      TB.tracks.filter((x, i) => i !== t && kindOf2(x) === kind).flatMap((x) => x.names).filter(Boolean)
+    ), picks = tplPick(TB.genre, tr.role, tr.same ? 1 : tr.n, TB.srcs, avoid, seed4), names = Array(16).fill(null);
+    for (let k2 = 0; k2 < tr.n; k2++) names[k2] = (tr.same ? picks[0] : picks[k2])?.name || null;
+    tr.names = names;
+  }
+  var fillAll = (seed4) => TB.tracks.forEach((x, t) => tbFill(t, seed4 ? seed4 + t : 0));
+  function entryOf(kind, name) {
+    if (!name) return null;
+    const pool = tplPool(kind === "drum" ? "kit" : "tone", ["factory", "mine", "starter"]);
+    return pool.find(
+      (e) => e.name === name && TB.srcs.includes(e.src === "factory" ? "factory" : e.src === "starter" ? "starter" : "mine")
+    ) || pool.find((e) => e.name === name) || null;
+  }
+  var FROM_APP = { chords: "keys", pad: "pads", lead: "leads", acid: "bass", vox: "leads", fx: "fx" };
+  function appRoles() {
+    return DEVS["707"].tracks.map((t) => {
+      const r = roleOf(t), drum = S.tracks[t].type === "drum";
+      if (drum) return ["kit", "hats", "perc"].includes(r) ? r : "kit";
+      const b = FROM_APP[r] || r;
+      return TPL_ROLES.some((x) => x[0] === b && !x[2]) ? b : "any";
+    });
+  }
+  var devTag = (t, tr) => t + 1 + "-" + (kindOf2(tr) === "drum" ? "D" : "T");
+  async function tbBytes() {
+    let missing = 0;
+    const tracks3 = TB.tracks.map((tr) => {
+      const kind = kindOf2(tr);
+      return {
+        kind,
+        sounds: Array.from({ length: 16 }, (_, k2) => {
+          if (k2 >= tr.n) return null;
+          const e = entryOf(kind, tr.names[k2]);
+          if (tr.names[k2] && !e) missing++;
+          return e;
+        })
+      };
+    });
+    const made3 = await tplBytes({ ...TB, tracks: tracks3 });
+    return { ...made3, missing };
+  }
+  async function templateBuilderOpen() {
+    document.getElementById("tbOv")?.remove();
+    await soundsLoad();
+    const noFactory = !ZS.list.some((e) => e.src === "factory");
+    if (noFactory && !TB.srcs.includes("starter")) {
+      TB.srcs = [...TB.srcs, "starter"];
+      fillAll(0);
+    }
+    if (TB.tracks.every((x) => !x.names.some(Boolean))) fillAll(0);
+    const ov = el("div", {
+      id: "tbOv",
+      class: "ptOv",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": "Template builder"
+    });
+    const close = () => (save4(), ov.remove());
+    const open2 = /* @__PURE__ */ new Set();
+    const render3 = () => {
+      save4();
+      const factory = ZS.list.some((e) => e.src === "factory" && e.mpj);
+      const opt = (v, label2, cur2) => el("option", { value: v, selected: String(v) === String(cur2) }, label2);
+      const sel2 = (label2, cur2, list2, on3, extra = {}) => el(
+        "select",
+        { "aria-label": label2, onchange: (e) => on3(e.target.value), ...extra },
+        ...list2.map(([v, l]) => opt(v, l, cur2))
+      );
+      const field = (label2, ...k2) => el("label", { class: "tbField" }, el("span", {}, label2), ...k2);
+      const top = el(
+        "div",
+        { class: "tbTop" },
+        field(
+          "Project name",
+          el("input", {
+            type: "text",
+            maxlength: 16,
+            value: TB.name,
+            "aria-label": "Project name",
+            oninput: (e) => (TB.name = e.target.value.toUpperCase().slice(0, 16), save4())
+          })
+        ),
+        field(
+          "Tempo",
+          el("input", {
+            type: "number",
+            min: 20,
+            max: 300,
+            value: TB.bpm,
+            "aria-label": "Tempo",
+            onchange: (e) => (TB.bpm = Math.max(20, Math.min(300, +e.target.value || 120)), save4())
+          })
+        ),
+        field(
+          "Genre",
+          sel2(
+            "Genre",
+            TB.genre,
+            Object.entries(TPL_GENRES).map(([id, g]) => [id, g.name]),
+            (v) => {
+              TB.genre = v;
+              TB.bpm = TPL_GENRES[v].bpm;
+              fillAll(0);
+              render3();
+            }
+          )
+        ),
+        field(
+          "Track layout",
+          sel2(
+            "Track layout",
+            TB.layout,
+            [
+              ...TPL_LAYOUTS.map(([id, l]) => [id, l]),
+              ["app", "Like my Track setup in the app"],
+              ["custom", "My own (set each track)"]
+            ],
+            (v) => {
+              TB.layout = v;
+              const roles = v === "app" ? appRoles() : (TPL_LAYOUTS.find((x) => x[0] === v) || [])[2];
+              if (roles) roles.forEach((r, t) => TB.tracks[t].role = r);
+              fillAll(0);
+              render3();
+            }
+          )
+        )
+      );
+      const srcs = el(
+        "div",
+        { class: "tbSrcs" },
+        el("span", { class: "hint" }, "Sounds from:"),
+        ...SRCS.map(
+          ([id, label2]) => el(
+            "label",
+            {},
+            el("input", {
+              type: "checkbox",
+              checked: TB.srcs.includes(id),
+              onchange: (e) => {
+                TB.srcs = e.target.checked ? [.../* @__PURE__ */ new Set([...TB.srcs, id])] : TB.srcs.filter((x) => x !== id);
+                if (!TB.srcs.length) TB.srcs = ["factory"];
+                fillAll(0);
+                render3();
+              }
+            }),
+            " " + label2
+          )
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            title: "New picks for every track",
+            onclick: () => {
+              fillAll((Date.now() & 65535) + 1);
+              render3();
+            }
+          },
+          "↻ New picks for all"
+        )
+      );
+      const warn = !factory ? el(
+        "div",
+        { class: "tbWarn" },
+        el(
+          "span",
+          {},
+          "The factory tones and kits are not in your Sound library yet, so drum tracks keep the empty template’s TR kits. Grab them from the MC-707’s update file (on your computer, nothing is uploaded)."
+        ),
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm on",
+            onclick: () => factoryImport(() => {
+              if (!TB.srcs.includes("factory")) TB.srcs.push("factory");
+              fillAll(0);
+              render3();
+            })
+          },
+          "Grab factory tones and kits…"
+        )
+      ) : null;
+      const dev = DEV !== "707" ? el("p", { class: "ptWarn" }, "Project files are for the MC-707 (8 tracks). The MC-101 cannot load them.") : null;
+      const rows2 = TB.tracks.flatMap((tr, t) => {
+        const kind = kindOf2(tr), names = tr.names.slice(0, tr.n).filter(Boolean), row2 = el(
+          "div",
+          { class: "tbRow" + (kind === "drum" ? " drum" : "") },
+          el("b", { class: "tbNum" }, devTag(t, tr)),
+          sel2(
+            "Track " + (t + 1) + " plays",
+            tr.role,
+            TPL_ROLES.map(([id, l, d]) => [id, (d ? "Drums: " : "") + l]),
+            (v) => {
+              tr.role = v;
+              TB.layout = "custom";
+              tbFill(t);
+              render3();
+            }
+          ),
+          sel2(
+            "Track " + (t + 1) + " clips",
+            tr.n,
+            COUNTS.map((n) => [n, n === 0 ? "No clips" : n + (n === 1 ? " clip" : " clips")]),
+            (v) => {
+              tr.n = +v;
+              tbFill(t);
+              render3();
+            }
+          ),
+          el(
+            "label",
+            { class: "tbSame", title: "The same sound in every clip of this track" },
+            el("input", {
+              type: "checkbox",
+              checked: tr.same,
+              onchange: (e) => {
+                tr.same = e.target.checked;
+                tbFill(t);
+                render3();
+              }
+            }),
+            " One sound"
+          ),
+          el(
+            "span",
+            { class: "tbNames", title: names.join(", ") },
+            tr.n ? names.length ? [...new Set(names)].slice(0, 4).join(" · ") + (new Set(names).size > 4 ? " …" : "") : kind === "drum" ? "Kits come from the factory sounds" : "No sounds found: tick more sources" : "—"
+          ),
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn sm",
+              title: "Other sounds for this track",
+              "aria-label": "New picks for track " + (t + 1),
+              disabled: !tr.n,
+              onclick: () => {
+                tbFill(t, (Date.now() & 65535) + t + 1);
+                render3();
+              }
+            },
+            "↻"
+          ),
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn sm" + (open2.has(t) ? " on" : ""),
+              disabled: !tr.n,
+              "aria-expanded": String(open2.has(t)),
+              onclick: () => {
+                open2.has(t) ? open2.delete(t) : open2.add(t);
+                render3();
+              }
+            },
+            "Clips ▾"
+          )
+        );
+        if (!open2.has(t) || !tr.n) return [row2];
+        const choices = tplPick(TB.genre, tr.role, 60, TB.srcs).map((e) => e.name);
+        const clips = el(
+          "div",
+          { class: "tbClips" },
+          ...Array.from({ length: tr.n }, (_, k2) => {
+            const cur2 = tr.names[k2], list2 = [...new Set([cur2, ...choices].filter(Boolean))];
+            return el(
+              "label",
+              {},
+              el("span", {}, "Clip " + (k2 + 1)),
+              sel2(
+                "Track " + (t + 1) + " clip " + (k2 + 1) + " sound",
+                cur2 || "",
+                [["", "— empty —"], ...list2.map((n) => [n, n])],
+                (v) => {
+                  tr.names[k2] = v || null;
+                  render3();
+                }
+              )
+            );
+          })
+        );
+        return [row2, clips];
+      });
+      const more2 = el(
+        "div",
+        { class: "tbMore" },
+        field(
+          "Clip length",
+          sel2(
+            "Clip length",
+            TB.clipBars,
+            [1, 2, 4, 8].map((n) => [n, n + (n === 1 ? " bar" : " bars")]),
+            (v) => (TB.clipBars = +v, save4())
+          )
+        ),
+        el(
+          "label",
+          {
+            class: "tbCheck",
+            title: "Set the app’s Track setup to the same drum and tone tracks, so Song and Scene Mode match the MC-707"
+          },
+          el("input", {
+            type: "checkbox",
+            checked: TB.useLayout,
+            onchange: (e) => (TB.useLayout = e.target.checked, save4())
+          }),
+          " Use this layout in the app too"
+        )
+      );
+      const total = TB.tracks.reduce((a, x) => a + x.names.slice(0, x.n).filter(Boolean).length, 0);
+      ov.replaceChildren(
+        el(
+          "div",
+          { class: "ptBox tbBox" },
+          el("h3", {}, "Template builder"),
+          el(
+            "p",
+            { class: "hint" },
+            "Make an MC-707 project to start from: your track layout with a sound in every clip. Save it onto the MC-707 in storage mode and load it there."
+          ),
+          dev,
+          warn,
+          top,
+          srcs,
+          el("div", { class: "tbRows" }, ...rows2),
+          more2,
+          el(
+            "div",
+            { class: "tbFoot" },
+            el(
+              "button",
+              { type: "button", class: "btn sm", onclick: () => (close(), templatesEmptyOpen()) },
+              "Empty templates (no sounds)…"
+            ),
+            el("span", { class: "hint" }, total + " clips with sounds"),
+            el("button", { type: "button", class: "btn", onclick: close }, "Close"),
+            el(
+              "button",
+              { type: "button", class: "btn on", disabled: DEV !== "707" || !total, onclick: () => tbSave(close) },
+              "Save to the MC-707…"
+            )
+          )
+        )
+      );
+    };
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    ov.addEventListener("pointerdown", (e) => e.target === ov && close());
+    document.body.append(ov);
+    render3();
+  }
+  async function writeFile(file, bytes) {
+    if (HOST && HOST.saveBinary) return await HOST.saveBinary(file, bytes, "mpj") || null;
+    if (window.showSaveFilePicker) {
+      try {
+        const h = await window.showSaveFilePicker({
+          suggestedName: file,
+          types: [{ description: "MC-707 project", accept: { "application/octet-stream": [".mpj"] } }]
+        });
+        const w = await h.createWritable();
+        await w.write(bytes);
+        await w.close();
+        return h.name;
+      } catch (e) {
+        if (e && e.name === "AbortError") return null;
+      }
+    }
+    await saveFile(file, new Blob([bytes], { type: "application/octet-stream" }));
+    return "Downloads";
+  }
+  async function tbSave(close) {
+    let made3;
+    try {
+      made3 = await tbBytes();
+    } catch (e) {
+      return void toast("Could not make the project: " + (e && e.message || e));
+    }
+    if (TB.useLayout && DEV === "707") {
+      const types = TB.tracks.map(kindOf2);
+      if (types.some((x, t) => S.tracks[t].type !== x) && !await matchTypes(types)) return;
+    }
+    const name = (TB.name || "MY TEMPLATE").slice(0, 16), file = name.replace(/[^\w\- ]+/g, "").trim() || "TEMPLATE";
+    const where2 = await writeFile(file + ".mpj", made3.bytes);
+    if (!where2) return;
+    close();
+    const li = (...k2) => el("li", {}, ...k2);
+    await askDlg({
+      title: "Saved " + file + ".mpj",
+      text: made3.clips + " clips with sounds" + (made3.missing ? " (" + made3.missing + " sounds were no longer in your library and were left out)" : "") + ". " + (where2 === "Downloads" ? "It is in your Downloads folder." : "Saved as " + where2 + "."),
+      body: el(
+        "ol",
+        { class: "hint tplSteps" },
+        li(
+          "On the MC-707: hold ",
+          el("b", {}, "SHIFT"),
+          " and press ",
+          el("b", {}, "KNOB ASSIGN"),
+          ", pick ",
+          el("b", {}, "STORAGE MODE"),
+          " and press ",
+          el("b", {}, "ENTER"),
+          "."
+        ),
+        li("Connect the USB cable: the SD card shows up as a drive."),
+        li(
+          "Put the .mpj file in the folder with the MC-707’s other projects (under ROLAND), if you did not save it straight there. Then eject the drive."
+        ),
+        li(
+          "Leave storage mode, press ",
+          el("b", {}, "PROJECT"),
+          ", choose ",
+          el("b", {}, "LOAD"),
+          " and pick ",
+          el("b", {}, name),
+          "."
+        ),
+        li(
+          "Every track plays its clips’ sounds: press a clip to hear it. Record into the clips, then save the project under a new name so the template stays as it is."
+        )
+      ),
+      ok: "OK",
+      cancel: "Close"
+    });
+  }
+
   // src/ui/setup-wizard.js
   var SU = {
     step: 1,
@@ -66229,6 +67983,17 @@ html.os-darwin.native-menu #menubar .mproj {
         step(
           "Sounds:",
           "tracks 1-3 hold drum kits and 4-8 tone sounds, unmuted with their levels up. Clips that hold a sound but no notes work best."
+        ),
+        el(
+          "li",
+          {},
+          el("b", {}, "Quickest:"),
+          " let the app make the project. The Template builder sets up the tracks the way the app has them, puts a kit or tone in every clip and turns Sound Source to CLIP. Save it onto the MC-707 in storage mode and load it. ",
+          el(
+            "button",
+            { type: "button", class: "btn sm on", onclick: () => (closeSetup(), templateBuilderOpen()) },
+            "Template builder…"
+          )
         )
       ),
       el("a", { href: ROLAND_USB_URL, target: "_blank", rel: "noopener" }, "Roland’s USB driver instructions")
@@ -67567,10 +69332,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/live/genre-picker.js
-  var KEY6 = "mc707-live-pick";
+  var KEY7 = "mc707-live-pick";
   function livePickOnOpen() {
     try {
-      return localStorage.getItem(KEY6) !== "0";
+      return localStorage.getItem(KEY7) !== "0";
     } catch (e) {
       return true;
     }
@@ -67631,7 +69396,7 @@ html.os-darwin.native-menu #menubar .mproj {
             checked: true,
             onchange: (e) => {
               try {
-                localStorage.setItem(KEY6, e.target.checked ? "1" : "0");
+                localStorage.setItem(KEY7, e.target.checked ? "1" : "0");
               } catch (er) {
               }
             }
@@ -67680,7 +69445,7 @@ html.os-darwin.native-menu #menubar .mproj {
 
   // src/ui/update-check.js
   var API = "https://api.github.com/repos/Mendo-707/mc707-toolbox/releases/latest";
-  var KEY7 = "mc707-update";
+  var KEY8 = "mc707-update";
   var parts3 = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
   function newer(a, b) {
     const x = parts3(a), y = parts3(b);
@@ -67691,7 +69456,7 @@ html.os-darwin.native-menu #menubar .mproj {
   async function checkUpdate(again = false) {
     if (!again)
       try {
-        const c = JSON.parse(sessionStorage.getItem(KEY7) || "null");
+        const c = JSON.parse(sessionStorage.getItem(KEY8) || "null");
         if (c && c.latest) return { ...c, newer: newer(c.latest, VERSION) };
       } catch (e) {
       }
@@ -67704,7 +69469,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (!latest) return null;
       const out2 = { latest, url: j.html_url || LINKS.releases };
       try {
-        sessionStorage.setItem(KEY7, JSON.stringify(out2));
+        sessionStorage.setItem(KEY8, JSON.stringify(out2));
       } catch (e) {
       }
       return { ...out2, newer: newer(latest, VERSION) };
@@ -67720,191 +69485,6 @@ html.os-darwin.native-menu #menubar .mproj {
       toast("Version " + u.latest + " is out (you have " + VERSION + "): opening the download page");
       openLink(u.url);
     } else toast("You have the latest version (" + VERSION + ")");
-  }
-
-  // src/ui/track-setup.js
-  var DEF_NAMES = ["Drums 1", "Drums 2", "Drums 3", "Bass", "Chords", "Pad", "Lead", "Pluck"];
-  var SHORT2 = {
-    kit: "Kit",
-    hats: "Hats",
-    perc: "Perc",
-    bass: "Bass",
-    chords: "Chords",
-    pad: "Pad",
-    lead: "Lead",
-    pluck: "Pluck",
-    acid: "Acid"
-  };
-  var PRESETS = [
-    ["Default: 3 drums + 5 tone", DEF_ROLES],
-    ["8 drums", ["kit", "kit", "hats", "hats", "perc", "perc", "kit", "perc"]],
-    ["6 drums + 2 tone", ["kit", "kit", "hats", "perc", "perc", "kit", "bass", "lead"]],
-    ["4 drums + 4 tone", ["kit", "hats", "perc", "kit", "bass", "chords", "lead", "pluck"]],
-    ["2 drums + 6 tone", ["kit", "hats", "bass", "chords", "pad", "lead", "pluck", "acid"]],
-    ["1 drum + 7 tone", ["kit", "bass", "chords", "pad", "lead", "pluck", "acid", "lead"]],
-    ["8 tone", ["bass", "chords", "pad", "lead", "pluck", "acid", "chords", "lead"]]
-  ];
-  function nameFor(roles, t) {
-    if (roles.every((r, i) => r === DEF_ROLES[i])) return DEF_NAMES[t];
-    const same = roles.map((r, i) => i).filter((i) => SHORT2[roles[i]] === SHORT2[roles[t]]);
-    return SHORT2[roles[t]] + (same.length > 1 ? " " + (same.indexOf(t) + 1) : "");
-  }
-  var AUTO = new RegExp("^(" + [...DEF_NAMES, ...Object.values(SHORT2)].join("|") + ")( \\d)?$");
-  var autoNamed = (t, roles) => S.tracks[t].name === nameFor(roles, t) || AUTO.test(S.tracks[t].name);
-  function matchTypes(types) {
-    const roles = S.tracks.map((x, t) => {
-      const r = roleOf(t);
-      if (types[t] !== "drum" && types[t] !== "tone") return r;
-      return roleInfo(r, t)[2] === types[t] ? r : types[t] === "drum" ? "kit" : "lead";
-    });
-    return applyRoles(roles);
-  }
-  async function applyRoles(roles) {
-    const old = S.tracks.map((x, t) => roleOf(t)), types = roles.map((r, t) => roleInfo(r, t)[2]);
-    const lose = S.clips.filter((c) => types[c.t] !== S.tracks[c.t].type);
-    if (lose.length) {
-      const ok = await askDlg({
-        title: "Change the track setup?",
-        text: lose.length + " clip" + (lose.length === 1 ? "" : "s") + " on tracks that change between drum and tone will be removed. Undo brings them back.",
-        ok: "Change and remove them"
-      });
-      if (!ok) return false;
-    }
-    stopAll();
-    pushUndo();
-    const rename = S.tracks.map((x, t) => autoNamed(t, old));
-    roles.forEach((r, t) => {
-      const tr = S.tracks[t];
-      if (r === DEF_ROLES[t]) delete tr.role;
-      else tr.role = r;
-      tr.type = types[t];
-      if (rename[t]) tr.name = nameFor(roles, t);
-    });
-    S.clips = S.clips.filter((c) => S.tracks[c.t].type === S.patterns[c.pat].type);
-    cmFix().forEach((m, t) => {
-      const drum = types[t] === "drum", kind = drum ? "drums" : ["bass", "chords", "pad", "lead", "pluck", "acid"].includes(roles[t]) ? roles[t] : "lead";
-      m.types = m.types.map((ty) => drum ? ty === "fx" ? ty : "drums" : ty === "drums" ? kind : ty);
-      if (roles[t] !== old[t] && m.n === 1) m.types[0] = drum ? "drums" : kind;
-    });
-    liveBuild();
-    renderAll();
-    liveRender();
-    scheduleSave();
-    return true;
-  }
-  function trackSetupOpen() {
-    let ov = $("#tsOv");
-    if (!ov) {
-      ov = el("div", {
-        id: "tsOv",
-        class: "ptOv",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-label": "Track setup",
-        onpointerdown: (e) => {
-          if (e.target.id === "tsOv") ov.remove();
-        }
-      });
-      document.body.append(ov);
-    }
-    render2(ov);
-  }
-  function render2(ov) {
-    ov.textContent = "";
-    const roles = S.tracks.map((x, t) => roleOf(t)), shown5 = DEVS[DEV].tracks, nD = shown5.filter((t) => roleInfo(roles[t], t)[2] === "drum").length;
-    const set2 = async (r) => {
-      if (await applyRoles(r)) {
-        toast("Track setup changed");
-        render2(ov);
-      }
-    };
-    const rows2 = shown5.map((t) => {
-      const sel2 = el("select", {
-        "aria-label": "Track " + devNum(t) + " role",
-        onchange: (e) => set2(roles.map((r, i) => i === t ? e.target.value : r))
-      });
-      for (const [lab, list2] of [
-        ["Drum track", ROLES.filter((r) => r[2] === "drum")],
-        ["Tone track", ROLES.filter((r) => r[2] === "tone")]
-      ]) {
-        const g = el("optgroup", { label: lab });
-        list2.forEach((r) => g.append(el("option", { value: r[0], selected: r[0] === roles[t] }, r[1])));
-        sel2.append(g);
-      }
-      const isD = roleInfo(roles[t], t)[2] === "drum";
-      return el(
-        "div",
-        { class: "tsRow", style: "--c:" + TRACK_COLORS[t] },
-        el("b", {}, "Track " + devNum(t)),
-        el("span", { class: "tsType " + (isD ? "d" : "t") }, isD ? "DRUM" : "TONE"),
-        sel2,
-        el("input", {
-          type: "text",
-          maxlength: 16,
-          value: S.tracks[t].name,
-          "aria-label": "Track " + devNum(t) + " name",
-          onchange: (e) => {
-            pushUndo();
-            S.tracks[t].name = e.target.value.trim().slice(0, 16) || nameFor(roles, t);
-            renderAll();
-            liveRender();
-            scheduleSave();
-          }
-        }),
-        el("small", { class: "hint" }, "MIDI ch " + S.tracks[t].ch)
-      );
-    });
-    ov.append(
-      el(
-        "div",
-        { class: "ptBox tsBox" },
-        el(
-          "div",
-          { class: "cmHead" },
-          el("h3", {}, "Track setup"),
-          el("button", { class: "btn sm on", onclick: () => ov.remove() }, "Done")
-        ),
-        el(
-          "p",
-          { class: "hint" },
-          "Choose what each track is for, from 8 drum tracks to 8 tone tracks. The song wizard and Live Mode follow it. Now: " + nD + " drum and " + (shown5.length - nD) + " tone tracks."
-        ),
-        /* the one thing the app cannot do for you: it says it up front, not as a footnote */
-        el(
-          "div",
-          { class: "tsMust", role: "note" },
-          el("b", {}, "Set the MC-707 to match, by hand"),
-          el(
-            "span",
-            {},
-            "The app can’t change what a track is on the MC-707. After choosing here, set each MC-707 track the same way: a drum kit on each drum track, a tone on each tone track (select the track on the MC-707 and choose its sound). If they don’t match, drum parts play notes on a tone, or melodies on a kit. Easiest: start from an "
-          ),
-          el(
-            "button",
-            { type: "button", class: "btn sm", onclick: () => (ov.remove(), templatesOpen()) },
-            "MC-707 project template…"
-          ),
-          el("span", {}, " with the tracks already set up.")
-        ),
-        el(
-          "div",
-          { class: "tsPresets" },
-          ...PRESETS.map(
-            ([lab, r]) => el(
-              "button",
-              { class: "btn sm" + (r.every((x, t) => x === roles[t]) ? " on" : ""), onclick: () => set2(r.slice()) },
-              lab
-            )
-          )
-        ),
-        el("div", { class: "tsRows" }, ...rows2),
-        el(
-          "p",
-          { class: "hint" },
-          "Each app track sends on its own MIDI channel, set in MIDI and sound and the MC-707’s Track Channel settings."
-        )
-      )
-    );
   }
 
   // src/ui/tutorial.js
@@ -67988,17 +69568,17 @@ html.os-darwin.native-menu #menubar .mproj {
       [
         "Each drum track holds a drum kit, each tone track a tone (select the track and choose its sound), unmuted with its level up.",
         "Sound Source: CLIP on every track. Hold SHIFT and press the track’s TRACK SEL, open the GENERAL tab and set Sound Source to CLIP, so each clip keeps its own sound. Then select each clip and give it a sound (a new clip can be silent until you do). Scene Mode, the clip switching and MC-707 project files all count on it.",
-        "Easiest: load a project template with the tracks already set up. Copy it to the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it and straight away PROJECT › WRITE it under a new name.",
+        "Easiest: MC-707 › Template builder makes a project with your track layout and a sound in every clip. Save it onto the SD card in STORAGE MODE (hold SHIFT and press KNOB ASSIGN, pick STORAGE MODE, press ENTER, then connect USB), then PROJECT › LOAD it on the MC-707.",
         "Clips that hold a sound but no notes work best: the app plays the notes."
       ],
       [
         "Settings › Track setup: pick how many drum and tone tracks you use (3 drums + 5 tones is the default) and what each one is for.",
-        "MC-707 › Project templates says which template matches your Track setup.",
+        "The Template builder can use the same layout as your Track setup, so the MC-707 matches the app.",
         "An MC-101: Settings › Device › MC-101 (it also switches by itself when it finds one)."
       ],
       [
         ["Track setup…", () => trackSetupOpen()],
-        ["Project templates…", () => templatesOpen()]
+        ["Template builder…", () => templateBuilderOpen()]
       ]
     ],
     [
@@ -68312,10 +69892,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/ui/start-screen.js
-  var KEY8 = "mc707-start";
+  var KEY9 = "mc707-start";
   function startOnOpen() {
     try {
-      return localStorage.getItem(KEY8) !== "0";
+      return localStorage.getItem(KEY9) !== "0";
     } catch (e) {
       return true;
     }
@@ -68472,7 +70052,7 @@ html.os-darwin.native-menu #menubar .mproj {
             checked: true,
             onchange: (e) => {
               try {
-                localStorage.setItem(KEY8, e.target.checked ? "1" : "0");
+                localStorage.setItem(KEY9, e.target.checked ? "1" : "0");
               } catch (er) {
               }
             }
@@ -68544,8 +70124,8 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     ensureAudio();
-    const ctx2 = AU.ctx, sr = ctx2.sampleRate, k2 = GRAB.src, def = grabDef(k2);
-    if (!def) {
+    const ctx2 = AU.ctx, sr = ctx2.sampleRate, k2 = GRAB.src, def2 = grabDef(k2);
+    if (!def2) {
       toast(
         grabPv() ? "Ext In needs the MC-707's USB audio. Choose it in Audio." : "Grabbing one track needs the MC-707's USB audio (8-channel). Set it up in Audio, or grab the Mix."
       );
@@ -68553,7 +70133,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     try {
-      if (def.cap !== "pv" && !AUDREC.caps[def.cap]) await capOpen(def.cap);
+      if (def2.cap !== "pv" && !AUDREC.caps[def2.cap]) await capOpen(def2.cap);
     } catch (e) {
       toast(e && e.message || "Could not open the audio input");
       openAudio();
@@ -68585,23 +70165,23 @@ html.os-darwin.native-menu #menubar .mproj {
         S.cursor = fromBar;
         S.metro = false;
         if (grabPv()) S.preview = true;
-        if (grabPv() && def.track != null)
+        if (grabPv() && def2.track != null)
           S.tracks.forEach((t, i) => {
-            t.solo = i === def.track;
-            if (i === def.track) t.mute = false;
+            t.solo = i === def2.track;
+            if (i === def2.track) t.mute = false;
           });
         startSong({ endTick: (fromBar + bars3) * 32 });
         startTime = TR.nextTime;
         ours = "song";
       }
     }
-    if (grabPv() && TR.mode === "live" && def.track != null) {
+    if (grabPv() && TR.mode === "live" && def2.track != null) {
       GRAB.pv = { was: S.tracks.map((t) => t.solo) };
       S.tracks.forEach((t, i) => {
-        t.solo = i === def.track;
+        t.solo = i === def2.track;
       });
     }
-    grabArm(def, k2, startTime, Math.round(grabSecs(fromBar, bars3) * sr), { bars: bars3, fromBar, label: grabName(k2) }, () => {
+    grabArm(def2, k2, startTime, Math.round(grabSecs(fromBar, bars3) * sr), { bars: bars3, fromBar, label: grabName(k2) }, () => {
       if (GRAB.pv) {
         GRAB.pv.was.forEach((s, i) => {
           S.tracks[i].solo = s;
@@ -68622,15 +70202,15 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     });
   }
-  function grabArm(def, k2, startTime, need, info, after2) {
+  function grabArm(def2, k2, startTime, need, info, after2) {
     const ctx2 = AU.ctx, sr = ctx2.sampleRate;
     const enc = wavEncoder(sr, AUD.bits === 24 ? 24 : 16);
     let got = 0;
-    const trim = (AUD.trimMs + (def.track != null && def.cap !== "pv" ? AUD.stemTrimMs : 0)) / 1e3;
+    const trim = (AUD.trimMs + (def2.track != null && def2.cap !== "pv" ? AUD.stemTrimMs : 0)) / 1e3;
     const sk = {
-      cap: def.cap,
-      l: def.l,
-      r: def.r,
+      cap: def2.cap,
+      l: def2.l,
+      r: def2.r,
       skip: 0,
       feed(L2, R4, n) {
         let a = 0;
@@ -68658,7 +70238,7 @@ html.os-darwin.native-menu #menubar .mproj {
     sk.t0 = startTime;
     sk.secs = need / sr;
     AUDREC.sinks.push(sk);
-    capAttachOne(def.cap);
+    capAttachOne(def2.cap);
     Object.assign(GRAB, {
       on: true,
       sink: sk,
@@ -69194,7 +70774,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/ui/auto-connect.js
-  var KEY9 = "mc707-autoconnect";
+  var KEY10 = "mc707-autoconnect";
   var CLOCK = "mc707-autoconnect-clock";
   var get = (k2) => {
     try {
@@ -69209,9 +70789,9 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
   };
-  var autoConnectOn = () => get(KEY9) !== "0";
+  var autoConnectOn = () => get(KEY10) !== "0";
   function autoConnectSet(on3) {
-    put4(KEY9, on3 ? "1" : "0");
+    put4(KEY10, on3 ? "1" : "0");
     toast(on3 ? "The app connects to the MC-707 by itself" : "Connect to the MC-707 with the Connect button");
     if (on3) autoConnectAtLaunch(true);
   }
@@ -69664,7 +71244,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/ui/fill-tones.js
-  var KEY10 = "mc707-tone-pools";
+  var KEY11 = "mc707-tone-pools";
   var GKEY = "mc707-fill-genre";
   var ROLES2 = CLIP_TYPES.map((c) => c[0]);
   var EXTRA = {
@@ -69675,7 +71255,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function pools() {
     if (POOLS) return POOLS;
     try {
-      POOLS = JSON.parse(localStorage.getItem(KEY10) || "{}") || {};
+      POOLS = JSON.parse(localStorage.getItem(KEY11) || "{}") || {};
     } catch (e) {
       POOLS = {};
     }
@@ -69683,7 +71263,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function savePools() {
     try {
-      localStorage.setItem(KEY10, JSON.stringify(POOLS));
+      localStorage.setItem(KEY11, JSON.stringify(POOLS));
     } catch (e) {
       toast("Could not keep the pools: the browser storage is full");
     }
@@ -70339,7 +71919,7 @@ html.os-darwin.native-menu #menubar .mproj {
           0,
           ["Open an MC-707 project file (.mpj)…", () => mpjPick()],
           ["Save as MC-707 project (.mpj)…", () => saveMpjOpen()],
-          ["Project templates…", () => templatesOpen()],
+          ["Template builder…", () => templateBuilderOpen()],
           0,
           ["Set up your MC-707…", go("#bSetup")],
           ["MIDI and sound…", go("#bMidi")]
@@ -70926,11 +72506,11 @@ html.os-darwin.native-menu #menubar .mproj {
           }))
         }
       );
-    const def = (LV.padLayout === "kbd" ? LV_ACTS_KBD : LV_ACTS)[i];
+    const def2 = (LV.padLayout === "kbd" ? LV_ACTS_KBD : LV_ACTS)[i];
     items.push("-", {
-      label: "Back to default (" + actLabel(def) + ")",
-      disabled: a === def,
-      action: () => set2(def)
+      label: "Back to default (" + actLabel(def2) + ")",
+      disabled: a === def2,
+      action: () => set2(def2)
     });
     return items;
   }
@@ -71417,18 +72997,18 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     ensureAudio();
-    let k2 = "t" + t, def = grabDef(k2);
-    if (!def) {
+    let k2 = "t" + t, def2 = grabDef(k2);
+    if (!def2) {
       k2 = "mix";
-      def = grabDef(k2);
+      def2 = grabDef(k2);
     }
-    if (!def) {
+    if (!def2) {
       toast("Recording needs an audio input. Choose the MC-707's USB audio (or the app's own sound) in Audio.");
       openAudio();
       return;
     }
     try {
-      if (def.cap !== "pv" && !AUDREC.caps[def.cap]) await capOpen(def.cap);
+      if (def2.cap !== "pv" && !AUDREC.caps[def2.cap]) await capOpen(def2.cap);
     } catch (e) {
       toast(e && e.message || "Could not open the audio input");
       openAudio();
@@ -71438,8 +73018,8 @@ html.os-darwin.native-menu #menubar .mproj {
     const was = { preview: S.preview, bars: GRAB.bars };
     if (AUD.source === "preview") S.preview = true;
     startPat(p, t);
-    const bars3 = p.bars * loops, need = Math.round(bars3 * 32 * tickDur() * AU.ctx.sampleRate), label2 = p.name + " on " + S.tracks[t].name + (k2 === "mix" || def.cap === "pv" ? "" : " (own channel)");
-    grabArm(def, k2, TR.nextTime, need, { bars: bars3, fromBar: 0, label: label2, anchor }, () => {
+    const bars3 = p.bars * loops, need = Math.round(bars3 * 32 * tickDur() * AU.ctx.sampleRate), label2 = p.name + " on " + S.tracks[t].name + (k2 === "mix" || def2.cap === "pv" ? "" : " (own channel)");
+    grabArm(def2, k2, TR.nextTime, need, { bars: bars3, fromBar: 0, label: label2, anchor }, () => {
       if (TR.playing && TR.mode === "pat") stopPlay();
       S.preview = was.preview;
       GRAB.bars = was.bars;
@@ -71596,7 +73176,7 @@ html.os-darwin.native-menu #menubar .mproj {
       },
       "Copy results"
     );
-    const save4 = el(
+    const save5 = el(
       "button",
       {
         type: "button",
@@ -71635,7 +73215,7 @@ html.os-darwin.native-menu #menubar .mproj {
           el("li", {}, "Turn CHAIN on again. Press Scan. Stay on that screen and touch nothing else between scans."),
           el("li", {}, "Press Save scans to a file (it goes to your Downloads), and Copy results into the chat.")
         ),
-        el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, scan, copy, save4),
+        el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, scan, copy, save5),
         status3,
         bar2,
         out2,
@@ -72280,6 +73860,7 @@ html.os-darwin.native-menu #menubar .mproj {
   initDesktop();
   Object.assign(hooks, {
     composeNow,
+    templateBuilder: templateBuilderOpen,
     fillTones: fillTonesOpen,
     fx: {
       choices: fxChoices,
@@ -72412,6 +73993,7 @@ html.os-darwin.native-menu #menubar .mproj {
       pump: pump_exports,
       mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
       compose: { compose, apply: applyComposed, now: composeNow },
+      tpl: { TB, bytes: tbBytes, open: templateBuilderOpen, read: mpjRead },
       get S() {
         return S;
       },

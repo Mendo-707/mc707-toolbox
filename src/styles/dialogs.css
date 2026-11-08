@@ -1405,3 +1405,121 @@
 .bkRow small {
   color: var(--mute);
 }
+/* MC-707 › Template builder (ui/template-builder.js) */
+.tbBox {
+  max-width: 980px;
+}
+.tbTop,
+.tbMore {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: flex-end;
+  margin: 10px 0;
+}
+.tbField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--mute);
+}
+.tbField input[type='text'] {
+  width: 170px;
+  text-transform: uppercase;
+}
+.tbField input[type='number'] {
+  width: 76px;
+}
+.tbSrcs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 4px 0 10px;
+  font-size: 13px;
+}
+.tbSrcs .btn {
+  margin-left: auto;
+}
+.tbWarn {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border: 1px solid var(--hot);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.tbWarn .btn {
+  flex: none;
+}
+.tbRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.tbRow {
+  display: grid;
+  grid-template-columns: 40px 210px 96px 92px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.tbNum {
+  font-variant-numeric: tabular-nums;
+}
+.tbRow.drum .tbNum {
+  color: var(--hot);
+}
+.tbNames {
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tbSame,
+.tbCheck {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.tbClips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 2px 0 8px 48px;
+  font-size: 12px;
+}
+.tbClips label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--mute);
+}
+.tbClips select {
+  width: 100%;
+}
+.tbFoot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+.tbFoot > .btn:first-child {
+  margin-right: auto;
+}
+@media (max-width: 760px) {
+  .tbRow {
+    grid-template-columns: 40px 1fr 1fr;
+  }
+  .tbNames {
+    grid-column: 1 / -1;
+  }
+  .tbClips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 0;
+  }
+}

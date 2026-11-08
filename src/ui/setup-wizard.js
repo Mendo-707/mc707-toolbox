@@ -13,6 +13,7 @@ import { renderDmap, syncControls } from './controls.js';
 import { recMidi } from '../song/recording-midi.js';
 import { openAudio } from '../song/audio-dialog.js';
 import { liveMidi } from '../live/midi-in.js';
+import { templateBuilderOpen } from './template-builder.js';
 
 /* ---------- MC-707 setup wizard ---------- */
 export const SU = {
@@ -470,6 +471,17 @@ function renderSetup(keep) {
       step(
         'Sounds:',
         'tracks 1-3 hold drum kits and 4-8 tone sounds, unmuted with their levels up. Clips that hold a sound but no notes work best.'
+      ),
+      el(
+        'li',
+        {},
+        el('b', {}, 'Quickest:'),
+        ' let the app make the project. The Template builder sets up the tracks the way the app has them, puts a kit or tone in every clip and turns Sound Source to CLIP. Save it onto the MC-707 in storage mode and load it. ',
+        el(
+          'button',
+          { type: 'button', class: 'btn sm on', onclick: () => (closeSetup(), templateBuilderOpen()) },
+          'Template builder…'
+        )
       )
     ),
     el('a', { href: ROLAND_USB_URL, target: '_blank', rel: 'noopener' }, 'Roland’s USB driver instructions')

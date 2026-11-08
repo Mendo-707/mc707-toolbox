@@ -37,6 +37,7 @@
 //   suAutoConnect      src/ui/setup-wizard.js
 //   syncControls       src/ui/controls.js
 //   syncExtra          src/ui/saved-songs.js
+//   templateBuilder    src/ui/template-builder.js
 //   testNote           src/ui/setup-wizard.js
 //   updPlayhead        src/ui/transport-view.js
 //   updTransport       src/ui/transport-view.js

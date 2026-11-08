@@ -2,12 +2,12 @@
 // (the app's part and the MC-707's part), with how far this song has got.
 //
 // Reads: S.
+import { hooks } from '../core/hooks.js';
 import { $, el } from '../core/dom.js';
 import { S } from '../core/state.js';
 import { sceneName } from '../zen/zc-scenes.js';
 import { firstScene, rows } from './model.js';
 import { pending } from './write.js';
-import { templatesOpen } from '../ui/templates.js';
 
 const STEPS = () => {
   const f = sceneName(firstScene());
@@ -15,7 +15,7 @@ const STEPS = () => {
     [
       'In the app',
       [
-        '0 · Start the MC-707 from a project template that matches your Track setup (MC-707 › Project templates, or the button below), written under a new name, so its tracks are drum and tone tracks where the app expects them.',
+        '0 · Start the MC-707 from a project that matches your Track setup: MC-707 › Template builder (or the button below) makes one with a sound in every clip, so its tracks are drum and tone tracks where the app expects them.',
         '1 · Clips: fill the MC-707’s clips on the board. Click an empty clip to choose its pattern, a full one to edit its notes (Notes) and its sound (Sound: the ZenCore editor and the factory tones).',
         '2 · Scenes: add scenes to the chain. Each one plays a clip per track (its chips) for so many bars; the last keeps playing.',
         '3 · Write: Write sends what changed (✓ written · ● changed · + not written yet). Or write one clip, a track or a scene from its button or right-click, or turn on Auto-write. Use a project you can lose the first time.'
@@ -85,8 +85,13 @@ export function sceneGuideOpen() {
         { style: 'display:flex;justify-content:flex-end;gap:8px' },
         el(
           'button',
-          { type: 'button', class: 'btn', style: 'margin-right:auto', onclick: () => (close(), templatesOpen()) },
-          'MC-707 project templates…'
+          {
+            type: 'button',
+            class: 'btn',
+            style: 'margin-right:auto',
+            onclick: () => (close(), hooks.templateBuilder())
+          },
+          'Template builder…'
         ),
         el('button', { type: 'button', class: 'btn on', onclick: close }, 'Got it')
       )

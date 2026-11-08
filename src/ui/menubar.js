@@ -24,7 +24,7 @@ import { aboutOpen } from './about.js';
 import { LINKS, openLink } from '../core/version.js';
 import { synthAct, synthViewOpen, synthViewSet } from '../zen/zc-synth.js';
 import { songToClipsOpen } from '../zen/zc-seq.js';
-import { templatesOpen } from './templates.js';
+import { templateBuilderOpen } from './template-builder.js';
 import { tutorialOpen } from './tutorial.js';
 import { backupsOn, backupsOpen } from './backups.js';
 import { saveMpjOpen } from '../scene/save-mpj.js';
@@ -206,7 +206,7 @@ function initMenubar() {
         0,
         ['Open an MC-707 project file (.mpj)…', () => mpjPick()],
         ['Save as MC-707 project (.mpj)…', () => saveMpjOpen()],
-        ['Project templates…', () => templatesOpen()],
+        ['Template builder…', () => templateBuilderOpen()],
         0,
         ['Set up your MC-707…', go('#bSetup')],
         ['MIDI and sound…', go('#bMidi')]

@@ -4,7 +4,7 @@
 // Clips that no longer fit a track's type are removed (with undo).
 //
 // Reads: S, DEV.
-import { templatesOpen } from './templates.js';
+import { templateBuilderOpen } from './template-builder.js';
 import { $, el, toast } from '../core/dom.js';
 import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
@@ -197,10 +197,10 @@ function render(ov) {
         ),
         el(
           'button',
-          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templatesOpen()) },
-          'MC-707 project template…'
+          { type: 'button', class: 'btn sm', onclick: () => (ov.remove(), templateBuilderOpen()) },
+          'MC-707 project from the Template builder…'
         ),
-        el('span', {}, ' with the tracks already set up.')
+        el('span', {}, ' with the tracks already set up, and a sound in every clip.')
       ),
       el(
         'div',

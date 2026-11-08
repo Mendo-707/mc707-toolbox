@@ -118,6 +118,8 @@ import { applyDevice, matchDevice } from './ui/device.js';
 import { midiBack, midiLost } from './ui/link-watch.js';
 import { autoConnectAtLaunch, midiFound } from './ui/auto-connect.js';
 import { applyComposed, composeNow } from './scene/compose.js';
+import { TB, tbBytes, templateBuilderOpen } from './ui/template-builder.js';
+import { mpjRead } from './core/mpj-write.js';
 import { compose } from './library/compose.js';
 import { mpjBytes, mpjSong } from './scene/save-mpj.js';
 import { backupsOffer } from './ui/backups.js';
@@ -201,6 +203,7 @@ initDesktop();
 // Fill in the hooks first: lower modules call these through core/hooks.js, never by import.
 Object.assign(hooks, {
   composeNow,
+  templateBuilder: templateBuilderOpen,
   fillTones: fillTonesOpen,
   fx: {
     choices: fxChoices,
@@ -335,6 +338,7 @@ PROJ.t = projTitle;
     pump,
     mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
     compose: { compose, apply: applyComposed, now: composeNow },
+    tpl: { TB, bytes: tbBytes, open: templateBuilderOpen, read: mpjRead },
     get S() {
       return S;
     },
