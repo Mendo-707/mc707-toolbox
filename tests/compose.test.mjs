@@ -98,3 +98,28 @@ test('Song wizard › Compose it now: writes the song and its scenes, and it sav
   assert.equal(await page.evaluate(() => JSON.stringify(window.__app.S.clips)), before);
   assert.deepEqual(errors, []);
 });
+
+test('Compose: every take plays its parts its own way (drums, bass and chords are not the same each time)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { compose } = window.__app.compose,
+      out = {};
+    const sig = p => p.notes.map(n => n.s + ':' + n.n + ':' + n.l).join(' ');
+    for (const id of ['liquid', 'trap', 'deephouse', 'techno', 'boombap', 'pop']) {
+      const st = window.__app.STYLES.find(s => s.id === id),
+        per = {};
+      for (let seed = 1; seed <= 8; seed++)
+        for (const p of Object.values(compose(st, { minutes: 3, seed }).patterns))
+          if (['kit', 'bass', 'chords'].includes(p.role) && /^[ABC]$/.test(p.variant))
+            (per[p.role] = per[p.role] || new Set()).add(p.variant + sig(p));
+      out[id] = Object.fromEntries(Object.entries(per).map(([k, v]) => [k, v.size]));
+    }
+    return out;
+  });
+  for (const [id, roles] of Object.entries(r))
+    for (const [role, n] of Object.entries(roles)) {
+      /* the A, B and C parts over 8 takes: at most 24 */
+      assert.ok(n >= (role === 'kit' ? 14 : 10), id + ' ' + role + ': ' + n + ' different in 8 takes');
+    }
+  assert.deepEqual(errors, []);
+});

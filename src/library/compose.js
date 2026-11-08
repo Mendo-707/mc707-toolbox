@@ -2511,6 +2511,222 @@ function soundFor(role, v, recipe, i) {
  *   patterns:Object<string,{role:string, variant:string, name:string, bars:number, type:'drum'|'tone', notes:object[]}>,
  *   sounds:Object<string,string>}}  parts: role → pattern key; sounds: pattern key → factory sound name
  */
+/* ------------------------------------------------------------- the take ----
+   Every take (seed) plays the parts its own way, like a different band on the same song: the drummer
+   picks where the extra kicks and ghost snares go, how the hats and percussion move; the bass player
+   jumps octaves, walks into the next chord or leaves space; the keys player picks an inversion and
+   pushes the changes; the arp finds its own order. A take's choices are the same for every variant
+   of a part (Main, Main B and the drop share the feel), so the song still hangs together. */
+const pick = (r, a) => a[Math.floor(r() * a.length)];
+const pickN = (r, a, n) => {
+  const b = [...a],
+    out = [];
+  while (b.length && out.length < n) out.push(b.splice(Math.floor(r() * b.length), 1)[0]);
+  return out;
+};
+function takeVary(p, role, v, ctx, tr) {
+  const nb = p.bars,
+    at = (b, s) => b * 16 + s,
+    has = (s, lanes) => p.notes.some(n => n.s === s && (!lanes || lanes.includes(n.n))),
+    bar = n => Math.floor(n.s / 16),
+    step = n => n.s % 16;
+  /* which bars get the take's extra touches: every other bar, the end of each 4, or all of them */
+  const mode = tr(),
+    inBars = mode < 0.4 ? b => b % 2 === 1 : mode < 0.75 ? b => b % 4 === 3 : () => true;
+  if (role === 'kit') {
+    const k0 = p.notes.filter(n => n.n === K && n.s < 16).map(step),
+      four = [0, 4, 8, 12].every(s => k0.includes(s));
+    const sn = new Set(p.notes.filter(n => n.n === SN || n.n === CL).map(step));
+    /* extra kicks where the snare is not */
+    const cand = (four ? [7, 14, 15] : [2, 3, 6, 7, 10, 11, 14, 15]).filter(s => !sn.has(s));
+    const adds = pickN(tr, cand, four ? (tr() < 0.6 ? 1 : 0) : 1 + Math.floor(tr() * 2)),
+      kv = four ? 52 + Math.floor(tr() * 14) : 74 + Math.floor(tr() * 22);
+    for (let b = 0; b < nb; b++)
+      if (inBars(b)) for (const s of adds) if (!has(at(b, s), [K])) p.add(b, s, 1, K, hum(tr, kv, 5));
+    /* one kick fewer in the answering bars */
+    if (!four && tr() < 0.4) {
+      const off = pick(tr, [3, 6, 7, 10, 11, 14]);
+      p.notes = p.notes.filter(n => !(n.n === K && step(n) === off && inBars(bar(n))));
+    }
+    /* ghost snares between the backbeats */
+    if (!four || tr() < 0.3) {
+      const ghosts = pickN(
+          tr,
+          [1, 3, 5, 6, 9, 11, 13, 15].filter(s => !sn.has(s)),
+          1 + Math.floor(tr() * 2)
+        ),
+        all = tr() < 0.5;
+      for (let b = 0; b < nb; b++)
+        if (all || inBars(b)) for (const s of ghosts) if (!has(at(b, s))) p.add(b, s, 1, SN, hum(tr, 34, 6));
+    }
+    /* a turn into the next phrase */
+    if (v !== 'drop' && v !== 'half' && tr() < 0.45) {
+      const kind = pick(tr, ['snare', 'toms', 'flam']);
+      for (const b of [3, 7].filter(x => x < nb)) {
+        if (p.notes.filter(n => bar(n) === b && step(n) >= 12 && (n.n === SN || n.n >= LT)).length > 2) continue;
+        if (kind === 'snare') for (const s of [13, 14, 15]) p.add(b, s, 1, SN, 70 + (s - 13) * 18);
+        else if (kind === 'toms') p.add(b, 13, 1, HT, 96).add(b, 14, 1, MT, 104).add(b, 15, 1, LT, 112);
+        else p.add(b, 14, 1, SN, 60).add(b, 15, 1, SN, 104);
+      }
+    }
+    return;
+  }
+  if (role === 'hats') {
+    const perBar = p.notes.filter(n => n.n === CH && n.s < 16).length;
+    const ops = pickN(
+      tr,
+      ['open', 'accent', 'thin', 'skip', 'ride', 'gallop', 'pickup', 'drop1'],
+      1 + Math.floor(tr() * 3)
+    );
+    if (ops.includes('open')) {
+      const s = pick(tr, [2, 6, 10, 14, 7, 15]),
+        every = tr() < 0.5;
+      for (let b = 0; b < nb; b++)
+        if (every || inBars(b)) {
+          p.notes = p.notes.filter(n => !(n.s === at(b, s) && n.n === CH));
+          if (!has(at(b, s), [OH])) p.add(b, s, 1, OH, hum(tr, 70, 6));
+        }
+    }
+    if (ops.includes('accent')) {
+      const shape = pick(tr, [
+          [1, 0.62, 0.86, 0.62],
+          [0.8, 0.6, 1, 0.6],
+          [1, 0.7, 0.7, 0.9],
+          [0.75, 0.95, 0.75, 0.95]
+        ]),
+        top = Math.max(1, ...p.notes.filter(n => n.n === CH).map(n => n.v));
+      for (const n of p.notes) if (n.n === CH) n.v = Math.max(20, Math.round(top * shape[step(n) % 4] - tr() * 6));
+    }
+    if (ops.includes('thin') && perBar >= 12) {
+      const cls = pick(tr, [1, 3]);
+      p.notes = p.notes.filter(n => !(n.n === CH && step(n) % 4 === cls && inBars(bar(n))));
+    }
+    if (ops.includes('skip'))
+      for (const b of [3, 7].filter(x => x < nb))
+        p.notes = p.notes.filter(n => !(bar(n) === b && step(n) >= 13 && (n.n === CH || n.n === OH)));
+    /* 8th hats with a 16th after some of them */
+    if (ops.includes('gallop') && perBar <= 8) {
+      const where = pick(tr, [
+        [3, 11],
+        [7, 15],
+        [3, 7, 11, 15]
+      ]);
+      for (let b = 0; b < nb; b++)
+        if (inBars(b)) for (const s of where) if (!has(at(b, s), [CH, OH])) p.add(b, s, 1, CH, hum(tr, 44, 5));
+    }
+    /* a hat into the next bar */
+    if (ops.includes('pickup'))
+      for (let b = 0; b < nb; b++) if (inBars(b) && !has(at(b, 15), [CH, OH])) p.add(b, 15, 1, CH, hum(tr, 56, 5));
+    /* the first hat of the answering bars left out, for the kick */
+    if (ops.includes('drop1'))
+      p.notes = p.notes.filter(n => !(step(n) === 0 && n.n === CH && inBars(bar(n)) && bar(n) > 0));
+    if (ops.includes('ride') && perBar <= 8)
+      for (let b = 0; b < nb; b++)
+        if (inBars(b)) for (const s of [0, 4, 8, 12]) if (!has(at(b, s), [RD])) p.add(b, s, 1, RD, hum(tr, 58, 6));
+    return;
+  }
+  if (role === 'perc') {
+    const op = pick(tr, ['rotate', 'rotate', 'swap', 'sparse', 'double', 'shift']);
+    if (op === 'rotate') {
+      const d = pick(tr, [2, 4, 6, 10, 12]);
+      for (const n of p.notes) if (n.n !== CR && n.n !== K) n.s = bar(n) * 16 + ((step(n) + d) % 16);
+    } else if (op === 'swap') {
+      const to = pick(tr, [RIM, CL, PC]);
+      for (const n of p.notes) if ((n.n === RIM || n.n === CL || n.n === PC) && tr() < 0.7) n.n = to;
+    } else if (op === 'sparse') p.notes = p.notes.filter((n, i) => n.n === CR || i % 2 === 0 || !inBars(bar(n)));
+    else if (op === 'double') {
+      for (const n of [...p.notes])
+        if (n.n !== CR && step(n) < 8 && !has(n.s + 8, [n.n])) p.add(bar(n), step(n) + 8, 1, n.n, hum(tr, n.v - 10, 5));
+    } else if (op === 'shift') {
+      const d = pick(tr, [1, 3]);
+      for (const n of p.notes) if (n.n !== CR && n.n !== K && inBars(bar(n))) n.s = bar(n) * 16 + ((step(n) + d) % 16);
+    }
+    /* a percussion line of its own when the style has little: a shaker or rim figure the take picks */
+    if (p.notes.filter(n => n.n !== CR).length < nb * 2 && tr() < 0.6) {
+      const lane = pick(tr, [PC, RIM, CL]),
+        fig = pick(tr, [
+          [3, 11],
+          [6, 14],
+          [2, 7, 10, 15],
+          [3, 6, 11, 14]
+        ]);
+      for (let b = 0; b < nb; b++)
+        for (const s of fig) if (!has(at(b, s), [lane])) p.add(b, s, 1, lane, hum(tr, 62, 8));
+    }
+    return;
+  }
+  if (role === 'bass' || role === 'acid') {
+    if (v === 'intro' || v === 'half') return;
+    const ops = pickN(tr, ['octave', 'approach', 'space', 'approach'], 1 + Math.floor(tr() * 2));
+    if (ops.includes('octave')) {
+      const pos = pick(tr, [[2, 10], [6, 14], [3, 11], [7]]);
+      for (const n of p.notes) if (pos.includes(step(n)) && n.n + 12 <= 60 && inBars(bar(n))) n.n += 12;
+    }
+    if (ops.includes('approach'))
+      for (let b = 0; b < nb - 1; b++) {
+        const next = p.notes.filter(n => n.s === at(b + 1, 0)).sort((x, y) => x.n - y.n)[0],
+          last = p.notes.filter(n => bar(n) === b).sort((x, y) => y.s - x.s)[0];
+        if (!next || !last || last.n % 12 === next.n % 12) continue;
+        if (last.s + last.l > at(b, 15)) last.l = Math.max(1, at(b, 15) - last.s);
+        if (!has(at(b, 15))) p.add(b, 15, 1, next.n + (tr() < 0.5 ? -1 : 2), hum(tr, 96, 6));
+      }
+    if (ops.includes('space')) {
+      const off = pick(tr, [2, 3, 6, 7, 10, 11, 13, 14]);
+      p.notes = p.notes.filter(n => !(step(n) === off && inBars(bar(n)) && n.s % 16 !== 0));
+    }
+    return;
+  }
+  if (role === 'chords' || role === 'pad') {
+    const groups = new Map();
+    for (const n of p.notes) (groups.get(n.s) || groups.set(n.s, []).get(n.s)).push(n);
+    const inv = Math.floor(tr() * 3); /* 0 root position, 1 first inversion, 2 an open voicing */
+    for (const g of groups.values()) {
+      if (g.length < 3) continue;
+      g.sort((x, y) => x.n - y.n);
+      if (inv === 1) g[0].n += 12;
+      else if (inv === 2 && g[0].n - 12 >= 40) g[g.length - 1].n -= 12;
+    }
+    /* push the changes: the new chord comes in a 16th early */
+    if (role === 'chords' && tr() < 0.4) {
+      for (const [s, g] of groups) {
+        if (s % 16 !== 0 || s === 0) continue;
+        const prev = groups.get(s - 16);
+        if (prev && prev.map(n => n.n).join() === g.map(n => n.n).join()) continue;
+        if (p.notes.some(n => n.s > s - 2 && n.s < s)) continue;
+        for (const n of g) {
+          n.s -= 1;
+          n.l += 1;
+        }
+      }
+      for (const n of p.notes) {
+        const later = p.notes.find(m => m.n === n.n && m.s > n.s && m.s < n.s + n.l);
+        if (later) n.l = later.s - n.s;
+      }
+    }
+    return;
+  }
+  if (role === 'pluck') {
+    const op = pick(tr, ['reverse', 'octave', 'gaps', 'rate', 'keep']);
+    /* half the speed: every other note, held twice as long */
+    if (op === 'rate' && p.notes.length && p.notes.every(n => n.l <= 1)) {
+      p.notes = p.notes.filter(n => step(n) % 2 === 0);
+      for (const n of p.notes) n.l = 2;
+      return;
+    }
+    for (let b = 0; b < nb; b++) {
+      const ns = p.notes.filter(n => bar(n) === b).sort((x, y) => x.s - y.s);
+      if (op === 'reverse') {
+        const pitches = ns.map(n => n.n).reverse();
+        ns.forEach((n, i) => (n.n = pitches[i]));
+      } else if (op === 'octave') ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 96 && (n.n += 12));
+    }
+    if (op === 'gaps') {
+      const g = pick(tr, [3, 7]);
+      p.notes = p.notes.filter(n => step(n) % 8 !== g);
+    }
+  }
+}
+
 export function compose(style, opts = {}) {
   const c = composer(style, opts),
     out = [];
@@ -2549,10 +2765,16 @@ export function composer(style, opts = {}) {
   const fam = recipe.form || style.fam;
   const bpm = Math.round(opts.bpm || (style.bpm && style.bpm[2]) || 120);
   const key = opts.key ?? (style.keys && style.keys[0] ? style.keys[0][0] : 9);
-  const progId = recipe.progs[Math.floor(r() * recipe.progs.length)];
+  /* the style's own progressions most of the time, otherwise another of the same colour (minor,
+     major, jazzy or a vamp), sometimes starting further round the loop */
+  const own = recipe.progs[Math.floor(r() * recipe.progs.length)],
+    kin = Object.keys(PROGS).filter(id => id[0] === own[0] || (own[0] === 'v' && /^m[1-7]/.test(id))),
+    progId = r() < 0.55 || kin.length < 2 ? own : kin[Math.floor(r() * kin.length)],
+    turn = own[0] !== 'v' && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
   const scale = style.scale === 'major' && progId[0] !== 'm' ? 'major' : progScale(progId, style.scale);
   /* sevenths (and ninths) from the scale for the styles that like them */
-  const ch = chordsOf(progId, key, scale, recipe.ext || 0);
+  const ch0 = chordsOf(progId, key, scale, recipe.ext || 0),
+    ch = ch0.slice(turn).concat(ch0.slice(0, turn));
   const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === 'dnb' || fam === 'edm' ? 5 : 3.5)));
   const sections = formOf(fam, Math.round((minutes * bpm) / 4));
   const motif = {
@@ -2580,7 +2802,10 @@ export function composer(style, opts = {}) {
     else if (role === 'pad') padPart(p, v, ctx);
     else if (role === 'lead') melody(p, v, ctx, recipe.lead === 'trap' || recipe.lead === 'whine' ? 74 : 72);
     else if (role === 'pluck') arp(p, v, ctx);
-    if (v === 'build' || v === 'rise') silentLastBeat(p);
+    if (v !== 'build' && v !== 'rise')
+      takeVary(p, role, v, ctx, mulberry(hashStr(role + ':take') ^ Math.imul(seed + 7, 2654435761)));
+    else silentLastBeat(p);
+    p.notes = p.notes.filter(n => n.s >= 0 && n.s < nb * 16);
     if (!p.notes.length) return null;
     /* one note per step and pitch (the loudest, the longest) */
     const one = new Map();

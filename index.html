@@ -14500,7 +14500,7 @@ html.os-darwin.native-menu #menubar .mproj {
       let kk = 0;
       const nk = () => KS[kk++ % KS.length];
       const tag = F.tag + " ";
-      const pick3 = (n) => shuffle(sids).slice(0, n);
+      const pick4 = (n) => shuffle(sids).slice(0, n);
       shuffle(PG.flatMap((p, pi) => CR2.map((r, ri) => [pi, ri]))).slice(0, C.chords).forEach(([pi, ri]) => {
         const [pn, prog] = PG[pi], [rn, rhy] = CR2[ri];
         const bars3 = ri % 2 === 0 ? 4 : 2;
@@ -14520,7 +14520,7 @@ html.os-darwin.native-menu #menubar .mproj {
           notes,
           keyName: kn,
           role: "Chords",
-          styles: pick3(3),
+          styles: pick4(3),
           pool: "chords"
         });
       });
@@ -14542,7 +14542,7 @@ html.os-darwin.native-menu #menubar .mproj {
           notes,
           keyName: kn,
           role: "Bass",
-          styles: pick3(2),
+          styles: pick4(2),
           pool: "bass"
         });
       });
@@ -14580,7 +14580,7 @@ html.os-darwin.native-menu #menubar .mproj {
           notes,
           keyName: kn,
           role: "Lead",
-          styles: pick3(3),
+          styles: pick4(3),
           pool: "pluck"
         });
       });
@@ -14608,7 +14608,7 @@ html.os-darwin.native-menu #menubar .mproj {
           notes,
           keyName: kn,
           role: "Lead",
-          styles: pick3(3),
+          styles: pick4(3),
           pool: "lead"
         });
       });
@@ -14633,7 +14633,7 @@ html.os-darwin.native-menu #menubar .mproj {
           notes,
           keyName: kn,
           role: "Pad",
-          styles: pick3(3),
+          styles: pick4(3),
           pool: "pad"
         });
       });
@@ -15087,7 +15087,7 @@ html.os-darwin.native-menu #menubar .mproj {
       seed4 = seed4 * 1103515245 + 12345 & 2147483647;
       return seed4 / 2147483647;
     };
-    const pickN = (a, n) => {
+    const pickN2 = (a, n) => {
       a = a.slice();
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(rnd6() * (i + 1));
@@ -15113,7 +15113,7 @@ html.os-darwin.native-menu #menubar .mproj {
           if (p && PR[p]) used.set(p + "|" + f.bars, { p, bars: f.bars, keyName: f.keyName });
         }
       });
-      const pairs2 = pickN([...used.values()], 6);
+      const pairs2 = pickN2([...used.values()], 6);
       const four3 = FOUR.has(g);
       pairs2.forEach(({ p, bars: bars3, keyName: keyName2 }) => {
         const kn2 = keyName2 && KEYS[keyName2] ? keyName2 : /^[iv]/.test(p) ? "Am" : "C";
@@ -16692,7 +16692,7 @@ html.os-darwin.native-menu #menubar .mproj {
     for (const g of genres2) flashFor(g, G[g], NAME[g] || g, push);
   })();
   function flashFor(g, q, nm, push) {
-    for (const [rid, rl, bars3, hits, pick3] of FLASH_RH) {
+    for (const [rid, rl, bars3, hits, pick4] of FLASH_RH) {
       const total = bars3 * 16, base = { genre: g, bars: bars3, flash: rid };
       const dn2 = [];
       hits.forEach(([s, a], i) => {
@@ -16702,11 +16702,11 @@ html.os-darwin.native-menu #menubar .mproj {
         if (i > 0 && q.sn !== 3 && a > 0.9) dn2.push({ s, l: 1, n: 3, v: v - 10 });
       });
       if (rid === "half") [8, 24].forEach((s) => dn2.push({ s, l: 1, n: 2, v: 120 }));
-      if (pick3 != null) {
-        const st = q.roll ? 0.5 : 1, n = Math.round((total - pick3) / st);
+      if (pick4 != null) {
+        const st = q.roll ? 0.5 : 1, n = Math.round((total - pick4) / st);
         for (let i = 0; i < n; i++)
           dn2.push({
-            s: pick3 + i * st,
+            s: pick4 + i * st,
             l: st,
             n: rid === "answer" && i < n / 2 ? [6, 6, 7, 7, 8, 8, 8, 8][Math.floor(i * 8 / n)] : 2,
             v: ramp2(i, n, 64, 124)
@@ -16759,11 +16759,11 @@ html.os-darwin.native-menu #menubar .mproj {
           while (top < 74) top += 12;
           ln.push({ s, l: Math.min(l, 2), n: rid === "rush" ? deg(i + 7) : top, v: Math.round(92 + 33 * a) });
         });
-        if (pick3 != null) {
-          const n = total - pick3;
+        if (pick4 != null) {
+          const n = total - pick4;
           for (let i = 0; i < n; i++)
             ln.push({
-              s: pick3 + i,
+              s: pick4 + i,
               l: 1,
               n: deg(Math.round(i * 7 / Math.max(1, n - 1))),
               v: ramp2(i, n, 84, 120)
@@ -19062,9 +19062,9 @@ html.os-darwin.native-menu #menubar .mproj {
       const up = q.slice(1).map((x) => x % 12);
       const v = voice2({ pc: (g.pc + up[0]) % 12, q: "M" }, null);
       const tones = [...new Set(up.map((x) => clampN(60 + (g.pc + x) % 12, 60, 76)))].sort((a, b) => a - b);
-      const pick3 = prev ? tones.map((n) => Math.abs(n + 12 - prev[0]) < Math.abs(n - prev[0]) && n + 12 <= 79 ? n + 12 : n) : tones;
-      prev = pick3.length ? pick3 : v;
-      [low2, ...pick3].forEach((n) => out2.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
+      const pick4 = prev ? tones.map((n) => Math.abs(n + 12 - prev[0]) < Math.abs(n - prev[0]) && n + 12 <= 79 ? n + 12 : n) : tones;
+      prev = pick4.length ? pick4 : v;
+      [low2, ...pick4].forEach((n) => out2.push({ s: g.s, l: g.e - g.s, n, v: hum2(74) }));
     }
     return out2;
   }
@@ -19821,21 +19821,21 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
     const saved = outs.find((o) => o.id === S.midiOut), mc = mcFind(outs);
-    let pick3 = MIDI.picked && saved ? saved : auto && mc ? mc : saved || mc;
-    sel2.value = pick3 ? pick3.id : "";
-    MIDI.out = pick3 || null;
-    if (pick3) S.midiOut = pick3.id;
-    if (pick3) hooks.matchDevice(pick3.name);
-    if (had && !pick3) {
+    let pick4 = MIDI.picked && saved ? saved : auto && mc ? mc : saved || mc;
+    sel2.value = pick4 ? pick4.id : "";
+    MIDI.out = pick4 || null;
+    if (pick4) S.midiOut = pick4.id;
+    if (pick4) hooks.matchDevice(pick4.name);
+    if (had && !pick4) {
       MIDI.lost = had.name;
       hooks.midiLost(had.name);
-    } else if (pick3 && MIDI.lost) {
+    } else if (pick4 && MIDI.lost) {
       MIDI.lost = null;
-      hooks.midiBack(pick3.name);
-    } else if (pick3 && isMcName(pick3.name) && !(had && isMcName(had.name))) {
-      hooks.midiFound(pick3.name);
+      hooks.midiBack(pick4.name);
+    } else if (pick4 && isMcName(pick4.name) && !(had && isMcName(had.name))) {
+      hooks.midiFound(pick4.name);
     }
-    $("#midiStat").textContent = pick3 ? "Sending to " + pick3.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
+    $("#midiStat").textContent = pick4 ? "Sending to " + pick4.name + "." : outs.length ? "Choose an output device." : "No MIDI outputs found. Plug in the MC-707 by USB and reconnect.";
     hooks.refreshIns();
   }
   var NOTEHIST = /* @__PURE__ */ new Set();
@@ -22515,15 +22515,15 @@ html.os-darwin.native-menu #menubar .mproj {
         {
           class: "btn on",
           onclick: () => {
-            const pick3 = all.filter((p) => p.on);
-            if (!pick3.length) return;
+            const pick4 = all.filter((p) => p.on);
+            if (!pick4.length) return;
             pushUndo();
             if (tempoCk && tempoCk.checked && tempo.tempo) S.bpm = clamp(tempo.tempo, 40, 240);
             const place = dest.value === "place";
             const bar2 = Math.max(0, Math.floor(posBarNow()));
             const rot = { drum: 0, tone: 0 };
             let last3 = null, placed = 0;
-            pick3.forEach((p) => {
+            pick4.forEach((p) => {
               const r = p.res;
               const pid = addPattern(p.type, p.name || "Imported", r.bars, r.notes, {
                 key: null,
@@ -22532,7 +22532,7 @@ html.os-darwin.native-menu #menubar .mproj {
               if (!place) return;
               const pool = S.tracks.map((t2, i) => i).filter((i) => S.tracks[i].type === p.type);
               let t = null;
-              if (trk.value !== "auto" && S.tracks[+trk.value].type === p.type && !p.usedSel && !pick3.some((q) => q !== p && q.usedSel && q.type === p.type)) {
+              if (trk.value !== "auto" && S.tracks[+trk.value].type === p.type && !p.usedSel && !pick4.some((q) => q !== p && q.usedSel && q.type === p.type)) {
                 t = +trk.value;
                 p.usedSel = true;
               }
@@ -22561,7 +22561,7 @@ html.os-darwin.native-menu #menubar .mproj {
             hooks.syncControls();
             scheduleSave();
             toast(
-              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar2 + 1) : "Added " + pick3.length + " to the Project library. Drag them onto a track."
+              place ? "Placed " + placed + (placed === 1 ? " pattern" : " patterns") + " at bar " + (bar2 + 1) : "Added " + pick4.length + " to the Project library. Drag them onto a track."
             );
           }
         },
@@ -31699,10 +31699,10 @@ html.os-darwin.native-menu #menubar .mproj {
   function setPick(i, t, k2) {
     if (rows()[i] && rows()[i].pick[t] !== k2) edit((q) => q.rows[i].pick[t] = k2);
   }
-  function setPattern(t, k2, pid, pick3) {
+  function setPattern(t, k2, pid, pick4) {
     edit((q) => {
       q.clips[t][k2] = { ...q.clips[t][k2] || {}, pat: pid };
-      if (pick3 != null && q.rows[pick3]) q.rows[pick3].pick[t] = k2;
+      if (pick4 != null && q.rows[pick4]) q.rows[pick4].pick[t] = k2;
     });
   }
   function setTranspose(t, k2, tr) {
@@ -37814,7 +37814,7 @@ html.os-darwin.native-menu #menubar .mproj {
     );
   }
   function seqTools(ctx2) {
-    const pick3 = (label2, opts, cur2, on3) => el(
+    const pick4 = (label2, opts, cur2, on3) => el(
       "label",
       { class: "zcC" },
       el("span", { class: "zcL" }, label2),
@@ -37826,23 +37826,23 @@ html.os-darwin.native-menu #menubar .mproj {
     );
     const rate = ctx2.get(k(ctx2, 1, "RATE_NOTE")), len = ctx2.get(k(ctx2, 1, "STEP_MAX")), shape = ctx2.get(k(ctx2, 2, "STEP_CURVE_1"));
     return [
-      pick3(
+      pick4(
         "Step length",
         RATES.map((r) => [r, RATE_IX[r]]),
         rate,
         (v) => both(ctx2, "RATE_NOTE", +v)
       ),
-      pick3(
+      pick4(
         "Steps",
         [...Array(16)].map((_, i) => [String(i + 1), i]),
         len,
         (v) => both(ctx2, "STEP_MAX", +v)
       ),
-      pick3("Step shape", SHAPES, shape, (v) => {
+      pick4("Step shape", SHAPES, shape, (v) => {
         for (let i = 1; i <= 16; i++) ctx2.set(k(ctx2, 2, "STEP_CURVE_" + i), +v, false);
         ctx2.commit();
       }),
-      pick3("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
+      pick4("Pattern", [["Choose…", -1], ...SEQ_PATTERNS.map(([n], i) => [n, i])], -1, (v) => {
         if (+v >= 0) seqPattern(ctx2, SEQ_PATTERNS[+v][1]);
       })
     ];
@@ -45694,7 +45694,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const box = el("div", { class: "ptBox pmBox", style: "--tc:" + TRACK_COLORS[t] });
     const ov = el("div", { id: "pmOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "Pump" }, box);
     const close = () => (ov.remove(), SC.pumpDraw = null);
-    const seg = (label2, opts, cur2, pick3) => el(
+    const seg = (label2, opts, cur2, pick4) => el(
       "div",
       { class: "pmRow" },
       el("span", { class: "pmLab" }, label2),
@@ -45710,7 +45710,7 @@ html.os-darwin.native-menu #menubar .mproj {
               "aria-checked": String(cur2 === v),
               class: "btn sm" + (cur2 === v ? " on" : ""),
               title: tip || l,
-              onclick: () => pick3(v)
+              onclick: () => pick4(v)
             },
             l
           )
@@ -46390,7 +46390,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const clips = emptyClips(), out2 = [];
     let over = 0;
     for (const s of segs) {
-      const pick3 = s.cells.map((x, t) => {
+      const pick4 = s.cells.map((x, t) => {
         if (!x) return -1;
         let k2 = clips[t].findIndex((c) => sameClip(c, x));
         if (k2 < 0) {
@@ -46403,7 +46403,7 @@ html.os-darwin.native-menu #menubar .mproj {
       for (let a = s.a; a < s.b; a += SCN_BARS) {
         const mk = S.markers.find((m) => m.bar === a);
         const r = newRow("r" + S.nextId++, mk ? mk.name : "Scene " + (out2.length + 1), Math.min(SCN_BARS, s.b - a));
-        r.pick = [...pick3];
+        r.pick = [...pick4];
         out2.push(r);
       }
     }
@@ -50831,7 +50831,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function addLeadPack() {
     let seed4 = 20261101;
     const rnd6 = () => (seed4 = Math.imul(seed4, 1103515245) + 12345 >>> 0) / 4294967296;
-    const pick3 = (list2, n) => {
+    const pick4 = (list2, n) => {
       const a = list2.slice();
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(rnd6() * (i + 1));
@@ -50858,14 +50858,14 @@ html.os-darwin.native-menu #menubar .mproj {
         if (notes.length)
           FAC.push({ ...base, id: "lp" + uid++, name: role + ": " + name + " " + prog, notes, role, pool });
       };
-      for (const [name, rh, motif] of pick3(LEADS, PER2.lead))
+      for (const [name, rh, motif] of pick4(LEADS, PER2.lead))
         add(
           "lead",
           "Lead",
           name,
           write({ chords, rh, motif, scale, root: src.key.root, low: 60, bars: src.bars, held: true })
         );
-      for (const [name, rh, motif] of pick3(PLUCKS, PER2.pluck))
+      for (const [name, rh, motif] of pick4(PLUCKS, PER2.pluck))
         add(
           "pluck",
           "Lead",
@@ -56384,6 +56384,201 @@ html.os-darwin.native-menu #menubar .mproj {
     if (role === "chords") return list2[(VIDX[v] ?? 1) % list2.length] || list2[0];
     return list2[i % list2.length];
   }
+  var pick2 = (r, a) => a[Math.floor(r() * a.length)];
+  var pickN = (r, a, n) => {
+    const b = [...a], out2 = [];
+    while (b.length && out2.length < n) out2.push(b.splice(Math.floor(r() * b.length), 1)[0]);
+    return out2;
+  };
+  function takeVary(p, role, v, ctx2, tr) {
+    const nb = p.bars, at2 = (b, s) => b * 16 + s, has2 = (s, lanes) => p.notes.some((n) => n.s === s && (!lanes || lanes.includes(n.n))), bar2 = (n) => Math.floor(n.s / 16), step = (n) => n.s % 16;
+    const mode = tr(), inBars = mode < 0.4 ? (b) => b % 2 === 1 : mode < 0.75 ? (b) => b % 4 === 3 : () => true;
+    if (role === "kit") {
+      const k0 = p.notes.filter((n) => n.n === K && n.s < 16).map(step), four3 = [0, 4, 8, 12].every((s) => k0.includes(s));
+      const sn = new Set(p.notes.filter((n) => n.n === SN || n.n === CL).map(step));
+      const cand = (four3 ? [7, 14, 15] : [2, 3, 6, 7, 10, 11, 14, 15]).filter((s) => !sn.has(s));
+      const adds = pickN(tr, cand, four3 ? tr() < 0.6 ? 1 : 0 : 1 + Math.floor(tr() * 2)), kv = four3 ? 52 + Math.floor(tr() * 14) : 74 + Math.floor(tr() * 22);
+      for (let b = 0; b < nb; b++)
+        if (inBars(b)) {
+          for (const s of adds) if (!has2(at2(b, s), [K])) p.add(b, s, 1, K, hum3(tr, kv, 5));
+        }
+      if (!four3 && tr() < 0.4) {
+        const off = pick2(tr, [3, 6, 7, 10, 11, 14]);
+        p.notes = p.notes.filter((n) => !(n.n === K && step(n) === off && inBars(bar2(n))));
+      }
+      if (!four3 || tr() < 0.3) {
+        const ghosts = pickN(
+          tr,
+          [1, 3, 5, 6, 9, 11, 13, 15].filter((s) => !sn.has(s)),
+          1 + Math.floor(tr() * 2)
+        ), all = tr() < 0.5;
+        for (let b = 0; b < nb; b++)
+          if (all || inBars(b)) {
+            for (const s of ghosts) if (!has2(at2(b, s))) p.add(b, s, 1, SN, hum3(tr, 34, 6));
+          }
+      }
+      if (v !== "drop" && v !== "half" && tr() < 0.45) {
+        const kind = pick2(tr, ["snare", "toms", "flam"]);
+        for (const b of [3, 7].filter((x) => x < nb)) {
+          if (p.notes.filter((n) => bar2(n) === b && step(n) >= 12 && (n.n === SN || n.n >= LT)).length > 2) continue;
+          if (kind === "snare") for (const s of [13, 14, 15]) p.add(b, s, 1, SN, 70 + (s - 13) * 18);
+          else if (kind === "toms") p.add(b, 13, 1, HT2, 96).add(b, 14, 1, MT, 104).add(b, 15, 1, LT, 112);
+          else p.add(b, 14, 1, SN, 60).add(b, 15, 1, SN, 104);
+        }
+      }
+      return;
+    }
+    if (role === "hats") {
+      const perBar = p.notes.filter((n) => n.n === CH2 && n.s < 16).length;
+      const ops = pickN(
+        tr,
+        ["open", "accent", "thin", "skip", "ride", "gallop", "pickup", "drop1"],
+        1 + Math.floor(tr() * 3)
+      );
+      if (ops.includes("open")) {
+        const s = pick2(tr, [2, 6, 10, 14, 7, 15]), every = tr() < 0.5;
+        for (let b = 0; b < nb; b++)
+          if (every || inBars(b)) {
+            p.notes = p.notes.filter((n) => !(n.s === at2(b, s) && n.n === CH2));
+            if (!has2(at2(b, s), [OH])) p.add(b, s, 1, OH, hum3(tr, 70, 6));
+          }
+      }
+      if (ops.includes("accent")) {
+        const shape = pick2(tr, [
+          [1, 0.62, 0.86, 0.62],
+          [0.8, 0.6, 1, 0.6],
+          [1, 0.7, 0.7, 0.9],
+          [0.75, 0.95, 0.75, 0.95]
+        ]), top = Math.max(1, ...p.notes.filter((n) => n.n === CH2).map((n) => n.v));
+        for (const n of p.notes) if (n.n === CH2) n.v = Math.max(20, Math.round(top * shape[step(n) % 4] - tr() * 6));
+      }
+      if (ops.includes("thin") && perBar >= 12) {
+        const cls = pick2(tr, [1, 3]);
+        p.notes = p.notes.filter((n) => !(n.n === CH2 && step(n) % 4 === cls && inBars(bar2(n))));
+      }
+      if (ops.includes("skip"))
+        for (const b of [3, 7].filter((x) => x < nb))
+          p.notes = p.notes.filter((n) => !(bar2(n) === b && step(n) >= 13 && (n.n === CH2 || n.n === OH)));
+      if (ops.includes("gallop") && perBar <= 8) {
+        const where2 = pick2(tr, [
+          [3, 11],
+          [7, 15],
+          [3, 7, 11, 15]
+        ]);
+        for (let b = 0; b < nb; b++)
+          if (inBars(b)) {
+            for (const s of where2) if (!has2(at2(b, s), [CH2, OH])) p.add(b, s, 1, CH2, hum3(tr, 44, 5));
+          }
+      }
+      if (ops.includes("pickup")) {
+        for (let b = 0; b < nb; b++) if (inBars(b) && !has2(at2(b, 15), [CH2, OH])) p.add(b, 15, 1, CH2, hum3(tr, 56, 5));
+      }
+      if (ops.includes("drop1"))
+        p.notes = p.notes.filter((n) => !(step(n) === 0 && n.n === CH2 && inBars(bar2(n)) && bar2(n) > 0));
+      if (ops.includes("ride") && perBar <= 8) {
+        for (let b = 0; b < nb; b++)
+          if (inBars(b)) {
+            for (const s of [0, 4, 8, 12]) if (!has2(at2(b, s), [RD])) p.add(b, s, 1, RD, hum3(tr, 58, 6));
+          }
+      }
+      return;
+    }
+    if (role === "perc") {
+      const op = pick2(tr, ["rotate", "rotate", "swap", "sparse", "double", "shift"]);
+      if (op === "rotate") {
+        const d = pick2(tr, [2, 4, 6, 10, 12]);
+        for (const n of p.notes) if (n.n !== CR && n.n !== K) n.s = bar2(n) * 16 + (step(n) + d) % 16;
+      } else if (op === "swap") {
+        const to = pick2(tr, [RIM, CL, PC]);
+        for (const n of p.notes) if ((n.n === RIM || n.n === CL || n.n === PC) && tr() < 0.7) n.n = to;
+      } else if (op === "sparse") p.notes = p.notes.filter((n, i) => n.n === CR || i % 2 === 0 || !inBars(bar2(n)));
+      else if (op === "double") {
+        for (const n of [...p.notes])
+          if (n.n !== CR && step(n) < 8 && !has2(n.s + 8, [n.n])) p.add(bar2(n), step(n) + 8, 1, n.n, hum3(tr, n.v - 10, 5));
+      } else if (op === "shift") {
+        const d = pick2(tr, [1, 3]);
+        for (const n of p.notes) if (n.n !== CR && n.n !== K && inBars(bar2(n))) n.s = bar2(n) * 16 + (step(n) + d) % 16;
+      }
+      if (p.notes.filter((n) => n.n !== CR).length < nb * 2 && tr() < 0.6) {
+        const lane = pick2(tr, [PC, RIM, CL]), fig = pick2(tr, [
+          [3, 11],
+          [6, 14],
+          [2, 7, 10, 15],
+          [3, 6, 11, 14]
+        ]);
+        for (let b = 0; b < nb; b++)
+          for (const s of fig) if (!has2(at2(b, s), [lane])) p.add(b, s, 1, lane, hum3(tr, 62, 8));
+      }
+      return;
+    }
+    if (role === "bass" || role === "acid") {
+      if (v === "intro" || v === "half") return;
+      const ops = pickN(tr, ["octave", "approach", "space", "approach"], 1 + Math.floor(tr() * 2));
+      if (ops.includes("octave")) {
+        const pos = pick2(tr, [[2, 10], [6, 14], [3, 11], [7]]);
+        for (const n of p.notes) if (pos.includes(step(n)) && n.n + 12 <= 60 && inBars(bar2(n))) n.n += 12;
+      }
+      if (ops.includes("approach"))
+        for (let b = 0; b < nb - 1; b++) {
+          const next = p.notes.filter((n) => n.s === at2(b + 1, 0)).sort((x, y) => x.n - y.n)[0], last3 = p.notes.filter((n) => bar2(n) === b).sort((x, y) => y.s - x.s)[0];
+          if (!next || !last3 || last3.n % 12 === next.n % 12) continue;
+          if (last3.s + last3.l > at2(b, 15)) last3.l = Math.max(1, at2(b, 15) - last3.s);
+          if (!has2(at2(b, 15))) p.add(b, 15, 1, next.n + (tr() < 0.5 ? -1 : 2), hum3(tr, 96, 6));
+        }
+      if (ops.includes("space")) {
+        const off = pick2(tr, [2, 3, 6, 7, 10, 11, 13, 14]);
+        p.notes = p.notes.filter((n) => !(step(n) === off && inBars(bar2(n)) && n.s % 16 !== 0));
+      }
+      return;
+    }
+    if (role === "chords" || role === "pad") {
+      const groups = /* @__PURE__ */ new Map();
+      for (const n of p.notes) (groups.get(n.s) || groups.set(n.s, []).get(n.s)).push(n);
+      const inv = Math.floor(tr() * 3);
+      for (const g of groups.values()) {
+        if (g.length < 3) continue;
+        g.sort((x, y) => x.n - y.n);
+        if (inv === 1) g[0].n += 12;
+        else if (inv === 2 && g[0].n - 12 >= 40) g[g.length - 1].n -= 12;
+      }
+      if (role === "chords" && tr() < 0.4) {
+        for (const [s, g] of groups) {
+          if (s % 16 !== 0 || s === 0) continue;
+          const prev = groups.get(s - 16);
+          if (prev && prev.map((n) => n.n).join() === g.map((n) => n.n).join()) continue;
+          if (p.notes.some((n) => n.s > s - 2 && n.s < s)) continue;
+          for (const n of g) {
+            n.s -= 1;
+            n.l += 1;
+          }
+        }
+        for (const n of p.notes) {
+          const later2 = p.notes.find((m) => m.n === n.n && m.s > n.s && m.s < n.s + n.l);
+          if (later2) n.l = later2.s - n.s;
+        }
+      }
+      return;
+    }
+    if (role === "pluck") {
+      const op = pick2(tr, ["reverse", "octave", "gaps", "rate", "keep"]);
+      if (op === "rate" && p.notes.length && p.notes.every((n) => n.l <= 1)) {
+        p.notes = p.notes.filter((n) => step(n) % 2 === 0);
+        for (const n of p.notes) n.l = 2;
+        return;
+      }
+      for (let b = 0; b < nb; b++) {
+        const ns = p.notes.filter((n) => bar2(n) === b).sort((x, y) => x.s - y.s);
+        if (op === "reverse") {
+          const pitches = ns.map((n) => n.n).reverse();
+          ns.forEach((n, i) => n.n = pitches[i]);
+        } else if (op === "octave") ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 96 && (n.n += 12));
+      }
+      if (op === "gaps") {
+        const g = pick2(tr, [3, 7]);
+        p.notes = p.notes.filter((n) => step(n) % 8 !== g);
+      }
+    }
+  }
   function compose(style, opts = {}) {
     const c = composer(style, opts), out2 = [];
     c.sections.forEach((sec, i) => {
@@ -56411,9 +56606,9 @@ html.os-darwin.native-menu #menubar .mproj {
     const fam = recipe.form || style.fam;
     const bpm = Math.round(opts.bpm || style.bpm && style.bpm[2] || 120);
     const key = opts.key ?? (style.keys && style.keys[0] ? style.keys[0][0] : 9);
-    const progId = recipe.progs[Math.floor(r() * recipe.progs.length)];
+    const own = recipe.progs[Math.floor(r() * recipe.progs.length)], kin = Object.keys(PROGS).filter((id) => id[0] === own[0] || own[0] === "v" && /^m[1-7]/.test(id)), progId = r() < 0.55 || kin.length < 2 ? own : kin[Math.floor(r() * kin.length)], turn = own[0] !== "v" && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
     const scale = style.scale === "major" && progId[0] !== "m" ? "major" : progScale(progId, style.scale);
-    const ch = chordsOf2(progId, key, scale, recipe.ext || 0);
+    const ch0 = chordsOf2(progId, key, scale, recipe.ext || 0), ch = ch0.slice(turn).concat(ch0.slice(0, turn));
     const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === "dnb" || fam === "edm" ? 5 : 3.5)));
     const sections = formOf(fam, Math.round(minutes * bpm / 4));
     const motif = {
@@ -56437,7 +56632,10 @@ html.os-darwin.native-menu #menubar .mproj {
       else if (role === "pad") padPart2(p, v, ctx2);
       else if (role === "lead") melody(p, v, ctx2, recipe.lead === "trap" || recipe.lead === "whine" ? 74 : 72);
       else if (role === "pluck") arp2(p, v, ctx2);
-      if (v === "build" || v === "rise") silentLastBeat(p);
+      if (v !== "build" && v !== "rise")
+        takeVary(p, role, v, ctx2, mulberry(hashStr(role + ":take") ^ Math.imul(seed4 + 7, 2654435761)));
+      else silentLastBeat(p);
+      p.notes = p.notes.filter((n) => n.s >= 0 && n.s < nb * 16);
       if (!p.notes.length) return null;
       const one = /* @__PURE__ */ new Map();
       for (const n of p.notes) {
@@ -58280,8 +58478,8 @@ html.os-darwin.native-menu #menubar .mproj {
     const t2 = t1 + 32;
     LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend", "brk"].includes(c.type) && c.type !== "fill");
     LV.blend = null;
-    const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick3 = fills.filter((f) => want.test(f.name));
-    const fill2 = pick3.length ? lvRand(pick3) : fills.length ? lvRand(fills) : null;
+    const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick4 = fills.filter((f) => want.test(f.name));
+    const fill2 = pick4.length ? lvRand(pick4) : fills.length ? lvRand(fills) : null;
     if (fill2 && LV.scenes[LV.cur] && LV.scenes[LV.cur].cells[trackOf(0)])
       LV.cues.push({ type: "fill", tick: t1, end: t2, f: fill2 });
     const T4 = toneTracksAll();
@@ -58776,7 +58974,7 @@ html.os-darwin.native-menu #menubar .mproj {
   // src/live/jam.js
   var HATS = [1, 4, 5, 10, 11];
   var SNARE = [2, 3];
-  var pick2 = (a) => a[Math.floor(Math.random() * a.length)];
+  var pick3 = (a) => a[Math.floor(Math.random() * a.length)];
   var LABEL = {
     hats: "hats only",
     kick: "kick and hats",
@@ -58811,7 +59009,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return [
         ...keep2,
         ...rollNotes(trap ? "t16" : "16", 24, 2, 84),
-        ...rollNotes(trap ? pick2(["32", "64"]) : pick2(["32", "h32"]), 28, 2, 118)
+        ...rollNotes(trap ? pick3(["32", "64"]) : pick3(["32", "h32"]), 28, 2, 118)
       ];
     }
     return n2;
@@ -58895,7 +59093,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const names = Object.keys(recipes).filter(
       (n) => (n !== "bass first" || has(cells, 3)) && (n !== "keys first" || has(cells, 4) || has(cells, 5))
     );
-    const name = pick2(names);
+    const name = pick3(names);
     let r = recipes[name];
     if (Math.random() < 0.4) r = [r[0], r[1], r[3]];
     return { name, loops: r.map((spec) => ({ bars: 2, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length) };
@@ -58910,7 +59108,7 @@ html.os-darwin.native-menu #menubar .mproj {
       "fade away": [{ ...keys2, 1: "full", 3: "roots" }]
     };
     const names = Object.keys(recipes).filter((n) => n !== "cut to the hit" || Object.keys(hit.ids).length);
-    const name = pick2(names);
+    const name = pick3(names);
     const fade = name === "fade away";
     const loops = recipes[name].map((spec) => ({ bars: fade ? 2 : 1, ids: loop(cells, spec) })).filter((l) => Object.keys(l.ids).length);
     if (!fade && Object.keys(hit.ids).length) loops.push(hit);
@@ -64883,7 +65081,7 @@ html.os-darwin.native-menu #menubar .mproj {
     b.textContent = "";
     const rec = AUDREC.on || AUDREC.busy, m = audMode();
     const how = el("div", { class: "wcard" }, el("h3", {}, "1. What do you want to record?"));
-    const pick3 = (v) => {
+    const pick4 = (v) => {
       capCloseAll();
       AUDREC.metering = false;
       AUDREC.check = null;
@@ -64892,7 +65090,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     const tile = (v, tag, t, d) => el(
       "button",
-      { class: "rectile" + (m === v ? " on" : ""), disabled: rec, onclick: () => pick3(v) },
+      { class: "rectile" + (m === v ? " on" : ""), disabled: rec, onclick: () => pick4(v) },
       el("span", { class: "rtag" + (v === "interface" ? " b" : "") }, tag),
       el("b", {}, t),
       el("small", {}, d)
@@ -64922,7 +65120,7 @@ html.os-darwin.native-menu #menubar .mproj {
           name: "audmode",
           checked: m === "preview",
           disabled: rec,
-          onchange: () => pick3("preview")
+          onchange: () => pick4("preview")
         }),
         el("span", {}, "No hardware? Record the app’s preview sound instead")
       )
@@ -66163,12 +66361,12 @@ html.os-darwin.native-menu #menubar .mproj {
     sel2.textContent = "";
     sel2.append(el("option", { value: "" }, "No input"));
     ins.forEach((i) => sel2.append(el("option", { value: i.id }, i.name)));
-    const pick3 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
-    if (pick3) {
-      sel2.value = pick3.id;
-      const back = MIDI.inLost && pick3.state === "connected";
-      if (!MIDI.inp || MIDI.inp.id !== pick3.id || back) setMidiIn(pick3.id);
-      MIDI.inLost = pick3.state === "disconnected";
+    const pick4 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
+    if (pick4) {
+      sel2.value = pick4.id;
+      const back = MIDI.inLost && pick4.state === "connected";
+      if (!MIDI.inp || MIDI.inp.id !== pick4.id || back) setMidiIn(pick4.id);
+      MIDI.inLost = pick4.state === "disconnected";
     } else sel2.value = "";
     if (LV.ctl && LV.ctl.map && typeof ctlAttach === "function") ctlAttach();
   }
@@ -67381,7 +67579,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if ($("#lvPickOv")) return;
     const cur2 = lvStyle();
     const close = () => ov.remove();
-    const pick3 = (id) => {
+    const pick4 = (id) => {
       close();
       if (id !== LV.style || !LV.scenes.length) liveNewSet(id);
       liveRender();
@@ -67402,7 +67600,7 @@ html.os-darwin.native-menu #menubar .mproj {
                 type: "button",
                 class: "lpStyle" + (s.id === cur2.id ? " on" : ""),
                 title: s.vibe || s.name,
-                onclick: () => pick3(s.id)
+                onclick: () => pick4(s.id)
               },
               el("b", {}, s.name),
               el("small", {}, Math.round(s.bpm[2]) + " BPM")
@@ -67421,7 +67619,7 @@ html.os-darwin.native-menu #menubar .mproj {
           "div",
           { class: "lpHead" },
           el("h3", {}, "What are we jamming?"),
-          el("button", { type: "button", class: "btn on", onclick: () => pick3(cur2.id) }, "Keep " + cur2.name + " →")
+          el("button", { type: "button", class: "btn on", onclick: () => pick4(cur2.id) }, "Keep " + cur2.name + " →")
         ),
         el("p", { class: "hint" }, "Pick a style for a fresh set of scenes, or keep the one you had."),
         ...fams,
@@ -68938,7 +69136,7 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
     if (!list2.length) return toast("No backups yet: they start with your next change");
-    let pick3 = list2[0];
+    let pick4 = list2[0];
     const rows2 = el(
       "div",
       { class: "bkList", role: "listbox", "aria-label": "Backups" },
@@ -68946,7 +69144,7 @@ html.os-darwin.native-menu #menubar .mproj {
         (b, i) => el(
           "label",
           { class: "bkRow" },
-          el("input", { type: "radio", name: "bk", checked: i === 0, onchange: () => pick3 = b }),
+          el("input", { type: "radio", name: "bk", checked: i === 0, onchange: () => pick4 = b }),
           el("span", {}, b.name === "latest.json" ? "Latest autosave" : "Saved copy"),
           el("small", {}, when(b.at) + " · " + Math.max(1, Math.round(b.size / 1024)) + " KB")
         )
@@ -68969,7 +69167,7 @@ html.os-darwin.native-menu #menubar .mproj {
       body,
       ok: "Bring it back"
     });
-    if (ok) await restore(pick3);
+    if (ok) await restore(pick4);
   }
   async function backupsOffer() {
     if (!backupsOn()) return;
@@ -69247,9 +69445,9 @@ html.os-darwin.native-menu #menubar .mproj {
       if (scenes.length) {
         S.scn.first = 0;
         S.scn.rows = scenes.map((x) => {
-          const pick3 = x.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1), bars3 = x.bars || Math.max(1, ...pick3.map((k2, t) => k2 >= 0 ? S.patterns[clips[t][k2].pat].bars : 1));
+          const pick4 = x.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1), bars3 = x.bars || Math.max(1, ...pick4.map((k2, t) => k2 >= 0 ? S.patterns[clips[t][k2].pat].bars : 1));
           const r = newRow("r" + S.nextId++, "Scene " + sceneName(x.n), bars3);
-          r.pick = pick3;
+          r.pick = pick4;
           return r;
         });
       } else S.scn.rows.forEach((r) => r.pick = r.pick.map((k2, t) => k2 >= 0 && clips[t][k2] ? k2 : -1));
@@ -69619,7 +69817,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const rows2 = DEVS[DEV].tracks.filter((t) => S.tracks[t].type !== "drum").map((t) => {
         const clips = plan2[t].map((c, k2) => {
           const pool = poolOf2(gid, c.role), r = c.item && resolve(c.item);
-          const pick3 = el(
+          const pick4 = el(
             "select",
             {
               "aria-label": "Track " + devNum(t) + " clip " + (k2 + 1) + " sound",
@@ -69642,7 +69840,7 @@ html.os-darwin.native-menu #menubar .mproj {
             el("option", { value: "__lib" }, "Any sound in the library…")
           );
           if (!c.item)
-            pick3.prepend(el("option", { value: "", selected: true }, pool.length ? "—" : "Nothing in the pool"));
+            pick4.prepend(el("option", { value: "", selected: true }, pool.length ? "—" : "Nothing in the pool"));
           return el(
             "div",
             { class: "ftClip" + (c.on ? "" : " off") },
@@ -69656,7 +69854,7 @@ html.os-darwin.native-menu #menubar .mproj {
             }),
             el("b", {}, String(k2 + 1)),
             el("span", { class: "ftRole", style: "--rc:" + ctInfo(c.role)[2] }, ctInfo(c.role)[1]),
-            pick3,
+            pick4,
             el(
               "button",
               {
@@ -71133,7 +71331,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const rows2 = [];
       for (const sec of song.sections) {
         S.markers.push({ bar: at2, name: sec.name.slice(0, 20) });
-        const pick3 = Array(8).fill(-1);
+        const pick4 = Array(8).fill(-1);
         for (const t of tracks3) {
           const r = role(t);
           let keys2 = [];
@@ -71146,9 +71344,9 @@ html.os-darwin.native-menu #menubar .mproj {
           if (!list2.some((x) => x.pid === pid)) list2.push({ pid, keys: keys2 });
           const k2 = list2.findIndex((x) => x.pid === pid);
           if (k2 > 15) scenes = false;
-          pick3[t] = k2;
+          pick4[t] = k2;
         }
-        rows2.push({ name: sec.name, bars: sec.bars, pick: pick3 });
+        rows2.push({ name: sec.name, bars: sec.bars, pick: pick4 });
         at2 += sec.bars;
       }
       ensureBars(total);
