@@ -108,8 +108,12 @@ export const mpjKeysAt = (u8, t, slot) => mpjSections(u8).PRJa.at + KEYS + t * K
 
 /** Printable ASCII, padded with spaces. */
 const putText = (u8, at, s, n) => {
+  /* accents off (Für shows as Fur, not F r) */
+  const t = String(s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
   for (let i = 0; i < n; i++) {
-    const c = String(s || '').charCodeAt(i);
+    const c = t.charCodeAt(i);
     u8[at + i] = c >= 32 && c < 127 ? c : 32;
   }
 };
@@ -179,12 +183,13 @@ export function mpjFill(u8, song) {
   const first = song.first || 0;
   /* the scene chain switched on (CHAIN ON, +143), so the scenes follow one another by themselves */
   if (song.scenes.length > 1 && song.chain !== false) u8[P + 0x143] = 1;
+  const last = Math.min(song.scenes.length, 128 - first) - 1;
   song.scenes.forEach((sc, i) => {
     const s = first + i;
     if (s > 127) return;
     /* the chain moves on after LENGTH bars; the last scene is OFF, so it stays there (without the
        chain, every scene keeps its length) */
-    u8[P + 0x50 + s] = i === song.scenes.length - 1 && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
+    u8[P + 0x50 + s] = i === last && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
     for (let t = 0; t < 8; t++) u8[P + 0x200 + t * 0x100 + 0x90 + s] = sc.pick[t] >= 0 ? sc.pick[t] + 1 : 0;
   });
   return u8;

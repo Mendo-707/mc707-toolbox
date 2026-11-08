@@ -112,8 +112,12 @@ export async function writeThese(what, quiet = false) {
     for (const [n, [t, k]] of clips.entries()) {
       if (ui.cancelled) return void (stopped = true);
       const c = clipAt(t, k),
-        p = clipPattern(c),
-        where = 'Track ' + devNum(t) + ' clip ' + (k + 1),
+        where = 'Track ' + devNum(t) + ' clip ' + (k + 1);
+      if (!c || !S.patterns[c.pat]) {
+        bad.push(where + ': not written (its pattern is no longer in the song)');
+        continue;
+      }
+      const p = clipPattern(c),
         head = where + ': ' + p.name + ' (' + (n + 1) + ' of ' + clips.length + ')';
       ui.set(head, n / N);
       const r = await writeClip(t, k, p, {

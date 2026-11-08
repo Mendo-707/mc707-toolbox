@@ -27,17 +27,20 @@ export async function saveFile(name, data) {
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       toast('Saved ' + name);
       hooks.closePops();
+      return true;
     } catch (e) {
       toast('Could not save the file');
     }
-    return;
+    return false;
   }
   try {
     await DL.save({ filename: name, data });
     toast('Saved ' + name);
     hooks.closePops();
+    return true;
   } catch (err) {
     if (!err || err.code !== 'declined') toast('Could not save: ' + ((err && err.code) || 'error'));
+    return false;
   }
 }
 const vlq = n => {

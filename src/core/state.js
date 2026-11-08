@@ -129,6 +129,8 @@ export function redo() {
   afterReplace();
 }
 function afterReplace() {
+  /* a recording into the song that was there stops (its pattern is not this song's any more) */
+  if (hooks.recStop) hooks.recStop();
   ED.selNotes.clear();
   if (!curClip()) UI.sel = null;
   hooks.stopAll();
@@ -291,9 +293,11 @@ export function fixState(s) {
       const p = s.patterns[id];
       if (!p || !Array.isArray(p.notes) || (p.type !== 'drum' && p.type !== 'tone')) continue;
       p.id = id;
-      p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars)
-        ? p.bars
-        : Math.min(8, Math.max(1, Math.round(num(p.bars, 1, 8, 1))));
+      /* any whole number of bars up to 32 (imported MIDI can be 12) */
+      p.bars =
+        Number.isInteger(+p.bars) && +p.bars >= 1 && +p.bars <= 32
+          ? +p.bars
+          : Math.min(8, Math.max(1, Math.round(num(p.bars, 1, 8, 1))));
       p.name = String(p.name || 'Pattern').slice(0, 40);
       p.notes = p.notes
         .filter(

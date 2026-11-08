@@ -577,7 +577,11 @@ const sig = notes =>
 /** The clip name bytes for a pattern name: printable ASCII, padded with spaces to the field's length. */
 export const nameBytes = (s, n) =>
   Array.from({ length: n }, (_, i) => {
-    const c = String(s || '').charCodeAt(i);
+    /* accents off (Für shows as Fur, not F r) */
+    const c = String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .charCodeAt(i);
     return c >= 32 && c < 127 ? c : 32;
   });
 /**

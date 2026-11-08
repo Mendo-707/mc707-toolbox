@@ -470,8 +470,7 @@ async function writeFile(file, bytes) {
       if (e && e.name === 'AbortError') return null;
     }
   }
-  await saveFile(file, new Blob([bytes], { type: 'application/octet-stream' }));
-  return 'Downloads';
+  return (await saveFile(file, new Blob([bytes], { type: 'application/octet-stream' }))) ? 'Downloads' : null;
 }
 async function tbSave(close) {
   let made;

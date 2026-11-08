@@ -28,13 +28,19 @@ export function mpjSong(name) {
   const own = !!(S.scn && S.scn.rows.length),
     made = own ? { rows: S.scn.rows, clips: S.scn.clips } : songToRows();
   if (!made.rows.length) return { error: 'The song has nothing to play yet' };
+  if (made.rows.length > 128)
+    return { error: 'The song has ' + made.rows.length + ' sections: an MC-707 project holds 128 scenes' };
   const clips = [],
     tones = [],
     lost = [];
   for (const t of DEVS[DEV].tracks)
     for (let k = 0; k < 16; k++) {
       const c = made.clips[t] && made.clips[t][k];
-      if (!c || !S.patterns[c.pat]) continue;
+      if (!c) continue;
+      if (!S.patterns[c.pat]) {
+        lost.push(S.tracks[t].name + ' clip ' + (k + 1) + ': its pattern is no longer in the song');
+        continue;
+      }
       const type = S.tracks[t].type === 'drum' ? 'drum' : 'tone',
         p = clipPattern(c);
       if (p.type !== type) {
@@ -68,13 +74,15 @@ export function mpjSong(name) {
           );
       }
     }
+  if (made.over) lost.push(made.over + ' patterns left out (a track holds 16 clips)');
   return {
     name: (name || PROJ.name || 'Toolbox song').slice(0, 16),
     bpm: S.bpm,
     clips,
     tones,
     scenes: made.rows.map(r => ({ bars: r.bars, pick: r.pick })),
-    first: own ? S.scn.first || 0 : 0,
+    /* a new project: the scenes from the first (Scene Mode's start scene is where USB writes go) */
+    first: 0,
     from: own ? 'Scene Mode’s clips and scenes' : 'the song (as Scene Mode would make its scenes)',
     lost
   };
@@ -143,7 +151,7 @@ export async function saveMpjOpen() {
       return void toast('Could not save the file');
     }
     if (!where) return;
-  } else await saveFile(file + '.mpj', new Blob([made.bytes], { type: 'application/octet-stream' }));
+  } else if (!(await saveFile(file + '.mpj', new Blob([made.bytes], { type: 'application/octet-stream' })))) return;
   const li = (...k) => el('li', {}, ...k);
   await askDlg({
     title: 'Saved ' + file + '.mpj',

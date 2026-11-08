@@ -106,7 +106,11 @@ export function applyComposed(song, o) {
     ensureBars(total);
     /* Scene Mode: the same song as scenes (the MC-707 holds 16 clips a track and 128 scenes) */
     if (!scenes || rows.length > 128) {
+      /* the old song's scenes go too (their patterns are gone) */
       scenes = false;
+      q.rows = [];
+      q.clips = Array.from({ length: 8 }, () => Array(16).fill(null));
+      q.tones = {};
       return;
     }
     q.first = 0;

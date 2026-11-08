@@ -16,7 +16,8 @@ import { SC, clipAt, edit, rows } from './model.js';
 /** The song as clips and scene rows (see the header): {clips, rows, over} (over: patterns left out, no clip left). */
 export function songToRows() {
   const tracks = DEVS[DEV].tracks;
-  const live = S.clips.filter(c => tracks.includes(c.t) && !c.mute && S.patterns[c.pat]);
+  /* (muted tracks stay out, as Song to clips over USB leaves them) */
+  const live = S.clips.filter(c => tracks.includes(c.t) && !c.mute && !S.tracks[c.t].mute && S.patterns[c.pat]);
   const cuts = [...new Set(live.flatMap(c => [Math.round(c.start), Math.round(c.start + c.len)]))].sort(
     (a, b) => a - b
   );

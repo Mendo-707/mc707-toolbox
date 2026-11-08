@@ -10974,6 +10974,7 @@ html.os-darwin.native-menu #menubar .mproj {
     afterReplace();
   }
   function afterReplace() {
+    if (hooks.recStop) hooks.recStop();
     ED.selNotes.clear();
     if (!curClip()) UI.sel = null;
     hooks.stopAll();
@@ -11101,7 +11102,7 @@ html.os-darwin.native-menu #menubar .mproj {
         const p = s.patterns[id];
         if (!p || !Array.isArray(p.notes) || p.type !== "drum" && p.type !== "tone") continue;
         p.id = id;
-        p.bars = [1, 2, 4, 8, 16, 32].includes(p.bars) ? p.bars : Math.min(8, Math.max(1, Math.round(num4(p.bars, 1, 8, 1))));
+        p.bars = Number.isInteger(+p.bars) && +p.bars >= 1 && +p.bars <= 32 ? +p.bars : Math.min(8, Math.max(1, Math.round(num4(p.bars, 1, 8, 1))));
         p.name = String(p.name || "Pattern").slice(0, 40);
         p.notes = p.notes.filter(
           (n) => n && Number.isFinite(+n.s) && Number.isFinite(+n.l) && Number.isFinite(+n.n) && Number.isFinite(+n.v) && n.l > 0 && n.s >= 0 && n.s < p.bars * 16
@@ -26255,6 +26256,7 @@ html.os-darwin.native-menu #menubar .mproj {
     drawEditor();
   }
   function recStart() {
+    ensureAudio();
     const c = curClip();
     if (!c) {
       toast("Select a clip first");
@@ -32348,7 +32350,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var sig = (notes) => notes.map((x) => [x.step, x.note, x.start, x.len, x.vel, x.sub || 0].join(",")).sort().join(" ");
   var nameBytes = (s, n) => Array.from({ length: n }, (_, i) => {
-    const c = String(s || "").charCodeAt(i);
+    const c = String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").charCodeAt(i);
     return c >= 32 && c < 127 ? c : 32;
   });
   async function writeClip(t, k2, p, o = {}) {
@@ -45631,7 +45633,12 @@ html.os-darwin.native-menu #menubar .mproj {
       const N = clips.length + (scenes.length ? 1 : 0) || 1;
       for (const [n, [t, k2]] of clips.entries()) {
         if (ui.cancelled) return void (stopped = true);
-        const c = clipAt(t, k2), p = clipPattern(c), where2 = "Track " + devNum(t) + " clip " + (k2 + 1), head3 = where2 + ": " + p.name + " (" + (n + 1) + " of " + clips.length + ")";
+        const c = clipAt(t, k2), where2 = "Track " + devNum(t) + " clip " + (k2 + 1);
+        if (!c || !S.patterns[c.pat]) {
+          bad.push(where2 + ": not written (its pattern is no longer in the song)");
+          continue;
+        }
+        const p = clipPattern(c), head3 = where2 + ": " + p.name + " (" + (n + 1) + " of " + clips.length + ")";
         ui.set(head3, n / N);
         const r = await writeClip(t, k2, p, {
           replace: WO.replace,
@@ -46486,7 +46493,7 @@ html.os-darwin.native-menu #menubar .mproj {
   // src/scene/convert.js
   function songToRows() {
     const tracks3 = DEVS[DEV].tracks;
-    const live3 = S.clips.filter((c) => tracks3.includes(c.t) && !c.mute && S.patterns[c.pat]);
+    const live3 = S.clips.filter((c) => tracks3.includes(c.t) && !c.mute && !S.tracks[c.t].mute && S.patterns[c.pat]);
     const cuts = [...new Set(live3.flatMap((c) => [Math.round(c.start), Math.round(c.start + c.len)]))].sort(
       (a, b) => a - b
     );
@@ -46810,8 +46817,9 @@ html.os-darwin.native-menu #menubar .mproj {
   var mpjKitAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + KITS + t * KIT_BLOCK + slot2 * KIT_REC2;
   var mpjKeysAt = (u8, t, slot2) => mpjSections(u8).PRJa.at + KEYS3 + t * KEYS_BLOCK + slot2 * KEYS_REC;
   var putText = (u8, at2, s, n) => {
+    const t = String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     for (let i = 0; i < n; i++) {
-      const c = String(s || "").charCodeAt(i);
+      const c = t.charCodeAt(i);
       u8[at2 + i] = c >= 32 && c < 127 ? c : 32;
     }
   };
@@ -46854,10 +46862,11 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const first = song.first || 0;
     if (song.scenes.length > 1 && song.chain !== false) u8[P2 + 323] = 1;
+    const last3 = Math.min(song.scenes.length, 128 - first) - 1;
     song.scenes.forEach((sc, i) => {
       const s = first + i;
       if (s > 127) return;
-      u8[P2 + 80 + s] = i === song.scenes.length - 1 && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
+      u8[P2 + 80 + s] = i === last3 && song.chain !== false ? 0 : Math.max(1, Math.min(127, sc.bars));
       for (let t = 0; t < 8; t++) u8[P2 + 512 + t * 256 + 144 + s] = sc.pick[t] >= 0 ? sc.pick[t] + 1 : 0;
     });
     return u8;
@@ -46907,17 +46916,20 @@ html.os-darwin.native-menu #menubar .mproj {
         setTimeout(() => URL.revokeObjectURL(a.href), 2e3);
         toast("Saved " + name);
         hooks.closePops();
+        return true;
       } catch (e) {
         toast("Could not save the file");
       }
-      return;
+      return false;
     }
     try {
       await DL.save({ filename: name, data });
       toast("Saved " + name);
       hooks.closePops();
+      return true;
     } catch (err) {
       if (!err || err.code !== "declined") toast("Could not save: " + (err && err.code || "error"));
+      return false;
     }
   }
   var vlq = (n) => {
@@ -47103,11 +47115,17 @@ html.os-darwin.native-menu #menubar .mproj {
     if (DEV !== "707") return { error: "MC-707 project files are for the MC-707 (8 tracks): switch Settings › Device" };
     const own = !!(S.scn && S.scn.rows.length), made3 = own ? { rows: S.scn.rows, clips: S.scn.clips } : songToRows();
     if (!made3.rows.length) return { error: "The song has nothing to play yet" };
+    if (made3.rows.length > 128)
+      return { error: "The song has " + made3.rows.length + " sections: an MC-707 project holds 128 scenes" };
     const clips = [], tones = [], lost = [];
     for (const t of DEVS[DEV].tracks)
       for (let k2 = 0; k2 < 16; k2++) {
         const c = made3.clips[t] && made3.clips[t][k2];
-        if (!c || !S.patterns[c.pat]) continue;
+        if (!c) continue;
+        if (!S.patterns[c.pat]) {
+          lost.push(S.tracks[t].name + " clip " + (k2 + 1) + ": its pattern is no longer in the song");
+          continue;
+        }
         const type = S.tracks[t].type === "drum" ? "drum" : "tone", p = clipPattern(c);
         if (p.type !== type) {
           lost.push(S.tracks[t].name + " clip " + (k2 + 1) + ": a " + p.type + " pattern on a " + type + " track");
@@ -47133,13 +47151,15 @@ html.os-darwin.native-menu #menubar .mproj {
             );
         }
       }
+    if (made3.over) lost.push(made3.over + " patterns left out (a track holds 16 clips)");
     return {
       name: (name || PROJ.name || "Toolbox song").slice(0, 16),
       bpm: S.bpm,
       clips,
       tones,
       scenes: made3.rows.map((r) => ({ bars: r.bars, pick: r.pick })),
-      first: own ? S.scn.first || 0 : 0,
+      /* a new project: the scenes from the first (Scene Mode's start scene is where USB writes go) */
+      first: 0,
       from: own ? "Scene Mode’s clips and scenes" : "the song (as Scene Mode would make its scenes)",
       lost
     };
@@ -47182,7 +47202,7 @@ html.os-darwin.native-menu #menubar .mproj {
         return void toast("Could not save the file");
       }
       if (!where2) return;
-    } else await saveFile(file + ".mpj", new Blob([made3.bytes], { type: "application/octet-stream" }));
+    } else if (!await saveFile(file + ".mpj", new Blob([made3.bytes], { type: "application/octet-stream" }))) return;
     const li = (...k2) => el("li", {}, ...k2);
     await askDlg({
       title: "Saved " + file + ".mpj",
@@ -53448,6 +53468,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (w.mode === "replace") {
       S.clips = [];
       S.patterns = {};
+      delete S.scn;
       S.markers = [];
       S.clipMarks = [];
       S.bars = 32;
@@ -67973,8 +67994,7 @@ html.os-darwin.native-menu #menubar .mproj {
         if (e && e.name === "AbortError") return null;
       }
     }
-    await saveFile(file, new Blob([bytes], { type: "application/octet-stream" }));
-    return "Downloads";
+    return await saveFile(file, new Blob([bytes], { type: "application/octet-stream" })) ? "Downloads" : null;
   }
   async function tbSave(close) {
     let made3;
@@ -73409,6 +73429,9 @@ html.os-darwin.native-menu #menubar .mproj {
       ensureBars(total);
       if (!scenes || rows2.length > 128) {
         scenes = false;
+        q.rows = [];
+        q.clips = Array.from({ length: 8 }, () => Array(16).fill(null));
+        q.tones = {};
         return;
       }
       q.first = 0;

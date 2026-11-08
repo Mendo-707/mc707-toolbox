@@ -63,6 +63,8 @@ export function wizApply() {
   if (w.mode === 'replace') {
     S.clips = [];
     S.patterns = {};
+    /* Scene Mode's clips were the old song's patterns */
+    delete S.scn;
     S.markers = [];
     S.clipMarks = [];
     S.bars = 32;

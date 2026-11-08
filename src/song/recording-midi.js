@@ -7,7 +7,7 @@ import { ED, S, curClip, pushUndo } from '../core/state.js';
 import { scheduleUI } from './arrangement.js';
 import { patOf, touch } from '../core/song-model.js';
 import { drawEditor } from './editor.js';
-import { AU } from '../services/synth.js';
+import { AU, ensureAudio } from '../services/synth.js';
 import { MIDI } from '../services/midi.js';
 import { REC, TR, emitNote, startPat, stopPlay, tickDur } from '../services/transport.js';
 import { renderEdHead } from './editor-head.js';
@@ -154,6 +154,8 @@ function stepAdv(d) {
   drawEditor();
 }
 function recStart() {
+  /* the audio clock times the notes: it has to be running */
+  ensureAudio();
   const c = curClip();
   if (!c) {
     toast('Select a clip first');
