@@ -217,6 +217,12 @@ export function liveScene(idx, tick, hard) {
     LV.blend = null;
     lvApplyGain(tick);
   }
+  /* an auto mute for a bar that was cut short: its track comes back now, not never */
+  let back = false;
+  for (const c of LV.cues)
+    if (c.type === 'mute' && c.auto && !c.on)
+      for (const t of c.tracks) if (LV.mute[t]) ((LV.mute[t] = false), (back = true));
+  if (back) lvApplyGain(tick);
   LV.cues = LV.cues.filter(c => c.type !== 'guestOut' && !(c.type === 'mute' && c.auto));
   if (hard) {
     lvSlam(AU.ctx ? AU.ctx.currentTime : 0, a => a.tag !== 'q' && a.tag !== 'fade');
@@ -694,8 +700,8 @@ export function liveTick(tick, nt, td) {
         evs = patIndex(f).get((((ft - LV.fill.org) % L) + L) % L);
       if (evs) {
         for (const n of evs)
-          emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
-        LV.pulse[0] = { time: nt, v: 1 };
+          emitNote(t, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
+        LV.pulse[t] = { time: nt, v: 1 };
       }
       continue;
     }
@@ -787,6 +793,7 @@ export function liveStart(idx) {
   });
   Object.assign(LV, {
     cur: i,
+    blend: null,
     sceneStart: 0,
     voices: Array.from({ length: 8 }, () => []),
     cues: [],

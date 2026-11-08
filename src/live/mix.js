@@ -9,6 +9,7 @@ import { S } from '../core/state.js';
 import { sendMidi } from '../services/midi.js';
 import { LV, saveLive } from './state.js';
 import { lvRestCC, lvSendCC } from './moves.js';
+import { devOn } from '../core/device.js';
 
 /** The mixer's controls and their CCs. */
 export const MIX_CC = { lvl: 7, pan: 10, rev: 91, cho: 92, flt: 80, mod: 81, fx: 82, snd: 83 };
@@ -43,6 +44,7 @@ export function lvMixSendAll(nt) {
   if (S.sendCC === false) return;
   for (let t = 0; t < 8; t++)
     for (const k in MIX_CC) {
+      if (!devOn(t)) continue;
       /* a knob the mixer has not set is Live's knob panel's, which Start sends already */
       if (MIX_KNOBS.includes(k) && LV.mix[k][t] == null) continue;
       const v = lvMixRest(t, MIX_CC[k]);

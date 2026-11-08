@@ -239,7 +239,7 @@ export function liveJamEnd() {
   }
   const at = lvBoundary(1);
   LV.cues = LV.cues.filter(c => !['scene', 'swap', 'fill', 'guest', 'gap', 'thin', 'bov', 'stop'].includes(c.type));
-  LV.auto = false;
+  /* (auto-pilot rests during the outro by itself, and stays on for the next jam) */
   LV.jam = { kind: 'out', name, loops, i: -1, next: at, fade };
   LV.ver++;
   toast('Outro: ' + name + ' from bar ' + (at / 32 + 1) + '. Press again to stop now.');

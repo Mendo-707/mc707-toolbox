@@ -14,6 +14,7 @@ import { lvOn } from './cues.js';
 import { liveSync } from './panels.js';
 import { knobUI } from './pads.js';
 import { toneTracksAll, tracksFor } from '../core/tracks.js';
+import { devOn } from '../core/device.js';
 
 /* ---- automation moves: MC-707 CCs shaped over time (filter, resonance, reverb wash, pump, autopan) ---- */
 export const LV_SCFX = [
@@ -92,7 +93,8 @@ export function lvUserNote(t, on) {
   toast('You have ' + S.tracks[t].name + ': the app hands it back 4 bars after you stop');
 }
 export function lvSendCC(t, cc, v, nt) {
-  if (lvUserOwns(t)) return;
+  /* (an MC-101 has 4 tracks: the others' channels are its own tracks') */
+  if (lvUserOwns(t) || !devOn(t)) return;
   v = clamp(Math.round(v), 0, 127);
   const k = t + ':' + cc;
   if (LV.ccLast[k] === v) return;

@@ -19959,7 +19959,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var NOTEHIST = /* @__PURE__ */ new Set();
   function panic(hard) {
-    flushOffs();
+    const t0 = AU.ctx ? AU.ctx.currentTime : 0;
+    for (const [k2, h] of HELD) sendMidi([128 | k2 >> 7, k2 & 127, 0], Math.min(h.at, Math.max(t0, h.on + 1e-3)));
+    HELD.clear();
+    LASTON.clear();
     const o = MIDI.out;
     if (!o) return;
     const now2 = performance.now();
@@ -19974,7 +19977,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     try {
       burst(now2);
-      burst(now2 + 320 + Math.max(0, S.midiOffset || 0));
+      if (hard) burst(now2 + 320 + Math.max(0, S.midiOffset || 0));
     } catch (e) {
     }
     NOTEHIST.clear();
@@ -20423,6 +20426,7 @@ html.os-darwin.native-menu #menubar .mproj {
           );
     }
     TR.vis.push({ time, tick, dur: td });
+    if (TR.vis.length > 512) TR.vis.splice(0, TR.vis.length - 64);
     flushOffs(time - 0.1);
   }
   function advance() {
@@ -58814,7 +58818,6 @@ html.os-darwin.native-menu #menubar .mproj {
     if (t1 - TR.tick < 8) t1 += 32;
     const t2 = t1 + 32;
     LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov", "blend", "brk"].includes(c.type) && c.type !== "fill");
-    LV.blend = null;
     const fills = LV.fillIds.map(facById).filter(Boolean), want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/, pick5 = fills.filter((f) => want.test(f.name));
     const fill2 = pick5.length ? lvRand(pick5) : fills.length ? lvRand(fills) : null;
     if (fill2 && LV.scenes[LV.cur] && LV.scenes[LV.cur].cells[trackOf(0)])
@@ -59502,7 +59505,6 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const at2 = lvBoundary(1);
     LV.cues = LV.cues.filter((c) => !["scene", "swap", "fill", "guest", "gap", "thin", "bov", "stop"].includes(c.type));
-    LV.auto = false;
     LV.jam = { kind: "out", name, loops, i: -1, next: at2, fade };
     LV.ver++;
     toast("Outro: " + name + " from bar " + (at2 / 32 + 1) + ". Press again to stop now.");
@@ -59608,6 +59610,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (S.sendCC === false) return;
     for (let t = 0; t < 8; t++)
       for (const k2 in MIX_CC) {
+        if (!devOn(t)) continue;
         if (MIX_KNOBS.includes(k2) && LV.mix[k2][t] == null) continue;
         const v = lvMixRest(t, MIX_CC[k2]);
         LV.ccLast[t + ":" + MIX_CC[k2]] = v;
@@ -59742,6 +59745,12 @@ html.os-darwin.native-menu #menubar .mproj {
       LV.blend = null;
       lvApplyGain(tick);
     }
+    let back = false;
+    for (const c of LV.cues)
+      if (c.type === "mute" && c.auto && !c.on) {
+        for (const t of c.tracks) if (LV.mute[t]) LV.mute[t] = false, back = true;
+      }
+    if (back) lvApplyGain(tick);
     LV.cues = LV.cues.filter((c) => c.type !== "guestOut" && !(c.type === "mute" && c.auto));
     if (hard) {
       lvSlam(AU.ctx ? AU.ctx.currentTime : 0, (a) => a.tag !== "q" && a.tag !== "fade");
@@ -60143,8 +60152,8 @@ html.os-darwin.native-menu #menubar .mproj {
         const f = LV.fill.f, L2 = f.bars * 32, evs = patIndex(f).get(((ft - LV.fill.org) % L2 + L2) % L2);
         if (evs) {
           for (const n of evs)
-            emitNote(0, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
-          LV.pulse[0] = { time: nt, v: 1 };
+            emitNote(t, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
+          LV.pulse[t] = { time: nt, v: 1 };
         }
         continue;
       }
@@ -60221,6 +60230,7 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     Object.assign(LV, {
       cur: i,
+      blend: null,
       sceneStart: 0,
       voices: Array.from({ length: 8 }, () => []),
       cues: [],
@@ -61250,7 +61260,7 @@ html.os-darwin.native-menu #menubar .mproj {
     toast("You have " + S.tracks[t].name + ": the app hands it back 4 bars after you stop");
   }
   function lvSendCC(t, cc2, v, nt) {
-    if (lvUserOwns(t)) return;
+    if (lvUserOwns(t) || !devOn(t)) return;
     v = clamp(Math.round(v), 0, 127);
     const k2 = t + ":" + cc2;
     if (LV.ccLast[k2] === v) return;
@@ -61996,7 +62006,8 @@ html.os-darwin.native-menu #menubar .mproj {
     if (on3) {
       let nn = clamp(n + 12 * c.soloOct, 0, 127);
       if (c.soloSnap) nn = ctlSnap(nn);
-      if (CTL.held[n] != null) sendMidi([128 | tr.ch - 1, CTL.held[n], 0], now2);
+      const was = CTL.held[n];
+      if (was) sendMidi([128 | was.ch - 1, was.nn, 0], now2);
       CTL.held[n] = { nn, t, ch: tr.ch };
       lvUserNote(t, true);
       if (MIDI.out) sendMidi([144 | tr.ch - 1, nn, v], now2);
@@ -64104,10 +64115,10 @@ html.os-darwin.native-menu #menubar .mproj {
     return true;
   }
   function lvTracksFor(target) {
-    if (target === "drums") return [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t].type === "drum");
-    if (target === "tone") return toneTracksAll();
-    if (target === "all") return [0, 1, 2, 3, 4, 5, 6, 7];
-    return [+target];
+    if (target === "drums") return [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => S.tracks[t].type === "drum" && devOn(t));
+    if (target === "tone") return toneTracksAll().filter(devOn);
+    if (target === "all") return [0, 1, 2, 3, 4, 5, 6, 7].filter(devOn);
+    return devOn(+target) ? [+target] : [];
   }
 
   // src/live/lanes.js

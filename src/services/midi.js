@@ -183,7 +183,12 @@ export function refreshOuts() {
 const NOTEHIST = new Set();
 /** All notes off and sustain off on every channel, now and again after the look-ahead. hard = also all sound off. */
 export function panic(hard) {
-  flushOffs();
+  /* the waiting note-offs go now (not at their time, which could cut the next run's notes); one for a
+     note still to start goes just after it */
+  const t0 = AU.ctx ? AU.ctx.currentTime : 0;
+  for (const [k, h] of HELD) sendMidi([0x80 | (k >> 7), k & 127, 0], Math.min(h.at, Math.max(t0, h.on + 0.001)));
+  HELD.clear();
+  LASTON.clear();
   const o = MIDI.out;
   if (!o) return;
   const now = performance.now();
@@ -197,10 +202,11 @@ export function panic(hard) {
     }
     NOTEHIST.forEach(k => o.send([0x80 | (k >> 7), k & 127, 0], ms));
   };
-  /* once now, and again after the scheduling window so queued note-ons cannot start afterwards */
+  /* once now; the Panic button again after the scheduling window, in case anything queued slips
+     through (not on a plain stop: a run started straight after would lose its first notes) */
   try {
     burst(now);
-    burst(now + 320 + Math.max(0, S.midiOffset || 0));
+    if (hard) burst(now + 320 + Math.max(0, S.midiOffset || 0));
   } catch (e) {}
   NOTEHIST.clear();
 }

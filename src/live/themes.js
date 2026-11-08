@@ -11,6 +11,7 @@ import { lvTickF } from './ui.js';
 import { liveStatus } from './lanes.js';
 import { liveRenderCards, liveRenderPads } from './panels.js';
 import { toneTracksAll } from '../core/tracks.js';
+import { devOn } from '../core/device.js';
 
 /* Live Mode colour themes. Each sets the panel colours (CSS) and how scene colours run from low to high energy. */
 export const LV_THEMES = {
@@ -95,8 +96,9 @@ export function lvSend(bytes) {
   return true;
 }
 export function lvTracksFor(target) {
-  if (target === 'drums') return [0, 1, 2, 3, 4, 5, 6, 7].filter(t => S.tracks[t].type === 'drum');
-  if (target === 'tone') return toneTracksAll();
-  if (target === 'all') return [0, 1, 2, 3, 4, 5, 6, 7];
-  return [+target];
+  /* (only the tracks the device has: an MC-101's other channels are its own tracks') */
+  if (target === 'drums') return [0, 1, 2, 3, 4, 5, 6, 7].filter(t => S.tracks[t].type === 'drum' && devOn(t));
+  if (target === 'tone') return toneTracksAll().filter(devOn);
+  if (target === 'all') return [0, 1, 2, 3, 4, 5, 6, 7].filter(devOn);
+  return devOn(+target) ? [+target] : [];
 }

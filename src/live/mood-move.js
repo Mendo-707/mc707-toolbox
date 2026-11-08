@@ -23,8 +23,8 @@ export function lvMoodMove(m) {
   if (t1 - TR.tick < 8) t1 += 32;
   const t2 = t1 + 32;
   /* a break waiting to play would fight the change (and its filter move this one): it goes too */
+  /* (a blend going stays set: the scene change clears it and brings the tone parts back) */
   LV.cues = LV.cues.filter(c => !['scene', 'gap', 'thin', 'bov', 'blend', 'brk'].includes(c.type) && c.type !== 'fill');
-  LV.blend = null;
   /* the drums: a roll into it, or the beat falling away */
   const fills = LV.fillIds.map(facById).filter(Boolean),
     want = intense ? /Roll|Snare 16ths|Flam|Kick Stutter/ : calm ? /Drop-out|Tom Run|Mixed/ : /Mixed|Clap|Snare/,

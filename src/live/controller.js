@@ -211,7 +211,8 @@ function ctlSolo(n, v, on) {
   if (on) {
     let nn = clamp(n + 12 * c.soloOct, 0, 127);
     if (c.soloSnap) nn = ctlSnap(nn);
-    if (CTL.held[n] != null) sendMidi([0x80 | (tr.ch - 1), CTL.held[n], 0], now);
+    const was = CTL.held[n];
+    if (was) sendMidi([0x80 | (was.ch - 1), was.nn, 0], now);
     CTL.held[n] = { nn, t, ch: tr.ch };
     lvUserNote(t, true);
     if (MIDI.out) sendMidi([0x90 | (tr.ch - 1), nn, v], now);

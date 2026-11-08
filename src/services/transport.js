@@ -228,6 +228,8 @@ export function processTick(tick, time) {
         );
   }
   TR.vis.push({ time, tick, dur: td });
+  /* (with the window hidden nothing draws, so nothing takes these off) */
+  if (TR.vis.length > 512) TR.vis.splice(0, TR.vis.length - 64);
   /* note-offs no later note of their key can come before any more (nudge, humanize and swing move
      notes by well under this) */
   flushOffs(time - 0.1);
