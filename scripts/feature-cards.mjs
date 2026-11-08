@@ -126,17 +126,17 @@ const CARDS = [
     'song',
     '1-song-mode.png',
     'Song Mode',
-    'Arrange a whole track',
+    'Make your own music',
     [
       [
-        'Compose it now',
-        'Pick one of 42 styles and the composer writes the whole song: drums, bass, chords, pads, hooks, builds and drops.'
+        'Your own patterns',
+        'Write beats, basslines, chords and melodies in the step grid or piano roll, or play them in from your keys.'
       ],
+      ['Arrange on a timeline', 'Build your track section by section and hear it on the MC-707 as you go.'],
       [
-        '28,000+ patterns',
-        'Or build it step by step from the library: drums, bass, chords, pads, arps, leads and fills.'
+        'A head start when you want one',
+        '28,000+ patterns to drag in, or Compose it now to sketch a song in one of 42 styles, then make it yours.'
       ],
-      ['Step grid and piano roll', 'Change any pattern, note by note, and hear it on the MC-707 as you go.'],
       ['Record and export', 'Record every track’s audio over USB as separate files, or save the song as MIDI.']
     ]
   ],
@@ -220,7 +220,7 @@ function banner() {
 /* one picture of the best of it: the name, then six features each with its screen */
 function promo(raw) {
   const tiles = [
-    ['song', 'Compose a whole song', '42 styles, written for you, from drums to drops'],
+    ['song', 'Make your own music', 'Write, play in and arrange your own tracks'],
     ['scene', 'On the MC-707, no computer', 'Clips and scenes like its own CLIP screen, as a project file'],
     ['live', 'Play it live', 'Composed sets, breaks, moves and Loop rec from 16 pads'],
     ['synth', 'An 8-track synth', 'Pick, edit and mix the sound on every track'],

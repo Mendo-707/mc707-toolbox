@@ -12,7 +12,7 @@ Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and de
 
 ### Song Mode
 
-Arrange a whole track on a timeline and play it on the MC-707 note for note. The song wizard composes a whole song in one of 42 styles with **Compose it now**, or builds one from over 28,000 patterns (drums, bass, chords, pads, arps, leads, fills and builds); change any of it in the step grid or piano roll, record every track's audio, or export MIDI. [More](#song-mode-1)
+Make your own music and play it on the MC-707 note for note. Write your own patterns in the step grid or piano roll, record them from a keyboard or the MC-707's keys, and arrange them into a whole track on a timeline. Want a head start? Drag in any of over 28,000 patterns (drums, bass, chords, pads, arps, leads, fills and builds), or let the song wizard sketch a song in one of 42 styles with **Compose it now**, then make it yours. Record every track's audio, or export MIDI. [More](#song-mode-1)
 
 ![Song Mode](docs/features/1-song-mode.png)
 
