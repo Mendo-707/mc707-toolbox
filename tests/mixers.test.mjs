@@ -37,10 +37,10 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   const ch = (await page.evaluate('window.__app.S.tracks[3].ch')) - 1;
   assert.ok(await ccSent(page, ch, 7, 80), 'level sent as CC 7');
   assert.ok(await ccSent(page, ch, 10, 30), 'pan sent as CC 10');
-  /* undo takes the reverb back, and the window follows (the song's window in front for the key: with the
-     mixer's in front, a browser can hold back the key) */
+  /* undo takes the reverb back, and the window follows (Undo clicked: a key sent to the song's window can
+     be held back while the mixer's window has the focus) */
   await page.bringToFront();
-  await page.keyboard.press('Control+z');
+  await page.locator('#bUndo').click();
   /* the window redraws on its animation frames, which a browser can hold back for a window behind */
   await win.bringToFront();
   await page.waitForFunction(() => !window.__app.S.tracks[3].cc[91], null, { polling: 100 });
@@ -53,16 +53,21 @@ test('Song mixer: a window of its own; level, pan, sends, velocity, mute and sol
   /* mute from the window; the song's track header follows */
   await s4.locator('.mxTg.mute').click();
   assert.equal(await page.evaluate('window.__app.S.tracks[3].mute'), true);
-  await page.waitForFunction(() => document.querySelectorAll('#arrInner .ms.m.on').length === 1);
+  /* (polled on a timer: the song's window is behind, and its animation frames can be held back) */
+  await page.waitForFunction(() => document.querySelectorAll('#arrInner .ms.m.on').length === 1, null, {
+    polling: 100
+  });
   /* a mute in the song shows in the window */
   await page.evaluate(() => {
     window.__app.S.tracks[5].solo = true;
   });
-  await win.waitForFunction(() => document.querySelectorAll('.mxStrip')[5].classList.contains('solo'));
+  await win.waitForFunction(() => document.querySelectorAll('.mxStrip')[5].classList.contains('solo'), null, {
+    polling: 100
+  });
   /* Space in the window starts the song */
   await win.locator('.mxTitle').click();
   await win.keyboard.press('Space');
-  await page.waitForFunction(() => window.__app.TR.playing, null, { timeout: 5000 });
+  await page.waitForFunction(() => window.__app.TR.playing, null, { timeout: 5000, polling: 100 });
   await win.waitForFunction(() => [...document.querySelectorAll('.mxLight')].some(l => +l.style.opacity > 0.3), null, {
     timeout: 8000
   });
@@ -92,24 +97,33 @@ test('Live mixer: its own mix, sent at Start, mutes on the beat', async () => {
   /* Start sends Live's mix */
   await page.evaluate('window.__out.length = 0');
   await page.evaluate(() => document.querySelector('#lvStart').click());
-  await page.waitForFunction(() => window.__app.TR.playing, null, { timeout: 5000 });
+  await page.waitForFunction(() => window.__app.TR.playing, null, { timeout: 5000, polling: 100 });
   const ch = (await page.evaluate('window.__app.S.tracks[1].ch')) - 1;
   await page.waitForFunction(
     ([ch]) => window.__out.some(b => b[0] === (0xb0 | ch) && b[1] === 7 && b[2] === 64),
     [ch],
     {
-      timeout: 3000
+      timeout: 3000,
+      polling: 100
     }
   );
   /* a mute waits for the beat (blinking), then lands */
   await s2.locator('.mxTg.mute').click();
-  await win.waitForFunction(() => document.querySelectorAll('.mxStrip')[1].querySelector('.mxTg.mute.on'));
-  await page.waitForFunction(() => window.__app.LV.mute[1] === true, null, { timeout: 4000 });
+  await win.waitForFunction(() => document.querySelectorAll('.mxStrip')[1].querySelector('.mxTg.mute.on'), null, {
+    polling: 100
+  });
+  await page.waitForFunction(() => window.__app.LV.mute[1] === true, null, { timeout: 4000, polling: 100 });
   /* solo track 1: the others go quiet; again: they come back */
   await win.locator('.mxStrip').nth(0).locator('.mxTg.solo').click();
-  await page.waitForFunction(() => [2, 3, 4, 5, 6, 7].every(t => window.__app.LV.mute[t]), null, { timeout: 4000 });
+  await page.waitForFunction(() => [2, 3, 4, 5, 6, 7].every(t => window.__app.LV.mute[t]), null, {
+    timeout: 4000,
+    polling: 100
+  });
   await win.locator('.mxStrip').nth(0).locator('.mxTg.solo').click();
-  await page.waitForFunction(() => [2, 3, 4, 5, 6, 7].every(t => !window.__app.LV.mute[t]), null, { timeout: 4000 });
+  await page.waitForFunction(() => [2, 3, 4, 5, 6, 7].every(t => !window.__app.LV.mute[t]), null, {
+    timeout: 4000,
+    polling: 100
+  });
   assert.equal(await page.evaluate('window.__app.LV.mute[1]'), true, 'a track muted before the solo stays muted');
   await page.evaluate(() => document.querySelector('#lvStart').click());
   assert.deepEqual(errors, []);
@@ -140,7 +154,7 @@ test('Mixers in the Windows app: borderless, dragged by the header, with pin, mi
   ]);
   /* the click closes the window, which can end it before the click itself returns */
   await Promise.all([
-    win.waitForEvent('close', { timeout: 3000 }).catch(() => {}),
+    win.waitForEvent('close', { timeout: 3000, polling: 100 }).catch(() => {}),
     win
       .locator('.popWb.x')
       .click({ noWaitAfter: true })
