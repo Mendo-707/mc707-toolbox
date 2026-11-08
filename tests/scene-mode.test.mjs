@@ -65,9 +65,10 @@ const emptyClips = (page, list) =>
   }, list);
 const states = page =>
   page.evaluate(() =>
-    [...document.querySelectorAll('#scene .sbClip:not(.empty)')].map(
-      b => b.dataset.t + ':' + b.dataset.k + ' ' + b.className.match(/\b(new|written|changed)\b/)[1]
-    )
+    [...document.querySelectorAll('#scene .sbClip:not(.empty)')]
+      /* track by track, whatever way the board is laid out */
+      .sort((a, b) => a.dataset.t - b.dataset.t || a.dataset.k - b.dataset.k)
+      .map(b => b.dataset.t + ':' + b.dataset.k + ' ' + b.className.match(/\b(new|written|changed)\b/)[1])
   );
 
 test('Scene Mode: clips and scenes from the song, kept with it (older songs converted), and back to a song', async () => {
@@ -339,5 +340,24 @@ test('Scene Mode: Auto-write writes a change a moment after it is made', async (
   /* off again, for the other tests */
   await page.locator('.scWrite button').last().click();
   await page.locator('.cmenu .cmi', { hasText: 'Auto-write changes' }).click();
+  assert.deepEqual(errors, []);
+});
+
+test('Scene Mode’s board is laid out like the MC-707’s CLIP screen: a column per track, clips 1-16 down', async () => {
+  const { page, errors } = await openApp();
+  await page.evaluate(seedSong);
+  await fromSong(page);
+  const box = (t, k) => page.locator(`#scene .sbClip[data-t="${t}"][data-k="${k}"]`).boundingBox();
+  const [a, down, right] = await Promise.all([box(0, 0), box(0, 1), box(1, 0)]);
+  assert.ok(Math.abs(a.x - down.x) < 1 && down.y > a.y, 'clip 2 under clip 1 in the track’s column');
+  assert.ok(Math.abs(a.y - right.y) < 1 && right.x > a.x, 'the next track to the right');
+  assert.match(await page.locator('#scene .sbHead .sbTrk').first().textContent(), /^1-D /);
+  /* arrows: down is the next clip, right the next track */
+  await page.locator('#scene .sbClip[data-t="0"][data-k="0"]').click({ button: 'right' });
+  await page.keyboard.press('Escape');
+  const at = () => page.evaluate(() => [window.__app.scene.SC.t, window.__app.scene.SC.k]);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  assert.deepEqual(await at(), [1, 1]);
   assert.deepEqual(errors, []);
 });

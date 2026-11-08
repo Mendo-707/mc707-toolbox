@@ -8931,6 +8931,40 @@ body[data-mode='scene'] #scene {
   border-radius: 4px;
   pointer-events: none;
 }
+/* as the MC-707's CLIP screen: a column for each track, its 16 clips down it */
+.sBoard.vert {
+  grid-template-columns: 34px repeat(var(--cols, 8), minmax(96px, 1fr));
+  gap: 3px 4px;
+  min-width: 0;
+}
+.sBoard.vert .sbNum {
+  align-self: center;
+  text-align: right;
+  padding-right: 4px;
+  font-size: 11px;
+  color: var(--mute);
+}
+.sBoard.vert .sbHead .sbTrk {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-left: 0;
+  border-top: 4px solid var(--tc);
+  background: var(--panel);
+  padding: 3px 5px;
+  font-size: 12px;
+}
+.sBoard.vert .sbClip {
+  min-height: 34px;
+  padding: 2px 4px;
+}
+.sBoard.vert .sbClip b {
+  -webkit-line-clamp: 1;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+}
 .sMain.wide .sBoard {
   grid-template-columns: 118px repeat(16, minmax(54px, 1fr));
 }
@@ -46322,7 +46356,7 @@ html.os-darwin.native-menu #menubar .mproj {
       SC.draw();
       return true;
     }
-    const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (!mv) return false;
     e.preventDefault();
     SC.t = Math.max(0, Math.min(7, SC.t + mv[0]));
@@ -48109,42 +48143,76 @@ html.os-darwin.native-menu #menubar .mproj {
   };
   function board(act, only = null) {
     const q = S.scn, sel2 = rows()[SC.row], tracks3 = DEVS[DEV].tracks.filter((t) => only == null || t === only);
+    const pending2 = (t) => Array.from({ length: 16 }, (_, k2) => clipState(q, S.patterns, t, k2)).filter((s) => s === "new" || s === "changed").length;
+    const trk = (t) => {
+      const n = pending2(t);
+      return el(
+        "div",
+        {
+          class: "sbTrk",
+          style: "--tc:" + TRACK_COLORS[t],
+          title: "Right-click for this track: write its clips, check them on the MC-707",
+          oncontextmenu: (e) => (e.preventDefault(), act.trackMenu(t, e.clientX, e.clientY))
+        },
+        el(
+          "b",
+          {},
+          /* the MC-707's own column label (1-D a drum track, 3-T a tone track) */
+          only == null ? devNum(t) + "-" + (S.tracks[t].type === "drum" ? "D" : "T") + " " + S.tracks[t].name : devNum(t) + " " + S.tracks[t].name
+        ),
+        n ? el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm sbWr",
+            title: "Write this track’s " + n + " new or changed clip" + (n === 1 ? "" : "s") + " to the MC-707",
+            onclick: () => act.writeTrack(t)
+          },
+          "⤒ " + n
+        ) : null
+      );
+    };
+    if (only != null) {
+      const head4 = el(
+        "div",
+        { class: "sbRow sbHead" },
+        el("div", { class: "sbTrk" }, el("span", { class: "hint" }, "MC-707 clips")),
+        ...Array.from({ length: 16 }, (_, k2) => el("div", { class: "sbNum" }, String(k2 + 1)))
+      );
+      const row2 = el(
+        "div",
+        { class: "sbRow", style: "--tc:" + TRACK_COLORS[only] },
+        trk(only),
+        ...Array.from({ length: 16 }, (_, k2) => slot(only, k2, sel2, act))
+      );
+      return el("div", { class: "sBoard", role: "grid", "aria-label": "MC-707 clips" }, head4, row2);
+    }
     const head3 = el(
       "div",
       { class: "sbRow sbHead" },
-      el("div", { class: "sbTrk" }, el("span", { class: "hint" }, "MC-707 clips")),
-      ...Array.from({ length: 16 }, (_, k2) => el("div", { class: "sbNum" }, String(k2 + 1)))
+      el("div", { class: "sbNum", title: "Clip number, as on the MC-707" }, "Clip"),
+      ...tracks3.map(trk)
     );
-    const body = tracks3.map((t) => {
-      const pending2 = Array.from({ length: 16 }, (_, k2) => clipState(q, S.patterns, t, k2)).filter(
-        (s) => s === "new" || s === "changed"
-      ).length;
-      return el(
+    const body = Array.from(
+      { length: 16 },
+      (_, k2) => el(
         "div",
-        { class: "sbRow", style: "--tc:" + TRACK_COLORS[t] },
-        el(
-          "div",
-          {
-            class: "sbTrk",
-            title: "Right-click for this track: write its clips, check them on the MC-707",
-            oncontextmenu: (e) => (e.preventDefault(), act.trackMenu(t, e.clientX, e.clientY))
-          },
-          el("b", {}, devNum(t) + " " + S.tracks[t].name),
-          pending2 ? el(
-            "button",
-            {
-              type: "button",
-              class: "btn sm sbWr",
-              title: "Write this track’s " + pending2 + " new or changed clip" + (pending2 === 1 ? "" : "s") + " to the MC-707",
-              onclick: () => act.writeTrack(t)
-            },
-            "⤒ " + pending2
-          ) : null
-        ),
-        ...Array.from({ length: 16 }, (_, k2) => slot(t, k2, sel2, act))
-      );
-    });
-    return el("div", { class: "sBoard", role: "grid", "aria-label": "MC-707 clips" }, head3, ...body);
+        { class: "sbRow" },
+        el("div", { class: "sbNum" }, String(k2 + 1)),
+        ...tracks3.map((t) => slot(t, k2, sel2, act))
+      )
+    );
+    return el(
+      "div",
+      {
+        class: "sBoard vert",
+        style: "--cols:" + tracks3.length,
+        role: "grid",
+        "aria-label": "MC-707 clips: a column for each track"
+      },
+      head3,
+      ...body
+    );
   }
   function slot(t, k2, sel2, act) {
     const q = S.scn, c = q.clips[t][k2], p = c && S.patterns[c.pat], st = clipState(q, S.patterns, t, k2), tn = toneOf(c), inScene = !!sel2 && sel2.pick[t] === k2, uses2 = c ? clipUses(q, t, k2) : 0, ck2 = checked(t, k2), cur2 = SC.edit && SC.t === t && SC.k === k2;
@@ -48156,6 +48224,7 @@ html.os-darwin.native-menu #menubar .mproj {
         class: "sbClip" + (p ? " " + st : " empty") + (inScene ? " inScene" : "") + (p && !uses2 ? " unused" : "") + (cur2 ? " cur" : "") + (SC.t === t && SC.k === k2 ? " sel" : "") + (ck2 && ck2.notes ? " busy" : ""),
         "data-t": t,
         "data-k": k2,
+        style: "--tc:" + TRACK_COLORS[t],
         title: tip + ". Right-click for more",
         "aria-label": "Track " + devNum(t) + " clip " + (k2 + 1) + ": " + (p ? p.name : "empty"),
         onclick: () => p ? act.edit(t, k2) : act.pick(t, k2),

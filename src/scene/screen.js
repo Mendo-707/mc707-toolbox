@@ -1,8 +1,9 @@
 // Scene Mode: arrange a song the way the MC-707 keeps one. The clips board holds each track's 16 clips
-// (pattern and tone); the scene chain down the left lists the scenes in the order the MC-707's scene
-// chain plays them, each choosing a clip per track and lasting so many bars. The editor for the selected
-// clip (notes or sound) sits under the board. Every clip and scene shows whether it is written to the
-// MC-707; the toolbar walks through the four steps (clips, scenes, write, on the MC-707).
+// (pattern and tone), a column per track as on the MC-707's CLIP screen; the scene chain down the left
+// lists the scenes in the order the MC-707's scene chain plays them, each choosing a clip per track and
+// lasting so many bars. The editor for the selected clip (notes or sound) sits under the board. Every
+// clip and scene shows whether it is written to the MC-707; the toolbar walks through the four steps
+// (clips, scenes, write, on the MC-707).
 //
 // Reads: S, SC, TR, DEV.
 import { $, el, toast } from '../core/dom.js';

@@ -495,6 +495,40 @@ body[data-mode='scene'] #scene {
   border-radius: 4px;
   pointer-events: none;
 }
+/* as the MC-707's CLIP screen: a column for each track, its 16 clips down it */
+.sBoard.vert {
+  grid-template-columns: 34px repeat(var(--cols, 8), minmax(96px, 1fr));
+  gap: 3px 4px;
+  min-width: 0;
+}
+.sBoard.vert .sbNum {
+  align-self: center;
+  text-align: right;
+  padding-right: 4px;
+  font-size: 11px;
+  color: var(--mute);
+}
+.sBoard.vert .sbHead .sbTrk {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-left: 0;
+  border-top: 4px solid var(--tc);
+  background: var(--panel);
+  padding: 3px 5px;
+  font-size: 12px;
+}
+.sBoard.vert .sbClip {
+  min-height: 34px;
+  padding: 2px 4px;
+}
+.sBoard.vert .sbClip b {
+  -webkit-line-clamp: 1;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+}
 .sMain.wide .sBoard {
   grid-template-columns: 118px repeat(16, minmax(54px, 1fr));
 }

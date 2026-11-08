@@ -227,7 +227,8 @@ export function sceneKey(e, togglePlay, open) {
     SC.draw();
     return true;
   }
-  const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+  /* the board as the MC-707's CLIP screen: tracks across, clips down */
+  const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
   if (!mv) return false;
   e.preventDefault();
   SC.t = Math.max(0, Math.min(7, SC.t + mv[0]));

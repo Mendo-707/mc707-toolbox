@@ -1,4 +1,6 @@
-// Scene Mode's clips board: each track's 16 MC-707 clips in a row, as the MC-707's CLIP pads hold them.
+// Scene Mode's clips board, laid out like the MC-707's CLIP screen: a column for each track (1-D … 8-T)
+// with its 16 clips down it, so the clips a scene plays read across like they do on the MC-707 (with the
+// editor expanded, the one track's clips in a row).
 // A clip shows its pattern, its tone, and whether it is written to the MC-707 (✓), changed since (●) or
 // new (+); the clips the selected scene plays are outlined, clips no scene plays are faded, and a ring
 // marks a clip that holds notes on the MC-707 (from Check). Click an empty clip to fill it, a full one to
@@ -28,49 +30,82 @@ export function board(act, only = null) {
   const q = S.scn,
     sel = rows()[SC.row],
     tracks = DEVS[DEV].tracks.filter(t => only == null || t === only);
+  const pending = t =>
+    Array.from({ length: 16 }, (_, k) => clipState(q, S.patterns, t, k)).filter(s => s === 'new' || s === 'changed')
+      .length;
+  const trk = t => {
+    const n = pending(t);
+    return el(
+      'div',
+      {
+        class: 'sbTrk',
+        style: '--tc:' + TRACK_COLORS[t],
+        title: 'Right-click for this track: write its clips, check them on the MC-707',
+        oncontextmenu: e => (e.preventDefault(), act.trackMenu(t, e.clientX, e.clientY))
+      },
+      el(
+        'b',
+        {},
+        /* the MC-707's own column label (1-D a drum track, 3-T a tone track) */
+        only == null
+          ? devNum(t) + '-' + (S.tracks[t].type === 'drum' ? 'D' : 'T') + ' ' + S.tracks[t].name
+          : devNum(t) + ' ' + S.tracks[t].name
+      ),
+      n
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'btn sm sbWr',
+              title: 'Write this track’s ' + n + ' new or changed clip' + (n === 1 ? '' : 's') + ' to the MC-707',
+              onclick: () => act.writeTrack(t)
+            },
+            '⤒ ' + n
+          )
+        : null
+    );
+  };
+  /* the expanded editor keeps its one track as a row of 16 */
+  if (only != null) {
+    const head = el(
+      'div',
+      { class: 'sbRow sbHead' },
+      el('div', { class: 'sbTrk' }, el('span', { class: 'hint' }, 'MC-707 clips')),
+      ...Array.from({ length: 16 }, (_, k) => el('div', { class: 'sbNum' }, String(k + 1)))
+    );
+    const row = el(
+      'div',
+      { class: 'sbRow', style: '--tc:' + TRACK_COLORS[only] },
+      trk(only),
+      ...Array.from({ length: 16 }, (_, k) => slot(only, k, sel, act))
+    );
+    return el('div', { class: 'sBoard', role: 'grid', 'aria-label': 'MC-707 clips' }, head, row);
+  }
   const head = el(
     'div',
     { class: 'sbRow sbHead' },
-    el('div', { class: 'sbTrk' }, el('span', { class: 'hint' }, 'MC-707 clips')),
-    ...Array.from({ length: 16 }, (_, k) => el('div', { class: 'sbNum' }, String(k + 1)))
+    el('div', { class: 'sbNum', title: 'Clip number, as on the MC-707' }, 'Clip'),
+    ...tracks.map(trk)
   );
-  const body = tracks.map(t => {
-    const pending = Array.from({ length: 16 }, (_, k) => clipState(q, S.patterns, t, k)).filter(
-      s => s === 'new' || s === 'changed'
-    ).length;
-    return el(
+  const body = Array.from({ length: 16 }, (_, k) =>
+    el(
       'div',
-      { class: 'sbRow', style: '--tc:' + TRACK_COLORS[t] },
-      el(
-        'div',
-        {
-          class: 'sbTrk',
-          title: 'Right-click for this track: write its clips, check them on the MC-707',
-          oncontextmenu: e => (e.preventDefault(), act.trackMenu(t, e.clientX, e.clientY))
-        },
-        el('b', {}, devNum(t) + ' ' + S.tracks[t].name),
-        pending
-          ? el(
-              'button',
-              {
-                type: 'button',
-                class: 'btn sm sbWr',
-                title:
-                  'Write this track’s ' +
-                  pending +
-                  ' new or changed clip' +
-                  (pending === 1 ? '' : 's') +
-                  ' to the MC-707',
-                onclick: () => act.writeTrack(t)
-              },
-              '⤒ ' + pending
-            )
-          : null
-      ),
-      ...Array.from({ length: 16 }, (_, k) => slot(t, k, sel, act))
-    );
-  });
-  return el('div', { class: 'sBoard', role: 'grid', 'aria-label': 'MC-707 clips' }, head, ...body);
+      { class: 'sbRow' },
+      el('div', { class: 'sbNum' }, String(k + 1)),
+      ...tracks.map(t => slot(t, k, sel, act))
+    )
+  );
+  return el(
+    'div',
+    {
+      class: 'sBoard vert',
+      style: '--cols:' + tracks.length,
+      role: 'grid',
+      'aria-label': 'MC-707 clips: a column for each track'
+    },
+    head,
+    ...body
+  );
 }
 
 function slot(t, k, sel, act) {
@@ -118,6 +153,7 @@ function slot(t, k, sel, act) {
         (ck && ck.notes ? ' busy' : ''),
       'data-t': t,
       'data-k': k,
+      style: '--tc:' + TRACK_COLORS[t],
       title: tip + '. Right-click for more',
       'aria-label': 'Track ' + devNum(t) + ' clip ' + (k + 1) + ': ' + (p ? p.name : 'empty'),
       onclick: () => (p ? act.edit(t, k) : act.pick(t, k)),
