@@ -57,6 +57,7 @@ const MOVES = {
 const START = { minor: { 1: 8, 6: 1, 4: 1 }, major: { 1: 7, 6: 1.5, 4: 1.5 } };
 /* how long each chord lasts over 8 bars: which of the chords each bar plays */
 const RHYTHMS = [
+  /* two bars a chord, listed twice: twice as likely as the others */
   [0, 0, 1, 1, 2, 2, 3, 3],
   [0, 0, 1, 1, 2, 2, 3, 3],
   [0, 1, 2, 3, 0, 1, 2, 4],
@@ -70,10 +71,12 @@ const RHYTHMS = [
  * A progression for a colour ('m' minor, 'M' major, 'j' jazzy, 'v' a vamp), as chord tokens a bar
  * (library/compose.js chordsOf reads them).
  */
-export function genProg(r, colour) {
+export function genProg(r, colour, scale = 'minor') {
+  const maj = scale === 'major';
   if (colour === 'v') {
-    const x = pick(r, [7, 4, 6, '4M', 3]),
-      y = pick(r, [7, 4, 6, 1]);
+    /* (a major key's seventh chord is diminished: its flat seventh instead) */
+    const x = pick(r, maj ? [4, 'b7', 6, '4m', 2] : [7, 4, 6, '4M', 3]),
+      y = pick(r, maj ? [4, 'b7', 6, 1] : [7, 4, 6, 1]);
     return pick(r, [
       [1, 1, 1, 1, x, x, 1, 1],
       [1, 1, x, x, 1, 1, y, y],
@@ -81,7 +84,9 @@ export function genProg(r, colour) {
       [1, x, 1, x, 1, x, 1, y]
     ]);
   }
-  const mode = colour === 'M' ? 'major' : colour === 'j' ? (r() < 0.5 ? 'major' : 'minor') : 'minor',
+  /* the jazzy colour follows the key (the coin is still tossed, so the takes stay as they were) */
+  colour === 'j' && r();
+  const mode = colour === 'M' || (colour === 'j' && maj) ? 'major' : 'minor',
     table = MOVES[mode],
     rhythm = pick(r, RHYTHMS),
     n = Math.max(...rhythm) + 1;
@@ -104,12 +109,13 @@ export function genProg(r, colour) {
   let out = rhythm.map(i => asTok(chords[i]));
   if (colour === 'j') {
     /* sevenths throughout, a ninth on the home chord, and now and then a ii-V into it */
-    out = out.map(t =>
-      String(t) === '1' ? '1-9' : /^b|s$/.test(String(t)) ? t : String(t).replace(/[Mm]$/, '') + '-7'
-    );
+    out = out.map(t => {
+      const x = String(t);
+      return x === '1' ? '1-9' : /s$/.test(x) ? x : x + '-7';
+    });
     if (r() < 0.5) {
       out[6] = '2-7';
-      out[7] = mode === 'minor' ? '5M' : '5-7';
+      out[7] = mode === 'minor' ? '5M-7' : '5-7';
     }
   }
   return out;
@@ -285,7 +291,8 @@ export function genBassT(r, feel) {
 export function mutateBassT(r, bar) {
   const out = bar.map(x => [...x]),
     taken = new Set(out.map(x => x[0]));
-  const free = [3, 6, 7, 10, 11, 13, 14, 15].filter(s => !taken.has(s));
+  /* (nothing after a note that walks into the next chord) */
+  const free = [3, 6, 7, 10, 11, 13, 14, 15].filter(s => !taken.has(s) && !out.some(x => x[2] === 'A' && x[0] < s));
   if (free.length && r() < 0.7) {
     const s = pick(r, free),
       i = out.findIndex(x => x[0] > s),
@@ -300,7 +307,7 @@ export function mutateBassT(r, bar) {
 /* ---------- chords ---------- */
 const COMP = {
   four: { 2: 3, 6: 2.5, 10: 3, 14: 2, 3: 1, 7: 1, 11: 1, 0: 1, 12: 1 },
-  dnb: { 0: 3, 6: 2, 10: 2.5, 3: 1.5, 14: 1.5, 8: 1, 12: 1 },
+  dnb: { 0: 3, 6: 2, 10: 2.5, 3: 1.5, 14: 1.5, 8: 1 },
   hh: { 0: 3, 3: 1.5, 6: 2, 8: 1.5, 11: 1.5, 14: 1.5, 4: 1 },
   song: { 0: 3, 4: 2, 8: 2.5, 12: 2, 6: 1.5, 10: 1.5, 14: 1, 2: 1 }
 };

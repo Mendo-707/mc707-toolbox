@@ -153,8 +153,9 @@ function chordsOf(prog, key, scale, extAll = 0) {
     if (major) tones.splice(1, 2, 4, 7);
     if (minor) tones.splice(1, 2, 3, 7);
     if (sus) tones[1] = 5;
-    if (ext >= 7) tones.push(flat ? 10 : at(6));
-    if (ext >= 9) tones.push(at(8));
+    if (ext >= 7) tones.push(flat || minor ? 10 : at(6));
+    /* a ninth only where the scale's is a major ninth (no flat nines), or on a dominant */
+    if (ext >= 9 && (at(8) === 14 || major)) tones.push(at(8));
     return { root: (key + sc[deg] - (flat ? 1 : 0) + 12) % 12, tones, deg: deg + 1 };
   });
 }
@@ -310,8 +311,8 @@ function partsOf(sec, i, all, fam, recipe) {
         kit: sec.n > 1 ? 'B' : 'A',
         hats: 'A',
         perc: 'verse',
-        bass: 'A',
-        chords: 'A',
+        bass: 'verse',
+        chords: 'verse',
         lead: 'verse',
         pad: fam === 'hh' ? null : sec.n > 1 ? 'drop' : null,
         acid: recipe.acid ? 'A' : null
@@ -2122,8 +2123,9 @@ const CONTOURS = [
 ];
 /* ---------- this take's own bass, chords and arp (from compose-gen.js) ---------- */
 /* the variants the generated parts write (the intro, builds, half-time and breaks keep the style's) */
+const inKey = (ctx, n) => (SCALES[ctx.scale] || SCALES.minor).includes((((n - ctx.key) % 12) + 12) % 12);
 const GEN_V = new Set(['A', 'B', 'C', 'drop', 'hook', 'verse', 'pre', 'outro']);
-const BASS_LO = { roll: 40, off: 40, drive: 40, sparse: 36, 808: 34, funk: 40, walk: 40, reggae: 38, pop: 40 };
+const BASS_LO = { roll: 40, off: 40, drive: 40, sparse: 36, 808: 28, funk: 40, walk: 34, reggae: 38, pop: 40 };
 const FOUR = new Set(['house', 'techhouse', 'afro', 'techno', 'minimal', 'trance', 'disco']);
 /* the take's bar templates: Main plays one, Main B the same changed a little, Main C another */
 function genBass(p, v, ctx) {
@@ -2153,8 +2155,10 @@ function genBass(p, v, ctx) {
       let n;
       if (iv === 'A') {
         const to = bassNote(next, lo);
-        n = to === root ? root + 7 : to + (to > root ? -1 : 1);
-      } else n = typeof iv === 'string' ? root + (c.tones[+iv.slice(1)] ?? 7) : root + iv;
+        n = to === root ? root + (c.tones[2] ?? 7) : to + (to > root ? -1 : 1);
+      } else n = typeof iv === 'string' ? root + (c.tones[+iv.slice(1)] ?? c.tones[2] ?? 7) : root + iv;
+      /* a step or a fifth that is not in the key comes down to one that is */
+      if (typeof iv === 'number' && iv % 12) while (!inKey(ctx, n)) n--;
       p.add(b, s, len, n, hum(r, s % 4 === 0 ? 116 : 100, 5));
     }
   }
@@ -2179,7 +2183,7 @@ function genArpPart(p, v, ctx, center, step0) {
   for (let b = 0; b < nb; b++) {
     const vc = voice(ch[b % ch.length], center, prev, 3);
     prev = vc;
-    const up = g.span > 1 ? [...vc, ...vc.map(x => x + 12)] : [...vc, vc[0] + 12];
+    const up = g.span > 1 && center < 70 ? [...vc, ...vc.map(x => x + 12)] : [...vc, vc[0] + 12];
     const seq =
       g.order === 'down'
         ? [...up].reverse()
@@ -2237,7 +2241,9 @@ function melody(p, v, ctx, center = 72) {
         c = ch[b % ch.length];
       cell.forEach(([s, len], i) => {
         const strong = s % 4 === 0;
-        const target = center + (shape[Math.min(i, shape.length - 1)] + (half ? motif.lift : 0)) * 2;
+        /* the contour spread over the whole cell, however many notes it has */
+        const at = Math.round((i * (shape.length - 1)) / Math.max(1, cell.length - 1)),
+          target = center + (shape[at] + (half ? motif.lift : 0)) * 2;
         let n = strong ? chordTone(c, (target + last) / 2) : stepTo(last, target >= last ? 1 : -1);
         if (Math.abs(n - last) > 9) n = chordTone(c, last);
         /* a strong beat that would repeat the last note moves to the next chord tone the line is heading for */
@@ -2773,7 +2779,10 @@ function takeVary(p, role, v, ctx, tr) {
           last = p.notes.filter(n => bar(n) === b).sort((x, y) => y.s - x.s)[0];
         if (!next || !last || last.n % 12 === next.n % 12) continue;
         if (last.s + last.l > at(b, 15)) last.l = Math.max(1, at(b, 15) - last.s);
-        if (!has(at(b, 15))) p.add(b, 15, 1, next.n + (tr() < 0.5 ? -1 : 2), hum(tr, 96, 6));
+        /* from a semitone below, or the key's next note above */
+        let up = next.n + 1;
+        while (!inKey(ctx, up)) up++;
+        if (!has(at(b, 15))) p.add(b, 15, 1, tr() < 0.5 ? next.n - 1 : up, hum(tr, 96, 6));
       }
     if (ops.includes('space')) {
       const off = pick(tr, [2, 3, 6, 7, 10, 11, 13, 14]);
@@ -2876,7 +2885,8 @@ export function composer(style, opts = {}) {
   const own = recipe.progs[Math.floor(r() * recipe.progs.length)],
     kin = Object.keys(PROGS).filter(id => id[0] === own[0] || (own[0] === 'v' && /^m[1-7]/.test(id))),
     pr0 = r(),
-    made = pr0 >= 0.45 ? genProg(r, own[0]) : null,
+    sc0 = style.scale === 'major' && own[0] !== 'm' ? 'major' : progScale(own[0], style.scale),
+    made = pr0 >= 0.45 ? genProg(r, own[0], sc0) : null,
     progId = made
       ? 'g' + own[0] + ':' + made.join('.')
       : pr0 < 0.3 || kin.length < 2
@@ -2906,7 +2916,8 @@ export function composer(style, opts = {}) {
   motif.bass = BASS_FEEL[recipe.bass] && r() < 0.55 ? BASS_FEEL[recipe.bass] : null;
   motif.comp = recipe.chords !== 'long' && r() < 0.45;
   motif.arp = r() < 0.5 ? genArp(r) : null;
-  motif.seed = Math.imul(seed + 3, 2654435761);
+  /* (each style its own: the same take number in another style is another bassline) */
+  motif.seed = Math.imul(seed + 3, 2654435761) ^ hashStr(style.id);
   const gr = GR[recipe.gr] || GR.pop;
   const patterns = {},
     sounds = {};
@@ -2920,10 +2931,15 @@ export function composer(style, opts = {}) {
     if (role === 'kit') gr.kit(p, pr, v, nb);
     else if (role === 'hats') gr.hats(p, pr, v, nb);
     else if (role === 'perc') gr.perc(p, pr, v, nb);
-    else if (role === 'bass') (motif.bass && GEN_V.has(v) ? genBass : BASS[recipe.bass] || BASS.pop)(p, v, ctx);
+    /* a verse's bass and chords: the take's own thinner ones, or the style's Main */ else if (role === 'bass')
+      motif.bass && GEN_V.has(v)
+        ? genBass(p, v, ctx)
+        : (BASS[recipe.bass] || BASS.pop)(p, v === 'verse' ? 'A' : v, ctx);
     else if (role === 'acid') acidLine(p, ctx, v === 'A' ? 'A' : v === 'B' ? 'B' : 'C', 48);
     else if (role === 'chords')
-      (motif.comp && GEN_V.has(v) ? genChords : CHORDS[recipe.chords] || CHORDS.pop)(p, v, ctx);
+      motif.comp && GEN_V.has(v)
+        ? genChords(p, v, ctx)
+        : (CHORDS[recipe.chords] || CHORDS.pop)(p, v === 'verse' ? 'A' : v, ctx);
     else if (role === 'pad') padPart(p, v, ctx);
     else if (role === 'lead') melody(p, v, ctx, recipe.lead === 'trap' || recipe.lead === 'whine' ? 74 : 72);
     else if (role === 'pluck') arp(p, v, ctx);
