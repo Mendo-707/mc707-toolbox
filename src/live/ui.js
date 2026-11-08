@@ -374,9 +374,10 @@ export function liveInit() {
           id: 'lvFlavor',
           'aria-label': 'Pattern style',
           title:
-            'Composed: the app writes the set itself, every part from one chord progression (builds that stop dead, a halftime switch, a hook in the peaks). Lively picks busier, more syncopated library parts; Classic keeps them simple.',
+            'Composed: the app writes the set itself, every part from one chord progression (builds that stop dead, a halftime switch, a hook in the peaks). Or pick parts from the pattern library: Lively busier and more syncopated, Classic simple, Mixed both.',
           onchange: e => {
             LV.flavor = e.target.value;
+            LV.flavorPick = true;
             saveLive();
             liveBuild();
             liveRender();
@@ -386,9 +387,13 @@ export function liveInit() {
           }
         },
         el('option', { value: 'composed' }, 'Composed'),
-        el('option', { value: 'lively' }, 'Lively'),
-        el('option', { value: 'mixed' }, 'Mixed'),
-        el('option', { value: 'classic' }, 'Classic')
+        el(
+          'optgroup',
+          { label: 'From the pattern library' },
+          el('option', { value: 'lively' }, 'Lively'),
+          el('option', { value: 'mixed' }, 'Mixed'),
+          el('option', { value: 'classic' }, 'Classic')
+        )
       )
     ),
     sel('Launch on', qs),
@@ -602,6 +607,18 @@ export function liveInit() {
           () => liveMoveNow('pump'),
           'Sidechain-style pumping on the bass, chords and pad. Press again to stop.',
           'lvPumpB'
+        )
+      ),
+      el(
+        'div',
+        { class: 'lvBtns' },
+        lvBtn('btn', 'Wobble', () => liveMoveNow('wobble'), 'The bass filter wobbles in 8ths for 2 bars, then settles'),
+        lvBtn('btn', 'Chop', () => liveMoveNow('chop'), 'Chords, pad and lead chopped in 16ths for 2 bars'),
+        lvBtn(
+          'btn',
+          'Lift',
+          () => liveMoveNow('lift'),
+          'Filter and resonance climb over the next bar, then snap back on the downbeat: a lift into whatever comes next'
         )
       ),
       /* the rest, folded away: still all there, just not in the way */

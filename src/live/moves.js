@@ -1,5 +1,5 @@
-// Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan)
-// for builds, drops and scene moves.
+// Live Mode moves: MC-707 knob automation over time (filter, resonance, reverb wash, pump, autopan,
+// wobble, chop, lift) for builds, drops and scene moves.
 //
 // Reads: S, LV, TR, AU.
 import { clamp, toast } from '../core/dom.js';
@@ -120,6 +120,12 @@ function lvMoveVal(a, t, tick) {
       ph = ((((tick - a.start) % per) + per) % per) / per;
     const d = a.d0 + (a.d1 - a.d0) * u;
     return rest * (1 - d * (1 - Math.pow(Math.min(1, ph * 1.7), 0.7)));
+  }
+  if (a.kind === 'wob') {
+    /* the filter away from rest and back, in time (the way lvFilterAway goes) */
+    const ph = (((tick - a.start) % a.period) + a.period) % a.period,
+      amt = a.depth * (0.5 - 0.5 * Math.cos((2 * Math.PI * ph) / a.period));
+    return rest < 32 ? rest + (127 - rest) * amt : rest - rest * amt;
   }
   if (a.kind === 'lfo') {
     const per = Math.max(2, Math.round(a.p0 + (a.p1 - a.p0) * u));
@@ -339,6 +345,59 @@ export function liveMoveNow(kind) {
       });
       toast('Pump on');
     }
+  } else if (kind === 'wobble') {
+    lvMove({
+      id: 'qwob',
+      tag: 'q',
+      tracks: tracksFor([3]),
+      cc: 80,
+      kind: 'wob',
+      depth: 0.8,
+      period: 4,
+      start: bar,
+      end: bar + 64
+    });
+    toast('Wobble on the bass for 2 bars');
+  } else if (kind === 'chop') {
+    lvMove({
+      id: 'qchop',
+      tag: 'q',
+      tracks: tracksFor([4, 5, 6]),
+      cc: 11,
+      kind: 'pump',
+      d0: 0.9,
+      d1: 0.9,
+      period: 2,
+      start: bar,
+      end: bar + 64
+    });
+    toast('Chop for 2 bars');
+  } else if (kind === 'lift') {
+    lvMove({
+      id: 'qliftf',
+      tag: 'q',
+      tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+      cc: 80,
+      kind: 'ramp',
+      from: 'rest',
+      to: lvFilterAway(0.75),
+      curve: 'exp',
+      start: bar,
+      end: bar + 32
+    });
+    lvMove({
+      id: 'qliftr',
+      tag: 'q',
+      tracks: toneTracksAll(),
+      cc: 71,
+      kind: 'ramp',
+      from: 'rest',
+      to: 100,
+      curve: 'exp',
+      start: bar,
+      end: bar + 32
+    });
+    toast('Lift over the next bar');
   } else if (kind === 'pan') {
     if (LV.autos.some(a => a.id === 'qpan')) {
       lvSlam(AU.ctx.currentTime, a => a.id === 'qpan');

@@ -53583,6 +53583,7 @@ html.os-darwin.native-menu #menubar .mproj {
     "mode",
     "vary",
     "flavor",
+    "flavorPick",
     "buildFx",
     "chordLock",
     "custom",
@@ -53631,7 +53632,7 @@ html.os-darwin.native-menu #menubar .mproj {
       dropStyle: "gap",
       mode: null,
       vary: 50,
-      flavor: "lively",
+      flavor: "composed",
       buildFx: true,
       chordLock: true,
       custom: false,
@@ -53725,7 +53726,8 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
     LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
     if (!["smooth", "hard", "gap"].includes(LV.dropStyle)) LV.dropStyle = "gap";
-    if (!["lively", "mixed", "classic", "composed"].includes(LV.flavor)) LV.flavor = "lively";
+    if (!["lively", "mixed", "classic", "composed"].includes(LV.flavor)) LV.flavor = "composed";
+    if (!LV.flavorPick) LV.flavor = "composed";
     if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
     else LV.mood = { i: clamp(Math.round(+LV.mood.i), 0, 100), c: clamp(Math.round(+LV.mood.c), 0, 100) };
     LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);
@@ -60598,6 +60600,10 @@ html.os-darwin.native-menu #menubar .mproj {
       const d = a.d0 + (a.d1 - a.d0) * u;
       return rest * (1 - d * (1 - Math.pow(Math.min(1, ph * 1.7), 0.7)));
     }
+    if (a.kind === "wob") {
+      const ph = ((tick - a.start) % a.period + a.period) % a.period, amt = a.depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * ph / a.period));
+      return rest < 32 ? rest + (127 - rest) * amt : rest - rest * amt;
+    }
     if (a.kind === "lfo") {
       const per = Math.max(2, Math.round(a.p0 + (a.p1 - a.p0) * u));
       return 64 + a.depth * 63 * Math.sin(2 * Math.PI * ((tick - a.start) % per) / per);
@@ -60808,6 +60814,59 @@ html.os-darwin.native-menu #menubar .mproj {
         });
         toast("Pump on");
       }
+    } else if (kind === "wobble") {
+      lvMove({
+        id: "qwob",
+        tag: "q",
+        tracks: tracksFor([3]),
+        cc: 80,
+        kind: "wob",
+        depth: 0.8,
+        period: 4,
+        start: bar2,
+        end: bar2 + 64
+      });
+      toast("Wobble on the bass for 2 bars");
+    } else if (kind === "chop") {
+      lvMove({
+        id: "qchop",
+        tag: "q",
+        tracks: tracksFor([4, 5, 6]),
+        cc: 11,
+        kind: "pump",
+        d0: 0.9,
+        d1: 0.9,
+        period: 2,
+        start: bar2,
+        end: bar2 + 64
+      });
+      toast("Chop for 2 bars");
+    } else if (kind === "lift") {
+      lvMove({
+        id: "qliftf",
+        tag: "q",
+        tracks: [0, 1, 2, 3, 4, 5, 6, 7],
+        cc: 80,
+        kind: "ramp",
+        from: "rest",
+        to: lvFilterAway(0.75),
+        curve: "exp",
+        start: bar2,
+        end: bar2 + 32
+      });
+      lvMove({
+        id: "qliftr",
+        tag: "q",
+        tracks: toneTracksAll(),
+        cc: 71,
+        kind: "ramp",
+        from: "rest",
+        to: 100,
+        curve: "exp",
+        start: bar2,
+        end: bar2 + 32
+      });
+      toast("Lift over the next bar");
     } else if (kind === "pan") {
       if (LV.autos.some((a) => a.id === "qpan")) {
         lvSlam(AU.ctx.currentTime, (a) => a.id === "qpan");
@@ -62645,9 +62704,10 @@ html.os-darwin.native-menu #menubar .mproj {
           {
             id: "lvFlavor",
             "aria-label": "Pattern style",
-            title: "Composed: the app writes the set itself, every part from one chord progression (builds that stop dead, a halftime switch, a hook in the peaks). Lively picks busier, more syncopated library parts; Classic keeps them simple.",
+            title: "Composed: the app writes the set itself, every part from one chord progression (builds that stop dead, a halftime switch, a hook in the peaks). Or pick parts from the pattern library: Lively busier and more syncopated, Classic simple, Mixed both.",
             onchange: (e) => {
               LV.flavor = e.target.value;
+              LV.flavorPick = true;
               saveLive();
               liveBuild();
               liveRender();
@@ -62657,9 +62717,13 @@ html.os-darwin.native-menu #menubar .mproj {
             }
           },
           el("option", { value: "composed" }, "Composed"),
-          el("option", { value: "lively" }, "Lively"),
-          el("option", { value: "mixed" }, "Mixed"),
-          el("option", { value: "classic" }, "Classic")
+          el(
+            "optgroup",
+            { label: "From the pattern library" },
+            el("option", { value: "lively" }, "Lively"),
+            el("option", { value: "mixed" }, "Mixed"),
+            el("option", { value: "classic" }, "Classic")
+          )
         )
       ),
       sel2("Launch on", qs),
@@ -62872,6 +62936,18 @@ html.os-darwin.native-menu #menubar .mproj {
             () => liveMoveNow("pump"),
             "Sidechain-style pumping on the bass, chords and pad. Press again to stop.",
             "lvPumpB"
+          )
+        ),
+        el(
+          "div",
+          { class: "lvBtns" },
+          lvBtn("btn", "Wobble", () => liveMoveNow("wobble"), "The bass filter wobbles in 8ths for 2 bars, then settles"),
+          lvBtn("btn", "Chop", () => liveMoveNow("chop"), "Chords, pad and lead chopped in 16ths for 2 bars"),
+          lvBtn(
+            "btn",
+            "Lift",
+            () => liveMoveNow("lift"),
+            "Filter and resonance climb over the next bar, then snap back on the downbeat: a lift into whatever comes next"
           )
         ),
         /* the rest, folded away: still all there, just not in the way */

@@ -93,6 +93,7 @@ const LV_SAVE = [
   'mode',
   'vary',
   'flavor',
+  'flavorPick',
   'buildFx',
   'chordLock',
   'custom',
@@ -141,7 +142,7 @@ export const LV = Object.assign(
     dropStyle: 'gap',
     mode: null,
     vary: 50,
-    flavor: 'lively',
+    flavor: 'composed',
     buildFx: true,
     chordLock: true,
     custom: false,
@@ -241,7 +242,9 @@ export const liveSwingAmt = () => LV.swing;
   LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
   LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
   if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
-  if (!['lively', 'mixed', 'classic', 'composed'].includes(LV.flavor)) LV.flavor = 'lively';
+  if (!['lively', 'mixed', 'classic', 'composed'].includes(LV.flavor)) LV.flavor = 'composed';
+  /* Composed is the default (1.8.6): a set on the old default, never picked by hand, moves to it */
+  if (!LV.flavorPick) LV.flavor = 'composed';
   if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
   else LV.mood = { i: clamp(Math.round(+LV.mood.i), 0, 100), c: clamp(Math.round(+LV.mood.c), 0, 100) };
   LV.vary = clamp(Math.round(Number.isFinite(+LV.vary) ? +LV.vary : 50), 0, 125);

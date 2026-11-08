@@ -110,3 +110,46 @@ test('Auto-pilot switched on late, or with a cue of yours waiting at its moment,
   assert.ok(r.again && r.again <= 8, 'moves on once the cue has gone: ' + r.again);
   assert.deepEqual(errors, []);
 });
+
+test('Composed is the default (a set on the old default moves to it), and the Wobble, Chop and Lift moves send their knobs', async () => {
+  const { page, errors } = await openApp({ storage: { 'mc707-live': JSON.stringify({ flavor: 'lively' }) } });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    const flavor = LV.flavor,
+      groups = [...document.querySelectorAll('#lvFlavor optgroup')].map(g => g.label);
+    a.ensureAudio();
+    await a.connectMidi();
+    a.live.jamStart();
+    a.TICKER.stop();
+    const sent = [];
+    const real = a.MIDI.out.send.bind(a.MIDI.out);
+    a.MIDI.out.send = (m, t) => {
+      if ((m[0] & 0xf0) === 0xb0) sent.push([(m[0] & 15) + 1, m[1], m[2]]);
+      return real(m, t);
+    };
+    const run = (label, bars) => {
+      [...document.querySelectorAll('.lvMain button')].find(b => b.textContent === label).click();
+      for (let i = 0; i < bars * 32; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    const out = {};
+    for (const [label, cc] of [
+      ['Wobble', 80],
+      ['Chop', 11],
+      ['Lift', 71]
+    ]) {
+      sent.length = 0;
+      run(label, 4);
+      const v = sent.filter(m => m[1] === cc).map(m => m[2]);
+      out[label] = { moved: new Set(v).size > 3, back: v.length ? v[v.length - 1] : null };
+    }
+    a.stopAll();
+    return { flavor, groups, out };
+  });
+  assert.equal(r.flavor, 'composed', 'Composed by default');
+  assert.deepEqual(r.groups, ['From the pattern library']);
+  for (const k of ['Wobble', 'Chop', 'Lift']) assert.ok(r.out[k].moved, k + ' moves its knob');
+  assert.deepEqual(errors, []);
+});
