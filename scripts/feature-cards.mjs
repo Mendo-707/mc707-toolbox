@@ -1,6 +1,6 @@
-// Makes the README's pictures (docs/features/): a banner and one card per main feature (Song Mode,
+// Makes the README's pictures (docs/features/): a banner, one card per main feature (Song Mode,
 // Scene Mode, Live Mode, Synth Mode, the ZenCore editor and the Slime Lab), each a screenshot of the built
-// app beside what it does. Run after npm run build:
+// app beside what it does, and a promo picture of the best of it all (promo.png). Run after npm run build:
 //   node scripts/feature-cards.mjs
 // Needs the test tools (npm run tools). The screenshots use the tests' stand-in MIDI device.
 import fs from 'node:fs';
@@ -36,7 +36,8 @@ async function shots() {
   const { page, errors } = await openApp({
     viewport: { width: 1440, height: 900 },
     scale: 2,
-    storage: { 'mc707-synth': JSON.stringify(SYNTH) }
+    /* Live Mode as a new user finds it: a Composed set */
+    storage: { 'mc707-synth': JSON.stringify(SYNTH), 'mc707-live': JSON.stringify({ flavor: 'composed' }) }
   });
   /* the app's own font is a web font the tests don't load: a narrow one that is here */
   await page.addStyleTag({
@@ -51,15 +52,22 @@ async function shots() {
   };
   const tab = m => page.click('#menubar .mtab[data-mode=' + m + ']');
   await page.keyboard.press('Escape');
-  /* Song Mode: a chord clip open in the editor */
-  await page
-    .locator('#arrInner .clip', { hasText: /Chords/ })
-    .first()
-    .click();
+  /* Song Mode: a composed song, its chords open in the editor */
+  await page.evaluate(() => window.__app.compose.now('liquid', { minutes: 4, seed: 3 }));
+  await page.waitForTimeout(400);
+  /* the chords' second clip (the groove after the intro) */
+  await page.locator('#arrInner .lane[data-t="4"] .clip').nth(1).click();
+  /* the middle of the song, where every part plays */
+  await page.evaluate(() => {
+    const a = document.getElementById('arr'),
+      drop = [...document.querySelectorAll('#arrInner .lane[data-t="6"] .clip')].find(c =>
+        /Hook|Drop/.test(c.textContent)
+      );
+    a.scrollTo(drop ? drop.offsetLeft - 60 : 0, 0);
+  });
   await shot('song');
-  /* Scene Mode: the song as scenes */
+  /* Scene Mode: the same song as scenes, on the board laid out like the MC-707's CLIP screen */
   await tab('scene');
-  await page.locator('button', { hasText: 'Make them from the song' }).click();
   await page.waitForTimeout(800);
   await shot('scene');
   /* Live Mode: a set playing */
@@ -120,10 +128,13 @@ const CARDS = [
     'Song Mode',
     'Arrange a whole track',
     [
-      ['Song wizard', 'Pick one of 42 styles and a mood and get a full arrangement, with fills, builds and drops.'],
       [
-        '25,000+ patterns',
-        'Drums, bass, chords, pads, arps and leads, plus a fill for every moment. Or start from a blank pattern.'
+        'Compose it now',
+        'Pick one of 42 styles and the composer writes the whole song: drums, bass, chords, pads, hooks, builds and drops.'
+      ],
+      [
+        '28,000+ patterns',
+        'Or build it step by step from the library: drums, bass, chords, pads, arps, leads and fills.'
       ],
       ['Step grid and piano roll', 'Change any pattern, note by note, and hear it on the MC-707 as you go.'],
       ['Record and export', 'Record every track’s audio over USB as separate files, or save the song as MIDI.']
@@ -135,10 +146,13 @@ const CARDS = [
     'Scene Mode',
     'Put the song on the MC-707',
     [
-      ['Song to scenes', 'The arrangement becomes MC-707 clips and a chain of scenes, one per change.'],
-      ['Written over USB', 'Patterns and sounds go into the project, so it plays with no computer at all.'],
-      ['Fits the hardware', 'Every pattern is fitted to the MC-707’s clips: step size, length and note limits.'],
-      ['Auto-write', 'Change something and it is written a moment later.']
+      ['Laid out like the MC-707', 'A column per track with its 16 clips down it, just like the CLIP screen.'],
+      ['Song to scenes', 'The arrangement becomes MC-707 clips and a chain of scenes, one per section.'],
+      [
+        'Written over USB, or as a project',
+        'Write it over USB, or save an MC-707 project file with the sounds and kits in, to load from the SD card.'
+      ],
+      ['Fits the hardware', 'Every pattern is fitted to the MC-707’s clips, and Auto-write keeps it in step.']
     ]
   ],
   [
@@ -147,10 +161,10 @@ const CARDS = [
     'Live Mode',
     'Play a set from 16 pads',
     [
-      ['Scenes that flow', 'Swaps, fades, builds and drops that always land on the beat.'],
-      ['Breaks and fills', 'Unison hits, rolls, gate chops, half-time, reverb washes and fills for every genre.'],
-      ['Auto-pilot', 'Let the set change by itself as much or as little as you like.'],
-      ['Hands on', 'Play it from the MC-707’s pads or a MIDI keyboard, with a mixer on a second screen.']
+      ['Composed sets', 'The whole set written for the style: one progression, hooks in the peaks, a halftime switch.'],
+      ['Breaks, fills and moves', 'Unison hits, rolls, gate chops and half-time; Wobble, Chop and Lift on the filter.'],
+      ['Loop rec', 'Record a riff on the MC-707’s keys and it stays in the set until you take it out.'],
+      ['Tight and hands on', 'Auto-pilot when you want it, swing that stays tight, and the MC-707’s own pads.']
     ]
   ],
   [
@@ -203,6 +217,41 @@ function banner() {
   </body></html>`);
 }
 
+/* one picture of the best of it: the name, then six features each with its screen */
+function promo(raw) {
+  const tiles = [
+    ['song', 'Compose a whole song', '42 styles, written for you, from drums to drops'],
+    ['scene', 'On the MC-707, no computer', 'Clips and scenes like its own CLIP screen, as a project file'],
+    ['live', 'Play it live', 'Composed sets, breaks, moves and Loop rec from 16 pads'],
+    ['synth', 'An 8-track synth', 'Pick, edit and mix the sound on every track'],
+    ['zen', 'Every ZenCore setting', 'Tones and kits on a big screen, with factory sounds'],
+    ['lab', 'Slime Lab', 'Sound design made simple: five knobs and variations']
+  ];
+  return nb(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}
+  body{width:1920px;height:1080px;background:radial-gradient(1200px 700px at 80% -10%,#ff5f4526,transparent 60%),#14151a}
+  .top{position:absolute;left:72px;top:56px;right:72px;display:flex;align-items:center;gap:28px}
+  .top img{width:104px;height:104px;image-rendering:pixelated}
+  .top h1{font-size:64px;margin:0 0 6px;letter-spacing:-1px}.top p{margin:0;font-size:25px;color:#a7a9b2}
+  .tag{margin-left:auto;align-self:flex-start;padding:10px 18px;border:2px solid #ff5f45;border-radius:999px;color:#ff5f45;font-weight:bold;font-size:18px;letter-spacing:3px;text-transform:uppercase;white-space:nowrap}
+  .grid{position:absolute;left:72px;right:72px;top:228px;bottom:96px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:28px}
+  .tile{background:#1c1e25;border:1px solid #2a2c34;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+  .tile .img{flex:1;background-size:cover;background-position:top left;border-bottom:1px solid #2a2c34}
+  .tile .c{padding:16px 20px 18px}.tile b{display:block;font-size:24px;margin-bottom:4px}.tile span{font-size:17px;color:#a7a9b2}
+  .foot{position:absolute;left:72px;right:72px;bottom:34px;display:flex;justify-content:space-between;color:#8f929c;font-size:19px;letter-spacing:2px}
+  .foot i{font-style:normal;color:#ff5f45}
+  </style></head><body>
+  <div class="top"><img src="${ICON}"><div><h1>${NAME}</h1><p>Songs, live sets and sounds for your Roland MC-707 and MC-101, all from your computer</p></div>
+  <div class="tag">Free · v${pkg.version}</div></div>
+  <div class="grid">${tiles
+    .map(
+      ([k, b, t]) =>
+        `<div class="tile"><div class="img" style="background-image:url('${png(raw[k])}')"></div><div class="c"><b>${b}</b><span>${t}</span></div></div>`
+    )
+    .join('')}</div>
+  <div class="foot"><span>Windows · Mac · Linux · in the browser</span><span>One USB cable <i>·</i> every track <i>·</i> tight timing</span></div>
+  </body></html>`);
+}
+
 const raw = await shots();
 const { page } = await openApp({ viewport: { width: 1600, height: 1000 } });
 for (const [k, file, kicker, title, items] of CARDS) {
@@ -213,6 +262,11 @@ for (const [k, file, kicker, title, items] of CARDS) {
 await page.setViewportSize({ width: 1600, height: 420 });
 await page.setContent(banner());
 await page.screenshot({ path: path.join(OUT, '0-banner.png') });
+await page.setViewportSize({ width: 1920, height: 1080 });
+await page.setContent(promo(raw));
+await page.waitForTimeout(300);
+await page.screenshot({ path: path.join(OUT, 'promo.png') });
+console.log('made promo.png');
 for (const f of Object.values(raw)) fs.unlinkSync(f);
 await closeBrowser();
 console.log('made 0-banner.png for', pkg.version);
