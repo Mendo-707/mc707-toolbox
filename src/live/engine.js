@@ -32,6 +32,7 @@ import { liveBuild, liveSwapIds } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
+import { lvLater, lvLaterTick, lvLaterClear } from './later.js';
 import { lvExtreme, lvTrapRoll, lvTrapRolls, lvXExtra, lvXSkip, lvXType } from './extreme.js';
 import { knobUI } from './pads.js';
 import { lvAnchorStart, lvFitIds } from './harmony.js';
@@ -571,13 +572,18 @@ function lvVarExtra(t, v, vt, local, L, nt, td, g) {
       ins = n => sc.includes((((n - LV.key) % 12) + 12) % 12),
       run = [];
     for (let n = tgt - 1; run.length < 4 && n > tgt - 15; n--) if (ins(n)) run.unshift(n);
-    run.forEach((nn, i) => emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt + i * 2 * td, 1.6 * td));
+    run.forEach((nn, i) =>
+      i
+        ? lvLater(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), i * 2, 1.6)
+        : emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt, 1.6 * td)
+    );
   } else if (vt === 'ghost' && slotOf(t) === 0 && local >= L - 32 && [6, 14, 22, 30].includes(local - (L - 32)))
     emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
   else if (vt === 'open' && local === L - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
   else if (vt === 'kickx' && slotOf(t) === 0 && local === L - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
 }
 export function liveTick(tick, nt, td) {
+  lvLaterTick(tick, nt, td);
   lvFadeTick(tick, nt);
   while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
   if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
@@ -743,8 +749,10 @@ export function liveTick(tick, nt, td) {
           Math.min(n.l * 2 * td * durK, durMax)
         );
         if (slotOf(t) === 3) v._last = nn;
+        /* the echo plays on its own tick (a dotted 8th later), so it swings with the groove and comes in
+           order with the notes around it */
         if (vt === 'echo' && last && tone)
-          emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
+          lvLater(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), 6 + subTick(n), n.l * 2, lvUserOwns);
       }
       LV.pulse[t] = { time: nt, v: Math.min(1, g) };
     }
@@ -753,6 +761,7 @@ export function liveTick(tick, nt, td) {
 }
 export function liveStart(idx) {
   if (BUSY.write) return void toast(BUSY.write);
+  lvLaterClear();
   if (REC.on) hooks.recStop();
   stopAll();
   ensureAudio();
@@ -833,6 +842,7 @@ export function liveStart(idx) {
   hooks.updTransport();
 }
 export function liveCleanup() {
+  lvLaterClear();
   try {
     ctlAllOff();
   } catch (e) {}

@@ -113,6 +113,9 @@ export async function openApp(o = {}) {
     'mc707-start': '0',
     'mc707-live-pick': '0',
     'mc707-autoconnect': '0',
+    /* Live Mode plays the pattern library here (the golden tests are pinned to it); Composed, the
+       default, has its own tests (live-composed.test.mjs) */
+    'mc707-live': JSON.stringify({ flavor: 'lively', flavorPick: true }),
     ...(o.storage || {})
   };
   await page.addInitScript(s => {

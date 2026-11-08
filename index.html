@@ -19699,11 +19699,20 @@ html.os-darwin.native-menu #menubar .mproj {
     const a = MIDI_ACT[ch], dt = performance.now() - a.at;
     return dt < 0 || dt > 300 ? 0 : a.v / 127 * (1 - dt / 300);
   }
+  var GAP = null;
+  var GAPAT = 0;
+  function ctxMs(at2) {
+    const now2 = performance.now(), g = now2 - AU.ctx.currentTime * 1e3;
+    if (GAP == null || g < GAP || g > GAP + 100) GAP = g;
+    else GAP = Math.min(g, GAP + (now2 - GAPAT) * 2e-4);
+    GAPAT = now2;
+    return GAP + at2 * 1e3;
+  }
   function sendMidi(bytes, at2) {
     const o = MIDI.out;
     if (!o) return;
     try {
-      const ms = performance.now() + (at2 - AU.ctx.currentTime) * 1e3;
+      const ms = ctxMs(at2) + (S.midiOffset || 0);
       if (bytes.length > 2 && (bytes[0] & 240) === 144 && bytes[2] > 0) {
         NOTEHIST.add((bytes[0] & 15) << 7 | bytes[1]);
         SENTAT.set((bytes[0] & 15) << 7 | bytes[1], Math.max(ms, performance.now()));
@@ -19713,6 +19722,43 @@ html.os-darwin.native-menu #menubar .mproj {
       o.send(bytes, Math.max(ms, 0));
     } catch (e) {
     }
+  }
+  var HELD = /* @__PURE__ */ new Map();
+  var LASTON = /* @__PURE__ */ new Map();
+  var DOUBLE = 5e-4;
+  function noteOn(ch, p, v, at2) {
+    const k2 = ch << 7 | p, last3 = LASTON.get(k2);
+    if (last3 != null && Math.abs(at2 - last3) < DOUBLE) return false;
+    const h = HELD.get(k2);
+    if (h && h.on < at2) {
+      HELD.delete(k2);
+      sendMidi([128 | ch, p, 0], Math.min(h.at, Math.max(h.on + 1e-3, at2 - 5e-4)));
+    }
+    LASTON.set(k2, at2);
+    sendMidi([144 | ch, p, v], at2);
+    return true;
+  }
+  function noteOff(ch, p, at2, on3) {
+    const k2 = ch << 7 | p, h = HELD.get(k2);
+    if (h) {
+      if (h.on > on3) return sendMidi([128 | ch, p, 0], Math.min(at2, Math.max(on3 + 1e-3, h.on - 5e-4)));
+      sendMidi([128 | ch, p, 0], Math.min(h.at, Math.max(h.on + 1e-3, on3 - 5e-4)));
+    }
+    HELD.set(k2, { at: at2, on: on3 });
+    if (!offTimer)
+      offTimer = setInterval(() => {
+        if (AU.ctx) flushOffs(AU.ctx.currentTime + 0.05);
+        if (!HELD.size) offTimer = (clearInterval(offTimer), 0);
+      }, 100);
+  }
+  var offTimer = 0;
+  function flushOffs(before = Infinity) {
+    for (const [k2, h] of HELD)
+      if (h.at < before) {
+        HELD.delete(k2);
+        sendMidi([128 | k2 >> 7, k2 & 127, 0], h.at);
+      }
+    if (before === Infinity) LASTON.clear();
   }
   async function connectMidi() {
     const st = $("#midiStat");
@@ -19760,6 +19806,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var NOTEHIST = /* @__PURE__ */ new Set();
   function panic(hard) {
+    flushOffs();
     const o = MIDI.out;
     if (!o) return;
     const now2 = performance.now();
@@ -19774,7 +19821,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     try {
       burst(now2);
-      burst(now2 + 320);
+      burst(now2 + 320 + Math.max(0, S.midiOffset || 0));
     } catch (e) {
     }
     NOTEHIST.clear();
@@ -19920,7 +19967,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const k2 = ti + ":" + c.cc.n;
     if (AUTOLAST[k2] === v) return;
     AUTOLAST[k2] = v;
-    sendMidi([176 | S.tracks[ti].ch - 1, c.cc.n, v], time + (S.midiOffset || 0) / 1e3);
+    sendMidi([176 | S.tracks[ti].ch - 1, c.cc.n, v], time);
   }
   function tempoAtBar(bar2) {
     let b = S.bpm;
@@ -20097,14 +20144,13 @@ html.os-darwin.native-menu #menubar .mproj {
       dur = h.d;
       flam = h.flam;
     }
-    if (MIDI.out && !noMidi) {
-      const mt = tm + (S.midiOffset || 0) / 1e3, off = (S.midiOffset || 0) / 1e3;
-      if (flam != null) {
-        sendMidi([144 | t.ch - 1, pitch, Math.max(1, Math.round(vel * 0.45))], flam + off);
-        sendMidi([128 | t.ch - 1, pitch, 0], Math.min(mt, flam + off + 8e-3));
-      }
-      sendMidi([144 | t.ch - 1, pitch, vel], mt);
-      sendMidi([128 | t.ch - 1, pitch, 0], mt + Math.max(dur, 0.03));
+    const dk = t.ch - 1 << 7 | pitch, same = Math.abs((HITAT.get(dk) ?? -1) - time) < 1e-3;
+    HITAT.set(dk, time);
+    if (MIDI.out && !noMidi && !same) {
+      const ch = t.ch - 1;
+      if (flam != null && noteOn(ch, pitch, Math.max(1, Math.round(vel * 0.45)), flam))
+        noteOff(ch, pitch, Math.min(tm, flam + 8e-3), flam);
+      if (noteOn(ch, pitch, vel, tm)) noteOff(ch, pitch, tm + Math.max(dur, 0.03), tm);
     }
     if (TR.mode === "live" && typeof hooks.vizNote === "function") hooks.vizNote(ti, isD ? nn : pitch, vel, time, dur);
     if (S.preview) {
@@ -20114,6 +20160,7 @@ html.os-darwin.native-menu #menubar .mproj {
       } else voice3(ti, pitch, tm, dur, vel);
     }
   }
+  var HITAT = /* @__PURE__ */ new Map();
   function audition(ti, nn, v = 100) {
     ensureAudio();
     emitNote(ti, nn, v, AU.ctx.currentTime + 5e-3, 0.22);
@@ -20172,7 +20219,7 @@ html.os-darwin.native-menu #menubar .mproj {
                 ti,
                 tone2 ? clamp(n.n + trs, 0, 127) : n.n,
                 n.v * vm,
-                nt + Math.max(0, rel) * td,
+                nt + Math.max(0, rel) * (TR.subTd || td),
                 Math.min(n.l * 2, c1 - abs) * td
               );
             }
@@ -20223,6 +20270,7 @@ html.os-darwin.native-menu #menubar .mproj {
           );
     }
     TR.vis.push({ time, tick, dur: td });
+    flushOffs(time - 0.1);
   }
   function advance() {
     TR.nextTime += TR.mode === "song" ? tickDurAt(TR.tick / 32) : tickDur();
@@ -43401,7 +43449,7 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#labOv .labBefore")?.classList.toggle("down", on3);
     draw();
     if (NOTE) retrigger();
-    else if (on3) noteOn(48, null);
+    else if (on3) noteOn2(48, null);
   }
   function newTone(why = true, name = "INIT TONE") {
     noteOffIfHeld();
@@ -43633,7 +43681,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function onKeyUp(e) {
     if (!$("#labOv")) return removeEventListener("keyup", onKeyUp, true);
     const k2 = e.key.toLowerCase();
-    if (k2 in KEYS2 && !LAB.latch && NOTE && NOTE.n === KEYS2[k2]) noteOff();
+    if (k2 in KEYS2 && !LAB.latch && NOTE && NOTE.n === KEYS2[k2]) noteOff2();
     if (k2 === "q") compare(false);
   }
   function labClose(quiet) {
@@ -43642,7 +43690,7 @@ html.os-darwin.native-menu #menubar .mproj {
     removeEventListener("keyup", onKeyUp, true);
     if (!ov) return;
     if (CMP.on) compare(false);
-    noteOff();
+    noteOff2();
     LAB.latch = false;
     ov.remove();
     cancelAnimationFrame(TASTE.raf);
@@ -43650,7 +43698,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!quiet) zeRender();
   }
   function noteOffIfHeld() {
-    if (NOTE && !LAB.latch) noteOff();
+    if (NOTE && !LAB.latch) noteOff2();
   }
   var NOTE = null;
   var TASTE = { t0: 0, up: null, raf: 0, last: 0 };
@@ -43673,8 +43721,8 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     scopeDraw(sc, ZE.snd.v, onParts(), still() ? null : at2);
   }
-  function noteOn(n, key) {
-    noteOff();
+  function noteOn2(n, key) {
+    noteOff2();
     const off = audition2(n, true);
     NOTE = { n, off, key };
     if (key) key.classList.add("down");
@@ -43682,7 +43730,7 @@ html.os-darwin.native-menu #menubar .mproj {
     TASTE.up = null;
     if (!TASTE.raf) TASTE.raf = requestAnimationFrame(tasteFrame);
   }
-  function noteOff() {
+  function noteOff2() {
     if (!NOTE) return;
     const x = NOTE;
     NOTE = null;
@@ -43695,14 +43743,14 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function retrigger() {
     const { n, key } = NOTE;
-    noteOn(n, key);
+    noteOn2(n, key);
   }
   function keyDown(n, key, fromKeyboard) {
-    if (LAB.latch && NOTE && NOTE.n === n) return noteOff();
-    noteOn(n, key);
+    if (LAB.latch && NOTE && NOTE.n === n) return noteOff2();
+    noteOn2(n, key);
     if (LAB.latch || fromKeyboard) return;
     const up = () => {
-      if (NOTE && NOTE.n === n && !LAB.latch) noteOff();
+      if (NOTE && NOTE.n === n && !LAB.latch) noteOff2();
       for (const ev of ["pointerup", "pointercancel", "blur"]) removeEventListener(ev, up);
     };
     for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, up);
@@ -43714,8 +43762,8 @@ html.os-darwin.native-menu #menubar .mproj {
       b.classList.toggle("on", LAB.latch);
       b.setAttribute("aria-pressed", String(LAB.latch));
     }
-    if (!LAB.latch) noteOff();
-    else if (!NOTE) noteOn(48, $('#labOv .labKey[data-n="48"]'));
+    if (!LAB.latch) noteOff2();
+    else if (!NOTE) noteOn2(48, $('#labOv .labKey[data-n="48"]'));
   }
 
   // src/zen/zc-synth-io.js
@@ -44972,7 +45020,7 @@ html.os-darwin.native-menu #menubar .mproj {
     clearTimeout(nudgeT);
     nudgeT = setTimeout(() => {
       if (!$("#zcOv") || !zeRefreshOn() || !ZX.out || ZX.wait || ZX.q.size || ZE.k > 15) return;
-      if (HELD.size) return screenNudge();
+      if (HELD2.size) return screenNudge();
       const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
       try {
         ZX.out.send([192 | ch - 1, ZE.k]);
@@ -45177,8 +45225,8 @@ html.os-darwin.native-menu #menubar .mproj {
     removeEventListener("keydown", keys, true);
     const ch = S.tracks[ZE.t] && S.tracks[ZE.t].ch || ZE.t + 1;
     try {
-      for (const [c, b] of HELD.values()) noteOut(c, b, false);
-      HELD.clear();
+      for (const [c, b] of HELD2.values()) noteOut(c, b, false);
+      HELD2.clear();
       const out2 = ZX.out || MIDI.out;
       if (out2) {
         out2.send([176 | ch - 1, 64, 0]);
@@ -45235,7 +45283,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
   }
   var zeCtx = () => ({ ...ctx(), ze: ZE });
-  var HELD = /* @__PURE__ */ new Map();
+  var HELD2 = /* @__PURE__ */ new Map();
   var noteOut = (ch, b, on3) => {
     if (ZX.out) zxNote(ch, b, on3);
     else if (MIDI.out) MIDI.out.send(on3 ? [144 | ch - 1, b, 100] : [128 | ch - 1, b, 0]);
@@ -45245,8 +45293,8 @@ html.os-darwin.native-menu #menubar .mproj {
     const ch = S.tracks[ZE.t].ch || ZE.t + 1;
     const send2 = (b, on3) => {
       noteOut(ch, b, on3);
-      if (on3) HELD.set(ch + ":" + b, [ch, b]);
-      else HELD.delete(ch + ":" + b);
+      if (on3) HELD2.set(ch + ":" + b, [ch, b]);
+      else HELD2.delete(ch + ":" + b);
     };
     send2(n, true);
     if (manual) return () => send2(n, false);
@@ -58554,6 +58602,23 @@ html.os-darwin.native-menu #menubar .mproj {
       });
   }
 
+  // src/live/later.js
+  var LATER = [];
+  function lvLater(t, nn, v, ahead, len, skip) {
+    const k2 = Math.floor(ahead + 1e-9);
+    LATER.push({ tick: TR.tick + k2, sub: Math.max(0, ahead - k2), t, nn, v, len, skip });
+  }
+  function lvLaterTick(tick, nt, td) {
+    for (let i = 0; i < LATER.length; i++) {
+      const e = LATER[i];
+      if (e.tick > tick && e.tick < tick + 256) continue;
+      LATER.splice(i--, 1);
+      if (e.tick !== tick || S.tracks[e.t].mute || e.skip && e.skip(e.t)) continue;
+      emitNote(e.t, e.nn, e.v, nt + e.sub * (TR.subTd || td), e.len * td);
+    }
+  }
+  var lvLaterClear = () => void (LATER.length = 0);
+
   // src/live/extreme.js
   var lvExtreme = () => LV.vary > 100;
   var TRAPFAM = ["trap", "drill", "phonk", "memphis"];
@@ -58585,7 +58650,9 @@ html.os-darwin.native-menu #menubar .mproj {
   function lvXExtra(t, v, vt, local, L2, nt, td, g) {
     const lb = local - (L2 - 32);
     if (lb < 0) return;
-    const at2 = (notes, lane) => notes.forEach((n) => emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * td, Math.max(1, n.l * 2) * td));
+    const at2 = (notes, lane) => notes.forEach(
+      (n) => n.s * 2 < 1 - 1e-9 ? emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td) : lvLater(t, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
+    );
     if (vt === "hroll" && lb % 8 === 0 && v._vr.beats.includes(lb >> 3)) at2(rollNotes(v._vr.kind, 0, 4, 96));
     else if (vt === "sroll") {
       const start = v._vr.two ? 16 : 24;
@@ -59369,13 +59436,16 @@ html.os-darwin.native-menu #menubar .mproj {
       if (f.key && lvModeFam(f.key.scale) !== LV.mode) tgt = lvModeNote(tgt);
       const sc = SCALES[LV.mode === "major" ? "major" : "minor"], ins = (n) => sc.includes(((n - LV.key) % 12 + 12) % 12), run2 = [];
       for (let n = tgt - 1; run2.length < 4 && n > tgt - 15; n--) if (ins(n)) run2.unshift(n);
-      run2.forEach((nn, i) => emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt + i * 2 * td, 1.6 * td));
+      run2.forEach(
+        (nn, i) => i ? lvLater(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), i * 2, 1.6) : emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt, 1.6 * td)
+      );
     } else if (vt === "ghost" && slotOf(t) === 0 && local >= L2 - 32 && [6, 14, 22, 30].includes(local - (L2 - 32)))
       emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
     else if (vt === "open" && local === L2 - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
     else if (vt === "kickx" && slotOf(t) === 0 && local === L2 - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
   }
   function liveTick(tick, nt, td) {
+    lvLaterTick(tick, nt, td);
     lvFadeTick(tick, nt);
     while (LV.cues.length && LV.cues[0].tick <= tick) liveFire(LV.cues.shift(), tick);
     if (LV.jam && tick >= LV.jam.next) lvJamStep(tick);
@@ -59512,7 +59582,7 @@ html.os-darwin.native-menu #menubar .mproj {
           );
           if (slotOf(t) === 3) v._last = nn;
           if (vt === "echo" && last3 && tone2)
-            emitNote(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), nt + (6 + subTick(n)) * td, n.l * 2 * td);
+            lvLater(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), 6 + subTick(n), n.l * 2, lvUserOwns);
         }
         LV.pulse[t] = { time: nt, v: Math.min(1, g) };
       }
@@ -59521,6 +59591,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function liveStart(idx) {
     if (BUSY.write) return void toast(BUSY.write);
+    lvLaterClear();
     if (REC.on) hooks.recStop();
     stopAll();
     ensureAudio();
@@ -59600,6 +59671,7 @@ html.os-darwin.native-menu #menubar .mproj {
     hooks.updTransport();
   }
   function liveCleanup() {
+    lvLaterClear();
     try {
       ctlAllOff();
     } catch (e) {
@@ -72125,6 +72197,7 @@ html.os-darwin.native-menu #menubar .mproj {
       startSong,
       ensureAudio,
       connectMidi,
+      sendMidi,
       refreshOuts,
       fixState,
       setClipMark,

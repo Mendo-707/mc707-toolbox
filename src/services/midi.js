@@ -31,11 +31,30 @@ export function midiAct(ch) {
     dt = performance.now() - a.at;
   return dt < 0 || dt > 300 ? 0 : (a.v / 127) * (1 - dt / 300);
 }
+/* The audio clock moves on in steps (once per audio buffer, 3 to 20 ms on most computers) while
+   performance.now() runs smoothly, so 'now + (at - currentTime)' is late by however long ago the last step
+   was: every batch of notes would land up to a buffer late, a different amount each time, and fast hats
+   would wobble. The gap between the two clocks is smallest just after a step, so the smallest gap seen
+   lately is the true one; it may creep up slowly (the two clocks drift apart a little) and starts again
+   after a jump (the audio was suspended). */
+let GAP = null,
+  GAPAT = 0;
+/** performance.now() time (ms) of an AudioContext time (s). */
+export function ctxMs(at) {
+  const now = performance.now(),
+    g = now - AU.ctx.currentTime * 1000;
+  if (GAP == null || g < GAP || g > GAP + 100) GAP = g;
+  else GAP = Math.min(g, GAP + (now - GAPAT) * 0.0002);
+  GAPAT = now;
+  return GAP + at * 1000;
+}
 export function sendMidi(bytes, at) {
   const o = MIDI.out;
   if (!o) return;
   try {
-    const ms = performance.now() + (at - AU.ctx.currentTime) * 1000;
+    /* the MIDI offset (latency trim) moves every message together: notes, clip changes, controls and the
+       clock, so a clip change still comes before the clip's first note and a note-off after its note-on */
+    const ms = ctxMs(at) + (S.midiOffset || 0);
     if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) {
       NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
       SENTAT.set(((bytes[0] & 15) << 7) | bytes[1], Math.max(ms, performance.now()));
@@ -45,6 +64,61 @@ export function sendMidi(bytes, at) {
     }
     o.send(bytes, Math.max(ms, 0));
   } catch (e) {}
+}
+/* ---------- played notes: a note-off never lands after the next note-on of the same key ----------
+   With swing or humanize an off-beat note is played late but its next neighbour is not, so its note-off
+   would come after the next note-on of the same key and cut that note short on the MC-707 (a hat or kick
+   that clicks instead of ringing). So note-offs wait here (HELD) until no note of that key can come
+   before them any more (flushOffs, once a tick), and a note-on of the same key sends the waiting note-off
+   just before itself. Two note-ons of one key at the same moment play once (emitNote also catches two
+   parts hitting one key on the same tick, before Humanize moves them apart). */
+const HELD = new Map(),
+  LASTON = new Map();
+const DOUBLE = 0.0005; /* s: note-ons of one key closer than this are one hit */
+/**
+ * Send a note-on at an AudioContext time, ending the key's waiting note first. False if the key was
+ * already hit at that moment (then send no note-off for it either).
+ */
+export function noteOn(ch, p, v, at) {
+  const k = (ch << 7) | p,
+    last = LASTON.get(k);
+  if (last != null && Math.abs(at - last) < DOUBLE) return false;
+  const h = HELD.get(k);
+  if (h && h.on < at) {
+    HELD.delete(k);
+    sendMidi([0x80 | ch, p, 0], Math.min(h.at, Math.max(h.on + 0.001, at - 0.0005)));
+  }
+  LASTON.set(k, at);
+  sendMidi([0x90 | ch, p, v], at);
+  return true;
+}
+/** The note-off for a note that started at `on`: it waits until flushOffs (or the key's next note-on). */
+export function noteOff(ch, p, at, on) {
+  const k = (ch << 7) | p,
+    h = HELD.get(k);
+  if (h) {
+    /* a note of this key already waiting: a later one ends before it starts, an earlier one is sent */
+    if (h.on > on) return sendMidi([0x80 | ch, p, 0], Math.min(at, Math.max(on + 0.001, h.on - 0.0005)));
+    sendMidi([0x80 | ch, p, 0], Math.min(h.at, Math.max(h.on + 0.001, on - 0.0005)));
+  }
+  HELD.set(k, { at, on });
+  /* notes played with nothing scheduling after them (an audition, a pad): their note-offs go out
+     when they are nearly due */
+  if (!offTimer)
+    offTimer = setInterval(() => {
+      if (AU.ctx) flushOffs(AU.ctx.currentTime + 0.05);
+      if (!HELD.size) offTimer = (clearInterval(offTimer), 0);
+    }, 100);
+}
+let offTimer = 0;
+/** Send the waiting note-offs due before `before` (all of them with no argument). */
+export function flushOffs(before = Infinity) {
+  for (const [k, h] of HELD)
+    if (h.at < before) {
+      HELD.delete(k);
+      sendMidi([0x80 | (k >> 7), k & 127, 0], h.at);
+    }
+  if (before === Infinity) LASTON.clear();
 }
 /** Ask the browser for MIDI access, then pick the output (see refreshOuts). */
 export async function connectMidi() {
@@ -109,6 +183,7 @@ export function refreshOuts() {
 const NOTEHIST = new Set();
 /** All notes off and sustain off on every channel, now and again after the look-ahead. hard = also all sound off. */
 export function panic(hard) {
+  flushOffs();
   const o = MIDI.out;
   if (!o) return;
   const now = performance.now();
@@ -125,7 +200,7 @@ export function panic(hard) {
   /* once now, and again after the scheduling window so queued note-ons cannot start afterwards */
   try {
     burst(now);
-    burst(now + 320);
+    burst(now + 320 + Math.max(0, S.midiOffset || 0));
   } catch (e) {}
   NOTEHIST.clear();
 }

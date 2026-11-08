@@ -48,7 +48,7 @@ export function autoCC(ti, c, tick, time) {
   const k = ti + ':' + c.cc.n;
   if (AUTOLAST[k] === v) return;
   AUTOLAST[k] = v;
-  sendMidi([0xb0 | (S.tracks[ti].ch - 1), c.cc.n, v], time + (S.midiOffset || 0) / 1000);
+  sendMidi([0xb0 | (S.tracks[ti].ch - 1), c.cc.n, v], time);
 }
 /** The tempo at a bar, following markers with their own tempo. */
 export function tempoAtBar(bar) {

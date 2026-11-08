@@ -11,7 +11,7 @@ import { BUSY, S } from '../core/state.js';
 import { facById, shiftFor } from '../library/index.js';
 import { patIndex, songEnd, subTick } from '../core/song-model.js';
 import { AU, DRUMS, click, ensureAudio, voice } from './synth.js';
-import { MIDI, panic, sendMidi } from './midi.js';
+import { MIDI, panic, sendMidi, noteOn, noteOff, flushOffs } from './midi.js';
 import { CMK, PCLAST, autoClip, autoClipReset, sendClip, songClipTick } from './clip-switch.js';
 import { AUTOLAST, autoCC, sendTrackCCs, tickDurAt, velMul } from './mc-controls.js';
 import { hooks } from '../core/hooks.js';
@@ -89,15 +89,16 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
     dur = h.d;
     flam = h.flam;
   }
-  if (MIDI.out && !noMidi) {
-    const mt = tm + (S.midiOffset || 0) / 1000,
-      off = (S.midiOffset || 0) / 1000;
-    if (flam != null) {
-      sendMidi([0x90 | (t.ch - 1), pitch, Math.max(1, Math.round(vel * 0.45))], flam + off);
-      sendMidi([0x80 | (t.ch - 1), pitch, 0], Math.min(mt, flam + off + 0.008));
-    }
-    sendMidi([0x90 | (t.ch - 1), pitch, vel], mt);
-    sendMidi([0x80 | (t.ch - 1), pitch, 0], mt + Math.max(dur, 0.03));
+  /* two parts hitting one key on the same tick (a fill over the groove, a layer on the kit) are one hit */
+  const dk = ((t.ch - 1) << 7) | pitch,
+    same = Math.abs((HITAT.get(dk) ?? -1) - time) < 0.001;
+  HITAT.set(dk, time);
+  if (MIDI.out && !noMidi && !same) {
+    /* (the MIDI offset is added to every scheduled message in sendMidi, clip changes and controls too) */
+    const ch = t.ch - 1;
+    if (flam != null && noteOn(ch, pitch, Math.max(1, Math.round(vel * 0.45)), flam))
+      noteOff(ch, pitch, Math.min(tm, flam + 0.008), flam);
+    if (noteOn(ch, pitch, vel, tm)) noteOff(ch, pitch, tm + Math.max(dur, 0.03), tm);
   }
   if (TR.mode === 'live' && typeof hooks.vizNote === 'function') hooks.vizNote(ti, isD ? nn : pitch, vel, time, dur);
   if (S.preview) {
@@ -107,6 +108,7 @@ export function emitNote(ti, nn, v, time, dur, noMidi) {
     } else voice(ti, pitch, tm, dur, vel);
   }
 }
+const HITAT = new Map();
 /** Play one note on a track right now (for clicks in the editor). */
 export function audition(ti, nn, v = 100) {
   ensureAudio();
@@ -175,7 +177,7 @@ export function processTick(tick, time) {
               ti,
               tone ? clamp(n.n + trs, 0, 127) : n.n,
               n.v * vm,
-              nt + Math.max(0, rel) * td,
+              nt + Math.max(0, rel) * (TR.subTd || td),
               Math.min(n.l * 2, c1 - abs) * td
             );
           }
@@ -226,6 +228,9 @@ export function processTick(tick, time) {
         );
   }
   TR.vis.push({ time, tick, dur: td });
+  /* note-offs no later note of their key can come before any more (nudge, humanize and swing move
+     notes by well under this) */
+  flushOffs(time - 0.1);
 }
 /** Move the transport on by one tick (looping, song end, pattern range). */
 export function advance() {

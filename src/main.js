@@ -111,7 +111,7 @@ import { renderArr, scheduleUI } from './song/arrangement.js';
 import { facById, makeDemo } from './library/index.js';
 import { initEditor } from './song/editor.js';
 import { AU, ensureAudio } from './services/synth.js';
-import { MIDI, connectMidi, panic, refreshOuts } from './services/midi.js';
+import { MIDI, connectMidi, panic, refreshOuts, sendMidi } from './services/midi.js';
 import { TICKER, TR, advance, processTick, sched, startSong, stopAll } from './services/transport.js';
 import { cmChipSet, setClipMark } from './clips/clip-map.js';
 import { applyDevice, matchDevice } from './ui/device.js';
@@ -387,6 +387,7 @@ PROJ.t = projTitle;
     startSong,
     ensureAudio,
     connectMidi,
+    sendMidi,
     refreshOuts,
     fixState,
     setClipMark,

@@ -284,7 +284,8 @@ test('Loop rec on the MC-707’s keys: the track played first, and playing anoth
     rec();
     s = Math.ceil((a.TR.tick + 16) / 32) * 32;
     to(s + 1);
-    window.__inject([0x90 | (a.S.tracks[7].ch - 1), 86, 90]);
+    /* a note the set does not play on that track just now (one the app sent is taken for the MC-707's echo) */
+    window.__inject([0x90 | (a.S.tracks[7].ch - 1), 97, 90]);
     const warn = (document.querySelector('.riffWarn') || {}).textContent || '';
     a.stopAll();
     return { take, notes, warn };

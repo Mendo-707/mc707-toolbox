@@ -5,7 +5,8 @@
 // Reads: LV.
 import { clamp } from '../core/dom.js';
 import { ROLL, rollNotes } from '../core/rolls.js';
-import { emitNote } from '../services/transport.js';
+import { TR, emitNote } from '../services/transport.js';
+import { lvLater } from './later.js';
 import { LV, lvStyle } from './state.js';
 import { slotOf } from '../core/tracks.js';
 
@@ -66,7 +67,11 @@ export function lvXExtra(t, v, vt, local, L, nt, td, g) {
   const lb = local - (L - 32);
   if (lb < 0) return;
   const at = (notes, lane) =>
-    notes.forEach(n => emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * td, Math.max(1, n.l * 2) * td));
+    notes.forEach(n =>
+      n.s * 2 < 1 - 1e-9
+        ? emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td)
+        : lvLater(t, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
+    );
   if (vt === 'hroll' && lb % 8 === 0 && v._vr.beats.includes(lb >> 3)) at(rollNotes(v._vr.kind, 0, 4, 96));
   else if (vt === 'sroll') {
     const start = v._vr.two ? 16 : 24;
