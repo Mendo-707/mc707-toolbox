@@ -54,7 +54,18 @@ const MOVES = {
     '5s': { 5: 2, 1: 2 }
   }
 };
-const START = { minor: { 1: 8, 6: 1, 4: 1 }, major: { 1: 7, 6: 1.5, 4: 1.5 } };
+/* the dark colour: the Neapolitan flat two (b2), the flat six falling to a minor five, the four
+   leaning back; no bright seven-to-one, no major borrowings */
+MOVES.dark = {
+  1: { b2: 3, 6: 2.5, 4: 3, 5: 1.5, '5M': 1, 3: 0.4 },
+  b2: { 1: 4, 5: 1, '5M': 1 },
+  4: { 1: 2.5, b2: 2, '5M': 1.5, 6: 1.5, 5: 1 },
+  5: { 1: 3, 6: 2, b2: 1 },
+  '5M': { 1: 4, 6: 1 },
+  6: { 5: 2.5, b2: 2, 4: 2, '5M': 2, 1: 1.5 },
+  3: { 6: 2, 4: 2 }
+};
+const START = { minor: { 1: 8, 6: 1, 4: 1 }, major: { 1: 7, 6: 1.5, 4: 1.5 }, dark: { 1: 9, 6: 1 } };
 /* how long each chord lasts over 8 bars: which of the chords each bar plays */
 const RHYTHMS = [
   /* two bars a chord, listed twice: twice as likely as the others */
@@ -73,6 +84,15 @@ const RHYTHMS = [
  */
 export function genProg(r, colour, scale = 'minor') {
   const maj = scale === 'major';
+  /* dark: now and then a menacing vamp on the one, leaning on the flat two or six */
+  if (colour === 'd' && r() < 0.3) {
+    const x = pick(r, ['b2', 6, 4, 'b2']);
+    return pick(r, [
+      [1, 1, 1, 1, 1, 1, x, x],
+      [1, 1, 1, x, 1, 1, 1, x],
+      [1, 1, x, x, 1, 1, x, 1]
+    ]);
+  }
   if (colour === 'v') {
     /* (a major key's seventh chord is diminished: its flat seventh instead) */
     const x = pick(r, maj ? [4, 'b7', 6, '4m', 2] : [7, 4, 6, '4M', 3]),
@@ -86,7 +106,7 @@ export function genProg(r, colour, scale = 'minor') {
   }
   /* the jazzy colour follows the key (the coin is still tossed, so the takes stay as they were) */
   colour === 'j' && r();
-  const mode = colour === 'M' || (colour === 'j' && maj) ? 'major' : 'minor',
+  const mode = colour === 'd' ? 'dark' : colour === 'M' || (colour === 'j' && maj) ? 'major' : 'minor',
     table = MOVES[mode],
     rhythm = pick(r, RHYTHMS),
     n = Math.max(...rhythm) + 1;

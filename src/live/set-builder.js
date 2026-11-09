@@ -240,10 +240,22 @@ function cmpRole(t) {
   const pool = poolOf(t);
   return trackOf(slotOf(t)) === t || pool === 'acid' ? pool : null;
 }
+/* the Mood pad as the composer's dials: dark from the colour (down is dark), edge from the intensity
+   (no mood: a little edge) */
+export function lvComposeMood() {
+  const m = LV.mood;
+  if (!m) return { dark: 0, edge: 0.35 };
+  return {
+    dark: Math.round(Math.max(0, Math.min(1, (55 - m.c) / 45)) * 20) / 20,
+    edge: Math.round(Math.max(0, Math.min(1, 0.35 + (m.i - 50) / 70)) * 20) / 20
+  };
+}
 function buildComposed(st) {
-  const c = composer(st, { key: LV.key, seed: LV.seed, minutes: 4 }),
-    tag = 'cmp-' + st.id + '-' + LV.seed + '-' + LV.key + '-',
-    prog = 'cmp:' + st.id + ':' + LV.seed;
+  const md = lvComposeMood(),
+    c = composer(st, { key: LV.key, seed: LV.seed, minutes: 4, ...md }),
+    mk = '-d' + md.dark + 'e' + md.edge,
+    tag = 'cmp-' + st.id + '-' + LV.seed + '-' + LV.key + mk + '-',
+    prog = 'cmp:' + st.id + ':' + LV.seed + mk;
   /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up) */
   const entry = (t, role, v) => {
     const roles = role === 'full' ? ['kit', 'hats', 'perc'] : [role];

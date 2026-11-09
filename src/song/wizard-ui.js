@@ -97,7 +97,16 @@ export function renderWiz(keepScroll) {
 }
 /* Compose it now: the whole song for the style picked, written by the composer, every part from one chord
    progression (builds that stop dead, a switch, something new in every drop or chorus) */
-const CMP = { minutes: 0, take: 1, sounds: true };
+const CMP = { minutes: 0, take: 1, sounds: true, mood: 'default' };
+/* the composer's dials for each mood: dark (minor, dark chord moves, low and riffy) and edge (harder,
+   shorter, busier) */
+const MOODS = [
+  ['default', 'As the style is', { dark: 0, edge: 0.35 }],
+  ['dark', 'Dark', { dark: 0.85, edge: 0.45 }],
+  ['hard', 'Hard', { dark: 0.35, edge: 0.85 }],
+  ['banger', 'Banger (dark and hard)', { dark: 0.9, edge: 0.95 }],
+  ['chill', 'Chill', { dark: 0, edge: 0 }]
+];
 function composePanel() {
   const st = curStyle();
   const box = el('div', { class: 'wcard wCompose', style: 'margin:0 0 12px' });
@@ -138,6 +147,17 @@ function composePanel() {
     style: 'width:64px',
     onchange: e => (CMP.take = +e.target.value || 1)
   });
+  const mood = el(
+    'select',
+    {
+      'aria-label': 'Mood',
+      title:
+        'Dark: minor, darker chords, a lower riffier line. Hard: harder hits, punchy short bass and stabs, busier drums. Banger: both.',
+      onchange: e => (CMP.mood = e.target.value)
+    },
+    ...MOODS.map(([id, label]) => el('option', { value: id }, label))
+  );
+  mood.value = CMP.mood;
   const snd = el('input', { type: 'checkbox', onchange: e => (CMP.sounds = e.target.checked) });
   snd.checked = CMP.sounds;
   box.append(
@@ -153,6 +173,7 @@ function composePanel() {
       lab('Key', key),
       lab('Tempo', bpm),
       lab('Length', mins),
+      lab('Mood', mood),
       lab('Take', take),
       el(
         'button',
@@ -174,7 +195,14 @@ function composePanel() {
           type: 'button',
           class: 'btn on',
           onclick: () => {
-            const o = { key: WIZ.key, bpm: WIZ.bpm, minutes: CMP.minutes, seed: CMP.take, sounds: CMP.sounds };
+            const o = {
+              key: WIZ.key,
+              bpm: WIZ.bpm,
+              minutes: CMP.minutes,
+              seed: CMP.take,
+              sounds: CMP.sounds,
+              ...(MOODS.find(x => x[0] === CMP.mood) || MOODS[0])[2]
+            };
             closeWiz();
             hooks.composeNow(st.id, o);
           }

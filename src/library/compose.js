@@ -2207,6 +2207,58 @@ function genArpPart(p, v, ctx, center, step0) {
   }
 }
 
+/* ---------- the mood, played: harder and shorter with edge, lower in the dark ---------- */
+function moodPlay(p, role, v, ctx, er) {
+  const { edge, dark } = ctx.mood,
+    nb = p.bars,
+    drum = role === 'kit' || role === 'hats' || role === 'perc',
+    main = /^(A|B|C|drop|hook)$/.test(v),
+    played = !/^(intro|break|outro|rise|build)$/.test(v),
+    has = (s, lanes) => p.notes.some(n => n.s === s && lanes.includes(n.n));
+  if (!p.notes.length) return;
+  /* harder: kicks, snares and claps hit harder; the tone parts too (ghost notes stay soft) */
+  for (const n of p.notes) {
+    if (n.v < 52) continue;
+    const up = drum ? ([K, SN, CL].includes(n.n) ? 24 : 10) : role === 'pad' ? 4 : 16;
+    n.v = Math.min(127, Math.round(n.v + up * edge));
+  }
+  if (edge >= 0.5 && main) {
+    if (role === 'kit') {
+      const four = [0, 4, 8, 12].every(s => has(s, [K]));
+      /* a kick pushing into the next bar, and a snare run into the last bar */
+      for (let b = 1; b < nb; b += 2)
+        if (er() < edge * 0.7) {
+          const s = four ? 15 : er() < 0.5 ? 10 : 7;
+          if (!has(b * 16 + s, [K, SN, CL])) p.add(b, s, 1, K, 100 + Math.round(edge * 20));
+        }
+      if (v !== 'drop' || er() < 0.5)
+        for (const s of [12, 13, 14, 15])
+          if (!has((nb - 1) * 16 + s, [SN])) p.add(nb - 1, s, 1, SN, 70 + (s - 12) * 15);
+    } else if (role === 'hats') {
+      /* 8th hats get the 16ths between them, quietly: they drive */
+      const per = p.notes.filter(n => n.n === CH && n.s < 16).length;
+      if (per && per <= 8)
+        for (let b = 0; b < nb; b++)
+          for (const s of [1, 3, 5, 7, 9, 11, 13, 15])
+            if (!has(b * 16 + s, [CH, OH]) && er() < edge * 0.8) p.add(b, s, 1, CH, 36 + Math.round(er() * 14));
+    }
+  }
+  /* everywhere it plays (not the intro, breaks and outro): short and punchy, not held */
+  if (edge >= 0.5 && played) {
+    const max = edge >= 0.8 ? 1 : 2;
+    /* the bass (an 808 keeps its boom), the chords as stabs, the lead as a riff */
+    if (role === 'bass' && ctx.recipe.bass !== 'eight08') for (const n of p.notes) n.l = Math.min(n.l, max);
+    else if (role === 'chords' && ctx.recipe.chords !== 'long') for (const n of p.notes) n.l = Math.min(n.l, max);
+    else if (role === 'lead') for (const n of p.notes) if (n.l < 8) n.l = Math.min(n.l, max + 1);
+  }
+  /* the dark sits low: chords, pads and leads that sit high come down an octave */
+  if (dark >= 0.6 && !drum && role !== 'bass' && role !== 'acid') {
+    const avg = p.notes.reduce((a, n) => a + n.n, 0) / p.notes.length,
+      top = role === 'lead' || role === 'pluck' ? 78 : 66;
+    if (avg > top) for (const n of p.notes) if (n.n - 12 >= 36) n.n -= 12;
+  }
+}
+
 function melody(p, v, ctx, center = 72) {
   const { ch, r, nb, scale, key, recipe, motif } = ctx;
   const sc = SCALES[scale] || SCALES.minor,
@@ -2216,7 +2268,10 @@ function melody(p, v, ctx, center = 72) {
       motif.cells
         ? motif.cells[x]
         : cells[(x === 'A' ? motif.a : x === 'B' ? motif.b : motif.a + motif.b + 3) % cells.length],
-    contour = motif.shape || CONTOURS[motif.c % CONTOURS.length],
+    /* dark: a tighter, lower line, like a riff */
+    contour = (motif.shape || CONTOURS[motif.c % CONTOURS.length]).map(y =>
+      ctx.mood.dark >= 0.5 ? Math.round(y * 0.6) - 1 : y
+    ),
     form = motif.form || ['A', 'A', 'B', 'A'];
   let last = center;
   const chordTone = (c, target) => {
@@ -2233,6 +2288,7 @@ function melody(p, v, ctx, center = 72) {
     while (!inScale(n)) n += dir;
     return n;
   };
+  const dark = ctx.mood.dark >= 0.5;
   const phrase = (bar, cell, shape, cadence) => {
     /* the cell spreads over two bars: the first bar has the cell, the second its echo, shifted */
     const notes = [];
@@ -2244,7 +2300,10 @@ function melody(p, v, ctx, center = 72) {
         /* the contour spread over the whole cell, however many notes it has */
         const at = Math.round((i * (shape.length - 1)) / Math.max(1, cell.length - 1)),
           target = center + (shape[at] + (half ? motif.lift : 0)) * 2;
-        let n = strong ? chordTone(c, (target + last) / 2) : stepTo(last, target >= last ? 1 : -1);
+        /* dark: the strong beats sit on the root and fifth (and the flat two over its chord), not the
+           sweeter third */
+        const tc = dark && c.tones.length > 2 ? { root: c.root, tones: [0, c.tones[2]] } : c;
+        let n = strong ? chordTone(tc, (target + last) / 2) : stepTo(last, target >= last ? 1 : -1);
         if (Math.abs(n - last) > 9) n = chordTone(c, last);
         /* a strong beat that would repeat the last note moves to the next chord tone the line is heading for */
         if (strong && n === last && i) {
@@ -2264,7 +2323,7 @@ function melody(p, v, ctx, center = 72) {
     }
     return notes;
   };
-  const vel = v === 'break' ? 92 : v === 'verse' ? 96 : 110;
+  const vel = (v === 'break' ? 92 : v === 'verse' ? 96 : 110) + Math.round(ctx.mood.edge * 10);
   const all = [];
   /* four 2-bar phrases by the take's plan: an A again goes a step higher, B and C answer the other way,
      the last comes home */
@@ -2893,11 +2952,29 @@ export function composer(style, opts = {}) {
         ? own
         : kin[Math.floor(r() * kin.length)],
     turn = !made && own[0] !== 'v' && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
-  const colour = made ? own[0] : progId[0],
-    scale = style.scale === 'major' && colour !== 'm' ? 'major' : progScale(colour, style.scale);
-  /* sevenths (and ninths) from the scale for the styles that like them */
-  const ch0 = chordsOf(made || progId, key, scale, recipe.ext || 0),
-    ch = ch0.slice(turn).concat(ch0.slice(0, turn));
+  /* the mood: dark (0 to 1) takes it into minor, harmonic minor and dark chord moves; edge (0 to 1)
+     plays it harder, shorter and busier. Its own random numbers, so the rest of the take is as it was. */
+  const mood = {
+      dark: Math.max(0, Math.min(1, +(opts.dark ?? 0) || 0)),
+      edge: Math.max(0, Math.min(1, +(opts.edge ?? 0.3) || 0))
+    },
+    mr = mulberry(hashStr(style.id + ':mood') ^ seed),
+    goDark = mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6,
+    dprog = goDark ? genProg(mr, 'd') : null,
+    hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
+  const colour = dprog ? 'd' : made ? own[0] : progId[0],
+    scale = dprog
+      ? hm
+        ? 'harmonic minor'
+        : 'minor'
+      : mood.dark >= 0.5
+        ? 'minor'
+        : style.scale === 'major' && colour !== 'm'
+          ? 'major'
+          : progScale(colour, style.scale);
+  /* sevenths (and ninths) from the scale for the styles that like them (not in the dark: plain and hard) */
+  const ch0 = chordsOf(dprog || made || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0),
+    ch = dprog ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
   const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === 'dnb' || fam === 'edm' ? 5 : 3.5)));
   const sections = formOf(fam, Math.round((minutes * bpm) / 4));
   const motif = {
@@ -2927,7 +3004,7 @@ export function composer(style, opts = {}) {
     const nb = 8,
       p = new Pat(nb),
       pr = mulberry(hashStr(k) ^ seed),
-      ctx = { ch, r: pr, nb, scale, key, recipe, motif, fam };
+      ctx = { ch, r: pr, nb, scale, key, recipe, motif, fam, mood };
     if (role === 'kit') gr.kit(p, pr, v, nb);
     else if (role === 'hats') gr.hats(p, pr, v, nb);
     else if (role === 'perc') gr.perc(p, pr, v, nb);
@@ -2946,6 +3023,7 @@ export function composer(style, opts = {}) {
     if (v !== 'build' && v !== 'rise')
       takeVary(p, role, v, ctx, mulberry(hashStr(role + ':take') ^ Math.imul(seed + 7, 2654435761)));
     else silentLastBeat(p);
+    moodPlay(p, role, v, ctx, mulberry(hashStr(role + ':edge:' + v) ^ motif.seed));
     p.notes = p.notes.filter(n => n.s >= 0 && n.s < nb * 16);
     if (!p.notes.length) return null;
     /* one note per step and pitch (the loudest, the longest) */
@@ -2965,7 +3043,19 @@ export function composer(style, opts = {}) {
     if (snd) sounds[k] = snd;
     return k;
   };
-  return { make, patterns, sounds, sections, bpm, key, scale, prog: progId, fam, recipe };
+  return {
+    make,
+    patterns,
+    sounds,
+    sections,
+    bpm,
+    key,
+    scale,
+    prog: dprog ? 'gd:' + dprog.join('.') : progId,
+    fam,
+    recipe,
+    mood
+  };
 }
 /** Every factory sound name the composer may ask for (for checks). */
 export function composeSoundNames() {

@@ -151,3 +151,40 @@ test('Compose: new material for every take (progressions, basslines and melodies
   }
   assert.deepEqual(errors, []);
 });
+
+test('Compose: Dark and Hard moods: minor and dark chord moves, harder hits, shorter bass and stabs', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { compose } = window.__app.compose,
+      out = {};
+    for (const [name, m] of Object.entries({ plain: {}, banger: { dark: 0.9, edge: 0.95 } })) {
+      let bright = 0,
+        major = 0,
+        kv = 0,
+        kn = 0,
+        bl = 0,
+        bn = 0;
+      for (const id of ['liquid', 'deephouse', 'pop', 'trance'])
+        for (let seed = 1; seed <= 20; seed++) {
+          const s = compose(
+              window.__app.STYLES.find(x => x.id === id),
+              { minutes: 2, seed, ...m }
+            ),
+            toks = String(s.prog).split(':').pop().split('.');
+          if (s.scale === 'major') major++;
+          for (let i = 1; i < toks.length; i++) if (toks[i - 1] === '7' && toks[i] === '1') bright++;
+          for (const p of Object.values(s.patterns)) {
+            if (p.role === 'kit') for (const n of p.notes) if (n.n === 0) ((kv += n.v), kn++);
+            if (p.role === 'bass' && /^[ABC]$/.test(p.variant)) for (const n of p.notes) ((bl += n.l), bn++);
+          }
+        }
+      out[name] = { bright, major, kick: kv / kn, bass: bl / bn };
+    }
+    return out;
+  });
+  assert.equal(r.banger.major, 0, 'the dark is never in a major key');
+  assert.ok(r.banger.bright < r.plain.bright && r.banger.bright <= 2, 'hardly a bright seven-to-one: ' + JSON.stringify(r));
+  assert.ok(r.banger.kick > r.plain.kick + 4, 'harder kicks');
+  assert.ok(r.banger.bass < r.plain.bass * 0.8, 'shorter, punchier bass');
+  assert.deepEqual(errors, []);
+});

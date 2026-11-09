@@ -159,7 +159,9 @@ export function composeNow(styleId, o) {
     key: o.key,
     bpm: Math.max(40, Math.min(300, +o.bpm || 120)),
     minutes: +o.minutes || 4,
-    seed: +o.seed || 1
+    seed: +o.seed || 1,
+    dark: o.dark,
+    edge: o.edge
   });
   const sounds = !!o.sounds && fs.tone.size > 0;
   const r = applyComposed(song, { style: st, sounds });
