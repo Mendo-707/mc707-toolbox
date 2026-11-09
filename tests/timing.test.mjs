@@ -104,6 +104,30 @@ test('MIDI times: the audio clock moving in steps does not make notes wobble', a
   assert.deepEqual(errors, []);
 });
 
+test('MIDI times: a note-off sent after the clocks moved still comes after its note-on', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(async () => {
+    const a = window.__app;
+    a.ensureAudio();
+    await a.connectMidi();
+    let wall = 5000;
+    const pn = performance.now.bind(performance);
+    performance.now = () => wall;
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 1, configurable: true });
+    window.__out.length = 0;
+    window.__times = [];
+    a.sendMidi([0x99, 42, 100], 2);
+    /* the audio clock catches up a few ms: the mapping drops before the waiting note-off goes out */
+    wall -= 6;
+    a.sendMidi([0x89, 42, 0], 2.001);
+    performance.now = pn;
+    delete a.AU.ctx.currentTime;
+    return window.__times.slice();
+  });
+  assert.ok(r[1] > r[0], 'note-on at ' + r[0] + ', note-off at ' + r[1]);
+  assert.deepEqual(errors, []);
+});
+
 test('MIDI offset: every message moves together, so a clip change still comes before its first note', async () => {
   const { page, errors } = await openApp();
   const r = await page.evaluate(async () => {

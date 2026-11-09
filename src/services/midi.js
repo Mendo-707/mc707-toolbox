@@ -39,6 +39,7 @@ export function midiAct(ch) {
    after a jump (the audio was suspended). */
 let GAP = null,
   GAPAT = 0;
+const ONMS = new Map(); /* key → ms its last note-on was sent at */
 /** performance.now() time (ms) of an AudioContext time (s). */
 export function ctxMs(at) {
   const now = performance.now(),
@@ -54,8 +55,19 @@ export function sendMidi(bytes, at) {
   try {
     /* the MIDI offset (latency trim) moves every message together: notes, clip changes, controls and the
        clock, so a clip change still comes before the clip's first note and a note-off after its note-on */
-    const ms = ctxMs(at) + (S.midiOffset || 0);
-    if (bytes.length > 2 && (bytes[0] & 0xf0) === 0x90 && bytes[2] > 0) {
+    let ms = ctxMs(at) + (S.midiOffset || 0);
+    const st = bytes[0] & 0xf0;
+    if (bytes.length > 2 && (st === 0x80 || st === 0x90)) {
+      /* a note-off is sent later than its note-on (it waits in HELD): if the clock mapping moved in
+         between, it must still never be timestamped before the note-on, or the key would hang */
+      const k = ((bytes[0] & 15) << 7) | bytes[1];
+      if (st === 0x90 && bytes[2] > 0) ONMS.set(k, ms);
+      else if (ONMS.has(k)) {
+        ms = Math.max(ms, ONMS.get(k) + 0.5);
+        ONMS.delete(k);
+      }
+    }
+    if (bytes.length > 2 && st === 0x90 && bytes[2] > 0) {
       NOTEHIST.add(((bytes[0] & 15) << 7) | bytes[1]);
       SENTAT.set(((bytes[0] & 15) << 7) | bytes[1], Math.max(ms, performance.now()));
       const a = MIDI_ACT[bytes[0] & 15],

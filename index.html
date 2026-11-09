@@ -19883,6 +19883,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var GAP = null;
   var GAPAT = 0;
+  var ONMS = /* @__PURE__ */ new Map();
   function ctxMs(at2) {
     const now2 = performance.now(), g = now2 - AU.ctx.currentTime * 1e3;
     if (GAP == null || g < GAP || g > GAP + 100) GAP = g;
@@ -19894,8 +19895,17 @@ html.os-darwin.native-menu #menubar .mproj {
     const o = MIDI.out;
     if (!o) return;
     try {
-      const ms = ctxMs(at2) + (S.midiOffset || 0);
-      if (bytes.length > 2 && (bytes[0] & 240) === 144 && bytes[2] > 0) {
+      let ms = ctxMs(at2) + (S.midiOffset || 0);
+      const st = bytes[0] & 240;
+      if (bytes.length > 2 && (st === 128 || st === 144)) {
+        const k2 = (bytes[0] & 15) << 7 | bytes[1];
+        if (st === 144 && bytes[2] > 0) ONMS.set(k2, ms);
+        else if (ONMS.has(k2)) {
+          ms = Math.max(ms, ONMS.get(k2) + 0.5);
+          ONMS.delete(k2);
+        }
+      }
+      if (bytes.length > 2 && st === 144 && bytes[2] > 0) {
         NOTEHIST.add((bytes[0] & 15) << 7 | bytes[1]);
         SENTAT.set((bytes[0] & 15) << 7 | bytes[1], Math.max(ms, performance.now()));
         const a = MIDI_ACT[bytes[0] & 15], t = Math.max(ms, performance.now());
