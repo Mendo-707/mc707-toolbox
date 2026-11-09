@@ -4886,6 +4886,45 @@ input[type='number'] {
     animation: none;
   }
 }
+
+/* LoopCompose (live/loop-compose.js) */
+.lcPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lcHelp {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+.lcPanel .btn.rec {
+  min-width: 96px;
+  font-weight: 700;
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 55%, transparent);
+}
+.lcPanel .btn.rec:hover {
+  background: #ef4444;
+  color: #fff;
+}
+.lcStat {
+  font-weight: 700;
+  color: #f59e0b;
+}
+.lcKeep {
+  gap: 6px;
+}
+.lcInfo {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  font-size: 13px;
+}
+.lcLoop {
+  margin-top: 2px;
+  opacity: 0.85;
+}
 </style>
     <style>
 /* Live Mode colour themes: each #live[data-theme] sets the colour tokens; data-light marks the light themes. Loaded after live.css. */
@@ -15263,8 +15302,8 @@ html.os-darwin.native-menu #menubar .mproj {
       });
       const pairs2 = pickN2([...used.values()], 6);
       const four3 = FOUR2.has(g);
-      pairs2.forEach(({ p, bars: bars3, keyName: keyName2 }) => {
-        const kn2 = keyName2 && KEYS[keyName2] ? keyName2 : /^[iv]/.test(p) ? "Am" : "C";
+      pairs2.forEach(({ p, bars: bars3, keyName: keyName3 }) => {
+        const kn2 = keyName3 && KEYS[keyName3] ? keyName3 : /^[iv]/.test(p) ? "Am" : "C";
         const R5 = KEYS[kn2].root, prog = PR[p];
         const BR = four3 ? {
           A: [
@@ -17582,8 +17621,8 @@ html.os-darwin.native-menu #menubar .mproj {
     return out2;
   }
   function parts(P2, o) {
-    const { tag, keyName: keyName2, bpm, styles } = o;
-    const key = KEYS[keyName2], R4 = key.root;
+    const { tag, keyName: keyName3, bpm, styles } = o;
+    const key = KEYS[keyName3], R4 = key.root;
     P2.forEach(([prog, chords], pi) => {
       const ix = o.ix(pi);
       const pcOf = ([d]) => (R4 + d) % 12;
@@ -17597,7 +17636,7 @@ html.os-darwin.native-menu #menubar .mproj {
         bars: 4,
         notes: notes.map((n) => ({ ...n, s: r42(n.s), l: r42(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n),
         key: { ...key },
-        keyName: keyName2,
+        keyName: keyName3,
         role,
         styles,
         pool,
@@ -19283,7 +19322,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ...o
     });
     GPROGS.filter((p) => p[4].split(" ").includes(g)).forEach((p, pi) => {
-      const [name, bars3, , mode] = p, R4 = set2.keys[pi % set2.keys.length][0], sg = lay(p, R4), keyName2 = NOTE_NAMES[R4] + " " + SCALE_OF(mode), K2 = { key: { root: R4, scale: SCALE_OF(mode) }, keyName: keyName2 }, tag = set2.tag + " ", suf = bars3 === 2 ? " 2-bar" : "", notes = (list2) => list2.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
+      const [name, bars3, , mode] = p, R4 = set2.keys[pi % set2.keys.length][0], sg = lay(p, R4), keyName3 = NOTE_NAMES[R4] + " " + SCALE_OF(mode), K2 = { key: { root: R4, scale: SCALE_OF(mode) }, keyName: keyName3 }, tag = set2.tag + " ", suf = bars3 === 2 ? " 2-bar" : "", notes = (list2) => list2.map((n) => ({ ...n, s: r43(n.s), l: r43(n.l) })).sort((a, b) => a.s - b.s || a.n - b.n);
       const rh = CH_RH[set2.ch];
       ["Groove", "Push"].forEach(
         (lab, v) => push({
@@ -19845,14 +19884,14 @@ html.os-darwin.native-menu #menubar .mproj {
     const peak = Math.max(a * p.gain, 2e-4);
     g.gain.setValueAtTime(1e-4, t);
     g.gain.linearRampToValueAtTime(peak, t + p.atk);
-    let stop;
+    let stop2;
     if (p.pluck) {
       g.gain.exponentialRampToValueAtTime(1e-4, t + p.pluck + 0.1);
-      stop = t + p.pluck + 0.15;
+      stop2 = t + p.pluck + 0.15;
     } else {
       g.gain.setValueAtTime(peak, Math.max(end, t + p.atk + 1e-3));
       g.gain.linearRampToValueAtTime(1e-4, end + p.rel);
-      stop = end + p.rel + 0.05;
+      stop2 = end + p.rel + 0.05;
     }
     p.w.forEach((w, i) => {
       const o = AU.ctx.createOscillator();
@@ -19861,7 +19900,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (p.det) o.detune.value = p.det[i] || 0;
       o.connect(lp);
       o.start(t);
-      o.stop(stop);
+      o.stop(stop2);
     });
   }
   function click(t, accent2) {
@@ -20697,9 +20736,9 @@ html.os-darwin.native-menu #menubar .mproj {
     });
   }
   var PREVIEWS = /* @__PURE__ */ new Set();
-  function onStopAll(stop) {
-    PREVIEWS.add(stop);
-    return () => PREVIEWS.delete(stop);
+  function onStopAll(stop2) {
+    PREVIEWS.add(stop2);
+    return () => PREVIEWS.delete(stop2);
   }
   function stopAll() {
     for (const f of [...PREVIEWS])
@@ -43855,25 +43894,25 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!$("#labOv")) return removeEventListener("keydown", onKey, true);
     const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) && e.target.type !== "range" && e.target.type !== "checkbox";
     const k2 = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey || e.altKey;
-    const stop = () => (e.stopPropagation(), e.preventDefault());
+    const stop2 = () => (e.stopPropagation(), e.preventDefault());
     if (e.key === "Escape") {
-      stop();
+      stop2();
       if ($("#labSave")) $("#labSave").remove();
       else labClose();
     } else if ((e.ctrlKey || e.metaKey) && k2 === "s") {
-      stop();
+      stop2();
       saveOpen();
     } else if ((e.ctrlKey || e.metaKey) && k2 === "z") {
       if (typing) return;
-      stop();
+      stop2();
       if (e.shiftKey) redo2();
       else undo2();
     } else if (typing || mod) return;
     else if (k2 in KEYS2) {
-      stop();
+      stop2();
       if (!e.repeat) keyDown(KEYS2[k2], $('#labOv .labKey[data-n="' + KEYS2[k2] + '"]'), true);
     } else if (k2 === "q") {
-      stop();
+      stop2();
       if (!e.repeat) compare(true);
     } else if (!$("#labOv").contains(e.target)) e.stopPropagation();
   }
@@ -44322,14 +44361,14 @@ html.os-darwin.native-menu #menubar .mproj {
     const v = q.snd.v[ref];
     const out2 = el("b", {}, known2 ? valText(kind, ref, v) : "–");
     const apply4 = (x) => {
-      const d = x - q.snd.v[ref], changed2 = [];
+      const d = x - q.snd.v[ref], changed3 = [];
       keys2.forEach((k2, i) => {
         if (multi && !on3.includes(i)) return;
         const [pp] = paramOf(kind, k2);
         const nv = multi ? Math.max(pp[3], Math.min(pp[4], q.snd.v[k2] + d)) : x;
-        if (nv !== q.snd.v[k2]) q.snd.v[k2] = nv, changed2.push(k2);
+        if (nv !== q.snd.v[k2]) q.snd.v[k2] = nv, changed3.push(k2);
       });
-      if (changed2.length) send(t, changed2);
+      if (changed3.length) send(t, changed3);
       out2.textContent = valText(kind, ref, q.snd.v[ref]);
     };
     const title = (p[7] || label2) + (multi ? ". Moves every playing partial by the same amount." : "");
@@ -47444,8 +47483,8 @@ html.os-darwin.native-menu #menubar .mproj {
     node.meter = meter;
     return node;
   }
-  function fxSelect(choices, cur2, on3, label2, title) {
-    const now2 = choices.find((c) => c.id === cur2);
+  function fxSelect(choices2, cur2, on3, label2, title) {
+    const now2 = choices2.find((c) => c.id === cur2);
     const opt = (c) => el("option", { value: c.id, selected: c.id === cur2 }, c.label);
     const sel2 = el(
       "select",
@@ -47455,11 +47494,11 @@ html.os-darwin.native-menu #menubar .mproj {
     const fill2 = () => {
       if (sel2.dataset.full) return;
       sel2.dataset.full = "1";
-      const groups = [...new Set(choices.map((c) => c.group))];
+      const groups = [...new Set(choices2.map((c) => c.group))];
       sel2.replaceChildren(
         ...now2 ? [] : [el("option", { value: "", selected: true }, "—")],
         ...groups.flatMap(
-          (g) => g ? [el("optgroup", { label: g }, ...choices.filter((c) => c.group === g).map(opt))] : choices.filter((c) => !c.group).map(opt)
+          (g) => g ? [el("optgroup", { label: g }, ...choices2.filter((c) => c.group === g).map(opt))] : choices2.filter((c) => !c.group).map(opt)
         )
       );
     };
@@ -48638,7 +48677,7 @@ html.os-darwin.native-menu #menubar .mproj {
       )
     );
   }
-  function dock2(changed2) {
+  function dock2(changed3) {
     const t = SC.t, k2 = SC.k, c = clipAt(t, k2), p = c && S.patterns[c.pat];
     if (!SC.edit || !p) {
       if (SC.edit) SC.edit = SC.big = false;
@@ -48660,7 +48699,7 @@ html.os-darwin.native-menu #menubar .mproj {
       shown4 = key;
     }
     let tm = 0;
-    const later2 = () => (clearTimeout(tm), tm = setTimeout(changed2, 150));
+    const later2 = () => (clearTimeout(tm), tm = setTimeout(changed3, 150));
     const box = el(
       "div",
       { class: "scnDock", style: "--tc:" + TRACK_COLORS[t], onchange: later2, onpointerup: later2 },
@@ -50707,10 +50746,10 @@ html.os-darwin.native-menu #menubar .mproj {
       intro(name + " kick", { k: L2.k, h: "..x...x...x...x...x...x...x...x." });
     }
   }
-  function addTones(push, [prog, chords], keyName2, root, scale) {
+  function addTones(push, [prog, chords], keyName3, root, scale) {
     const key = { root, scale };
     for (const per of [16, 32]) {
-      const total = per * 4, base = { type: "tone", bars: total / 16, key, keyName: keyName2 }, tag = " " + prog;
+      const total = per * 4, base = { type: "tone", bars: total / 16, key, keyName: keyName3 }, tag = " " + prog;
       const each = (fn) => {
         const out2 = [];
         chords.forEach(([off, q], ci) => {
@@ -57071,9 +57110,9 @@ html.os-darwin.native-menu #menubar .mproj {
     const mood = {
       dark: Math.max(0, Math.min(1, +(opts.dark ?? 0) || 0)),
       edge: Math.max(0, Math.min(1, +(opts.edge ?? 0.3) || 0))
-    }, mr = mulberry(hashStr(style.id + ":mood") ^ seed4), goDark = mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6, dprog = goDark ? genProg(mr, "d") : null, hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
-    const colour = dprog ? "d" : made3 ? own[0] : progId[0], scale = dprog ? hm ? "harmonic minor" : "minor" : mood.dark >= 0.5 ? "minor" : style.scale === "major" && colour !== "m" ? "major" : progScale(colour, style.scale);
-    const ch0 = chordsOf2(dprog || made3 || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0), ch = dprog ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
+    }, mr = mulberry(hashStr(style.id + ":mood") ^ seed4), given = Array.isArray(opts.prog) && opts.prog.length ? opts.prog : null, goDark = !given && mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6, dprog = goDark ? genProg(mr, "d") : null, hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
+    const colour = dprog ? "d" : made3 ? own[0] : progId[0], scale = given ? opts.scale === "major" ? "major" : "minor" : dprog ? hm ? "harmonic minor" : "minor" : mood.dark >= 0.5 ? "minor" : style.scale === "major" && colour !== "m" ? "major" : progScale(colour, style.scale);
+    const ch0 = chordsOf2(given || dprog || made3 || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0), ch = dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
     const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === "dnb" || fam === "edm" ? 5 : 3.5)));
     const sections = formOf(fam, Math.round(minutes * bpm / 4));
     const motif = {
@@ -57138,7 +57177,7 @@ html.os-darwin.native-menu #menubar .mproj {
       bpm,
       key,
       scale,
-      prog: dprog ? "gd:" + dprog.join(".") : progId,
+      prog: given ? "u:" + given.join(".") : dprog ? "gd:" + dprog.join(".") : progId,
       fam,
       recipe,
       mood
@@ -57336,7 +57375,13 @@ html.os-darwin.native-menu #menubar .mproj {
     };
   }
   function buildComposed(st) {
-    const md = lvComposeMood(), c = composer(st, { key: LV.key, seed: LV.seed, minutes: 4, ...md }), mk = "-d" + md.dark + "e" + md.edge, tag = "cmp-" + st.id + "-" + LV.seed + "-" + LV.key + mk + "-", prog = "cmp:" + st.id + ":" + LV.seed + mk;
+    const md = lvComposeMood(), lc = LV.lc, c = composer(st, {
+      key: lc ? lc.key : LV.key,
+      seed: LV.seed,
+      minutes: 4,
+      ...md,
+      ...lc ? { prog: lc.prog, scale: lc.scale } : {}
+    }), mk = "-d" + md.dark + "e" + md.edge + (lc ? "-u" + lc.scale[1] + lc.prog.join(".") : ""), tag = "cmp-" + st.id + "-" + LV.seed + "-" + LV.key + mk + "-", prog = "cmp:" + st.id + ":" + LV.seed + mk;
     const entry = (t, role, v) => {
       const roles = role === "full" ? ["kit", "hats", "perc"] : [role];
       const keys2 = roles.map((x) => c.make(x, v === "C" && x !== "kit" && x !== "bass" && x !== "hats" ? "B" : v)).filter(Boolean);
@@ -57370,6 +57415,13 @@ html.os-darwin.native-menu #menubar .mproj {
         const id = entry(t, role, v);
         if (id) cells[t] = { id, pool: role };
       }
+      if (lc)
+        for (const t in cells) {
+          const f = FACMAP.get(cells[t].id);
+          if (lc.loops[t] != null || !f || f.type !== "tone") continue;
+          const crowds = (g) => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
+          if (Object.values(lc.loops).some((id) => crowds(FACMAP.get(id)))) delete cells[t];
+        }
       const sc = { kind, name, bars: bars3, e, cells };
       if (fx) sc.fx = fx;
       return sc;
@@ -62475,7 +62527,9 @@ html.os-darwin.native-menu #menubar .mproj {
     /* plays cued for the next bar: [{t, id, tick}] (id null: the set's own part back) */
     cued: [],
     /* each track's own part before a take took over: {t: id} */
-    was: {}
+    was: {},
+    /* the recording is LoopCompose's (live/loop-compose.js) */
+    lc: false
   };
   var SAVED = ["track", "bars", "quant", "count", "auto", "quiet"];
   try {
@@ -62513,6 +62567,9 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var riffTakes = () => kept.slice().reverse();
   var listeners = /* @__PURE__ */ new Set();
+  var takers = /* @__PURE__ */ new Set();
+  var riffOnTake = (fn) => takers.add(fn);
+  var took = (f, tick) => takers.forEach((fn) => fn(f, tick));
   var riffOnChange = (fn) => listeners.add(fn);
   var changed = () => {
     listeners.forEach((fn) => fn());
@@ -62566,6 +62623,7 @@ html.os-darwin.native-menu #menubar .mproj {
     RIFF.dub = null;
     handBack(t);
     changed();
+    took(null, TR.tick);
     toast("Recording cancelled");
   }
   function riffStopped() {
@@ -62574,6 +62632,7 @@ html.os-darwin.native-menu #menubar .mproj {
       RIFF.notes = [];
       RIFF.held = {};
       RIFF.dub = null;
+      took(null, TR.tick);
     }
     RIFF.cued = [];
     changed();
@@ -62659,6 +62718,7 @@ html.os-darwin.native-menu #menubar .mproj {
     ), notes = riffQuantize(raw, RIFF.quant, bars3);
     if (!notes.length || t < 0 || !S.tracks[t]) {
       changed();
+      took(null, tick);
       return void toast("Nothing was played, so no take: press ● Rec to try again");
     }
     const f = {
@@ -62678,7 +62738,10 @@ html.os-darwin.native-menu #menubar .mproj {
     FACMAP.set(f.id, f);
     keep(f);
     RIFF.last = f.id;
-    if (RIFF.auto) put2(t, f.id, tick);
+    const lc = RIFF.lc;
+    RIFF.lc = false;
+    if (RIFF.auto && !lc) put2(t, f.id, tick);
+    took(f, tick);
     changed();
   }
   function put2(t, id, tick) {
@@ -62698,6 +62761,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     LV.ver++;
   }
+  var riffPin = (t, id, tick) => put2(t, id, tick);
   var nextBar = () => Math.ceil((TR.tick + 2) / 32) * 32;
   var riffPlaying = (t) => {
     const v = LV.voices[t] && LV.voices[t][0];
@@ -63222,6 +63286,345 @@ html.os-darwin.native-menu #menubar .mproj {
         "Recording always starts on a bar line at least two beats away (a whole bar more with the count-in); from a stopped jam it starts the jam and records after one bar. Takes are kept between sessions; a scene that keeps one (★) still has it next time."
       )
     );
+  }
+
+  // src/library/loop-harmony.js
+  var NAMES3 = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  var PROF = {
+    major: [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
+    minor: [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+  };
+  var weight = (n) => Math.min(4, Math.max(0.5, n.l)) * (n.s % 4 < 0.25 ? 1.5 : 1) * (0.5 + (n.v || 100) / 254);
+  function corr(a, b) {
+    const ma = a.reduce((x, y) => x + y, 0) / 12, mb = b.reduce((x, y) => x + y, 0) / 12;
+    let n = 0, da = 0, db2 = 0;
+    for (let i = 0; i < 12; i++) {
+      n += (a[i] - ma) * (b[i] - mb);
+      da += (a[i] - ma) ** 2;
+      db2 += (b[i] - mb) ** 2;
+    }
+    return da && db2 ? n / Math.sqrt(da * db2) : 0;
+  }
+  function loopKey(notes, hint) {
+    const h = Array(12).fill(0);
+    for (const n of notes) h[n.n % 12] += weight(n);
+    const total = h.reduce((a, b) => a + b, 0);
+    if (!total) return { key: hint.key, scale: hint.scale };
+    const inScale = (key, scale) => SCALES[scale].reduce((a, i) => a + h[(key + i) % 12], 0) / total;
+    if (hint && inScale(hint.key, hint.scale) >= 0.9) return { key: hint.key, scale: hint.scale };
+    let best = null;
+    for (const scale of ["minor", "major"])
+      for (let key = 0; key < 12; key++) {
+        const prof = PROF[scale].map((_, i) => PROF[scale][(i - key + 12) % 12]), sc = corr(h, prof) + (hint && hint.key === key && hint.scale === scale ? 0.08 : 0);
+        if (!best || sc > best.sc) best = { key, scale, sc };
+      }
+    return { key: best.key, scale: best.scale };
+  }
+  function choices(key, scale) {
+    const sc = SCALES[scale], out2 = [];
+    for (let d = 0; d < 7; d++) {
+      const pcs = [0, 2, 4].map((i) => (key + sc[(d + i) % 7]) % 12), third = (pcs[1] - pcs[0] + 12) % 12, fifth = (pcs[2] - pcs[0] + 12) % 12;
+      if (fifth !== 7) continue;
+      out2.push({ tok: d + 1, pcs, minor: third === 3 });
+    }
+    if (scale === "minor") out2.push({ tok: "5M", pcs: [7, 11, 2].map((i) => (key + i) % 12), minor: false });
+    return out2;
+  }
+  function loopHarmony(loops, hint) {
+    const bars3 = Math.max(1, ...loops.map((l) => l.bars || 1)), all = loops.flatMap((l) => l.notes), { key, scale } = loopKey(all, hint), cands = choices(key, scale), prog = [], names = [];
+    let prev = null;
+    for (let b = 0; b < bars3; b++) {
+      const w = Array(12).fill(0);
+      let low2 = null;
+      for (const l of loops) {
+        const lb = b % (l.bars || 1);
+        for (const n of l.notes) {
+          if (n.s < lb * 16 || n.s >= lb * 16 + 16) continue;
+          w[n.n % 12] += weight(n) * (l.bass ? 1.5 : 1);
+          if (l.bass && (!low2 || n.n < low2.n || n.n === low2.n && n.s < low2.s)) low2 = n;
+        }
+      }
+      let best = null;
+      if (w.some(Boolean))
+        for (const c2 of cands) {
+          let sc = 0;
+          for (let pc3 = 0; pc3 < 12; pc3++)
+            if (w[pc3]) sc += c2.pcs.includes(pc3) ? w[pc3] * (pc3 === c2.pcs[0] ? 1.3 : 1) : -0.6 * w[pc3];
+          if (low2 && low2.n % 12 === c2.pcs[0]) sc += 2;
+          if (prev && c2.tok === prev.tok) sc += 0.25;
+          if (c2.tok === 1) sc += 0.1;
+          if (!best || sc > best.sc) best = { ...c2, sc };
+        }
+      const c = best || prev || cands[0];
+      prog.push(c.tok);
+      names.push(NAMES3[c.pcs[0]] + (c.minor ? "m" : ""));
+      prev = c;
+    }
+    return { key, scale, prog, names };
+  }
+  var keyName2 = (key, scale) => NAMES3[key] + " " + scale;
+
+  // src/live/loop-compose.js
+  var OPTS2 = "mc707-live-loopcompose";
+  var LC = {
+    state: "off",
+    t: -1,
+    bars: 4,
+    keep: true,
+    loops: {},
+    names: [],
+    key: 0,
+    scale: "minor",
+    /* what to go back to: the patterns flavour, auto-pilot, and the state before a recording */
+    flavor: null,
+    auto: null,
+    before: "off"
+  };
+  try {
+    const o = JSON.parse(localStorage.getItem(OPTS2) || "{}");
+    if (o.t != null) LC.t = o.t;
+    if (RIFF_BARS.includes(o.bars)) LC.bars = o.bars;
+    if (o.keep != null) LC.keep = !!o.keep;
+  } catch (e) {
+  }
+  var saveOpts2 = () => {
+    try {
+      localStorage.setItem(OPTS2, JSON.stringify({ t: LC.t, bars: LC.bars, keep: LC.keep }));
+    } catch (e) {
+    }
+  };
+  var toneTracks2 = () => S.tracks.map((tr, t) => [t, tr.name]).filter(([t]) => S.tracks[t].type === "tone");
+  var listeners2 = /* @__PURE__ */ new Set();
+  var changed2 = () => listeners2.forEach((fn) => fn());
+  riffOnChange(changed2);
+  function beatScene() {
+    const drums2 = (sc) => Object.keys(sc.cells || {}).filter((t) => S.tracks[t] && S.tracks[t].type !== "tone").length;
+    const from = LV.scenes.filter((sc) => sc.cells && sc.kind !== "lc").reduce((a, sc) => !a || drums2(sc) > drums2(a) ? sc : a, null);
+    const cells = {};
+    if (from) {
+      for (const t in from.cells) if (S.tracks[t] && S.tracks[t].type !== "tone") cells[t] = from.cells[t];
+    }
+    LV.scenes = LV.scenes.filter((sc) => sc.kind !== "lc");
+    LV.scenes.push({ kind: "lc", name: "Your loop", bars: 4, e: 5, cells });
+    LV.ver++;
+    return LV.scenes.length - 1;
+  }
+  function record(t) {
+    if (!S.tracks[t] || S.tracks[t].type !== "tone") return void toast("Choose a melody track to record to");
+    if (LC.auto == null) LC.auto = LV.auto;
+    LV.auto = false;
+    for (const u of Object.keys(LC.loops).map(Number))
+      if (u === t || !LC.keep) {
+        if (LV.pin[u] === LC.loops[u]) {
+          if (lvOn()) riffPin(u, null, TR.tick);
+          else {
+            delete LV.pin[u];
+            delete LV.pinUnder[u];
+          }
+        }
+        if (!LC.keep || u === t) delete LC.loops[u];
+      }
+    const beat = beatScene();
+    riffSet("track", t);
+    riffSet("bars", LC.bars);
+    LC.before = LC.state;
+    LC.state = "rec";
+    RIFF.lc = true;
+    if (!lvOn()) {
+      LV.cur = beat;
+      riffArm();
+      if (RIFF.state === "off") return fail();
+    } else {
+      const bar2 = Math.ceil((TR.tick + 16) / 32) * 32;
+      LV.cues = LV.cues.filter((c) => c.type !== "scene" && c.type !== "blend" && c.type !== "blendDrums");
+      LV.cues.push({ type: "scene", idx: beat, tick: bar2, hard: true });
+      lvSortCues();
+      riffArm();
+      if (RIFF.state === "off") return fail();
+      RIFF.start = bar2 + 32;
+      RIFF.end = RIFF.start + LC.bars * 32;
+    }
+    riffShow();
+    changed2();
+  }
+  function fail() {
+    RIFF.lc = false;
+    LC.state = LC.before === "on" ? "on" : "off";
+    if (LC.auto != null) LV.auto = LC.auto;
+    LC.auto = null;
+    if (LC.state === "off") stop();
+    changed2();
+  }
+  function lcStart(t = LC.t) {
+    if (RIFF.state !== "off") return void toast("Loop rec is recording: finish or cancel it first");
+    LC.loops = {};
+    LC.flavor = LV.flavor;
+    LV.flavor = "composed";
+    LV.custom = false;
+    LV.lc = null;
+    liveBuild();
+    record(t);
+  }
+  function lcNewLoop(t = LC.t) {
+    if (LC.state === "off") return lcStart(t);
+    if (RIFF.state !== "off") return void toast("Loop rec is recording: finish or cancel it first");
+    record(t);
+  }
+  function lcEnd() {
+    if (LC.state === "rec") riffCancel();
+    stop();
+    toast("LoopCompose ended: your loops stay on their tracks (■ Back in Loop rec takes one off)");
+  }
+  function stop() {
+    LC.state = "off";
+    LV.lc = null;
+    LV.scenes = LV.scenes.filter((sc) => sc.kind !== "lc");
+    if (LV.cur >= LV.scenes.length) LV.cur = 0;
+    if (LC.flavor) LV.flavor = LC.flavor;
+    LC.flavor = null;
+    if (LC.auto != null) LV.auto = LC.auto;
+    LC.auto = null;
+    saveLive();
+    LV.ver++;
+    changed2();
+  }
+  riffOnTake((f, tick) => {
+    if (LC.state !== "rec") return;
+    if (!f) return fail();
+    const first = LC.before !== "on";
+    LC.loops[f.track] = f.id;
+    const loops = Object.entries(LC.loops).map(([t, id]) => ({ t: +t, f: FACMAP.get(id) })).filter((x) => x.f);
+    const h = loopHarmony(
+      loops.map((x) => ({
+        notes: x.f.notes,
+        bars: x.f.bars,
+        bass: /bass|acid/.test(x.f.pool || "") || x.f.notes.reduce((a, n) => a + n.n, 0) / x.f.notes.length < 50
+      })),
+      { key: LV.key, scale: LV.mode === "major" ? "major" : "minor" }
+    );
+    for (const x of loops) x.f.key = { root: h.key, scale: h.scale };
+    Object.assign(LC, { key: h.key, scale: h.scale, names: h.names });
+    LV.key = h.key;
+    LV.homeKey = h.key;
+    LV.mode = lvModeFam(h.scale);
+    if (!first) LV.seed = Math.floor(Math.random() * 1e6) + 1;
+    LV.lc = { prog: h.prog, key: h.key, scale: h.scale, loops: { ...LC.loops } };
+    LV.custom = false;
+    liveBuild();
+    LV.cur = 0;
+    for (const x of loops) if (LV.pin[x.t] !== x.f.id) riffPin(x.t, x.f.id, tick);
+    const parts4 = (sc) => Object.keys(sc.cells || {}).length;
+    let into = -1;
+    LV.scenes.forEach((sc, i) => {
+      if (sc.kind === "groove" && (into < 0 || parts4(sc) > parts4(LV.scenes[into]))) into = i;
+    });
+    if (into < 0) into = 0;
+    LV.cues = LV.cues.filter((c) => c.type !== "scene");
+    LV.cues.push({ type: "scene", idx: into, tick: Math.ceil(tick / 32) * 32 + 64 });
+    lvSortCues();
+    if (LC.auto != null) LV.auto = LC.auto;
+    LC.auto = null;
+    LC.state = "on";
+    saveLive();
+    LV.ver++;
+    toast("Your loop: " + keyName2(h.key, h.scale) + ", " + h.names.join(" – ") + ". The set comes in in two bars");
+    liveRender();
+    changed2();
+  });
+  function lcPanel() {
+    const box = el("div", { class: "lcPanel" });
+    const draw2 = () => {
+      if (LC.t < 0 || !S.tracks[LC.t] || S.tracks[LC.t].type !== "tone") {
+        const first = toneTracks2()[0];
+        LC.t = first ? first[0] : -1;
+      }
+      const going = LC.state === "rec";
+      const pick5 = el(
+        "select",
+        {
+          "aria-label": "LoopCompose track",
+          disabled: going,
+          onchange: (e) => {
+            LC.t = +e.target.value;
+            saveOpts2();
+          }
+        },
+        ...toneTracks2().map(([t, name]) => el("option", { value: t, selected: t === LC.t }, name))
+      );
+      const len = el(
+        "select",
+        {
+          "aria-label": "LoopCompose length",
+          disabled: going,
+          onchange: (e) => {
+            LC.bars = +e.target.value;
+            saveOpts2();
+          }
+        },
+        ...RIFF_BARS.map((n) => el("option", { value: n, selected: n === LC.bars }, n + (n > 1 ? " bars" : " bar")))
+      );
+      const keep2 = el("input", {
+        type: "checkbox",
+        checked: LC.keep,
+        onchange: (e) => {
+          LC.keep = e.target.checked;
+          saveOpts2();
+        }
+      });
+      const b = (label2, fn, title, cls) => el("button", { type: "button", class: "btn" + (cls ? " " + cls : " sm"), title, onclick: fn }, label2);
+      const loops = Object.entries(LC.loops).map(([t, id]) => [S.tracks[t] && S.tracks[t].name, FACMAP.get(id)]).filter((x) => x[0] && x[1]);
+      const kids = [
+        el(
+          "p",
+          { class: "lcHelp" },
+          "Start from a beat, play a loop on a track, and the composer writes the rest of the set around it."
+        ),
+        el(
+          "div",
+          { class: "riffRow" },
+          el("label", { class: "lvf" }, "Record to", pick5),
+          el("label", { class: "lvf" }, "Length", len),
+          LC.state !== "off" ? el("label", { class: "lvf lcKeep" }, keep2, "Keep my other loops") : null
+        ),
+        going ? el(
+          "div",
+          { class: "riffRow" },
+          el(
+            "span",
+            { class: "lcStat", "aria-live": "polite" },
+            RIFF.state === "rec" ? "● Recording your loop on " + S.tracks[LC.t].name + "…" : "The beat, then play your loop from the next bar (the count-down is in Loop rec)"
+          ),
+          b("Cancel", () => riffCancel(), "Throw the recording away")
+        ) : el(
+          "div",
+          { class: "riffRow" },
+          LC.state === "off" ? b("● Start", () => lcStart(LC.t), "Play a beat and record your loop on the track chosen", "rec") : b(
+            "● New loop",
+            () => lcNewLoop(LC.t),
+            "Record another loop: the set strips back to the drums, then a new set around your loops comes in",
+            "rec"
+          ),
+          LC.state === "on" ? b("■ End", lcEnd, "LoopCompose off (your loops stay on their tracks)") : null
+        ),
+        LC.state === "on" ? el(
+          "div",
+          { class: "lcInfo" },
+          el("b", {}, keyName2(LC.key, LC.scale) + ": "),
+          LC.names.join(" – "),
+          ...loops.map(
+            ([tn, f]) => el(
+              "div",
+              { class: "lcLoop" },
+              "↻ " + f.name + " on " + tn + ", " + f.bars + (f.bars > 1 ? " bars" : " bar")
+            )
+          )
+        ) : null
+      ];
+      box.replaceChildren(...kids.filter(Boolean));
+    };
+    listeners2.add(() => box.isConnected && draw2());
+    draw2();
+    return box;
   }
 
   // src/live/live-mixer.js
@@ -64136,6 +64539,7 @@ html.os-darwin.native-menu #menubar .mproj {
           el("span", {}, "FILTER ↔ · FX ↕")
         )
       ),
+      fold("loopcompose", "LoopCompose", true, lcPanel()),
       fold("looprec", "Loop rec", true, riffPanel()),
       /* a controller keyboard's zones, while one is connected */
       el("div", { class: "ctlBar", id: "lvCtlBar", hidden: true })
@@ -68057,12 +68461,12 @@ html.os-darwin.native-menu #menubar .mproj {
           )
         );
         if (!open2.has(t) || !tr.n) return [row2];
-        const choices = tplPick(TB.genre, tr.role, 60, TB.srcs).map((e) => e.name);
+        const choices2 = tplPick(TB.genre, tr.role, 60, TB.srcs).map((e) => e.name);
         const clips = el(
           "div",
           { class: "tbClips" },
           ...Array.from({ length: tr.n }, (_, k2) => {
-            const cur2 = tr.names[k2], list2 = [...new Set([cur2, ...choices].filter(Boolean))];
+            const cur2 = tr.names[k2], list2 = [...new Set([cur2, ...choices2].filter(Boolean))];
             return el(
               "label",
               {},
@@ -71536,7 +71940,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const m = readMpj(u8);
     if (m.error) return toast(m.error);
     document.getElementById("mpjOv")?.remove();
-    const close = () => (stop(), ov.remove());
+    const close = () => (stop2(), ov.remove());
     const title = m.name || file.replace(/\.mpj$/i, "");
     const full = (t, k2) => {
       const c = m.tracks[t].clips[k2];
@@ -71544,7 +71948,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     const clipCount = m.tracks.reduce((n, tr, t) => n + tr.clips.filter((c, k2) => full(t, k2)).length, 0);
     let playing2 = null, unhook = null;
-    const stop = () => {
+    const stop2 = () => {
       if (playing2) playing2.stop();
       playing2 = null;
       if (unhook) unhook();
@@ -71560,7 +71964,7 @@ html.os-darwin.native-menu #menubar .mproj {
       src.connect(AU.ctx.destination);
       src.start();
       playing2 = src;
-      unhook = onStopAll(stop);
+      unhook = onStopAll(stop2);
     };
     const wavName = (s, i) => String(i + 1).padStart(2, "0") + " " + s.name.replace(/\.wav$/i, "") + ".wav";
     const all = m.scenes.map((x, n) => ({
@@ -71787,11 +72191,11 @@ html.os-darwin.native-menu #menubar .mproj {
         el(
           "div",
           { style: "display:flex;justify-content:flex-end" },
-          el("button", { type: "button", class: "btn", onclick: () => (stop(), close()) }, "Close")
+          el("button", { type: "button", class: "btn", onclick: () => (stop2(), close()) }, "Close")
         )
       )
     );
-    ov.addEventListener("keydown", (e) => e.key === "Escape" && (stop(), close()));
+    ov.addEventListener("keydown", (e) => e.key === "Escape" && (stop2(), close()));
     document.body.append(ov);
     return m;
   }

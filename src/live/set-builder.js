@@ -252,8 +252,16 @@ export function lvComposeMood() {
 }
 function buildComposed(st) {
   const md = lvComposeMood(),
-    c = composer(st, { key: LV.key, seed: LV.seed, minutes: 4, ...md }),
-    mk = '-d' + md.dark + 'e' + md.edge,
+    /* LoopCompose: every part on the chords of the loops you played (live/loop-compose.js) */
+    lc = LV.lc,
+    c = composer(st, {
+      key: lc ? lc.key : LV.key,
+      seed: LV.seed,
+      minutes: 4,
+      ...md,
+      ...(lc ? { prog: lc.prog, scale: lc.scale } : {})
+    }),
+    mk = '-d' + md.dark + 'e' + md.edge + (lc ? '-u' + lc.scale[1] + lc.prog.join('.') : ''),
     tag = 'cmp-' + st.id + '-' + LV.seed + '-' + LV.key + mk + '-',
     prog = 'cmp:' + st.id + ':' + LV.seed + mk;
   /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up) */
@@ -300,6 +308,15 @@ function buildComposed(st) {
       const id = entry(t, role, v);
       if (id) cells[t] = { id, pool: role };
     }
+    /* LoopCompose: a melodic part that would crowd a loop of yours (in its register, and one of them busy)
+       sits that scene out */
+    if (lc)
+      for (const t in cells) {
+        const f = FACMAP.get(cells[t].id);
+        if (lc.loops[t] != null || !f || f.type !== 'tone') continue;
+        const crowds = g => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
+        if (Object.values(lc.loops).some(id => crowds(FACMAP.get(id)))) delete cells[t];
+      }
     const sc = { kind, name, bars, e, cells };
     if (fx) sc.fx = fx;
     return sc;

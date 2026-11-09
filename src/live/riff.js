@@ -108,7 +108,9 @@ export const RIFF = {
   /* plays cued for the next bar: [{t, id, tick}] (id null: the set's own part back) */
   cued: [],
   /* each track's own part before a take took over: {t: id} */
-  was: {}
+  was: {},
+  /* the recording is LoopCompose's (live/loop-compose.js) */
+  lc: false
 };
 const SAVED = ['track', 'bars', 'quant', 'count', 'auto', 'quiet'];
 try {
@@ -147,7 +149,11 @@ function keep(f) {
 /** The takes, newest first. */
 export const riffTakes = () => kept.slice().reverse();
 
-const listeners = new Set();
+const listeners = new Set(),
+  takers = new Set();
+/** Call fn(take, tick) when a recording ends: the take made, or null (cancelled, or nothing played). */
+export const riffOnTake = fn => takers.add(fn);
+const took = (f, tick) => takers.forEach(fn => fn(f, tick));
 /** Call fn when the recording or the takes change (to redraw). */
 export const riffOnChange = fn => listeners.add(fn);
 const changed = () => {
@@ -216,6 +222,7 @@ export function riffCancel() {
   RIFF.dub = null;
   handBack(t);
   changed();
+  took(null, TR.tick);
   toast('Recording cancelled');
 }
 /** The jam stopped: a recording going is cancelled, plays waiting for the next bar are dropped. */
@@ -225,6 +232,7 @@ export function riffStopped() {
     RIFF.notes = [];
     RIFF.held = {};
     RIFF.dub = null;
+    took(null, TR.tick);
   }
   RIFF.cued = [];
   changed();
@@ -331,6 +339,7 @@ function riffDone(tick, bars) {
     notes = riffQuantize(raw, RIFF.quant, bars);
   if (!notes.length || t < 0 || !S.tracks[t]) {
     changed();
+    took(null, tick);
     return void toast('Nothing was played, so no take: press ● Rec to try again');
   }
   const f = {
@@ -350,7 +359,11 @@ function riffDone(tick, bars) {
   FACMAP.set(f.id, f);
   keep(f);
   RIFF.last = f.id;
-  if (RIFF.auto) put(t, f.id, tick);
+  /* (LoopCompose, recording, puts the take on its track itself) */
+  const lc = RIFF.lc;
+  RIFF.lc = false;
+  if (RIFF.auto && !lc) put(t, f.id, tick);
+  took(f, tick);
   changed();
 }
 
@@ -376,6 +389,8 @@ function put(t, id, tick) {
   }
   LV.ver++;
 }
+/** A take on its track now, pinned (LoopCompose), or (id null) the set's own part back. */
+export const riffPin = (t, id, tick) => put(t, id, tick);
 const nextBar = () => Math.ceil((TR.tick + 2) / 32) * 32;
 /** The take playing on track t now, if one is. */
 export const riffPlaying = t => {

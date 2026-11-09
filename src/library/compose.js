@@ -2928,6 +2928,8 @@ export function compose(style, opts = {}) {
  * The composer for a style without the song: make(role, variant) writes one part (kept in .patterns under
  * 'role:variant', which make returns, or null when the part is silent), all from the same progression,
  * motif and groove. Live Mode builds its scenes from these (live/set-builder.js).
+ * opts: seed, bpm, key, minutes, dark and edge (the mood), and prog with scale: chords to keep (degree
+ * tokens, one a bar, as loop-harmony.js finds them in a loop you played) instead of the take's own.
  * @returns {{make:(role:string, v:string)=>string|null, patterns:object, sounds:object, sections:object[],
  *   bpm:number, key:number, scale:string, prog:string, fam:string, recipe:object}}
  */
@@ -2959,22 +2961,28 @@ export function composer(style, opts = {}) {
       edge: Math.max(0, Math.min(1, +(opts.edge ?? 0.3) || 0))
     },
     mr = mulberry(hashStr(style.id + ':mood') ^ seed),
-    goDark = mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6,
+    /* chords given (LoopCompose: the chords of a loop you played) are kept as they are */
+    given = Array.isArray(opts.prog) && opts.prog.length ? opts.prog : null,
+    goDark = !given && mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6,
     dprog = goDark ? genProg(mr, 'd') : null,
     hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
   const colour = dprog ? 'd' : made ? own[0] : progId[0],
-    scale = dprog
-      ? hm
-        ? 'harmonic minor'
+    scale = given
+      ? opts.scale === 'major'
+        ? 'major'
         : 'minor'
-      : mood.dark >= 0.5
-        ? 'minor'
-        : style.scale === 'major' && colour !== 'm'
-          ? 'major'
-          : progScale(colour, style.scale);
+      : dprog
+        ? hm
+          ? 'harmonic minor'
+          : 'minor'
+        : mood.dark >= 0.5
+          ? 'minor'
+          : style.scale === 'major' && colour !== 'm'
+            ? 'major'
+            : progScale(colour, style.scale);
   /* sevenths (and ninths) from the scale for the styles that like them (not in the dark: plain and hard) */
-  const ch0 = chordsOf(dprog || made || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0),
-    ch = dprog ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
+  const ch0 = chordsOf(given || dprog || made || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0),
+    ch = dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
   const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === 'dnb' || fam === 'edm' ? 5 : 3.5)));
   const sections = formOf(fam, Math.round((minutes * bpm) / 4));
   const motif = {
@@ -3051,7 +3059,7 @@ export function composer(style, opts = {}) {
     bpm,
     key,
     scale,
-    prog: dprog ? 'gd:' + dprog.join('.') : progId,
+    prog: given ? 'u:' + given.join('.') : dprog ? 'gd:' + dprog.join('.') : progId,
     fam,
     recipe,
     mood

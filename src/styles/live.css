@@ -1959,3 +1959,42 @@ input[type='number'] {
     animation: none;
   }
 }
+
+/* LoopCompose (live/loop-compose.js) */
+.lcPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lcHelp {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+.lcPanel .btn.rec {
+  min-width: 96px;
+  font-weight: 700;
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 55%, transparent);
+}
+.lcPanel .btn.rec:hover {
+  background: #ef4444;
+  color: #fff;
+}
+.lcStat {
+  font-weight: 700;
+  color: #f59e0b;
+}
+.lcKeep {
+  gap: 6px;
+}
+.lcInfo {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  font-size: 13px;
+}
+.lcLoop {
+  margin-top: 2px;
+  opacity: 0.85;
+}

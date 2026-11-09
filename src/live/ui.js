@@ -3,6 +3,7 @@
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
 import { riffPanel, riffShow } from './riff.js';
+import { lcPanel } from './loop-compose.js';
 import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
@@ -790,6 +791,7 @@ export function liveInit() {
         el('span', {}, 'FILTER ↔ · FX ↕')
       )
     ),
+    fold('loopcompose', 'LoopCompose', true, lcPanel()),
     fold('looprec', 'Loop rec', true, riffPanel()),
     /* a controller keyboard's zones, while one is connected */
     el('div', { class: 'ctlBar', id: 'lvCtlBar', hidden: true })
