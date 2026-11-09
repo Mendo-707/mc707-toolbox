@@ -183,7 +183,10 @@ test('Compose: Dark and Hard moods: minor and dark chord moves, harder hits, sho
     return out;
   });
   assert.equal(r.banger.major, 0, 'the dark is never in a major key');
-  assert.ok(r.banger.bright < r.plain.bright && r.banger.bright <= 2, 'hardly a bright seven-to-one: ' + JSON.stringify(r));
+  assert.ok(
+    r.banger.bright < r.plain.bright && r.banger.bright <= 2,
+    'hardly a bright seven-to-one: ' + JSON.stringify(r)
+  );
   assert.ok(r.banger.kick > r.plain.kick + 4, 'harder kicks');
   assert.ok(r.banger.bass < r.plain.bass * 0.8, 'shorter, punchier bass');
   assert.deepEqual(errors, []);
