@@ -4,7 +4,7 @@
 
 Write songs, put them on your **Roland MC-707 or MC-101**, play live sets and design sounds, all from your computer. One USB cable carries every track, and the app can record the audio that comes back.
 
-> **Version 1.8.9.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
+> **Version 1.9.0.** Free to use and share, not for sale (see [Licence](#licence)). An unofficial fan project, not made by or affiliated with Roland. It was called MC-707 Toolbox until 1.7; [what's new](CHANGELOG.md) in every release.
 
 **Try it:** open the [web version](https://mendo-707.github.io/mc707-toolbox/) in Chrome or Edge, or download the app for Windows, Mac or Linux from [Releases](../../releases).
 

@@ -2,6 +2,10 @@
 
 Every release of MC707 / 101 Toolbox (called MC-707 Toolbox before 1.7), newest first.
 
+## New in 1.9
+
+- **1.9.0: LoopCompose**: play a loop, get a song around it. In **Live Mode**, the new **LoopCompose** panel above Loop rec starts a beat on its own and records a loop you play on the track you pick. The app works out your key and chords, the composer writes every other part on them, and the full set comes in two bars later with your loop still playing. **● New loop** strips back to the drums while you record another, then brings in a fresh set built around all your loops, like New patterns. Auto-pilot, swaps and New patterns all stay on your chords.
+
 ## New in 1.8
 
 - **1.8.9: Darker, harder songs from the composer**: **Compose it now** has a **Mood** menu: As the style is, Dark, Hard, Banger (dark and hard) or Chill. Dark gives minor and harmonic-minor progressions, lower chords and leads, and melodies that sit on the root and fifth; Hard hits the drums harder, pushes kicks, adds snare runs and 16th hats, and makes bass and chords shorter and punchier. In **Live Mode**, the Mood pad now makes Composed sets darker or harder the same way. Also fixed: a note could very rarely hang on the MC-707 when the audio and MIDI clocks shifted while its note-off was waiting.
