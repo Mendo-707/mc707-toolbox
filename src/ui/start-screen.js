@@ -14,6 +14,7 @@ import { zenOpen } from '../zen/zc-editor.js';
 import { VERSION, openLink } from '../core/version.js';
 import { checkUpdate } from './update-check.js';
 import { tutorialOpen } from './tutorial.js';
+import { templateBuilderOpen } from './template-builder.js';
 
 const KEY = 'mc707-start';
 /** True unless the start screen was turned off. */
@@ -147,6 +148,14 @@ export function startOpen(last = true) {
           'Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.',
           () => setMode('scene')
         ),
+        DEV === '707'
+          ? card(
+              '▧',
+              'Template builder',
+              'Make an MC-707 project to start from: your track layout with a kit or tone in every clip.',
+              () => templateBuilderOpen()
+            )
+          : null,
         card('◉', 'Live Mode', 'Pick a genre and jam: scenes on 16 pads, drops, breaks and effects.', () =>
           setMode('live')
         ),

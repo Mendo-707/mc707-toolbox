@@ -306,6 +306,15 @@ input[type='range'] {
   font-weight: 600;
   border-color: color-mix(in srgb, var(--hot) 55%, var(--line));
 }
+.composeTop {
+  font-weight: 700;
+  color: #fff;
+  background: var(--hot);
+  border-color: var(--hot);
+}
+.composeTop:hover {
+  filter: brightness(1.1);
+}
 .clipsTop:hover {
   border-color: var(--hot);
 }
@@ -981,6 +990,21 @@ input[type='range'] {
 #edEmpty[hidden] {
   display: none;
 }
+/* nothing selected: a strip under the arrangement, not half the window */
+#work > #editor.empty {
+  height: auto;
+}
+#work > #editor.empty #edEmpty {
+  flex: none;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+#work > #editor.empty #edEmpty br {
+  display: none;
+}
+#work > #editor.empty #edEmpty b {
+  margin-right: 8px;
+}
 #edEmpty b {
   color: var(--ink);
 }
@@ -1006,6 +1030,14 @@ input[type='range'] {
   #lib {
     max-height: none;
   }
+}
+
+#tbOv:focus {
+  outline: none;
+}
+/* (no splitter to drag while the editor is a strip) */
+#work:has(> #editor.empty) > #split {
+  display: none;
 }
 </style>
     <style>
@@ -3157,8 +3189,32 @@ input[type='range'] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#menubar .mtabs {
+#menubar .mconn {
   margin-left: auto;
+  margin-right: 10px;
+  align-self: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--hot);
+  background: transparent;
+  color: var(--hot);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+#menubar .mconn.on {
+  border-color: color-mix(in srgb, #22c55e 55%, transparent);
+  color: #22c55e;
+}
+#menubar .mconn:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+#menubar .mtabs {
   display: flex;
   gap: 2px;
   background: var(--panel);
@@ -9969,6 +10025,13 @@ html.os-darwin.native-menu #menubar .mproj {
         ></label>
       </div>
       <div class="grp" style="margin-left: auto">
+        <button
+          class="btn composeTop"
+          id="bCompose"
+          title="Song wizard: pick a style and mood and the app composes a whole song, or build one step by step"
+        >
+          ✦ Compose<span class="clipsLong"> a song</span>
+        </button>
         <button
           class="btn clipsTop"
           id="bClips"
@@ -26985,6 +27048,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const c = edClip();
     $("#edBody").style.display = c ? "" : "none";
     $("#edEmpty").hidden = !!c;
+    $("#editor").classList.toggle("empty", !c);
     if (!c) {
       $("#edHead").textContent = "";
       $("#edVelWrap").hidden = true;
@@ -48169,7 +48233,7 @@ html.os-darwin.native-menu #menubar .mproj {
         scheduleSave();
       }
     });
-    const p = pending(), n = p.clips.length + p.scenes.length;
+    const p = pending(), n = p.clips.length + p.scenes.length, empty2 = !rows().length && !(S.scn && S.scn.clips.flat().some(Boolean));
     return el(
       "header",
       { class: "scnTop" },
@@ -48206,16 +48270,6 @@ html.os-darwin.native-menu #menubar .mproj {
         "div",
         { class: "grp", style: "margin-left:auto" },
         CK.line ? el("span", { class: "hint scCk" }, CK.line) : null,
-        MIDI.out ? null : el(
-          "button",
-          {
-            type: "button",
-            class: "btn scnConn",
-            title: "No MC-707 connected. Play still works here with the app’s own sound; writing and checking need it connected over USB. Click to connect.",
-            onclick: () => connectMidi().then(() => SC.draw())
-          },
-          "⚠ Not connected"
-        ),
         WO.auto ? el(
           "span",
           {
@@ -48232,10 +48286,10 @@ html.os-darwin.native-menu #menubar .mproj {
             {
               type: "button",
               class: "btn" + (n ? " on" : ""),
-              title: n ? "Write the " + n + " changed or new clips and scenes to the MC-707" : "Everything is written",
+              title: n ? "Write the " + n + " changed or new clips and scenes to the MC-707" : empty2 ? "Fill some clips and add a scene first" : "Everything is written",
               onclick: () => writeChanged()
             },
-            n ? "Write " + n + " changes" : "✓ All written"
+            n ? "Write " + n + " changes" : empty2 ? "Nothing to write yet" : "✓ All written"
           ),
           el(
             "button",
@@ -56286,9 +56340,13 @@ html.os-darwin.native-menu #menubar .mproj {
       const c = ctx2.ch[b % ctx2.ch.length];
       let n = 1;
       while (n < 2 && b + n < ctx2.nb && same(ctx2.ch[(b + n) % ctx2.ch.length], c)) n++;
-      const vc = voice4(c, v === "break" ? 55 : 52, prev, 4);
-      prev = vc;
-      p.add(b, 0, n * 16, vc, v0);
+      const way = ctx2.motif && ctx2.motif.pad || "hold", full = voice4(c, (v === "break" ? 55 : 52) + (way === "high" ? 7 : 0), prev, 4);
+      prev = full;
+      const vc = way === "open" && full.length > 3 ? [full[0], ...full.slice(-2)] : full;
+      if (way === "again" && n * 16 >= 16) {
+        p.add(b, 0, n * 8, vc, v0);
+        p.add(b, n * 8, n * 8, vc, v0 - 10);
+      } else p.add(b, 0, n * 16, vc, v0);
       b += n;
     }
   };
@@ -56888,6 +56946,179 @@ html.os-darwin.native-menu #menubar .mproj {
     while (b.length && out2.length < n) out2.push(b.splice(Math.floor(r() * b.length), 1)[0]);
     return out2;
   };
+  function drumTurn(p, role, v, r) {
+    const nb = p.bars, at2 = (b, s) => b * 16 + s, bar2 = (n) => Math.floor(n.s / 16), step = (n) => n.s % 16, has2 = (s, lanes) => p.notes.some((n) => n.s === s && (!lanes || lanes.includes(n.n)));
+    if (v === "build" || v === "rise") return;
+    const mode = r(), answer2 = mode < 0.45 ? (b) => b % 2 === 1 : mode < 0.75 ? (b) => b % 4 >= 2 : (b) => b % 4 === 1 || b % 4 === 3;
+    if (role === "kit") {
+      const k0 = p.notes.filter((n) => n.n === K && n.s < 16).map(step), four3 = [0, 4, 8, 12].every((s) => k0.includes(s)), back = new Set(p.notes.filter((n) => (n.n === SN || n.n === CL) && n.v >= 70).map(step)), fillFrom = (b) => b === nb - 1 ? 8 : 12, inFill = (n) => bar2(n) === nb - 1 && step(n) >= 8 || bar2(n) % 4 === 3 && step(n) >= 12;
+      if (!four3 && v !== "half") {
+        const free = (s) => s > 0 && s < 16 && !back.has(s);
+        const moves = /* @__PURE__ */ new Map();
+        for (const s of new Set(p.notes.filter((n) => n.n === K && step(n) > 0 && !inFill(n)).map(step))) {
+          const x = r();
+          if (x < 0.5) {
+            const to = s + pick3(r, [-2, -1, 1, 2]);
+            if (free(to)) moves.set(s, to);
+          } else if (x < 0.65) moves.set(s, -1);
+        }
+        const extra = pick3(r, [2, 3, 6, 7, 10, 11, 14].filter(free));
+        for (let b = 0; b < nb; b++) {
+          if (!answer2(b)) continue;
+          for (const n of p.notes.filter((n2) => n2.n === K && bar2(n2) === b && !inFill(n2) && moves.has(step(n2)))) {
+            const to = moves.get(step(n));
+            if (to < 0) n.dead = true;
+            else if (!has2(at2(b, to), [K])) n.s = at2(b, to);
+          }
+          if (extra != null && r() < 0.6 && !has2(at2(b, extra), [K, SN, CL])) p.add(b, extra, 1, K, hum3(r, 84, 6));
+        }
+        p.notes = p.notes.filter((n) => !n.dead);
+      } else if (four3) {
+        const ops = pickN(r, ["gap", "lead", "clap", "rim", "rim"], 2);
+        if (ops.includes("gap"))
+          for (const b of [3, 7].filter((x) => x < nb))
+            p.notes = p.notes.filter((n) => !(n.n === K && bar2(n) === b && step(n) === 12));
+        if (ops.includes("lead")) {
+          const s = pick3(r, [14, 15, 7]);
+          for (let b = 0; b < nb; b++) if (answer2(b) && !has2(at2(b, s), [K])) p.add(b, s, 1, K, hum3(r, 70, 5));
+        }
+        if (ops.includes("clap")) {
+          const s = pick3(r, [15, 7, 11, 3]);
+          for (let b = 0; b < nb; b++) if (answer2(b) && !has2(at2(b, s))) p.add(b, s, 1, CL, hum3(r, 52, 6));
+        }
+        if (ops.includes("rim")) {
+          const fig = pick3(r, [
+            [3, 10],
+            [6, 11, 14],
+            [2, 7],
+            [10, 13],
+            [3, 6, 11]
+          ]);
+          for (let b = 0; b < nb; b++)
+            if (!answer2(b) || r() < 0.4) {
+              for (const s of fig) if (!has2(at2(b, s))) p.add(b, s, 1, RIM, hum3(r, 56, 8));
+            }
+        }
+      }
+      if (!four3) {
+        const isGhost = (n) => n.n === SN && n.v < 60 && !inFill(n);
+        if (r() < 0.7) p.notes = p.notes.filter((n) => !(isGhost(n) && answer2(bar2(n))));
+        const g = pickN(
+          r,
+          [1, 3, 5, 6, 7, 9, 11, 13, 14, 15].filter((s) => !back.has(s)),
+          1 + Math.floor(r() * 3)
+        );
+        for (let b = 0; b < nb; b++)
+          if (answer2(b)) {
+            for (const s of g) if (!has2(at2(b, s))) p.add(b, s, 1, SN, hum3(r, 36, 7));
+          }
+      }
+      if (v !== "intro" && v !== "outro" && v !== "drop")
+        for (const b of [3, 7].filter((x) => x < nb)) {
+          const from = fillFrom(b), kind = pick3(
+            r,
+            b === nb - 1 ? ["roll", "toms", "stutter", "gap", "flam", "mix"] : ["flam", "gap", "toms3", "none", "roll3"]
+          );
+          if (kind === "none") continue;
+          p.notes = p.notes.filter(
+            (n) => !(bar2(n) === b && step(n) >= from && (n.n === SN || n.n === CL || n.n === RIM || n.n >= LT && n.n <= HT2 || n.n === K && !four3))
+          );
+          const keep4 = () => from <= 12 && !has2(at2(b, 12), [SN, CL]) ? p.add(b, 12, 1, SN, 118) : p;
+          if (kind === "roll") for (let s = from; s < 16; s++) p.add(b, s, 1, SN, 64 + (s - from) * 60 / (15 - from));
+          else if (kind === "roll3") keep4().add(b, 13, 1, SN, 70).add(b, 14, 1, SN, 88).add(b, 15, 1, SN, 108);
+          else if (kind === "toms")
+            for (let s = from; s < 16; s++)
+              p.add(
+                b,
+                s,
+                1,
+                [HT2, HT2, MT, MT, LT, LT, LT, SN][Math.floor((s - from) * 8 / (16 - from))],
+                84 + (s - from) * 5
+              );
+          else if (kind === "toms3") keep4().add(b, 13, 1, HT2, 96).add(b, 14, 1, MT, 104).add(b, 15, 1, LT, 112);
+          else if (kind === "stutter")
+            for (let s = from; s < 16; s++) p.add(b, s, 1, s % 2 ? SN : K, (s % 2 ? 92 : 104) + (s - from) * 2);
+          else if (kind === "mix")
+            for (let s = from; s < 16; s++) p.add(b, s, 1, (s - from) % 3 === 2 ? MT : SN, 76 + (s - from) * 6);
+          else if (kind === "flam") keep4().add(b, 14, 1, SN, 58).add(b, 15, 1, SN, 112);
+          else if (kind === "gap") {
+            keep4().add(b, 15, 1, pick3(r, [SN, K]), 108);
+          }
+        }
+      return;
+    }
+    if (role === "hats") {
+      const ch = p.notes.filter((n) => n.n === CH2), per = ch.filter((n) => n.s < 16).length;
+      if (v === "half" || !per) {
+        for (const n of ch) n.v = Math.max(24, Math.min(118, n.v + Math.round((r() - 0.5) * 24)));
+        return;
+      }
+      const top = Math.max(60, ...ch.map((n) => n.v)), cls = per <= 5 ? 0 : per <= 10 ? 1 : 2, to = Math.max(0, Math.min(2, cls + (r() < 0.25 ? pick3(r, [-1, 1]) : 0)));
+      const FEELS3 = [
+        [
+          [
+            [2, 1],
+            [6, 1],
+            [10, 1],
+            [14, 1]
+          ],
+          [
+            [0, 0.6],
+            [2, 1],
+            [6, 1],
+            [8, 0.6],
+            [10, 1],
+            [14, 1]
+          ],
+          [
+            [2, 1],
+            [6, 1],
+            [7, 0.5],
+            [10, 1],
+            [14, 1],
+            [15, 0.5]
+          ],
+          [
+            [2, 0.9],
+            [6, 1],
+            [10, 0.9],
+            [11, 0.55],
+            [14, 1]
+          ]
+        ],
+        [
+          [0, 2, 4, 6, 8, 10, 12, 14].map((s) => [s, s % 4 === 2 ? 1 : 0.62]),
+          [0, 2, 4, 6, 8, 10, 12, 14].map((s) => [s, s % 4 === 0 ? 1 : 0.66]),
+          [0, 2, 3, 4, 6, 8, 10, 11, 12, 14].map((s) => [s, s % 2 ? 0.5 : s % 4 === 2 ? 1 : 0.7]),
+          [0, 2, 4, 6, 7, 8, 10, 12, 14, 15].map((s) => [s, s % 2 ? 0.5 : s % 4 === 2 ? 1 : 0.7]),
+          [0, 3, 4, 6, 8, 11, 12, 14].map((s) => [s, s % 4 === 0 ? 0.7 : 1]),
+          [2, 4, 6, 8, 10, 12, 14, 15].map((s) => [s, s % 4 === 2 ? 1 : 0.6])
+        ],
+        [
+          Array.from({ length: 16 }, (_, s) => [s, [1, 0.42, 0.68, 0.46][s % 4]]),
+          Array.from({ length: 16 }, (_, s) => [s, [0.7, 0.45, 1, 0.45][s % 4]]),
+          Array.from({ length: 16 }, (_, s) => [s, [0, 3, 6, 8, 11, 14].includes(s) ? 1 : 0.46]),
+          Array.from({ length: 16 }, (_, s) => [s, [1, 0.5, 0.7, 0.5][s % 4]]).filter((x) => x[0] % 4 !== 1),
+          Array.from({ length: 16 }, (_, s) => [s, [1, 0.5, 0.7, 0.5][s % 4]]).filter((x) => x[0] % 4 !== 3),
+          Array.from({ length: 16 }, (_, s) => [s, [0.6, 0.6, 1, 0.8][s % 4]]).filter((x) => x[0] % 8 !== 0)
+        ]
+      ];
+      const a = pick3(r, FEELS3[to]), b2 = r() < 0.5 ? pick3(r, FEELS3[to]) : a, open2 = r() < 0.7 ? pick3(r, [6, 14, 10, 2]) : -1, openIn = r() < 0.5 ? () => true : answer2, end = pick3(r, ["roll", "skip", "none", "none"]);
+      p.notes = p.notes.filter((n) => n.n !== CH2 && n.n !== OH);
+      for (let b = 0; b < nb; b++) {
+        for (const [s, lv] of answer2(b) ? b2 : a) {
+          if (end === "skip" && b % 4 === 3 && s >= 13) continue;
+          if (s === open2 && openIn(b)) p.add(b, s, 1, OH, hum3(r, 70, 6));
+          else p.add(b, s, 1, CH2, Math.max(22, hum3(r, top * lv, 5)));
+        }
+        if (open2 >= 0 && openIn(b) && !has2(at2(b, open2), [OH])) p.add(b, open2, 1, OH, hum3(r, 68, 6));
+        if (end === "roll" && b % 4 === 3) {
+          for (const s of [13, 14, 15]) if (!has2(at2(b, s), [CH2, OH])) p.add(b, s, 1, CH2, 50 + (s - 13) * 14);
+        }
+      }
+      return;
+    }
+  }
   function takeVary(p, role, v, ctx2, tr) {
     const nb = p.bars, at2 = (b, s) => b * 16 + s, has2 = (s, lanes) => p.notes.some((n) => n.s === s && (!lanes || lanes.includes(n.n))), bar2 = (n) => Math.floor(n.s / 16), step = (n) => n.s % 16;
     const mode = tr(), inBars = mode < 0.4 ? (b) => b % 2 === 1 : mode < 0.75 ? (b) => b % 4 === 3 : () => true;
@@ -57080,12 +57311,14 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
   function compose(style, opts = {}) {
-    const c = composer(style, opts), out2 = [];
+    const c = composer(style, opts), out2 = [], seen2 = /* @__PURE__ */ new Set();
     c.sections.forEach((sec, i) => {
       const want = partsOf(sec, i, c.sections, c.fam, c.recipe), parts4 = {};
       for (const [role, v] of Object.entries(want)) {
         if (!v) continue;
-        const k2 = c.make(role, v);
+        const again = (role === "kit" || role === "hats") && /^[ABC]$/.test(v) && i >= c.sections.length / 2 && seen2.has(role + v);
+        seen2.add(role + v);
+        const k2 = c.make(role, v, again ? 1 : void 0);
         if (k2) parts4[role] = k2;
       }
       out2.push({ name: sec.name, kind: sec.kind, bars: sec.bars, parts: parts4 });
@@ -57103,16 +57336,16 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function composer(style, opts = {}) {
     const recipe = recipeOf(style), seed4 = (opts.seed ?? 1) >>> 0, r = mulberry(hashStr(style.id + ":compose") ^ seed4);
-    const fam = recipe.form || style.fam;
+    const fam = recipe.form || style.fam, dturn = Math.max(0, Math.floor(opts.turn || 0));
     const bpm = Math.round(opts.bpm || style.bpm && style.bpm[2] || 120);
     const key = opts.key ?? (style.keys && style.keys[0] ? style.keys[0][0] : 9);
     const own = recipe.progs[Math.floor(r() * recipe.progs.length)], kin = Object.keys(PROGS).filter((id) => id[0] === own[0] || own[0] === "v" && /^m[1-7]/.test(id)), pr0 = r(), sc0 = style.scale === "major" && own[0] !== "m" ? "major" : progScale(own[0], style.scale), made3 = pr0 >= 0.45 ? genProg(r, own[0], sc0) : null, progId = made3 ? "g" + own[0] + ":" + made3.join(".") : pr0 < 0.3 || kin.length < 2 ? own : kin[Math.floor(r() * kin.length)], turn = !made3 && own[0] !== "v" && r() < 0.3 ? 2 * (1 + Math.floor(r() * 3)) : 0;
     const mood = {
       dark: Math.max(0, Math.min(1, +(opts.dark ?? 0) || 0)),
       edge: Math.max(0, Math.min(1, +(opts.edge ?? 0.3) || 0))
-    }, mr = mulberry(hashStr(style.id + ":mood") ^ seed4), given = Array.isArray(opts.prog) && opts.prog.length ? opts.prog : null, goDark = !given && mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6, dprog = goDark ? genProg(mr, "d") : null, hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
-    const colour = dprog ? "d" : made3 ? own[0] : progId[0], scale = given ? opts.scale === "major" ? "major" : "minor" : dprog ? hm ? "harmonic minor" : "minor" : mood.dark >= 0.5 ? "minor" : style.scale === "major" && colour !== "m" ? "major" : progScale(colour, style.scale);
-    const ch0 = chordsOf2(given || dprog || made3 || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0), ch = dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
+    }, mr = mulberry(hashStr(style.id + ":mood") ^ seed4), given = Array.isArray(opts.prog) && opts.prog.length ? opts.prog : null, like = opts.like && opts.like.chords && opts.like.chords.length ? opts.like : null, goDark = !given && !like && mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6, dprog = goDark ? genProg(mr, "d") : null, hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
+    const colour = dprog ? "d" : made3 ? own[0] : progId[0], scale = like ? like.scale : given ? opts.scale === "major" ? "major" : "minor" : dprog ? hm ? "harmonic minor" : "minor" : mood.dark >= 0.5 ? "minor" : style.scale === "major" && colour !== "m" ? "major" : progScale(colour, style.scale);
+    const ch0 = chordsOf2(given || dprog || made3 || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0), ch = like ? like.chords : dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
     const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === "dnb" || fam === "edm" ? 5 : 3.5)));
     const sections = formOf(fam, Math.round(minutes * bpm / 4));
     const motif = {
@@ -57129,13 +57362,14 @@ html.os-darwin.native-menu #menubar .mproj {
     motif.bass = BASS_FEEL[recipe.bass] && r() < 0.55 ? BASS_FEEL[recipe.bass] : null;
     motif.comp = recipe.chords !== "long" && r() < 0.45;
     motif.arp = r() < 0.5 ? genArp(r) : null;
+    motif.pad = ["hold", "hold", "high", "open", "again"][Math.floor(mulberry(hashStr(style.id + ":pad") ^ seed4)() * 5)];
     motif.seed = Math.imul(seed4 + 3, 2654435761) ^ hashStr(style.id);
     const gr = GR[recipe.gr] || GR.pop;
     const patterns = {}, sounds = {};
-    const make = (role, v) => {
-      const k2 = role + ":" + v;
+    const make = (role, v, tn = dturn) => {
+      const k0 = role + ":" + v, k2 = tn === dturn ? k0 : k0 + "~" + tn;
       if (patterns[k2]) return k2;
-      const nb = 8, p = new Pat(nb), pr = mulberry(hashStr(k2) ^ seed4), ctx2 = { ch, r: pr, nb, scale, key, recipe, motif, fam, mood };
+      const nb = 8, p = new Pat(nb), pr = mulberry(hashStr(k0) ^ seed4), ctx2 = { ch, r: pr, nb, scale, key, recipe, motif, fam, mood };
       if (role === "kit") gr.kit(p, pr, v, nb);
       else if (role === "hats") gr.hats(p, pr, v, nb);
       else if (role === "perc") gr.perc(p, pr, v, nb);
@@ -57150,6 +57384,11 @@ html.os-darwin.native-menu #menubar .mproj {
       if (v !== "build" && v !== "rise")
         takeVary(p, role, v, ctx2, mulberry(hashStr(role + ":take") ^ Math.imul(seed4 + 7, 2654435761)));
       else silentLastBeat(p);
+      if (tn) {
+        const ur = mulberry(hashStr(role + ":turn:" + v) ^ Math.imul(seed4 + 11 + tn * 7919, 2654435761));
+        if (role === "kit" || role === "hats") drumTurn(p, role, v, ur);
+        else if (role === "perc" && v !== "build" && v !== "rise") takeVary(p, role, v, ctx2, ur);
+      }
       moodPlay(p, role, v, ctx2, mulberry(hashStr(role + ":edge:" + v) ^ motif.seed));
       p.notes = p.notes.filter((n) => n.s >= 0 && n.s < nb * 16);
       if (!p.notes.length) return null;
@@ -57164,7 +57403,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       p.notes = [...one.values()].sort((a, b) => a.s - b.s || a.n - b.n);
       const type = role === "kit" || role === "hats" || role === "perc" ? "drum" : "tone";
-      patterns[k2] = { role, variant: v, name: NAMES2[v] || v, bars: nb, type, notes: p.notes };
+      patterns[k2] = { role, variant: v, name: (NAMES2[v] || v) + (k2 === k0 ? "" : " ′"), bars: nb, type, notes: p.notes };
       const snd = soundFor(role, v, recipe, Object.keys(patterns).length);
       if (snd) sounds[k2] = snd;
       return k2;
@@ -57177,7 +57416,8 @@ html.os-darwin.native-menu #menubar .mproj {
       bpm,
       key,
       scale,
-      prog: given ? "u:" + given.join(".") : dprog ? "gd:" + dprog.join(".") : progId,
+      chords: ch,
+      prog: like ? like.prog : given ? "u:" + given.join(".") : dprog ? "gd:" + dprog.join(".") : progId,
       fam,
       recipe,
       mood
@@ -57374,6 +57614,7 @@ html.os-darwin.native-menu #menubar .mproj {
       edge: Math.round(Math.max(0, Math.min(1, 0.35 + (m.i - 50) / 70)) * 20) / 20
     };
   }
+  var CMP_TAKES = 4;
   function buildComposed(st) {
     const md = lvComposeMood(), lc = LV.lc, c = composer(st, {
       key: lc ? lc.key : LV.key,
@@ -57381,17 +57622,31 @@ html.os-darwin.native-menu #menubar .mproj {
       minutes: 4,
       ...md,
       ...lc ? { prog: lc.prog, scale: lc.scale } : {}
-    }), mk = "-d" + md.dark + "e" + md.edge + (lc ? "-u" + lc.scale[1] + lc.prog.join(".") : ""), tag = "cmp-" + st.id + "-" + LV.seed + "-" + LV.key + mk + "-", prog = "cmp:" + st.id + ":" + LV.seed + mk;
-    const entry = (t, role, v) => {
-      const roles = role === "full" ? ["kit", "hats", "perc"] : [role];
-      const keys2 = roles.map((x) => c.make(x, v === "C" && x !== "kit" && x !== "bass" && x !== "hats" ? "B" : v)).filter(Boolean);
+    }), takes = [c], mk = "-d" + md.dark + "e" + md.edge + (lc ? "-u" + lc.scale[1] + lc.prog.join(".") : ""), tag = "cmp-" + st.id + "-" + LV.seed + "-" + LV.key + mk + "-", prog = "cmp:" + st.id + ":" + LV.seed + mk;
+    for (let k2 = 1; k2 < CMP_TAKES; k2++)
+      takes.push(
+        composer(st, {
+          key: c.key,
+          seed: (Math.imul(LV.seed + k2, 2654435761) >>> 0) % 1e9,
+          minutes: 4,
+          ...md,
+          like: c,
+          turn: k2
+        })
+      );
+    CMP3.tags = [...(CMP3.tags || []).filter((x) => x !== tag).slice(-1), tag];
+    for (const id of [...FACMAP.keys()])
+      if (id.startsWith("cmp-") && FACMAP.get(id).composed && !CMP3.tags.some((x) => id.startsWith(x))) FACMAP.delete(id);
+    const entry = (t, role, v, k2 = 0) => {
+      const cc2 = takes[k2], roles = role === "full" ? ["kit", "hats", "perc"] : [role];
+      const keys2 = roles.map((x) => cc2.make(x, v === "C" && x !== "kit" && x !== "bass" && x !== "hats" ? "B" : v)).filter(Boolean);
       if (!keys2.length) return null;
-      const id = tag + t + "-" + v;
+      const id = tag + t + "-" + v + (k2 ? "~" + k2 : "");
       if (!FACMAP.has(id)) {
-        const ps = keys2.map((k2) => c.patterns[k2]), p = ps[0];
+        const ps = keys2.map((x) => cc2.patterns[x]), p = ps[0];
         FACMAP.set(id, {
           id,
-          name: p.name + (role === "full" ? "" : " " + role),
+          name: p.name + (role === "full" ? "" : " " + role) + (k2 ? " " + "′″‴"[k2 - 1] : ""),
           type: p.type,
           genre: st.id,
           bars: p.bars,
@@ -57404,6 +57659,12 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       return id;
     };
+    const crowds = (id) => {
+      const f = FACMAP.get(id);
+      if (!lc || !f || f.type !== "tone") return false;
+      const hit = (g) => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
+      return Object.values(lc.loops).some((x) => hit(FACMAP.get(x)));
+    };
     CMP3.ids = {};
     const scenes = CMP_TPL.map(([name, kind, bars3, e, fx, parts4]) => {
       const cells = {};
@@ -57413,15 +57674,15 @@ html.os-darwin.native-menu #menubar .mproj {
         const v = role === "full" ? parts4.kit : role === "acid" ? parts4.bass && /^[ABC]$/.test(parts4.bass) ? parts4.bass : null : parts4[role];
         if (!v) continue;
         const id = entry(t, role, v);
-        if (id) cells[t] = { id, pool: role };
+        if (!id || lc && lc.loops[t] == null && crowds(id)) continue;
+        const ways = [id];
+        if (v !== "build" && v !== "rise")
+          for (let k2 = 1; k2 < CMP_TAKES; k2++) {
+            const a = entry(t, role, v, k2);
+            if (a && !crowds(a)) ways.push(a);
+          }
+        cells[t] = { id, pool: role, ways, hook: role === "lead" };
       }
-      if (lc)
-        for (const t in cells) {
-          const f = FACMAP.get(cells[t].id);
-          if (lc.loops[t] != null || !f || f.type !== "tone") continue;
-          const crowds = (g) => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
-          if (Object.values(lc.loops).some((id) => crowds(FACMAP.get(id)))) delete cells[t];
-        }
       const sc = { kind, name, bars: bars3, e, cells };
       if (fx) sc.fx = fx;
       return sc;
@@ -57429,12 +57690,30 @@ html.os-darwin.native-menu #menubar .mproj {
     for (let t = 0; t < 8; t++) {
       const role = cmpRole(t);
       if (!role) continue;
-      CMP3.ids[t] = (CMP_SWAP[role === "full" ? "kit" : role] || []).map((v) => entry(t, role, v)).filter(Boolean);
+      const vs = CMP_SWAP[role === "full" ? "kit" : role] || [];
+      CMP3.ids[t] = takes.flatMap((_, k2) => vs.map((v) => entry(t, role, v, k2))).filter((id, i, a) => id && a.indexOf(id) === i && !crowds(id));
     }
     LV.scenes = scenes;
     LV.fillIds = lvPool(st, "fill");
     if (LV.cur >= scenes.length) LV.cur = 0;
     LV.ver++;
+  }
+  function lvSceneTurn(idx) {
+    const sc = LV.scenes[idx];
+    if (LV.flavor !== "composed" || !sc || !sc.cells) return;
+    sc.n = (sc.n || 0) + 1;
+    if (sc.n < 2 || LV.vary <= 0) return;
+    const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
+    let any = false;
+    for (const t in sc.cells) {
+      const cell = sc.cells[t];
+      if (!cell.ways || cell.ways.length < 2 || Math.random() >= p * (cell.hook ? 0.4 : 1)) continue;
+      const others = cell.ways.filter((id) => id !== cell.id && FACMAP.has(id));
+      if (!others.length) continue;
+      cell.id = others[Math.floor(Math.random() * others.length)];
+      any = true;
+    }
+    if (any) LV.ver++;
   }
   function liveSwapIds(t) {
     if (LV.flavor === "composed" && CMP3.ids[t] && CMP3.ids[t].length) return CMP3.ids[t].slice();
@@ -58729,7 +59008,8 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#lvMode").value = LV.mode || "minor";
     const ms = $("#lvMidiSt");
     if (ms)
-      ms.textContent = (MIDI.out ? "Out: " + MIDI.out.name : "No MIDI out") + " · " + (MIDI.inp ? "In: " + MIDI.inp.name : "no MIDI in");
+      ms.textContent = /* (the output is in the top bar, the same in every mode) */
+      MIDI.inp ? "MIDI in: " + MIDI.inp.name : "No MIDI in";
     liveRenderKeyRec();
     liveRenderCards();
     liveRenderSceneEd();
@@ -59943,6 +60223,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function liveScene(idx, tick, hard) {
     const prev = LV.scenes[LV.cur], sc = LV.scenes[idx];
     if (!sc || lvIsFlash(sc)) return;
+    lvSceneTurn(idx);
     const jump = sc.e - (prev ? prev.e : 0);
     const base = hard || LV.entry === "hard" ? 0 : ENTRY_TICKS[LV.entry] || 32;
     const toneFade = jump >= 4 ? Math.min(base, 8) : base;
@@ -61449,10 +61730,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function lvUserNote(t, on3) {
     if (t < 0 || t > 7 || !LV.perfOn || !lvOn()) return;
-    const all = LV.userPlay || (LV.userPlay = {}), fresh2 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
+    const all = LV.userPlay || (LV.userPlay = {}), fresh3 = !all[t], u = all[t] || (all[t] = { held: 0, last: TR.tick });
     u.last = TR.tick;
     u.held = Math.max(0, u.held + (on3 ? 1 : -1));
-    if (!fresh2) return;
+    if (!fresh3) return;
     const nt = AU.ctx ? AU.ctx.currentTime : 0, ccs = /* @__PURE__ */ new Set([11]);
     LV.autos.forEach((a) => a.tracks.includes(t) && ccs.add(a.cc));
     if (LV.rise) [80].forEach((c) => ccs.add(c));
@@ -62592,12 +62873,12 @@ html.os-darwin.native-menu #menubar .mproj {
     if (t < 0 && !LV.perfOn && !CTL.inp)
       return void toast("Turn on playing the MC-707 yourself (Live › Settings), or connect a keyboard, to record");
     if (t >= 0 && CTL.inp && LV.ctl) LV.ctl.soloT = t;
-    const fresh2 = !lvOn();
-    if (fresh2) {
+    const fresh3 = !lvOn();
+    if (fresh3) {
       liveStart(LV.cur);
       if (!lvOn()) return;
     }
-    const bar2 = fresh2 ? 32 : Math.ceil((TR.tick + 16) / 32) * 32, start = RIFF.count === "count" && !fresh2 ? bar2 + 32 : bar2;
+    const bar2 = fresh3 ? 32 : Math.ceil((TR.tick + 16) / 32) * 32, start = RIFF.count === "count" && !fresh3 ? bar2 + 32 : bar2;
     Object.assign(RIFF, {
       state: "wait",
       from: TR.tick,
@@ -64262,6 +64543,9 @@ html.os-darwin.native-menu #menubar .mproj {
     const fx = el(
       "div",
       { class: "lvRight" },
+      /* playing your own loops comes first: these were below the fold under Energy, Moves and Knobs */
+      fold("loopcompose", "LoopCompose", true, lcPanel()),
+      fold("looprec", "Loop rec", false, riffPanel()),
       el(
         "div",
         { class: "lvPanel" },
@@ -64539,8 +64823,6 @@ html.os-darwin.native-menu #menubar .mproj {
           el("span", {}, "FILTER ↔ · FX ↕")
         )
       ),
-      fold("loopcompose", "LoopCompose", true, lcPanel()),
-      fold("looprec", "Loop rec", true, riffPanel()),
       /* a controller keyboard's zones, while one is connected */
       el("div", { class: "ctlBar", id: "lvCtlBar", hidden: true })
     );
@@ -68184,10 +68466,14 @@ html.os-darwin.native-menu #menubar .mproj {
     useLayout: true,
     tracks: TPL_LAYOUTS[0][2].map((role) => ({ role, n: 16, same: false, names: [] }))
   });
+  var fresh = true;
   var TB = (() => {
     try {
       const o = JSON.parse(localStorage.getItem(KEY6) || "null");
-      if (o && Array.isArray(o.tracks) && o.tracks.length === 8) return { ...def(), ...o };
+      if (o && Array.isArray(o.tracks) && o.tracks.length === 8) {
+        fresh = false;
+        return { ...def(), ...o };
+      }
     } catch (e) {
     }
     return def();
@@ -68249,8 +68535,18 @@ html.os-darwin.native-menu #menubar .mproj {
       TB.srcs = [...TB.srcs, "starter"];
       fillAll(0);
     }
+    if (fresh && S.clips.length) {
+      TB.bpm = Math.round(S.bpm);
+      TB.genre = Object.keys(TPL_GENRES).reduce(
+        (a, g) => Math.abs(TPL_GENRES[g].bpm - S.bpm) < Math.abs(TPL_GENRES[a].bpm - S.bpm) ? g : a,
+        TB.genre
+      );
+      TB.tracks.forEach((x) => x.names = []);
+    }
+    fresh = false;
     if (TB.tracks.every((x) => !x.names.some(Boolean))) fillAll(0);
     const ov = el("div", {
+      tabindex: -1,
       id: "tbOv",
       class: "ptOv",
       role: "dialog",
@@ -68551,6 +68847,7 @@ html.os-darwin.native-menu #menubar .mproj {
     ov.addEventListener("pointerdown", (e) => e.target === ov && close());
     document.body.append(ov);
     render3();
+    ov.focus();
   }
   async function writeFile(file, bytes) {
     if (HOST && HOST.saveBinary) return await HOST.saveBinary(file, bytes, "mpj") || null;
@@ -69696,6 +69993,7 @@ html.os-darwin.native-menu #menubar .mproj {
       closePops();
     });
     $("#bClips").addEventListener("click", () => clipMapOpen());
+    $("#bCompose").addEventListener("click", () => $("#bWiz").click());
     $("#fDemo").addEventListener("click", () => {
       pushUndo();
       const m = S.midiOut;
@@ -70985,7 +71283,7 @@ html.os-darwin.native-menu #menubar .mproj {
     [48, "Drop 2"],
     [56, "Outro"]
   ];
-  function fresh(template) {
+  function fresh2(template) {
     pushUndo();
     const m = S.midiOut;
     replaceState(newState());
@@ -71064,12 +71362,12 @@ html.os-darwin.native-menu #menubar .mproj {
             },
             true
           ) : null,
-          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh(false), !has2),
+          card("＋", "Blank song", "An empty arrangement: drag patterns in from the library.", () => fresh2(false), !has2),
           card(
             "▤",
             "Empty template",
             "64 bars with the sections marked: intro, build, drop, break, drop 2, outro.",
-            () => fresh(true)
+            () => fresh2(true)
           ),
           card(
             "✦",
@@ -71083,6 +71381,12 @@ html.os-darwin.native-menu #menubar .mproj {
             "Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.",
             () => setMode("scene")
           ),
+          DEV === "707" ? card(
+            "▧",
+            "Template builder",
+            "Make an MC-707 project to start from: your track layout with a kit or tone in every clip.",
+            () => templateBuilderOpen()
+          ) : null,
           card(
             "◉",
             "Live Mode",
@@ -73221,7 +73525,24 @@ html.os-darwin.native-menu #menubar .mproj {
         )
       )
     );
-    nav.append(el("span", { class: "mproj", "data-m": "song", id: "mProj" }, "Untitled"), tabs);
+    const conn = el("button", {
+      type: "button",
+      class: "mconn",
+      id: "mConn",
+      onclick: () => MIDI.out ? openSetup2() : connectMidi().then(connDraw)
+    });
+    let connWas = null;
+    const connDraw = () => {
+      const name = MIDI.out ? MIDI.out.name : "";
+      if (name === connWas) return;
+      connWas = name;
+      conn.classList.toggle("on", !!name);
+      conn.textContent = name ? "● " + (isMcName(name) ? DEVS[DEV].name : name) + " connected" : "⚠ Not connected";
+      conn.title = name ? "Sending to " + name + ". Click for MIDI and sound." : "No " + DEVS[DEV].name + " connected: the app plays with its own sound. Plug it in by USB and click to connect.";
+    };
+    connDraw();
+    setInterval(connDraw, 1e3);
+    nav.append(el("span", { class: "mproj", "data-m": "song", id: "mProj" }, "Untitled"), conn, tabs);
     document.addEventListener(
       "pointerdown",
       (e) => {
@@ -75076,7 +75397,7 @@ html.os-darwin.native-menu #menubar .mproj {
       motion: zc_motion_exports,
       pump: pump_exports,
       mpj: { open: mpjOpen, read: readMpj, loopAudio, song: mpjSong, bytes: mpjBytes },
-      compose: { compose, apply: applyComposed, now: composeNow },
+      compose: { compose, composer, apply: applyComposed, now: composeNow },
       tpl: { TB, bytes: tbBytes, open: templateBuilderOpen, read: mpjRead },
       get S() {
         return S;

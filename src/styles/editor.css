@@ -173,6 +173,21 @@
 #edEmpty[hidden] {
   display: none;
 }
+/* nothing selected: a strip under the arrangement, not half the window */
+#work > #editor.empty {
+  height: auto;
+}
+#work > #editor.empty #edEmpty {
+  flex: none;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+#work > #editor.empty #edEmpty br {
+  display: none;
+}
+#work > #editor.empty #edEmpty b {
+  margin-right: 8px;
+}
 #edEmpty b {
   color: var(--ink);
 }
@@ -198,4 +213,12 @@
   #lib {
     max-height: none;
   }
+}
+
+#tbOv:focus {
+  outline: none;
+}
+/* (no splitter to drag while the editor is a strip) */
+#work:has(> #editor.empty) > #split {
+  display: none;
 }

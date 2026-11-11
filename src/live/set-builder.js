@@ -250,6 +250,10 @@ export function lvComposeMood() {
     edge: Math.round(Math.max(0, Math.min(1, 0.35 + (m.i - 50) / 70)) * 20) / 20
   };
 }
+/* How many ways a composed set has each part: the take itself and three more on the same chords (the
+   melodic parts written again, the drums turned: composer opts.like and opts.turn). Swaps choose among
+   all of them, and a scene that comes round again plays some of its parts another way (lvSceneTurn). */
+const CMP_TAKES = 4;
 function buildComposed(st) {
   const md = lvComposeMood(),
     /* LoopCompose: every part on the chords of the loops you played (live/loop-compose.js) */
@@ -261,23 +265,41 @@ function buildComposed(st) {
       ...md,
       ...(lc ? { prog: lc.prog, scale: lc.scale } : {})
     }),
+    takes = [c],
     mk = '-d' + md.dark + 'e' + md.edge + (lc ? '-u' + lc.scale[1] + lc.prog.join('.') : ''),
     tag = 'cmp-' + st.id + '-' + LV.seed + '-' + LV.key + mk + '-',
     prog = 'cmp:' + st.id + ':' + LV.seed + mk;
-  /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up) */
-  const entry = (t, role, v) => {
-    const roles = role === 'full' ? ['kit', 'hats', 'perc'] : [role];
+  for (let k = 1; k < CMP_TAKES; k++)
+    takes.push(
+      composer(st, {
+        key: c.key,
+        seed: (Math.imul(LV.seed + k, 2654435761) >>> 0) % 1e9,
+        minutes: 4,
+        ...md,
+        like: c,
+        turn: k
+      })
+    );
+  /* the sets before the last one are gone from the library (the last one may still be blending out) */
+  CMP.tags = [...(CMP.tags || []).filter(x => x !== tag).slice(-1), tag];
+  for (const id of [...FACMAP.keys()])
+    if (id.startsWith('cmp-') && FACMAP.get(id).composed && !CMP.tags.some(x => id.startsWith(x))) FACMAP.delete(id);
+  /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up);
+     k is the take (0: the set's own) */
+  const entry = (t, role, v, k = 0) => {
+    const cc = takes[k],
+      roles = role === 'full' ? ['kit', 'hats', 'perc'] : [role];
     const keys = roles
-      .map(x => c.make(x, v === 'C' && x !== 'kit' && x !== 'bass' && x !== 'hats' ? 'B' : v))
+      .map(x => cc.make(x, v === 'C' && x !== 'kit' && x !== 'bass' && x !== 'hats' ? 'B' : v))
       .filter(Boolean);
     if (!keys.length) return null;
-    const id = tag + t + '-' + v;
+    const id = tag + t + '-' + v + (k ? '~' + k : '');
     if (!FACMAP.has(id)) {
-      const ps = keys.map(k => c.patterns[k]),
+      const ps = keys.map(x => cc.patterns[x]),
         p = ps[0];
       FACMAP.set(id, {
         id,
-        name: p.name + (role === 'full' ? '' : ' ' + role),
+        name: p.name + (role === 'full' ? '' : ' ' + role) + (k ? ' ' + '′″‴'[k - 1] : ''),
         type: p.type,
         genre: st.id,
         bars: p.bars,
@@ -289,6 +311,13 @@ function buildComposed(st) {
       });
     }
     return id;
+  };
+  /* LoopCompose: a melodic part that would crowd a loop of yours (in its register, and one of them busy) */
+  const crowds = id => {
+    const f = FACMAP.get(id);
+    if (!lc || !f || f.type !== 'tone') return false;
+    const hit = g => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
+    return Object.values(lc.loops).some(x => hit(FACMAP.get(x)));
   };
   CMP.ids = {};
   const scenes = CMP_TPL.map(([name, kind, bars, e, fx, parts]) => {
@@ -306,31 +335,56 @@ function buildComposed(st) {
             : parts[role];
       if (!v) continue;
       const id = entry(t, role, v);
-      if (id) cells[t] = { id, pool: role };
+      /* (a part that would crowd a loop of yours sits that scene out) */
+      if (!id || (lc && lc.loops[t] == null && crowds(id))) continue;
+      /* the ways this part can come back: the same variant in the other takes (builds stay as they are) */
+      const ways = [id];
+      if (v !== 'build' && v !== 'rise')
+        for (let k = 1; k < CMP_TAKES; k++) {
+          const a = entry(t, role, v, k);
+          if (a && !crowds(a)) ways.push(a);
+        }
+      cells[t] = { id, pool: role, ways, hook: role === 'lead' };
     }
-    /* LoopCompose: a melodic part that would crowd a loop of yours (in its register, and one of them busy)
-       sits that scene out */
-    if (lc)
-      for (const t in cells) {
-        const f = FACMAP.get(cells[t].id);
-        if (lc.loops[t] != null || !f || f.type !== 'tone') continue;
-        const crowds = g => g && Math.abs(avgPitch(f) - avgPitch(g)) < 5 && (lvLively(f) > 0.5 || lvLively(g) > 0.5);
-        if (Object.values(lc.loops).some(id => crowds(FACMAP.get(id)))) delete cells[t];
-      }
     const sc = { kind, name, bars, e, cells };
     if (fx) sc.fx = fx;
     return sc;
   });
-  /* the variants each track can swap to */
+  /* the variants each track can swap to: every take's */
   for (let t = 0; t < 8; t++) {
     const role = cmpRole(t);
     if (!role) continue;
-    CMP.ids[t] = (CMP_SWAP[role === 'full' ? 'kit' : role] || []).map(v => entry(t, role, v)).filter(Boolean);
+    const vs = CMP_SWAP[role === 'full' ? 'kit' : role] || [];
+    CMP.ids[t] = takes
+      .flatMap((_, k) => vs.map(v => entry(t, role, v, k)))
+      .filter((id, i, a) => id && a.indexOf(id) === i && !crowds(id));
   }
   LV.scenes = scenes;
   LV.fillIds = lvPool(st, 'fill');
   if (LV.cur >= scenes.length) LV.cur = 0;
   LV.ver++;
+}
+/**
+ * A composed set's scene is about to play: the first time as written; after that, some of its parts come
+ * back another way (the same variant from another take of the set). How many depends on Variation: none
+ * at 0, about a third at Low, half at Medium, three quarters from High. The lead's hook changes less.
+ */
+export function lvSceneTurn(idx) {
+  const sc = LV.scenes[idx];
+  if (LV.flavor !== 'composed' || !sc || !sc.cells) return;
+  sc.n = (sc.n || 0) + 1;
+  if (sc.n < 2 || LV.vary <= 0) return;
+  const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
+  let any = false;
+  for (const t in sc.cells) {
+    const cell = sc.cells[t];
+    if (!cell.ways || cell.ways.length < 2 || Math.random() >= p * (cell.hook ? 0.4 : 1)) continue;
+    const others = cell.ways.filter(id => id !== cell.id && FACMAP.has(id));
+    if (!others.length) continue;
+    cell.id = others[Math.floor(Math.random() * others.length)];
+    any = true;
+  }
+  if (any) LV.ver++;
 }
 
 export function liveSwapIds(t) {

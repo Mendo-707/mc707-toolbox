@@ -131,6 +131,15 @@
   font-weight: 600;
   border-color: color-mix(in srgb, var(--hot) 55%, var(--line));
 }
+.composeTop {
+  font-weight: 700;
+  color: #fff;
+  background: var(--hot);
+  border-color: var(--hot);
+}
+.composeTop:hover {
+  filter: brightness(1.1);
+}
 .clipsTop:hover {
   border-color: var(--hot);
 }

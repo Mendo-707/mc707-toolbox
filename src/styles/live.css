@@ -230,8 +230,32 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#menubar .mtabs {
+#menubar .mconn {
   margin-left: auto;
+  margin-right: 10px;
+  align-self: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--hot);
+  background: transparent;
+  color: var(--hot);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+#menubar .mconn.on {
+  border-color: color-mix(in srgb, #22c55e 55%, transparent);
+  color: #22c55e;
+}
+#menubar .mconn:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+#menubar .mtabs {
   display: flex;
   gap: 2px;
   background: var(--panel);

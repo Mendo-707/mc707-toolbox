@@ -38,10 +38,14 @@ const def = () => ({
   tracks: TPL_LAYOUTS[0][2].map(role => ({ role, n: 16, same: false, names: [] }))
 });
 /** The builder's choices (kept between visits). */
+let fresh = true;
 export const TB = (() => {
   try {
     const o = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (o && Array.isArray(o.tracks) && o.tracks.length === 8) return { ...def(), ...o };
+    if (o && Array.isArray(o.tracks) && o.tracks.length === 8) {
+      fresh = false;
+      return { ...def(), ...o };
+    }
   } catch (e) {
     /* storage off: start fresh */
   }
@@ -128,8 +132,19 @@ export async function templateBuilderOpen() {
     TB.srcs = [...TB.srcs, 'starter'];
     fillAll(0);
   }
+  /* the first time, with a song open: its tempo, and the genre nearest to it */
+  if (fresh && S.clips.length) {
+    TB.bpm = Math.round(S.bpm);
+    TB.genre = Object.keys(TPL_GENRES).reduce(
+      (a, g) => (Math.abs(TPL_GENRES[g].bpm - S.bpm) < Math.abs(TPL_GENRES[a].bpm - S.bpm) ? g : a),
+      TB.genre
+    );
+    TB.tracks.forEach(x => (x.names = []));
+  }
+  fresh = false;
   if (TB.tracks.every(x => !x.names.some(Boolean))) fillAll(0);
   const ov = el('div', {
+    tabindex: -1,
     id: 'tbOv',
     class: 'ptOv',
     role: 'dialog',
@@ -450,6 +465,8 @@ export async function templateBuilderOpen() {
   ov.addEventListener('pointerdown', e => e.target === ov && close());
   document.body.append(ov);
   render();
+  /* (keys go to the window from the start: Escape closes it) */
+  ov.focus();
 }
 
 /* ---------- saving ---------- */

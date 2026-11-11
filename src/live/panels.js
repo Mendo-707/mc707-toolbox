@@ -56,7 +56,8 @@ export function liveRender() {
   const ms = $('#lvMidiSt');
   if (ms)
     ms.textContent =
-      (MIDI.out ? 'Out: ' + MIDI.out.name : 'No MIDI out') + ' · ' + (MIDI.inp ? 'In: ' + MIDI.inp.name : 'no MIDI in');
+      /* (the output is in the top bar, the same in every mode) */
+      MIDI.inp ? 'MIDI in: ' + MIDI.inp.name : 'No MIDI in';
   liveRenderKeyRec();
   liveRenderCards();
   liveRenderSceneEd();

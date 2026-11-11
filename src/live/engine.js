@@ -28,7 +28,7 @@ import { riffBusy, riffQuiet, riffStopped, riffTick } from './riff.js';
 import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
-import { liveBuild, liveSwapIds } from './set-builder.js';
+import { liveBuild, liveSwapIds, lvSceneTurn } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
@@ -207,6 +207,8 @@ export function liveScene(idx, tick, hard) {
   const prev = LV.scenes[LV.cur],
     sc = LV.scenes[idx];
   if (!sc || lvIsFlash(sc)) return;
+  /* (a composed scene that comes round again plays some parts another way) */
+  lvSceneTurn(idx);
   const jump = sc.e - (prev ? prev.e : 0);
   const base = hard || LV.entry === 'hard' ? 0 : ENTRY_TICKS[LV.entry] || 32;
   const toneFade = jump >= 4 ? Math.min(base, 8) : base;

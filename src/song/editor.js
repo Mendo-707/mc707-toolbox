@@ -64,6 +64,8 @@ export function renderEditor() {
   const c = edClip();
   $('#edBody').style.display = c ? '' : 'none';
   $('#edEmpty').hidden = !!c;
+  /* nothing to edit: the editor is a thin strip, and the arrangement has the room */
+  $('#editor').classList.toggle('empty', !c);
   if (!c) {
     $('#edHead').textContent = '';
     $('#edVelWrap').hidden = true;

@@ -202,6 +202,7 @@ test('Loop rec: ■ Stop ends early, Cancel and nothing played make no take, Aga
 
 test('Loop rec: count-in, Quantize 1/8, play straight away, keep the track playing', async () => {
   const { page, errors } = await setUp(SAVED);
+  await page.evaluate(() => (document.querySelector('#lvF-looprec').open = true));
   await page.locator('.riffPanel select[aria-label="Quantize"]').selectOption('8');
   await page.evaluate(() => {
     document.querySelector('#lvSetDet').open = true;
@@ -303,6 +304,7 @@ test('Loop rec on the MC-707’s keys: the track played first, and playing anoth
 
 test('Loop rec: Quantize a take again, from the notes as played (triplets too, and back to Off)', async () => {
   const { page, errors } = await setUp(SAVED);
+  await page.evaluate(() => (document.querySelector('#lvF-looprec').open = true));
   await page.locator('.riffPanel select[aria-label="Quantize"]').selectOption('off');
   const played = await page.evaluate(() => {
     const a = window.__app;

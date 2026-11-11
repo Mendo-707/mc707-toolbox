@@ -293,6 +293,7 @@ export function initControls() {
     closePops();
   });
   $('#bClips').addEventListener('click', () => clipMapOpen());
+  $('#bCompose').addEventListener('click', () => $('#bWiz').click());
   $('#fDemo').addEventListener('click', () => {
     pushUndo();
     const m = S.midiOut;

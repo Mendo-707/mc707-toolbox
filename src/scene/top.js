@@ -2,12 +2,11 @@
 // each has got (1 Clips, 2 Scenes, 3 Write, 4 On the MC-707), whether the MC-707 is connected, and Write
 // with its choices (what to write, Auto-write and the write settings).
 //
-// Reads: S, WO, MIDI.
+// Reads: S, WO.
 import { saveMpjOpen } from './save-mpj.js';
 import { el } from '../core/dom.js';
 import { songMixerOpen } from '../song/song-mixer.js';
 import { S, scheduleSave } from '../core/state.js';
-import { MIDI, connectMidi } from '../services/midi.js';
 import { showMenu } from '../ui/menu.js';
 import { SC, forgetWritten, rows } from './model.js';
 import { WO, pending, setWO, showReport, writeAll, writeChanged } from './write.js';
@@ -110,7 +109,8 @@ export function sceneTop(toggle) {
     }
   });
   const p = pending(),
-    n = p.clips.length + p.scenes.length;
+    n = p.clips.length + p.scenes.length,
+    empty = !rows().length && !(S.scn && S.scn.clips.flat().some(Boolean));
   return el(
     'header',
     { class: 'scnTop' },
@@ -147,19 +147,6 @@ export function sceneTop(toggle) {
       'div',
       { class: 'grp', style: 'margin-left:auto' },
       CK.line ? el('span', { class: 'hint scCk' }, CK.line) : null,
-      MIDI.out
-        ? null
-        : el(
-            'button',
-            {
-              type: 'button',
-              class: 'btn scnConn',
-              title:
-                'No MC-707 connected. Play still works here with the app’s own sound; writing and checking need it connected over USB. Click to connect.',
-              onclick: () => connectMidi().then(() => SC.draw())
-            },
-            '⚠ Not connected'
-          ),
       WO.auto
         ? el(
             'span',
@@ -178,10 +165,14 @@ export function sceneTop(toggle) {
           {
             type: 'button',
             class: 'btn' + (n ? ' on' : ''),
-            title: n ? 'Write the ' + n + ' changed or new clips and scenes to the MC-707' : 'Everything is written',
+            title: n
+              ? 'Write the ' + n + ' changed or new clips and scenes to the MC-707'
+              : empty
+                ? 'Fill some clips and add a scene first'
+                : 'Everything is written',
             onclick: () => writeChanged()
           },
-          n ? 'Write ' + n + ' changes' : '✓ All written'
+          n ? 'Write ' + n + ' changes' : empty ? 'Nothing to write yet' : '✓ All written'
         ),
         el(
           'button',

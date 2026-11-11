@@ -5,7 +5,8 @@
 import { songMixerOpen } from '../song/song-mixer.js';
 import { liveMixerOpen } from '../live/live-mixer.js';
 import { $, el, toast } from '../core/dom.js';
-import { DEV, oneKit } from '../core/device.js';
+import { DEV, DEVS, isMcName, oneKit } from '../core/device.js';
+import { MIDI, connectMidi } from '../services/midi.js';
 import { HOST, S, scheduleSave } from '../core/state.js';
 import { STAGE, isFull, setAwake, toggleFull } from './fullscreen.js';
 import { clipMapOpen } from '../clips/clips-screen.js';
@@ -431,7 +432,29 @@ function initMenubar() {
       )
     )
   );
-  nav.append(el('span', { class: 'mproj', 'data-m': 'song', id: 'mProj' }, 'Untitled'), tabs);
+  /* the MC-707's connection, the same in every mode: click to connect, or (connected) to open MIDI and sound */
+  const conn = el('button', {
+    type: 'button',
+    class: 'mconn',
+    id: 'mConn',
+    onclick: () => (MIDI.out ? openSetup() : connectMidi().then(connDraw))
+  });
+  let connWas = null;
+  const connDraw = () => {
+    const name = MIDI.out ? MIDI.out.name : '';
+    if (name === connWas) return;
+    connWas = name;
+    conn.classList.toggle('on', !!name);
+    conn.textContent = name ? '● ' + (isMcName(name) ? DEVS[DEV].name : name) + ' connected' : '⚠ Not connected';
+    conn.title = name
+      ? 'Sending to ' + name + '. Click for MIDI and sound.'
+      : 'No ' +
+        DEVS[DEV].name +
+        ' connected: the app plays with its own sound. Plug it in by USB and click to connect.';
+  };
+  connDraw();
+  setInterval(connDraw, 1000);
+  nav.append(el('span', { class: 'mproj', 'data-m': 'song', id: 'mProj' }, 'Untitled'), conn, tabs);
   document.addEventListener(
     'pointerdown',
     e => {

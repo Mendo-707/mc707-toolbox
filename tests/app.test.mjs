@@ -559,6 +559,7 @@ test('the start screen opens the last session or Live Mode, which asks for a gen
     'Empty template',
     'Song wizard',
     'Scene Mode',
+    'Template builder',
     'Live Mode',
     'Synth Mode',
     'ZenCore editor'

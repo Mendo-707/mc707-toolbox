@@ -191,3 +191,66 @@ test('Compose: Dark and Hard moods: minor and dark chord moves, harder hits, sho
   assert.ok(r.banger.bass < r.plain.bass * 0.8, 'shorter, punchier bass');
   assert.deepEqual(errors, []);
 });
+
+test('More takes of one song: the same chords, other melodies, and the drums turned (downbeat and backbeat kept)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { composer, compose } = window.__app.compose,
+      out = {
+        kits: 0,
+        kitSame: 0,
+        hatSame: 0,
+        back: 0,
+        down: 0,
+        bassSame: 0,
+        n: 0,
+        chords: 0,
+        second: 0,
+        songs: 0,
+        clips: 0
+      };
+    const pos = p => JSON.stringify(p.notes.map(n => [n.s, n.n])),
+      strong = p =>
+        p.notes
+          .filter(n => (n.n === 2 || n.n === 3) && n.v >= 70 && n.s < 48)
+          .map(n => n.s)
+          .join();
+    for (const id of ['liquid', 'neuro', 'boombap', 'trap', 'deephouse', 'techno', 'pop', 'lofi'])
+      for (const seed of [1, 2, 3]) {
+        const st = window.__app.STYLES.find(x => x.id === id),
+          c = composer(st, { seed, key: 5 }),
+          plain = composer(st, { seed: seed + 500, key: 5, like: c }),
+          d = composer(st, { seed: seed + 500, key: 5, like: c, turn: 2 });
+        out.n++;
+        if (JSON.stringify(d.chords) === JSON.stringify(c.chords) && d.scale === c.scale && d.prog === c.prog)
+          out.chords++;
+        for (const v of ['A', 'B']) {
+          const a = plain.patterns[plain.make('kit', v)],
+            b = d.patterns[d.make('kit', v)];
+          out.kits++;
+          if (pos(a) === pos(b)) out.kitSame++;
+          if (strong(a) === strong(b)) out.back++;
+          if (b.notes.some(n => n.n === 0 && n.s === 0)) out.down++;
+          const ha = plain.make('hats', v),
+            hb = d.make('hats', v);
+          if (ha && hb && pos(plain.patterns[ha]) === pos(d.patterns[hb])) out.hatSame++;
+        }
+        if (pos(c.patterns[c.make('bass', 'A')]) === pos(d.patterns[d.make('bass', 'A')])) out.bassSame++;
+        /* a whole song: a main groove that comes back in the second half is turned, within 16 clips a track */
+        const s = compose(st, { seed, minutes: 4 });
+        out.songs++;
+        if (Object.keys(s.patterns).some(k => /^kit:[ABC]~1$/.test(k))) out.second++;
+        out.clips = Math.max(out.clips, new Set(s.sections.map(x => x.parts.kit).filter(Boolean)).size);
+      }
+    return out;
+  });
+  assert.equal(r.chords, r.n, 'every take keeps the chords');
+  assert.equal(r.back, r.kits, 'the backbeat stays');
+  assert.equal(r.down, r.kits, 'the downbeat kick stays');
+  assert.ok(r.kitSame <= r.kits * 0.1, 'turned kits differ: ' + JSON.stringify(r));
+  assert.ok(r.hatSame <= r.kits * 0.15, 'turned hats differ: ' + JSON.stringify(r));
+  assert.ok(r.bassSame <= 2, 'another take, another bassline');
+  assert.ok(r.second >= r.songs * 0.6, 'songs bring a groove back turned: ' + JSON.stringify(r));
+  assert.ok(r.clips <= 12, 'kit patterns in a song: ' + r.clips);
+  assert.deepEqual(errors, []);
+});

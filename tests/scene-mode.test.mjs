@@ -306,7 +306,7 @@ test('Scene Mode: chips choose a scene’s clips; clip, scene and track menus; t
   const top = await page.locator('.scnTop').textContent();
   assert.match(top, /Clips4 filled/);
   assert.match(top, /Write\d+ waiting/);
-  assert.match(top, /Not connected/);
+  assert.match(await page.locator('#mConn').textContent(), /Not connected/);
   await page.locator('.stStep', { hasText: 'On the MC-707' }).click();
   const guide = page.locator('#sgOv');
   await guide.waitFor();

@@ -512,6 +512,9 @@ export function liveInit() {
   const fx = el(
     'div',
     { class: 'lvRight' },
+    /* playing your own loops comes first: these were below the fold under Energy, Moves and Knobs */
+    fold('loopcompose', 'LoopCompose', true, lcPanel()),
+    fold('looprec', 'Loop rec', false, riffPanel()),
     el(
       'div',
       { class: 'lvPanel' },
@@ -791,8 +794,6 @@ export function liveInit() {
         el('span', {}, 'FILTER ↔ · FX ↕')
       )
     ),
-    fold('loopcompose', 'LoopCompose', true, lcPanel()),
-    fold('looprec', 'Loop rec', true, riffPanel()),
     /* a controller keyboard's zones, while one is connected */
     el('div', { class: 'ctlBar', id: 'lvCtlBar', hidden: true })
   );

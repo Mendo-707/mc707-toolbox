@@ -153,3 +153,56 @@ test('Composed is the default (a set on the old default moves to it), and the Wo
   for (const k of ['Wobble', 'Chop', 'Lift']) assert.ok(r.out[k].moved, k + ' moves its knob');
   assert.deepEqual(errors, []);
 });
+
+test('A composed set has four takes of each part: bigger swap pools, and a scene that comes round again plays parts another way', async () => {
+  const { page, errors } = await openApp({
+    storage: { 'mc707-live': JSON.stringify({ flavor: 'composed', flavorPick: true, style: 'liquid' }) }
+  });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    const kitT = a.S.tracks.findIndex(t => t.type === 'drum'),
+      bassT = a.S.tracks.findIndex(t => t.type === 'tone');
+    const out = { kitPool: a.liveSwapIds(kitT).length, bassPool: a.liveSwapIds(bassT).length };
+    const ids = () =>
+      Object.values(LV.scenes[0].cells)
+        .map(c => c.id)
+        .join();
+    const run = vary => {
+      LV.vary = vary;
+      LV.auto = false;
+      a.liveStart(0);
+      a.TICKER.stop();
+      const first = ids();
+      let changed = 0;
+      for (let i = 0; i < 6; i++) {
+        a.liveScene(0, a.TR.tick, true);
+        if (ids() !== first) changed++;
+      }
+      /* every part it plays is on the set's one progression */
+      const progs = new Set(
+        Object.values(LV.scenes[0].cells)
+          .map(c => a.facById(c.id))
+          .filter(f => f && f.type === 'tone')
+          .map(f => f._prog)
+      );
+      a.stopAll();
+      return { changed, progs: progs.size };
+    };
+    out.off = run(0);
+    a.liveBuild();
+    out.high = run(80);
+    return out;
+  });
+  assert.ok(r.kitPool >= 12, 'kit swaps to choose from: ' + r.kitPool);
+  assert.ok(r.bassPool >= 12, 'bass swaps to choose from: ' + r.bassPool);
+  assert.equal(r.off.changed, 0, 'Variation at 0 holds every scene as written');
+  assert.ok(r.high.changed >= 4, 'the scene comes back another way: ' + r.high.changed);
+  assert.equal(r.high.progs, 1, 'still one progression');
+  assert.deepEqual(errors, []);
+});
