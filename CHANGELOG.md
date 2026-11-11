@@ -4,6 +4,7 @@ Every release of MC707 / 101 Toolbox (called MC-707 Toolbox before 1.7), newest 
 
 ## New in 1.9
 
+- **1.9.1: More variety and a tidier workflow. **Composed jams** now write every part four ways on the same chords, with the drums played differently each time (other kick patterns, ghost notes, fills and hi-hat feel), so swaps have far more to choose from and a scene that comes round again plays some parts another way (set by Variation). In Song Mode, a main drum groove that comes back in the second half is played differently, and pads are held, re-struck, raised or opened out depending on the take. **Workflow\***\*: one connection pill in the top bar for every mode, a **✦ Compose a song\*\* button in Song Mode's toolbar, a slim pattern editor when nothing is selected, LoopCompose and Loop rec at the top of Live Mode's right column, and the Template builder on the start screen, taking your song's tempo and genre and closing with Escape.
 - **1.9.0: LoopCompose**: play a loop, get a song around it. In **Live Mode**, the new **LoopCompose** panel above Loop rec starts a beat on its own and records a loop you play on the track you pick. The app works out your key and chords, the composer writes every other part on them, and the full set comes in two bars later with your loop still playing. **● New loop** strips back to the drums while you record another, then brings in a fresh set built around all your loops, like New patterns. Auto-pilot, swaps and New patterns all stay on your chords.
 
 ## New in 1.8
