@@ -4981,6 +4981,24 @@ input[type='number'] {
   margin-top: 2px;
   opacity: 0.85;
 }
+/* auto-pilot's plan (not cued yet): a fainter line */
+.lvLine.plan {
+  border-left-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+/* auto-pilot's next scene, planned but not cued yet: marked, without the pulse (it starts pulsing once cued) */
+.lvTile.queued.plan,
+.lvPad.queued.plan {
+  animation: none;
+}
+.lvTile.queued.plan {
+  outline-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+.lvPad.queued.plan {
+  border-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+.lvPad.queued.plan::after {
+  opacity: 0.7;
+}
 </style>
     <style>
 /* Live Mode colour themes: each #live[data-theme] sets the colour tokens; data-light marks the light themes. Loaded after live.css. */
@@ -54086,6 +54104,10 @@ html.os-darwin.native-menu #menubar .mproj {
     } catch (e) {
     }
   }
+  var lvOwnBuild = (sc) => {
+    const c = sc && sc.cells && sc.cells[lvBT()];
+    return !!(c && /-build$/.test(c.id));
+  };
   var lvBT = () => {
     if (DEV === "101") return 0;
     const p = trackOf(2);
@@ -57429,6 +57451,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(avgPitch(f) - avgPitch(g)) >= 7;
   function liveBuild() {
     const st = lvStyle();
+    LV.apPlan = null;
     LV.style = st.id;
     if (!LV.mode) LV.mode = lvModeFam(st.scale);
     LV.fillIds = lvPool(st, "fill");
@@ -59606,35 +59629,68 @@ html.os-darwin.native-menu #menubar .mproj {
   function lvAutoReset() {
     LV.ap = { step: 1, played: {}, changes: 0, home: LV.key };
   }
-  function lvAutoPick() {
-    const A = ap(), reg = LV.scenes.map((s, i) => i).filter((i) => !lvIsFlash(LV.scenes[i]) && i !== LV.cur);
-    if (!reg.length) return LV.cur;
+  function lvAutoPick(after2 = LV.cur) {
+    const A = ap(), reg = LV.scenes.map((s, i) => i).filter((i) => !lvIsFlash(LV.scenes[i]) && i !== after2);
+    if (!reg.length) return after2;
+    const least = (cand) => cand.reduce((b, i) => (A.played[i] || 0) < (A.played[b] || 0) ? i : b, cand[0]);
+    if (LV.scenes[after2] && LV.scenes[after2].kind === "build") {
+      const peaks = reg.filter((i) => LV.scenes[i].kind === "peak");
+      if (peaks.length) {
+        const k2 = ARC.indexOf("peak", A.step);
+        if (k2 >= 0) A.step = (k2 + 1) % ARC.length;
+        return least(peaks);
+      }
+    }
     if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 100) return lvRand(reg);
     for (let k2 = 0; k2 < ARC.length; k2++) {
       const kind = ARC[(A.step + k2) % ARC.length], cand = reg.filter((i) => LV.scenes[i].kind === kind);
       if (!cand.length) continue;
       A.step = (A.step + k2 + 1) % ARC.length;
-      return cand.reduce((b, i) => (A.played[i] || 0) < (A.played[b] || 0) ? i : b, cand[0]);
+      return least(cand);
     }
     return lvRand(reg);
+  }
+  var lvAutoTotal = (sc) => sc.bars * 32 * (sc.kind === "build" ? 1 : LV.autoReps);
+  var lvAutoFreshDue = (kind) => !LV.custom && ap().changes >= FRESH_EVERY && ["strip", "groove"].includes(kind);
+  function lvAutoPlan() {
+    const P2 = LV.apPlan;
+    if (P2 && P2.from === LV.sceneStart && P2.list.length && P2.list.every((x) => LV.scenes[x.idx])) return P2;
+    const list2 = P2 && P2.list.length > 1 && P2.next === LV.sceneStart ? P2.list.slice(1) : [];
+    while (list2.length < 2 && !(list2.length && list2[list2.length - 1].fresh)) {
+      const idx = lvAutoPick(list2.length ? list2[list2.length - 1].idx : LV.cur), nx = LV.scenes[idx];
+      if (!nx) break;
+      const fresh3 = lvAutoFreshDue(nx.kind);
+      if (!fresh3) {
+        lvAutoPlayed(idx);
+        lvSceneTurn(idx);
+      }
+      list2.push({ idx, fresh: fresh3 });
+    }
+    LV.apPlan = list2.length ? { from: LV.sceneStart, list: list2 } : null;
+    LV.ver++;
+    return LV.apPlan;
   }
   function lvAutoPlayed(idx) {
     const A = ap();
     A.played[idx] = (A.played[idx] || 0) + 1;
     A.changes++;
   }
+  function lvAutoPlanUsed(tick) {
+    if (LV.apPlan) LV.apPlan.next = tick;
+  }
   function lvAutoBuild(sc, nx, fire) {
     if (!(nx.kind === "peak" && sc.kind === "build") || LV.cues.some((c) => c.type === "bov")) return false;
     const bars3 = Math.max(1, Math.min(2, Math.floor((fire - TR.tick) / 32))), t1 = fire - bars3 * 32;
     const bp = lvPool(lvStyle(), "build").map(facById).filter(Boolean), fit = bp.filter((f) => f.bars >= bars3), bf = fit.length ? lvRand(fit) : bp.length ? lvRand(bp) : null;
-    if (bf) LV.cues.push({ type: "bov", tick: t1, end: fire, f: bf, off: Math.max(0, (bf.bars - bars3) * 32) });
+    if (bf && !lvOwnBuild(sc))
+      LV.cues.push({ type: "bov", tick: t1, end: fire, f: bf, off: Math.max(0, (bf.bars - bars3) * 32) });
     LV.rise = { start: t1, end: fire, from: LV.rest[0], to: 127, cc: 80, target: "all" };
     LV.cues.push({ type: "moves", tick: t1, end: fire });
     return true;
   }
-  function lvAutoFresh(nextKind) {
+  function lvAutoFresh(nextKind, planned) {
     const A = ap();
-    if (LV.custom || A.changes < FRESH_EVERY || !["strip", "groove"].includes(nextKind)) return false;
+    if (!planned && (LV.custom || A.changes < FRESH_EVERY || !["strip", "groove"].includes(nextKind))) return false;
     A.changes = 0;
     A.played = {};
     A.step = ARC.indexOf("strip") + 1;
@@ -60220,10 +60276,9 @@ html.os-darwin.native-menu #menubar .mproj {
       if (h >= 0) sendClip(t, h, time);
     }
   }
-  function liveScene(idx, tick, hard) {
+  function liveScene(idx, tick, hard, len) {
     const prev = LV.scenes[LV.cur], sc = LV.scenes[idx];
     if (!sc || lvIsFlash(sc)) return;
-    lvSceneTurn(idx);
     const jump = sc.e - (prev ? prev.e : 0);
     const base = hard || LV.entry === "hard" ? 0 : ENTRY_TICKS[LV.entry] || 32;
     const toneFade = jump >= 4 ? Math.min(base, 8) : base;
@@ -60310,6 +60365,11 @@ html.os-darwin.native-menu #menubar .mproj {
         top ? tone2 ? toneFade : 0 : tone2 ? toneFade : jump >= 4 ? 0 : base
       );
     }
+    if (len && sc.kind === "build")
+      for (const t in sc.cells) {
+        const v = LV.voices[t] && LV.voices[t][0];
+        if (v && v.f.id === sc.cells[t].id && v.f.bars > len) v.start = tick - (v.f.bars - len) * 32;
+      }
     if (jump >= 4 && !hard && LV.entry !== "hard") {
       LV.crash = true;
       LV.dropTick = tick;
@@ -60371,7 +60431,7 @@ html.os-darwin.native-menu #menubar .mproj {
     knobUI(r.cc - 80, clamp(v, 0, 127));
   }
   function liveFire(c, tick) {
-    if (c.type === "scene") liveScene(c.idx, tick, c.hard);
+    if (c.type === "scene") liveScene(c.idx, tick, c.hard, c.len);
     else if (c.type === "gap") {
       if (LV.cues.some((x) => x.type === "scene")) LV.gap = c.tick;
     } else if (c.type === "thin") {
@@ -60470,20 +60530,23 @@ html.os-darwin.native-menu #menubar .mproj {
   function liveAutoStep(tick, rel) {
     const sc = LV.scenes[LV.cur];
     if (!sc || LV.stopAt != null) return;
-    const loop2 = sc.bars * 32, total = loop2 * LV.autoReps;
+    const loop2 = sc.bars * 32, total = lvAutoTotal(sc);
     const pend = LV.cues.some((c) => c.type === "scene" || c.type === "blend");
+    if (!pend && !LV.jam) lvAutoPlan();
     if (!pend && rel >= total - 64 && LV.apCued !== LV.sceneStart) {
       LV.apCued = LV.sceneStart;
-      const idx = lvAutoPick(), fire = LV.sceneStart + Math.max(total, Math.ceil((rel + 64) / loop2) * loop2), nx = LV.scenes[idx];
-      if (lvAutoFresh(nx.kind)) {
+      const plan2 = lvAutoPlan(), first = plan2 && plan2.list[0], idx = first ? first.idx : lvAutoPick(), fire = LV.sceneStart + Math.max(total, Math.ceil((rel + 64) / loop2) * loop2), nx = LV.scenes[idx];
+      if (first ? first.fresh && lvAutoFresh(nx.kind, true) : lvAutoFresh(nx.kind)) {
+        LV.apPlan = null;
         LV.apCued = null;
         LV.ver++;
         return;
       }
-      lvAutoPlayed(idx);
+      if (first) lvAutoPlanUsed(fire);
+      else lvAutoPlayed(idx);
       const built = lvAutoBuild(sc, nx, fire);
       const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
-      LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0 });
+      LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0, turned: true });
       lvAutoKey(sc, nx, fire);
       if (nx.kind === "strip") lvAutoMove(sc, fire, true);
       if (!hard && !built && LV.fills && sc.cells[trackOf(0)] && nx.cells[trackOf(0)] && nx.e >= sc.e && LV.fillIds.length) {
@@ -60746,7 +60809,8 @@ html.os-darwin.native-menu #menubar .mproj {
       jam: null,
       bars: /* @__PURE__ */ new Map(),
       maskSig: "",
-      apCued: null
+      apCued: null,
+      apPlan: null
     });
     autoClipReset();
     for (let t = 0; t < 8; t++) {
@@ -61362,7 +61426,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var lvVaryLabel = () => LV.vary === 0 ? "Off" : LV.vary < 35 ? "Low" : LV.vary < 70 ? "Medium" : LV.vary <= 100 ? "High" : "Extreme";
   function liveVaryStep(tick, rel) {
     const sc = LV.scenes[LV.cur];
-    if (!sc || LV.stopAt != null) return;
+    if (!sc || LV.stopAt != null || sc.kind === "build") return;
     const U = (LV.vary >= 75 ? 2 : LV.vary >= 40 ? 4 : 8) * 32;
     if (rel % U !== U - 64) return;
     const end = tick + 64;
@@ -61419,6 +61483,11 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function lvSortCues() {
     LV.cues.sort((a, b) => a.tick - b.tick);
+    for (const c of LV.cues)
+      if (c.type === "scene" && !c.turned) {
+        c.turned = true;
+        lvSceneTurn(c.idx);
+      }
   }
   function lvBase() {
     const sc = LV.cues.filter((c) => c.type === "scene").pop();
@@ -61489,11 +61558,12 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     LV.cues = LV.cues.filter((c) => !["scene", "gap", "thin", "bov"].includes(c.type) && !(c.type === "fill" && c.auto));
     const bars3 = LV.riseBars || 4, t1 = lvBoundary(LV.quant === "phrase" ? curSc.bars : LV.quant), t2 = t1 + bars3 * 32;
-    if (b >= 0) LV.cues.push({ type: "scene", idx: b, tick: t1 });
+    if (b >= 0) LV.cues.push({ type: "scene", idx: b, tick: t1, len: bars3 });
     const bp = lvPool(lvStyle(), "build").map(facById).filter(Boolean);
     const fit = bp.filter((f) => f.bars >= bars3);
     const bf = fit.length ? lvRand(fit) : bp.length ? lvRand(bp) : null;
-    if (bf) LV.cues.push({ type: "bov", tick: t1, end: t2, f: bf, off: Math.max(0, (bf.bars - bars3) * 32) });
+    if (bf && !(b >= 0 && lvOwnBuild(LV.scenes[b])))
+      LV.cues.push({ type: "bov", tick: t1, end: t2, f: bf, off: Math.max(0, (bf.bars - bars3) * 32) });
     const hard = lvDropExtras(t2);
     LV.cues.push({ type: "scene", idx: dI, tick: t2, hard: hard || void 0 });
     LV.rise = { start: t1, end: t2, from: LV.rest[0], to: 127, cc: 80, target: "all" };
@@ -64115,7 +64185,34 @@ html.os-darwin.native-menu #menubar .mproj {
         });
       }
     });
+    for (const plan2 of lvPlanned()) {
+      const sc = LV.scenes[plan2.idx];
+      segs.push({
+        tick: plan2.tick,
+        idx: plan2.idx,
+        plan: true,
+        label: plan2.fresh ? "New patterns" : null,
+        ids: plan2.fresh ? lvIds() : Array.from({ length: 8 }, (_, t) => sc && sc.cells[t] ? sc.cells[t].id : null)
+      });
+    }
     return segs.sort((a, b) => a.tick - b.tick);
+  }
+  function lvPlanned() {
+    const p = LV.apPlan, sc = LV.scenes[LV.cur];
+    if (!lvOn() || !LV.auto || !p || !sc || p.from !== LV.sceneStart || LV.jam || LV.stopAt != null) return [];
+    const cued = LV.cues.filter((c) => c.type === "scene" || c.type === "blend");
+    if (cued.length && !(p.next != null && cued.length === 1 && cued[0].tick === p.next && cued[0].idx === p.list[0].idx))
+      return [];
+    const out2 = [];
+    let tick = p.next != null ? p.next : LV.sceneStart + lvAutoTotal(sc);
+    for (let i = 0; i < p.list.length; i++) {
+      const x = p.list[i], s = LV.scenes[x.idx];
+      if (!s) break;
+      if (!(i === 0 && p.next != null)) out2.push({ idx: x.idx, fresh: x.fresh, tick });
+      if (x.fresh) break;
+      tick += lvAutoTotal(s);
+    }
+    return out2;
   }
   var lvTickF = () => lvOn() && TR.vis[0] ? TR.vis[0].tick : 0;
   var FOLD_KEY = "mc707-live-fold";
@@ -65139,9 +65236,10 @@ html.os-darwin.native-menu #menubar .mproj {
       inner.append(row2);
     });
     const cue = LV.cues.filter((c) => c.type === "scene")[0];
-    if (cue) {
-      const k2 = Math.floor(cue.tick / 32) - b0;
-      if (k2 >= 0 && k2 <= W2 + 1) inner.append(el("div", { class: "lvLine", style: "left:" + k2 * bw2 + "px" }));
+    for (const x of [cue, ...lvPlanned()].filter(Boolean)) {
+      const k2 = Math.floor(x.tick / 32) - b0;
+      if (k2 >= 0 && k2 <= W2 + 1)
+        inner.append(el("div", { class: "lvLine" + (x === cue ? "" : " plan"), style: "left:" + k2 * bw2 + "px" }));
     }
     lvUI = { b0, bw: bw2, ver: LV.ver };
   }
@@ -65194,7 +65292,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const barNo = on3 && sc ? Math.floor((tickf - s0.tick) / 32) % sc.bars : 0;
     put3(
       "lvNowBar",
-      on3 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + LV.autoReps : "") : "Press Start Jam, or hit a scene pad"
+      on3 && sc ? "bar " + (barNo + 1) + " of " + sc.bars + (LV.auto ? " · loop " + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + "/" + lvAutoTotal(sc) / (sc.bars * 32) : "") : "Press Start Jam, or hit a scene pad"
     );
     const pg = $("#lvProg");
     if (pg && sc) {
@@ -65207,10 +65305,13 @@ html.os-darwin.native-menu #menubar .mproj {
         x.classList.toggle("now", on3 && i === barNo);
       });
     }
-    const cue = LV.cues.filter((c) => c.type === "scene")[0], ns = cue ? LV.scenes[cue.idx] : null;
-    put3("lvNextName", on3 && ns ? ns.name : on3 && LV.auto ? "Auto" : "—");
+    const plan2 = lvPlanned()[0], cue = LV.cues.filter((c) => c.type === "scene")[0] || plan2, ns = cue ? LV.scenes[cue.idx] : null;
+    put3(
+      "lvNextName",
+      on3 && plan2 && !LV.cues.some((c) => c.type === "scene") && plan2.fresh ? "New patterns" : on3 && ns ? ns.name : on3 && LV.auto ? "Auto" : "—"
+    );
     const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-    put3("lvNextIn", on3 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") : "");
+    put3("lvNextIn", on3 && cue ? "in " + nb + " bar" + (nb === 1 ? "" : "s") + (cue === plan2 ? " · auto-pilot" : "") : "");
     const kc = LV.cues.filter((c) => c.type === "key")[0];
     put3("lvKeyShow", NK(LV.key, LV.mode));
     const ks = $("#lvKey");
@@ -65244,6 +65345,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       c.classList.toggle("cur", !!isCur);
       c.classList.toggle("queued", !!isQ);
+      c.classList.toggle("plan", !!isQ && cue === plan2);
       put3(
         "lvCardQ" + i,
         isQ ? qn ? "in " + qn + " bar" + (qn === 1 ? "" : "s") : "next bar" : isCur ? lvIsFlash(s) ? "FLASH!" : "playing" : ""
@@ -65276,6 +65378,7 @@ html.os-darwin.native-menu #menubar .mproj {
       else if (a.startsWith("rise:") || a === "bd") cur2 = !!LV.rise;
       b.classList.toggle("cur", !!cur2);
       b.classList.toggle("queued", !!q);
+      b.classList.toggle("plan", !!q && /^s\d$/.test(a) && cue === plan2);
     }
     for (let i = 0; i < 12; i++) {
       const b = $("#lvK" + i);
@@ -75430,6 +75533,8 @@ html.os-darwin.native-menu #menubar .mproj {
       facById,
       liveStart,
       liveScene,
+      lvSegs,
+      liveCue,
       lvEmute,
       lvFadeKind,
       lvUserOwns,

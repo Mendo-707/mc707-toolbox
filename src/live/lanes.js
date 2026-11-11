@@ -19,7 +19,8 @@ import { lvIsFlash, lvScCol } from './themes.js';
 import { lvPlayOn } from './scene-templates.js';
 import { lvEmute, lvTop } from './engine.js';
 import { lvEffMute, lvOn } from './cues.js';
-import { lvSegs, lvTickF } from './ui.js';
+import { lvPlanned, lvSegs, lvTickF } from './ui.js';
+import { lvAutoTotal } from './autopilot.js';
 import { liveRenderKeyRec } from './panels.js';
 import { VZ } from './visualizer.js';
 
@@ -223,9 +224,10 @@ export function liveRenderLanes(b0, force) {
     inner.append(row);
   });
   const cue = LV.cues.filter(c => c.type === 'scene')[0];
-  if (cue) {
-    const k = Math.floor(cue.tick / 32) - b0;
-    if (k >= 0 && k <= W + 1) inner.append(el('div', { class: 'lvLine', style: 'left:' + k * bw + 'px' }));
+  for (const x of [cue, ...lvPlanned()].filter(Boolean)) {
+    const k = Math.floor(x.tick / 32) - b0;
+    if (k >= 0 && k <= W + 1)
+      inner.append(el('div', { class: 'lvLine' + (x === cue ? '' : ' plan'), style: 'left:' + k * bw + 'px' }));
   }
   lvUI = { b0, bw, ver: LV.ver };
 }
@@ -300,7 +302,9 @@ export function liveStatus(tickf) {
           (barNo + 1) +
           ' of ' +
           sc.bars +
-          (LV.auto ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + LV.autoReps : '')
+          (LV.auto
+            ? ' · loop ' + (Math.floor((tickf - s0.tick) / (sc.bars * 32)) + 1) + '/' + lvAutoTotal(sc) / (sc.bars * 32)
+            : '')
       : 'Press Start Jam, or hit a scene pad'
   );
   const pg = $('#lvProg');
@@ -314,11 +318,22 @@ export function liveStatus(tickf) {
       x.classList.toggle('now', on && i === barNo);
     });
   }
-  const cue = LV.cues.filter(c => c.type === 'scene')[0],
+  /* what is cued next, or else auto-pilot's plan (chosen when this scene started) */
+  const plan = lvPlanned()[0],
+    cue = LV.cues.filter(c => c.type === 'scene')[0] || plan,
     ns = cue ? LV.scenes[cue.idx] : null;
-  put('lvNextName', on && ns ? ns.name : on && LV.auto ? 'Auto' : '—');
+  put(
+    'lvNextName',
+    on && plan && !LV.cues.some(c => c.type === 'scene') && plan.fresh
+      ? 'New patterns'
+      : on && ns
+        ? ns.name
+        : on && LV.auto
+          ? 'Auto'
+          : '—'
+  );
   const nb = cue ? Math.max(0, Math.ceil((cue.tick - tickf) / 32)) : 0;
-  put('lvNextIn', on && cue ? 'in ' + nb + ' bar' + (nb === 1 ? '' : 's') : '');
+  put('lvNextIn', on && cue ? 'in ' + nb + ' bar' + (nb === 1 ? '' : 's') + (cue === plan ? ' · auto-pilot' : '') : '');
   const kc = LV.cues.filter(c => c.type === 'key')[0];
   put('lvKeyShow', NK(LV.key, LV.mode));
   const ks = $('#lvKey');
@@ -355,6 +370,7 @@ export function liveStatus(tickf) {
     }
     c.classList.toggle('cur', !!isCur);
     c.classList.toggle('queued', !!isQ);
+    c.classList.toggle('plan', !!isQ && cue === plan);
     put(
       'lvCardQ' + i,
       isQ
@@ -397,6 +413,7 @@ export function liveStatus(tickf) {
     else if (a.startsWith('rise:') || a === 'bd') cur = !!LV.rise;
     b.classList.toggle('cur', !!cur);
     b.classList.toggle('queued', !!q);
+    b.classList.toggle('plan', !!q && /^s\d$/.test(a) && cue === plan);
   }
   for (let i = 0; i < 12; i++) {
     const b = $('#lvK' + i);

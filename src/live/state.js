@@ -296,6 +296,11 @@ export function saveLive() {
   } catch (e) {}
 }
 /* the build track: Drums 3 (perc) with the default setup, else the kit track, else any drum track */
+/** A composed lift that already rolls into the drop on the build overlay's track (its own build part). */
+export const lvOwnBuild = sc => {
+  const c = sc && sc.cells && sc.cells[lvBT()];
+  return !!(c && /-build$/.test(c.id));
+};
 export const lvBT = () => {
   if (DEV === '101') return 0;
   const p = trackOf(2);

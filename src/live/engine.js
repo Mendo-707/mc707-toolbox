@@ -25,10 +25,21 @@ import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOw
 import { LV_GATE, lvAutoFlash, lvBreakStart, lvRollTick } from './breaks.js';
 import { lvChordNow, lvLockNote } from './chord-lock.js';
 import { riffBusy, riffQuiet, riffStopped, riffTick } from './riff.js';
-import { lvAutoBuild, lvAutoFresh, lvAutoKey, lvAutoMove, lvAutoPick, lvAutoPlayed, lvAutoReset } from './autopilot.js';
+import {
+  lvAutoBuild,
+  lvAutoFresh,
+  lvAutoKey,
+  lvAutoMove,
+  lvAutoPick,
+  lvAutoPlan,
+  lvAutoPlanUsed,
+  lvAutoPlayed,
+  lvAutoReset,
+  lvAutoTotal
+} from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
-import { liveBuild, liveSwapIds, lvSceneTurn } from './set-builder.js';
+import { liveBuild, liveSwapIds } from './set-builder.js';
 import { liveVaryStep, lvDropExtras, lvSortCues } from './cues.js';
 import { CTL, ctlAllOff } from './controller.js';
 import { hooks } from '../core/hooks.js';
@@ -203,12 +214,10 @@ export function lvCellClip(t, cell, time) {
     if (h >= 0) sendClip(t, h, time);
   }
 }
-export function liveScene(idx, tick, hard) {
+export function liveScene(idx, tick, hard, len) {
   const prev = LV.scenes[LV.cur],
     sc = LV.scenes[idx];
   if (!sc || lvIsFlash(sc)) return;
-  /* (a composed scene that comes round again plays some parts another way) */
-  lvSceneTurn(idx);
   const jump = sc.e - (prev ? prev.e : 0);
   const base = hard || LV.entry === 'hard' ? 0 : ENTRY_TICKS[LV.entry] || 32;
   const toneFade = jump >= 4 ? Math.min(base, 8) : base;
@@ -310,6 +319,13 @@ export function liveScene(idx, tick, hard) {
       top ? (tone ? toneFade : 0) : tone ? toneFade : jump >= 4 ? 0 : base
     );
   }
+  /* a lift played shorter than its build (Build → Drop for 4 bars of an 8-bar build): the build joins part
+     way, so it still peaks right on the drop */
+  if (len && sc.kind === 'build')
+    for (const t in sc.cells) {
+      const v = LV.voices[t] && LV.voices[t][0];
+      if (v && v.f.id === sc.cells[t].id && v.f.bars > len) v.start = tick - (v.f.bars - len) * 32;
+    }
   if (jump >= 4 && !hard && LV.entry !== 'hard') {
     LV.crash = true;
     LV.dropTick = tick;
@@ -374,7 +390,7 @@ function lvRiseTick(tick, nt) {
   knobUI(r.cc - 80, clamp(v, 0, 127));
 }
 function liveFire(c, tick) {
-  if (c.type === 'scene') liveScene(c.idx, tick, c.hard);
+  if (c.type === 'scene') liveScene(c.idx, tick, c.hard, c.len);
   else if (c.type === 'gap') {
     if (LV.cues.some(x => x.type === 'scene')) LV.gap = c.tick;
   } else if (c.type === 'thin') {
@@ -480,27 +496,33 @@ function liveAutoStep(tick, rel) {
   const sc = LV.scenes[LV.cur];
   if (!sc || LV.stopAt != null) return;
   const loop = sc.bars * 32,
-    total = loop * LV.autoReps;
+    total = lvAutoTotal(sc);
   const pend = LV.cues.some(c => c.type === 'scene' || c.type === 'blend');
+  /* the next scene is chosen when this one starts, so it shows on the timeline from then on */
+  if (!pend && !LV.jam) lvAutoPlan();
   /* two bars before the scene's planned end; or, when that moment was missed (auto-pilot switched on
      late, or a cue of yours was waiting then), at the next bar line, landing on a loop's end at least two
      bars away, so a scene never plays on forever */
   if (!pend && rel >= total - 64 && LV.apCued !== LV.sceneStart) {
     LV.apCued = LV.sceneStart;
     /* the next scene on the journey (or, now and then at a breakdown, fresh patterns) */
-    const idx = lvAutoPick(),
+    const plan = lvAutoPlan(),
+      first = plan && plan.list[0],
+      idx = first ? first.idx : lvAutoPick(),
       fire = LV.sceneStart + Math.max(total, Math.ceil((rel + 64) / loop) * loop),
       nx = LV.scenes[idx];
-    if (lvAutoFresh(nx.kind)) {
+    if (first ? first.fresh && lvAutoFresh(nx.kind, true) : lvAutoFresh(nx.kind)) {
       /* the blend brings the new set in; the journey picks up again after it */
+      LV.apPlan = null;
       LV.apCued = null;
       LV.ver++;
       return;
     }
-    lvAutoPlayed(idx);
+    if (first) lvAutoPlanUsed(fire);
+    else lvAutoPlayed(idx);
     const built = lvAutoBuild(sc, nx, fire);
     const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
-    LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined });
+    LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined, turned: true });
     lvAutoKey(sc, nx, fire);
     if (nx.kind === 'strip') lvAutoMove(sc, fire, true);
     if (
@@ -822,7 +844,8 @@ export function liveStart(idx) {
     jam: null,
     bars: new Map(),
     maskSig: '',
-    apCued: null
+    apCued: null,
+    apPlan: null
   });
   autoClipReset();
   for (let t = 0; t < 8; t++) {

@@ -21,6 +21,7 @@ import { liveNewSet } from './scene-templates.js';
 import { lvFullPool } from '../library/pools.js';
 import { liveBuild } from './set-builder.js';
 import { liveToggle, lvIds } from './engine.js';
+import { lvAutoTotal } from './autopilot.js';
 import { lvJamAhead } from './jam.js';
 import {
   liveAuto,
@@ -76,7 +77,43 @@ export function lvSegs(tickf) {
         });
       }
     });
+  /* auto-pilot's next scenes, chosen when this one started (each is cued two bars before it starts) */
+  for (const plan of lvPlanned()) {
+    const sc = LV.scenes[plan.idx];
+    segs.push({
+      tick: plan.tick,
+      idx: plan.idx,
+      plan: true,
+      label: plan.fresh ? 'New patterns' : null,
+      ids: plan.fresh ? lvIds() : Array.from({ length: 8 }, (_, t) => (sc && sc.cells[t] ? sc.cells[t].id : null))
+    });
+  }
   return segs.sort((a, b) => a.tick - b.tick);
+}
+/**
+ * Auto-pilot's next scenes and when each comes ([{idx, tick, fresh}]): the plan, from the next change on
+ * (one already cued is left out; its successor still shows). Empty with auto-pilot off, or a cue or a
+ * blend of yours waiting.
+ */
+export function lvPlanned() {
+  const p = LV.apPlan,
+    sc = LV.scenes[LV.cur];
+  if (!lvOn() || !LV.auto || !p || !sc || p.from !== LV.sceneStart || LV.jam || LV.stopAt != null) return [];
+  const cued = LV.cues.filter(c => c.type === 'scene' || c.type === 'blend');
+  /* a cue that is not the plan's own: the plan is off */
+  if (cued.length && !(p.next != null && cued.length === 1 && cued[0].tick === p.next && cued[0].idx === p.list[0].idx))
+    return [];
+  const out = [];
+  let tick = p.next != null ? p.next : LV.sceneStart + lvAutoTotal(sc);
+  for (let i = 0; i < p.list.length; i++) {
+    const x = p.list[i],
+      s = LV.scenes[x.idx];
+    if (!s) break;
+    if (!(i === 0 && p.next != null)) out.push({ idx: x.idx, fresh: x.fresh, tick });
+    if (x.fresh) break;
+    tick += lvAutoTotal(s);
+  }
+  return out;
 }
 export const lvTickF = () => (lvOn() && TR.vis[0] ? TR.vis[0].tick : 0);
 /* A panel that folds away: its heading is the switch, and whether it is open is remembered. Folded, its

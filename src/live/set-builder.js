@@ -26,6 +26,8 @@ const roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(
 
 export function liveBuild() {
   const st = lvStyle();
+  /* (auto-pilot's next scene was one of the old set's) */
+  LV.apPlan = null;
   LV.style = st.id;
   if (!LV.mode) LV.mode = lvModeFam(st.scale);
   LV.fillIds = lvPool(st, 'fill');
@@ -365,7 +367,7 @@ function buildComposed(st) {
   LV.ver++;
 }
 /**
- * A composed set's scene is about to play: the first time as written; after that, some of its parts come
+ * A composed set's scene is cued: the first time it plays as written; after that, some of its parts come
  * back another way (the same variant from another take of the set). How many depends on Variation: none
  * at 0, about a third at Low, half at Medium, three quarters from High. The lead's hook changes less.
  */

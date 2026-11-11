@@ -180,9 +180,16 @@ test('A composed set has four takes of each part: bigger swap pools, and a scene
       a.TICKER.stop();
       const first = ids();
       let changed = 0;
+      /* scene 0 cued again and again (a scene is chosen when cued, so the timeline shows what plays) */
+      const step = n => {
+        for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+      };
       for (let i = 0; i < 6; i++) {
-        a.liveScene(0, a.TR.tick, true);
+        a.liveCue(1);
+        step(64 - (a.TR.tick % 32));
+        a.liveCue(0);
         if (ids() !== first) changed++;
+        step(64 - (a.TR.tick % 32));
       }
       /* every part it plays is on the set's one progression */
       const progs = new Set(
@@ -204,5 +211,143 @@ test('A composed set has four takes of each part: bigger swap pools, and a scene
   assert.equal(r.off.changed, 0, 'Variation at 0 holds every scene as written');
   assert.ok(r.high.changed >= 4, 'the scene comes back another way: ' + r.high.changed);
   assert.equal(r.high.progs, 1, 'still one progression');
+  assert.deepEqual(errors, []);
+});
+
+test('Auto-pilot: a lift plays once into a peak (even one you cued), and its next two scenes show from the start', async () => {
+  const { page, errors } = await openApp({
+    storage: { 'mc707-live': JSON.stringify({ flavor: 'composed', flavorPick: true, style: 'liquid', auto: true }) }
+  });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    LV.auto = true;
+    a.liveStart(0);
+    a.TICKER.stop();
+    const step = n => {
+      for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    const out = { runs: [], seen: [] };
+    /* a bar into the set: the plan is there, two scenes, and the Next card says so */
+    step(40);
+    const segs = a.lvSegs(a.TR.tick).filter(s => s.plan);
+    out.plan = segs.map(s => ({ name: LV.scenes[s.idx].name, bars: (s.tick - LV.sceneStart) / 32 }));
+    return out;
+  });
+  /* (the Next card redraws on the screen's own frames) */
+  await page.waitForTimeout(400);
+  const next = await page.evaluate(
+    () => document.querySelector('#lvNextName').textContent + ' ' + document.querySelector('#lvNextIn').textContent
+  );
+  Object.assign(
+    r,
+    await page.evaluate(async () => {
+      const a = window.__app,
+        LV = a.LV,
+        out = { runs: [] };
+      const step = n => {
+        for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+      };
+      /* what plays, bar by bar (sampled mid-bar), for 120 bars */
+      const log = [];
+      for (let b = 0; b < 120; b++) {
+        step(16);
+        log.push({ idx: LV.cur, start: LV.sceneStart });
+        step(16);
+      }
+      for (const x of log) {
+        const last = out.runs[out.runs.length - 1];
+        if (last && last.start === x.start) last.n++;
+        else out.runs.push({ kind: LV.scenes[x.idx].kind, name: LV.scenes[x.idx].name, start: x.start, n: 1 });
+      }
+      out.played = out.runs.slice(0, 3).map(x => x.name);
+      /* your own Lift: auto-pilot follows it with a peak */
+      const lift = LV.scenes.findIndex(s => s.kind === 'build');
+      while (LV.scenes[LV.cur].kind === 'build') step(32);
+      a.liveCue(lift);
+      const at = LV.cues.find(c => c.type === 'scene').tick;
+      while (LV.sceneStart !== at) step(1);
+      const s0 = LV.sceneStart;
+      /* (nothing gets cued into the middle of a lift: fills, swaps, drop-outs) */
+      out.midLift = [];
+      while (a.TR.tick < s0 + 5 * 32) {
+        step(32);
+        out.midLift.push(
+          ...LV.cues
+            .filter(c => ['fill', 'swap', 'mute', 'guest', 'brk'].includes(c.type) && c.tick < s0 + 6 * 32)
+            .map(c => c.type)
+        );
+      }
+      while (LV.sceneStart === s0) step(32);
+      out.afterMine = LV.scenes[LV.cur].kind;
+      out.mineBars = (LV.sceneStart - s0) / 32;
+      a.stopAll();
+      return out;
+    })
+  );
+  assert.equal(r.plan.length, 2, 'two scenes planned: ' + JSON.stringify(r.plan));
+  assert.match(next, new RegExp(r.plan[0].name + ' in \\d+ bars · auto-pilot'));
+  assert.deepEqual(
+    r.played.slice(1),
+    r.plan.map(x => x.name),
+    'the plan is what plays'
+  );
+  const runs = r.runs.slice(0, -1);
+  for (let i = 0; i < runs.length; i++)
+    if (runs[i].kind === 'build') {
+      assert.equal(runs[i].n, 8, 'a lift plays once (8 bars): ' + JSON.stringify(runs));
+      if (runs[i + 1]) assert.equal(runs[i + 1].kind, 'peak', 'into a peak: ' + JSON.stringify(runs));
+    }
+  assert.ok(
+    runs.some(x => x.kind === 'build'),
+    'a lift came: ' + JSON.stringify(runs)
+  );
+  assert.equal(r.mineBars, 8, 'your lift plays once too');
+  assert.deepEqual(r.midLift, [], 'nothing cued into the middle of the lift');
+  assert.equal(r.afterMine, 'peak', 'and into a peak');
+  assert.deepEqual(errors, []);
+});
+
+test('Build → Drop shorter than the lift’s build: the build joins part way and peaks on the drop', async () => {
+  const { page, errors } = await openApp({
+    storage: { 'mc707-live': JSON.stringify({ flavor: 'composed', flavorPick: true, style: 'techno', auto: false }) }
+  });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    LV.auto = false;
+    LV.riseBars = 4;
+    a.liveStart(0);
+    a.TICKER.stop();
+    const step = n => {
+      for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    step(40);
+    a.liveBuildDrop();
+    const lift = LV.scenes.findIndex(s => s.kind === 'build');
+    while (LV.cur !== lift) step(1);
+    const t = Number(Object.keys(LV.scenes[lift].cells).find(k => a.facById(LV.scenes[lift].cells[k].id).bars === 8));
+    const v = LV.voices[t][0],
+      out = { phase: (LV.sceneStart - v.start) / 32, bars: v.f.bars };
+    const s0 = LV.sceneStart;
+    while (LV.sceneStart === s0) step(1);
+    out.len = (LV.sceneStart - s0) / 32;
+    out.drop = LV.scenes[LV.cur].kind;
+    a.stopAll();
+    return out;
+  });
+  assert.equal(r.len, 4, 'a 4-bar build');
+  assert.equal(r.phase, 4, 'the 8-bar build starts half way: ' + JSON.stringify(r));
+  assert.equal(r.drop, 'peak');
   assert.deepEqual(errors, []);
 });

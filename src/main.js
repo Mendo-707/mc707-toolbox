@@ -83,7 +83,7 @@ import './live/scene-templates.js';
 import './library/pools.js';
 import './live/set-builder.js';
 import './live/engine.js';
-import { liveBuildDrop, lvBlendIn } from './live/cues.js';
+import { liveBuildDrop, liveCue, lvBlendIn } from './live/cues.js';
 import { liveMoveNow, lvRestCC, lvUserOwns } from './live/moves.js';
 import { liveActDown, liveActUp } from './live/pads.js';
 import { liveJamEnd, liveJamStart } from './live/jam.js';
@@ -157,7 +157,7 @@ import { liveRenderSceneEd } from './live/scene-editor.js';
 import { liveBuild, liveSwapIds } from './live/set-builder.js';
 import { liveCleanup, lvEmute, lvFadeKind, liveScene, liveStart, liveTick } from './live/engine.js';
 import { liveCapture } from './ui/live-capture.js';
-import { liveInit } from './live/ui.js';
+import { liveInit, lvSegs } from './live/ui.js';
 import { vizNote } from './live/visualizer.js';
 import { setMode } from './ui/mode.js';
 import * as sceneModel from './scene/model.js';
@@ -382,6 +382,8 @@ PROJ.t = projTitle;
     facById,
     liveStart,
     liveScene,
+    lvSegs,
+    liveCue,
     lvEmute,
     lvFadeKind,
     lvUserOwns,

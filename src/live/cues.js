@@ -7,12 +7,12 @@ import { devOn } from '../core/device.js';
 import { facById } from '../library/index.js';
 import { poolOf, slotOf, trackOf, tracksFor, tracksOf } from '../core/tracks.js';
 import { TR } from '../services/transport.js';
-import { LV, SWG, lvRand, lvStyle, saveLive } from './state.js';
+import { LV, SWG, lvOwnBuild, lvRand, lvStyle, saveLive } from './state.js';
 import { lvIsFlash } from './themes.js';
 import { lvSaveScenes } from './scene-editor.js';
 import { lvAutoFlash } from './breaks.js';
 import { lvPool } from '../library/pools.js';
-import { liveSwapIds } from './set-builder.js';
+import { liveSwapIds, lvSceneTurn } from './set-builder.js';
 import { lvFitIds, lvMelodicCount } from './harmony.js';
 import { liveStart, lvEmute, lvIds, lvSwapCue, lvTop } from './engine.js';
 import { lvTickF } from './ui.js';
@@ -26,7 +26,8 @@ export const lvVaryLabel = () =>
   LV.vary === 0 ? 'Off' : LV.vary < 35 ? 'Low' : LV.vary < 70 ? 'Medium' : LV.vary <= 100 ? 'High' : 'Extreme';
 export function liveVaryStep(tick, rel) {
   const sc = LV.scenes[LV.cur];
-  if (!sc || LV.stopAt != null) return;
+  /* (a lift is left to build: no fill, swap, drop-out or guest part in the middle of it) */
+  if (!sc || LV.stopAt != null || sc.kind === 'build') return;
   const U = (LV.vary >= 75 ? 2 : LV.vary >= 40 ? 4 : 8) * 32;
   if (rel % U !== U - 64) return;
   const end = tick + 64;
@@ -96,6 +97,13 @@ export function liveVaryStep(tick, rel) {
 }
 export function lvSortCues() {
   LV.cues.sort((a, b) => a.tick - b.tick);
+  /* a scene cued is chosen now: one that comes round again plays some parts another way (set-builder.js
+     lvSceneTurn), decided here so the timeline shows what will play */
+  for (const c of LV.cues)
+    if (c.type === 'scene' && !c.turned) {
+      c.turned = true;
+      lvSceneTurn(c.idx);
+    }
 }
 function lvBase() {
   const sc = LV.cues.filter(c => c.type === 'scene').pop();
@@ -175,11 +183,12 @@ export function liveBuildDrop() {
   const bars = LV.riseBars || 4,
     t1 = lvBoundary(LV.quant === 'phrase' ? curSc.bars : LV.quant),
     t2 = t1 + bars * 32;
-  if (b >= 0) LV.cues.push({ type: 'scene', idx: b, tick: t1 });
+  if (b >= 0) LV.cues.push({ type: 'scene', idx: b, tick: t1, len: bars });
   const bp = lvPool(lvStyle(), 'build').map(facById).filter(Boolean);
   const fit = bp.filter(f => f.bars >= bars);
   const bf = fit.length ? lvRand(fit) : bp.length ? lvRand(bp) : null;
-  if (bf) LV.cues.push({ type: 'bov', tick: t1, end: t2, f: bf, off: Math.max(0, (bf.bars - bars) * 32) });
+  if (bf && !(b >= 0 && lvOwnBuild(LV.scenes[b])))
+    LV.cues.push({ type: 'bov', tick: t1, end: t2, f: bf, off: Math.max(0, (bf.bars - bars) * 32) });
   const hard = lvDropExtras(t2);
   LV.cues.push({ type: 'scene', idx: dI, tick: t2, hard: hard || undefined });
   LV.rise = { start: t1, end: t2, from: LV.rest[0], to: 127, cc: 80, target: 'all' };

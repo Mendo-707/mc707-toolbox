@@ -2022,3 +2022,21 @@ input[type='number'] {
   margin-top: 2px;
   opacity: 0.85;
 }
+/* auto-pilot's plan (not cued yet): a fainter line */
+.lvLine.plan {
+  border-left-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+/* auto-pilot's next scene, planned but not cued yet: marked, without the pulse (it starts pulsing once cued) */
+.lvTile.queued.plan,
+.lvPad.queued.plan {
+  animation: none;
+}
+.lvTile.queued.plan {
+  outline-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+.lvPad.queued.plan {
+  border-color: color-mix(in srgb, var(--hot) 55%, transparent);
+}
+.lvPad.queued.plan::after {
+  opacity: 0.7;
+}
