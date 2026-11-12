@@ -1,6 +1,6 @@
 // Open an MC-707 project file (.mpj, copied off the SD card in storage mode) and see what is in it: its
 // name and tempo, each track's kind and sound name, the clips with notes, and the samples it holds. Bring
-// the clips into Scene Mode's board (as patterns), add them to My patterns, and play or save the samples
+// the clips into Scene Mode's board (as patterns), lay its scenes out in Song Mode, add them to My patterns, and play or save the samples
 // as WAV files. Read only: the file is never changed. The format is in core/mpj.js.
 //
 // Reads: S, DEV.

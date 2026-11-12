@@ -46721,13 +46721,13 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   async function scenesToSong() {
     const rs = rows();
-    if (!rs.length) return toast("Add a scene first");
+    if (!rs.length) return toast("Add a scene first"), false;
     if (S.clips.length && !await askDlg({
       title: "Replace the song’s arrangement?",
       text: "The clips and markers in Song Mode are replaced by the scenes, one after another (Undo brings them back).",
       ok: "Replace"
     }))
-      return;
+      return false;
     pushUndo();
     S.clips = [];
     S.markers = [];
@@ -46757,6 +46757,7 @@ html.os-darwin.native-menu #menubar .mproj {
     scheduleSave();
     hooks.renderAll();
     toast("Laid out " + rs.length + " scenes (" + at2 + " bars) in Song Mode");
+    return true;
   }
 
   // src/core/mpj-templates.js
@@ -72468,7 +72469,7 @@ html.os-darwin.native-menu #menubar .mproj {
         )
       )
     );
-    const toScenes = async () => {
+    const toScenes = async (song = false) => {
       const types = m.tracks.map((tr) => tr.kind);
       const wrong = DEVS[DEV].tracks.filter(
         (t) => (types[t] === "drum" || types[t] === "tone") && m.tracks[t].clips.some((c, k2) => full(t, k2)) && S.tracks[t].type !== types[t]
@@ -72521,9 +72522,16 @@ html.os-darwin.native-menu #menubar .mproj {
       for (const t of DEVS[DEV].tracks)
         if (m.tracks[t].sound && m.tracks[t].kind !== "empty") S.tracks[t].name = m.tracks[t].sound.slice(0, 16);
       scheduleSave();
+      if (song && !await scenesToSong()) {
+        close();
+        hooks.setMode("scene");
+        hooks.renderAll();
+        return;
+      }
       close();
-      hooks.setMode("scene");
+      hooks.setMode(song ? "song" : "scene");
       hooks.renderAll();
+      if (song) return;
       toast(
         "Brought in " + plural3(put5, "clip") + (scenes.length ? " and " + plural3(scenes.length, "scene") : "") + " from " + title + (m.bpm ? " at " + m.bpm + " BPM" : "") + (skipped ? "; " + skipped + " left out (track kind)" : "") + (dropped ? "; " + plural3(dropped, "drum note") + " had no lane in the drum map" : "")
       );
@@ -72544,6 +72552,7 @@ html.os-darwin.native-menu #menubar .mproj {
       title.replace(/[^\w\- ]+/g, "").trim() + " samples.zip",
       makeZip(m.samples.map((s, i) => ({ name: wavName(s, i), data: wavBytes(sampleAudio(u8, s), s.rate) })))
     );
+    const inSong = document.body.dataset.mode === "song";
     const ov = el(
       "div",
       { id: "mpjOv", class: "ptOv", role: "dialog", "aria-modal": "true", "aria-label": "MC-707 project file" },
@@ -72564,7 +72573,7 @@ html.os-darwin.native-menu #menubar .mproj {
           el(
             "p",
             { class: "hint" },
-            "The clip each track plays in each scene, and how many bars the scene chain stays on it. They come into Scene Mode with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip)."
+            "The clip each track plays in each scene, and how many bars the scene chain stays on it. They come in with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip)."
           ),
           ...sceneRows
         ) : null,
@@ -72573,8 +72582,24 @@ html.os-darwin.native-menu #menubar .mproj {
           { class: "mpjActs" },
           el(
             "button",
-            { type: "button", class: "btn on", onclick: toScenes, disabled: !clipCount },
-            "Bring the clips into Scene Mode"
+            {
+              type: "button",
+              class: "btn" + (inSong ? "" : " on"),
+              onclick: () => toScenes(false),
+              disabled: !clipCount
+            },
+            "Load into Scene Mode"
+          ),
+          el(
+            "button",
+            {
+              type: "button",
+              class: "btn" + (inSong ? " on" : ""),
+              title: "The scenes one after another as the song’s arrangement (the clips also stay in Scene Mode)",
+              onclick: () => toScenes(true),
+              disabled: !clipCount || !scenes.length
+            },
+            "Lay it out in Song Mode"
           ),
           el("button", { type: "button", class: "btn", onclick: toMine, disabled: !clipCount }, "Add them to My patterns")
         ),
@@ -73283,6 +73308,7 @@ html.os-darwin.native-menu #menubar .mproj {
           ["New project", projNew, "Ctrl+N"],
           ["Open project…", projOpen, "Ctrl+O"],
           "recent",
+          ["Load an MC-707 project file (.mpj)…", () => mpjPick()],
           ["Save", projSave, "Ctrl+S"],
           ["Save as…", projSaveAs, "Ctrl+Shift+S"],
           ["Save as MC-707 project (.mpj)…", () => saveMpjOpen()],
