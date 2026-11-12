@@ -93,10 +93,10 @@ export async function scenesFromSong() {
       (made.over ? ' (some patterns left out: a track holds 16 clips)' : '')
   );
 }
-/** Scene Mode's To Song Mode: the scenes laid out one after another, replacing the song's clips and markers. */
+/** Scene Mode's To Song Mode: the scenes laid out one after another, replacing the song's clips and markers. True once done. */
 export async function scenesToSong() {
   const rs = rows();
-  if (!rs.length) return toast('Add a scene first');
+  if (!rs.length) return (toast('Add a scene first'), false);
   if (
     S.clips.length &&
     !(await askDlg({
@@ -105,7 +105,7 @@ export async function scenesToSong() {
       ok: 'Replace'
     }))
   )
-    return;
+    return false;
   pushUndo();
   S.clips = [];
   S.markers = [];
@@ -135,4 +135,5 @@ export async function scenesToSong() {
   scheduleSave();
   hooks.renderAll();
   toast('Laid out ' + rs.length + ' scenes (' + at + ' bars) in Song Mode');
+  return true;
 }

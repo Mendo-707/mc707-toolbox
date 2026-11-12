@@ -420,7 +420,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | `ui/menu.js` | The right-click menu itself: showMenu() and closeMenu(). Menus pass a list of items. | CM (the open menu) |
 | `ui/menubar.js` | The top menu bar (File, Edit, Song, Scene, Live, Synth, Settings, View, Help, each shown in the modes it belongs to), and wiring the setup wizard's buttons. |  |
 | `ui/mode.js` | Switching between Song Mode, Scene Mode, Live Mode and Synth mode. |  |
-| `ui/mpj-open.js` | Open an MC-707 project file (.mpj, copied off the SD card in storage mode) and see what is in it: its name and tempo, each track's kind and sound name, the clips with notes, and the samples it holds. Bring the clips into Scene Mode's board (as patterns), add them to My patterns, and play or save the samples as WAV files. Read only: the file is never changed. The format is in core/mpj.js. |  |
+| `ui/mpj-open.js` | Open an MC-707 project file (.mpj, copied off the SD card in storage mode) and see what is in it: its name and tempo, each track's kind and sound name, the clips with notes, and the samples it holds. Bring the clips into Scene Mode's board (as patterns), lay its scenes out in Song Mode, add them to My patterns, and play or save the samples as WAV files. Read only: the file is never changed. The format is in core/mpj.js. |  |
 | `ui/projects.js` | Project files: new, open, save, recent projects and the project title, through the Windows app or the browser. |  |
 | `ui/saved-songs.js` | Saved song slots in the browser, and the extra settings panel (MIDI input list, recording keys, transpose). |  |
 | `ui/setup-wizard.js` | The MC-707 setup wizard: connect MIDI, test notes on each channel, and check the clock and audio. | SU (the setup wizard) |

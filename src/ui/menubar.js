@@ -86,6 +86,7 @@ function initMenubar() {
         ['New project', projNew, 'Ctrl+N'],
         ['Open project…', projOpen, 'Ctrl+O'],
         'recent',
+        ['Load an MC-707 project file (.mpj)…', () => mpjPick()],
         ['Save', projSave, 'Ctrl+S'],
         ['Save as…', projSaveAs, 'Ctrl+Shift+S'],
         ['Save as MC-707 project (.mpj)…', () => saveMpjOpen()],

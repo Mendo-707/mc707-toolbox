@@ -145,7 +145,7 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   ]);
   assert.equal(dl.suggestedFilename(), '01 Hit.wav');
   /* into Scene Mode */
-  await page.click('#mpjOv button:has-text("Bring the clips into Scene Mode")');
+  await page.click('#mpjOv button:has-text("Load into Scene Mode")');
   await page.waitForFunction(() =>
     /Brought in 2 clips and 18 scenes from Test Song at 95 BPM/.test(document.getElementById('toast').textContent)
   );
@@ -183,5 +183,29 @@ test('MC-707 project file: read, shown, clips into Scene Mode, samples as WAV', 
   );
   assert.deepEqual(got.rows[17], ['Scene 2-2', 8, '-1,-1,-1,0,-1,-1,-1,-1']);
   assert.equal(got.mode, 'scene');
+  /* the same project laid out in Song Mode: the scenes one after another as the arrangement */
+  await page.evaluate(() => {
+    document.querySelector('#menubar .mtab[data-mode=song]').click();
+    window.__app.mpj.open(window.__mpj, 'Test.mpj');
+  });
+  assert.ok(
+    await page.locator('#mpjOv button.on:has-text("Lay it out in Song Mode")').count(),
+    'in Song Mode the layout button leads'
+  );
+  await page.click('#mpjOv button:has-text("Lay it out in Song Mode")');
+  /* Scene Mode already holds scenes: its replace question comes first, then the song's */
+  for (let i = 0; i < 2; i++) {
+    const ok = page.locator('[role=dialog] button.on:has-text("Replace")');
+    if (await ok.count()) await ok.first().click();
+    await page.waitForTimeout(150);
+  }
+  await page.waitForFunction(() => document.body.dataset.mode === 'song');
+  const song = await page.evaluate(() => {
+    const S = window.__app.S;
+    return { markers: S.markers.length, clips: S.clips.length, mpj: !!document.getElementById('mpjOv') };
+  });
+  assert.equal(song.markers, 18, 'a marker per scene');
+  assert.ok(song.clips > 0, 'the scenes became clips');
+  assert.equal(song.mpj, false);
   assert.deepEqual(errors, []);
 });

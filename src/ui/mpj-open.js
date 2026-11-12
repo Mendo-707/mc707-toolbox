@@ -16,6 +16,7 @@ import { userSave } from '../library/user-lib.js';
 import { makeZip, saveFile } from '../song/export.js';
 import { STEP_NAMES, joinNotes, toPattern } from '../zen/zc-seq.js';
 import { sceneName } from '../zen/zc-scenes.js';
+import { scenesToSong } from '../scene/convert.js';
 import { askDlg } from './dialogs.js';
 import { matchTypes } from './track-setup.js';
 
@@ -200,7 +201,8 @@ export function mpjOpen(u8, file) {
       )
     )
   );
-  const toScenes = async () => {
+  /* song: after the clips and scenes are in, lay the scenes out as the song in Song Mode */
+  const toScenes = async (song = false) => {
     const types = m.tracks.map(tr => tr.kind);
     const wrong = DEVS[DEV].tracks.filter(
       t =>
@@ -270,9 +272,17 @@ export function mpjOpen(u8, file) {
     for (const t of DEVS[DEV].tracks)
       if (m.tracks[t].sound && m.tracks[t].kind !== 'empty') S.tracks[t].name = m.tracks[t].sound.slice(0, 16);
     scheduleSave();
+    if (song && !(await scenesToSong())) {
+      /* the song was kept: the clips and scenes stay in Scene Mode */
+      close();
+      hooks.setMode('scene');
+      hooks.renderAll();
+      return;
+    }
     close();
-    hooks.setMode('scene');
+    hooks.setMode(song ? 'song' : 'scene');
     hooks.renderAll();
+    if (song) return;
     toast(
       'Brought in ' +
         plural(put, 'clip') +
@@ -301,6 +311,7 @@ export function mpjOpen(u8, file) {
       title.replace(/[^\w\- ]+/g, '').trim() + ' samples.zip',
       makeZip(m.samples.map((s, i) => ({ name: wavName(s, i), data: wavBytes(sampleAudio(u8, s), s.rate) })))
     );
+  const inSong = document.body.dataset.mode === 'song';
   const ov = el(
     'div',
     { id: 'mpjOv', class: 'ptOv', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'MC-707 project file' },
@@ -328,7 +339,7 @@ export function mpjOpen(u8, file) {
             el(
               'p',
               { class: 'hint' },
-              'The clip each track plays in each scene, and how many bars the scene chain stays on it. They come into Scene Mode with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip).'
+              'The clip each track plays in each scene, and how many bars the scene chain stays on it. They come in with the clips, in the same order and length (a scene whose length is OFF lasts as long as its longest clip).'
             ),
             ...sceneRows
           )
@@ -338,8 +349,24 @@ export function mpjOpen(u8, file) {
         { class: 'mpjActs' },
         el(
           'button',
-          { type: 'button', class: 'btn on', onclick: toScenes, disabled: !clipCount },
-          'Bring the clips into Scene Mode'
+          {
+            type: 'button',
+            class: 'btn' + (inSong ? '' : ' on'),
+            onclick: () => toScenes(false),
+            disabled: !clipCount
+          },
+          'Load into Scene Mode'
+        ),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'btn' + (inSong ? ' on' : ''),
+            title: 'The scenes one after another as the song’s arrangement (the clips also stay in Scene Mode)',
+            onclick: () => toScenes(true),
+            disabled: !clipCount || !scenes.length
+          },
+          'Lay it out in Song Mode'
         ),
         el('button', { type: 'button', class: 'btn', onclick: toMine, disabled: !clipCount }, 'Add them to My patterns')
       ),
