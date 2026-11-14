@@ -254,3 +254,90 @@ test('More takes of one song: the same chords, other melodies, and the drums tur
   assert.ok(r.clips <= 12, 'kit patterns in a song: ' + r.clips);
   assert.deepEqual(errors, []);
 });
+
+test('Compose: each genre keeps its conventions (backbeat, kick, bass register, skank, plucks)', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { composer } = window.__app.compose,
+      out = {};
+    for (const st of window.__app.STYLES) {
+      const o = (out[st.id] = {
+        sn: {},
+        four: 0,
+        bars: 0,
+        bass: [],
+        skank: 0,
+        chordOn: 0,
+        pluck: 0,
+        maj7: 0,
+        fine: 0,
+        offRise: 0,
+        roll: 0
+      });
+      for (const seed of [3, 11, 29]) {
+        const c = composer(st, { seed, minutes: 4 }),
+          P = (role, v) => {
+            const k = c.make(role, v);
+            return k ? c.patterns[k].notes : [];
+          };
+        const kit = P('kit', 'A');
+        for (let b = 0; b < 8; b++) {
+          const at = lanes =>
+            new Set(kit.filter(n => Math.floor(n.s / 16) === b && lanes.includes(n.n) && n.v >= 85).map(n => n.s % 16));
+          for (const s of at([2, 3])) o.sn[s] = (o.sn[s] || 0) + 1;
+          if ([0, 4, 8, 12].every(s => at([0]).has(s))) o.four++;
+          o.bars++;
+        }
+        o.fine += P('hats', 'A').filter(n => n.s % 1).length;
+        for (const v of ['A', 'B', 'C']) o.bass.push(...P('bass', v).map(n => n.n));
+        for (const n of P('chords', 'A')) (o.chordOn++, n.s % 4 >= 2 && o.skank++);
+        o.pluck += P('pluck', 'drop').length / 8 / 3;
+        if (c.scale === 'major') o.maj7 += c.chords.filter(x => x.tones[1] === 4 && x.tones.includes(11)).length;
+        /* the Lift: the riser's held notes are the bar's chord's own; a snare roll only where it belongs */
+        for (const n of P('pluck', 'rise').filter(n => n.l >= 16)) {
+          const ch = c.chords[Math.floor(n.s / 16) % c.chords.length];
+          if (!ch.tones.some(t => (ch.root + t) % 12 === n.n % 12)) o.offRise++;
+        }
+        o.roll += P('perc', 'build').filter(n => n.n === 2).length / 3;
+      }
+      o.bass.sort((a, b) => a - b);
+      o.bassMed = o.bass[o.bass.length >> 1];
+      o.bassLo = o.bass[0];
+      delete o.bass;
+    }
+    return out;
+  });
+  /* the backbeat: on 2 and 4, or on 3 where the genre is counted in half time */
+  const ON3 = ['halftime', 'trap', 'drill', 'dubstep', 'riddim', 'reggae', 'dub', 'cinematic'],
+    OTHER = ['dancehall', 'reggaeton', 'ambient'];
+  for (const [id, o] of Object.entries(r)) {
+    if (OTHER.includes(id)) continue;
+    const want = ON3.includes(id) ? [8] : [4, 12];
+    /* (the last bar of a groove is its fill) */
+    for (const s of want)
+      assert.ok((o.sn[s] || 0) >= o.bars - 6, id + ': the backbeat on step ' + s + ' ' + JSON.stringify(o.sn));
+    if (!ON3.includes(id)) assert.ok((o.sn[8] || 0) < o.bars / 2, id + ': no half-time snare ' + JSON.stringify(o.sn));
+    /* a bass sits low: its middle note under C3, nothing under C1 */
+    assert.ok(o.bassMed <= 47 && o.bassLo >= 24, id + ': bass register ' + o.bassLo + ' to middle ' + o.bassMed);
+  }
+  for (const id of ['deephouse', 'classichouse', 'techhouse', 'techno', 'minimal', 'trance', 'disco', 'reggaeton'])
+    assert.ok(r[id].four >= r[id].bars - 3, id + ': four on the floor (' + r[id].four + '/' + r[id].bars + ')');
+  /* Memphis is counted slow: hats finer than 16ths (the rolls), the snare on 2 and 4 (checked above) */
+  assert.ok(r.memphis.fine > 0, 'memphis: 32nd hat rolls');
+  /* the skank is on the offbeats */
+  for (const id of ['reggae', 'dub'])
+    assert.equal(r[id].skank, r[id].chordOn, id + ': the skank on the “and” of each beat');
+  /* funk vamps on dominant sevenths, not major sevenths */
+  assert.equal(r.funk.maj7, 0, 'funk: no major sevenths on its major chords');
+  /* a running arp where the genre has one, a few notes elsewhere */
+  for (const id of ['trance', 'deephouse', 'synthwave', 'disco'])
+    assert.ok(r[id].pluck >= 7, id + ': an arp (' + r[id].pluck + ')');
+  for (const id of ['trap', 'drill', 'techno', 'minimal', 'dub', 'boombap', 'dubstep', 'neuro'])
+    assert.ok(r[id].pluck <= 5, id + ': a sparse pluck (' + r[id].pluck + ')');
+  for (const [id, o] of Object.entries(r)) assert.equal(o.offRise, 0, id + ': the riser holds notes of the chords');
+  for (const id of ['lofi', 'boombap', 'neosoul', 'reggae', 'dub', 'funk'])
+    assert.ok(r[id].roll <= 4, id + ': no snare-roll riser (' + r[id].roll + ')');
+  for (const id of ['techno', 'trance', 'neuro', 'deephouse'])
+    assert.ok(r[id].roll > 30, id + ': a snare roll into the drop');
+  assert.deepEqual(errors, []);
+});

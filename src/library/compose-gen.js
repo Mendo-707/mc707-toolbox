@@ -232,7 +232,7 @@ export const BASS_FEEL = {
   walk: 'walk',
   eight08: '808',
   reggae: 'reggae',
-  dembow: 'reggae',
+  dembow: 'dembow',
   pop: 'pop',
   drone: null
 };
@@ -255,6 +255,8 @@ const FEELS = {
     legato: 0.2
   },
   reggae: { must: [], may: { 2: 2, 3: 2, 4: 1, 6: 2.5, 8: 2, 10: 2, 11: 1.5, 12: 1, 14: 1.5 }, n: [3, 6], legato: 0.5 },
+  /* the tresillo (3 + 3 + 2) the dembow's bass plays with the kick */
+  dembow: { must: [0, 3, 6], may: { 8: 3, 11: 3, 14: 2.5, 10: 1, 12: 1 }, n: [4, 6], legato: 0.5 },
   pop: { must: [0, 8], may: { 2: 1, 4: 2, 6: 2, 10: 2, 11: 1, 12: 2, 14: 2 }, n: [3, 7], legato: 0.4 }
 };
 /**

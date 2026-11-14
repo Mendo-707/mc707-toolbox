@@ -59,7 +59,7 @@ const RECIPES = {
   gfunk: R('boombap', 'funk', 'keys', 'whine', ['M6', 'm8'], 'gfunk', { form: 'hh', ext: 7 }),
   drill: R('drill', 'eight08', 'keys', 'trap', ['m6', 'm5'], 'drill', { form: 'hh' }),
   neosoul: R('lofi', 'walk', 'jazz', 'song', ['j1', 'j2', 'j3'], 'neosoul', { form: 'hh', ext: 9 }),
-  memphis: R('trap', 'eight08', 'keys', 'trap', ['m5', 'm6'], 'phonk', { form: 'hh' }),
+  memphis: R('memphis', 'eight08', 'keys', 'trap', ['m5', 'm6'], 'phonk', { form: 'hh' }),
   phonk: R('phonk', 'eight08', 'keys', 'trap', ['m5', 'm6'], 'phonk', { form: 'hh' }),
 
   deephouse: R('house', 'house', 'house', 'song', ['m8', 'j1', 'm3'], 'deephouse', { form: 'edm', ext: 7 }),
@@ -73,13 +73,13 @@ const RECIPES = {
   speedgarage: R('garage', 'garage', 'stab', 'hard', ['m5', 'm6'], 'garage', { form: 'edm' }),
   dubstep: R('dubstep', 'wobble', 'hit', 'hard', ['m6', 'm7', 'm5'], 'dubstep', { form: 'edm' }),
   riddim: R('dubstep', 'riddim', 'hit', 'hard', ['v2', 'm6'], 'dubstep', { form: 'edm' }),
-  trance: R('trance', 'trance', 'long', 'trance', ['m4', 'm2', 'm3'], 'trance', { form: 'edm' }),
-  progtrance: R('trance', 'trance', 'long', 'trance', ['m3', 'm2'], 'trance', { form: 'edm' }),
+  trance: R('trance', 'trance', 'tranceGate', 'trance', ['m4', 'm2', 'm3'], 'trance', { form: 'edm' }),
+  progtrance: R('trance', 'trance', 'tranceGate', 'trance', ['m3', 'm2'], 'trance', { form: 'edm' }),
   electro: R('electro', 'synth', 'stab', 'hard', ['m5', 'm6'], 'electro', { form: 'edm' }),
   breakbeat: R('breaks', 'synth', 'stab', 'hard', ['m5', 'm1'], 'bigbeat', { form: 'edm' }),
   bigbeat: R('breaks', 'synth', 'stab', 'hard', ['m5', 'm6'], 'bigbeat', { form: 'edm' }),
 
-  funk: R('funk', 'funk', 'comp', 'song', ['v3', 'M6'], 'funk', { form: 'song', ext: 7 }),
+  funk: R('funk', 'funk', 'comp', 'song', ['v3', 'M6'], 'funk', { form: 'song', ext: 7, dom: true }),
   disco: R('disco', 'disco', 'comp', 'song', ['M1', 'm3'], 'disco', { form: 'song', ext: 7 }),
   nudisco: R('disco', 'disco', 'house', 'song', ['m3', 'M2'], 'disco', { form: 'song', ext: 7 }),
   reggae: R('reggae', 'reggae', 'skank', 'song', ['M3', 'm5'], 'reggae', { form: 'song' }),
@@ -138,7 +138,7 @@ const progScale = (id, scale) => (id[0] === 'M' ? 'major' : id[0] === 'j' && sca
 /* a chord token: a degree, 'M'/'m' a major or minor chord where the scale has the other, 's' a sus4, a
    'b' before it the degree a semitone down (a major chord: the flat seventh in a major key), '-7'/'-9'
    sevenths and ninths. prog is a PROGS id or a list of tokens (a generated progression). */
-function chordsOf(prog, key, scale, extAll = 0) {
+function chordsOf(prog, key, scale, extAll = 0, dom = false) {
   const sc = SCALES[scale] || SCALES.minor;
   return (Array.isArray(prog) ? prog : PROGS[prog]).map(d => {
     const s = String(d),
@@ -153,7 +153,8 @@ function chordsOf(prog, key, scale, extAll = 0) {
     if (major) tones.splice(1, 2, 4, 7);
     if (minor) tones.splice(1, 2, 3, 7);
     if (sus) tones[1] = 5;
-    if (ext >= 7) tones.push(flat || minor ? 10 : at(6));
+    /* (dom: a major chord's seventh is the flat one, the funk vamp's dominant sevenths) */
+    if (ext >= 7) tones.push(flat || minor || (dom && tones[1] === 4) ? 10 : at(6));
     /* a ninth only where the scale's is a major ninth (no flat nines), or on a dominant */
     if (ext >= 9 && (at(8) === 14 || major)) tones.push(at(8));
     return { root: (key + sc[deg] - (flat ? 1 : 0) + 12) % 12, tones, deg: deg + 1 };
@@ -895,8 +896,20 @@ GR.drill = {
     }
   }
 };
+/* Phonk at its own tempo drives: the clap on 2 and 4 over a syncopated kick (the Switch drops to the trap
+   half time, the snare on 3) */
 GR.phonk = {
   ...GR.trap,
+  kit(p, r, v, nb) {
+    if (v === 'intro' || v === 'build' || v === 'half') return GR.trap.kit(p, r, v, nb);
+    for (let b = 0; b < nb; b++) {
+      const ks =
+        v === 'B' || v === 'C' ? (b % 2 ? [0, 7, 10, 14] : [0, 3, 6, 10]) : b % 2 ? [0, 6, 10, 11] : [0, 6, 10];
+      for (const s of ks) p.add(b, s, 1, K, hum(r, s ? 112 : 122, 4));
+      p.add(b, 4, 1, [SN, CL], hum(r, 122, 3)).add(b, 12, 1, [SN, CL], hum(r, 124, 3));
+      if (v === 'C' && b % 2) p.add(b, 15, 1, SN, 84);
+    }
+  },
   hats(p, r, v, nb) {
     GR.trap.hats(p, r, v, nb);
     /* the cowbell line */
@@ -905,6 +918,19 @@ GR.phonk = {
         for (const s of [0, 3, 6, 10, 12]) p.add(b, s, 1, PC, hum(r, s % 4 === 0 ? 104 : 84));
   }
 };
+/* A grammar played twice as fast: two of its bars in one (a 16th becomes a 32nd), for a style whose tempo
+   is counted slow. Its half time is the grammar as written. */
+const doubleTime = g => {
+  const w = f => (p, r, v, nb) => {
+    if (v === 'half') return f(p, r, 'A', nb);
+    const q = new Pat(nb * 2);
+    f(q, r, v, nb * 2);
+    for (const n of q.notes) p.notes.push({ ...n, s: n.s / 2, l: Math.max(1, n.l / 2) });
+  };
+  return { kit: w(g.kit), hats: w(g.hats), perc: w(g.perc) };
+};
+/* Memphis is counted slow (70 to 85): the snare on 2 and 4, hats in 16ths with 32nd rolls, the cowbell line */
+GR.memphis = doubleTime({ kit: GR.trap.kit, hats: GR.phonk.hats, perc: GR.trap.perc });
 GR.funk = {
   kit(p, r, v, nb) {
     for (let b = 0; b < nb; b++) {
@@ -968,7 +994,9 @@ GR.reggae = {
   },
   hats(p, r, v, nb) {
     for (let b = 0; b < nb; b++) {
-      for (let s = 0; s < 16; s += 2) p.add(b, s, 1, CH, hum(r, s % 4 === 2 ? 80 : 54));
+      for (let s = 0; s < 16; s += 2) if (s !== 14 || v === 'intro') p.add(b, s, 1, CH, hum(r, s % 4 === 2 ? 80 : 54));
+      /* an open hat on the last 8th leads into the next bar */
+      if (v !== 'intro') p.add(b, 14, 1, OH, hum(r, 72));
       if (v === 'B' || v === 'C') for (const s of [3, 7, 11, 15]) p.add(b, s, 1, CH, 42);
     }
   },
@@ -1084,13 +1112,30 @@ GR.cinematic = {
     if (v === 'build') rollPerc(p, r, nb);
   }
 };
+/* The styles a snare-roll riser does not belong in (boom bap, lo-fi, neo soul, G-funk, reggae, dub, funk,
+   ambient): their build is a shaker that grows and a short pickup, the bass holds its roots and the
+   riser holds its notes. */
+const SOFT_BUILD = new Set(['boombap', 'lofi', 'reggae', 'funk', 'ambient']);
+const softBuild = (p, r, nb) => {
+  for (let b = 0; b < nb; b++) {
+    const end = b === nb - 1 ? 12 : 16;
+    for (let s = b < nb / 2 ? 2 : 0; s < end; s += b < nb / 2 ? 4 : 2)
+      p.add(b, s, 1, PC, 46 + (50 * (b * 16 + s)) / (nb * 16));
+  }
+  for (const [s, v] of [
+    [8, 84],
+    [10, 96],
+    [11, 104]
+  ])
+    p.add(nb - 1, s, 1, SN, v);
+};
 /* every grammar's perc writes rolls into a build, and a fill tail into a pre-chorus */
-for (const g of Object.values(GR)) {
+for (const [name, g] of Object.entries(GR)) {
   const own = g.perc;
   g.perc = (p, r, v, nb) => {
     if (v === 'build' && !p.notes.length) {
       own(p, r, v, nb);
-      if (!p.notes.length) rollPerc(p, r, nb);
+      if (!p.notes.length) (SOFT_BUILD.has(name) ? softBuild : rollPerc)(p, r, nb);
       return;
     }
     own(p, r, v, nb);
@@ -1128,6 +1173,9 @@ function voice(ch, center, prev, size = 3) {
     opts[0]
   );
 }
+/* the bass register: roots from G1 to F#2 (49 to 92 Hz), where a bass has weight on any system; an 808
+   sits lower (28) */
+const BLO = 31;
 const bassNote = (ch, lo = 28) => nearest(ch.root, lo + 6);
 
 /* ---------- bass ---------- */
@@ -1138,81 +1186,101 @@ const bassBars = (p, ctx, rhythm, lo, v = 116, gap = true) => {
   for (let b = 0; b < nb; b++) {
     const c = ch[b % ch.length],
       root = bassNote(c, lo);
-    for (const [s, len, iv] of rhythm(b)) {
+    for (const [s, len, iv0] of rhythm(b)) {
       if (gap && b === nb - 1 && s >= 12) continue;
+      /* a written third is the chord's own (minor over a minor chord, major over a major one), and a
+         seventh the chord's, or the key's where the chord has none */
+      const m3 = typeof iv0 === 'number' ? ((iv0 % 12) + 12) % 12 : -1,
+        c7 = c.tones.find(t => t === 10 || t === 11);
+      const iv =
+        (m3 === 3 || m3 === 4) && (c.tones[1] === 3 || c.tones[1] === 4)
+          ? iv0 - m3 + c.tones[1]
+          : m3 === 10 || m3 === 11
+            ? iv0 - m3 + (c7 ?? (inKey(ctx, root + 10) ? 10 : 11))
+            : iv0;
       const note = typeof iv === 'string' ? root + c.tones[+iv.slice(1)] : root + iv;
       p.add(b, s, len, note, hum(r, s % 4 === 0 ? v : v - 14, 4));
     }
   }
 };
+/* held roots, up to `every` bars each: a note ends where the chord changes, so it is never the last chord's
+   root under the next one */
 const longRoots = (p, ctx, lo = 28, every = 2, v = 100) => {
-  for (let b = 0; b < ctx.nb; b += every) p.add(b, 0, every * 16, bassNote(ctx.ch[b % ctx.ch.length], lo), v);
+  const { ch, nb } = ctx;
+  for (let b = 0; b < nb; ) {
+    let n = 1;
+    while (n < every && b + n < nb && ch[(b + n) % ch.length].root === ch[b % ch.length].root) n++;
+    p.add(b, 0, n * 16, bassNote(ch[b % ch.length], lo), v);
+    b += n;
+  }
 };
+/* a build: each bar's root held (the chords keep moving under a build), then a climb in 8ths from the
+   root of the bar it starts in */
 const buildBass = (p, ctx, lo = 28) => {
   const { nb, ch } = ctx,
-    root = bassNote(ch[0], lo);
-  for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, root, 100);
+    root = bassNote(ch[(nb - 2) % ch.length], lo);
+  for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 100);
   for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s += 2, i++)
     p.add(Math.floor(s / 16), s % 16, 2, root + i, 96 + i);
 };
 BASS.dnb = (p, v, ctx) => {
-  if (v === 'intro') return longRoots(p, ctx, 34);
-  if (v === 'build') return buildBass(p, ctx, 34);
+  if (v === 'intro') return longRoots(p, ctx, BLO);
+  if (v === 'build') return buildBass(p, ctx, BLO);
   if (v === 'half')
     return bassBars(
       p,
       ctx,
       () => [
-        [0, 4, 12],
-        [4, 4, 12],
-        [8, 2, 24],
-        [10, 2, 12],
-        [12, 4, 15]
+        [0, 4, 0],
+        [4, 4, 0],
+        [8, 2, 12],
+        [10, 2, 0],
+        [12, 4, 3]
       ],
-      34,
+      BLO,
       120,
       false
     );
   const R = {
     A: () => [
-      [0, 2, 12],
-      [2, 1, 24],
-      [3, 2, 12],
-      [6, 2, 19],
-      [8, 1, 12],
-      [10, 2, 24],
-      [12, 1, 12],
-      [13, 3, 15]
+      [0, 2, 0],
+      [2, 1, 12],
+      [3, 2, 0],
+      [6, 2, 7],
+      [8, 1, 0],
+      [10, 2, 12],
+      [12, 1, 0],
+      [13, 3, 3]
     ],
     B: () => [
-      [0, 1, 12],
-      [1, 1, 12],
-      [2, 2, 24],
-      [6, 1, 12],
-      [7, 1, 12],
-      [8, 3, 12],
-      [11, 1, 24],
-      [12, 2, 22],
-      [14, 2, 19]
+      [0, 1, 0],
+      [1, 1, 0],
+      [2, 2, 12],
+      [6, 1, 0],
+      [7, 1, 0],
+      [8, 3, 0],
+      [11, 1, 12],
+      [12, 2, 10],
+      [14, 2, 7]
     ],
     C: b =>
       b % 2
         ? [
-            [0, 6, 12],
-            [6, 2, 24],
-            [8, 3, 12],
-            [11, 2, 15],
-            [13, 3, 10]
+            [0, 6, 0],
+            [6, 2, 12],
+            [8, 3, 0],
+            [11, 2, 3],
+            [13, 3, -2]
           ]
         : [...Array(8)]
-            .map((_, s) => [s, 1, s % 2 ? 24 : 12])
+            .map((_, s) => [s, 1, s % 2 ? 12 : 0])
             .concat([
-              [8, 2, 19],
-              [10, 2, 18],
-              [12, 4, 12]
+              [8, 2, 7],
+              [10, 2, 6],
+              [12, 4, 0]
             ])
   };
-  bassBars(p, ctx, R[v] || R.A, 34, 120);
+  bassBars(p, ctx, R[v] || R.A, BLO, 120);
 };
 BASS.dnbLiquid = (p, v, ctx) => {
   if (v === 'intro' || v === 'build' || v === 'half') return BASS.dnb(p, v, ctx);
@@ -1237,7 +1305,7 @@ BASS.dnbLiquid = (p, v, ctx) => {
       [13, 3, 10]
     ]
   };
-  bassBars(p, ctx, R[v] || R.A, 34, 116);
+  bassBars(p, ctx, R[v] || R.A, BLO, 116);
 };
 BASS.dnbJungle = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C')
@@ -1256,7 +1324,7 @@ BASS.dnbJungle = (p, v, ctx) => {
               [12, 2, 12],
               [14, 2, 10]
             ],
-      34,
+      BLO,
       118
     );
   return BASS.dnb(p, v, ctx);
@@ -1269,19 +1337,19 @@ BASS.dnbJump = (p, v, ctx) => {
       b =>
         b % 2
           ? [
-              [0, 2, 12],
-              [3, 1, 12],
-              [6, 2, 24],
-              [10, 4, 12],
-              [14, 2, 13]
+              [0, 2, 0],
+              [3, 1, 0],
+              [6, 2, 12],
+              [10, 4, 0],
+              [14, 2, 1]
             ]
           : [
-              [0, 4, 12],
-              [6, 2, 12],
-              [8, 2, 19],
-              [10, 4, 12]
+              [0, 4, 0],
+              [6, 2, 0],
+              [8, 2, 7],
+              [10, 4, 0]
             ],
-      34,
+      BLO,
       124
     );
   return BASS.dnb(p, v, ctx);
@@ -1291,35 +1359,35 @@ BASS.wobble = (p, v, ctx) => {
   if (v === 'build') return buildBass(p, ctx, 28);
   const R = {
     A: b => [
-      [0, 6, 12],
-      [6, 2, 12],
-      [8, 4, 15],
-      [12, 4, 12]
+      [0, 6, 0],
+      [6, 2, 0],
+      [8, 4, 3],
+      [12, 4, 0]
     ],
     B: b =>
       b % 2
         ? [
-            [0, 2, 12],
-            [2, 2, 24],
-            [4, 2, 12],
-            [6, 2, 22],
-            [8, 8, 12]
+            [0, 2, 0],
+            [2, 2, 12],
+            [4, 2, 0],
+            [6, 2, 10],
+            [8, 8, 0]
           ]
         : [
-            [0, 3, 12],
-            [3, 3, 12],
-            [6, 2, 15],
-            [8, 3, 12],
-            [11, 3, 24],
-            [14, 2, 12]
+            [0, 3, 0],
+            [3, 3, 0],
+            [6, 2, 3],
+            [8, 3, 0],
+            [11, 3, 12],
+            [14, 2, 0]
           ],
-    C: b => [...Array(8)].map((_, i) => [i * 2, 2, i % 3 ? 12 : 24]),
+    C: b => [...Array(8)].map((_, i) => [i * 2, 2, i % 3 ? 0 : 12]),
     half: () => [
-      [0, 3, 12],
-      [3, 3, 12],
-      [6, 2, 12],
-      [10, 3, 12],
-      [13, 3, 15]
+      [0, 3, 0],
+      [3, 3, 0],
+      [6, 2, 0],
+      [10, 3, 0],
+      [13, 3, 3]
     ]
   };
   bassBars(p, ctx, R[v] || R.A, 28, 124);
@@ -1330,12 +1398,12 @@ BASS.riddim = (p, v, ctx) => {
       p,
       ctx,
       b => [
-        [0, 3, 12],
-        [4, 2, 12],
-        [6, 2, 12],
-        [8, 3, 12],
-        [12, 2, 12],
-        [14, 2, v === 'A' ? 12 : 13]
+        [0, 3, 0],
+        [4, 2, 0],
+        [6, 2, 0],
+        [8, 3, 0],
+        [12, 2, 0],
+        [14, 2, v === 'A' ? 0 : 1]
       ],
       28,
       124
@@ -1351,11 +1419,11 @@ BASS.house = (p, v, ctx) => {
         [2, 2, 0],
         [10, 2, 0]
       ],
-      34,
+      BLO,
       96,
       false
     );
-  if (v === 'build') return buildBass(p, ctx, 34);
+  if (v === 'build') return buildBass(p, ctx, BLO);
   const R = {
     A: () => [
       [2, 2, 0],
@@ -1385,7 +1453,7 @@ BASS.house = (p, v, ctx) => {
       [14, 2, 7]
     ]
   };
-  bassBars(p, ctx, R[v] || R.A, 34, 112);
+  bassBars(p, ctx, R[v] || R.A, BLO, 112);
 };
 BASS.techhouse = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C')
@@ -1400,7 +1468,7 @@ BASS.techhouse = (p, v, ctx) => {
         [11, 1, 0],
         [14, 1, v === 'C' ? 10 : 0]
       ],
-      34,
+      BLO,
       120
     );
   return BASS.house(p, v, ctx);
@@ -1423,7 +1491,7 @@ BASS.rumble = (p, v, ctx) => {
   return BASS.house(p, v, ctx);
 };
 BASS.acid = (p, v, ctx) => {
-  if (v === 'A' || v === 'B' || v === 'C') return acidLine(p, ctx, v);
+  if (v === 'A' || v === 'B' || v === 'C') return acidLine(p, ctx, v, BLO + 2);
   return BASS.house(p, v, ctx);
 };
 function acidLine(p, ctx, v, lo = 36) {
@@ -1456,7 +1524,7 @@ BASS.trance = (p, v, ctx) => {
           [q * 4 + 2, 1, 0],
           [q * 4 + 3, 1, v === 'C' ? 12 : 0]
         ]),
-      34,
+      BLO,
       112,
       false
     );
@@ -1482,14 +1550,14 @@ BASS.garage = (p, v, ctx) => {
               [11, 2, 'T2'],
               [14, 2, 10]
             ],
-      34,
+      BLO,
       116
     );
   return BASS.house(p, v, ctx);
 };
 BASS.synth = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C')
-    return bassBars(p, ctx, () => [...Array(8)].map((_, i) => [i * 2, 2, v === 'A' ? 0 : i % 2 ? 12 : 0]), 34, 112);
+    return bassBars(p, ctx, () => [...Array(8)].map((_, i) => [i * 2, 2, v === 'A' ? 0 : i % 2 ? 12 : 0]), BLO, 112);
   if (v === 'half')
     return bassBars(
       p,
@@ -1498,7 +1566,7 @@ BASS.synth = (p, v, ctx) => {
         [0, 8, 0],
         [8, 8, 0]
       ],
-      34,
+      BLO,
       104,
       false
     );
@@ -1510,7 +1578,7 @@ BASS.disco = (p, v, ctx) => {
       p,
       ctx,
       () => [...Array(8)].map((_, i) => [i * 2, 1, i % 2 ? 12 : 0]).concat(v === 'C' ? [[15, 1, 10]] : []),
-      34,
+      BLO,
       112
     );
   return BASS.house(p, v, ctx);
@@ -1539,10 +1607,10 @@ BASS.funk = (p, v, ctx) => {
               [11, 1, 12],
               [14, 2, 7]
             ],
-      34,
+      BLO,
       114
     );
-  if (v === 'intro') return longRoots(p, ctx, 34, 2, 90);
+  if (v === 'intro') return longRoots(p, ctx, BLO, 2, 90);
   return BASS.house(p, v, ctx);
 };
 BASS.boombap = (p, v, ctx) => {
@@ -1562,12 +1630,12 @@ BASS.boombap = (p, v, ctx) => {
               [7, 3, 0],
               [10, 4, 7]
             ],
-      34,
+      BLO,
       108,
       false
     );
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 2, 96);
+  return longRoots(p, ctx, BLO, 2, 96);
 };
 BASS.walk = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C') {
@@ -1575,15 +1643,15 @@ BASS.walk = (p, v, ctx) => {
     for (let b = 0; b < nb; b++) {
       const c = ch[b % ch.length],
         nx = ch[(b + 1) % ch.length],
-        root = bassNote(c, 34),
-        tgt = bassNote(nx, 34);
+        root = bassNote(c, BLO),
+        tgt = bassNote(nx, BLO);
       const line = [root, root + c.tones[1], root + c.tones[2], tgt + (tgt > root ? -1 : 1)];
       line.forEach((n, i) => p.add(b, i * 4, v === 'A' ? 3 : 4, n, hum(r, i ? 96 : 110)));
     }
     return;
   }
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 2, 92);
+  return longRoots(p, ctx, BLO, 2, 92);
 };
 BASS.eight08 = (p, v, ctx) => {
   /* 808: long notes on the kicks, an octave jump and a slide down at the turn */
@@ -1647,12 +1715,12 @@ BASS.reggae = (p, v, ctx) => {
               [10, 2, 'T1'],
               [12, 4, 0]
             ],
-      34,
+      BLO,
       112,
       false
     );
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 2, 96);
+  return longRoots(p, ctx, BLO, 2, 96);
 };
 BASS.dembow = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C')
@@ -1667,12 +1735,12 @@ BASS.dembow = (p, v, ctx) => {
         [11, 3, 0],
         [14, 2, 7]
       ],
-      34,
+      BLO,
       116,
       false
     );
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 2, 96);
+  return longRoots(p, ctx, BLO, 2, 96);
 };
 BASS.afro = (p, v, ctx) => {
   if (v === 'A' || v === 'B' || v === 'C')
@@ -1687,12 +1755,12 @@ BASS.afro = (p, v, ctx) => {
         [12, 2, 7],
         [14, 2, 'T1']
       ],
-      34,
+      BLO,
       110,
       false
     );
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 2, 96);
+  return longRoots(p, ctx, BLO, 2, 96);
 };
 BASS.pop = (p, v, ctx) => {
   if (v === 'A')
@@ -1705,13 +1773,14 @@ BASS.pop = (p, v, ctx) => {
         [8, 6, 0],
         [14, 2, 7]
       ],
-      34,
+      BLO,
       106,
       false
     );
-  if (v === 'B' || v === 'C') return bassBars(p, ctx, () => [...Array(8)].map((_, i) => [i * 2, 2, 0]), 34, 110, false);
+  if (v === 'B' || v === 'C')
+    return bassBars(p, ctx, () => [...Array(8)].map((_, i) => [i * 2, 2, 0]), BLO, 110, false);
   if (v === 'intro') return;
-  return longRoots(p, ctx, 34, 1, 96);
+  return longRoots(p, ctx, BLO, 1, 96);
 };
 BASS.drone = (p, v, ctx) => {
   if (v === 'build') return buildBass(p, ctx, 28);
@@ -1904,6 +1973,8 @@ CHORDS.comp = (p, v, ctx) => {
   };
   chordBars(p, ctx, R[v] || R.A, 64, 90);
 };
+/* the skank: short chords on the "and" of every beat (the drop is on beat 3); Main B strums the second
+   and fourth twice */
 CHORDS.skank = (p, v, ctx) => {
   if (v === 'intro') return sustain(p, ctx, 62, 64);
   chordBars(
@@ -1911,13 +1982,15 @@ CHORDS.skank = (p, v, ctx) => {
     ctx,
     () =>
       [
-        [4, 1, 90],
-        [12, 1, 92]
+        [2, 1, 88],
+        [6, 1, 92],
+        [10, 1, 88],
+        [14, 1, 92]
       ].concat(
         v === 'B'
           ? [
-              [6, 1, 70],
-              [14, 1, 72]
+              [7, 1, 66],
+              [15, 1, 68]
             ]
           : []
       ),
@@ -1960,6 +2033,20 @@ CHORDS.pluckCh = (p, v, ctx) => {
   );
 };
 CHORDS.long = (p, v, ctx) => sustain(p, ctx, 60, v === 'intro' ? 66 : 84, v === 'B' ? 4 : 3);
+/* trance: the chords pump between the kicks (the pad holds them), and Main B is the gate, in 16ths */
+CHORDS.tranceGate = (p, v, ctx) => {
+  if (v === 'intro') return sustain(p, ctx, 60, 66);
+  chordBars(
+    p,
+    ctx,
+    () =>
+      v === 'B'
+        ? [0, 3, 6, 8, 11, 14].map(s => [s, s % 8 === 6 ? 2 : 1, s % 8 === 0 ? 96 : 84])
+        : [2, 6, 10, 14].map(s => [s, 2, 90]),
+    62,
+    90
+  );
+};
 CHORDS.pop = (p, v, ctx) => {
   if (v === 'intro') return sustain(p, ctx, 60, 70);
   chordBars(
@@ -2131,7 +2218,7 @@ const CONTOURS = [
 /* the variants the generated parts write (the intro, builds, half-time and breaks keep the style's) */
 const inKey = (ctx, n) => (SCALES[ctx.scale] || SCALES.minor).includes((((n - ctx.key) % 12) + 12) % 12);
 const GEN_V = new Set(['A', 'B', 'C', 'drop', 'hook', 'verse', 'pre', 'outro']);
-const BASS_LO = { roll: 40, off: 40, drive: 40, sparse: 36, 808: 28, funk: 40, walk: 34, reggae: 38, pop: 40 };
+const BASS_LO = { 808: 28 };
 const FOUR = new Set(['house', 'techhouse', 'afro', 'techno', 'minimal', 'trance', 'disco']);
 /* the take's bar templates: Main plays one, Main B the same changed a little, Main C another */
 function genBass(p, v, ctx) {
@@ -2149,7 +2236,7 @@ function genBass(p, v, ctx) {
             ? [A2, mutateBassT(tr, A2)]
             : [A, A];
   const { ch, nb, r } = ctx,
-    lo = BASS_LO[feel] || 40,
+    lo = BASS_LO[feel] || BLO,
     thin = v === 'verse' || v === 'pre' || v === 'outro';
   for (let b = 0; b < nb; b++) {
     const c = ch[b % ch.length],
@@ -2208,7 +2295,7 @@ function genArpPart(p, v, ctx, center, step0) {
     for (let i = 0, s = 0; s < 16; s += step, i++) {
       if (g.gaps.includes(i % 8)) continue;
       if (b === nb - 1 && s >= 12 && v === 'drop') continue;
-      p.add(b, s, step, seq[i % seq.length], hum(r, (s % 4 === 0 ? 76 : 64) - (v === 'drop' ? 8 : 0), 4));
+      p.add(b, s, step, arpTop(seq[i % seq.length]), hum(r, (s % 4 === 0 ? 76 : 64) - (v === 'drop' ? 8 : 0), 4));
     }
   }
 }
@@ -2311,6 +2398,11 @@ function melody(p, v, ctx, center = 72) {
         const tc = dark && c.tones.length > 2 ? { root: c.root, tones: [0, c.tones[2]] } : c;
         let n = strong ? chordTone(tc, (target + last) / 2) : stepTo(last, target >= last ? 1 : -1);
         if (Math.abs(n - last) > 9) n = chordTone(c, last);
+        /* a held note between the beats does not rub against the chord (a semitone from one of its notes) */
+        if (!strong && len >= 3) {
+          const pc = ((n % 12) + 12) % 12;
+          if (c.tones.some(t => [1, 11].includes((((pc - c.root - t) % 12) + 12) % 12))) n = chordTone(c, n);
+        }
         /* a strong beat that would repeat the last note moves to the next chord tone the line is heading for */
         if (strong && n === last && i) {
           const dir = target >= last ? 1 : -1;
@@ -2354,16 +2446,120 @@ function melody(p, v, ctx, center = 72) {
 }
 
 /* ---------- arps and risers ---------- */
+/* What the pluck plays, by groove: a running arp where the genre has one (house, trance, disco, synthwave,
+   pop, liquid); elsewhere a few notes with room around them: a ticking synth for techno, bells for trap
+   and drill, a lick for boom bap, an echoing stab for reggae and dub, blips for the hard styles. */
+const PLUCK_WAY = {
+  techno: 'tick',
+  minimal: 'tick',
+  techhouse: 'tick',
+  trap: 'bell',
+  drill: 'bell',
+  phonk: 'bell',
+  memphis: 'bell',
+  dembow: 'bell',
+  boombap: 'lick',
+  lofi: 'lick',
+  reggae: 'echo',
+  electro: 'arp',
+  trance: 'arp'
+};
+const PLUCK_CELLS = {
+  tick: [
+    [3, 6, 11, 14],
+    [2, 5, 8, 11, 14],
+    [3, 7, 10, 14],
+    [1, 4, 7, 10, 13]
+  ],
+  blip: [
+    [3, 10],
+    [6, 11, 14],
+    [0, 7],
+    [3, 6, 12]
+  ],
+  bell: [
+    [0, 3, 6],
+    [0, 6, 10, 12],
+    [2, 8, 11],
+    [0, 4, 7, 10]
+  ],
+  lick: [
+    [0, 3, 6],
+    [2, 6, 10],
+    [0, 7, 10],
+    [4, 7, 12]
+  ],
+  echo: [
+    [4, 7, 10],
+    [12, 15],
+    [2, 5, 8],
+    [6, 9, 12]
+  ]
+};
+/* the take's own cell (two, called and answered bar by bar) on the chord's notes; the intro and the break
+   play every other bar */
+function sparsePluck(p, v, ctx, way) {
+  const { ch, nb, r } = ctx,
+    tr = mulberry(hashStr('pluck:' + way) ^ ctx.motif.seed),
+    one = a => a[Math.floor(tr() * a.length)],
+    cells = [one(PLUCK_CELLS[way]), one(PLUCK_CELLS[way])],
+    order = one([
+      [2, 1, 0, 1],
+      [0, 1, 2, 1],
+      [2, 0, 1, 2],
+      [2, 2, 1, 0]
+    ]),
+    center = way === 'bell' ? 77 : way === 'lick' ? 67 : 72,
+    thin = v === 'intro' || v === 'break';
+  let prev = null;
+  for (let b = 0; b < nb; b++) {
+    const c = ch[b % ch.length],
+      vc = voice(c, center, prev, 3);
+    prev = vc;
+    if (thin && b % 2) continue;
+    (way === 'tick' ? cells[0] : cells[b % 2]).forEach((s, i) => {
+      if (b === nb - 1 && s >= 12 && v === 'drop') return;
+      const n =
+          way === 'tick'
+            ? nearest(c.root, center) + (i % 3 === 2 ? (c.tones[2] ?? 7) : 0)
+            : way === 'echo'
+              ? vc[order[0]]
+              : vc[order[i % 4]],
+        vel = way === 'echo' ? [92, 64, 46][i] : way === 'tick' ? (i % 2 ? 70 : 84) : s % 4 === 0 ? 86 : 74;
+      p.add(b, s, way === 'bell' || way === 'lick' ? 2 : 1, arpTop(n), hum(r, vel - (v === 'drop' ? 4 : 0), 4));
+    });
+  }
+}
+/* an arp stays out of the shrill top octave: a note above E6 comes down an octave */
+const arpTop = n => (n > 88 ? n - 12 : n);
 const arp = (p, v, ctx) => {
   const { ch, nb, r, recipe } = ctx;
   if (v === 'rise') {
-    const root = nearest(ch[0].root, 60);
-    for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, root + b * 2, 70 + b * 6);
-    for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s++, i++)
-      p.add(Math.floor(s / 16), s % 16, 1, root + 12 + Math.floor(i / 2), 90 + i);
+    /* a held note that climbs bar by bar, always one of the bar's chord's own; then a run up the scale in
+       16ths (the quiet styles hold to the end instead) */
+    let n = nearest(ch[0].root, 60) - 1;
+    const climb = b => {
+      const c = ch[b % ch.length],
+        pcs = c.tones.map(t => (c.root + t) % 12);
+      do n++;
+      while (!pcs.includes(n % 12));
+      return n;
+    };
+    const soft = SOFT_BUILD.has(recipe.gr);
+    for (let b = 0; b < nb - (soft ? 0 : 2); b++) p.add(b, 0, 16, climb(b), 70 + b * 6);
+    if (soft) return;
+    for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s++, i++) {
+      if (i % 4 === 0)
+        do n++;
+        while (!inKey(ctx, n));
+      p.add(Math.floor(s / 16), s % 16, 1, Math.min(n, 96), 90 + i);
+    }
     return;
   }
-  const step = v === 'break' || v === 'intro' ? 2 : 1,
+  const way = PLUCK_WAY[recipe.gr] || (recipe.lead === 'hard' ? 'blip' : 'arp');
+  if (way !== 'arp') return sparsePluck(p, v, ctx, way);
+  /* (ambient takes its time: 8ths, and quarters in the intro and the break) */
+  const step = (v === 'break' || v === 'intro' ? 2 : 1) * (recipe.gr === 'ambient' ? 2 : 1),
     center = v === 'drop' ? 72 : 67;
   if (ctx.motif.arp) return genArpPart(p, v, ctx, center, step);
   let prev = null;
@@ -2375,7 +2571,7 @@ const arp = (p, v, ctx) => {
     );
     for (let i = 0, s = 0; s < 16; s += step, i++) {
       if (b === nb - 1 && s >= 12 && v === 'drop') continue;
-      p.add(b, s, step, seq[i % seq.length], hum(r, (s % 4 === 0 ? 76 : 64) - (v === 'drop' ? 8 : 0), 4));
+      p.add(b, s, step, arpTop(seq[i % seq.length]), hum(r, (s % 4 === 0 ? 76 : 64) - (v === 'drop' ? 8 : 0), 4));
     }
   }
 };
@@ -3101,7 +3297,7 @@ function takeVary(p, role, v, ctx, tr) {
       if (op === 'reverse') {
         const pitches = ns.map(n => n.n).reverse();
         ns.forEach((n, i) => (n.n = pitches[i]));
-      } else if (op === 'octave') ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 96 && (n.n += 12));
+      } else if (op === 'octave') ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 88 && (n.n += 12));
     }
     if (op === 'gaps') {
       const g = pick(tr, [3, 7]);
@@ -3205,7 +3401,13 @@ export function composer(style, opts = {}) {
               ? 'major'
               : progScale(colour, style.scale);
   /* sevenths (and ninths) from the scale for the styles that like them (not in the dark: plain and hard) */
-  const ch0 = chordsOf(given || dprog || made || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0),
+  const ch0 = chordsOf(
+      given || dprog || made || progId,
+      key,
+      scale,
+      mood.dark >= 0.5 ? 0 : recipe.ext || 0,
+      !!recipe.dom
+    ),
     ch = like ? like.chords : dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
   const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === 'dnb' || fam === 'edm' ? 5 : 3.5)));
   const sections = formOf(fam, Math.round((minutes * bpm) / 4));
@@ -3223,7 +3425,9 @@ export function composer(style, opts = {}) {
   }
   motif.form = r() < 0.6 ? genForm(r) : ['A', 'A', 'B', 'A'];
   motif.bass = BASS_FEEL[recipe.bass] && r() < 0.55 ? BASS_FEEL[recipe.bass] : null;
-  motif.comp = recipe.chords !== 'long' && r() < 0.45;
+  /* (a chord rhythm that is the genre itself stays as written: the skank, the dembow, the trance gate) */
+  motif.comp =
+    recipe.chords !== 'long' && r() < 0.45 && !['skank', 'dembowCh', 'pluckCh', 'tranceGate'].includes(recipe.chords);
   motif.arp = r() < 0.5 ? genArp(r) : null;
   /* (its own random numbers, so the rest of the take is as it was) */
   motif.pad = ['hold', 'hold', 'high', 'open', 'again'][Math.floor(mulberry(hashStr(style.id + ':pad') ^ seed)() * 5)];
@@ -3244,6 +3448,7 @@ export function composer(style, opts = {}) {
     if (role === 'kit') gr.kit(p, pr, v, nb);
     else if (role === 'hats') gr.hats(p, pr, v, nb);
     else if (role === 'perc') gr.perc(p, pr, v, nb);
+    else if (role === 'bass' && v === 'build' && SOFT_BUILD.has(recipe.gr)) longRoots(p, ctx, BLO, 1, 96);
     /* a verse's bass and chords: the take's own thinner ones, or the style's Main */ else if (role === 'bass')
       motif.bass && GEN_V.has(v)
         ? genBass(p, v, ctx)

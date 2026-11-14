@@ -54447,7 +54447,7 @@ html.os-darwin.native-menu #menubar .mproj {
     walk: "walk",
     eight08: "808",
     reggae: "reggae",
-    dembow: "reggae",
+    dembow: "dembow",
     pop: "pop",
     drone: null
   };
@@ -54469,6 +54469,8 @@ html.os-darwin.native-menu #menubar .mproj {
       legato: 0.2
     },
     reggae: { must: [], may: { 2: 2, 3: 2, 4: 1, 6: 2.5, 8: 2, 10: 2, 11: 1.5, 12: 1, 14: 1.5 }, n: [3, 6], legato: 0.5 },
+    /* the tresillo (3 + 3 + 2) the dembow's bass plays with the kick */
+    dembow: { must: [0, 3, 6], may: { 8: 3, 11: 3, 14: 2.5, 10: 1, 12: 1 }, n: [4, 6], legato: 0.5 },
     pop: { must: [0, 8], may: { 2: 1, 4: 2, 6: 2, 10: 2, 11: 1, 12: 2, 14: 2 }, n: [3, 7], legato: 0.4 }
   };
   function genBassT(r, feel) {
@@ -54574,7 +54576,7 @@ html.os-darwin.native-menu #menubar .mproj {
     gfunk: R3("boombap", "funk", "keys", "whine", ["M6", "m8"], "gfunk", { form: "hh", ext: 7 }),
     drill: R3("drill", "eight08", "keys", "trap", ["m6", "m5"], "drill", { form: "hh" }),
     neosoul: R3("lofi", "walk", "jazz", "song", ["j1", "j2", "j3"], "neosoul", { form: "hh", ext: 9 }),
-    memphis: R3("trap", "eight08", "keys", "trap", ["m5", "m6"], "phonk", { form: "hh" }),
+    memphis: R3("memphis", "eight08", "keys", "trap", ["m5", "m6"], "phonk", { form: "hh" }),
     phonk: R3("phonk", "eight08", "keys", "trap", ["m5", "m6"], "phonk", { form: "hh" }),
     deephouse: R3("house", "house", "house", "song", ["m8", "j1", "m3"], "deephouse", { form: "edm", ext: 7 }),
     classichouse: R3("house", "house", "house", "song", ["M1", "M2", "m3"], "house", { form: "edm", ext: 7 }),
@@ -54587,12 +54589,12 @@ html.os-darwin.native-menu #menubar .mproj {
     speedgarage: R3("garage", "garage", "stab", "hard", ["m5", "m6"], "garage", { form: "edm" }),
     dubstep: R3("dubstep", "wobble", "hit", "hard", ["m6", "m7", "m5"], "dubstep", { form: "edm" }),
     riddim: R3("dubstep", "riddim", "hit", "hard", ["v2", "m6"], "dubstep", { form: "edm" }),
-    trance: R3("trance", "trance", "long", "trance", ["m4", "m2", "m3"], "trance", { form: "edm" }),
-    progtrance: R3("trance", "trance", "long", "trance", ["m3", "m2"], "trance", { form: "edm" }),
+    trance: R3("trance", "trance", "tranceGate", "trance", ["m4", "m2", "m3"], "trance", { form: "edm" }),
+    progtrance: R3("trance", "trance", "tranceGate", "trance", ["m3", "m2"], "trance", { form: "edm" }),
     electro: R3("electro", "synth", "stab", "hard", ["m5", "m6"], "electro", { form: "edm" }),
     breakbeat: R3("breaks", "synth", "stab", "hard", ["m5", "m1"], "bigbeat", { form: "edm" }),
     bigbeat: R3("breaks", "synth", "stab", "hard", ["m5", "m6"], "bigbeat", { form: "edm" }),
-    funk: R3("funk", "funk", "comp", "song", ["v3", "M6"], "funk", { form: "song", ext: 7 }),
+    funk: R3("funk", "funk", "comp", "song", ["v3", "M6"], "funk", { form: "song", ext: 7, dom: true }),
     disco: R3("disco", "disco", "comp", "song", ["M1", "m3"], "disco", { form: "song", ext: 7 }),
     nudisco: R3("disco", "disco", "house", "song", ["m3", "M2"], "disco", { form: "song", ext: 7 }),
     reggae: R3("reggae", "reggae", "skank", "song", ["M3", "m5"], "reggae", { form: "song" }),
@@ -54639,7 +54641,7 @@ html.os-darwin.native-menu #menubar .mproj {
     v3: ["1-7", "1-7", "1-7", "1-7", "4-7", "4-7", "1-7", "1-7"]
   };
   var progScale = (id, scale) => id[0] === "M" ? "major" : id[0] === "j" && scale === "major" ? "major" : "minor";
-  function chordsOf2(prog, key, scale, extAll = 0) {
+  function chordsOf2(prog, key, scale, extAll = 0, dom = false) {
     const sc = SCALES[scale] || SCALES.minor;
     return (Array.isArray(prog) ? prog : PROGS[prog]).map((d) => {
       const s = String(d), flat = s[0] === "b", deg = parseInt(flat ? s.slice(1) : s, 10) - 1, major = s.includes("M") || flat, minor = /\dm/.test(s), sus = /\ds/.test(s), ext = Math.max(s.includes("-9") ? 9 : s.includes("-7") ? 7 : 0, major || sus ? 0 : extAll);
@@ -54648,7 +54650,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (major) tones.splice(1, 2, 4, 7);
       if (minor) tones.splice(1, 2, 3, 7);
       if (sus) tones[1] = 5;
-      if (ext >= 7) tones.push(flat || minor ? 10 : at2(6));
+      if (ext >= 7) tones.push(flat || minor || dom && tones[1] === 4 ? 10 : at2(6));
       if (ext >= 9 && (at2(8) === 14 || major)) tones.push(at2(8));
       return { root: (key + sc[deg] - (flat ? 1 : 0) + 12) % 12, tones, deg: deg + 1 };
     });
@@ -55362,6 +55364,15 @@ html.os-darwin.native-menu #menubar .mproj {
   };
   GR.phonk = {
     ...GR.trap,
+    kit(p, r, v, nb) {
+      if (v === "intro" || v === "build" || v === "half") return GR.trap.kit(p, r, v, nb);
+      for (let b = 0; b < nb; b++) {
+        const ks = v === "B" || v === "C" ? b % 2 ? [0, 7, 10, 14] : [0, 3, 6, 10] : b % 2 ? [0, 6, 10, 11] : [0, 6, 10];
+        for (const s of ks) p.add(b, s, 1, K, hum3(r, s ? 112 : 122, 4));
+        p.add(b, 4, 1, [SN, CL], hum3(r, 122, 3)).add(b, 12, 1, [SN, CL], hum3(r, 124, 3));
+        if (v === "C" && b % 2) p.add(b, 15, 1, SN, 84);
+      }
+    },
     hats(p, r, v, nb) {
       GR.trap.hats(p, r, v, nb);
       if (v !== "intro")
@@ -55369,6 +55380,16 @@ html.os-darwin.native-menu #menubar .mproj {
           for (const s of [0, 3, 6, 10, 12]) p.add(b, s, 1, PC, hum3(r, s % 4 === 0 ? 104 : 84));
     }
   };
+  var doubleTime = (g) => {
+    const w = (f) => (p, r, v, nb) => {
+      if (v === "half") return f(p, r, "A", nb);
+      const q = new Pat(nb * 2);
+      f(q, r, v, nb * 2);
+      for (const n of q.notes) p.notes.push({ ...n, s: n.s / 2, l: Math.max(1, n.l / 2) });
+    };
+    return { kit: w(g.kit), hats: w(g.hats), perc: w(g.perc) };
+  };
+  GR.memphis = doubleTime({ kit: GR.trap.kit, hats: GR.phonk.hats, perc: GR.trap.perc });
   GR.funk = {
     kit(p, r, v, nb) {
       for (let b = 0; b < nb; b++) {
@@ -55431,7 +55452,8 @@ html.os-darwin.native-menu #menubar .mproj {
     },
     hats(p, r, v, nb) {
       for (let b = 0; b < nb; b++) {
-        for (let s = 0; s < 16; s += 2) p.add(b, s, 1, CH2, hum3(r, s % 4 === 2 ? 80 : 54));
+        for (let s = 0; s < 16; s += 2) if (s !== 14 || v === "intro") p.add(b, s, 1, CH2, hum3(r, s % 4 === 2 ? 80 : 54));
+        if (v !== "intro") p.add(b, 14, 1, OH, hum3(r, 72));
         if (v === "B" || v === "C") for (const s of [3, 7, 11, 15]) p.add(b, s, 1, CH2, 42);
       }
     },
@@ -55547,12 +55569,26 @@ html.os-darwin.native-menu #menubar .mproj {
       if (v === "build") rollPerc(p, r, nb);
     }
   };
-  for (const g of Object.values(GR)) {
+  var SOFT_BUILD = /* @__PURE__ */ new Set(["boombap", "lofi", "reggae", "funk", "ambient"]);
+  var softBuild = (p, r, nb) => {
+    for (let b = 0; b < nb; b++) {
+      const end = b === nb - 1 ? 12 : 16;
+      for (let s = b < nb / 2 ? 2 : 0; s < end; s += b < nb / 2 ? 4 : 2)
+        p.add(b, s, 1, PC, 46 + 50 * (b * 16 + s) / (nb * 16));
+    }
+    for (const [s, v] of [
+      [8, 84],
+      [10, 96],
+      [11, 104]
+    ])
+      p.add(nb - 1, s, 1, SN, v);
+  };
+  for (const [name, g] of Object.entries(GR)) {
     const own = g.perc;
     g.perc = (p, r, v, nb) => {
       if (v === "build" && !p.notes.length) {
         own(p, r, v, nb);
-        if (!p.notes.length) rollPerc(p, r, nb);
+        if (!p.notes.length) (SOFT_BUILD.has(name) ? softBuild : rollPerc)(p, r, nb);
         return;
       }
       own(p, r, v, nb);
@@ -55581,81 +55617,90 @@ html.os-darwin.native-menu #menubar .mproj {
     const score = (v) => prev ? v.reduce((s, x, i) => s + Math.abs(x - (prev[i] ?? prev[prev.length - 1])), 0) : Math.abs(v[0] - center) + Math.abs(v[v.length - 1] - center - 7);
     return opts.filter((v) => v[0] >= center - 9 && v[v.length - 1] <= center + 19).sort((a, b) => score(a) - score(b))[0] || opts[0];
   }
+  var BLO = 31;
   var bassNote = (ch, lo = 28) => nearest(ch.root, lo + 6);
   var BASS = {};
   var bassBars = (p, ctx2, rhythm, lo, v = 116, gap = true) => {
     const { ch, r, nb } = ctx2;
     for (let b = 0; b < nb; b++) {
       const c = ch[b % ch.length], root = bassNote(c, lo);
-      for (const [s, len, iv] of rhythm(b)) {
+      for (const [s, len, iv0] of rhythm(b)) {
         if (gap && b === nb - 1 && s >= 12) continue;
+        const m3 = typeof iv0 === "number" ? (iv0 % 12 + 12) % 12 : -1, c7 = c.tones.find((t) => t === 10 || t === 11);
+        const iv = (m3 === 3 || m3 === 4) && (c.tones[1] === 3 || c.tones[1] === 4) ? iv0 - m3 + c.tones[1] : m3 === 10 || m3 === 11 ? iv0 - m3 + (c7 ?? (inKey(ctx2, root + 10) ? 10 : 11)) : iv0;
         const note = typeof iv === "string" ? root + c.tones[+iv.slice(1)] : root + iv;
         p.add(b, s, len, note, hum3(r, s % 4 === 0 ? v : v - 14, 4));
       }
     }
   };
   var longRoots = (p, ctx2, lo = 28, every = 2, v = 100) => {
-    for (let b = 0; b < ctx2.nb; b += every) p.add(b, 0, every * 16, bassNote(ctx2.ch[b % ctx2.ch.length], lo), v);
+    const { ch, nb } = ctx2;
+    for (let b = 0; b < nb; ) {
+      let n = 1;
+      while (n < every && b + n < nb && ch[(b + n) % ch.length].root === ch[b % ch.length].root) n++;
+      p.add(b, 0, n * 16, bassNote(ch[b % ch.length], lo), v);
+      b += n;
+    }
   };
   var buildBass = (p, ctx2, lo = 28) => {
-    const { nb, ch } = ctx2, root = bassNote(ch[0], lo);
-    for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, root, 100);
+    const { nb, ch } = ctx2, root = bassNote(ch[(nb - 2) % ch.length], lo);
+    for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 100);
     for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s += 2, i++)
       p.add(Math.floor(s / 16), s % 16, 2, root + i, 96 + i);
   };
   BASS.dnb = (p, v, ctx2) => {
-    if (v === "intro") return longRoots(p, ctx2, 34);
-    if (v === "build") return buildBass(p, ctx2, 34);
+    if (v === "intro") return longRoots(p, ctx2, BLO);
+    if (v === "build") return buildBass(p, ctx2, BLO);
     if (v === "half")
       return bassBars(
         p,
         ctx2,
         () => [
-          [0, 4, 12],
-          [4, 4, 12],
-          [8, 2, 24],
-          [10, 2, 12],
-          [12, 4, 15]
+          [0, 4, 0],
+          [4, 4, 0],
+          [8, 2, 12],
+          [10, 2, 0],
+          [12, 4, 3]
         ],
-        34,
+        BLO,
         120,
         false
       );
     const R4 = {
       A: () => [
-        [0, 2, 12],
-        [2, 1, 24],
-        [3, 2, 12],
-        [6, 2, 19],
-        [8, 1, 12],
-        [10, 2, 24],
-        [12, 1, 12],
-        [13, 3, 15]
+        [0, 2, 0],
+        [2, 1, 12],
+        [3, 2, 0],
+        [6, 2, 7],
+        [8, 1, 0],
+        [10, 2, 12],
+        [12, 1, 0],
+        [13, 3, 3]
       ],
       B: () => [
-        [0, 1, 12],
-        [1, 1, 12],
-        [2, 2, 24],
-        [6, 1, 12],
-        [7, 1, 12],
-        [8, 3, 12],
-        [11, 1, 24],
-        [12, 2, 22],
-        [14, 2, 19]
+        [0, 1, 0],
+        [1, 1, 0],
+        [2, 2, 12],
+        [6, 1, 0],
+        [7, 1, 0],
+        [8, 3, 0],
+        [11, 1, 12],
+        [12, 2, 10],
+        [14, 2, 7]
       ],
       C: (b) => b % 2 ? [
-        [0, 6, 12],
-        [6, 2, 24],
-        [8, 3, 12],
-        [11, 2, 15],
-        [13, 3, 10]
-      ] : [...Array(8)].map((_, s) => [s, 1, s % 2 ? 24 : 12]).concat([
-        [8, 2, 19],
-        [10, 2, 18],
-        [12, 4, 12]
+        [0, 6, 0],
+        [6, 2, 12],
+        [8, 3, 0],
+        [11, 2, 3],
+        [13, 3, -2]
+      ] : [...Array(8)].map((_, s) => [s, 1, s % 2 ? 12 : 0]).concat([
+        [8, 2, 7],
+        [10, 2, 6],
+        [12, 4, 0]
       ])
     };
-    bassBars(p, ctx2, R4[v] || R4.A, 34, 120);
+    bassBars(p, ctx2, R4[v] || R4.A, BLO, 120);
   };
   BASS.dnbLiquid = (p, v, ctx2) => {
     if (v === "intro" || v === "build" || v === "half") return BASS.dnb(p, v, ctx2);
@@ -55680,7 +55725,7 @@ html.os-darwin.native-menu #menubar .mproj {
         [13, 3, 10]
       ]
     };
-    bassBars(p, ctx2, R4[v] || R4.A, 34, 116);
+    bassBars(p, ctx2, R4[v] || R4.A, BLO, 116);
   };
   BASS.dnbJungle = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C")
@@ -55696,7 +55741,7 @@ html.os-darwin.native-menu #menubar .mproj {
           [12, 2, 12],
           [14, 2, 10]
         ],
-        34,
+        BLO,
         118
       );
     return BASS.dnb(p, v, ctx2);
@@ -55707,18 +55752,18 @@ html.os-darwin.native-menu #menubar .mproj {
         p,
         ctx2,
         (b) => b % 2 ? [
-          [0, 2, 12],
-          [3, 1, 12],
-          [6, 2, 24],
-          [10, 4, 12],
-          [14, 2, 13]
-        ] : [
-          [0, 4, 12],
+          [0, 2, 0],
+          [3, 1, 0],
           [6, 2, 12],
-          [8, 2, 19],
-          [10, 4, 12]
+          [10, 4, 0],
+          [14, 2, 1]
+        ] : [
+          [0, 4, 0],
+          [6, 2, 0],
+          [8, 2, 7],
+          [10, 4, 0]
         ],
-        34,
+        BLO,
         124
       );
     return BASS.dnb(p, v, ctx2);
@@ -55728,32 +55773,32 @@ html.os-darwin.native-menu #menubar .mproj {
     if (v === "build") return buildBass(p, ctx2, 28);
     const R4 = {
       A: (b) => [
-        [0, 6, 12],
-        [6, 2, 12],
-        [8, 4, 15],
-        [12, 4, 12]
+        [0, 6, 0],
+        [6, 2, 0],
+        [8, 4, 3],
+        [12, 4, 0]
       ],
       B: (b) => b % 2 ? [
-        [0, 2, 12],
-        [2, 2, 24],
-        [4, 2, 12],
-        [6, 2, 22],
-        [8, 8, 12]
+        [0, 2, 0],
+        [2, 2, 12],
+        [4, 2, 0],
+        [6, 2, 10],
+        [8, 8, 0]
       ] : [
-        [0, 3, 12],
-        [3, 3, 12],
-        [6, 2, 15],
-        [8, 3, 12],
-        [11, 3, 24],
-        [14, 2, 12]
+        [0, 3, 0],
+        [3, 3, 0],
+        [6, 2, 3],
+        [8, 3, 0],
+        [11, 3, 12],
+        [14, 2, 0]
       ],
-      C: (b) => [...Array(8)].map((_, i) => [i * 2, 2, i % 3 ? 12 : 24]),
+      C: (b) => [...Array(8)].map((_, i) => [i * 2, 2, i % 3 ? 0 : 12]),
       half: () => [
-        [0, 3, 12],
-        [3, 3, 12],
-        [6, 2, 12],
-        [10, 3, 12],
-        [13, 3, 15]
+        [0, 3, 0],
+        [3, 3, 0],
+        [6, 2, 0],
+        [10, 3, 0],
+        [13, 3, 3]
       ]
     };
     bassBars(p, ctx2, R4[v] || R4.A, 28, 124);
@@ -55764,12 +55809,12 @@ html.os-darwin.native-menu #menubar .mproj {
         p,
         ctx2,
         (b) => [
-          [0, 3, 12],
-          [4, 2, 12],
-          [6, 2, 12],
-          [8, 3, 12],
-          [12, 2, 12],
-          [14, 2, v === "A" ? 12 : 13]
+          [0, 3, 0],
+          [4, 2, 0],
+          [6, 2, 0],
+          [8, 3, 0],
+          [12, 2, 0],
+          [14, 2, v === "A" ? 0 : 1]
         ],
         28,
         124
@@ -55785,11 +55830,11 @@ html.os-darwin.native-menu #menubar .mproj {
           [2, 2, 0],
           [10, 2, 0]
         ],
-        34,
+        BLO,
         96,
         false
       );
-    if (v === "build") return buildBass(p, ctx2, 34);
+    if (v === "build") return buildBass(p, ctx2, BLO);
     const R4 = {
       A: () => [
         [2, 2, 0],
@@ -55819,7 +55864,7 @@ html.os-darwin.native-menu #menubar .mproj {
         [14, 2, 7]
       ]
     };
-    bassBars(p, ctx2, R4[v] || R4.A, 34, 112);
+    bassBars(p, ctx2, R4[v] || R4.A, BLO, 112);
   };
   BASS.techhouse = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C")
@@ -55834,7 +55879,7 @@ html.os-darwin.native-menu #menubar .mproj {
           [11, 1, 0],
           [14, 1, v === "C" ? 10 : 0]
         ],
-        34,
+        BLO,
         120
       );
     return BASS.house(p, v, ctx2);
@@ -55856,7 +55901,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return BASS.house(p, v, ctx2);
   };
   BASS.acid = (p, v, ctx2) => {
-    if (v === "A" || v === "B" || v === "C") return acidLine(p, ctx2, v);
+    if (v === "A" || v === "B" || v === "C") return acidLine(p, ctx2, v, BLO + 2);
     return BASS.house(p, v, ctx2);
   };
   function acidLine(p, ctx2, v, lo = 36) {
@@ -55888,7 +55933,7 @@ html.os-darwin.native-menu #menubar .mproj {
           [q * 4 + 2, 1, 0],
           [q * 4 + 3, 1, v === "C" ? 12 : 0]
         ]),
-        34,
+        BLO,
         112,
         false
       );
@@ -55911,14 +55956,14 @@ html.os-darwin.native-menu #menubar .mproj {
           [11, 2, "T2"],
           [14, 2, 10]
         ],
-        34,
+        BLO,
         116
       );
     return BASS.house(p, v, ctx2);
   };
   BASS.synth = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C")
-      return bassBars(p, ctx2, () => [...Array(8)].map((_, i) => [i * 2, 2, v === "A" ? 0 : i % 2 ? 12 : 0]), 34, 112);
+      return bassBars(p, ctx2, () => [...Array(8)].map((_, i) => [i * 2, 2, v === "A" ? 0 : i % 2 ? 12 : 0]), BLO, 112);
     if (v === "half")
       return bassBars(
         p,
@@ -55927,7 +55972,7 @@ html.os-darwin.native-menu #menubar .mproj {
           [0, 8, 0],
           [8, 8, 0]
         ],
-        34,
+        BLO,
         104,
         false
       );
@@ -55939,7 +55984,7 @@ html.os-darwin.native-menu #menubar .mproj {
         p,
         ctx2,
         () => [...Array(8)].map((_, i) => [i * 2, 1, i % 2 ? 12 : 0]).concat(v === "C" ? [[15, 1, 10]] : []),
-        34,
+        BLO,
         112
       );
     return BASS.house(p, v, ctx2);
@@ -55965,10 +56010,10 @@ html.os-darwin.native-menu #menubar .mproj {
           [11, 1, 12],
           [14, 2, 7]
         ],
-        34,
+        BLO,
         114
       );
-    if (v === "intro") return longRoots(p, ctx2, 34, 2, 90);
+    if (v === "intro") return longRoots(p, ctx2, BLO, 2, 90);
     return BASS.house(p, v, ctx2);
   };
   BASS.boombap = (p, v, ctx2) => {
@@ -55985,25 +56030,25 @@ html.os-darwin.native-menu #menubar .mproj {
           [7, 3, 0],
           [10, 4, 7]
         ],
-        34,
+        BLO,
         108,
         false
       );
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 2, 96);
+    return longRoots(p, ctx2, BLO, 2, 96);
   };
   BASS.walk = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C") {
       const { ch, nb, r } = ctx2;
       for (let b = 0; b < nb; b++) {
-        const c = ch[b % ch.length], nx = ch[(b + 1) % ch.length], root = bassNote(c, 34), tgt = bassNote(nx, 34);
+        const c = ch[b % ch.length], nx = ch[(b + 1) % ch.length], root = bassNote(c, BLO), tgt = bassNote(nx, BLO);
         const line = [root, root + c.tones[1], root + c.tones[2], tgt + (tgt > root ? -1 : 1)];
         line.forEach((n, i) => p.add(b, i * 4, v === "A" ? 3 : 4, n, hum3(r, i ? 96 : 110)));
       }
       return;
     }
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 2, 92);
+    return longRoots(p, ctx2, BLO, 2, 92);
   };
   BASS.eight08 = (p, v, ctx2) => {
     if (v === "intro") return;
@@ -56057,12 +56102,12 @@ html.os-darwin.native-menu #menubar .mproj {
           [10, 2, "T1"],
           [12, 4, 0]
         ],
-        34,
+        BLO,
         112,
         false
       );
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 2, 96);
+    return longRoots(p, ctx2, BLO, 2, 96);
   };
   BASS.dembow = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C")
@@ -56077,12 +56122,12 @@ html.os-darwin.native-menu #menubar .mproj {
           [11, 3, 0],
           [14, 2, 7]
         ],
-        34,
+        BLO,
         116,
         false
       );
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 2, 96);
+    return longRoots(p, ctx2, BLO, 2, 96);
   };
   BASS.afro = (p, v, ctx2) => {
     if (v === "A" || v === "B" || v === "C")
@@ -56097,12 +56142,12 @@ html.os-darwin.native-menu #menubar .mproj {
           [12, 2, 7],
           [14, 2, "T1"]
         ],
-        34,
+        BLO,
         110,
         false
       );
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 2, 96);
+    return longRoots(p, ctx2, BLO, 2, 96);
   };
   BASS.pop = (p, v, ctx2) => {
     if (v === "A")
@@ -56115,13 +56160,14 @@ html.os-darwin.native-menu #menubar .mproj {
           [8, 6, 0],
           [14, 2, 7]
         ],
-        34,
+        BLO,
         106,
         false
       );
-    if (v === "B" || v === "C") return bassBars(p, ctx2, () => [...Array(8)].map((_, i) => [i * 2, 2, 0]), 34, 110, false);
+    if (v === "B" || v === "C")
+      return bassBars(p, ctx2, () => [...Array(8)].map((_, i) => [i * 2, 2, 0]), BLO, 110, false);
     if (v === "intro") return;
-    return longRoots(p, ctx2, 34, 1, 96);
+    return longRoots(p, ctx2, BLO, 1, 96);
   };
   BASS.drone = (p, v, ctx2) => {
     if (v === "build") return buildBass(p, ctx2, 28);
@@ -56295,12 +56341,14 @@ html.os-darwin.native-menu #menubar .mproj {
       p,
       ctx2,
       () => [
-        [4, 1, 90],
-        [12, 1, 92]
+        [2, 1, 88],
+        [6, 1, 92],
+        [10, 1, 88],
+        [14, 1, 92]
       ].concat(
         v === "B" ? [
-          [6, 1, 70],
-          [14, 1, 72]
+          [7, 1, 66],
+          [15, 1, 68]
         ] : []
       ),
       64,
@@ -56342,6 +56390,16 @@ html.os-darwin.native-menu #menubar .mproj {
     );
   };
   CHORDS3.long = (p, v, ctx2) => sustain(p, ctx2, 60, v === "intro" ? 66 : 84, v === "B" ? 4 : 3);
+  CHORDS3.tranceGate = (p, v, ctx2) => {
+    if (v === "intro") return sustain(p, ctx2, 60, 66);
+    chordBars(
+      p,
+      ctx2,
+      () => v === "B" ? [0, 3, 6, 8, 11, 14].map((s) => [s, s % 8 === 6 ? 2 : 1, s % 8 === 0 ? 96 : 84]) : [2, 6, 10, 14].map((s) => [s, 2, 90]),
+      62,
+      90
+    );
+  };
   CHORDS3.pop = (p, v, ctx2) => {
     if (v === "intro") return sustain(p, ctx2, 60, 70);
     chordBars(
@@ -56499,11 +56557,11 @@ html.os-darwin.native-menu #menubar .mproj {
   ];
   var inKey = (ctx2, n) => (SCALES[ctx2.scale] || SCALES.minor).includes(((n - ctx2.key) % 12 + 12) % 12);
   var GEN_V = /* @__PURE__ */ new Set(["A", "B", "C", "drop", "hook", "verse", "pre", "outro"]);
-  var BASS_LO = { roll: 40, off: 40, drive: 40, sparse: 36, 808: 28, funk: 40, walk: 34, reggae: 38, pop: 40 };
+  var BASS_LO = { 808: 28 };
   var FOUR = /* @__PURE__ */ new Set(["house", "techhouse", "afro", "techno", "minimal", "trance", "disco"]);
   function genBass(p, v, ctx2) {
     const feel = ctx2.motif.bass, tr = mulberry(hashStr("bass:" + feel) ^ ctx2.motif.seed), A = genBassT(tr, feel), A2 = mutateBassT(tr, A), C = genBassT(tr, feel), bars3 = v === "B" ? [A, A2] : v === "C" ? [C, mutateBassT(tr, C)] : v === "drop" || v === "hook" ? [A2, mutateBassT(tr, A2)] : [A, A];
-    const { ch, nb, r } = ctx2, lo = BASS_LO[feel] || 40, thin = v === "verse" || v === "pre" || v === "outro";
+    const { ch, nb, r } = ctx2, lo = BASS_LO[feel] || BLO, thin = v === "verse" || v === "pre" || v === "outro";
     for (let b = 0; b < nb; b++) {
       const c = ch[b % ch.length], next = ch[(b + 1) % ch.length], root = bassNote(c, lo);
       for (const [s, len, iv] of bars3[b % 2]) {
@@ -56534,7 +56592,7 @@ html.os-darwin.native-menu #menubar .mproj {
       for (let i = 0, s = 0; s < 16; s += step, i++) {
         if (g.gaps.includes(i % 8)) continue;
         if (b === nb - 1 && s >= 12 && v === "drop") continue;
-        p.add(b, s, step, seq2[i % seq2.length], hum3(r, (s % 4 === 0 ? 76 : 64) - (v === "drop" ? 8 : 0), 4));
+        p.add(b, s, step, arpTop(seq2[i % seq2.length]), hum3(r, (s % 4 === 0 ? 76 : 64) - (v === "drop" ? 8 : 0), 4));
       }
     }
   }
@@ -56615,6 +56673,10 @@ html.os-darwin.native-menu #menubar .mproj {
           const tc = dark && c.tones.length > 2 ? { root: c.root, tones: [0, c.tones[2]] } : c;
           let n = strong ? chordTone(tc, (target + last3) / 2) : stepTo(last3, target >= last3 ? 1 : -1);
           if (Math.abs(n - last3) > 9) n = chordTone(c, last3);
+          if (!strong && len >= 3) {
+            const pc3 = (n % 12 + 12) % 12;
+            if (c.tones.some((t) => [1, 11].includes(((pc3 - c.root - t) % 12 + 12) % 12))) n = chordTone(c, n);
+          }
           if (strong && n === last3 && i) {
             const dir = target >= last3 ? 1 : -1;
             n = chordTone(c, last3 + dir * 3);
@@ -56647,16 +56709,99 @@ html.os-darwin.native-menu #menubar .mproj {
       } else p.add(b, s, len, n, hum3(r, vel, 5));
     }
   }
+  var PLUCK_WAY = {
+    techno: "tick",
+    minimal: "tick",
+    techhouse: "tick",
+    trap: "bell",
+    drill: "bell",
+    phonk: "bell",
+    memphis: "bell",
+    dembow: "bell",
+    boombap: "lick",
+    lofi: "lick",
+    reggae: "echo",
+    electro: "arp",
+    trance: "arp"
+  };
+  var PLUCK_CELLS = {
+    tick: [
+      [3, 6, 11, 14],
+      [2, 5, 8, 11, 14],
+      [3, 7, 10, 14],
+      [1, 4, 7, 10, 13]
+    ],
+    blip: [
+      [3, 10],
+      [6, 11, 14],
+      [0, 7],
+      [3, 6, 12]
+    ],
+    bell: [
+      [0, 3, 6],
+      [0, 6, 10, 12],
+      [2, 8, 11],
+      [0, 4, 7, 10]
+    ],
+    lick: [
+      [0, 3, 6],
+      [2, 6, 10],
+      [0, 7, 10],
+      [4, 7, 12]
+    ],
+    echo: [
+      [4, 7, 10],
+      [12, 15],
+      [2, 5, 8],
+      [6, 9, 12]
+    ]
+  };
+  function sparsePluck(p, v, ctx2, way) {
+    const { ch, nb, r } = ctx2, tr = mulberry(hashStr("pluck:" + way) ^ ctx2.motif.seed), one = (a) => a[Math.floor(tr() * a.length)], cells = [one(PLUCK_CELLS[way]), one(PLUCK_CELLS[way])], order = one([
+      [2, 1, 0, 1],
+      [0, 1, 2, 1],
+      [2, 0, 1, 2],
+      [2, 2, 1, 0]
+    ]), center = way === "bell" ? 77 : way === "lick" ? 67 : 72, thin = v === "intro" || v === "break";
+    let prev = null;
+    for (let b = 0; b < nb; b++) {
+      const c = ch[b % ch.length], vc = voice4(c, center, prev, 3);
+      prev = vc;
+      if (thin && b % 2) continue;
+      (way === "tick" ? cells[0] : cells[b % 2]).forEach((s, i) => {
+        if (b === nb - 1 && s >= 12 && v === "drop") return;
+        const n = way === "tick" ? nearest(c.root, center) + (i % 3 === 2 ? c.tones[2] ?? 7 : 0) : way === "echo" ? vc[order[0]] : vc[order[i % 4]], vel = way === "echo" ? [92, 64, 46][i] : way === "tick" ? i % 2 ? 70 : 84 : s % 4 === 0 ? 86 : 74;
+        p.add(b, s, way === "bell" || way === "lick" ? 2 : 1, arpTop(n), hum3(r, vel - (v === "drop" ? 4 : 0), 4));
+      });
+    }
+  }
+  var arpTop = (n) => n > 88 ? n - 12 : n;
   var arp2 = (p, v, ctx2) => {
     const { ch, nb, r, recipe } = ctx2;
     if (v === "rise") {
-      const root = nearest(ch[0].root, 60);
-      for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, root + b * 2, 70 + b * 6);
-      for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s++, i++)
-        p.add(Math.floor(s / 16), s % 16, 1, root + 12 + Math.floor(i / 2), 90 + i);
+      let n = nearest(ch[0].root, 60) - 1;
+      const climb = (b) => {
+        const c = ch[b % ch.length], pcs = c.tones.map((t) => (c.root + t) % 12);
+        do
+          n++;
+        while (!pcs.includes(n % 12));
+        return n;
+      };
+      const soft = SOFT_BUILD.has(recipe.gr);
+      for (let b = 0; b < nb - (soft ? 0 : 2); b++) p.add(b, 0, 16, climb(b), 70 + b * 6);
+      if (soft) return;
+      for (let i = 0, s = (nb - 2) * 16; s < nb * 16 - 4; s++, i++) {
+        if (i % 4 === 0)
+          do
+            n++;
+          while (!inKey(ctx2, n));
+        p.add(Math.floor(s / 16), s % 16, 1, Math.min(n, 96), 90 + i);
+      }
       return;
     }
-    const step = v === "break" || v === "intro" ? 2 : 1, center = v === "drop" ? 72 : 67;
+    const way = PLUCK_WAY[recipe.gr] || (recipe.lead === "hard" ? "blip" : "arp");
+    if (way !== "arp") return sparsePluck(p, v, ctx2, way);
+    const step = (v === "break" || v === "intro" ? 2 : 1) * (recipe.gr === "ambient" ? 2 : 1), center = v === "drop" ? 72 : 67;
     if (ctx2.motif.arp) return genArpPart(p, v, ctx2, center, step);
     let prev = null;
     for (let b = 0; b < nb; b++) {
@@ -56667,7 +56812,7 @@ html.os-darwin.native-menu #menubar .mproj {
       );
       for (let i = 0, s = 0; s < 16; s += step, i++) {
         if (b === nb - 1 && s >= 12 && v === "drop") continue;
-        p.add(b, s, step, seq2[i % seq2.length], hum3(r, (s % 4 === 0 ? 76 : 64) - (v === "drop" ? 8 : 0), 4));
+        p.add(b, s, step, arpTop(seq2[i % seq2.length]), hum3(r, (s % 4 === 0 ? 76 : 64) - (v === "drop" ? 8 : 0), 4));
       }
     }
   };
@@ -57325,7 +57470,7 @@ html.os-darwin.native-menu #menubar .mproj {
         if (op === "reverse") {
           const pitches = ns.map((n) => n.n).reverse();
           ns.forEach((n, i) => n.n = pitches[i]);
-        } else if (op === "octave") ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 96 && (n.n += 12));
+        } else if (op === "octave") ns.forEach((n, i) => i % 4 === 3 && n.n + 12 <= 88 && (n.n += 12));
       }
       if (op === "gaps") {
         const g = pick3(tr, [3, 7]);
@@ -57368,7 +57513,13 @@ html.os-darwin.native-menu #menubar .mproj {
       edge: Math.max(0, Math.min(1, +(opts.edge ?? 0.3) || 0))
     }, mr = mulberry(hashStr(style.id + ":mood") ^ seed4), given = Array.isArray(opts.prog) && opts.prog.length ? opts.prog : null, like = opts.like && opts.like.chords && opts.like.chords.length ? opts.like : null, goDark = !given && !like && mood.dark >= 0.5 && mr() < 0.4 + mood.dark * 0.6, dprog = goDark ? genProg(mr, "d") : null, hm = goDark && mood.dark >= 0.75 && mr() < 0.5;
     const colour = dprog ? "d" : made3 ? own[0] : progId[0], scale = like ? like.scale : given ? opts.scale === "major" ? "major" : "minor" : dprog ? hm ? "harmonic minor" : "minor" : mood.dark >= 0.5 ? "minor" : style.scale === "major" && colour !== "m" ? "major" : progScale(colour, style.scale);
-    const ch0 = chordsOf2(given || dprog || made3 || progId, key, scale, mood.dark >= 0.5 ? 0 : recipe.ext || 0), ch = like ? like.chords : dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
+    const ch0 = chordsOf2(
+      given || dprog || made3 || progId,
+      key,
+      scale,
+      mood.dark >= 0.5 ? 0 : recipe.ext || 0,
+      !!recipe.dom
+    ), ch = like ? like.chords : dprog || given ? ch0 : ch0.slice(turn).concat(ch0.slice(0, turn));
     const minutes = Math.max(1, Math.min(10, opts.minutes || (fam === "dnb" || fam === "edm" ? 5 : 3.5)));
     const sections = formOf(fam, Math.round(minutes * bpm / 4));
     const motif = {
@@ -57383,7 +57534,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     motif.form = r() < 0.6 ? genForm(r) : ["A", "A", "B", "A"];
     motif.bass = BASS_FEEL[recipe.bass] && r() < 0.55 ? BASS_FEEL[recipe.bass] : null;
-    motif.comp = recipe.chords !== "long" && r() < 0.45;
+    motif.comp = recipe.chords !== "long" && r() < 0.45 && !["skank", "dembowCh", "pluckCh", "tranceGate"].includes(recipe.chords);
     motif.arp = r() < 0.5 ? genArp(r) : null;
     motif.pad = ["hold", "hold", "high", "open", "again"][Math.floor(mulberry(hashStr(style.id + ":pad") ^ seed4)() * 5)];
     motif.seed = Math.imul(seed4 + 3, 2654435761) ^ hashStr(style.id);
@@ -57396,6 +57547,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (role === "kit") gr.kit(p, pr, v, nb);
       else if (role === "hats") gr.hats(p, pr, v, nb);
       else if (role === "perc") gr.perc(p, pr, v, nb);
+      else if (role === "bass" && v === "build" && SOFT_BUILD.has(recipe.gr)) longRoots(p, ctx2, BLO, 1, 96);
       else if (role === "bass")
         motif.bass && GEN_V.has(v) ? genBass(p, v, ctx2) : (BASS[recipe.bass] || BASS.pop)(p, v === "verse" ? "A" : v, ctx2);
       else if (role === "acid") acidLine(p, ctx2, v === "A" ? "A" : v === "B" ? "B" : "C", 48);
