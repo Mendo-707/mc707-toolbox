@@ -170,7 +170,7 @@ const CARDS = [
         'Perform it',
         'Change scenes, swap parts, drop breaks, fills and builds, and move the filters, all on the beat.'
       ],
-      ['Loop rec', 'Record your own riff on the MC-707’s keys and it stays in the set until you take it out.'],
+      ['Loop rec', 'Record your own riff on the MC-707’s keys, or have the composer write a whole set around it.'],
       ['Auto-pilot', 'Let the set play and change by itself, as much or as little as you like.']
     ]
   ],
