@@ -54170,57 +54170,80 @@ html.os-darwin.native-menu #menubar .mproj {
   var lvHue = (e) => Math.round(215 - e * 19);
 
   // src/live/kit-hop.js
-  var MOVE = {
-    /* one kit all scene */
-    stay: () => 0,
-    /* four bars on one kit, four on the next */
-    phrase: (r) => Math.floor(r / 128) % 2,
-    /* three bars on one kit, the fourth on the next */
-    turn: (r) => Math.floor(r / 32) % 4 === 3 ? 1 : 0,
-    /* bar by bar: one, two, one, three */
-    bar: (r) => [0, 1, 0, 2][Math.floor(r / 32) % 4],
-    /* every half bar between two kits, and every fourth bar chopped beat by beat over all three */
-    half: (r) => Math.floor(r / 32) % 4 === 3 ? [0, 1, 2, 1][Math.floor(r / 8) % 4] : Math.floor(r / 16) % 2,
-    /* beat by beat: one, two, one, three */
-    beat: (r) => [0, 1, 0, 2][Math.floor(r / 8) % 4]
+  var BAR = 32;
+  var BEAT = 8;
+  var SPAN2 = 16 * BAR;
+  var RATE = {
+    fast: { turn: 0.55, flick: 0.22, sw: 0.5 },
+    mid: { turn: 0.3, flick: 0.08, sw: 0.35 },
+    slow: { turn: 0.1, flick: 0, sw: 0.25 }
   };
-  var TIER = {
-    fast: { groove: ["turn", "bar", "half"], peak: ["half", "beat", "bar"], tool: ["phrase", "turn"] },
-    mid: { groove: ["phrase", "turn"], peak: ["turn", "bar"], tool: ["phrase"] },
-    slow: { groove: ["stay"], peak: ["stay", "phrase"], tool: ["stay"] }
-  };
+  var KIND2 = { peak: 1, groove: 0.7, tool: 0.6, build: 0, strip: 0.2 };
   var FAST = /* @__PURE__ */ new Set(["dnb", "jungle", "dnbHalf", "breaks"]);
   var MID = /* @__PURE__ */ new Set(["garage", "dubstep", "electro", "funk", "afro", "dembow"]);
   var tierOf = (gr) => FAST.has(gr) ? "fast" : MID.has(gr) ? "mid" : "slow";
-  var hopMoves = (gr, kind) => TIER[tierOf(gr)][kind] || ["stay"];
   var hopTracks = () => [0, 1, 2].map(trackOf).filter((t) => t >= 0 && S.tracks[t].type === "drum");
+  function hopMake(kind, gr, base, rand = Math.random) {
+    const R4 = RATE[tierOf(gr)], m = KIND2[kind] ?? 0.5, segs = [];
+    let kit2 = base, last3 = -2 * BAR;
+    const other = (k2) => (k2 + 1 + Math.floor(rand() * 2)) % 3;
+    for (let bar2 = 0; bar2 < 16; bar2++) {
+      const at2 = bar2 * BAR, free = at2 - last3 >= 2 * BAR;
+      if (bar2 === 7 && rand() < R4.sw * m) {
+        const to = other(kit2), from = rand() < 0.5 ? at2 + BAR : at2 + 2 * BEAT;
+        segs.push([from, SPAN2, to, "switch"]);
+        last3 = from;
+        kit2 = to;
+        continue;
+      }
+      if (!free) continue;
+      if (bar2 % 4 === 3 && rand() < R4.turn * m) {
+        const n = rand() < 0.6 ? 2 : 1;
+        segs.push([at2 + (4 - n) * BEAT, at2 + BAR, other(kit2), "turn"]);
+        last3 = at2;
+      } else if (bar2 % 2 === 1 && bar2 % 4 !== 3 && rand() < R4.flick * m) {
+        const b = rand() < 0.5 ? 2 : 3;
+        segs.push([at2 + b * BEAT, at2 + (b + 1) * BEAT, other(kit2), "flick"]);
+        last3 = at2;
+      }
+    }
+    const sw = segs.filter((s) => s[3] === "switch");
+    return {
+      base,
+      segs: segs.map(([a, b, k2, w]) => {
+        if (w === "switch") return [a, SPAN2, k2];
+        const under = sw.filter((s) => s[0] <= a).pop();
+        const now2 = under ? under[2] : base;
+        return [a, b, k2 === now2 ? (k2 + 1) % 3 : k2];
+      }).sort((x, y) => x[0] - y[0])
+    };
+  }
+  function hopKit(plan2, r) {
+    const x = (r % SPAN2 + SPAN2) % SPAN2;
+    let k2 = plan2.base;
+    for (const [a, b, kk] of plan2.segs) if (a <= x && x < b) k2 = kk;
+    return k2;
+  }
   function hopPlan(scenes, gr, rand = Math.random) {
     if (!threeKits()) return;
-    scenes.forEach((sc, i) => {
-      const moves = hopMoves(gr, sc.kind);
-      sc.hop = moves[Math.floor(rand() * moves.length)];
-      sc.hopK = i % 3;
-    });
+    scenes.forEach((sc, i) => sc.hop = hopMake(sc.kind, gr, i % 3, rand));
   }
   function hopTurn(sc, gr) {
     if (!sc.hop || !threeKits()) return;
-    const moves = hopMoves(gr, sc.kind);
-    sc.hop = moves[Math.floor(Math.random() * moves.length)];
-    sc.hopK = (sc.hopK + 1 + Math.floor(Math.random() * 2)) % 3;
+    sc.hop = hopMake(sc.kind, gr, (sc.hop.base + 1 + Math.floor(Math.random() * 2)) % 3);
   }
   function hopTo(hop, t, f, tick) {
-    if (!hop || !f || t !== trackOf(0) || !threeKits()) return t;
+    if (!hop || !hop.plan || !f || t !== trackOf(0) || !threeKits()) return t;
     const ks = hopTracks();
     if (ks.length < 2) return t;
-    const r = Math.max(0, tick - hop.start);
-    return ks[(hop.k + (MOVE[hop.speed] || MOVE.stay)(r)) % ks.length];
+    return ks[hopKit(hop.plan, Math.max(0, tick - hop.start)) % ks.length];
   }
   function hopLane(sc, t, bar2) {
-    if (!sc || !sc.hop || !threeKits()) return null;
+    if (!sc || !sc.hop || !sc.hop.segs || !threeKits()) return null;
     const ks = hopTracks(), i = ks.indexOf(t);
     if (i < 0 || ks.length < 2) return null;
-    const move = MOVE[sc.hop] || MOVE.stay, used = /* @__PURE__ */ new Set();
-    for (let r = bar2 * 32; r < bar2 * 32 + 32; r += 4) used.add(((sc.hopK || 0) + move(r)) % ks.length);
+    const used = /* @__PURE__ */ new Set();
+    for (let r = bar2 * BAR; r < bar2 * BAR + BAR; r += BEAT) used.add(hopKit(sc.hop, r) % ks.length);
     return { on: used.has(i), chop: used.size > 1 };
   }
 
@@ -57987,7 +58010,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return tr;
     };
     const sets = { A: mkSet(), B: mkSet() }, scenes = [];
-    const MOVE2 = ["h2", "alt", "rest", "odd"];
+    const MOVE = ["h2", "alt", "rest", "odd"];
     for (const [name, kind, bars3, e, fx, parts4] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
       const cells = {};
       for (let t = 0; t < 8; t++) {
@@ -58004,7 +58027,7 @@ html.os-darwin.native-menu #menubar .mproj {
         if (!id || !facById(id)) continue;
         let play2 = play0;
         if (S.tracks[t].type === "tone" && r() < 0.25)
-          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE2[Math.floor(r() * MOVE2.length)];
+          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE[Math.floor(r() * MOVE.length)];
         cells[t] = { id, pool };
         if (play2) cells[t].play = play2;
       }
@@ -60875,7 +60898,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     LV.cur = idx;
     LV.sceneStart = tick;
-    LV.hop = sc.hop ? { speed: sc.hop, k: sc.hopK || 0, start: tick } : null;
+    LV.hop = sc.hop && sc.hop.segs ? { plan: sc.hop, start: tick } : null;
     const newProg = [4, 3, 5, 7, 6].flatMap(tracksOf).map((t) => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
     const parts4 = (c) => c ? Array.from({ length: 8 }, (_, t) => c[t]).filter(Boolean).length : 0;
     const down = !hard && LV.entry !== "hard" && (jump < 0 || parts4(sc.cells) < parts4(prev && prev.cells)), leaving = [];
@@ -61342,7 +61365,7 @@ html.os-darwin.native-menu #menubar .mproj {
       blend: null,
       sceneStart: 0,
       /* (the first scene's plan for three full kits) */
-      hop: LV.scenes[i].hop ? { speed: LV.scenes[i].hop, k: LV.scenes[i].hopK || 0, start: 0 } : null,
+      hop: LV.scenes[i].hop && LV.scenes[i].hop.segs ? { plan: LV.scenes[i].hop, start: 0 } : null,
       voices: Array.from({ length: 8 }, () => []),
       cues: [],
       fill: null,

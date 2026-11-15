@@ -1,5 +1,6 @@
-// Three full kits (live/kit-hop.js): the beat moves between Drums 1, 2 and 3, fast in drum and bass, a
-// whole scene at a time in house; with the setting off it stays on its tracks. And the half time is a
+// Three full kits (live/kit-hop.js): the beat stays on a kit and moves to another now and then (a
+// turnaround, a flick, a switch at eight bars), always on the beat, most in drum and bass; with the setting
+// off it stays on its tracks. And the half time is a
 // touch now: two bars of the Switch, never left there by a swap.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,58 +8,99 @@ import { openApp, closeBrowser } from './helpers.mjs';
 
 after(closeBrowser);
 
-/* Play each scene of a composed set for 8 bars; per scene, which drum channels the kicks went to (the beat:
-   Drums 3 still plays the builds' rolls and the peaks' percussion as parts of their own), and
-   how often the channel changed */
-const RUN = `async (c) => {
-  const a = window.__app, LV = a.LV;
-  a.ensureAudio(); await a.connectMidi();
-  a.stopAll();
-  a.S.threeKits = c.three; a.S.oneKit = false;
-  /* (Variation off: its Breaks hit every kit at once, on purpose) */
-  Object.assign(LV, { style: c.style, flavor: 'composed', flavorPick: true, custom: false, seed: 7, auto: false, vary: 0 });
-  a.liveBuild();
-  Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
-  const drums = [0, 1, 2].map(s => a.S.tracks.findIndex((x, t) => x.type === 'drum' && t === s)).map(t => a.S.tracks[t].ch - 1);
-  const out = [];
-  a.liveStart(0); a.TICKER.stop();
-  for (let i = 0; i < LV.scenes.length; i++) {
-    const sc = LV.scenes[i];
-    if (i) { a.liveCue(i); while (LV.cur !== i) { a.processTick(a.TR.tick, a.TR.nextTime); a.advance(); } }
-    window.__out.length = 0;
-    const end = a.TR.tick + 8 * 32;
-    while (a.TR.tick < end) { a.processTick(a.TR.tick, a.TR.nextTime); a.advance(); }
-    const chs = window.__out.filter(m => (m[0] & 0xf0) === 0x90 && m[2] > 0 && drums.includes(m[0] & 15) && m[1] === 36).map(m => m[0] & 15);
-    let moves = 0; for (let j = 1; j < chs.length; j++) if (chs[j] !== chs[j - 1]) moves++;
-    out.push({ name: sc.name, kind: sc.kind, hop: sc.hop || null, used: [...new Set(chs)].length, moves, n: chs.length });
-  }
-  a.stopAll();
-  return out;
-}`;
-
-test('Three full kits: the beat moves between the drum tracks, fast in drum and bass and slow in house', async () => {
+test('Three full kits: the beat stays on a kit and moves now and then, on the beat; more in drum and bass', async () => {
   const { page, errors } = await openApp();
   await page.click('#menubar .mtab[data-mode=live]');
   await page.waitForTimeout(200);
-  const dnb = await page.evaluate(`(${RUN})(${JSON.stringify({ style: 'liquid', three: true })})`);
-  const peak = dnb.filter(s => s.kind === 'peak' && s.n > 20);
-  assert.ok(peak.length, JSON.stringify(dnb));
-  for (const s of peak)
-    assert.ok(s.used >= 2 && s.moves >= 6, 'drum and bass peak chops between kits: ' + JSON.stringify(s));
-  /* the scenes start on different kits */
-  const house = await page.evaluate(`(${RUN})(${JSON.stringify({ style: 'deephouse', three: true })})`);
-  const grooves = house.filter(s => s.kind === 'groove' && s.n > 20);
-  for (const s of grooves) assert.equal(s.used, 1, 'a house groove keeps one kit: ' + JSON.stringify(s));
-  assert.ok(new Set(house.map(s => s.hop)).size >= 1);
-  /* off: the kick, snare and hats stay on their own tracks, as before */
-  const off = await page.evaluate(`(${RUN})(${JSON.stringify({ style: 'liquid', three: false })})`);
+  const plans = style =>
+    page.evaluate(st => {
+      const a = window.__app,
+        LV = a.LV,
+        out = [];
+      a.S.threeKits = true;
+      for (let seed = 1; seed <= 12; seed++) {
+        Object.assign(LV, { style: st, flavor: 'composed', flavorPick: true, custom: false, seed });
+        a.liveBuild();
+        for (const sc of LV.scenes) out.push({ kind: sc.kind, segs: sc.hop ? sc.hop.segs : null });
+      }
+      a.S.threeKits = false;
+      return out;
+    }, style);
+  const dnb = await plans('liquid'),
+    house = await plans('deephouse');
+  const moves = ps => ps.reduce((n, p) => n + (p.segs ? p.segs.length : 0), 0);
   assert.ok(
-    off.every(s => !s.hop),
-    'no plan with the setting off'
+    dnb.every(p => p.segs),
+    'every scene has a plan'
   );
-  /* with three kits on, Drums 2 plays no hats part of its own (the hats are in the beat) */
+  /* on the beat, and no more than one move in two bars (16 bars a plan: at most 8) */
+  for (const p of [...dnb, ...house]) {
+    for (const [a, b] of p.segs)
+      assert.ok(a % 8 === 0 && b % 8 === 0 && b > a, 'on the beat: ' + JSON.stringify(p.segs));
+    assert.ok(p.segs.length <= 8, 'not choppy: ' + JSON.stringify(p.segs));
+  }
+  const peaks = dnb.filter(p => p.kind === 'peak');
+  assert.ok(peaks.filter(p => p.segs.length).length >= peaks.length / 2, 'drum and bass peaks move: ' + moves(peaks));
+  assert.ok(moves(dnb) > 2 * moves(house), 'drum and bass moves more than house: ' + moves(dnb) + ' / ' + moves(house));
+  assert.ok(
+    house.filter(p => p.kind === 'groove' && !p.segs.length).length >=
+      house.filter(p => p.kind === 'groove').length / 2,
+    'a house groove mostly keeps its kit'
+  );
+  assert.ok(
+    dnb.every(p => p.kind !== 'build' || !p.segs.length),
+    'a lift keeps its kit'
+  );
+  /* played: the beat's kicks go out on the kits the plan says */
+  const played = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    a.S.threeKits = true;
+    Object.assign(LV, { style: 'liquid', flavor: 'composed', custom: false, auto: false, vary: 0 });
+    let idx = -1;
+    for (let seed = 1; idx < 0 && seed < 40; seed++) {
+      LV.seed = seed;
+      a.liveBuild();
+      idx = LV.scenes.findIndex(s => s.kind === 'peak' && s.hop.segs.length);
+    }
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    const plan = LV.scenes[idx].hop,
+      ks = [0, 1, 2].map(t => a.S.tracks[t].ch - 1);
+    window.__out.length = 0;
+    const at = [];
+    a.liveStart(idx);
+    a.TICKER.stop();
+    while (a.TR.tick < 16 * 32) {
+      const n0 = window.__out.length;
+      a.processTick(a.TR.tick, a.TR.nextTime);
+      for (const m of window.__out.slice(n0))
+        if ((m[0] & 0xf0) === 0x90 && m[1] === 36 && m[2] > 0) at.push([a.TR.tick, ks.indexOf(m[0] & 15)]);
+      a.advance();
+    }
+    a.stopAll();
+    a.S.threeKits = false;
+    return { plan, at };
+  });
+  const kitAt = r => {
+    let k = played.plan.base;
+    for (const [a, b, kk] of played.plan.segs) if (a <= r % 512 && r % 512 < b) k = kk;
+    return k;
+  };
+  assert.ok(played.at.length > 20);
+  /* (Drums 3 also plays a peak's own percussion part: at each moment, one kick is on the planned kit) */
+  for (const tk of new Set(played.at.map(x => x[0])))
+    assert.ok(
+      played.at.some(x => x[0] === tk && x[1] === kitAt(tk)),
+      'the kick at ' + tk + ' on the planned kit: ' + JSON.stringify(played.plan)
+    );
+  assert.ok(new Set(played.at.map(x => x[1])).size >= 2, 'the beat moved');
+  /* off: no plan, and Drums 2 has no hats part of its own with three kits on */
   const cells = await page.evaluate(() => {
     const a = window.__app;
+    a.liveBuild();
+    const off = a.LV.scenes.every(s => !s.hop);
     a.S.threeKits = true;
     a.liveBuild();
     const r = a.LV.scenes.map(s =>
@@ -68,20 +110,26 @@ test('Three full kits: the beat moves between the drum tracks, fast in drum and 
     );
     a.S.threeKits = false;
     a.liveBuild();
-    return r;
+    return { off, r };
   });
+  assert.ok(cells.off, 'no plan with the setting off');
   assert.ok(
-    cells.every(ts => !ts.includes(1)),
-    'Drums 2 is free for the beat: ' + JSON.stringify(cells)
+    cells.r.every(ts => !ts.includes(1)),
+    'Drums 2 is free for the beat: ' + JSON.stringify(cells.r)
   );
   /* the timeline draws the beat on the kits it moves to */
   const drawn = await page.evaluate(async () => {
     const a = window.__app,
       LV = a.LV;
     a.S.threeKits = true;
-    Object.assign(LV, { style: 'liquid', flavor: 'composed', custom: false, seed: 7 });
-    a.liveBuild();
-    a.liveStart(LV.scenes.findIndex(s => s.hop === 'half' || s.hop === 'beat' || s.hop === 'bar'));
+    Object.assign(LV, { style: 'liquid', flavor: 'composed', custom: false });
+    let idx = -1;
+    for (let seed = 1; idx < 0 && seed < 40; seed++) {
+      LV.seed = seed;
+      a.liveBuild();
+      idx = LV.scenes.findIndex(s => s.hop.segs.some(x => x[0] < 4 * 32));
+    }
+    a.liveStart(idx);
     a.TICKER.stop();
     for (let i = 0; i < 40; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
     LV.ver++;

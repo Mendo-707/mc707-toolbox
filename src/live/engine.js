@@ -264,7 +264,7 @@ export function liveScene(idx, tick, hard, len) {
   LV.cur = idx;
   LV.sceneStart = tick;
   /* Three full kits: the scene's plan for the beat (live/kit-hop.js) */
-  LV.hop = sc.hop ? { speed: sc.hop, k: sc.hopK || 0, start: tick } : null;
+  LV.hop = sc.hop && sc.hop.segs ? { plan: sc.hop, start: tick } : null;
   /* the new scene's progression: a part of another progression that is leaving stops at once instead of fading over it */
   const newProg =
     [4, 3, 5, 7, 6]
@@ -831,7 +831,7 @@ export function liveStart(idx) {
     blend: null,
     sceneStart: 0,
     /* (the first scene's plan for three full kits) */
-    hop: LV.scenes[i].hop ? { speed: LV.scenes[i].hop, k: LV.scenes[i].hopK || 0, start: 0 } : null,
+    hop: LV.scenes[i].hop && LV.scenes[i].hop.segs ? { plan: LV.scenes[i].hop, start: 0 } : null,
     voices: Array.from({ length: 8 }, () => []),
     cues: [],
     fill: null,
