@@ -19,6 +19,7 @@ import { CLIPPIN, PCLAST, autoClipReset, clipFor, cmFix, patType, sendClip } fro
 import { hashStr } from '../core/random.js';
 import { AUTOLAST, sendTrackCCs } from '../services/mc-controls.js';
 import { ENTRY_TICKS, LV, LV_PRI, SWG, envAt, lvBT, lvRand, lvStyle, mkEnv } from './state.js';
+import { hopTo } from './kit-hop.js';
 import { lvFadeIn, lvFadeOut, lvFadeTick, lvFadesReset, lvLevelBack } from './fades.js';
 import { lvIsFlash, lvTracksFor } from './themes.js';
 import { lvAutoTick, lvBuildMoves, lvMove, lvRestCC, lvSceneFx, lvSlam, lvUserOwns } from './moves.js';
@@ -261,6 +262,8 @@ export function liveScene(idx, tick, hard, len) {
   }
   LV.cur = idx;
   LV.sceneStart = tick;
+  /* Three full kits: the scene's plan for the beat (live/kit-hop.js) */
+  LV.hop = sc.hop ? { speed: sc.hop, k: sc.hopK || 0, start: tick } : null;
   /* the new scene's progression: a part of another progression that is leaving stops at once instead of fading over it */
   const newProg =
     [4, 3, 5, 7, 6]
@@ -591,7 +594,8 @@ function lvVarOf(v, t, k, L) {
   v._vt = ty;
   return ty;
 }
-function lvVarExtra(t, v, vt, local, L, nt, td, g) {
+/* (o: the track the drum extras play on, the kit the beat is on with three full kits) */
+function lvVarExtra(t, v, vt, local, L, nt, td, g, o = t) {
   if (vt === 'run' && local === L - 8) {
     const f = v.f,
       first = f.notes.filter(n => n.s < 1).map(n => n.n);
@@ -608,9 +612,9 @@ function lvVarExtra(t, v, vt, local, L, nt, td, g) {
         : emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt, 1.6 * td)
     );
   } else if (vt === 'ghost' && slotOf(t) === 0 && local >= L - 32 && [6, 14, 22, 30].includes(local - (L - 32)))
-    emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
-  else if (vt === 'open' && local === L - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
-  else if (vt === 'kickx' && slotOf(t) === 0 && local === L - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
+    emitNote(o, 2, clamp(44 * g, 1, 127), nt, td);
+  else if (vt === 'open' && local === L - 4) emitNote(o, 5, clamp(92 * g, 1, 127), nt, 2 * td);
+  else if (vt === 'kickx' && slotOf(t) === 0 && local === L - 6) emitNote(o, 0, clamp(104 * g, 1, 127), nt, td);
 }
 export function liveTick(tick, nt, td) {
   lvLaterTick(tick, nt, td);
@@ -636,7 +640,7 @@ export function liveTick(tick, nt, td) {
   }
   if (LV.crash) {
     LV.crash = false;
-    const tk = trackOf(0);
+    const tk = trackOf(0) >= 0 && LV.hop ? hopTo(LV.hop, trackOf(0), { pool: 'full' }, tick) : trackOf(0);
     if (tk >= 0 && !S.tracks[tk].mute && !lvUserOwns(tk)) emitNote(tk, 9, 110, nt, 0.5);
   }
   const rel = tick - LV.sceneStart;
@@ -723,9 +727,11 @@ export function liveTick(tick, nt, td) {
         L = f.bars * 32,
         evs = patIndex(f).get((((ft - LV.fill.org) % L) + L) % L);
       if (evs) {
+        /* (with three full kits, a fill plays on the kit the beat is on) */
+        const ft2 = LV.hop ? hopTo(LV.hop, t, { pool: 'full' }, tick) : t;
         for (const n of evs)
-          emitNote(t, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
-        LV.pulse[t] = { time: nt, v: 1 };
+          emitNote(ft2, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
+        LV.pulse[ft2] = { time: nt, v: 1 };
       }
       continue;
     }
@@ -753,9 +759,12 @@ export function liveTick(tick, nt, td) {
       /* variations change the app's parts, never your own riff */
       const vt = quiet || v.f.riff ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L), L),
         last = local >= L - 32;
+      /* Three full kits: the beat plays on the kit its scene's plan says (live/kit-hop.js) */
+      const to = LV.hop ? hopTo(LV.hop, t, v.f, tick) : t;
+      if (to !== t && (S.tracks[to].mute || lvUserOwns(to))) continue;
       if (vt) {
-        lvVarExtra(t, v, vt, local, L, nt, td, g);
-        lvXExtra(t, v, vt, local, L, nt, td, g);
+        lvVarExtra(t, v, vt, local, L, nt, td, g, to);
+        lvXExtra(t, v, vt, local, L, nt, td, g, to);
       }
       const evs = patIndex(v.f).get(local);
       if (!evs) continue;
@@ -772,7 +781,7 @@ export function liveTick(tick, nt, td) {
           nn = slotOf(t) === 3 ? (nn + 12 <= 64 ? nn + 12 : nn) : nn + 12;
         if (tone && slotOf(t) >= 6 && LV.chordLock !== false && !v.f.riff) nn = lvLockNote(nn, n.l, local, chord());
         emitNote(
-          t,
+          to,
           tone ? clamp(nn, 0, 127) : nn,
           clamp(n.v * g, 1, 127),
           nt + subTick(n) * (TR.subTd || td),
@@ -784,7 +793,7 @@ export function liveTick(tick, nt, td) {
         if (vt === 'echo' && last && tone)
           lvLater(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), 6 + subTick(n), n.l * 2, lvUserOwns);
       }
-      LV.pulse[t] = { time: nt, v: Math.min(1, g) };
+      LV.pulse[to] = { time: nt, v: Math.min(1, g) };
     }
   }
   LV.lastTick = tick;
@@ -819,6 +828,8 @@ export function liveStart(idx) {
     cur: i,
     blend: null,
     sceneStart: 0,
+    /* (the first scene's plan for three full kits) */
+    hop: LV.scenes[i].hop ? { speed: LV.scenes[i].hop, k: LV.scenes[i].hopK || 0, start: 0 } : null,
     voices: Array.from({ length: 8 }, () => []),
     cues: [],
     fill: null,

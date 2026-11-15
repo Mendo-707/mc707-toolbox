@@ -14940,6 +14940,14 @@ html.os-darwin.native-menu #menubar .mproj {
       return false;
     }
   };
+  var threeKits = () => {
+    if (DEV === "101") return false;
+    try {
+      return !!S.threeKits && !S.oneKit;
+    } catch (e) {
+      return false;
+    }
+  };
   var devNm = () => DEV === "101" ? "MC-101" : "MC-707";
   var modelOfName = (n) => /MC-?101/i.test(n || "") ? "101" : /MC-?707/i.test(n || "") ? "707" : null;
   var isMcName = (n) => /MC-?(707|101)/i.test(n || "");
@@ -57821,6 +57829,53 @@ html.os-darwin.native-menu #menubar .mproj {
     };
   }
 
+  // src/live/kit-hop.js
+  var MOVE = {
+    /* one kit all scene */
+    stay: () => 0,
+    /* four bars on one kit, four on the next */
+    phrase: (r) => Math.floor(r / 128) % 2,
+    /* three bars on one kit, the fourth on the next */
+    turn: (r) => Math.floor(r / 32) % 4 === 3 ? 1 : 0,
+    /* bar by bar: one, two, one, three */
+    bar: (r) => [0, 1, 0, 2][Math.floor(r / 32) % 4],
+    /* every half bar between two kits, and every fourth bar chopped beat by beat over all three */
+    half: (r) => Math.floor(r / 32) % 4 === 3 ? [0, 1, 2, 1][Math.floor(r / 8) % 4] : Math.floor(r / 16) % 2,
+    /* beat by beat: one, two, one, three */
+    beat: (r) => [0, 1, 0, 2][Math.floor(r / 8) % 4]
+  };
+  var TIER = {
+    fast: { groove: ["turn", "bar", "half"], peak: ["half", "beat", "bar"], tool: ["phrase", "turn"] },
+    mid: { groove: ["phrase", "turn"], peak: ["turn", "bar"], tool: ["phrase"] },
+    slow: { groove: ["stay"], peak: ["stay", "phrase"], tool: ["stay"] }
+  };
+  var FAST = /* @__PURE__ */ new Set(["dnb", "jungle", "dnbHalf", "breaks"]);
+  var MID = /* @__PURE__ */ new Set(["garage", "dubstep", "electro", "funk", "afro", "dembow"]);
+  var tierOf = (gr) => FAST.has(gr) ? "fast" : MID.has(gr) ? "mid" : "slow";
+  var hopMoves = (gr, kind) => TIER[tierOf(gr)][kind] || ["stay"];
+  var hopTracks = () => [0, 1, 2].map(trackOf).filter((t) => t >= 0 && S.tracks[t].type === "drum");
+  function hopPlan(scenes, gr, rand = Math.random) {
+    if (!threeKits()) return;
+    scenes.forEach((sc, i) => {
+      const moves = hopMoves(gr, sc.kind);
+      sc.hop = moves[Math.floor(rand() * moves.length)];
+      sc.hopK = i % 3;
+    });
+  }
+  function hopTurn(sc, gr) {
+    if (!sc.hop || !threeKits()) return;
+    const moves = hopMoves(gr, sc.kind);
+    sc.hop = moves[Math.floor(Math.random() * moves.length)];
+    sc.hopK = (sc.hopK + 1 + Math.floor(Math.random() * 2)) % 3;
+  }
+  function hopTo(hop, t, f, tick) {
+    if (!hop || !f || t !== trackOf(0) || !threeKits()) return t;
+    const ks = hopTracks();
+    if (ks.length < 2) return t;
+    const r = Math.max(0, tick - hop.start);
+    return ks[(hop.k + (MOVE[hop.speed] || MOVE.stay)(r)) % ks.length];
+  }
+
   // src/live/set-builder.js
   var avgPitch = (f) => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
   var roomFor = (f, g) => !(lvLively(f) > 0.6 && lvLively(g) > 0.6) && Math.abs(avgPitch(f) - avgPitch(g)) >= 7;
@@ -57908,7 +57963,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return tr;
     };
     const sets = { A: mkSet(), B: mkSet() }, scenes = [];
-    const MOVE = ["h2", "alt", "rest", "odd"];
+    const MOVE2 = ["h2", "alt", "rest", "odd"];
     for (const [name, kind, bars3, e, fx, parts4] of DEV === "101" ? LV_TPL101 : oneKit() ? LV_TPL1K : LV_TPL) {
       const cells = {};
       for (let t = 0; t < 8; t++) {
@@ -57925,7 +57980,7 @@ html.os-darwin.native-menu #menubar .mproj {
         if (!id || !facById(id)) continue;
         let play2 = play0;
         if (S.tracks[t].type === "tone" && r() < 0.25)
-          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE[Math.floor(r() * MOVE.length)];
+          play2 = play2 ? r() < 0.5 ? null : play2 : MOVE2[Math.floor(r() * MOVE2.length)];
         cells[t] = { id, pool };
         if (play2) cells[t].play = play2;
       }
@@ -57982,7 +58037,8 @@ html.os-darwin.native-menu #menubar .mproj {
     ],
     ["Stripped", "strip", 8, 3, "wash", { pad: "break", lead: "break", pluck: "break", bass: "intro" }],
     ["Groove B", "groove", 8, 6, "pump", { kit: "B", hats: "B", bass: "B", chords: "B", pad: "drop" }],
-    ["Switch", "tool", 8, 5, null, { kit: "half", hats: "half", perc: "drop", bass: "half", chords: "B" }],
+    /* (the Switch is the B groove with two bars of half time in it: a change of gear, not a stop) */
+    ["Switch", "tool", 8, 5, null, { kit: "switch", hats: "switch", perc: "drop", bass: "switch", chords: "B" }],
     [
       "Peak B",
       "peak",
@@ -57993,10 +58049,10 @@ html.os-darwin.native-menu #menubar .mproj {
     ]
   ];
   var CMP_SWAP = {
-    kit: ["A", "B", "C", "half"],
+    kit: ["A", "B", "C"],
     hats: ["A", "B", "C"],
     perc: ["drop"],
-    bass: ["A", "B", "C", "half"],
+    bass: ["A", "B", "C"],
     chords: ["A", "B"],
     pad: ["intro", "break", "drop"],
     lead: ["hook", "break"],
@@ -58005,7 +58061,10 @@ html.os-darwin.native-menu #menubar .mproj {
   };
   var CMP3 = { ids: {} };
   function cmpRole(t) {
-    if (oneKit() && t === trackOf(0)) return "full";
+    if (oneKit() || threeKits()) {
+      if (t === trackOf(0)) return "full";
+      if (t === trackOf(1)) return null;
+    }
     const pool = poolOf(t);
     return trackOf(slotOf(t)) === t || pool === "acid" ? pool : null;
   }
@@ -58040,13 +58099,24 @@ html.os-darwin.native-menu #menubar .mproj {
     CMP3.tags = [...(CMP3.tags || []).filter((x) => x !== tag).slice(-1), tag];
     for (const id of [...FACMAP.keys()])
       if (id.startsWith("cmp-") && FACMAP.get(id).composed && !CMP3.tags.some((x) => id.startsWith(x))) FACMAP.delete(id);
+    const part = (cc2, x, v) => {
+      const pk2 = (w) => {
+        const key = cc2.make(x, w === "C" && x !== "kit" && x !== "bass" && x !== "hats" ? "B" : w);
+        return key ? cc2.patterns[key] : null;
+      };
+      if (v !== "switch") return pk2(v);
+      const b = pk2("B"), h = pk2("half");
+      if (!b || !h) return b || h;
+      const L2 = b.bars * 16, lo = L2 / 2, hi = lo + L2 / 4, inH = (n) => n.s % L2 >= lo && n.s % L2 < hi;
+      return { ...b, notes: [...b.notes.filter((n) => !inH(n)), ...h.notes.filter((n) => inH(n) && n.s < L2)] };
+    };
     const entry = (t, role, v, k2 = 0) => {
       const cc2 = takes[k2], roles = role === "full" ? ["kit", "hats", "perc"] : [role];
-      const keys2 = roles.map((x) => cc2.make(x, v === "C" && x !== "kit" && x !== "bass" && x !== "hats" ? "B" : v)).filter(Boolean);
-      if (!keys2.length) return null;
+      const pats = roles.map((x) => part(cc2, x, v)).filter(Boolean);
+      if (!pats.length) return null;
       const id = tag + t + "-" + v + (k2 ? "~" + k2 : "");
       if (!FACMAP.has(id)) {
-        const ps = keys2.map((x) => cc2.patterns[x]), p = ps[0];
+        const ps = pats, p = ps[0];
         FACMAP.set(id, {
           id,
           name: p.name + (role === "full" ? "" : " " + role) + (k2 ? " " + "′″‴"[k2 - 1] : ""),
@@ -58095,6 +58165,8 @@ html.os-darwin.native-menu #menubar .mproj {
       if (fx) sc.fx = fx;
       return sc;
     });
+    hopPlan(scenes, c.recipe.gr, mulberry(LV.seed ^ 27421));
+    CMP3.gr = c.recipe.gr;
     for (let t = 0; t < 8; t++) {
       const role = cmpRole(t);
       if (!role) continue;
@@ -58119,6 +58191,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     if (sc.n < 2 || LV.vary <= 0) return;
+    hopTurn(sc, CMP3.gr);
     const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
     let any = false;
     for (const t in sc.cells) {
@@ -60191,11 +60264,11 @@ html.os-darwin.native-menu #menubar .mproj {
     if (vt === "kdrop") return n.n === 0 && lb >= 16;
     return false;
   }
-  function lvXExtra(t, v, vt, local, L2, nt, td, g) {
+  function lvXExtra(t, v, vt, local, L2, nt, td, g, o = t) {
     const lb = local - (L2 - 32);
     if (lb < 0) return;
     const at2 = (notes, lane) => notes.forEach(
-      (n) => n.s * 2 < 1 - 1e-9 ? emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td) : lvLater(t, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
+      (n) => n.s * 2 < 1 - 1e-9 ? emitNote(o, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td) : lvLater(o, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
     );
     if (vt === "hroll" && lb % 8 === 0 && v._vr.beats.includes(lb >> 3)) at2(rollNotes(v._vr.kind, 0, 4, 96));
     else if (vt === "sroll") {
@@ -60715,6 +60788,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     LV.cur = idx;
     LV.sceneStart = tick;
+    LV.hop = sc.hop ? { speed: sc.hop, k: sc.hopK || 0, start: tick } : null;
     const newProg = [4, 3, 5, 7, 6].flatMap(tracksOf).map((t) => sc.cells[t] && lvProg(facById(sc.cells[t].id))).find(Boolean) || null;
     const parts4 = (c) => c ? Array.from({ length: 8 }, (_, t) => c[t]).filter(Boolean).length : 0;
     const down = !hard && LV.entry !== "hard" && (jump < 0 || parts4(sc.cells) < parts4(prev && prev.cells)), leaving = [];
@@ -60986,7 +61060,7 @@ html.os-darwin.native-menu #menubar .mproj {
     v._vt = ty;
     return ty;
   }
-  function lvVarExtra(t, v, vt, local, L2, nt, td, g) {
+  function lvVarExtra(t, v, vt, local, L2, nt, td, g, o = t) {
     if (vt === "run" && local === L2 - 8) {
       const f = v.f, first = f.notes.filter((n) => n.s < 1).map((n) => n.n);
       if (!f.notes.length) return;
@@ -60998,9 +61072,9 @@ html.os-darwin.native-menu #menubar .mproj {
         (nn, i) => i ? lvLater(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), i * 2, 1.6) : emitNote(t, clamp(nn, 0, 127), clamp(90 * g, 1, 127), nt, 1.6 * td)
       );
     } else if (vt === "ghost" && slotOf(t) === 0 && local >= L2 - 32 && [6, 14, 22, 30].includes(local - (L2 - 32)))
-      emitNote(t, 2, clamp(44 * g, 1, 127), nt, td);
-    else if (vt === "open" && local === L2 - 4) emitNote(t, 5, clamp(92 * g, 1, 127), nt, 2 * td);
-    else if (vt === "kickx" && slotOf(t) === 0 && local === L2 - 6) emitNote(t, 0, clamp(104 * g, 1, 127), nt, td);
+      emitNote(o, 2, clamp(44 * g, 1, 127), nt, td);
+    else if (vt === "open" && local === L2 - 4) emitNote(o, 5, clamp(92 * g, 1, 127), nt, 2 * td);
+    else if (vt === "kickx" && slotOf(t) === 0 && local === L2 - 6) emitNote(o, 0, clamp(104 * g, 1, 127), nt, td);
   }
   function liveTick(tick, nt, td) {
     lvLaterTick(tick, nt, td);
@@ -61026,7 +61100,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     if (LV.crash) {
       LV.crash = false;
-      const tk2 = trackOf(0);
+      const tk2 = trackOf(0) >= 0 && LV.hop ? hopTo(LV.hop, trackOf(0), { pool: "full" }, tick) : trackOf(0);
       if (tk2 >= 0 && !S.tracks[tk2].mute && !lvUserOwns(tk2)) emitNote(tk2, 9, 110, nt, 0.5);
     }
     const rel = tick - LV.sceneStart;
@@ -61096,9 +61170,10 @@ html.os-darwin.native-menu #menubar .mproj {
       if (!fl && t === trackOf(0) && LV.fill && tick >= LV.fill.start) {
         const f = LV.fill.f, L2 = f.bars * 32, evs = patIndex(f).get(((ft - LV.fill.org) % L2 + L2) % L2);
         if (evs) {
+          const ft2 = LV.hop ? hopTo(LV.hop, t, { pool: "full" }, tick) : t;
           for (const n of evs)
-            emitNote(t, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
-          LV.pulse[t] = { time: nt, v: 1 };
+            emitNote(ft2, n.n, clamp(n.v * tg, 1, 127), nt + subTick(n) * (TR.subTd || td), n.l * 2 * td);
+          LV.pulse[ft2] = { time: nt, v: 1 };
         }
         continue;
       }
@@ -61113,9 +61188,11 @@ html.os-darwin.native-menu #menubar .mproj {
         if (g <= 0.02) continue;
         const L2 = v.f.bars * 32, local = ((vft - v.start) % L2 + L2) % L2;
         const vt = quiet || v.f.riff ? null : lvVarOf(v, t, Math.floor((vft - v.start) / L2), L2), last3 = local >= L2 - 32;
+        const to = LV.hop ? hopTo(LV.hop, t, v.f, tick) : t;
+        if (to !== t && (S.tracks[to].mute || lvUserOwns(to))) continue;
         if (vt) {
-          lvVarExtra(t, v, vt, local, L2, nt, td, g);
-          lvXExtra(t, v, vt, local, L2, nt, td, g);
+          lvVarExtra(t, v, vt, local, L2, nt, td, g, to);
+          lvXExtra(t, v, vt, local, L2, nt, td, g, to);
         }
         const evs = patIndex(v.f).get(local);
         if (!evs) continue;
@@ -61132,7 +61209,7 @@ html.os-darwin.native-menu #menubar .mproj {
             nn = slotOf(t) === 3 ? nn + 12 <= 64 ? nn + 12 : nn : nn + 12;
           if (tone2 && slotOf(t) >= 6 && LV.chordLock !== false && !v.f.riff) nn = lvLockNote(nn, n.l, local, chord2());
           emitNote(
-            t,
+            to,
             tone2 ? clamp(nn, 0, 127) : nn,
             clamp(n.v * g, 1, 127),
             nt + subTick(n) * (TR.subTd || td),
@@ -61142,7 +61219,7 @@ html.os-darwin.native-menu #menubar .mproj {
           if (vt === "echo" && last3 && tone2)
             lvLater(t, clamp(nn, 0, 127), clamp(n.v * g * 0.55, 1, 127), 6 + subTick(n), n.l * 2, lvUserOwns);
         }
-        LV.pulse[t] = { time: nt, v: Math.min(1, g) };
+        LV.pulse[to] = { time: nt, v: Math.min(1, g) };
       }
     }
     LV.lastTick = tick;
@@ -61177,6 +61254,8 @@ html.os-darwin.native-menu #menubar .mproj {
       cur: i,
       blend: null,
       sceneStart: 0,
+      /* (the first scene's plan for three full kits) */
+      hop: LV.scenes[i].hop ? { speed: LV.scenes[i].hop, k: LV.scenes[i].hopK || 0, start: 0 } : null,
       voices: Array.from({ length: 8 }, () => []),
       cues: [],
       fill: null,
@@ -61305,12 +61384,12 @@ html.os-darwin.native-menu #menubar .mproj {
     if (kind === "mix") {
       const x = Math.random();
       const MIX = [
-        ["hits", 34],
+        ["hits", 41],
         ["stutter", 14],
         ["roll", 14],
         ["drop", 13],
         ["gate", 13],
-        ["half", 12]
+        ["half", 5]
       ];
       let acc = 0;
       kind = MIX.find(([, w]) => (acc += w / 100) > x)?.[0] || "hits";
@@ -61454,7 +61533,7 @@ html.os-darwin.native-menu #menubar .mproj {
     lvLog(tick);
   }
   function lvRollTick(b, tick, nt, td) {
-    const t = b.kind === "roll" ? kitTrack() : lvBT(), k2 = kitTrack();
+    const kk = kitTrack(), k2 = LV.hop ? hopTo(LV.hop, kk, { pool: "full" }, tick) : kk, t = b.kind === "roll" ? k2 : lvBT();
     if (t < 0 || S.tracks[t].mute || lvUserOwns(t) || tick >= b.end - 2) return;
     const rel = tick - b.start, u = rel / b.len, step = b.len >= 32 ? u < 0.5 ? 4 : u < 0.75 ? 2 : 1 : u < 0.5 ? 2 : 1;
     if (b.kind === "roll" && rel === 0) {
@@ -70893,12 +70972,31 @@ html.os-darwin.native-menu #menubar .mproj {
       "Found " + (m === "101" ? "an MC-101" : "an MC-707") + " on MIDI, so the app switched to " + (m === "101" ? "MC-101 mode (4 tracks)" : "MC-707 mode (8 tracks)") + ". Settings › Device changes it back."
     );
   }
+  function setThreeKits(on3) {
+    if (DEV === "101") {
+      toast("The MC-101 has one drum track");
+      return;
+    }
+    S.threeKits = !!on3;
+    if (on3) S.oneKit = false;
+    scheduleSave();
+    if (typeof lvClearCustom === "function") {
+      lvClearCustom();
+      LV.edIdx = -1;
+      liveBuild();
+      if (typeof liveRender === "function") liveRender();
+    }
+    toast(
+      on3 ? "Load a different full kit on each of Drums 1, 2 and 3: in Live Mode’s composed sets the beat moves between them, fast or slow to suit the genre and the scene." : "Drums are spread over Drums 1, 2 and 3 again."
+    );
+  }
   function setOneKit(on3) {
     if (DEV === "101") {
       toast("The MC-101 always plays full kits on its one drum track");
       return;
     }
     S.oneKit = !!on3;
+    if (on3) S.threeKits = false;
     scheduleSave();
     if (typeof lvClearCustom === "function") {
       lvClearCustom();
@@ -73968,6 +74066,7 @@ html.os-darwin.native-menu #menubar .mproj {
           ],
           ["Track setup…", () => trackSetupOpen()],
           ["Drums on one track (full kits)", () => setOneKit(!S.oneKit), "", () => oneKit()],
+          ["Three full kits (Live moves the beat between them)", () => setThreeKits(!S.threeKits), "", () => threeKits()],
           [
             "Synth Mode opens",
             null,

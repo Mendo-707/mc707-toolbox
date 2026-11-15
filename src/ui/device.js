@@ -60,12 +60,34 @@ export function matchDevice(portName) {
       '. Settings › Device changes it back.'
   );
 }
+/** Three full kits on Drums 1-3 (MC-707): Live's composed sets move the main kit between them. */
+export function setThreeKits(on) {
+  if (DEV === '101') {
+    toast('The MC-101 has one drum track');
+    return;
+  }
+  S.threeKits = !!on;
+  if (on) S.oneKit = false;
+  scheduleSave();
+  if (typeof lvClearCustom === 'function') {
+    lvClearCustom();
+    LV.edIdx = -1;
+    liveBuild();
+    if (typeof liveRender === 'function') liveRender();
+  }
+  toast(
+    on
+      ? 'Load a different full kit on each of Drums 1, 2 and 3: in Live Mode’s composed sets the beat moves between them, fast or slow to suit the genre and the scene.'
+      : 'Drums are spread over Drums 1, 2 and 3 again.'
+  );
+}
 export function setOneKit(on) {
   if (DEV === '101') {
     toast('The MC-101 always plays full kits on its one drum track');
     return;
   }
   S.oneKit = !!on;
+  if (on) S.threeKits = false;
   scheduleSave();
   if (typeof lvClearCustom === 'function') {
     lvClearCustom();

@@ -62,15 +62,16 @@ export function lvXSkip(v, vt, local, L, n) {
   if (vt === 'kdrop') return n.n === 0 && lb >= 16;
   return false;
 }
-/** Extra notes for the Extreme variations, placed exactly (triplets fall between ticks). */
-export function lvXExtra(t, v, vt, local, L, nt, td, g) {
+/** Extra notes for the Extreme variations, placed exactly (triplets fall between ticks); o: the track they
+    play on (the kit the beat is on, with three full kits). */
+export function lvXExtra(t, v, vt, local, L, nt, td, g, o = t) {
   const lb = local - (L - 32);
   if (lb < 0) return;
   const at = (notes, lane) =>
     notes.forEach(n =>
       n.s * 2 < 1 - 1e-9
-        ? emitNote(t, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td)
-        : lvLater(t, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
+        ? emitNote(o, lane ?? n.n, clamp(n.v * g, 1, 127), nt + n.s * 2 * (TR.subTd || td), Math.max(1, n.l * 2) * td)
+        : lvLater(o, lane ?? n.n, clamp(n.v * g, 1, 127), n.s * 2, Math.max(1, n.l * 2))
     );
   if (vt === 'hroll' && lb % 8 === 0 && v._vr.beats.includes(lb >> 3)) at(rollNotes(v._vr.kind, 0, 4, 96));
   else if (vt === 'sroll') {

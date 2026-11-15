@@ -12,6 +12,7 @@ import { lvMove, lvUserOwns } from './moves.js';
 import { lvModeFam, lvPool } from '../library/pools.js';
 import { lvLog } from './engine.js';
 import { lvOn, lvSortCues } from './cues.js';
+import { hopTo } from './kit-hop.js';
 import { kitTrack, toneTracksAll, trackOf, tracksFor } from '../core/tracks.js';
 
 /* ---- Flash: a quick 1-2 bar break. Every part hits the same rhythm with silence in between,
@@ -60,12 +61,12 @@ function lvMakeBreak(kind, len) {
     const x = Math.random();
     /* chances out of 100: unison hits most, the bigger moves now and then */
     const MIX = [
-      ['hits', 34],
+      ['hits', 41],
       ['stutter', 14],
       ['roll', 14],
       ['drop', 13],
       ['gate', 13],
-      ['half', 12]
+      ['half', 5]
     ];
     let acc = 0;
     kind = MIX.find(([, w]) => (acc += w / 100) > x)?.[0] || 'hits';
@@ -225,8 +226,10 @@ export function lvBreakStart(b, tick) {
 }
 /* Snare roll for the Roll and Drop-out breaks: 8ths, then 16ths, then 32nds, getting louder, with a breath of silence before the loop slams back. */
 export function lvRollTick(b, tick, nt, td) {
-  const t = b.kind === 'roll' ? kitTrack() : lvBT(),
-    k = kitTrack();
+  /* (with three full kits, the kit the beat is on) */
+  const kk = kitTrack(),
+    k = LV.hop ? hopTo(LV.hop, kk, { pool: 'full' }, tick) : kk,
+    t = b.kind === 'roll' ? k : lvBT();
   if (t < 0 || S.tracks[t].mute || lvUserOwns(t) || tick >= b.end - 2) return;
   const rel = tick - b.start,
     u = rel / b.len,

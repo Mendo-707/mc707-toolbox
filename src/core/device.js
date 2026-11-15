@@ -41,6 +41,18 @@ export const oneKit = () => {
     return false;
   }
 };
+/**
+ * True when the MC-707's three drum tracks each hold a full kit (kick, snare, hats and percussion, a
+ * different kit on each): Live Mode's composed sets move the main kit between them (live/kit-hop.js).
+ */
+export const threeKits = () => {
+  if (DEV === '101') return false;
+  try {
+    return !!S.threeKits && !S.oneKit;
+  } catch (e) {
+    return false;
+  }
+};
 /** 'MC-707' or 'MC-101'. */
 export const devNm = () => (DEV === '101' ? 'MC-101' : 'MC-707');
 /** '101' or '707' for an MC-101 or MC-707 port or device name, otherwise null. */

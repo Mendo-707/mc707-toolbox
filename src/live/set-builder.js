@@ -5,7 +5,7 @@
 // beat in the B scenes; swaps then move between the composed variants.
 //
 // Reads: S, LV, DEV.
-import { DEV, devOn, oneKit } from '../core/device.js';
+import { DEV, devOn, oneKit, threeKits } from '../core/device.js';
 import { S } from '../core/state.js';
 import { facById } from '../library/index.js';
 import { DEF_ROLES, poolOf, roleInfo, slotOf, trackOf } from '../core/tracks.js';
@@ -19,6 +19,7 @@ import { lvFlavor, lvLively, lvModeFam, lvPool, lvProg } from '../library/pools.
 import { moodFilter } from '../library/mood.js';
 import { composer } from '../library/compose.js';
 import { FACMAP } from '../library/index.js';
+import { hopPlan, hopTurn } from './kit-hop.js';
 
 const avgPitch = f => f.notes.reduce((a, n) => a + n.n, 0) / Math.max(1, f.notes.length);
 /** Two melodic parts that can play together: not both busy, and at least a fifth apart on average. */
@@ -220,7 +221,8 @@ const CMP_TPL = [
   ],
   ['Stripped', 'strip', 8, 3, 'wash', { pad: 'break', lead: 'break', pluck: 'break', bass: 'intro' }],
   ['Groove B', 'groove', 8, 6, 'pump', { kit: 'B', hats: 'B', bass: 'B', chords: 'B', pad: 'drop' }],
-  ['Switch', 'tool', 8, 5, null, { kit: 'half', hats: 'half', perc: 'drop', bass: 'half', chords: 'B' }],
+  /* (the Switch is the B groove with two bars of half time in it: a change of gear, not a stop) */
+  ['Switch', 'tool', 8, 5, null, { kit: 'switch', hats: 'switch', perc: 'drop', bass: 'switch', chords: 'B' }],
   [
     'Peak B',
     'peak',
@@ -230,12 +232,12 @@ const CMP_TPL = [
     { kit: 'C', hats: 'C', perc: 'drop', bass: 'C', chords: 'B', lead: 'hook', pluck: 'drop', pad: 'drop' }
   ]
 ];
-/* the variants a swap moves between, by role */
+/* the variants a swap moves between, by role (not the half time: a swap would leave it there) */
 const CMP_SWAP = {
-  kit: ['A', 'B', 'C', 'half'],
+  kit: ['A', 'B', 'C'],
   hats: ['A', 'B', 'C'],
   perc: ['drop'],
-  bass: ['A', 'B', 'C', 'half'],
+  bass: ['A', 'B', 'C'],
   chords: ['A', 'B'],
   pad: ['intro', 'break', 'drop'],
   lead: ['hook', 'break'],
@@ -245,7 +247,11 @@ const CMP_SWAP = {
 const CMP = { ids: {} };
 /* the job each track does in a composed set (the first track of a job plays it; one full kit plays all three drum parts) */
 function cmpRole(t) {
-  if (oneKit() && t === trackOf(0)) return 'full';
+  /* (with full kits, the hats are in the beat: Drums 2 is free, or another kit for the beat to move to) */
+  if (oneKit() || threeKits()) {
+    if (t === trackOf(0)) return 'full';
+    if (t === trackOf(1)) return null;
+  }
   const pool = poolOf(t);
   return trackOf(slotOf(t)) === t || pool === 'acid' ? pool : null;
 }
@@ -295,16 +301,30 @@ function buildComposed(st) {
     if (id.startsWith('cmp-') && FACMAP.get(id).composed && !CMP.tags.some(x => id.startsWith(x))) FACMAP.delete(id);
   /* a composed part as a library pattern the Live engine plays (kept in the library while the set is up);
      k is the take (0: the set's own) */
+  /* a part's pattern; 'switch' is its B with two bars of its half time (bars 5 and 6 of 8) */
+  const part = (cc, x, v) => {
+    const pk = w => {
+      const key = cc.make(x, w === 'C' && x !== 'kit' && x !== 'bass' && x !== 'hats' ? 'B' : w);
+      return key ? cc.patterns[key] : null;
+    };
+    if (v !== 'switch') return pk(v);
+    const b = pk('B'),
+      h = pk('half');
+    if (!b || !h) return b || h;
+    const L = b.bars * 16,
+      lo = L / 2,
+      hi = lo + L / 4,
+      inH = n => n.s % L >= lo && n.s % L < hi;
+    return { ...b, notes: [...b.notes.filter(n => !inH(n)), ...h.notes.filter(n => inH(n) && n.s < L)] };
+  };
   const entry = (t, role, v, k = 0) => {
     const cc = takes[k],
       roles = role === 'full' ? ['kit', 'hats', 'perc'] : [role];
-    const keys = roles
-      .map(x => cc.make(x, v === 'C' && x !== 'kit' && x !== 'bass' && x !== 'hats' ? 'B' : v))
-      .filter(Boolean);
-    if (!keys.length) return null;
+    const pats = roles.map(x => part(cc, x, v)).filter(Boolean);
+    if (!pats.length) return null;
     const id = tag + t + '-' + v + (k ? '~' + k : '');
     if (!FACMAP.has(id)) {
-      const ps = keys.map(x => cc.patterns[x]),
+      const ps = pats,
         p = ps[0];
       FACMAP.set(id, {
         id,
@@ -365,6 +385,9 @@ function buildComposed(st) {
     if (fx) sc.fx = fx;
     return sc;
   });
+  /* Three full kits: each scene's plan for moving the beat between them */
+  hopPlan(scenes, c.recipe.gr, mulberry(LV.seed ^ 0x6b1d));
+  CMP.gr = c.recipe.gr;
   /* the variants each track can swap to: every take's */
   for (let t = 0; t < 8; t++) {
     const role = cmpRole(t);
@@ -401,6 +424,7 @@ export function lvSceneTurn(idx) {
     return;
   }
   if (sc.n < 2 || LV.vary <= 0) return;
+  hopTurn(sc, CMP.gr);
   const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
   let any = false;
   for (const t in sc.cells) {

@@ -5,12 +5,12 @@
 import { songMixerOpen } from '../song/song-mixer.js';
 import { liveMixerOpen } from '../live/live-mixer.js';
 import { $, el, toast } from '../core/dom.js';
-import { DEV, DEVS, isMcName, oneKit } from '../core/device.js';
+import { DEV, DEVS, isMcName, oneKit, threeKits } from '../core/device.js';
 import { MIDI, connectMidi } from '../services/midi.js';
 import { HOST, S, scheduleSave } from '../core/state.js';
 import { STAGE, isFull, setAwake, toggleFull } from './fullscreen.js';
 import { clipMapOpen } from '../clips/clips-screen.js';
-import { setDevice, setOneKit } from './device.js';
+import { setDevice, setOneKit, setThreeKits } from './device.js';
 import { closePops } from './controls.js';
 import { SU, closeSetup, openSetup } from './setup-wizard.js';
 import { liveStopCue } from '../live/cues.js';
@@ -230,6 +230,7 @@ function initMenubar() {
         ],
         ['Track setup…', () => trackSetupOpen()],
         ['Drums on one track (full kits)', () => setOneKit(!S.oneKit), '', () => oneKit()],
+        ['Three full kits (Live moves the beat between them)', () => setThreeKits(!S.threeKits), '', () => threeKits()],
         [
           'Synth Mode opens',
           null,
