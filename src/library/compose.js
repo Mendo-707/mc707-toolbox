@@ -3274,9 +3274,10 @@ function drumTurn(p, role, v, r) {
   if (role === 'hats') {
     const ch = p.notes.filter(n => n.n === CH),
       per = ch.filter(n => n.s < 16).length;
-    if (v === 'half' || !per) {
-      /* half time, or no closed hats: only the accents move */
-      for (const n of ch) n.v = Math.max(24, Math.min(118, n.v + Math.round((r() - 0.5) * 24)));
+    /* (hats between the 16ths, the 32nd rolls of a style counted slow, keep their rhythm too) */
+    if (v === 'half' || !per || ch.some(n => n.s % 1)) {
+      /* half time, no closed hats, or rolls: only the accents move */
+      for (const n of ch) n.v = Math.max(24, Math.min(118, (n.v || 80) + Math.round((r() - 0.5) * 24)));
       return;
     }
     const top = Math.max(60, ...ch.map(n => n.v)),
@@ -3727,6 +3728,12 @@ export function composer(style, opts = {}) {
     }
     moodPlay(p, role, v, ctx, mulberry(hashStr(role + ':edge:' + v) ^ motif.seed));
     p.notes = p.notes.filter(n => n.s >= 0 && n.s < nb * 16);
+    /* (nothing that is not a number gets out: a note without a velocity or a length stops the synth) */
+    p.notes = p.notes.filter(n => Number.isFinite(n.s) && Number.isFinite(n.n) && n.s >= 0);
+    for (const n of p.notes) {
+      n.v = Number.isFinite(n.v) ? Math.max(1, Math.min(127, Math.round(n.v))) : 90;
+      n.l = Number.isFinite(n.l) && n.l > 0 ? n.l : 1;
+    }
     if (!p.notes.length) return null;
     /* one note per step and pitch (the loudest, the longest) */
     const one = new Map();

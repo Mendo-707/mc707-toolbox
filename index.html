@@ -57445,8 +57445,8 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     if (role === "hats") {
       const ch = p.notes.filter((n) => n.n === CH2), per = ch.filter((n) => n.s < 16).length;
-      if (v === "half" || !per) {
-        for (const n of ch) n.v = Math.max(24, Math.min(118, n.v + Math.round((r() - 0.5) * 24)));
+      if (v === "half" || !per || ch.some((n) => n.s % 1)) {
+        for (const n of ch) n.v = Math.max(24, Math.min(118, (n.v || 80) + Math.round((r() - 0.5) * 24)));
         return;
       }
       const top = Math.max(60, ...ch.map((n) => n.v)), cls = per <= 5 ? 0 : per <= 10 ? 1 : 2, to = Math.max(0, Math.min(2, cls + (r() < 0.25 ? pick3(r, [-1, 1]) : 0)));
@@ -57796,6 +57796,11 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       moodPlay(p, role, v, ctx2, mulberry(hashStr(role + ":edge:" + v) ^ motif.seed));
       p.notes = p.notes.filter((n) => n.s >= 0 && n.s < nb * 16);
+      p.notes = p.notes.filter((n) => Number.isFinite(n.s) && Number.isFinite(n.n) && n.s >= 0);
+      for (const n of p.notes) {
+        n.v = Number.isFinite(n.v) ? Math.max(1, Math.min(127, Math.round(n.v))) : 90;
+        n.l = Number.isFinite(n.l) && n.l > 0 ? n.l : 1;
+      }
       if (!p.notes.length) return null;
       const one = /* @__PURE__ */ new Map();
       for (const n of p.notes) {
@@ -60089,9 +60094,64 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/live/autopilot.js
-  var ARC = ["groove", "build", "peak", "peak", "strip", "groove", "tool", "build", "peak", "strip"];
+  var JOURNEY = {
+    drop: {
+      arc: ["groove", "build", "peak", "peak", "strip", "groove", "tool", "build", "peak", "strip"],
+      reps: { groove: [0, 0], peak: [-1, 0], strip: [-1, 0], tool: [-1, 0] }
+    },
+    club: {
+      arc: ["groove", "groove", "tool", "build", "peak", "groove", "peak", "strip", "groove", "tool", "peak"],
+      reps: { groove: [0, 1], peak: [0, 1], strip: [-1, 0], tool: [0, 1] }
+    },
+    song: {
+      arc: ["groove", "peak", "groove", "peak", "tool", "strip", "build", "peak", "groove", "peak"],
+      reps: { groove: [0, 0], peak: [-1, 0], strip: [-1, -1], tool: [-1, 0] }
+    },
+    drift: {
+      arc: ["groove", "strip", "groove", "tool", "peak", "strip", "groove", "peak"],
+      reps: { groove: [0, 1], peak: [0, 1], strip: [0, 1], tool: [0, 1] }
+    }
+  };
+  var SHAPE = {
+    drop: [
+      "liquid",
+      "neuro",
+      "jungle",
+      "jumpup",
+      "halftime",
+      "dubstep",
+      "riddim",
+      "trance",
+      "progtrance",
+      "bigbeat",
+      "breakbeat"
+    ],
+    club: [
+      "deephouse",
+      "classichouse",
+      "techhouse",
+      "afrohouse",
+      "techno",
+      "minimal",
+      "acidtechno",
+      "ukgarage",
+      "speedgarage",
+      "electro",
+      "disco",
+      "nudisco"
+    ],
+    drift: ["ambient", "cinematic"]
+  };
+  var lvShape = (id = LV.style) => Object.keys(SHAPE).find((k2) => SHAPE[k2].includes(id)) || "song";
+  var arc2 = () => JOURNEY[lvShape()].arc;
+  function lvAutoReps(sc) {
+    if (!sc || sc.kind === "build") return 1;
+    const [lo, hi] = JOURNEY[lvShape()].reps[sc.kind] || [0, 0], n = LV.autoReps + lo + Math.floor(Math.random() * (hi - lo + 1));
+    return Math.max(1, Math.min(4, n, Math.floor(48 / sc.bars)));
+  }
   var FRESH_EVERY = 12;
   var ap = () => LV.ap || (LV.ap = { step: 1, played: {}, changes: 0, home: LV.key });
+  var ARC_OF = () => arc2();
   function lvAutoReset() {
     LV.ap = { step: 1, played: {}, changes: 0, home: LV.key };
   }
@@ -60102,12 +60162,14 @@ html.os-darwin.native-menu #menubar .mproj {
     if (LV.scenes[after2] && LV.scenes[after2].kind === "build") {
       const peaks = reg.filter((i) => LV.scenes[i].kind === "peak");
       if (peaks.length) {
-        const k2 = ARC.indexOf("peak", A.step);
-        if (k2 >= 0) A.step = (k2 + 1) % ARC.length;
+        const ARC2 = ARC_OF(), k2 = ARC2.indexOf("peak", A.step);
+        if (k2 >= 0) A.step = (k2 + 1) % ARC2.length;
         return least(peaks);
       }
     }
     if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 100) return lvRand(reg);
+    const ARC = ARC_OF();
+    A.step %= ARC.length;
     for (let k2 = 0; k2 < ARC.length; k2++) {
       const kind = ARC[(A.step + k2) % ARC.length], cand = reg.filter((i) => LV.scenes[i].kind === kind);
       if (!cand.length) continue;
@@ -60116,12 +60178,18 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     return lvRand(reg);
   }
-  var lvAutoTotal = (sc) => sc.bars * 32 * (sc.kind === "build" ? 1 : LV.autoReps);
+  var lvAutoTotal = (sc, reps) => {
+    if (sc.kind === "build") return sc.bars * 32;
+    const now2 = LV.apNow && LV.apNow.from === LV.sceneStart && sc === LV.scenes[LV.cur] ? LV.apNow.reps : null;
+    return sc.bars * 32 * (reps || now2 || LV.autoReps);
+  };
   var lvAutoFreshDue = (kind) => !LV.custom && ap().changes >= FRESH_EVERY && ["strip", "groove"].includes(kind);
   function lvAutoPlan() {
     const P2 = LV.apPlan;
     if (P2 && P2.from === LV.sceneStart && P2.list.length && P2.list.every((x) => LV.scenes[x.idx])) return P2;
-    const list2 = P2 && P2.list.length > 1 && P2.next === LV.sceneStart ? P2.list.slice(1) : [];
+    const went = P2 && P2.list.length && P2.next === LV.sceneStart;
+    LV.apNow = went && P2.list[0].idx === LV.cur ? { from: LV.sceneStart, reps: P2.list[0].reps } : LV.apNow;
+    const list2 = went && P2.list.length > 1 ? P2.list.slice(1) : [];
     while (list2.length < 2 && !(list2.length && list2[list2.length - 1].fresh)) {
       const idx = lvAutoPick(list2.length ? list2[list2.length - 1].idx : LV.cur), nx = LV.scenes[idx];
       if (!nx) break;
@@ -60130,7 +60198,7 @@ html.os-darwin.native-menu #menubar .mproj {
         lvAutoPlayed(idx);
         lvSceneTurn(idx);
       }
-      list2.push({ idx, fresh: fresh3 });
+      list2.push({ idx, fresh: fresh3, reps: lvAutoReps(nx) });
     }
     LV.apPlan = list2.length ? { from: LV.sceneStart, list: list2 } : null;
     LV.ver++;
@@ -60159,7 +60227,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!planned && (LV.custom || A.changes < FRESH_EVERY || !["strip", "groove"].includes(nextKind))) return false;
     A.changes = 0;
     A.played = {};
-    A.step = ARC.indexOf("strip") + 1;
+    A.step = ARC_OF().indexOf("strip") + 1;
     if (LV.key !== A.home)
       LV.cues.push({ type: "key", key: A.home, mode: LV.mode, tick: Math.ceil(TR.tick / 32) * 32 + 32 });
     liveNewSet();
@@ -61012,7 +61080,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (first) lvAutoPlanUsed(fire);
       else lvAutoPlayed(idx);
       const built = lvAutoBuild(sc, nx, fire);
-      const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
+      const hard = nx.e - sc.e >= 4 && (lvShape() !== "song" || sc.kind === "build") && lvDropExtras(fire);
       LV.cues.push({ type: "scene", idx, tick: fire, hard: hard || void 0, turned: true });
       lvAutoKey(sc, nx, fire);
       if (nx.kind === "strip") lvAutoMove(sc, fire, true);
@@ -64805,7 +64873,7 @@ html.os-darwin.native-menu #menubar .mproj {
       if (!s) break;
       if (!(i === 0 && p.next != null)) out2.push({ idx: x.idx, fresh: x.fresh, tick });
       if (x.fresh) break;
-      tick += lvAutoTotal(s);
+      tick += lvAutoTotal(s, x.reps);
     }
     return out2;
   }
@@ -64930,12 +64998,13 @@ html.os-darwin.native-menu #menubar .mproj {
     const reps = el("select", {
       id: "lvReps",
       "aria-label": "Loops per scene",
+      title: "About how many loops auto-pilot plays each scene: club grooves often play one more, song hooks and breakdowns one fewer, a lift once",
       onchange: (e) => {
         LV.autoReps = +e.target.value;
         saveLive();
       }
     });
-    [1, 2, 3, 4].forEach((n) => reps.append(el("option", { value: n }, n + (n === 1 ? " loop" : " loops"))));
+    [1, 2, 3, 4].forEach((n) => reps.append(el("option", { value: n }, "~" + n + (n === 1 ? " loop" : " loops"))));
     const top = el(
       "div",
       { class: "lvTop" },

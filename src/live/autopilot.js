@@ -1,7 +1,12 @@
 // Auto-pilot's choices, shaped like a DJ's set rather than a loop round the scene list:
-//   journey   scenes follow an arc (groove, lift, peak, a second peak, a breakdown, back to the groove …),
-//             taking the version of each kind heard least lately, so Peak and Peak B, Groove and Groove B
-//             take turns; with Chaos high it sometimes jumps somewhere else
+//   journey   scenes follow an arc shaped by the genre (JOURNEY): build and drop for drum and bass,
+//             dubstep, trance and big beat; long grooves and the odd drop for house, techno, garage and
+//             disco; verse and hook for hip hop, R&B, reggae, funk, pop and the afro and dancehall styles
+//             (a lift only before the last hook); a slow drift for ambient and cinematic. Each takes the
+//             version of a kind heard least lately, so Peak and Peak B, Groove and Groove B take turns;
+//             with Chaos high it sometimes jumps somewhere else
+//   lengths   how many loops a scene plays is chosen when it is planned, around Repeats: longer grooves
+//             in club music, shorter hooks in songs, a lift once
 //   builds    a lift into a peak gets a snare build, the filter riser and the drop
 //   fresh     every so often (about every twelve scene changes) a breakdown brings in New patterns, so a
 //             long set keeps finding new parts in the same style; never on a set you edited yourself
@@ -21,10 +26,70 @@ import { lvBlendIn } from './cues.js';
 import { TR } from '../services/transport.js';
 import { lvSceneTurn } from './set-builder.js';
 
-/* the arc, by scene kind; it starts again at its first step */
-const ARC = ['groove', 'build', 'peak', 'peak', 'strip', 'groove', 'tool', 'build', 'peak', 'strip'];
+/* The arcs, by scene kind (each starts again at its first step), and how many loops each kind plays
+   around Repeats ([fewer, more]), by the shape of the genre's music. */
+const JOURNEY = {
+  drop: {
+    arc: ['groove', 'build', 'peak', 'peak', 'strip', 'groove', 'tool', 'build', 'peak', 'strip'],
+    reps: { groove: [0, 0], peak: [-1, 0], strip: [-1, 0], tool: [-1, 0] }
+  },
+  club: {
+    arc: ['groove', 'groove', 'tool', 'build', 'peak', 'groove', 'peak', 'strip', 'groove', 'tool', 'peak'],
+    reps: { groove: [0, 1], peak: [0, 1], strip: [-1, 0], tool: [0, 1] }
+  },
+  song: {
+    arc: ['groove', 'peak', 'groove', 'peak', 'tool', 'strip', 'build', 'peak', 'groove', 'peak'],
+    reps: { groove: [0, 0], peak: [-1, 0], strip: [-1, -1], tool: [-1, 0] }
+  },
+  drift: {
+    arc: ['groove', 'strip', 'groove', 'tool', 'peak', 'strip', 'groove', 'peak'],
+    reps: { groove: [0, 1], peak: [0, 1], strip: [0, 1], tool: [0, 1] }
+  }
+};
+const SHAPE = {
+  drop: [
+    'liquid',
+    'neuro',
+    'jungle',
+    'jumpup',
+    'halftime',
+    'dubstep',
+    'riddim',
+    'trance',
+    'progtrance',
+    'bigbeat',
+    'breakbeat'
+  ],
+  club: [
+    'deephouse',
+    'classichouse',
+    'techhouse',
+    'afrohouse',
+    'techno',
+    'minimal',
+    'acidtechno',
+    'ukgarage',
+    'speedgarage',
+    'electro',
+    'disco',
+    'nudisco'
+  ],
+  drift: ['ambient', 'cinematic']
+};
+/** The shape of the style's journey: 'drop', 'club', 'song' or 'drift'. */
+export const lvShape = (id = LV.style) => Object.keys(SHAPE).find(k => SHAPE[k].includes(id)) || 'song';
+const arc = () => JOURNEY[lvShape()].arc;
+/** How many loops auto-pilot plays a scene this time: around Repeats, by the genre's shape (a lift once). */
+export function lvAutoReps(sc) {
+  if (!sc || sc.kind === 'build') return 1;
+  const [lo, hi] = JOURNEY[lvShape()].reps[sc.kind] || [0, 0],
+    n = LV.autoReps + lo + Math.floor(Math.random() * (hi - lo + 1));
+  /* (never past 48 bars, nor under one loop) */
+  return Math.max(1, Math.min(4, n, Math.floor(48 / sc.bars)));
+}
 const FRESH_EVERY = 12;
 const ap = () => LV.ap || (LV.ap = { step: 1, played: {}, changes: 0, home: LV.key });
+const ARC_OF = () => arc();
 /** Forget the journey (a new start). */
 export function lvAutoReset() {
   /* a set starts on its groove: the journey goes on from there */
@@ -44,12 +109,15 @@ export function lvAutoPick(after = LV.cur) {
   if (LV.scenes[after] && LV.scenes[after].kind === 'build') {
     const peaks = reg.filter(i => LV.scenes[i].kind === 'peak');
     if (peaks.length) {
-      const k = ARC.indexOf('peak', A.step);
+      const ARC = ARC_OF(),
+        k = ARC.indexOf('peak', A.step);
       if (k >= 0) A.step = (k + 1) % ARC.length;
       return least(peaks);
     }
   }
   if (LV.chaos > 60 && Math.random() < (LV.chaos - 60) / 100) return lvRand(reg);
+  const ARC = ARC_OF();
+  A.step %= ARC.length;
   for (let k = 0; k < ARC.length; k++) {
     const kind = ARC[(A.step + k) % ARC.length],
       cand = reg.filter(i => LV.scenes[i].kind === kind);
@@ -61,10 +129,15 @@ export function lvAutoPick(after = LV.cur) {
   return lvRand(reg);
 }
 /**
- * How long auto-pilot plays a scene, in ticks: its loop times Repeats, but a lift once (a build peaks at
- * its end, so a second pass would build up, stop, and build again from nothing).
+ * How long auto-pilot plays a scene, in ticks: its loop times the loops chosen for it (lvAutoReps, when it
+ * was planned; reps for a planned one), a lift once (a build peaks at its end, so a second pass would build
+ * up, stop, and build again from nothing).
  */
-export const lvAutoTotal = sc => sc.bars * 32 * (sc.kind === 'build' ? 1 : LV.autoReps);
+export const lvAutoTotal = (sc, reps) => {
+  if (sc.kind === 'build') return sc.bars * 32;
+  const now = LV.apNow && LV.apNow.from === LV.sceneStart && sc === LV.scenes[LV.cur] ? LV.apNow.reps : null;
+  return sc.bars * 32 * (reps || now || LV.autoReps);
+};
 /** Would auto-pilot bring in fresh patterns instead of a scene of this kind (lvAutoFresh)? */
 export const lvAutoFreshDue = kind => !LV.custom && ap().changes >= FRESH_EVERY && ['strip', 'groove'].includes(kind);
 /**
@@ -77,8 +150,11 @@ export const lvAutoFreshDue = kind => !LV.custom && ap().changes >= FRESH_EVERY 
 export function lvAutoPlan() {
   const P = LV.apPlan;
   if (P && P.from === LV.sceneStart && P.list.length && P.list.every(x => LV.scenes[x.idx])) return P;
-  /* the scene that just started was the plan's first: the rest of the plan carries on */
-  const list = P && P.list.length > 1 && P.next === LV.sceneStart ? P.list.slice(1) : [];
+  /* the scene that just started was the plan's first: the rest of the plan carries on, and the loops
+     chosen for it are its length now */
+  const went = P && P.list.length && P.next === LV.sceneStart;
+  LV.apNow = went && P.list[0].idx === LV.cur ? { from: LV.sceneStart, reps: P.list[0].reps } : LV.apNow;
+  const list = went && P.list.length > 1 ? P.list.slice(1) : [];
   while (list.length < 2 && !(list.length && list[list.length - 1].fresh)) {
     const idx = lvAutoPick(list.length ? list[list.length - 1].idx : LV.cur),
       nx = LV.scenes[idx];
@@ -90,7 +166,7 @@ export function lvAutoPlan() {
       /* (a scene that comes round again is played another way: chosen now, so the timeline shows it) */
       lvSceneTurn(idx);
     }
-    list.push({ idx, fresh });
+    list.push({ idx, fresh, reps: lvAutoReps(nx) });
   }
   LV.apPlan = list.length ? { from: LV.sceneStart, list } : null;
   LV.ver++;
@@ -134,7 +210,7 @@ export function lvAutoFresh(nextKind, planned) {
   if (!planned && (LV.custom || A.changes < FRESH_EVERY || !['strip', 'groove'].includes(nextKind))) return false;
   A.changes = 0;
   A.played = {};
-  A.step = ARC.indexOf('strip') + 1;
+  A.step = ARC_OF().indexOf('strip') + 1;
   if (LV.key !== A.home)
     LV.cues.push({ type: 'key', key: A.home, mode: LV.mode, tick: Math.ceil(TR.tick / 32) * 32 + 32 });
   liveNewSet();

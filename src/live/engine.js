@@ -36,7 +36,8 @@ import {
   lvAutoPlanUsed,
   lvAutoPlayed,
   lvAutoReset,
-  lvAutoTotal
+  lvAutoTotal,
+  lvShape
 } from './autopilot.js';
 import { lvMaskOff } from './scene-templates.js';
 import { lvModeFam, lvPool, lvProg } from '../library/pools.js';
@@ -524,7 +525,8 @@ function liveAutoStep(tick, rel) {
     if (first) lvAutoPlanUsed(fire);
     else lvAutoPlayed(idx);
     const built = lvAutoBuild(sc, nx, fire);
-    const hard = nx.e - sc.e >= 4 && lvDropExtras(fire);
+    /* (a song's hook comes in on the beat: a drop only where a lift leads into it) */
+    const hard = nx.e - sc.e >= 4 && (lvShape() !== 'song' || sc.kind === 'build') && lvDropExtras(fire);
     LV.cues.push({ type: 'scene', idx, tick: fire, hard: hard || undefined, turned: true });
     lvAutoKey(sc, nx, fire);
     if (nx.kind === 'strip') lvAutoMove(sc, fire, true);

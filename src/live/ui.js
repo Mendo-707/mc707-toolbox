@@ -111,7 +111,7 @@ export function lvPlanned() {
     if (!s) break;
     if (!(i === 0 && p.next != null)) out.push({ idx: x.idx, fresh: x.fresh, tick });
     if (x.fresh) break;
-    tick += lvAutoTotal(s);
+    tick += lvAutoTotal(s, x.reps);
   }
   return out;
 }
@@ -239,12 +239,14 @@ export function liveInit() {
   const reps = el('select', {
     id: 'lvReps',
     'aria-label': 'Loops per scene',
+    title:
+      'About how many loops auto-pilot plays each scene: club grooves often play one more, song hooks and breakdowns one fewer, a lift once',
     onchange: e => {
       LV.autoReps = +e.target.value;
       saveLive();
     }
   });
-  [1, 2, 3, 4].forEach(n => reps.append(el('option', { value: n }, n + (n === 1 ? ' loop' : ' loops'))));
+  [1, 2, 3, 4].forEach(n => reps.append(el('option', { value: n }, '~' + n + (n === 1 ? ' loop' : ' loops'))));
   const top = el(
     'div',
     { class: 'lvTop' },

@@ -50,7 +50,13 @@ test('Live Mode, Patterns: Composed: a set written from one progression, played 
       names,
       progs: progs.size,
       composed: sc.every(s => Object.values(s.cells).every(c => f(c.id) && f(c.id).composed)),
-      liftEnds: lift && Object.values(lift.cells).every(c => !f(c.id).notes.some(x => x.s >= f(c.id).bars * 16 - 4)),
+      /* (the build as written; some of its other shapes roll right into the drop) */
+      liftEnds:
+        lift &&
+        Object.values(lift.cells).every(c => {
+          const p = f((c.ways || [c.id])[0]);
+          return !p.notes.some(x => x.s >= p.bars * 16 - 4);
+        }),
       hook: peak && Object.keys(peak.cells).some(t => tone(+t) && f(peak.cells[t].id).name.startsWith('Hook')),
       swaps: swaps.every(Boolean),
       scenes: seen.size
