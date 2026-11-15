@@ -81,3 +81,18 @@ export function hopTo(hop, t, f, tick) {
   const r = Math.max(0, tick - hop.start);
   return ks[(hop.k + (MOVE[hop.speed] || MOVE.stay)(r)) % ks.length];
 }
+/**
+ * For the timeline: where the beat is in bar `bar` of scene sc, for drum track t. Null with no plan or for
+ * a track that holds no kit; else {on: the beat plays on t's kit in this bar, chop: it moves between kits
+ * within the bar}.
+ */
+export function hopLane(sc, t, bar) {
+  if (!sc || !sc.hop || !threeKits()) return null;
+  const ks = hopTracks(),
+    i = ks.indexOf(t);
+  if (i < 0 || ks.length < 2) return null;
+  const move = MOVE[sc.hop] || MOVE.stay,
+    used = new Set();
+  for (let r = bar * 32; r < bar * 32 + 32; r += 4) used.add(((sc.hopK || 0) + move(r)) % ks.length);
+  return { on: used.has(i), chop: used.size > 1 };
+}

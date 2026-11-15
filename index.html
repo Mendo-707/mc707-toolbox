@@ -3730,6 +3730,17 @@ body[data-mode='live'] #live {
 .lvCell.em {
   opacity: 0.35;
 }
+/* Three full kits: the beat on another kit this bar, and a bar that chops between kits */
+.lvCell.hop {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 22%, transparent);
+}
+.lvCell.chop {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 6px,
+    color-mix(in srgb, #000 28%, transparent) 6px 12px
+  );
+}
 .lvCell.fill {
   background: #ffa629;
   color: #1e1f23;
@@ -54158,6 +54169,61 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var lvHue = (e) => Math.round(215 - e * 19);
 
+  // src/live/kit-hop.js
+  var MOVE = {
+    /* one kit all scene */
+    stay: () => 0,
+    /* four bars on one kit, four on the next */
+    phrase: (r) => Math.floor(r / 128) % 2,
+    /* three bars on one kit, the fourth on the next */
+    turn: (r) => Math.floor(r / 32) % 4 === 3 ? 1 : 0,
+    /* bar by bar: one, two, one, three */
+    bar: (r) => [0, 1, 0, 2][Math.floor(r / 32) % 4],
+    /* every half bar between two kits, and every fourth bar chopped beat by beat over all three */
+    half: (r) => Math.floor(r / 32) % 4 === 3 ? [0, 1, 2, 1][Math.floor(r / 8) % 4] : Math.floor(r / 16) % 2,
+    /* beat by beat: one, two, one, three */
+    beat: (r) => [0, 1, 0, 2][Math.floor(r / 8) % 4]
+  };
+  var TIER = {
+    fast: { groove: ["turn", "bar", "half"], peak: ["half", "beat", "bar"], tool: ["phrase", "turn"] },
+    mid: { groove: ["phrase", "turn"], peak: ["turn", "bar"], tool: ["phrase"] },
+    slow: { groove: ["stay"], peak: ["stay", "phrase"], tool: ["stay"] }
+  };
+  var FAST = /* @__PURE__ */ new Set(["dnb", "jungle", "dnbHalf", "breaks"]);
+  var MID = /* @__PURE__ */ new Set(["garage", "dubstep", "electro", "funk", "afro", "dembow"]);
+  var tierOf = (gr) => FAST.has(gr) ? "fast" : MID.has(gr) ? "mid" : "slow";
+  var hopMoves = (gr, kind) => TIER[tierOf(gr)][kind] || ["stay"];
+  var hopTracks = () => [0, 1, 2].map(trackOf).filter((t) => t >= 0 && S.tracks[t].type === "drum");
+  function hopPlan(scenes, gr, rand = Math.random) {
+    if (!threeKits()) return;
+    scenes.forEach((sc, i) => {
+      const moves = hopMoves(gr, sc.kind);
+      sc.hop = moves[Math.floor(rand() * moves.length)];
+      sc.hopK = i % 3;
+    });
+  }
+  function hopTurn(sc, gr) {
+    if (!sc.hop || !threeKits()) return;
+    const moves = hopMoves(gr, sc.kind);
+    sc.hop = moves[Math.floor(Math.random() * moves.length)];
+    sc.hopK = (sc.hopK + 1 + Math.floor(Math.random() * 2)) % 3;
+  }
+  function hopTo(hop, t, f, tick) {
+    if (!hop || !f || t !== trackOf(0) || !threeKits()) return t;
+    const ks = hopTracks();
+    if (ks.length < 2) return t;
+    const r = Math.max(0, tick - hop.start);
+    return ks[(hop.k + (MOVE[hop.speed] || MOVE.stay)(r)) % ks.length];
+  }
+  function hopLane(sc, t, bar2) {
+    if (!sc || !sc.hop || !threeKits()) return null;
+    const ks = hopTracks(), i = ks.indexOf(t);
+    if (i < 0 || ks.length < 2) return null;
+    const move = MOVE[sc.hop] || MOVE.stay, used = /* @__PURE__ */ new Set();
+    for (let r = bar2 * 32; r < bar2 * 32 + 32; r += 4) used.add(((sc.hopK || 0) + move(r)) % ks.length);
+    return { on: used.has(i), chop: used.size > 1 };
+  }
+
   // src/live/humanize-ui.js
   function lvHumApply(reset) {
     HUM.amount = Math.max(0, Math.min(100, +LV.human || 0));
@@ -57832,53 +57898,6 @@ html.os-darwin.native-menu #menubar .mproj {
       recipe,
       mood
     };
-  }
-
-  // src/live/kit-hop.js
-  var MOVE = {
-    /* one kit all scene */
-    stay: () => 0,
-    /* four bars on one kit, four on the next */
-    phrase: (r) => Math.floor(r / 128) % 2,
-    /* three bars on one kit, the fourth on the next */
-    turn: (r) => Math.floor(r / 32) % 4 === 3 ? 1 : 0,
-    /* bar by bar: one, two, one, three */
-    bar: (r) => [0, 1, 0, 2][Math.floor(r / 32) % 4],
-    /* every half bar between two kits, and every fourth bar chopped beat by beat over all three */
-    half: (r) => Math.floor(r / 32) % 4 === 3 ? [0, 1, 2, 1][Math.floor(r / 8) % 4] : Math.floor(r / 16) % 2,
-    /* beat by beat: one, two, one, three */
-    beat: (r) => [0, 1, 0, 2][Math.floor(r / 8) % 4]
-  };
-  var TIER = {
-    fast: { groove: ["turn", "bar", "half"], peak: ["half", "beat", "bar"], tool: ["phrase", "turn"] },
-    mid: { groove: ["phrase", "turn"], peak: ["turn", "bar"], tool: ["phrase"] },
-    slow: { groove: ["stay"], peak: ["stay", "phrase"], tool: ["stay"] }
-  };
-  var FAST = /* @__PURE__ */ new Set(["dnb", "jungle", "dnbHalf", "breaks"]);
-  var MID = /* @__PURE__ */ new Set(["garage", "dubstep", "electro", "funk", "afro", "dembow"]);
-  var tierOf = (gr) => FAST.has(gr) ? "fast" : MID.has(gr) ? "mid" : "slow";
-  var hopMoves = (gr, kind) => TIER[tierOf(gr)][kind] || ["stay"];
-  var hopTracks = () => [0, 1, 2].map(trackOf).filter((t) => t >= 0 && S.tracks[t].type === "drum");
-  function hopPlan(scenes, gr, rand = Math.random) {
-    if (!threeKits()) return;
-    scenes.forEach((sc, i) => {
-      const moves = hopMoves(gr, sc.kind);
-      sc.hop = moves[Math.floor(rand() * moves.length)];
-      sc.hopK = i % 3;
-    });
-  }
-  function hopTurn(sc, gr) {
-    if (!sc.hop || !threeKits()) return;
-    const moves = hopMoves(gr, sc.kind);
-    sc.hop = moves[Math.floor(Math.random() * moves.length)];
-    sc.hopK = (sc.hopK + 1 + Math.floor(Math.random() * 2)) % 3;
-  }
-  function hopTo(hop, t, f, tick) {
-    if (!hop || !f || t !== trackOf(0) || !threeKits()) return t;
-    const ks = hopTracks();
-    if (ks.length < 2) return t;
-    const r = Math.max(0, tick - hop.start);
-    return ks[(hop.k + (MOVE[hop.speed] || MOVE.stay)(r)) % ks.length];
   }
 
   // src/live/set-builder.js
@@ -65842,7 +65861,10 @@ html.os-darwin.native-menu #menubar .mproj {
           prevId = c ? c.id : null;
           continue;
         }
-        const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32), id = s.ids[ti];
+        const hk = hopLane(LV.scenes[s.idx], ti, Math.floor((tk2 - sStart(s)) / 32)), beatId = hk && s.ids[trackOf(0)];
+        const ovFill = ti === trackOf(0) && pendFill.find((c) => c.tick <= tk2 && tk2 < c.tick + 32);
+        let id = s.ids[ti], hopped = false;
+        if (hk && beatId && ti !== trackOf(0) && hk.on && !id) id = beatId, hopped = true;
         if (!id) {
           if (ovFill)
             row2.append(
@@ -65862,17 +65884,17 @@ html.os-darwin.native-menu #menubar .mproj {
         const f = facById(id);
         if (!f) continue;
         const ssc = LV.scenes[s.idx], scell = ssc && ssc.cells[ti], bar2 = Math.floor((tk2 - sStart(s)) / 32);
-        const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars);
+        const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars) || hk && ti === trackOf(0) && !hk.on;
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
-        const label2 = isFill ? "Fill" : resting ? "" : phase === 0 || id !== prevId ? f.name : "";
+        const label2 = isFill ? "Fill" : resting ? "" : hk && hk.chop && hk.on ? "⇄ " + (phase === 0 || id !== prevId ? f.name : "") : phase === 0 || id !== prevId ? f.name : "";
         row2.append(
           el(
             "div",
             {
-              class: "lvCell" + (phase === 0 || id !== prevId ? " st" : "") + (isFill ? " fill" : "") + (resting ? " rest" : "") + (lvEmute(ti) ? " em" : ""),
+              class: "lvCell" + (phase === 0 || id !== prevId ? " st" : "") + (isFill ? " fill" : "") + (resting ? " rest" : "") + (hopped ? " hop" : "") + (hk && hk.chop && hk.on ? " chop" : "") + (lvEmute(ti) ? " em" : ""),
               style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
-              title: f.name + (resting ? " (resting this bar)" : lvEmute(ti) ? " (held back by the energy level)" : "")
+              title: f.name + (hk && hk.chop && hk.on ? " (the beat moves between kits in this bar)" : hopped ? " (the beat on this kit)" : resting ? hk && ti === trackOf(0) && !hk.on ? " (the beat is on another kit this bar)" : " (resting this bar)" : lvEmute(ti) ? " (held back by the energy level)" : "")
             },
             label2
           )

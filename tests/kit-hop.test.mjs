@@ -74,6 +74,24 @@ test('Three full kits: the beat moves between the drum tracks, fast in drum and 
     cells.every(ts => !ts.includes(1)),
     'Drums 2 is free for the beat: ' + JSON.stringify(cells)
   );
+  /* the timeline draws the beat on the kits it moves to */
+  const drawn = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.S.threeKits = true;
+    Object.assign(LV, { style: 'liquid', flavor: 'composed', custom: false, seed: 7 });
+    a.liveBuild();
+    a.liveStart(LV.scenes.findIndex(s => s.hop === 'half' || s.hop === 'beat' || s.hop === 'bar'));
+    a.TICKER.stop();
+    for (let i = 0; i < 40; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    LV.ver++;
+    await new Promise(r => setTimeout(r, 400));
+    const n = document.querySelectorAll('.lvCell.hop, .lvCell.chop').length;
+    a.stopAll();
+    a.S.threeKits = false;
+    return n;
+  });
+  assert.ok(drawn > 0, 'the moving beat shows on the timeline');
   assert.deepEqual(errors, []);
 });
 

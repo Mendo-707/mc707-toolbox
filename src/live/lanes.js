@@ -14,6 +14,7 @@ import { cmChipFill, cmPickItems } from '../clips/clip-map.js';
 import { NK } from '../library/styles.js';
 import { showMenu } from '../ui/menu.js';
 import { LV, MUG } from './state.js';
+import { hopLane } from './kit-hop.js';
 import { trackOf, tracksFor } from '../core/tracks.js';
 import { lvIsFlash, lvScCol } from './themes.js';
 import { lvPlayOn } from './scene-templates.js';
@@ -154,8 +155,13 @@ export function liveRenderLanes(b0, force) {
         prevId = c ? c.id : null;
         continue;
       }
-      const ovFill = ti === trackOf(0) && pendFill.find(c => c.tick <= tk && tk < c.tick + 32),
-        id = s.ids[ti];
+      /* Three full kits: the beat drawn on the kit it plays on this bar (live/kit-hop.js) */
+      const hk = hopLane(LV.scenes[s.idx], ti, Math.floor((tk - sStart(s)) / 32)),
+        beatId = hk && s.ids[trackOf(0)];
+      const ovFill = ti === trackOf(0) && pendFill.find(c => c.tick <= tk && tk < c.tick + 32);
+      let id = s.ids[ti],
+        hopped = false;
+      if (hk && beatId && ti !== trackOf(0) && hk.on && !id) ((id = beatId), (hopped = true));
       if (!id) {
         if (ovFill)
           row.append(
@@ -178,10 +184,20 @@ export function liveRenderLanes(b0, force) {
         scell = ssc && ssc.cells[ti],
         bar = Math.floor((tk - sStart(s)) / 32);
       /* a bar the part sits out (its scene says first half, every other bar …): a faint outline, so the part does not seem to vanish */
-      const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar % ssc.bars, ssc.bars);
+      const resting =
+        (scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar % ssc.bars, ssc.bars)) ||
+        (hk && ti === trackOf(0) && !hk.on);
       const phase = bar % f.bars;
       const isFill = ti === trackOf(0) && pendFill.some(c => c.tick <= tk && tk < c.tick + 32);
-      const label = isFill ? 'Fill' : resting ? '' : phase === 0 || id !== prevId ? f.name : '';
+      const label = isFill
+        ? 'Fill'
+        : resting
+          ? ''
+          : hk && hk.chop && hk.on
+            ? '⇄ ' + (phase === 0 || id !== prevId ? f.name : '')
+            : phase === 0 || id !== prevId
+              ? f.name
+              : '';
       row.append(
         el(
           'div',
@@ -191,9 +207,23 @@ export function liveRenderLanes(b0, force) {
               (phase === 0 || id !== prevId ? ' st' : '') +
               (isFill ? ' fill' : '') +
               (resting ? ' rest' : '') +
+              (hopped ? ' hop' : '') +
+              (hk && hk.chop && hk.on ? ' chop' : '') +
               (lvEmute(ti) ? ' em' : ''),
             style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px',
-            title: f.name + (resting ? ' (resting this bar)' : lvEmute(ti) ? ' (held back by the energy level)' : '')
+            title:
+              f.name +
+              (hk && hk.chop && hk.on
+                ? ' (the beat moves between kits in this bar)'
+                : hopped
+                  ? ' (the beat on this kit)'
+                  : resting
+                    ? hk && ti === trackOf(0) && !hk.on
+                      ? ' (the beat is on another kit this bar)'
+                      : ' (resting this bar)'
+                    : lvEmute(ti)
+                      ? ' (held back by the energy level)'
+                      : '')
           },
           label
         )

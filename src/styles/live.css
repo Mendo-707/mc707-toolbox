@@ -771,6 +771,17 @@ body[data-mode='live'] #live {
 .lvCell.em {
   opacity: 0.35;
 }
+/* Three full kits: the beat on another kit this bar, and a bar that chops between kits */
+.lvCell.hop {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 22%, transparent);
+}
+.lvCell.chop {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 6px,
+    color-mix(in srgb, #000 28%, transparent) 6px 12px
+  );
+}
 .lvCell.fill {
   background: #ffa629;
   color: #1e1f23;
