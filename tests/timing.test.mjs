@@ -134,6 +134,11 @@ test('MIDI offset: every message moves together, so a clip change still comes be
     const a = window.__app;
     a.ensureAudio();
     await a.connectMidi();
+    /* both clocks held still, so the three runs compare exactly (a busy machine moved them apart) */
+    const pn = performance.now.bind(performance),
+      wall = pn();
+    performance.now = () => wall;
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 1, configurable: true });
     const run = off => {
       a.S.midiOffset = off;
       window.__out.length = 0;
@@ -148,6 +153,8 @@ test('MIDI offset: every message moves together, so a clip change still comes be
       early = run(-40),
       late = run(60);
     a.S.midiOffset = 0;
+    performance.now = pn;
+    delete a.AU.ctx.currentTime;
     return { zero, early, late };
   });
   for (const [name, ts, d] of [
