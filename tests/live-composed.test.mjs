@@ -416,3 +416,46 @@ test('Builds and drops vary: the Lift takes other shapes each time, and Mixed dr
     assert.notEqual(r.lands[i], r.lands[i - 1], 'not the same landing twice running');
   assert.deepEqual(errors, []);
 });
+
+test('A composed set you changed comes back after a restart, with its parts (and never as an empty set)', async () => {
+  const live = { flavor: 'composed', flavorPick: true, style: 'techno', auto: false };
+  const first = await openApp({ storage: { 'mc707-live': JSON.stringify(live) } });
+  await first.page.click('#menubar .mtab[data-mode=live]');
+  await first.page.waitForTimeout(200);
+  /* what renaming a scene saves (live/scene-editor.js lvSaveScenes) */
+  const saved = await first.page.evaluate(() => {
+    const LV = window.__app.LV;
+    LV.scenes[1].name = 'My lift';
+    return {
+      scenes: JSON.stringify({ style: LV.style, seed: LV.seed, scenes: LV.scenes }),
+      live: JSON.stringify({
+        ...JSON.parse(localStorage.getItem('mc707-live')),
+        custom: true,
+        seed: LV.seed,
+        key: LV.key
+      }),
+      cells: LV.scenes.map(s => Object.keys(s.cells).length)
+    };
+  });
+  const look = async storage => {
+    const { page, errors } = await openApp({ storage });
+    await page.click('#menubar .mtab[data-mode=live]');
+    await page.waitForTimeout(200);
+    const r = await page.evaluate(() => ({
+      names: window.__app.LV.scenes.map(s => s.name),
+      cells: window.__app.LV.scenes.map(s => Object.keys(s.cells).length)
+    }));
+    return { ...r, errors };
+  };
+  const back = await look({ 'mc707-live': saved.live, 'mc707-live-scenes2': saved.scenes });
+  assert.equal(back.names[1], 'My lift', 'your change is kept');
+  assert.deepEqual(back.cells, saved.cells, 'every scene has its parts');
+  /* saved scenes whose patterns cannot be written again (another key since): a fresh set, not an empty one */
+  const other = JSON.stringify({ ...JSON.parse(saved.live), key: (JSON.parse(saved.live).key + 5) % 12 });
+  const fresh = await look({ 'mc707-live': other, 'mc707-live-scenes2': saved.scenes });
+  assert.ok(
+    fresh.cells.every(n => n > 0),
+    'a fresh set: ' + fresh.cells
+  );
+  assert.deepEqual([...first.errors, ...back.errors, ...fresh.errors], []);
+});

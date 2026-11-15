@@ -47,7 +47,11 @@ export function lvLoadScenes() {
         rh: s.rh || undefined,
         cells: Object.fromEntries(Object.entries(s.cells).filter(([t, c]) => c && facById(c.id)))
       }));
-    if (!sc.length) return false;
+    /* scenes whose patterns are gone (most of their parts lost) are not loaded: a fresh set is better than
+       an empty one */
+    const had = o.scenes.reduce((n, s) => n + Object.keys((s && s.cells) || {}).length, 0),
+      has = sc.reduce((n, s) => n + Object.keys(s.cells).length, 0);
+    if (!sc.length || has < had / 2) return false;
     LV.scenes = sc.slice(0, 7);
     LV.custom = true;
     return true;

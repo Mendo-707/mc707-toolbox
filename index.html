@@ -57830,10 +57830,15 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.style = st.id;
     if (!LV.mode) LV.mode = lvModeFam(st.scale);
     LV.fillIds = lvPool(st, "fill");
-    if (LV.custom && lvLoadScenes()) {
-      if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
-      LV.ver++;
-      return;
+    if (LV.custom) {
+      const fresh3 = LV.flavor === "composed" && (buildComposed(st), LV.scenes);
+      if (lvLoadScenes()) {
+        if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
+        LV.ver++;
+        return;
+      }
+      LV.custom = false;
+      if (fresh3) return;
     }
     LV.custom = false;
     if (LV.flavor === "composed") return buildComposed(st);
@@ -61493,7 +61498,8 @@ html.os-darwin.native-menu #menubar .mproj {
         rh: s.rh || void 0,
         cells: Object.fromEntries(Object.entries(s.cells).filter(([t, c]) => c && facById(c.id)))
       }));
-      if (!sc.length) return false;
+      const had = o.scenes.reduce((n, s) => n + Object.keys(s && s.cells || {}).length, 0), has2 = sc.reduce((n, s) => n + Object.keys(s.cells).length, 0);
+      if (!sc.length || has2 < had / 2) return false;
       LV.scenes = sc.slice(0, 7);
       LV.custom = true;
       return true;
@@ -67783,7 +67789,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
 
   // src/core/version.js
-  var VERSION = "1.9.4";
+  var VERSION = "1.9.5";
   var LINKS = {
     home: "https://github.com/Mendo-707/mc707-toolbox",
     releases: "https://github.com/Mendo-707/mc707-toolbox/releases",

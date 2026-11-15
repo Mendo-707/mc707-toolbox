@@ -31,10 +31,17 @@ export function liveBuild() {
   LV.style = st.id;
   if (!LV.mode) LV.mode = lvModeFam(st.scale);
   LV.fillIds = lvPool(st, 'fill');
-  if (LV.custom && lvLoadScenes()) {
-    if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
-    LV.ver++;
-    return;
+  if (LV.custom) {
+    /* A composed set's patterns are written, not kept: write the set again first (the same style, seed,
+       key and mood give the same patterns, under the same ids), so the scenes you changed find them. */
+    const fresh = LV.flavor === 'composed' && (buildComposed(st), LV.scenes);
+    if (lvLoadScenes()) {
+      if (LV.cur >= LV.scenes.length || lvIsFlash(LV.scenes[LV.cur])) LV.cur = 0;
+      LV.ver++;
+      return;
+    }
+    LV.custom = false;
+    if (fresh) return;
   }
   LV.custom = false;
   if (LV.flavor === 'composed') return buildComposed(st);
