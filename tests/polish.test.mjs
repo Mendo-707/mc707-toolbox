@@ -69,11 +69,16 @@ test('Template builder: Escape closes it at once; the first time it takes the so
   assert.deepEqual(errors, []);
 });
 
-test('Live Mode: LoopCompose and Loop rec open the right column', async () => {
+test('Live Mode: Loop rec, with LoopCompose in it, opens the right column', async () => {
   const { page, errors } = await openApp();
   await page.click('#menubar .mtab[data-mode=live]');
-  const ids = await page.evaluate(() => [...document.querySelector('.lvRight').children].slice(0, 2).map(e => e.id));
-  assert.deepEqual(ids, ['lvF-loopcompose', 'lvF-looprec']);
-  assert.ok(await page.locator('.lcPanel button', { hasText: '● Start' }).isVisible());
+  const top = await page.evaluate(() => {
+    const d = document.querySelector('.lvRight').children[0];
+    return [d.id, d.open];
+  });
+  assert.deepEqual(top, ['lvF-loops', true]);
+  assert.ok(await page.locator('.riffPanel button', { hasText: '● Rec' }).isVisible());
+  await page.locator('.riffPanel select[aria-label="When the take is in"]').selectOption('compose');
+  assert.ok(await page.locator('.riffPanel select[aria-label="Record over"]').isVisible());
   assert.deepEqual(errors, []);
 });

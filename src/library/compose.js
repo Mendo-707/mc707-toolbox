@@ -8,6 +8,9 @@
 // built from a motif (stated, answered, developed, resolved), arps and risers, crashes and rolls. A part
 // changes from drop to drop (a new bass, a busier beat) so the song goes somewhere. It also names a
 // factory sound for every part (scene/compose.js gives them to the clips when asked).
+// Each genre keeps its conventions (where the backbeat falls, the bass register, the skank, which genres
+// have a running arp), and a build has four shapes of its kick, perc, bass and riser (BUILDS: variants
+// build1 to build3 and rise1 to rise3) for Live Mode to mix.
 //
 // Plain data in, plain data out: compose(style, opts) → {bpm, swing, key, scale, sections, patterns,
 // sounds}. One step is a 16th; drum notes are lanes (core/theory.js LANES). Seeded, so a song comes out
@@ -1128,6 +1131,254 @@ const softBuild = (p, r, nb) => {
     [11, 104]
   ])
     p.add(nb - 1, s, 1, SN, v);
+};
+/* ---------- more builds ----------
+   A build is four parts (kick, perc, bass, riser) and each has four shapes: the style's own (0) and three
+   more here, written so any kick goes with any perc, bass and riser: the bass and the riser only ever play
+   notes of the bar's chord. Live picks a shape for each part every time the Lift plays (variant names
+   build1 to build3, rise1 to rise3), so two builds in a row are rarely the same. The quiet styles
+   (SOFT_BUILD) have their own gentler three. */
+const BUILD_SHAPES = 4;
+const BUILDS = {
+  kit: [
+    null,
+    /* the kick drops out: four on the floor, then nothing under the last two bars */
+    (p, ctx) => {
+      const { nb } = ctx;
+      p.add(0, 0, 1, CR, 100);
+      for (let b = 0; b < nb - 2; b++) {
+        for (let s = 0; s < 16; s += 4) p.add(b, s, 1, K, 108);
+        p.add(b, 4, 1, CL, 96).add(b, 12, 1, CL, 100);
+      }
+    },
+    /* half time: the kick on 1, the snare on 3, then a stutter of kicks before the drop */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb - 1; b++) p.add(b, 0, 1, K, 118).add(b, 8, 1, [SN, CL], 112 + b);
+      for (const s of [0, 4, 8, 10]) p.add(nb - 1, s, 1, K, 112 + s);
+    },
+    /* kick and snare together: quarters, then hits in threes (3 + 3 + 2), closing up to the drop */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const hits =
+          b < nb - 4
+            ? [0, 4, 8, 12]
+            : b < nb - 2
+              ? [0, 6, 12]
+              : b < nb - 1
+                ? [0, 3, 6, 9, 12, 14]
+                : [0, 3, 6, 8, 10, 11];
+        for (const s of hits) p.add(b, s, 1, b < nb - 4 ? K : [K, SN], 104 + (b * 20) / nb);
+      }
+    }
+  ],
+  perc: [
+    null,
+    /* the snare doubles in steps (2 and 4, quarters, 8ths, 16ths) and ends on 32nds right up to the drop */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const q = b / nb,
+          step = q < 0.25 ? 8 : q < 0.5 ? 4 : q < 0.75 ? 2 : b < nb - 1 ? 1 : 0.5;
+        for (let s = step === 8 ? 4 : 0; s < 16; s += step) p.add(b, s, 1, SN, 56 + (66 * (b * 16 + s)) / (nb * 16));
+      }
+    },
+    /* toms: low ones in threes, the middle one answers, then a climb up the kit */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const v = 78 + (40 * b) / nb;
+        if (b < nb - 2) {
+          for (const s of [0, 6, 12]) p.add(b, s, 1, LT, v);
+          if (b >= nb / 2 - 1) for (const s of [3, 9, 14]) p.add(b, s, 1, MT, v - 10);
+        } else if (b < nb - 1)
+          for (let s = 0; s < 16; s += 2) p.add(b, s, 1, [LT, LT, MT, MT, LT, MT, MT, HT][s / 2], v);
+        else for (let s = 0; s < 12; s++) p.add(b, s, 1, s < 4 ? LT : s < 8 ? MT : HT, v + s);
+      }
+    },
+    /* claps: on 2 and 4, then every beat, 8ths and 16ths, with an open hat lifting between the beats */
+    (p, ctx) => {
+      const { nb } = ctx;
+      p.add(0, 0, 1, CR, 96);
+      for (let b = 0; b < nb; b++) {
+        const q = b / nb,
+          step = q < 0.5 ? 8 : q < 0.75 ? 4 : b < nb - 1 ? 2 : 1,
+          end = b === nb - 1 ? 12 : 16;
+        for (let s = step === 8 ? 4 : 0; s < end; s += step) p.add(b, s, 1, CL, 70 + (50 * (b * 16 + s)) / (nb * 16));
+        if (b < nb - 1) for (const s of [2, 6, 10, 14]) p.add(b, s, 1, OH, 52 + (36 * b) / nb);
+      }
+    }
+  ],
+  bass: [
+    null,
+    /* a pulse: the bar's root in 8ths, an octave up for the last two bars */
+    (p, ctx, lo) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++)
+        for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += 2)
+          p.add(b, s, 1, bassNote(ch[b % ch.length], lo) + (b >= nb - 2 ? 12 : 0), 88 + (b * 30) / nb);
+    },
+    /* the bass leaves: held roots, then nothing under the last two bars */
+    (p, ctx, lo) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 100);
+    },
+    /* in threes: the root on 3 + 3 + 2, its fifth answering, and 8ths up the scale to the drop */
+    (p, ctx, lo) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb - 1; b++) {
+        const c = ch[b % ch.length],
+          root = bassNote(c, lo);
+        for (const s of [0, 6, 12])
+          p.add(b, s, s === 12 ? 3 : 4, s === 6 && b % 2 ? root + (c.tones[2] ?? 7) : root, 100);
+      }
+      let n = bassNote(ch[(nb - 1) % ch.length], lo);
+      for (let s = 0; s < 12; s += 2) {
+        p.add(nb - 1, s, 2, n, 100 + s);
+        do n++;
+        while (!inKey(ctx, n));
+      }
+    }
+  ],
+  pluck: [
+    null,
+    /* a pulse that climbs: the chord's notes in 8ths, a step higher every two bars, 16ths at the end */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const vc = voice(ch[b % ch.length], 62 + Math.floor(b / 2) * 5, null, 3),
+          step = b < nb - 1 ? 2 : 1;
+        for (let s = 0, i = 0; s < (b === nb - 1 ? 12 : 16); s += step, i++)
+          p.add(b, s, 1, Math.min(96, vc[i % 2 ? 2 : 0]), 66 + (b * 44) / nb);
+      }
+    },
+    /* an arp that speeds up: quarters, 8ths, then 16ths, up through the chord over two octaves */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      let i = 0;
+      for (let b = 0; b < nb; b++) {
+        const vc = voice(ch[b % ch.length], 64, null, 3),
+          up = [...vc, ...vc.map(x => x + 12)],
+          step = b < nb / 2 ? 4 : b < nb - 2 ? 2 : 1;
+        for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += step, i++)
+          p.add(b, s, step, Math.min(96, up[i % up.length]), 64 + (b * 48) / nb);
+      }
+    },
+    /* one high note held, then shaking against the chord note under it for the last two bars */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const vc = voice(ch[b % ch.length], 76, null, 3);
+        if (b < nb - 2) p.add(b, 0, 16, vc[2], 66 + b * 6);
+        else
+          for (let s = 0; s < (b === nb - 1 ? 12 : 16); s++)
+            p.add(b, s, 1, vc[s % 2 ? 1 : 2], 84 + (b === nb - 1 ? s * 2 : 0));
+      }
+    }
+  ]
+};
+/* the quiet styles' three more: nothing that rolls or races */
+const SOFT_BUILDS = {
+  kit: [
+    null,
+    /* stop time: the kick on the 1 of each bar, and a pickup into the next */
+    (p, ctx) => {
+      for (let b = 0; b < ctx.nb; b++) {
+        p.add(b, 0, 1, K, 112);
+        if (b < ctx.nb - 1) p.add(b, 14, 1, K, 92);
+      }
+    },
+    /* half time: kick on 1, a rim on 3 */
+    (p, ctx) => {
+      for (let b = 0; b < ctx.nb; b++) p.add(b, 0, 1, K, 110).add(b, 8, 1, RIM, 96);
+    },
+    /* the kick thins out: on 1 and 3, then on 1, then gone for the last bar */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb - 1; b++) {
+        p.add(b, 0, 1, K, 110);
+        if (b < nb / 2) p.add(b, 8, 1, K, 100);
+      }
+    }
+  ],
+  perc: [
+    null,
+    /* a rim on 2 and 4, and a small tom fill into the drop */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb - 1; b++) p.add(b, 4, 1, RIM, 84).add(b, 12, 1, RIM, 88);
+      for (const [s, l] of [
+        [4, HT],
+        [6, MT],
+        [8, MT],
+        [10, LT],
+        [11, LT]
+      ])
+        p.add(nb - 1, s, 1, l, 84 + s * 2);
+    },
+    /* a shaker in 16ths that comes in half way and swells */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = Math.floor(nb / 2); b < nb; b++)
+        for (let s = 0; s < (b === nb - 1 ? 12 : 16); s++)
+          p.add(b, s, 1, PC, (s % 4 === 0 ? 58 : 40) + (44 * (b - nb / 2)) / (nb / 2));
+    },
+    /* claps: on 4, then on 2 and 4, then a three-hit pickup */
+    (p, ctx) => {
+      const { nb } = ctx;
+      for (let b = 0; b < nb - 1; b++) {
+        p.add(b, 12, 1, CL, 88);
+        if (b >= nb / 2) p.add(b, 4, 1, CL, 84);
+      }
+      for (const s of [6, 9, 11]) p.add(nb - 1, s, 1, CL, 90 + s);
+    }
+  ],
+  bass: [
+    null,
+    /* the root on 1 and a pickup into the next bar */
+    (p, ctx, lo) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++) {
+        p.add(b, 0, 8, bassNote(ch[b % ch.length], lo), 98);
+        if (b < nb - 1) p.add(b, 14, 2, bassNote(ch[(b + 1) % ch.length], lo), 84);
+      }
+    },
+    BUILDS.bass[2],
+    /* held roots, and a walk up the scale through the last bar */
+    (p, ctx, lo) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb - 1; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 98);
+      let n = bassNote(ch[(nb - 1) % ch.length], lo);
+      for (let s = 0; s < 12; s += 4) {
+        p.add(nb - 1, s, 4, n, 98);
+        do n++;
+        while (!inKey(ctx, n));
+      }
+    }
+  ],
+  pluck: [
+    null,
+    /* the chord's notes in quarters, getting louder */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++) {
+        const vc = voice(ch[b % ch.length], 64, null, 3);
+        for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += 4) p.add(b, s, 3, vc[(s / 4) % 3], 58 + (b * 40) / nb);
+      }
+    },
+    /* one note held over every bar: the top of the chord */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++) p.add(b, 0, 16, voice(ch[b % ch.length], 70, null, 3)[2], 62 + b * 5);
+    },
+    /* the chord rolled upwards once a bar */
+    (p, ctx) => {
+      const { nb, ch } = ctx;
+      for (let b = 0; b < nb; b++)
+        voice(ch[b % ch.length], 64, null, 3).forEach((n, i) => p.add(b, i * 2, 8, n, 60 + b * 5));
+    }
+  ]
 };
 /* every grammar's perc writes rolls into a build, and a fill tail into a pre-chorus */
 for (const [name, g] of Object.entries(GR)) {
@@ -3437,15 +3688,20 @@ export function composer(style, opts = {}) {
   const patterns = {},
     sounds = {};
   /* tn: the drums' turn for this part (the take's own unless given): a turned part is kept as 'role:v~tn' */
-  const make = (role, v, tn = dturn) => {
-    const k0 = role + ':' + v,
+  const make = (role, v0, tn = dturn) => {
+    const k0 = role + ':' + v0,
       k = tn === dturn ? k0 : k0 + '~' + tn;
     if (patterns[k]) return k;
     const nb = 8,
       p = new Pat(nb),
       pr = mulberry(hashStr(k0) ^ seed),
       ctx = { ch, r: pr, nb, scale, key, recipe, motif, fam, mood };
-    if (role === 'kit') gr.kit(p, pr, v, nb);
+    /* build1 to build3, rise1 to rise3: another shape of the build (BUILDS), for the parts that have one */
+    const bm = /^(build|rise)([1-3])$/.exec(v0),
+      v = bm ? bm[1] : v0,
+      shaped = bm && ((SOFT_BUILD.has(recipe.gr) ? SOFT_BUILDS : BUILDS)[role] || [])[+bm[2]];
+    if (shaped) shaped(p, ctx, recipe.bass === 'eight08' ? 28 : BLO);
+    else if (role === 'kit') gr.kit(p, pr, v, nb);
     else if (role === 'hats') gr.hats(p, pr, v, nb);
     else if (role === 'perc') gr.perc(p, pr, v, nb);
     else if (role === 'bass' && v === 'build' && SOFT_BUILD.has(recipe.gr)) longRoots(p, ctx, BLO, 1, 96);
@@ -3463,7 +3719,7 @@ export function composer(style, opts = {}) {
     else if (role === 'pluck') arp(p, v, ctx);
     if (v !== 'build' && v !== 'rise')
       takeVary(p, role, v, ctx, mulberry(hashStr(role + ':take') ^ Math.imul(seed + 7, 2654435761)));
-    else silentLastBeat(p);
+    /* (a shape ends its own way: some roll right up to the drop) */ else if (!shaped) silentLastBeat(p);
     if (tn) {
       const ur = mulberry(hashStr(role + ':turn:' + v) ^ Math.imul(seed + 11 + tn * 7919, 2654435761));
       if (role === 'kit' || role === 'hats') drumTurn(p, role, v, ur);

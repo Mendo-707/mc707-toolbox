@@ -21,7 +21,8 @@ test('Auto-pilot: an arc of scenes, builds into peaks, fresh patterns and key li
     const home = LV.key;
     a.live.jamStart();
     a.TICKER.stop();
-    const end = TR.tick + Math.round((14 * LV.bpm) / 4) * 32;
+    /* (long enough for the key lift, a one-in-three chance out of each breakdown, to come up) */
+    const end = TR.tick + Math.round((24 * LV.bpm) / 4) * 32;
     const seq = [],
       keys = new Set();
     let last = -1,

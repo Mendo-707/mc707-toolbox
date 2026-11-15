@@ -156,8 +156,24 @@ export function liveCue(idx) {
 /* Before a big jump: thin out kick and bass for the last bar, then a beat of silence, then everything slams in. */
 export function lvDropExtras(t2) {
   if (LV.dropStyle === 'smooth') return false;
-  if (t2 - 32 > TR.tick) LV.cues.push({ type: 'thin', tick: t2 - 32 });
-  if (LV.dropStyle === 'gap' && t2 - 8 > TR.tick) LV.cues.push({ type: 'gap', tick: t2 - 8 });
+  /* Mixed: another landing each time. The classic (kick and bass out for a bar, a beat of silence); two
+     beats of silence; no silence, the build running right into the drop; or everything at full power until
+     a beat of silence. */
+  let thin = true,
+    gap = LV.dropStyle === 'gap' ? 8 : 0;
+  if (LV.dropStyle === 'mix') {
+    const ways = [
+      [true, 8],
+      [true, 16],
+      [true, 0],
+      [false, 8]
+    ].filter((w, i) => i !== LV.dropWay);
+    const w = ways[Math.floor(Math.random() * ways.length)];
+    LV.dropWay = [8, 16, 0].indexOf(w[1]) + (w[0] ? 0 : 3);
+    [thin, gap] = w;
+  }
+  if (thin && t2 - 32 > TR.tick) LV.cues.push({ type: 'thin', tick: t2 - 32 });
+  if (gap && t2 - gap > TR.tick) LV.cues.push({ type: 'gap', tick: t2 - gap });
   return true;
 }
 export function liveBuildDrop() {

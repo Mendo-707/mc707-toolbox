@@ -30,12 +30,12 @@ function corr(a, b) {
   return da && db ? n / Math.sqrt(da * db) : 0;
 }
 
-/** The key of some notes: the hint's when nearly all of them are in its scale, else the best fit. */
+/** The key of some notes: the hint's when nearly all of them are in its scale (or it is fixed), else the best fit. */
 export function loopKey(notes, hint) {
   const h = Array(12).fill(0);
   for (const n of notes) h[n.n % 12] += weight(n);
   const total = h.reduce((a, b) => a + b, 0);
-  if (!total) return { key: hint.key, scale: hint.scale };
+  if (!total || (hint && hint.fixed)) return { key: hint.key, scale: hint.scale };
   const inScale = (key, scale) => SCALES[scale].reduce((a, i) => a + h[(key + i) % 12], 0) / total;
   if (hint && inScale(hint.key, hint.scale) >= 0.9) return { key: hint.key, scale: hint.scale };
   let best = null;
@@ -66,7 +66,7 @@ function choices(key, scale) {
 /**
  * The key and a chord for every bar of some loops played together (each repeats over the longest).
  * @param {{notes:{s:number,l:number,n:number,v:number}[], bars:number, bass?:boolean}[]} loops
- * @param {{key:number, scale:string}} hint  the set's key
+ * @param {{key:number, scale:string, fixed?:boolean}} hint  the set's key (fixed: keep it whatever was played)
  * @returns {{key:number, scale:string, prog:(number|string)[], names:string[]}}
  */
 export function loopHarmony(loops, hint) {

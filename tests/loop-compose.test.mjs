@@ -1,7 +1,9 @@
-// LoopCompose (live/loop-compose.js): ● Start plays the composer's beat alone and records your loop from the
-// next bar; the key and chords are found in it, every other part is written on them, your loop stays on its
-// track and the set comes in two bars later. ● New loop strips back to the drums and your loops, records
-// another, and a fresh set around both comes in. ■ End leaves the loops playing.
+// LoopCompose (live/loop-compose.js), in the Loop rec panel: with "Compose a set around it", ● Rec plays the
+// composer's beat alone and records your loop from the next bar; the key and chords are found in it, every
+// other part is written on them, your loop stays on its track and the set comes in two bars later. ● New loop
+// strips back to the drums and your loops, records another, and a fresh set around both comes in. ■ End
+// leaves the loops playing. ✎ Compose around it does the same with a take you already have; ✕ takes a loop
+// out of the set.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { openApp, closeBrowser, readFixture } from './helpers.mjs';
@@ -32,12 +34,12 @@ test('LoopCompose: a bass loop, the set written on its chords, then a new loop a
       while (a.TR.tick < t) step(1);
     };
     const pick = (label, v) => {
-      const s = document.querySelector('.lcPanel select[aria-label="' + label + '"]');
+      const s = document.querySelector('.riffPanel select[aria-label="' + label + '"]');
       s.value = String(v);
       s.dispatchEvent(new Event('change'));
     };
     const btn = txt =>
-      [...document.querySelectorAll('.lcPanel button')].find(b => b.textContent.trim().startsWith(txt));
+      [...document.querySelectorAll('.riffPanel button')].find(b => b.textContent.trim().startsWith(txt));
     /* a key on the keyboard as a pitch class of the set's key, in the octave around the keyboard's middle */
     const key0 = () => LV.ctl.base + 24;
     const note = semis => {
@@ -62,9 +64,13 @@ test('LoopCompose: a bass loop, the set written on its chords, then a new loop a
     out.key = LV.key;
     out.mode = LV.mode;
     /* 1. ● Start from a stopped jam: the beat alone, then a 4-bar loop: i, i, VI, v (roots, low) */
-    pick('LoopCompose track', bassT);
-    pick('LoopCompose length', 4);
-    btn('● Start').click();
+    pick('Record to', bassT);
+    pick('Length', 4);
+    pick('When the take is in', 'compose');
+    out.opts = ['Record over', 'Key', 'The set comes in'].every(l =>
+      document.querySelector('.riffPanel select[aria-label="' + l + '"]')
+    );
+    btn('● Rec').click();
     if (a.TICKER.stop) a.TICKER.stop();
     out.playing = a.TR.playing;
     out.beatOnly =
@@ -96,7 +102,7 @@ test('LoopCompose: a bass loop, the set written on its chords, then a new loop a
     out.shift = loopF && loopF.key.root === LV.key;
     const seed1 = LV.seed;
     /* 2. ● New loop on another track: down to the drums and the bass loop while recording */
-    pick('LoopCompose track', leadT);
+    pick('Record to', leadT);
     btn('● New loop').click();
     const b2 = Math.ceil((a.TR.tick + 16) / 32) * 32;
     to(b2 + 1);
@@ -119,7 +125,8 @@ test('LoopCompose: a bass loop, the set written on its chords, then a new loop a
     a.stopAll();
     return out;
   });
-  assert.equal(r.playing, true, '● Start starts the jam');
+  assert.ok(r.opts, 'LoopCompose’s choices show in the Loop rec panel');
+  assert.equal(r.playing, true, '● Rec starts the jam');
   assert.ok(r.beatOnly, 'the beat plays alone');
   assert.equal(r.flavor, 'composed');
   assert.ok(r.lc1, 'the chords were found');
@@ -140,5 +147,83 @@ test('LoopCompose: a bass loop, the set written on its chords, then a new loop a
   for (const p of r.others2) assert.match(p, /-u[ia]\d/);
   assert.equal(r.end.lc, null);
   assert.ok(r.end.both, 'the loops stay after ■ End');
+  assert.deepEqual(errors, []);
+});
+
+test('LoopCompose: a set composed around a take you already have, coming in on the next bar; ✕ ends it', async () => {
+  const { page, errors } = await openApp({ storage: SAVED });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.querySelector('#lvMidi').click());
+  await page.waitForTimeout(300);
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    const to = t => {
+      if (a.TICKER.stop) a.TICKER.stop();
+      while (a.TR.tick < t) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    const pick = (label, v) => {
+      const s = document.querySelector('.riffPanel select[aria-label="' + label + '"]');
+      s.value = String(v);
+      s.dispatchEvent(new Event('change'));
+    };
+    const btn = txt =>
+      [...document.querySelectorAll('.riffPanel button')].find(b => b.textContent.trim().startsWith(txt));
+    const out = {};
+    const t = a.S.tracks.findIndex(x => x.type === 'tone');
+    /* a plain take first: nothing in the set changes */
+    pick('Record to', t);
+    pick('Length', 2);
+    pick('When the take is in', 'wait');
+    out.plain = !document.querySelector('.riffPanel select[aria-label="Record over"]');
+    btn('● Rec').click();
+    if (a.TICKER.stop) a.TICKER.stop();
+    const k = LV.ctl.base + 24,
+      root = k + ((LV.key - (k % 12) + 12) % 12);
+    for (const [s, semis] of [
+      [32, 0],
+      [48, 7],
+      [64, 5],
+      [80, 7]
+    ]) {
+      to(s);
+      window.__key([0x90, root + semis, 100]);
+      to(s + 8);
+      window.__key([0x80, root + semis, 0]);
+    }
+    to(32 + 64 + 2);
+    out.take = !!btn('✎ Compose around it');
+    out.before = { lc: LV.lc || null, pinned: !!LV.pin[t] };
+    /* compose around it, the set in on the next bar */
+    pick('When the take is in', 'compose');
+    pick('The set comes in', 0);
+    btn('✎ Compose around it').click();
+    const cue = LV.cues.find(c => c.type === 'scene');
+    out.cue = cue && cue.tick - Math.ceil(a.TR.tick / 32) * 32;
+    out.after = { prog: LV.lc && LV.lc.prog, pinned: LV.pin[t] && a.facById(LV.pin[t]).riff, flavor: LV.flavor };
+    out.info = (document.querySelector('.lcInfo') || {}).textContent || '';
+    to(a.TR.tick + 40);
+    out.others = a.S.tracks.filter(
+      (x, i) => x.type === 'tone' && i !== t && LV.voices[i][0] && LV.voices[i][0].f._prog
+    ).length;
+    /* ✕ on the only loop: the session ends, the take is off its track */
+    document.querySelector('.lcLoop button').click();
+    out.end = { lc: LV.lc, info: !!document.querySelector('.lcInfo') };
+    a.stopAll();
+    return out;
+  });
+  assert.ok(r.plain, 'no LoopCompose choices for a plain take');
+  assert.ok(r.take, 'the take’s card offers ✎ Compose around it');
+  assert.deepEqual(r.before, { lc: null, pinned: false }, 'a plain take changes nothing');
+  assert.equal(r.cue, 0, 'the set comes in on the next bar');
+  assert.ok(r.after.prog && r.after.prog.length === 2, 'two bars of chords: ' + JSON.stringify(r.after.prog));
+  assert.ok(r.after.pinned, 'the take is on its track');
+  assert.equal(r.after.flavor, 'composed');
+  assert.match(r.info, /Composed around your loops/);
+  assert.ok(r.others >= 1, 'other parts play on its chords');
+  assert.deepEqual(r.end, { lc: null, info: false });
   assert.deepEqual(errors, []);
 });

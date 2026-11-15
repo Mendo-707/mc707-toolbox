@@ -341,3 +341,52 @@ test('Compose: each genre keeps its conventions (backbeat, kick, bass register, 
     assert.ok(r[id].roll > 30, id + ': a snare roll into the drop');
   assert.deepEqual(errors, []);
 });
+
+test('Compose: a build has four shapes of its kick, perc, bass and riser, all on the chords', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { composer } = window.__app.compose,
+      out = { same: [], off: [], empty: [], long: [] };
+    for (const st of window.__app.STYLES) {
+      const c = composer(st, { seed: 5, minutes: 4 });
+      for (const [role, base] of [
+        ['kit', 'build'],
+        ['perc', 'build'],
+        ['bass', 'build'],
+        ['pluck', 'rise']
+      ]) {
+        const sigs = new Set();
+        for (let k = 0; k < 4; k++) {
+          const key = c.make(role, base + (k || ''));
+          if (!key) {
+            /* (a style whose own build leaves a part out, ambient's kick, has no shapes of it to mix in) */
+            if (k) out.empty.push(st.id + ' ' + role + k);
+            else break;
+            continue;
+          }
+          const ns = c.patterns[key].notes;
+          sigs.add(JSON.stringify(ns.map(n => [n.s, n.n])));
+          if (ns.some(n => n.s + 0 >= 128 || n.l < 1)) out.long.push(st.id + ' ' + role + k);
+          /* a shape's held or repeated notes are the bar's chord's own (its last-bar climb is in the key) */
+          if (k && (role === 'bass' || role === 'pluck'))
+            for (const n of ns.filter(n => n.s < 112)) {
+              /* (a pickup on the last 8th may belong to the chord it leads into) */
+              const bar = Math.floor(n.s / 16),
+                on = b => {
+                  const ch = c.chords[b % c.chords.length];
+                  return ch.tones.some(t => (ch.root + t) % 12 === n.n % 12);
+                };
+              if (!on(bar) && !(n.s % 16 >= 14 && on(bar + 1))) out.off.push(st.id + ' ' + role + k + '@' + n.s);
+            }
+        }
+        if (sigs.size && sigs.size < 4) out.same.push(st.id + ' ' + role + ' ' + sigs.size);
+      }
+    }
+    return out;
+  });
+  assert.deepEqual(r.empty, [], 'every shape writes something');
+  assert.deepEqual(r.same, [], 'four different shapes of each part');
+  assert.deepEqual(r.off, [], 'bass and riser shapes stay on the chords');
+  assert.deepEqual(r.long, []);
+  assert.deepEqual(errors, []);
+});

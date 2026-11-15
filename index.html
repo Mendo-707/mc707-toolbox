@@ -4943,43 +4943,32 @@ input[type='number'] {
   }
 }
 
-/* LoopCompose (live/loop-compose.js) */
-.lcPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.lcHelp {
-  margin: 0;
-  font-size: 13px;
-  opacity: 0.8;
-}
-.lcPanel .btn.rec {
-  min-width: 96px;
-  font-weight: 700;
-  color: #ef4444;
-  border-color: color-mix(in srgb, #ef4444 55%, transparent);
-}
-.lcPanel .btn.rec:hover {
-  background: #ef4444;
-  color: #fff;
-}
-.lcStat {
-  font-weight: 700;
-  color: #f59e0b;
+/* LoopCompose's part of the Loop rec panel (live/loop-compose.js) */
+.lcOpts {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--hot) 8%, transparent);
 }
 .lcKeep {
   gap: 6px;
 }
 .lcInfo {
+  margin: 8px 0;
   padding: 6px 8px;
   border-radius: 6px;
   background: color-mix(in srgb, #22c55e 14%, transparent);
   font-size: 13px;
 }
+.lcHead,
 .lcLoop {
-  margin-top: 2px;
-  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lcLoop {
+  margin-top: 4px;
+  opacity: 0.9;
 }
 /* auto-pilot's plan (not cued yet): a fainter line */
 .lvLine.plan {
@@ -17113,10 +17102,10 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   for (const f of FAC) {
     if (!f.styles || !f.styles.some((s) => HALF.includes(s))) continue;
-    let drop = [];
-    if (f.pool === "kit" && backbeat(f)) drop = HALF;
-    else if (f.pool === "hats" && notTrapHats(f)) drop = ["trap", "drill"];
-    if (drop.length) f.styles = f.styles.filter((s) => !drop.includes(s));
+    let drop2 = [];
+    if (f.pool === "kit" && backbeat(f)) drop2 = HALF;
+    else if (f.pool === "hats" && notTrapHats(f)) drop2 = ["trap", "drill"];
+    if (drop2.length) f.styles = f.styles.filter((s) => !drop2.includes(s));
   }
   var tidy = (notes) => {
     const seen2 = /* @__PURE__ */ new Set();
@@ -20087,12 +20076,12 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
   function refreshOuts() {
-    const sel2 = $("#midiOut");
+    const sel3 = $("#midiOut");
     const outs = MIDI.access ? [...MIDI.access.outputs.values()].filter((o) => o.state !== "disconnected") : [];
     const had = MIDI.out;
-    sel2.textContent = "";
-    sel2.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
-    outs.forEach((o) => sel2.append(el("option", { value: o.id }, o.name)));
+    sel3.textContent = "";
+    sel3.append(el("option", { value: "" }, outs.length ? "No output" : "No devices found"));
+    outs.forEach((o) => sel3.append(el("option", { value: o.id }, o.name)));
     let auto = true;
     try {
       auto = localStorage.getItem("mc707-autoconnect") !== "0";
@@ -20100,7 +20089,7 @@ html.os-darwin.native-menu #menubar .mproj {
     }
     const saved = outs.find((o) => o.id === S.midiOut), mc = mcFind(outs);
     let pick5 = MIDI.picked && saved ? saved : auto && mc ? mc : saved || mc;
-    sel2.value = pick5 ? pick5.id : "";
+    sel3.value = pick5 ? pick5.id : "";
     MIDI.out = pick5 || null;
     if (pick5) S.midiOut = pick5.id;
     if (pick5) hooks.matchDevice(pick5.name);
@@ -22680,10 +22669,10 @@ html.os-darwin.native-menu #menubar .mproj {
       document.body.append(back);
     });
   }
-  function trackOptsFor(sel2, type, want) {
-    sel2.textContent = "";
+  function trackOptsFor(sel3, type, want) {
+    sel3.textContent = "";
     S.tracks.forEach((t, i) => {
-      if (t.type === type) sel2.append(el("option", { value: i, selected: i === want }, i + 1 + ". " + t.name));
+      if (t.type === type) sel3.append(el("option", { value: i, selected: i === want }, i + 1 + ". " + t.name));
     });
   }
   function placeBarFor(t, mode) {
@@ -23989,11 +23978,11 @@ html.os-darwin.native-menu #menubar .mproj {
         const pts = shapePts(c, true);
         const q = pts[SH.sel];
         if (!q) return;
-        const sel2 = q;
+        const sel3 = q;
         q[0] = snapU(h.u);
         q[1] = e.shiftKey ? Math.round(h.v / 0.05) * 0.05 : h.v;
         pts.sort((a, b) => a[0] - b[0]);
-        SH.sel = pts.indexOf(sel2);
+        SH.sel = pts.indexOf(sel3);
         scheduleUI();
       }
       drawShape();
@@ -25239,15 +25228,15 @@ html.os-darwin.native-menu #menubar .mproj {
   };
   function libSelect(label2, key, opts) {
     if (!opts.some((o) => o[0] === UI[key])) UI[key] = "all";
-    const sel2 = el("select", {
+    const sel3 = el("select", {
       "aria-label": label2,
       onchange: (e) => {
         UI[key] = e.target.value;
         renderLibrary();
       }
     });
-    opts.forEach(([v, l]) => sel2.append(el("option", { value: v, selected: UI[key] === v }, l)));
-    return el("label", {}, label2, sel2);
+    opts.forEach(([v, l]) => sel3.append(el("option", { value: v, selected: UI[key] === v }, l)));
+    return el("label", {}, label2, sel3);
   }
   function libReset() {
     Object.assign(UI, {
@@ -25348,9 +25337,9 @@ html.os-darwin.native-menu #menubar .mproj {
     const keyOpts = [["all", "Any key"], ...[...keyMap.entries()].sort((a, b) => a[1] - b[1]).map(([k2]) => [k2, k2])];
     const bars3 = [...new Set(base.map((it) => it.m.bars))].sort((a, b) => a - b);
     const barOpts = [["all", "Any length"], ...bars3.map((n) => [String(n), n + (n === 1 ? " bar" : " bars")])];
-    const sel2 = $("#libSel");
-    sel2.textContent = "";
-    sel2.append(
+    const sel3 = $("#libSel");
+    sel3.textContent = "";
+    sel3.append(
       libSelect("Style", "libStyle", styleOpts),
       libSelect("Role", "libRole", ROLE_OPTS),
       libSelect("Key", "libKey", keyOpts),
@@ -25738,7 +25727,7 @@ html.os-darwin.native-menu #menubar .mproj {
     return true;
   }
   function initPro() {
-    const sel2 = $("#snapSel");
+    const sel3 = $("#snapSel");
     [
       [1, "Bar"],
       [0.5, "1/2 bar"],
@@ -25747,9 +25736,9 @@ html.os-darwin.native-menu #menubar .mproj {
       [0.03125, "1/32"],
       [0.015625, "1/64"],
       [390625e-8, "Free"]
-    ].forEach(([v, l]) => sel2.append(el("option", { value: v }, l)));
-    sel2.value = SNAP();
-    sel2.addEventListener("change", (e) => {
+    ].forEach(([v, l]) => sel3.append(el("option", { value: v }, l)));
+    sel3.value = SNAP();
+    sel3.addEventListener("change", (e) => {
       S.snap = +e.target.value;
       scheduleSave();
     });
@@ -26927,7 +26916,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const same = S.tracks.map((x, i) => i).filter((i) => S.tracks[i].type === p.type && devOn(i));
     if (!same.length) return [];
     if (!same.includes(ED.recOn)) ED.recOn = same.includes(c.t) ? c.t : same[0];
-    const sel2 = el(
+    const sel3 = el(
       "select",
       {
         class: "edRecOn",
@@ -26949,7 +26938,7 @@ html.os-darwin.native-menu #menubar .mproj {
       },
       "● Record sample"
     );
-    return [b, sel2];
+    return [b, sel3];
   }
   function viewGroup(c) {
     const b = (label2, fn, title, on3) => el("button", { class: "btn sm" + (on3 ? " on" : ""), title: title || label2, onclick: fn }, label2);
@@ -27401,7 +27390,7 @@ html.os-darwin.native-menu #menubar .mproj {
     for (const n of p.notes) {
       const ri = g.idx.get(n.n);
       if (ri === void 0) continue;
-      const y = ri * g.rh, px = n.s * g.cw, sel2 = ED.selNotes.has(n);
+      const y = ri * g.rh, px = n.s * g.cw, sel3 = ED.selNotes.has(n);
       x.globalAlpha = 0.5 + 0.5 * n.v / 127;
       x.fillStyle = col;
       if (p.type === "drum" && !roll2) {
@@ -27428,7 +27417,7 @@ html.os-darwin.native-menu #menubar .mproj {
           x.setLineDash([]);
         }
       }
-      if (sel2) {
+      if (sel3) {
         x.globalAlpha = 1;
         x.strokeStyle = ink;
         x.lineWidth = 1.5;
@@ -27665,11 +27654,11 @@ html.os-darwin.native-menu #menubar .mproj {
         (n) => x >= n.s * g.cw - 2 && x <= n.s * g.cw + Math.max(10, Math.min(n.l * g.cw, 10)) + 2
       );
       if (!hits.length) return;
-      const sel2 = hits.filter((n) => ED.selNotes.has(n));
-      const targets2 = sel2.length ? sel2 : [hits.reduce((a, b) => Math.abs(a.s * g.cw - x) < Math.abs(b.s * g.cw - x) ? a : b)];
+      const sel3 = hits.filter((n) => ED.selNotes.has(n));
+      const targets2 = sel3.length ? sel3 : [hits.reduce((a, b) => Math.abs(a.s * g.cw - x) < Math.abs(b.s * g.cw - x) ? a : b)];
       const first = Math.min(...targets2.map((n) => n.s));
       p.notes.forEach((n) => {
-        if (targets2.includes(n) || !sel2.length && n.s === first && targets2.some((t) => t.s === n.s)) n.v = v;
+        if (targets2.includes(n) || !sel3.length && n.s === first && targets2.some((t) => t.s === n.s)) n.v = v;
       });
       touch(p);
       drawEditor();
@@ -32747,7 +32736,7 @@ html.os-darwin.native-menu #menubar .mproj {
       body.textContent = "";
       const plan2 = songPlan(starts);
       for (const row2 of plan2) {
-        const sel2 = el(
+        const sel3 = el(
           "select",
           {
             "aria-label": "First clip for track " + devNum(row2.t),
@@ -32763,7 +32752,7 @@ html.os-darwin.native-menu #menubar .mproj {
             "div",
             { class: "scRow" },
             el("b", {}, "Track " + devNum(row2.t) + " · " + S.tracks[row2.t].name),
-            sel2,
+            sel3,
             el(
               "span",
               { class: "hint" },
@@ -38076,7 +38065,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var interval = (s) => (s > 0 ? "+" : "") + s + ({ 0: " root", 12: " oct", "-12": " oct", 7: " 5th", "-5": " 5th", 3: " m3", 4: " M3" }[s] || "");
   function stepCell(ctx2, i, len) {
     const semis = Math.round(ctx2.get(k(ctx2, 1, "STEP_" + (i + 1))) / UNIT), rest = ctx2.get(k(ctx2, 2, "STEP_" + (i + 1))) <= REST + 8;
-    const sel2 = el(
+    const sel3 = el(
       "select",
       { onchange: (e) => ctx2.set(k(ctx2, 1, "STEP_" + (i + 1)), +e.target.value * UNIT, true) },
       ...[...Array(37)].map((_, j) => el("option", { value: 18 - j, selected: 18 - j === semis }, interval(18 - j)))
@@ -38095,7 +38084,7 @@ html.os-darwin.native-menu #menubar .mproj {
       "div",
       { class: "zcSeqStep" + (i > len ? " off" : "") },
       el("span", { class: "zcL" }, String(i + 1)),
-      sel2,
+      sel3,
       gate2
     );
   }
@@ -39983,7 +39972,7 @@ html.os-darwin.native-menu #menubar .mproj {
   async function folderFor(file) {
     const stem2 = file.name.replace(/\.svz$/i, "").trim().slice(0, 30) || "Expansion";
     const have = folderList();
-    const sel2 = el(
+    const sel3 = el(
       "select",
       { style: "width:100%" },
       el("option", { value: "" }, have.includes(stem2) ? "The folder “" + stem2 + "”" : "A new folder: “" + stem2 + "”"),
@@ -39992,10 +39981,10 @@ html.os-darwin.native-menu #menubar .mproj {
     const ok = await askDlg({
       title: "Add " + file.name + " to a folder",
       text: "Its tones go into one of your folders, where you can rename, tag and organise them.",
-      body: sel2,
+      body: sel3,
       ok: "Add"
     });
-    return ok ? folderAdd(sel2.value || stem2) : null;
+    return ok ? folderAdd(sel3.value || stem2) : null;
   }
   function expansionImport(done3) {
     const i = el("input", {
@@ -46270,7 +46259,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
       if (!all.length) body.append(el("p", { class: "hint" }, "Nothing matches."));
     };
-    const sel2 = (label2, opts, val, set2) => el(
+    const sel3 = (label2, opts, val, set2) => el(
       "select",
       { "aria-label": label2, onchange: (e) => (set2(e.target.value), draw2()) },
       ...opts.map(([v, l]) => el("option", { value: v, selected: v === val }, l))
@@ -46301,8 +46290,8 @@ html.os-darwin.native-menu #menubar .mproj {
       filt2.append(search);
       if (P.src === "fac")
         filt2.append(
-          sel2("Genre", [["all", "All genres"], ...Object.entries(GENRE_LABELS)], P.genre, (v) => P.genre = v),
-          sel2("Part", [["all", "Any part"], ...parts4], P.part, (v) => P.part = v)
+          sel3("Genre", [["all", "All genres"], ...Object.entries(GENRE_LABELS)], P.genre, (v) => P.genre = v),
+          sel3("Part", [["all", "Any part"], ...parts4], P.part, (v) => P.part = v)
         );
       filt2.append(count);
     };
@@ -47569,24 +47558,24 @@ html.os-darwin.native-menu #menubar .mproj {
   function fxSelect(choices2, cur2, on3, label2, title) {
     const now2 = choices2.find((c) => c.id === cur2);
     const opt = (c) => el("option", { value: c.id, selected: c.id === cur2 }, c.label);
-    const sel2 = el(
+    const sel3 = el(
       "select",
       { class: "mxSel", "aria-label": label2, title, onchange: (e) => e.target.value && on3(e.target.value) },
       now2 ? opt(now2) : el("option", { value: "", selected: true }, "—")
     );
     const fill2 = () => {
-      if (sel2.dataset.full) return;
-      sel2.dataset.full = "1";
+      if (sel3.dataset.full) return;
+      sel3.dataset.full = "1";
       const groups = [...new Set(choices2.map((c) => c.group))];
-      sel2.replaceChildren(
+      sel3.replaceChildren(
         ...now2 ? [] : [el("option", { value: "", selected: true }, "—")],
         ...groups.flatMap(
           (g) => g ? [el("optgroup", { label: g }, ...choices2.filter((c) => c.group === g).map(opt))] : choices2.filter((c) => !c.group).map(opt)
         )
       );
     };
-    for (const ev of ["pointerdown", "focus", "keydown"]) sel2.addEventListener(ev, fill2);
-    return sel2;
+    for (const ev of ["pointerdown", "focus", "keydown"]) sel3.addEventListener(ev, fill2);
+    return sel3;
   }
   function fxRow(fx, on3, name) {
     return el(
@@ -48335,7 +48324,7 @@ html.os-darwin.native-menu #menubar .mproj {
     new: "Not written to the MC-707 yet"
   };
   function board(act, only = null) {
-    const q = S.scn, sel2 = rows()[SC.row], tracks3 = DEVS[DEV].tracks.filter((t) => only == null || t === only);
+    const q = S.scn, sel3 = rows()[SC.row], tracks3 = DEVS[DEV].tracks.filter((t) => only == null || t === only);
     const pending2 = (t) => Array.from({ length: 16 }, (_, k2) => clipState(q, S.patterns, t, k2)).filter((s) => s === "new" || s === "changed").length;
     const trk = (t) => {
       const n = pending2(t);
@@ -48376,7 +48365,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "div",
         { class: "sbRow", style: "--tc:" + TRACK_COLORS[only] },
         trk(only),
-        ...Array.from({ length: 16 }, (_, k2) => slot(only, k2, sel2, act))
+        ...Array.from({ length: 16 }, (_, k2) => slot(only, k2, sel3, act))
       );
       return el("div", { class: "sBoard", role: "grid", "aria-label": "MC-707 clips" }, head4, row2);
     }
@@ -48392,7 +48381,7 @@ html.os-darwin.native-menu #menubar .mproj {
         "div",
         { class: "sbRow" },
         el("div", { class: "sbNum" }, String(k2 + 1)),
-        ...tracks3.map((t) => slot(t, k2, sel2, act))
+        ...tracks3.map((t) => slot(t, k2, sel3, act))
       )
     );
     return el(
@@ -48407,8 +48396,8 @@ html.os-darwin.native-menu #menubar .mproj {
       ...body
     );
   }
-  function slot(t, k2, sel2, act) {
-    const q = S.scn, c = q.clips[t][k2], p = c && S.patterns[c.pat], st = clipState(q, S.patterns, t, k2), tn = toneOf(c), inScene = !!sel2 && sel2.pick[t] === k2, uses2 = c ? clipUses(q, t, k2) : 0, ck2 = checked(t, k2), cur2 = SC.edit && SC.t === t && SC.k === k2;
+  function slot(t, k2, sel3, act) {
+    const q = S.scn, c = q.clips[t][k2], p = c && S.patterns[c.pat], st = clipState(q, S.patterns, t, k2), tn = toneOf(c), inScene = !!sel3 && sel3.pick[t] === k2, uses2 = c ? clipUses(q, t, k2) : 0, ck2 = checked(t, k2), cur2 = SC.edit && SC.t === t && SC.k === k2;
     const tip = p ? "Clip " + (k2 + 1) + ": " + p.name + (c.tr ? " (" + (c.tr > 0 ? "+" : "") + c.tr + ")" : "") + (tn ? ", tone " + tn.name : ", the clip’s own sound") + (c.pump ? ", pumps its " + (c.pump.mode === "level" ? "volume" : "filter") + " on the kicks" : "") + ". " + MARK_TIP[st] + ". " + (uses2 ? "In " + uses2 + " scene" + (uses2 === 1 ? "" : "s") : "In no scene yet") + (ck2 && ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + "): writing replaces them" : "") : "Clip " + (k2 + 1) + ": empty. Click to choose a pattern" + (ck2 ? ck2.notes ? ". On the MC-707 it holds notes (" + (ck2.name || "no name") + ")" : ". Empty on the MC-707 too" : "");
     return el(
       "button",
@@ -48890,7 +48879,7 @@ html.os-darwin.native-menu #menubar .mproj {
   function sceneRender() {
     const host2 = $("#scene");
     if (!host2) return;
-    const keep2 = (sel2) => host2.querySelector(sel2) ? host2.querySelector(sel2).scrollTop : 0, sc = [keep2(".scList"), keep2(".sBoardWrap")];
+    const keep2 = (sel3) => host2.querySelector(sel3) ? host2.querySelector(sel3).scrollTop : 0, sc = [keep2(".scList"), keep2(".sBoardWrap")];
     host2.textContent = "";
     host2.append(sceneTop(sceneToggle));
     if (DEV !== "707")
@@ -53067,7 +53056,7 @@ html.os-darwin.native-menu #menubar .mproj {
           g.append(el("div", { class: "tlc none" }, w.layers[t] ? "" : "off"));
           return;
         }
-        const sel2 = el("select", {
+        const sel3 = el("select", {
           class: "cellsel",
           "aria-label": trackLabel(st, t) + " in " + s.name,
           style: "--c:" + TRACK_COLORS[t],
@@ -53078,13 +53067,13 @@ html.os-darwin.native-menu #menubar .mproj {
             re();
           }
         });
-        sel2.append(el("option", { value: "", selected: !c.id }, "(empty)"));
+        sel3.append(el("option", { value: "", selected: !c.id }, "(empty)"));
         const ids = [...st.pools[c.pool] || []];
         const more2 = lvPool(st, c.pool).filter((id) => !ids.includes(id));
         if (c.id && !ids.includes(c.id) && !more2.includes(c.id)) more2.unshift(c.id);
         ids.forEach((id) => {
           const f2 = facById(id);
-          sel2.append(el("option", { value: id, selected: id === c.id }, f2.name));
+          sel3.append(el("option", { value: id, selected: id === c.id }, f2.name));
         });
         if (more2.length) {
           const og = el("optgroup", { label: "More patterns (" + more2.length + ")" });
@@ -53092,7 +53081,7 @@ html.os-darwin.native-menu #menubar .mproj {
             const f2 = facById(id);
             og.append(el("option", { value: id, selected: id === c.id }, f2.name));
           });
-          sel2.append(og);
+          sel3.append(og);
         }
         let title = "";
         const f = c.id && facById(c.id);
@@ -53100,7 +53089,7 @@ html.os-darwin.native-menu #menubar .mproj {
           const sh = shiftFor(f, w.key);
           title = "Transposed " + (sh > 0 ? "+" : "") + sh + " semitones from " + f.keyName;
         }
-        sel2.title = title;
+        sel3.title = title;
         const pb = el(
           "button",
           {
@@ -53113,7 +53102,7 @@ html.os-darwin.native-menu #menubar .mproj {
           "▶"
         );
         pb._f = f || null;
-        g.append(el("div", { class: "tlc cell" }, sel2, pb));
+        g.append(el("div", { class: "tlc cell" }, sel3, pb));
       });
     }
     left.append(el("div", { class: "tlwrap" }, g));
@@ -53916,6 +53905,7 @@ html.os-darwin.native-menu #menubar .mproj {
     "restV",
     "riseBars",
     "dropStyle",
+    "dropPick",
     "mode",
     "vary",
     "flavor",
@@ -53965,7 +53955,8 @@ html.os-darwin.native-menu #menubar .mproj {
       ktarget: "all",
       rest: [64, 0, 64, 64],
       riseBars: 4,
-      dropStyle: "gap",
+      dropStyle: "mix",
+      dropPick: false,
       mode: null,
       vary: 50,
       flavor: "composed",
@@ -54061,7 +54052,8 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.keyCh = clamp(Math.round(+LV.keyCh || 0), 0, 16);
     LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
     LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
-    if (!["smooth", "hard", "gap"].includes(LV.dropStyle)) LV.dropStyle = "gap";
+    if (!["smooth", "hard", "gap", "mix"].includes(LV.dropStyle)) LV.dropStyle = "mix";
+    if (LV.dropStyle === "gap" && !LV.dropPick) LV.dropStyle = "mix";
     if (!["lively", "mixed", "classic", "composed"].includes(LV.flavor)) LV.flavor = "composed";
     if (!LV.flavorPick) LV.flavor = "composed";
     if (!LV.mood || !Number.isFinite(+LV.mood.i) || !Number.isFinite(+LV.mood.c)) LV.mood = null;
@@ -54107,7 +54099,7 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var lvOwnBuild = (sc) => {
     const c = sc && sc.cells && sc.cells[lvBT()];
-    return !!(c && /-build$/.test(c.id));
+    return !!(c && /-build\d?$/.test(c.id));
   };
   var lvBT = () => {
     if (DEV === "101") return 0;
@@ -55582,6 +55574,234 @@ html.os-darwin.native-menu #menubar .mproj {
       [11, 104]
     ])
       p.add(nb - 1, s, 1, SN, v);
+  };
+  var BUILDS = {
+    kit: [
+      null,
+      /* the kick drops out: four on the floor, then nothing under the last two bars */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        p.add(0, 0, 1, CR, 100);
+        for (let b = 0; b < nb - 2; b++) {
+          for (let s = 0; s < 16; s += 4) p.add(b, s, 1, K, 108);
+          p.add(b, 4, 1, CL, 96).add(b, 12, 1, CL, 100);
+        }
+      },
+      /* half time: the kick on 1, the snare on 3, then a stutter of kicks before the drop */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb - 1; b++) p.add(b, 0, 1, K, 118).add(b, 8, 1, [SN, CL], 112 + b);
+        for (const s of [0, 4, 8, 10]) p.add(nb - 1, s, 1, K, 112 + s);
+      },
+      /* kick and snare together: quarters, then hits in threes (3 + 3 + 2), closing up to the drop */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const hits = b < nb - 4 ? [0, 4, 8, 12] : b < nb - 2 ? [0, 6, 12] : b < nb - 1 ? [0, 3, 6, 9, 12, 14] : [0, 3, 6, 8, 10, 11];
+          for (const s of hits) p.add(b, s, 1, b < nb - 4 ? K : [K, SN], 104 + b * 20 / nb);
+        }
+      }
+    ],
+    perc: [
+      null,
+      /* the snare doubles in steps (2 and 4, quarters, 8ths, 16ths) and ends on 32nds right up to the drop */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const q = b / nb, step = q < 0.25 ? 8 : q < 0.5 ? 4 : q < 0.75 ? 2 : b < nb - 1 ? 1 : 0.5;
+          for (let s = step === 8 ? 4 : 0; s < 16; s += step) p.add(b, s, 1, SN, 56 + 66 * (b * 16 + s) / (nb * 16));
+        }
+      },
+      /* toms: low ones in threes, the middle one answers, then a climb up the kit */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const v = 78 + 40 * b / nb;
+          if (b < nb - 2) {
+            for (const s of [0, 6, 12]) p.add(b, s, 1, LT, v);
+            if (b >= nb / 2 - 1) for (const s of [3, 9, 14]) p.add(b, s, 1, MT, v - 10);
+          } else if (b < nb - 1)
+            for (let s = 0; s < 16; s += 2) p.add(b, s, 1, [LT, LT, MT, MT, LT, MT, MT, HT2][s / 2], v);
+          else for (let s = 0; s < 12; s++) p.add(b, s, 1, s < 4 ? LT : s < 8 ? MT : HT2, v + s);
+        }
+      },
+      /* claps: on 2 and 4, then every beat, 8ths and 16ths, with an open hat lifting between the beats */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        p.add(0, 0, 1, CR, 96);
+        for (let b = 0; b < nb; b++) {
+          const q = b / nb, step = q < 0.5 ? 8 : q < 0.75 ? 4 : b < nb - 1 ? 2 : 1, end = b === nb - 1 ? 12 : 16;
+          for (let s = step === 8 ? 4 : 0; s < end; s += step) p.add(b, s, 1, CL, 70 + 50 * (b * 16 + s) / (nb * 16));
+          if (b < nb - 1) for (const s of [2, 6, 10, 14]) p.add(b, s, 1, OH, 52 + 36 * b / nb);
+        }
+      }
+    ],
+    bass: [
+      null,
+      /* a pulse: the bar's root in 8ths, an octave up for the last two bars */
+      (p, ctx2, lo) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++)
+          for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += 2)
+            p.add(b, s, 1, bassNote(ch[b % ch.length], lo) + (b >= nb - 2 ? 12 : 0), 88 + b * 30 / nb);
+      },
+      /* the bass leaves: held roots, then nothing under the last two bars */
+      (p, ctx2, lo) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb - 2; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 100);
+      },
+      /* in threes: the root on 3 + 3 + 2, its fifth answering, and 8ths up the scale to the drop */
+      (p, ctx2, lo) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb - 1; b++) {
+          const c = ch[b % ch.length], root = bassNote(c, lo);
+          for (const s of [0, 6, 12])
+            p.add(b, s, s === 12 ? 3 : 4, s === 6 && b % 2 ? root + (c.tones[2] ?? 7) : root, 100);
+        }
+        let n = bassNote(ch[(nb - 1) % ch.length], lo);
+        for (let s = 0; s < 12; s += 2) {
+          p.add(nb - 1, s, 2, n, 100 + s);
+          do
+            n++;
+          while (!inKey(ctx2, n));
+        }
+      }
+    ],
+    pluck: [
+      null,
+      /* a pulse that climbs: the chord's notes in 8ths, a step higher every two bars, 16ths at the end */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const vc = voice4(ch[b % ch.length], 62 + Math.floor(b / 2) * 5, null, 3), step = b < nb - 1 ? 2 : 1;
+          for (let s = 0, i = 0; s < (b === nb - 1 ? 12 : 16); s += step, i++)
+            p.add(b, s, 1, Math.min(96, vc[i % 2 ? 2 : 0]), 66 + b * 44 / nb);
+        }
+      },
+      /* an arp that speeds up: quarters, 8ths, then 16ths, up through the chord over two octaves */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        let i = 0;
+        for (let b = 0; b < nb; b++) {
+          const vc = voice4(ch[b % ch.length], 64, null, 3), up = [...vc, ...vc.map((x) => x + 12)], step = b < nb / 2 ? 4 : b < nb - 2 ? 2 : 1;
+          for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += step, i++)
+            p.add(b, s, step, Math.min(96, up[i % up.length]), 64 + b * 48 / nb);
+        }
+      },
+      /* one high note held, then shaking against the chord note under it for the last two bars */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const vc = voice4(ch[b % ch.length], 76, null, 3);
+          if (b < nb - 2) p.add(b, 0, 16, vc[2], 66 + b * 6);
+          else
+            for (let s = 0; s < (b === nb - 1 ? 12 : 16); s++)
+              p.add(b, s, 1, vc[s % 2 ? 1 : 2], 84 + (b === nb - 1 ? s * 2 : 0));
+        }
+      }
+    ]
+  };
+  var SOFT_BUILDS = {
+    kit: [
+      null,
+      /* stop time: the kick on the 1 of each bar, and a pickup into the next */
+      (p, ctx2) => {
+        for (let b = 0; b < ctx2.nb; b++) {
+          p.add(b, 0, 1, K, 112);
+          if (b < ctx2.nb - 1) p.add(b, 14, 1, K, 92);
+        }
+      },
+      /* half time: kick on 1, a rim on 3 */
+      (p, ctx2) => {
+        for (let b = 0; b < ctx2.nb; b++) p.add(b, 0, 1, K, 110).add(b, 8, 1, RIM, 96);
+      },
+      /* the kick thins out: on 1 and 3, then on 1, then gone for the last bar */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb - 1; b++) {
+          p.add(b, 0, 1, K, 110);
+          if (b < nb / 2) p.add(b, 8, 1, K, 100);
+        }
+      }
+    ],
+    perc: [
+      null,
+      /* a rim on 2 and 4, and a small tom fill into the drop */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb - 1; b++) p.add(b, 4, 1, RIM, 84).add(b, 12, 1, RIM, 88);
+        for (const [s, l] of [
+          [4, HT2],
+          [6, MT],
+          [8, MT],
+          [10, LT],
+          [11, LT]
+        ])
+          p.add(nb - 1, s, 1, l, 84 + s * 2);
+      },
+      /* a shaker in 16ths that comes in half way and swells */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = Math.floor(nb / 2); b < nb; b++)
+          for (let s = 0; s < (b === nb - 1 ? 12 : 16); s++)
+            p.add(b, s, 1, PC, (s % 4 === 0 ? 58 : 40) + 44 * (b - nb / 2) / (nb / 2));
+      },
+      /* claps: on 4, then on 2 and 4, then a three-hit pickup */
+      (p, ctx2) => {
+        const { nb } = ctx2;
+        for (let b = 0; b < nb - 1; b++) {
+          p.add(b, 12, 1, CL, 88);
+          if (b >= nb / 2) p.add(b, 4, 1, CL, 84);
+        }
+        for (const s of [6, 9, 11]) p.add(nb - 1, s, 1, CL, 90 + s);
+      }
+    ],
+    bass: [
+      null,
+      /* the root on 1 and a pickup into the next bar */
+      (p, ctx2, lo) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          p.add(b, 0, 8, bassNote(ch[b % ch.length], lo), 98);
+          if (b < nb - 1) p.add(b, 14, 2, bassNote(ch[(b + 1) % ch.length], lo), 84);
+        }
+      },
+      BUILDS.bass[2],
+      /* held roots, and a walk up the scale through the last bar */
+      (p, ctx2, lo) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb - 1; b++) p.add(b, 0, 16, bassNote(ch[b % ch.length], lo), 98);
+        let n = bassNote(ch[(nb - 1) % ch.length], lo);
+        for (let s = 0; s < 12; s += 4) {
+          p.add(nb - 1, s, 4, n, 98);
+          do
+            n++;
+          while (!inKey(ctx2, n));
+        }
+      }
+    ],
+    pluck: [
+      null,
+      /* the chord's notes in quarters, getting louder */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++) {
+          const vc = voice4(ch[b % ch.length], 64, null, 3);
+          for (let s = 0; s < (b === nb - 1 ? 12 : 16); s += 4) p.add(b, s, 3, vc[s / 4 % 3], 58 + b * 40 / nb);
+        }
+      },
+      /* one note held over every bar: the top of the chord */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++) p.add(b, 0, 16, voice4(ch[b % ch.length], 70, null, 3)[2], 62 + b * 5);
+      },
+      /* the chord rolled upwards once a bar */
+      (p, ctx2) => {
+        const { nb, ch } = ctx2;
+        for (let b = 0; b < nb; b++)
+          voice4(ch[b % ch.length], 64, null, 3).forEach((n, i) => p.add(b, i * 2, 8, n, 60 + b * 5));
+      }
+    ]
   };
   for (const [name, g] of Object.entries(GR)) {
     const own = g.perc;
@@ -57540,11 +57760,13 @@ html.os-darwin.native-menu #menubar .mproj {
     motif.seed = Math.imul(seed4 + 3, 2654435761) ^ hashStr(style.id);
     const gr = GR[recipe.gr] || GR.pop;
     const patterns = {}, sounds = {};
-    const make = (role, v, tn = dturn) => {
-      const k0 = role + ":" + v, k2 = tn === dturn ? k0 : k0 + "~" + tn;
+    const make = (role, v0, tn = dturn) => {
+      const k0 = role + ":" + v0, k2 = tn === dturn ? k0 : k0 + "~" + tn;
       if (patterns[k2]) return k2;
       const nb = 8, p = new Pat(nb), pr = mulberry(hashStr(k0) ^ seed4), ctx2 = { ch, r: pr, nb, scale, key, recipe, motif, fam, mood };
-      if (role === "kit") gr.kit(p, pr, v, nb);
+      const bm = /^(build|rise)([1-3])$/.exec(v0), v = bm ? bm[1] : v0, shaped = bm && ((SOFT_BUILD.has(recipe.gr) ? SOFT_BUILDS : BUILDS)[role] || [])[+bm[2]];
+      if (shaped) shaped(p, ctx2, recipe.bass === "eight08" ? 28 : BLO);
+      else if (role === "kit") gr.kit(p, pr, v, nb);
       else if (role === "hats") gr.hats(p, pr, v, nb);
       else if (role === "perc") gr.perc(p, pr, v, nb);
       else if (role === "bass" && v === "build" && SOFT_BUILD.has(recipe.gr)) longRoots(p, ctx2, BLO, 1, 96);
@@ -57558,7 +57780,7 @@ html.os-darwin.native-menu #menubar .mproj {
       else if (role === "pluck") arp2(p, v, ctx2);
       if (v !== "build" && v !== "rise")
         takeVary(p, role, v, ctx2, mulberry(hashStr(role + ":take") ^ Math.imul(seed4 + 7, 2654435761)));
-      else silentLastBeat(p);
+      else if (!shaped) silentLastBeat(p);
       if (tn) {
         const ur = mulberry(hashStr(role + ":turn:" + v) ^ Math.imul(seed4 + 11 + tn * 7919, 2654435761));
         if (role === "kit" || role === "hats") drumTurn(p, role, v, ur);
@@ -57857,6 +58079,11 @@ html.os-darwin.native-menu #menubar .mproj {
             const a = entry(t, role, v, k2);
             if (a && !crowds(a)) ways.push(a);
           }
+        else if (["full", "kit", "perc", "bass", "pluck"].includes(role))
+          for (let k2 = 1; k2 < 4; k2++) {
+            const a = entry(t, role, v + k2);
+            if (a) ways.push(a);
+          }
         cells[t] = { id, pool: role, ways, hook: role === "lead" };
       }
       const sc = { kind, name, bars: bars3, e, cells };
@@ -57878,6 +58105,14 @@ html.os-darwin.native-menu #menubar .mproj {
     const sc = LV.scenes[idx];
     if (LV.flavor !== "composed" || !sc || !sc.cells) return;
     sc.n = (sc.n || 0) + 1;
+    if (sc.kind === "build") {
+      for (const t in sc.cells) {
+        const cell = sc.cells[t], others = (cell.ways || []).filter((id) => id !== cell.id && FACMAP.has(id));
+        if (others.length) cell.id = others[Math.floor(Math.random() * others.length)];
+      }
+      LV.ver++;
+      return;
+    }
     if (sc.n < 2 || LV.vary <= 0) return;
     const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
     let any = false;
@@ -58359,7 +58594,7 @@ html.os-darwin.native-menu #menubar .mproj {
   // src/live/controller-settings.js
   function ctlRenderSettings(b, chSel) {
     const c = LV.ctl, ins = MIDI.access ? [...MIDI.access.inputs.values()].filter((i) => i !== MIDI.inp) : [], p = ctlPreset();
-    const sel2 = (id, label2, val, opts, on3) => el(
+    const sel3 = (id, label2, val, opts, on3) => el(
       "label",
       { class: "lvf" },
       label2,
@@ -58406,7 +58641,7 @@ html.os-darwin.native-menu #menubar .mproj {
             ...ins.map((i) => el("option", { value: i.name, selected: c.inName === i.name }, i.name))
           )
         ),
-        sel2(
+        sel3(
           "ctlPreset",
           "Model",
           c.preset,
@@ -58444,14 +58679,14 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "div",
         { class: "lvrow" },
-        sel2("ctlZones", "Keyboard layout", c.zones, CTL_ZONES, (v) => {
+        sel3("ctlZones", "Keyboard layout", c.zones, CTL_ZONES, (v) => {
           c.zones = v;
         })
       ),
       el(
         "div",
         { class: "lvrow" },
-        sel2(
+        sel3(
           "ctlSoloT",
           "Solo plays",
           c.soloT,
@@ -58461,7 +58696,7 @@ html.os-darwin.native-menu #menubar .mproj {
             c.soloT = +v;
           }
         ),
-        sel2(
+        sel3(
           "ctlSoloOct",
           "Solo octave",
           c.soloOct,
@@ -58503,7 +58738,7 @@ html.os-darwin.native-menu #menubar .mproj {
           }),
           "Silence the app's pattern on that track"
         ),
-        sel2(
+        sel3(
           "ctlMod",
           "Mod wheel",
           c.modWheel,
@@ -61687,8 +61922,20 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   function lvDropExtras(t2) {
     if (LV.dropStyle === "smooth") return false;
-    if (t2 - 32 > TR.tick) LV.cues.push({ type: "thin", tick: t2 - 32 });
-    if (LV.dropStyle === "gap" && t2 - 8 > TR.tick) LV.cues.push({ type: "gap", tick: t2 - 8 });
+    let thin = true, gap = LV.dropStyle === "gap" ? 8 : 0;
+    if (LV.dropStyle === "mix") {
+      const ways = [
+        [true, 8],
+        [true, 16],
+        [true, 0],
+        [false, 8]
+      ].filter((w2, i) => i !== LV.dropWay);
+      const w = ways[Math.floor(Math.random() * ways.length)];
+      LV.dropWay = [8, 16, 0].indexOf(w[1]) + (w[0] ? 0 : 3);
+      [thin, gap] = w;
+    }
+    if (thin && t2 - 32 > TR.tick) LV.cues.push({ type: "thin", tick: t2 - 32 });
+    if (gap && t2 - gap > TR.tick) LV.cues.push({ type: "gap", tick: t2 - gap });
     return true;
   }
   function liveBuildDrop() {
@@ -63519,7 +63766,7 @@ html.os-darwin.native-menu #menubar .mproj {
     b.className = "lvRecBadge " + n.cls;
   }
   function riffShow() {
-    const d = document.getElementById("lvF-looprec");
+    const d = document.getElementById("lvF-loops");
     if (!d) return;
     d.open = true;
     d.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -63540,7 +63787,7 @@ html.os-darwin.native-menu #menubar .mproj {
   );
   var btn3 = (label2, fn, title, cls) => el("button", { type: "button", class: "btn sm" + (cls ? " " + cls : ""), title: title || "", onclick: fn }, label2);
   var bars2 = (n) => n + (n > 1 ? " bars" : " bar");
-  function riffPanel() {
+  function riffPanel(ext = {}) {
     const box = el("div", { class: "riffPanel" });
     let card = null, strip2 = null, fill2 = null, status3 = null, big = null;
     const tick = () => {
@@ -63579,6 +63826,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ),
         sel("Quantize", RIFF.quant, RIFF_QUANT, (v) => riffSet("quant", v), going)
       );
+      const more2 = ext.options ? ext.options(going) : [], own = !going && ext.rec && ext.rec() || null;
       card = strip2 = fill2 = status3 = big = null;
       let main;
       if (going) {
@@ -63614,10 +63862,10 @@ html.os-darwin.native-menu #menubar .mproj {
           {
             type: "button",
             class: "btn riffBtn",
-            title: lvOn() ? "Record from the next bar" : "Start the jam and record after a bar",
-            onclick: () => riffArm()
+            title: own ? own.title : lvOn() ? "Record from the next bar" : "Start the jam and record after a bar",
+            onclick: () => own ? own.fn() : riffArm()
           },
-          "● Rec"
+          own ? own.label : "● Rec"
         );
         main = el(
           "div",
@@ -63629,7 +63877,7 @@ html.os-darwin.native-menu #menubar .mproj {
             el(
               "span",
               { class: "hint riffStat" },
-              (lvOn() ? "Records from the next bar. " : "Starts the jam, then records after a bar. ") + (RIFF.track >= 0 ? `Play ${trackName(RIFF.track)} on a keyboard, or on the MC-707 with ${trackName(RIFF.track)} selected.` : "Play any melody track on the MC-707, or a keyboard.")
+              (own ? own.hint : lvOn() ? "Records from the next bar. " : "Starts the jam, then records after a bar. ") + (RIFF.track >= 0 ? `Play ${trackName(RIFF.track)} on a keyboard, or on the MC-707 with ${trackName(RIFF.track)} selected.` : "Play any melody track on the MC-707, or a keyboard.")
             )
           ),
           last3 ? el(
@@ -63678,7 +63926,8 @@ html.os-darwin.native-menu #menubar .mproj {
                 "⤓ My patterns",
                 () => riffSaveMine(last3.id),
                 "Keep it in My patterns, for Song Mode and every song"
-              )
+              ),
+              ...ext.takeActs ? ext.takeActs(last3) : []
             )
           ) : null
         );
@@ -63686,7 +63935,9 @@ html.os-darwin.native-menu #menubar .mproj {
       const takes = riffTakes().slice(0, 8);
       box.replaceChildren(
         head3,
+        ...more2,
         main,
+        ...[ext.info ? ext.info() : null].filter(Boolean),
         el("h4", { class: "riffH" }, "Takes"),
         takes.length ? el(
           "ul",
@@ -63741,6 +63992,7 @@ html.os-darwin.native-menu #menubar .mproj {
     };
     draw2();
     riffOnChange(draw2);
+    if (ext.listen) ext.listen(() => box.isConnected && draw2());
     return box;
   }
   function takeBtn(f) {
@@ -63813,7 +64065,7 @@ html.os-darwin.native-menu #menubar .mproj {
     const h = Array(12).fill(0);
     for (const n of notes) h[n.n % 12] += weight(n);
     const total = h.reduce((a, b) => a + b, 0);
-    if (!total) return { key: hint.key, scale: hint.scale };
+    if (!total || hint && hint.fixed) return { key: hint.key, scale: hint.scale };
     const inScale = (key, scale) => SCALES[scale].reduce((a, i) => a + h[(key + i) % 12], 0) / total;
     if (hint && inScale(hint.key, hint.scale) >= 0.9) return { key: hint.key, scale: hint.scale };
     let best = null;
@@ -63872,8 +64124,10 @@ html.os-darwin.native-menu #menubar .mproj {
   var OPTS2 = "mc707-live-loopcompose";
   var LC = {
     state: "off",
-    t: -1,
-    bars: 4,
+    mode: "keep",
+    over: "beat",
+    keyFrom: "loop",
+    wait: 2,
     keep: true,
     loops: {},
     names: [],
@@ -63884,23 +64138,31 @@ html.os-darwin.native-menu #menubar .mproj {
     auto: null,
     before: "off"
   };
+  var SAVED2 = {
+    mode: ["keep", "compose"],
+    over: ["beat", "set"],
+    keyFrom: ["loop", "set"],
+    wait: [0, 2, 4],
+    keep: [true, false]
+  };
   try {
     const o = JSON.parse(localStorage.getItem(OPTS2) || "{}");
-    if (o.t != null) LC.t = o.t;
-    if (RIFF_BARS.includes(o.bars)) LC.bars = o.bars;
-    if (o.keep != null) LC.keep = !!o.keep;
+    for (const k2 in SAVED2) if (SAVED2[k2].includes(o[k2])) LC[k2] = o[k2];
   } catch (e) {
   }
   var saveOpts2 = () => {
     try {
-      localStorage.setItem(OPTS2, JSON.stringify({ t: LC.t, bars: LC.bars, keep: LC.keep }));
+      localStorage.setItem(OPTS2, JSON.stringify(Object.fromEntries(Object.keys(SAVED2).map((k2) => [k2, LC[k2]]))));
     } catch (e) {
     }
   };
-  var toneTracks2 = () => S.tracks.map((tr, t) => [t, tr.name]).filter(([t]) => S.tracks[t].type === "tone");
   var listeners2 = /* @__PURE__ */ new Set();
   var changed2 = () => listeners2.forEach((fn) => fn());
-  riffOnChange(changed2);
+  var setOpt = (k2, v) => {
+    LC[k2] = v;
+    saveOpts2();
+    changed2();
+  };
   function beatScene() {
     const drums2 = (sc) => Object.keys(sc.cells || {}).filter((t) => S.tracks[t] && S.tracks[t].type !== "tone").length;
     const from = LV.scenes.filter((sc) => sc.cells && sc.kind !== "lc").reduce((a, sc) => !a || drums2(sc) > drums2(a) ? sc : a, null);
@@ -63913,10 +64175,14 @@ html.os-darwin.native-menu #menubar .mproj {
     LV.ver++;
     return LV.scenes.length - 1;
   }
-  function record(t) {
-    if (!S.tracks[t] || S.tracks[t].type !== "tone") return void toast("Choose a melody track to record to");
-    if (LC.auto == null) LC.auto = LV.auto;
-    LV.auto = false;
+  function record() {
+    const t = RIFF.track;
+    if (t >= 0 && (!S.tracks[t] || S.tracks[t].type !== "tone")) return void toast("Choose a melody track to record to");
+    const alone = LC.over === "beat" || !lvOn();
+    if (alone) {
+      if (LC.auto == null) LC.auto = LV.auto;
+      LV.auto = false;
+    }
     for (const u of Object.keys(LC.loops).map(Number))
       if (u === t || !LC.keep) {
         if (LV.pin[u] === LC.loops[u]) {
@@ -63926,29 +64192,28 @@ html.os-darwin.native-menu #menubar .mproj {
             delete LV.pinUnder[u];
           }
         }
-        if (!LC.keep || u === t) delete LC.loops[u];
+        delete LC.loops[u];
       }
-    const beat = beatScene();
-    riffSet("track", t);
-    riffSet("bars", LC.bars);
     LC.before = LC.state;
     LC.state = "rec";
     RIFF.lc = true;
     if (!lvOn()) {
-      LV.cur = beat;
+      LV.cur = beatScene();
       riffArm();
       if (RIFF.state === "off") return fail();
-    } else {
-      const bar2 = Math.ceil((TR.tick + 16) / 32) * 32;
+    } else if (alone) {
+      const beat = beatScene(), bar2 = Math.ceil((TR.tick + 16) / 32) * 32;
       LV.cues = LV.cues.filter((c) => c.type !== "scene" && c.type !== "blend" && c.type !== "blendDrums");
       LV.cues.push({ type: "scene", idx: beat, tick: bar2, hard: true });
       lvSortCues();
       riffArm();
       if (RIFF.state === "off") return fail();
       RIFF.start = bar2 + 32;
-      RIFF.end = RIFF.start + LC.bars * 32;
+      RIFF.end = RIFF.start + RIFF.bars * 32;
+    } else {
+      riffArm();
+      if (RIFF.state === "off") return fail();
     }
-    riffShow();
     changed2();
   }
   function fail() {
@@ -63959,25 +64224,49 @@ html.os-darwin.native-menu #menubar .mproj {
     if (LC.state === "off") stop();
     changed2();
   }
-  function lcStart(t = LC.t) {
-    if (RIFF.state !== "off") return void toast("Loop rec is recording: finish or cancel it first");
+  function begin() {
     LC.loops = {};
     LC.flavor = LV.flavor;
     LV.flavor = "composed";
     LV.custom = false;
     LV.lc = null;
-    liveBuild();
-    record(t);
   }
-  function lcNewLoop(t = LC.t) {
-    if (LC.state === "off") return lcStart(t);
+  function lcRec() {
     if (RIFF.state !== "off") return void toast("Loop rec is recording: finish or cancel it first");
-    record(t);
+    if (LC.state === "off") {
+      begin();
+      liveBuild();
+    }
+    record();
+  }
+  function lcAround(id) {
+    const f = FACMAP.get(id);
+    if (!f) return;
+    if (RIFF.state !== "off") return void toast("Loop rec is recording: finish or cancel it first");
+    if (!lvOn()) return void toast("Start the jam, then compose around the take");
+    const first = LC.state === "off";
+    if (first) begin();
+    else if (!LC.keep) {
+      for (const u of Object.keys(LC.loops).map(Number)) if (u !== f.track) drop(u);
+    }
+    LC.loops[f.track] = id;
+    compose2(TR.tick, first);
+  }
+  function drop(t) {
+    if (LV.pin[t] === LC.loops[t] && lvOn()) riffPin(t, null, TR.tick);
+    delete LC.loops[t];
+  }
+  function lcDrop(t) {
+    if (LC.state !== "on" || !(t in LC.loops)) return;
+    drop(t);
+    if (!Object.keys(LC.loops).length) return lcEnd();
+    if (lvOn()) compose2(TR.tick, false);
+    else changed2();
   }
   function lcEnd() {
     if (LC.state === "rec") riffCancel();
     stop();
-    toast("LoopCompose ended: your loops stay on their tracks (■ Back in Loop rec takes one off)");
+    toast("LoopCompose ended: your loops stay on their tracks (■ Back takes one off)");
   }
   function stop() {
     LC.state = "off";
@@ -63995,16 +64284,19 @@ html.os-darwin.native-menu #menubar .mproj {
   riffOnTake((f, tick) => {
     if (LC.state !== "rec") return;
     if (!f) return fail();
-    const first = LC.before !== "on";
     LC.loops[f.track] = f.id;
+    compose2(tick, LC.before !== "on");
+  });
+  function compose2(tick, first) {
     const loops = Object.entries(LC.loops).map(([t, id]) => ({ t: +t, f: FACMAP.get(id) })).filter((x) => x.f);
+    if (!loops.length) return fail();
     const h = loopHarmony(
       loops.map((x) => ({
         notes: x.f.notes,
         bars: x.f.bars,
         bass: /bass|acid/.test(x.f.pool || "") || x.f.notes.reduce((a, n) => a + n.n, 0) / x.f.notes.length < 50
       })),
-      { key: LV.key, scale: LV.mode === "major" ? "major" : "minor" }
+      { key: LV.key, scale: LV.mode === "major" ? "major" : "minor", fixed: LC.keyFrom === "set" }
     );
     for (const x of loops) x.f.key = { root: h.key, scale: h.scale };
     Object.assign(LC, { key: h.key, scale: h.scale, names: h.names });
@@ -64024,111 +64316,176 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     if (into < 0) into = 0;
     LV.cues = LV.cues.filter((c) => c.type !== "scene");
-    LV.cues.push({ type: "scene", idx: into, tick: Math.ceil(tick / 32) * 32 + 64 });
+    LV.cues.push({ type: "scene", idx: into, tick: Math.ceil(tick / 32) * 32 + LC.wait * 32 });
     lvSortCues();
     if (LC.auto != null) LV.auto = LC.auto;
     LC.auto = null;
     LC.state = "on";
     saveLive();
     LV.ver++;
-    toast("Your loop: " + keyName2(h.key, h.scale) + ", " + h.names.join(" – ") + ". The set comes in in two bars");
+    toast(
+      "Your loop: " + keyName2(h.key, h.scale) + ", " + h.names.join(" – ") + ". The set comes in " + (LC.wait ? "in " + LC.wait + " bars" : "on the next bar")
+    );
     liveRender();
     changed2();
-  });
-  function lcPanel() {
-    const box = el("div", { class: "lcPanel" });
-    const draw2 = () => {
-      if (LC.t < 0 || !S.tracks[LC.t] || S.tracks[LC.t].type !== "tone") {
-        const first = toneTracks2()[0];
-        LC.t = first ? first[0] : -1;
-      }
-      const going = LC.state === "rec";
-      const pick5 = el(
-        "select",
-        {
-          "aria-label": "LoopCompose track",
-          disabled: going,
-          onchange: (e) => {
-            LC.t = +e.target.value;
-            saveOpts2();
-          }
-        },
-        ...toneTracks2().map(([t, name]) => el("option", { value: t, selected: t === LC.t }, name))
-      );
-      const len = el(
-        "select",
-        {
-          "aria-label": "LoopCompose length",
-          disabled: going,
-          onchange: (e) => {
-            LC.bars = +e.target.value;
-            saveOpts2();
-          }
-        },
-        ...RIFF_BARS.map((n) => el("option", { value: n, selected: n === LC.bars }, n + (n > 1 ? " bars" : " bar")))
-      );
-      const keep2 = el("input", {
-        type: "checkbox",
-        checked: LC.keep,
-        onchange: (e) => {
-          LC.keep = e.target.checked;
-          saveOpts2();
-        }
-      });
-      const b = (label2, fn, title, cls) => el("button", { type: "button", class: "btn" + (cls ? " " + cls : " sm"), title, onclick: fn }, label2);
-      const loops = Object.entries(LC.loops).map(([t, id]) => [S.tracks[t] && S.tracks[t].name, FACMAP.get(id)]).filter((x) => x[0] && x[1]);
-      const kids = [
-        el(
-          "p",
-          { class: "lcHelp" },
-          "Start from a beat, play a loop on a track, and the composer writes the rest of the set around it."
-        ),
-        el(
-          "div",
-          { class: "riffRow" },
-          el("label", { class: "lvf" }, "Record to", pick5),
-          el("label", { class: "lvf" }, "Length", len),
-          LC.state !== "off" ? el("label", { class: "lvf lcKeep" }, keep2, "Keep my other loops") : null
-        ),
-        going ? el(
-          "div",
-          { class: "riffRow" },
+  }
+  var sel2 = (label2, val, opts, on3, disabled) => el(
+    "label",
+    { class: "lvf" },
+    label2,
+    el(
+      "select",
+      { "aria-label": label2, disabled: !!disabled, onchange: (e) => on3(e.target.value) },
+      ...opts.map(([v, l]) => el("option", { value: v, selected: String(v) === String(val) }, l))
+    )
+  );
+  function loopPanel() {
+    const compose1 = () => LC.mode === "compose";
+    return riffPanel({
+      listen: (fn) => listeners2.add(fn),
+      options: (going) => {
+        const beat = compose1() && LC.over === "beat";
+        const rows2 = [
           el(
-            "span",
-            { class: "lcStat", "aria-live": "polite" },
-            RIFF.state === "rec" ? "● Recording your loop on " + S.tracks[LC.t].name + "…" : "The beat, then play your loop from the next bar (the count-down is in Loop rec)"
-          ),
-          b("Cancel", () => riffCancel(), "Throw the recording away")
-        ) : el(
-          "div",
-          { class: "riffRow" },
-          LC.state === "off" ? b("● Start", () => lcStart(LC.t), "Play a beat and record your loop on the track chosen", "rec") : b(
-            "● New loop",
-            () => lcNewLoop(LC.t),
-            "Record another loop: the set strips back to the drums, then a new set around your loops comes in",
-            "rec"
-          ),
-          LC.state === "on" ? b("■ End", lcEnd, "LoopCompose off (your loops stay on their tracks)") : null
-        ),
-        LC.state === "on" ? el(
-          "div",
-          { class: "lcInfo" },
-          el("b", {}, keyName2(LC.key, LC.scale) + ": "),
-          LC.names.join(" – "),
-          ...loops.map(
-            ([tn, f]) => el(
-              "div",
-              { class: "lcLoop" },
-              "↻ " + f.name + " on " + tn + ", " + f.bars + (f.bars > 1 ? " bars" : " bar")
+            "div",
+            { class: "riffRow" },
+            sel2(
+              "When the take is in",
+              compose1() ? "compose" : RIFF.auto ? "play" : "wait",
+              [
+                ["wait", "Wait for ▶ Play"],
+                ["play", "Play it straight away"],
+                ["compose", "Compose a set around it"]
+              ],
+              (v) => {
+                if (v !== "compose") riffSet("auto", v === "play");
+                setOpt("mode", v === "compose" ? "compose" : "keep");
+              },
+              going
+            ),
+            sel2(
+              "Recording starts",
+              beat ? "beat" : RIFF.count,
+              beat ? [["beat", "After a bar of the beat"]] : RIFF_COUNT,
+              (v) => riffSet("count", v),
+              going || beat
             )
           )
-        ) : null
-      ];
-      box.replaceChildren(...kids.filter(Boolean));
-    };
-    listeners2.add(() => box.isConnected && draw2());
-    draw2();
-    return box;
+        ];
+        if (compose1())
+          rows2.push(
+            el(
+              "div",
+              { class: "riffRow lcOpts" },
+              sel2(
+                "Record over",
+                LC.over,
+                [
+                  ["beat", "The beat alone"],
+                  ["set", "The set as it plays"]
+                ],
+                (v) => setOpt("over", v),
+                going
+              ),
+              sel2(
+                "Key",
+                LC.keyFrom,
+                [
+                  ["loop", "Found in my loop"],
+                  ["set", "The set’s key"]
+                ],
+                (v) => setOpt("keyFrom", v),
+                going
+              ),
+              sel2(
+                "The set comes in",
+                LC.wait,
+                [
+                  [0, "On the next bar"],
+                  [2, "After 2 bars"],
+                  [4, "After 4 bars"]
+                ],
+                (v) => setOpt("wait", +v),
+                going
+              ),
+              el(
+                "label",
+                {
+                  class: "lvf lcKeep",
+                  title: "Loops you recorded before stay on their tracks, and the set is written around all of them"
+                },
+                el("input", { type: "checkbox", checked: LC.keep, onchange: (e) => setOpt("keep", e.target.checked) }),
+                "Keep my other loops"
+              )
+            )
+          );
+        return rows2;
+      },
+      rec: () => compose1() ? {
+        label: LC.state === "on" ? "● New loop" : "● Rec",
+        title: LC.state === "on" ? "Record another loop: a new set around your loops comes in after it" : "Record a loop: the composer writes the rest of the set around it",
+        fn: lcRec,
+        hint: (LC.over === "beat" || !lvOn() ? "The beat plays alone and your loop records after a bar of it; " : "Your loop records over the set; ") + "then the composer writes the set around it. "
+      } : null,
+      takeActs: (f) => [
+        el(
+          "button",
+          {
+            type: "button",
+            class: "btn sm",
+            title: "The composer writes a set around this take: its key and chords, every other part on them",
+            onclick: () => lcAround(f.id)
+          },
+          "✎ Compose around it"
+        )
+      ],
+      info: () => {
+        if (LC.state !== "on") return null;
+        const loops = Object.entries(LC.loops).map(([t, id]) => [+t, S.tracks[t] && S.tracks[t].name, FACMAP.get(id)]).filter((x) => x[1] && x[2]);
+        return el(
+          "div",
+          { class: "lcInfo" },
+          el(
+            "div",
+            { class: "lcHead" },
+            el(
+              "span",
+              {},
+              el("b", {}, "Composed around your loops · " + keyName2(LC.key, LC.scale) + ": "),
+              LC.names.join(" – ")
+            ),
+            el(
+              "button",
+              {
+                type: "button",
+                class: "btn sm",
+                title: "LoopCompose off (your loops stay on their tracks)",
+                onclick: lcEnd
+              },
+              "■ End"
+            )
+          ),
+          ...loops.map(
+            ([t, tn, f]) => el(
+              "div",
+              { class: "lcLoop" },
+              "↻ " + f.name + " on " + tn + ", " + f.bars + (f.bars > 1 ? " bars" : " bar"),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "btn sm",
+                  "aria-label": "Take " + f.name + " out of the set",
+                  title: "Out of the set: it is written again around the loops left",
+                  onclick: () => lcDrop(t)
+                },
+                "✕"
+              )
+            )
+          )
+        );
+      }
+    });
   }
 
   // src/live/live-mixer.js
@@ -64403,7 +64760,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (!root) return;
     root.dataset.theme = LV.theme;
     root.dataset.light = LV_THEMES[LV.theme].light ? "1" : "";
-    const sel2 = (label2, node) => el("label", { class: "lvf" }, label2, node);
+    const sel3 = (label2, node) => el("label", { class: "lvf" }, label2, node);
     const styleSel = el("select", {
       id: "lvStyle",
       "aria-label": "Style",
@@ -64538,8 +64895,8 @@ html.os-darwin.native-menu #menubar .mproj {
         },
         "＋ Save as scene"
       ),
-      sel2("Style", styleSel),
-      sel2("Key", el("span", { class: "lvsw" }, keySel, modeSel)),
+      sel3("Style", styleSel),
+      sel3("Key", el("span", { class: "lvsw" }, keySel, modeSel)),
       el("span", { class: "lvKeyRec", id: "lvKeyRec", "aria-label": "Suggested keys for this style" }),
       el(
         "span",
@@ -64650,8 +65007,8 @@ html.os-darwin.native-menu #menubar .mproj {
     const playOpts = el(
       "div",
       { class: "lvPlayOpts" },
-      sel2("Loops", reps),
-      sel2(
+      sel3("Loops", reps),
+      sel3(
         "Patterns",
         el(
           "select",
@@ -64680,8 +65037,8 @@ html.os-darwin.native-menu #menubar .mproj {
           )
         )
       ),
-      sel2("Launch on", qs),
-      sel2("Entry", es),
+      sel3("Launch on", qs),
+      sel3("Entry", es),
       el(
         "label",
         { class: "lvf" },
@@ -64794,8 +65151,7 @@ html.os-darwin.native-menu #menubar .mproj {
       "div",
       { class: "lvRight" },
       /* playing your own loops comes first: these were below the fold under Energy, Moves and Knobs */
-      fold("loopcompose", "LoopCompose", true, lcPanel()),
-      fold("looprec", "Loop rec", false, riffPanel()),
+      fold("loops", "Loop rec", true, loopPanel()),
       el(
         "div",
         { class: "lvPanel" },
@@ -64935,12 +65291,14 @@ html.os-darwin.native-menu #menubar .mproj {
               {
                 id: "lvDropSt",
                 "aria-label": "Drop style",
-                title: "How big jumps land: Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first",
+                title: "How big jumps land: Mixed lands a different way each time, Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first",
                 onchange: (e) => {
                   LV.dropStyle = e.target.value;
+                  LV.dropPick = true;
                   saveLive();
                 }
               },
+              el("option", { value: "mix" }, "Mixed drops"),
               el("option", { value: "gap" }, "Hard drop + gap"),
               el("option", { value: "hard" }, "Hard drop"),
               el("option", { value: "smooth" }, "Smooth drop")
@@ -67545,7 +67903,7 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     };
     const rows2 = shown5.map((t) => {
-      const sel2 = el("select", {
+      const sel3 = el("select", {
         "aria-label": "Track " + devNum(t) + " role",
         onchange: (e) => set2(roles.map((r, i) => i === t ? e.target.value : r))
       });
@@ -67555,7 +67913,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ]) {
         const g = el("optgroup", { label: lab });
         list2.forEach((r) => g.append(el("option", { value: r[0], selected: r[0] === roles[t] }, r[1])));
-        sel2.append(g);
+        sel3.append(g);
       }
       const isD = roleInfo(roles[t], t)[2] === "drum";
       return el(
@@ -67563,7 +67921,7 @@ html.os-darwin.native-menu #menubar .mproj {
         { class: "tsRow", style: "--c:" + TRACK_COLORS[t] },
         el("b", {}, "Track " + devNum(t)),
         el("span", { class: "tsType " + (isD ? "d" : "t") }, isD ? "DRUM" : "TONE"),
-        sel2,
+        sel3,
         el("input", {
           type: "text",
           maxlength: 16,
@@ -68815,7 +69173,7 @@ html.os-darwin.native-menu #menubar .mproj {
       save4();
       const factory = ZS.list.some((e) => e.src === "factory" && e.mpj);
       const opt = (v, label2, cur2) => el("option", { value: v, selected: String(v) === String(cur2) }, label2);
-      const sel2 = (label2, cur2, list2, on3, extra = {}) => el(
+      const sel3 = (label2, cur2, list2, on3, extra = {}) => el(
         "select",
         { "aria-label": label2, onchange: (e) => on3(e.target.value), ...extra },
         ...list2.map(([v, l]) => opt(v, l, cur2))
@@ -68847,7 +69205,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ),
         field(
           "Genre",
-          sel2(
+          sel3(
             "Genre",
             TB.genre,
             Object.entries(TPL_GENRES).map(([id, g]) => [id, g.name]),
@@ -68861,7 +69219,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ),
         field(
           "Track layout",
-          sel2(
+          sel3(
             "Track layout",
             TB.layout,
             [
@@ -68942,7 +69300,7 @@ html.os-darwin.native-menu #menubar .mproj {
           "div",
           { class: "tbRow" + (kind === "drum" ? " drum" : "") },
           el("b", { class: "tbNum" }, devTag(t, tr)),
-          sel2(
+          sel3(
             "Track " + (t + 1) + " plays",
             tr.role,
             TPL_ROLES.map(([id, l, d]) => [id, (d ? "Drums: " : "") + l]),
@@ -68953,7 +69311,7 @@ html.os-darwin.native-menu #menubar .mproj {
               render3();
             }
           ),
-          sel2(
+          sel3(
             "Track " + (t + 1) + " clips",
             tr.n,
             COUNTS.map((n) => [n, n === 0 ? "No clips" : n + (n === 1 ? " clip" : " clips")]),
@@ -69023,7 +69381,7 @@ html.os-darwin.native-menu #menubar .mproj {
               "label",
               {},
               el("span", {}, "Clip " + (k2 + 1)),
-              sel2(
+              sel3(
                 "Track " + (t + 1) + " clip " + (k2 + 1) + " sound",
                 cur2 || "",
                 [["", "— empty —"], ...list2.map((n) => [n, n])],
@@ -69042,7 +69400,7 @@ html.os-darwin.native-menu #menubar .mproj {
         { class: "tbMore" },
         field(
           "Clip length",
-          sel2(
+          sel3(
             "Clip length",
             TB.clipBars,
             [1, 2, 4, 8].map((n) => [n, n + (n === 1 ? " bar" : " bars")]),
@@ -69746,19 +70104,19 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
   function refreshIns() {
-    const sel2 = $("#midiIn");
-    if (!sel2) return;
+    const sel3 = $("#midiIn");
+    if (!sel3) return;
     const ins = MIDI.access ? [...MIDI.access.inputs.values()] : [];
-    sel2.textContent = "";
-    sel2.append(el("option", { value: "" }, "No input"));
-    ins.forEach((i) => sel2.append(el("option", { value: i.id }, i.name)));
+    sel3.textContent = "";
+    sel3.append(el("option", { value: "" }, "No input"));
+    ins.forEach((i) => sel3.append(el("option", { value: i.id }, i.name)));
     const pick5 = ins.find((i) => i.id === S.midiIn) || mcFind(ins);
     if (pick5) {
-      sel2.value = pick5.id;
+      sel3.value = pick5.id;
       const back = MIDI.inLost && pick5.state === "connected";
       if (!MIDI.inp || MIDI.inp.id !== pick5.id || back) setMidiIn(pick5.id);
       MIDI.inLost = pick5.state === "disconnected";
-    } else sel2.value = "";
+    } else sel3.value = "";
     if (LV.ctl && LV.ctl.map && typeof ctlAttach === "function") ctlAttach();
   }
   function syncExtra() {
@@ -75517,8 +75875,8 @@ html.os-darwin.native-menu #menubar .mproj {
     ["button", "Move a control on your controller to link it", "Learn"]
   ];
   function apply3(root) {
-    for (const [sel2, help, text2] of HELP)
-      for (const e of root.querySelectorAll(sel2)) {
+    for (const [sel3, help, text2] of HELP)
+      for (const e of root.querySelectorAll(sel3)) {
         if (e.title || e.closest('[title]:not([title=""])') || e.dataset.helped) continue;
         if (text2 && !(e.textContent || "").trim().startsWith(text2)) continue;
         e.title = help;
@@ -75712,6 +76070,7 @@ html.os-darwin.native-menu #menubar .mproj {
       liveStart,
       liveScene,
       lvSegs,
+      lvOwnBuild,
       liveCue,
       lvEmute,
       lvFadeKind,

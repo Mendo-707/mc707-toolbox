@@ -152,7 +152,7 @@ import { initStageB } from './song/track-midi.js';
 import { initStructure } from './song/structure.js';
 import { wizCellAt } from './song/wizard-plan.js';
 import { initWizard } from './song/sound-suggestions.js';
-import { LV, liveSwingAmt, liveTempo } from './live/state.js';
+import { LV, liveSwingAmt, liveTempo, lvOwnBuild } from './live/state.js';
 import { liveRenderSceneEd } from './live/scene-editor.js';
 import { liveBuild, liveSwapIds } from './live/set-builder.js';
 import { liveCleanup, lvEmute, lvFadeKind, liveScene, liveStart, liveTick } from './live/engine.js';
@@ -383,6 +383,7 @@ PROJ.t = projTitle;
     liveStart,
     liveScene,
     lvSegs,
+    lvOwnBuild,
     liveCue,
     lvEmute,
     lvFadeKind,

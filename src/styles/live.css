@@ -1984,43 +1984,32 @@ input[type='number'] {
   }
 }
 
-/* LoopCompose (live/loop-compose.js) */
-.lcPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.lcHelp {
-  margin: 0;
-  font-size: 13px;
-  opacity: 0.8;
-}
-.lcPanel .btn.rec {
-  min-width: 96px;
-  font-weight: 700;
-  color: #ef4444;
-  border-color: color-mix(in srgb, #ef4444 55%, transparent);
-}
-.lcPanel .btn.rec:hover {
-  background: #ef4444;
-  color: #fff;
-}
-.lcStat {
-  font-weight: 700;
-  color: #f59e0b;
+/* LoopCompose's part of the Loop rec panel (live/loop-compose.js) */
+.lcOpts {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--hot) 8%, transparent);
 }
 .lcKeep {
   gap: 6px;
 }
 .lcInfo {
+  margin: 8px 0;
   padding: 6px 8px;
   border-radius: 6px;
   background: color-mix(in srgb, #22c55e 14%, transparent);
   font-size: 13px;
 }
+.lcHead,
 .lcLoop {
-  margin-top: 2px;
-  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lcLoop {
+  margin-top: 4px;
+  opacity: 0.9;
 }
 /* auto-pilot's plan (not cued yet): a fainter line */
 .lvLine.plan {

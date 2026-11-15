@@ -2,8 +2,8 @@
 //
 // Reads: S, LV, TR.
 // Calls up the layers through hooks (core/hooks.js).
-import { riffPanel, riffShow } from './riff.js';
-import { lcPanel } from './loop-compose.js';
+import { riffShow } from './riff.js';
+import { loopPanel } from './loop-compose.js';
 import { liveMixerOpen } from './live-mixer.js';
 import { humanizeControl } from './humanize-ui.js';
 import { moodControl } from './mood-ui.js';
@@ -550,8 +550,7 @@ export function liveInit() {
     'div',
     { class: 'lvRight' },
     /* playing your own loops comes first: these were below the fold under Energy, Moves and Knobs */
-    fold('loopcompose', 'LoopCompose', true, lcPanel()),
-    fold('looprec', 'Loop rec', false, riffPanel()),
+    fold('loops', 'Loop rec', true, loopPanel()),
     el(
       'div',
       { class: 'lvPanel' },
@@ -692,12 +691,14 @@ export function liveInit() {
               id: 'lvDropSt',
               'aria-label': 'Drop style',
               title:
-                'How big jumps land: Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first',
+                'How big jumps land: Mixed lands a different way each time, Smooth crossfades, Hard cuts kick and bass for the last bar then slams in with an impact, Hard + gap adds a beat of silence first',
               onchange: e => {
                 LV.dropStyle = e.target.value;
+                LV.dropPick = true;
                 saveLive();
               }
             },
+            el('option', { value: 'mix' }, 'Mixed drops'),
             el('option', { value: 'gap' }, 'Hard drop + gap'),
             el('option', { value: 'hard' }, 'Hard drop'),
             el('option', { value: 'smooth' }, 'Smooth drop')

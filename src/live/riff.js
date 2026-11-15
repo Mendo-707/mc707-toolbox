@@ -714,7 +714,7 @@ function badge() {
 }
 /** Open the Loop rec panel and bring it into view (the badge's click). */
 export function riffShow() {
-  const d = document.getElementById('lvF-looprec');
+  const d = document.getElementById('lvF-loops');
   if (!d) return;
   d.open = true;
   d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -739,8 +739,13 @@ const btn = (label, fn, title, cls) =>
   el('button', { type: 'button', class: 'btn sm' + (cls ? ' ' + cls : ''), title: title || '', onclick: fn }, label);
 const bars = n => n + (n > 1 ? ' bars' : ' bar');
 
-/** The Loop rec panel: choices, ● Rec, the recording as it happens, the take just made, and the takes. */
-export function riffPanel() {
+/**
+ * The Loop rec panel: choices, ● Rec, the recording as it happens, the take just made, and the takes.
+ * LoopCompose (live/loop-compose.js, which builds the panel) adds to it through `ext`: options(going) more
+ * rows of choices, rec() the ● Rec button's {label, title, fn, hint} when it takes the recording over,
+ * takeActs(take) more buttons on a take's card, info() what it is doing, listen(fn) its changes.
+ */
+export function riffPanel(ext = {}) {
   const box = el('div', { class: 'riffPanel' });
   let card = null,
     strip = null,
@@ -787,6 +792,8 @@ export function riffPanel() {
       ),
       sel('Quantize', RIFF.quant, RIFF_QUANT, v => riffSet('quant', v), going)
     );
+    const more = ext.options ? ext.options(going) : [],
+      own = (!going && ext.rec && ext.rec()) || null;
     /* idle: ● Rec and where it will listen; going: the count-down or the recording; done: the take */
     card = strip = fill = status = big = null;
     let main;
@@ -827,10 +834,10 @@ export function riffPanel() {
         {
           type: 'button',
           class: 'btn riffBtn',
-          title: lvOn() ? 'Record from the next bar' : 'Start the jam and record after a bar',
-          onclick: () => riffArm()
+          title: own ? own.title : lvOn() ? 'Record from the next bar' : 'Start the jam and record after a bar',
+          onclick: () => (own ? own.fn() : riffArm())
         },
-        '● Rec'
+        own ? own.label : '● Rec'
       );
       main = el(
         'div',
@@ -842,7 +849,7 @@ export function riffPanel() {
           el(
             'span',
             { class: 'hint riffStat' },
-            (lvOn() ? 'Records from the next bar. ' : 'Starts the jam, then records after a bar. ') +
+            (own ? own.hint : lvOn() ? 'Records from the next bar. ' : 'Starts the jam, then records after a bar. ') +
               (RIFF.track >= 0
                 ? `Play ${trackName(RIFF.track)} on a keyboard, or on the MC-707 with ${trackName(RIFF.track)} selected.`
                 : 'Play any melody track on the MC-707, or a keyboard.')
@@ -902,7 +909,8 @@ export function riffPanel() {
                   '⤓ My patterns',
                   () => riffSaveMine(last.id),
                   'Keep it in My patterns, for Song Mode and every song'
-                )
+                ),
+                ...(ext.takeActs ? ext.takeActs(last) : [])
               )
             )
           : null
@@ -911,7 +919,9 @@ export function riffPanel() {
     const takes = riffTakes().slice(0, 8);
     box.replaceChildren(
       head,
+      ...more,
       main,
+      ...[ext.info ? ext.info() : null].filter(Boolean),
       el('h4', { class: 'riffH' }, 'Takes'),
       takes.length
         ? el(
@@ -969,6 +979,7 @@ export function riffPanel() {
   };
   draw();
   riffOnChange(draw);
+  if (ext.listen) ext.listen(() => box.isConnected && draw());
   return box;
 }
 /* ▶ Play / ■ Back for a take, or what it is waiting for */

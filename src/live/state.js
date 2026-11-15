@@ -90,6 +90,7 @@ const LV_SAVE = [
   'restV',
   'riseBars',
   'dropStyle',
+  'dropPick',
   'mode',
   'vary',
   'flavor',
@@ -139,7 +140,8 @@ export const LV = Object.assign(
     ktarget: 'all',
     rest: [64, 0, 64, 64],
     riseBars: 4,
-    dropStyle: 'gap',
+    dropStyle: 'mix',
+    dropPick: false,
     mode: null,
     vary: 50,
     flavor: 'composed',
@@ -241,7 +243,9 @@ export const liveSwingAmt = () => LV.swing;
   LV.keyCh = clamp(Math.round(+LV.keyCh || 0), 0, 16);
   LV.autoReps = clamp(Math.round(+LV.autoReps || 2), 1, 4);
   LV.chaos = clamp(Math.round(+LV.chaos || 0), 0, 100);
-  if (!['smooth', 'hard', 'gap'].includes(LV.dropStyle)) LV.dropStyle = 'gap';
+  if (!['smooth', 'hard', 'gap', 'mix'].includes(LV.dropStyle)) LV.dropStyle = 'mix';
+  /* Mixed is the default (1.9.4): a set on the old default, never picked by hand, moves to it */
+  if (LV.dropStyle === 'gap' && !LV.dropPick) LV.dropStyle = 'mix';
   if (!['lively', 'mixed', 'classic', 'composed'].includes(LV.flavor)) LV.flavor = 'composed';
   /* Composed is the default (1.8.6): a set on the old default, never picked by hand, moves to it */
   if (!LV.flavorPick) LV.flavor = 'composed';
@@ -299,7 +303,7 @@ export function saveLive() {
 /** A composed lift that already rolls into the drop on the build overlay's track (its own build part). */
 export const lvOwnBuild = sc => {
   const c = sc && sc.cells && sc.cells[lvBT()];
-  return !!(c && /-build$/.test(c.id));
+  return !!(c && /-build\d?$/.test(c.id));
 };
 export const lvBT = () => {
   if (DEV === '101') return 0;

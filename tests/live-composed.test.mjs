@@ -351,3 +351,68 @@ test('Build → Drop shorter than the lift’s build: the build joins part way a
   assert.equal(r.drop, 'peak');
   assert.deepEqual(errors, []);
 });
+
+test('Builds and drops vary: the Lift takes other shapes each time, and Mixed drops land different ways', async () => {
+  const { page, errors } = await openApp({
+    storage: { 'mc707-live': JSON.stringify({ flavor: 'composed', flavorPick: true, style: 'techno', auto: false }) }
+  });
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(async () => {
+    const a = window.__app,
+      LV = a.LV;
+    a.ensureAudio();
+    await a.connectMidi();
+    Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => a.TR.nextTime, configurable: true });
+    const out = { style: LV.dropStyle };
+    LV.riseBars = 2;
+    a.liveStart(0);
+    a.TICKER.stop();
+    const step = n => {
+      for (let i = 0; i < n; i++) (a.processTick(a.TR.tick, a.TR.nextTime), a.advance());
+    };
+    const lift = LV.scenes.findIndex(s => s.kind === 'build'),
+      sc = LV.scenes[lift];
+    out.ways = Object.values(sc.cells).map(c => c.ways.length);
+    /* six Build → Drops: what the Lift plays each time, and how each drop lands */
+    out.builds = [];
+    out.lands = [];
+    out.own = true;
+    out.same = 0;
+    let last = '';
+    for (let i = 0; i < 6; i++) {
+      step(40);
+      a.liveBuildDrop();
+      const ids = Object.values(sc.cells)
+        .map(c => c.id)
+        .join(' ');
+      if (ids === last) out.same++;
+      last = ids;
+      out.builds.push(ids);
+      out.own = out.own && a.lvOwnBuild(sc) && !LV.cues.some(c => c.type === 'bov');
+      const drop = LV.cues.filter(c => c.type === 'scene').pop().tick,
+        gap = LV.cues.find(c => c.type === 'gap');
+      out.lands.push((LV.cues.some(c => c.type === 'thin') ? 'thin' : 'full') + ':' + (gap ? drop - gap.tick : 0));
+      while (LV.cur !== lift) step(1);
+      const s0 = LV.sceneStart;
+      while (LV.sceneStart === s0) step(1);
+      /* every part of the build is a real pattern with notes */
+      out.empty = Object.values(sc.cells).some(c => !a.facById(c.id) || !a.facById(c.id).notes.length);
+    }
+    a.stopAll();
+    return out;
+  });
+  assert.equal(r.style, 'mix', 'Mixed drops are the default');
+  assert.ok(
+    r.ways.filter(n => n === 4).length >= 2,
+    'the build’s kick, perc, bass or riser have four shapes: ' + r.ways
+  );
+  assert.equal(r.same, 0, 'no build twice in a row');
+  assert.ok(new Set(r.builds).size >= 4, 'at least four different builds in six: ' + new Set(r.builds).size);
+  assert.ok(r.own, 'the composed build needs no library build on top');
+  assert.equal(r.empty, false);
+  assert.ok(new Set(r.lands).size >= 3, 'the drops land at least three ways in six: ' + r.lands.join(', '));
+  for (let i = 1; i < r.lands.length; i++)
+    assert.notEqual(r.lands[i], r.lands[i - 1], 'not the same landing twice running');
+  assert.deepEqual(errors, []);
+});

@@ -339,12 +339,18 @@ function buildComposed(st) {
       const id = entry(t, role, v);
       /* (a part that would crowd a loop of yours sits that scene out) */
       if (!id || (lc && lc.loops[t] == null && crowds(id))) continue;
-      /* the ways this part can come back: the same variant in the other takes (builds stay as they are) */
+      /* the ways this part can come back: the same variant in the other takes; for a build's kick, perc,
+         bass and riser, its other shapes (library/compose.js BUILDS) */
       const ways = [id];
       if (v !== 'build' && v !== 'rise')
         for (let k = 1; k < CMP_TAKES; k++) {
           const a = entry(t, role, v, k);
           if (a && !crowds(a)) ways.push(a);
+        }
+      else if (['full', 'kit', 'perc', 'bass', 'pluck'].includes(role))
+        for (let k = 1; k < 4; k++) {
+          const a = entry(t, role, v + k);
+          if (a) ways.push(a);
         }
       cells[t] = { id, pool: role, ways, hook: role === 'lead' };
     }
@@ -370,11 +376,23 @@ function buildComposed(st) {
  * A composed set's scene is cued: the first time it plays as written; after that, some of its parts come
  * back another way (the same variant from another take of the set). How many depends on Variation: none
  * at 0, about a third at Low, half at Medium, three quarters from High. The lead's hook changes less.
+ * The Lift is different every time it is cued.
  */
 export function lvSceneTurn(idx) {
   const sc = LV.scenes[idx];
   if (LV.flavor !== 'composed' || !sc || !sc.cells) return;
   sc.n = (sc.n || 0) + 1;
+  /* a build is another one every time: each of its parts takes a shape of its own (never the one it just
+     had), whatever Variation is set to */
+  if (sc.kind === 'build') {
+    for (const t in sc.cells) {
+      const cell = sc.cells[t],
+        others = (cell.ways || []).filter(id => id !== cell.id && FACMAP.has(id));
+      if (others.length) cell.id = others[Math.floor(Math.random() * others.length)];
+    }
+    LV.ver++;
+    return;
+  }
   if (sc.n < 2 || LV.vary <= 0) return;
   const p = LV.vary < 35 ? 0.33 : LV.vary < 70 ? 0.5 : 0.75;
   let any = false;
