@@ -119,3 +119,108 @@ export function melodyFeelOk(f, styleId) {
   if (isDotted(f)) return DOTTED_STYLES.has(styleId);
   return true;
 }
+
+/* ---------- weak lines ----------
+   What makes a line sound generic, measured on its top notes: the same rhythm in nearly every bar, a
+   back-and-forth wobble (x y x y), a scale run of five notes or more, the same shape moved up a step bar
+   after bar (a sequence), 16th runs through the bar, no rhythm that ever comes back, two notes only, notes
+   all on the beat, no space, and a last note cut short. Each costs points from 100. */
+/**
+ * How good a lead line is (0-100): 70 and up is fine; under 70 is left out of Live Mode's automatic picks.
+ * Plucks are mostly arps, where one length and a wide range are the point: for them only a two-note wobble
+ * that loops, or notes thrown about over two octaves, count against.
+ * @param {{notes:{s:number,l:number,n:number}[], bars:number}} f
+ * @param {'lead'|'pluck'} role
+ */
+export function melodyQuality(f, role = 'lead') {
+  if (f._mq && f._mq[role] != null) return f._mq[role];
+  const line = [];
+  for (const n of f.notes.slice().sort((a, b) => a.s - b.s || b.n - a.n))
+    if (!line.length || line[line.length - 1].s !== n.s) line.push(n);
+  const bars = Math.max(1, f.bars || 1),
+    N = line.length;
+  let sc = 100;
+  if (N >= 3) {
+    const rb = Array.from({ length: bars }, (_, b) =>
+      line
+        .filter(n => Math.floor(n.s / 16) === b)
+        .map(n => n.s % 16)
+        .join(',')
+    );
+    const cnt = {};
+    for (const x of rb) if (x) cnt[x] = (cnt[x] || 0) + 1;
+    const topShare = Math.max(0, ...Object.values(cnt)) / bars;
+    let wob = 0;
+    for (let i = 3; i < N; i++)
+      if (
+        line[i].n === line[i - 2].n &&
+        line[i - 1].n === line[i - 3].n &&
+        line[i].n !== line[i - 1].n &&
+        Math.abs(line[i].n - line[i - 1].n) <= 2
+      )
+        wob++;
+    const pcs = new Set(line.map(n => n.n)).size;
+    if (role === 'pluck') {
+      if (pcs <= 2 && wob >= 4 && topShare >= 0.75) sc -= 40;
+      /* notes thrown about over two octaves and more, more than an octave apart a third of the time */
+      const ns = line.map(n => n.n),
+        wide = line.slice(1).filter((n, i) => Math.abs(n.n - line[i].n) > 12).length / (N - 1);
+      if (Math.max(...ns) - Math.min(...ns) > 24 && wide > 0.3) sc -= 40;
+    } else {
+      let rep = 0;
+      for (let b = 1; b < bars; b++) if (rb[b] && [1, 2, 4].some(l => b - l >= 0 && rb[b] === rb[b - l])) rep++;
+      const iv = line.slice(1).map((n, i) => n.n - line[i].n);
+      let run = 1,
+        maxRun = 1;
+      for (let i = 1; i < iv.length; i++) {
+        run =
+          iv[i] &&
+          iv[i - 1] &&
+          Math.abs(iv[i]) <= 2 &&
+          Math.abs(iv[i - 1]) <= 2 &&
+          Math.sign(iv[i]) === Math.sign(iv[i - 1])
+            ? run + 1
+            : 1;
+        maxRun = Math.max(maxRun, run);
+      }
+      const shapeOf = b => {
+        const xs = line.filter(n => Math.floor(n.s / 16) === b);
+        return xs.length > 1
+          ? {
+              sh: xs
+                .slice(1)
+                .map((n, i) => n.n - xs[i].n)
+                .join(','),
+              lo: xs[0].n
+            }
+          : null;
+      };
+      let seq = 0;
+      for (let b = 1; b < bars; b++) {
+        const a = shapeOf(b - 1),
+          c = shapeOf(b);
+        if (a && c && a.sh === c.sh && c.lo - a.lo >= 1 && c.lo - a.lo <= 4) seq++;
+      }
+      const sounding = Math.min(1, line.reduce((a, n) => a + Math.min(n.l, 16), 0) / (bars * 16)),
+        runBars = rb.filter(x => x && x.split(',').length >= 8).length / bars,
+        onBeat = line.filter(n => n.s % 4 === 0).length / N,
+        on8 = line.filter(n => n.s % 2 === 0).length / N,
+        lens = new Set(line.map(n => Math.min(8, Math.round(n.l)))).size;
+      if (bars >= 4 && rep / (bars - 1) < 0.25) sc -= 18;
+      if (bars >= 4 && new Set(rb.filter(Boolean)).size <= 1) sc -= 10;
+      if (maxRun >= 5) sc -= 12 + 3 * (maxRun - 5);
+      if (pcs <= 2) sc -= 15;
+      if (on8 === 1 && onBeat > 0.7 && N > 6) sc -= 10;
+      if (lens <= 1 && N > 8) sc -= 6;
+      if (N / bars > 9) sc -= 12;
+      if (runBars > 0.4) sc -= 10;
+      if (sounding > 0.95 && N > 12) sc -= 6;
+      if (seq >= 2) sc -= 10 + 4 * (seq - 2);
+      if (bars >= 4 && line[N - 1].l < 2) sc -= 4;
+      if (topShare >= 0.75 && bars >= 4) sc -= 15;
+      if (wob >= 2) sc -= 8 + 2 * Math.min(5, wob - 2);
+    }
+  }
+  (f._mq = f._mq || {})[role] = Math.max(0, sc);
+  return f._mq[role];
+}

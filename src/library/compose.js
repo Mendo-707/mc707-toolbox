@@ -2336,135 +2336,6 @@ const padPart = (p, v, ctx) => {
     b += n;
   }
 };
-
-/* ---------- melody ----------
-   A hook from a motif: two bars stated (A), answered on the next chords (A'), a contrasting pair (B)
-   and a cadence that comes home (A with a long last note on the root). Strong beats land on chord
-   tones, the notes between move by step through the scale. */
-const CELLS = {
-  song: [
-    [
-      [0, 4],
-      [4, 2],
-      [6, 2],
-      [8, 8]
-    ],
-    [
-      [0, 3],
-      [3, 3],
-      [6, 2],
-      [8, 4],
-      [12, 4]
-    ],
-    [
-      [2, 2],
-      [4, 2],
-      [6, 2],
-      [8, 6],
-      [14, 2]
-    ],
-    [
-      [0, 6],
-      [6, 2],
-      [8, 2],
-      [10, 2],
-      [12, 4]
-    ]
-  ],
-  hard: [
-    [
-      [0, 2],
-      [2, 1],
-      [3, 1],
-      [4, 4],
-      [8, 2],
-      [10, 2],
-      [12, 4]
-    ],
-    [
-      [0, 1],
-      [1, 1],
-      [2, 2],
-      [6, 2],
-      [8, 4],
-      [12, 2],
-      [14, 2]
-    ],
-    [
-      [0, 4],
-      [6, 2],
-      [8, 2],
-      [10, 1],
-      [11, 1],
-      [12, 4]
-    ]
-  ],
-  trance: [
-    [
-      [0, 2],
-      [2, 2],
-      [4, 2],
-      [6, 2],
-      [8, 2],
-      [10, 2],
-      [12, 4]
-    ],
-    [
-      [0, 3],
-      [3, 3],
-      [6, 2],
-      [8, 3],
-      [11, 3],
-      [14, 2]
-    ]
-  ],
-  trap: [
-    [
-      [0, 3],
-      [3, 3],
-      [6, 2],
-      [8, 6],
-      [14, 2]
-    ],
-    [
-      [4, 2],
-      [6, 2],
-      [8, 4],
-      [12, 2],
-      [14, 2]
-    ]
-  ],
-  whine: [
-    [
-      [0, 6],
-      [6, 2],
-      [8, 8]
-    ],
-    [
-      [2, 2],
-      [4, 4],
-      [8, 4],
-      [12, 4]
-    ]
-  ],
-  sparse: [
-    [
-      [0, 12],
-      [12, 4]
-    ],
-    [
-      [0, 8],
-      [8, 8]
-    ]
-  ]
-};
-const CONTOURS = [
-  [0, 1, 2, 1, 0],
-  [2, 1, 0, -1, 0],
-  [0, 2, 1, 3, 2],
-  [0, -1, 1, 0, 2],
-  [4, 3, 2, 1, 0]
-];
 /* ---------- this take's own bass, chords and arp (from compose-gen.js) ---------- */
 /* the variants the generated parts write (the intro, builds, half-time and breaks keep the style's) */
 const inKey = (ctx, n) => (SCALES[ctx.scale] || SCALES.minor).includes((((n - ctx.key) % 12) + 12) % 12);
@@ -2603,96 +2474,423 @@ function moodPlay(p, role, v, ctx, er) {
   }
 }
 
+/* ---------- hooks ----------
+   A hook is a 2-bar motif: a rhythm with space and a lean (anticipations, notes off the beat), and a shape
+   in scale steps with one memorable move (a leap that falls back, a repeated note that breaks away, a
+   turn). Each note is 'c' (lands on a note of the chord under it) or 'p' (a passing note in the key).
+   Eight bars play it as a phrase: the call, its answer (the same rhythm, ending the other way), the call
+   again, and a close that comes home on a held note. The call is fitted to the chord it lands on (it starts
+   on the chord note nearest where it started before), never moved up a step each time: that is what makes
+   a line sound like a scale exercise. [step, length, move, kind] over 32 steps. */
+const HOOKS = {
+  song: [
+    /* a leap up that falls back */
+    [
+      [0, 3, 0, 'c'],
+      [3, 3, 3, 'c'],
+      [6, 2, -1, 'p'],
+      [8, 6, -1, 'c'],
+      [16, 2, 0, 'c'],
+      [18, 2, 1, 'p'],
+      [20, 4, -1, 'c'],
+      [26, 6, -2, 'c']
+    ],
+    /* an anticipation: the top note pushed ahead of the bar */
+    [
+      [2, 2, 0, 'c'],
+      [4, 2, 1, 'p'],
+      [6, 4, 1, 'c'],
+      [12, 2, -2, 'p'],
+      [14, 6, 3, 'c'],
+      [24, 2, -1, 'p'],
+      [26, 6, -1, 'c']
+    ],
+    /* a repeated note that breaks away */
+    [
+      [0, 2, 0, 'c'],
+      [3, 2, 0, 'c'],
+      [6, 2, 0, 'c'],
+      [8, 4, 2, 'c'],
+      [12, 2, -1, 'p'],
+      [16, 6, -1, 'c'],
+      [24, 8, -2, 'c']
+    ],
+    /* a call, then space */
+    [
+      [0, 2, 0, 'c'],
+      [2, 2, 2, 'p'],
+      [4, 4, 1, 'c'],
+      [10, 2, -3, 'p'],
+      [12, 4, 1, 'c'],
+      [16, 12, 0, 'c']
+    ],
+    /* off the beat */
+    [
+      [0, 2, 0, 'c'],
+      [3, 2, 2, 'c'],
+      [6, 3, -1, 'p'],
+      [10, 2, 3, 'c'],
+      [12, 4, -2, 'c'],
+      [19, 2, -1, 'p'],
+      [22, 2, 1, 'c'],
+      [26, 6, -2, 'c']
+    ],
+    /* a swoop: down, then a leap up to hold */
+    [
+      [0, 4, 0, 'c'],
+      [4, 2, -1, 'p'],
+      [6, 2, -1, 'c'],
+      [8, 8, 4, 'c'],
+      [18, 2, -1, 'p'],
+      [20, 2, -1, 'p'],
+      [22, 10, -1, 'c']
+    ],
+    /* a question that rises and stays open */
+    [
+      [4, 2, 0, 'c'],
+      [6, 2, 1, 'p'],
+      [8, 4, 1, 'c'],
+      [14, 4, 2, 'c'],
+      [20, 2, -1, 'p'],
+      [22, 2, -1, 'p'],
+      [24, 8, 3, 'c']
+    ],
+    /* two notes and a push */
+    [
+      [0, 6, 0, 'c'],
+      [6, 2, -2, 'c'],
+      [8, 6, 0, 'c'],
+      [14, 2, 2, 'c'],
+      [16, 4, 0, 'c'],
+      [22, 2, -2, 'p'],
+      [24, 8, -1, 'c']
+    ]
+  ],
+  /* riffs: busier, but each still answers itself */
+  hard: [
+    [
+      [0, 1, 0, 'c'],
+      [2, 1, 0, 'c'],
+      [3, 1, 2, 'p'],
+      [4, 2, -2, 'c'],
+      [8, 1, 0, 'c'],
+      [10, 1, 3, 'c'],
+      [12, 2, -1, 'p'],
+      [14, 2, -2, 'c'],
+      [16, 1, 0, 'c'],
+      [18, 1, 0, 'c'],
+      [19, 1, 2, 'p'],
+      [20, 2, -2, 'c'],
+      [24, 2, 4, 'c'],
+      [26, 2, -1, 'p'],
+      [28, 4, -1, 'c']
+    ],
+    [
+      [0, 3, 0, 'c'],
+      [3, 3, 0, 'c'],
+      [6, 2, 2, 'c'],
+      [8, 2, -1, 'p'],
+      [10, 2, -1, 'c'],
+      [12, 4, 3, 'c'],
+      [16, 3, 0, 'c'],
+      [19, 3, 0, 'c'],
+      [22, 2, -2, 'c'],
+      [24, 8, -1, 'c']
+    ],
+    [
+      [0, 2, 0, 'c'],
+      [3, 1, 0, 'c'],
+      [6, 2, 3, 'c'],
+      [10, 2, -1, 'p'],
+      [12, 2, -2, 'c'],
+      [14, 2, 1, 'p'],
+      [16, 2, 0, 'c'],
+      [19, 1, 0, 'c'],
+      [22, 2, -2, 'c'],
+      [24, 8, -1, 'c']
+    ],
+    [
+      [0, 2, 0, 'c'],
+      [2, 2, 4, 'c'],
+      [4, 2, -1, 'p'],
+      [6, 2, -1, 'c'],
+      [10, 2, 0, 'c'],
+      [12, 4, -2, 'c'],
+      [18, 2, 0, 'c'],
+      [20, 2, 4, 'c'],
+      [22, 2, -1, 'p'],
+      [24, 8, -2, 'c']
+    ]
+  ],
+  trance: [
+    [
+      [0, 2, 0, 'c'],
+      [2, 2, 2, 'p'],
+      [4, 2, 1, 'c'],
+      [6, 2, -3, 'c'],
+      [8, 2, 0, 'c'],
+      [10, 2, 2, 'p'],
+      [12, 2, 1, 'c'],
+      [14, 2, 1, 'p'],
+      [16, 2, 0, 'c'],
+      [18, 2, -1, 'p'],
+      [20, 2, -1, 'c'],
+      [22, 2, -2, 'c'],
+      [24, 8, 1, 'c']
+    ],
+    [
+      [0, 3, 0, 'c'],
+      [3, 3, 2, 'c'],
+      [6, 2, -1, 'p'],
+      [8, 3, 0, 'c'],
+      [11, 3, 2, 'c'],
+      [14, 2, -1, 'p'],
+      [16, 3, 0, 'c'],
+      [19, 3, 2, 'c'],
+      [22, 2, 1, 'c'],
+      [24, 8, -2, 'c']
+    ],
+    [
+      [0, 4, 0, 'c'],
+      [4, 2, 4, 'c'],
+      [6, 2, -1, 'p'],
+      [8, 4, -1, 'c'],
+      [12, 4, -2, 'c'],
+      [16, 4, 0, 'c'],
+      [20, 2, 4, 'c'],
+      [22, 2, 1, 'p'],
+      [24, 8, -1, 'c']
+    ]
+  ],
+  trap: [
+    [
+      [0, 2, 0, 'c'],
+      [3, 2, 2, 'c'],
+      [6, 4, -1, 'c'],
+      [12, 2, 3, 'c'],
+      [16, 6, -2, 'c'],
+      [24, 2, 1, 'p'],
+      [26, 6, -1, 'c']
+    ],
+    [
+      [0, 3, 0, 'c'],
+      [3, 3, -1, 'p'],
+      [6, 2, -1, 'c'],
+      [10, 6, 3, 'c'],
+      [19, 3, -1, 'p'],
+      [22, 2, -1, 'c'],
+      [24, 8, 2, 'c']
+    ],
+    [
+      [2, 2, 0, 'c'],
+      [6, 2, 2, 'c'],
+      [8, 6, -1, 'c'],
+      [18, 2, 0, 'c'],
+      [22, 2, 2, 'c'],
+      [24, 8, 1, 'c']
+    ]
+  ],
+  sparse: [
+    [
+      [0, 8, 0, 'c'],
+      [8, 4, 1, 'p'],
+      [12, 4, -2, 'c'],
+      [16, 16, -1, 'c']
+    ],
+    [
+      [2, 6, 0, 'c'],
+      [8, 8, 3, 'c'],
+      [20, 4, -1, 'p'],
+      [24, 8, -1, 'c']
+    ],
+    [
+      [0, 12, 0, 'c'],
+      [12, 4, 2, 'c'],
+      [16, 8, -1, 'p'],
+      [24, 8, -1, 'c']
+    ]
+  ]
+};
+HOOKS.whine = HOOKS.sparse;
+/* the phrase plans over 8 bars (four 2-bar phrases): the call (A), its answer (a), a second idea (B), the
+   close (z: the call's first bar, then home) */
+const HOOK_FORMS = [
+  ['A', 'a', 'A', 'z'],
+  ['A', 'B', 'A', 'z'],
+  ['A', 'a', 'B', 'z'],
+  ['A', 'A', 'B', 'z']
+];
 function melody(p, v, ctx, center = 72) {
-  const { ch, r, nb, scale, key, recipe, motif } = ctx;
+  motifLine(p, v, ctx, {
+    set: HOOKS[ctx.recipe.lead] || HOOKS.song,
+    forms: HOOK_FORMS,
+    center,
+    salt: 'hook:' + ctx.recipe.lead
+  });
+}
+/* Plucks that answer the lead with a short riff of their own (bells over trap and drill, a lick over boom
+   bap and lo-fi): 2-bar motifs played as a riff, the answer ending the other way. */
+const PLUCK_HOOKS = {
+  bell: [
+    [
+      [0, 2, 0, 'c'],
+      [3, 2, 2, 'c'],
+      [6, 2, -1, 'c'],
+      [16, 2, 0, 'c'],
+      [19, 2, 2, 'c'],
+      [22, 4, 1, 'c']
+    ],
+    [
+      [2, 2, 0, 'c'],
+      [6, 2, 1, 'c'],
+      [10, 2, -2, 'c'],
+      [18, 2, 0, 'c'],
+      [22, 2, 2, 'c'],
+      [28, 4, -1, 'c']
+    ],
+    [
+      [0, 2, 0, 'c'],
+      [6, 2, 3, 'c'],
+      [8, 2, -1, 'p'],
+      [10, 2, -1, 'c'],
+      [16, 2, 0, 'c'],
+      [22, 4, 3, 'c']
+    ],
+    [
+      [0, 3, 0, 'c'],
+      [3, 3, -1, 'c'],
+      [6, 2, -1, 'c'],
+      [12, 2, 3, 'c'],
+      [24, 4, -1, 'c']
+    ]
+  ],
+  lick: [
+    [
+      [0, 2, 0, 'c'],
+      [3, 1, 1, 'p'],
+      [4, 2, 1, 'c'],
+      [10, 2, -2, 'c'],
+      [16, 2, 0, 'c'],
+      [19, 1, 1, 'p'],
+      [20, 4, -1, 'c']
+    ],
+    [
+      [2, 2, 0, 'c'],
+      [4, 2, 2, 'c'],
+      [7, 1, -1, 'p'],
+      [8, 4, -1, 'c'],
+      [26, 2, 0, 'c'],
+      [28, 4, -2, 'c']
+    ],
+    [
+      [0, 3, 0, 'c'],
+      [6, 2, 3, 'c'],
+      [8, 2, -1, 'p'],
+      [12, 4, -2, 'c'],
+      [22, 2, 1, 'c'],
+      [24, 4, -1, 'c']
+    ]
+  ]
+};
+const PLUCK_FORMS = [
+  ['A', 'a', 'A', 'a'],
+  ['A', 'A', 'A', 'a'],
+  ['A', 'a', 'B', 'a']
+];
+/* A line from 2-bar motifs: the take's call (A) and second idea (B) from `set`, in a plan from `forms`. */
+function motifLine(p, v, ctx, o) {
+  const { ch, r, nb, scale, key, motif } = ctx,
+    center = o.center;
   const sc = SCALES[scale] || SCALES.minor,
-    inScale = n => sc.includes((((n - key) % 12) + 12) % 12);
-  const cells = CELLS[recipe.lead] || CELLS.song;
-  const cellOf = x =>
-      motif.cells
-        ? motif.cells[x]
-        : cells[(x === 'A' ? motif.a : x === 'B' ? motif.b : motif.a + motif.b + 3) % cells.length],
-    /* dark: a tighter, lower line, like a riff */
-    contour = (motif.shape || CONTOURS[motif.c % CONTOURS.length]).map(y =>
-      ctx.mood.dark >= 0.5 ? Math.round(y * 0.6) - 1 : y
-    ),
-    form = motif.form || ['A', 'A', 'B', 'A'];
-  let last = center;
-  const chordTone = (c, target) => {
-    let best = null;
-    for (const t of c.tones)
-      for (let o = -2; o <= 2; o++) {
-        const n = nearest((c.root + t) % 12, target) + o * 12;
-        if (best === null || Math.abs(n - target) < Math.abs(best - target)) best = n;
-      }
-    return best;
-  };
-  const stepTo = (from, dir) => {
-    let n = from + dir;
-    while (!inScale(n)) n += dir;
+    inScale = n => sc.includes((((n - key) % 12) + 12) % 12),
+    tr = mulberry(hashStr(o.salt) ^ motif.seed),
+    set = o.set,
+    one = a => a[Math.floor(tr() * a.length)];
+  /* the take's call and second idea, and its plan */
+  const A = one(set);
+  let B = one(set);
+  if (B === A) B = set[(set.indexOf(A) + 1) % set.length];
+  const form = one(o.forms);
+  const dark = ctx.mood.dark >= 0.5;
+  const pcsOf = c => (dark && c.tones.length > 2 ? [0, c.tones[2]] : c.tones).map(t => (c.root + t) % 12);
+  /* the chord note nearest n, leaning the way the line is moving; ahead: only that way */
+  const snap = (c, n, dir, ahead) => {
+    const pcs = pcsOf(c);
+    for (let d = 0; d <= 12; d++)
+      for (const x of ahead ? [n + Math.sign(dir) * d] : dir >= 0 ? [n + d, n - d] : [n - d, n + d])
+        if (pcs.includes(((x % 12) + 12) % 12)) return x;
     return n;
   };
-  const dark = ctx.mood.dark >= 0.5;
-  const phrase = (bar, cell, shape, cadence) => {
-    /* the cell spreads over two bars: the first bar has the cell, the second its echo, shifted */
-    const notes = [];
-    for (const half of [0, 1]) {
-      const b = bar + half,
-        c = ch[b % ch.length];
-      cell.forEach(([s, len], i) => {
-        const strong = s % 4 === 0;
-        /* the contour spread over the whole cell, however many notes it has */
-        const at = Math.round((i * (shape.length - 1)) / Math.max(1, cell.length - 1)),
-          target = center + (shape[at] + (half ? motif.lift : 0)) * 2;
-        /* dark: the strong beats sit on the root and fifth (and the flat two over its chord), not the
-           sweeter third */
-        const tc = dark && c.tones.length > 2 ? { root: c.root, tones: [0, c.tones[2]] } : c;
-        let n = strong ? chordTone(tc, (target + last) / 2) : stepTo(last, target >= last ? 1 : -1);
-        if (Math.abs(n - last) > 9) n = chordTone(c, last);
-        /* a held note between the beats does not rub against the chord (a semitone from one of its notes) */
-        if (!strong && len >= 3) {
-          const pc = ((n % 12) + 12) % 12;
-          if (c.tones.some(t => [1, 11].includes((((pc - c.root - t) % 12) + 12) % 12))) n = chordTone(c, n);
-        }
-        /* a strong beat that would repeat the last note moves to the next chord tone the line is heading for */
-        if (strong && n === last && i) {
-          const dir = target >= last ? 1 : -1;
-          n = chordTone(c, last + dir * 3);
-          if (n === last) n = chordTone(c, last + dir * 5);
-        }
-        notes.push([b, s, len, n]);
-        last = n;
-      });
+  const stepBy = (n, k) => {
+    let x = n;
+    for (let i = 0; i < Math.abs(k); i++) {
+      x += Math.sign(k);
+      while (!inScale(x)) x += Math.sign(k);
     }
-    if (cadence) {
-      const lastN = notes[notes.length - 1],
-        c = ch[lastN[0] % ch.length];
-      lastN[3] = chordTone({ root: c.root, tones: [0] }, lastN[3]);
-      lastN[2] = 16 - lastN[1];
-    }
-    return notes;
+    return x;
   };
-  const vel = (v === 'break' ? 92 : v === 'verse' ? 96 : 110) + Math.round(ctx.mood.edge * 10);
-  const all = [];
-  /* four 2-bar phrases by the take's plan: an A again goes a step higher, B and C answer the other way,
-     the last comes home */
-  for (let b = 0; b < nb; b += 8)
-    form.forEach((x, i) => {
-      const shape =
-        x !== 'A'
-          ? [...contour].reverse()
-          : i && form.slice(0, i).includes('A') && i < 3
-            ? contour.map(y => y + 1)
-            : contour;
-      all.push(...phrase(b + i * 2, cellOf(x), shape, i === 3));
+  /* where the call starts: the chord's third or fifth near the centre (a root start sounds like a scale) */
+  let anchor = null;
+  /* play a motif from bar `bar`; kind 'a' ends the other way, 'z' is its first bar then a held home note */
+  const play = (bar, m, kind) => {
+    const c0 = ch[bar % ch.length],
+      pcs0 = pcsOf(c0);
+    const want = anchor ?? center;
+    let start = snap(c0, want, 0);
+    if (anchor == null) {
+      const third = (c0.root + (c0.tones[1] ?? 7)) % 12,
+        fifth = (c0.root + (c0.tones[2] ?? 7)) % 12;
+      const tgt = dark ? fifth : tr() < 0.6 ? third : fifth;
+      start = nearest(tgt, center);
+      anchor = start;
+    } else if (!pcs0.includes(((start % 12) + 12) % 12)) start = snap(c0, start, 0);
+    const notes = kind === 'z' ? m.filter(x => x[0] < 16) : m.slice();
+    let n = start,
+      prev = null;
+    const out = [];
+    notes.forEach(([s, len, mv, k], i) => {
+      let move = mv;
+      /* the answer: its last two moves go the other way */
+      if (kind === 'a' && i >= notes.length - 2 && move) move = -move;
+      let x = i ? stepBy(n, move) : start;
+      /* keep the line in its register: a move that would leave it turns back */
+      if (x > center + 8 || x < center - 8) x = stepBy(n, -move);
+      const b = bar + Math.floor(s / 16),
+        c = ch[b % ch.length];
+      /* chord notes on the beats and under held notes */
+      if (k === 'c' || len >= 4) {
+        const y = snap(c, x, move);
+        /* (a move that the chord would cancel goes on to the chord's next note that way) */
+        x = y === prev && move ? snap(c, y + Math.sign(move), move, true) : y;
+      }
+      out.push([b, s % 16, len, x]);
+      prev = x;
+      n = x;
     });
-  for (const [b, s, len, n] of all) {
+    if (kind === 'z') {
+      /* home: the root of the last bar's chord, held */
+      const c = ch[(bar + 1) % ch.length];
+      out.push([bar + 1, 0, 12, nearest(c.root, n)]);
+    }
+    return out;
+  };
+  const vel = (o.vel || (v === 'break' ? 92 : v === 'verse' ? 96 : 110)) + Math.round(ctx.mood.edge * 10);
+  const all = [];
+  for (let b = 0; b < nb; b += 8)
+    form.forEach((x, i) => all.push(...play(b + i * 2, x === 'B' ? B : A, x === 'B' ? 'A' : x)));
+  for (const [b, s, len0, n0] of all) {
     if (b >= nb) continue;
+    const len = o.len ? Math.min(len0, o.len) : len0,
+      n = o.top ? o.top(n0) : n0;
+    /* (a pluck in the intro and the break plays every other bar; none on the drop's last beat) */
+    if (o.thin && b % 2) continue;
+    if (o.pluck && b === nb - 1 && s >= 12 && v === 'drop') continue;
     if (v === 'verse' && s % 8 === 6 && r() < 0.4) continue;
     if (v === 'break') {
-      if (s % 4) continue;
-      p.add(b, s, Math.max(len, 4), n, hum(r, vel));
-    } else p.add(b, s, len, n, hum(r, vel, 5));
+      /* the break: the long notes of the hook, quietly */
+      if (len < 4 && s % 8) continue;
+      p.add(b, s, Math.max(len, 6), n, hum(r, vel));
+    } else p.add(b, s, len, n, hum(r, s % 4 === 0 ? vel : vel - 8, 5));
   }
 }
 
@@ -2728,18 +2926,6 @@ const PLUCK_CELLS = {
     [0, 7],
     [3, 6, 12]
   ],
-  bell: [
-    [0, 3, 6],
-    [0, 6, 10, 12],
-    [2, 8, 11],
-    [0, 4, 7, 10]
-  ],
-  lick: [
-    [0, 3, 6],
-    [2, 6, 10],
-    [0, 7, 10],
-    [4, 7, 12]
-  ],
   echo: [
     [4, 7, 10],
     [12, 15],
@@ -2750,6 +2936,18 @@ const PLUCK_CELLS = {
 /* the take's own cell (two, called and answered bar by bar) on the chord's notes; the intro and the break
    play every other bar */
 function sparsePluck(p, v, ctx, way) {
+  if (way === 'bell' || way === 'lick')
+    return motifLine(p, v === 'break' ? 'drop' : v, ctx, {
+      set: PLUCK_HOOKS[way],
+      forms: PLUCK_FORMS,
+      center: way === 'bell' ? 76 : 67,
+      salt: 'pluck:' + way,
+      len: 2,
+      vel: 84,
+      top: arpTop,
+      thin: v === 'intro' || v === 'break',
+      pluck: true
+    });
   const { ch, nb, r } = ctx,
     tr = mulberry(hashStr('pluck:' + way) ^ ctx.motif.seed),
     one = a => a[Math.floor(tr() * a.length)],
@@ -3537,7 +3735,9 @@ function takeVary(p, role, v, ctx, tr) {
     return;
   }
   if (role === 'pluck') {
-    const op = pick(tr, ['reverse', 'octave', 'gaps', 'rate', 'keep']);
+    /* (a riff keeps its notes: reversing them or throwing every fourth up an octave is for a running arp) */
+    const arp = p.notes.length / nb >= 6,
+      op = pick(tr, arp ? ['reverse', 'octave', 'gaps', 'rate', 'keep'] : ['keep', 'keep', 'gaps', 'keep', 'keep']);
     /* half the speed: every other note, held twice as long */
     if (op === 'rate' && p.notes.length && p.notes.every(n => n.l <= 1)) {
       p.notes = p.notes.filter(n => step(n) % 2 === 0);

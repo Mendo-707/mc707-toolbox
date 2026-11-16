@@ -51216,6 +51216,70 @@ html.os-darwin.native-menu #menubar .mproj {
     if (isDotted(f)) return DOTTED_STYLES.has(styleId);
     return true;
   }
+  function melodyQuality(f, role = "lead") {
+    if (f._mq && f._mq[role] != null) return f._mq[role];
+    const line = [];
+    for (const n of f.notes.slice().sort((a, b) => a.s - b.s || b.n - a.n))
+      if (!line.length || line[line.length - 1].s !== n.s) line.push(n);
+    const bars3 = Math.max(1, f.bars || 1), N = line.length;
+    let sc = 100;
+    if (N >= 3) {
+      const rb = Array.from(
+        { length: bars3 },
+        (_, b) => line.filter((n) => Math.floor(n.s / 16) === b).map((n) => n.s % 16).join(",")
+      );
+      const cnt = {};
+      for (const x of rb) if (x) cnt[x] = (cnt[x] || 0) + 1;
+      const topShare = Math.max(0, ...Object.values(cnt)) / bars3;
+      let wob = 0;
+      for (let i = 3; i < N; i++)
+        if (line[i].n === line[i - 2].n && line[i - 1].n === line[i - 3].n && line[i].n !== line[i - 1].n && Math.abs(line[i].n - line[i - 1].n) <= 2)
+          wob++;
+      const pcs = new Set(line.map((n) => n.n)).size;
+      if (role === "pluck") {
+        if (pcs <= 2 && wob >= 4 && topShare >= 0.75) sc -= 40;
+        const ns = line.map((n) => n.n), wide = line.slice(1).filter((n, i) => Math.abs(n.n - line[i].n) > 12).length / (N - 1);
+        if (Math.max(...ns) - Math.min(...ns) > 24 && wide > 0.3) sc -= 40;
+      } else {
+        let rep2 = 0;
+        for (let b = 1; b < bars3; b++) if (rb[b] && [1, 2, 4].some((l) => b - l >= 0 && rb[b] === rb[b - l])) rep2++;
+        const iv = line.slice(1).map((n, i) => n.n - line[i].n);
+        let run2 = 1, maxRun = 1;
+        for (let i = 1; i < iv.length; i++) {
+          run2 = iv[i] && iv[i - 1] && Math.abs(iv[i]) <= 2 && Math.abs(iv[i - 1]) <= 2 && Math.sign(iv[i]) === Math.sign(iv[i - 1]) ? run2 + 1 : 1;
+          maxRun = Math.max(maxRun, run2);
+        }
+        const shapeOf = (b) => {
+          const xs = line.filter((n) => Math.floor(n.s / 16) === b);
+          return xs.length > 1 ? {
+            sh: xs.slice(1).map((n, i) => n.n - xs[i].n).join(","),
+            lo: xs[0].n
+          } : null;
+        };
+        let seq2 = 0;
+        for (let b = 1; b < bars3; b++) {
+          const a = shapeOf(b - 1), c = shapeOf(b);
+          if (a && c && a.sh === c.sh && c.lo - a.lo >= 1 && c.lo - a.lo <= 4) seq2++;
+        }
+        const sounding = Math.min(1, line.reduce((a, n) => a + Math.min(n.l, 16), 0) / (bars3 * 16)), runBars = rb.filter((x) => x && x.split(",").length >= 8).length / bars3, onBeat = line.filter((n) => n.s % 4 === 0).length / N, on8 = line.filter((n) => n.s % 2 === 0).length / N, lens = new Set(line.map((n) => Math.min(8, Math.round(n.l)))).size;
+        if (bars3 >= 4 && rep2 / (bars3 - 1) < 0.25) sc -= 18;
+        if (bars3 >= 4 && new Set(rb.filter(Boolean)).size <= 1) sc -= 10;
+        if (maxRun >= 5) sc -= 12 + 3 * (maxRun - 5);
+        if (pcs <= 2) sc -= 15;
+        if (on8 === 1 && onBeat > 0.7 && N > 6) sc -= 10;
+        if (lens <= 1 && N > 8) sc -= 6;
+        if (N / bars3 > 9) sc -= 12;
+        if (runBars > 0.4) sc -= 10;
+        if (sounding > 0.95 && N > 12) sc -= 6;
+        if (seq2 >= 2) sc -= 10 + 4 * (seq2 - 2);
+        if (bars3 >= 4 && line[N - 1].l < 2) sc -= 4;
+        if (topShare >= 0.75 && bars3 >= 4) sc -= 15;
+        if (wob >= 2) sc -= 8 + 2 * Math.min(5, wob - 2);
+      }
+    }
+    (f._mq = f._mq || {})[role] = Math.max(0, sc);
+    return f._mq[role];
+  }
 
   // src/library/pools.js
   var TONE_POOLS = ["bass", "chords", "pad", "lead", "pluck", "acid"];
@@ -51309,7 +51373,7 @@ html.os-darwin.native-menu #menubar .mproj {
     if (pool === "lead" || pool === "pluck") {
       const ok = ids.filter((id) => {
         const f = facById(id);
-        return !melodyClashes(f) && melodyFeelOk(f, st.id);
+        return !melodyClashes(f) && melodyFeelOk(f, st.id) && melodyQuality(f, pool) >= 70;
       });
       if (ok.length) ids = ok;
     }
@@ -56748,130 +56812,6 @@ html.os-darwin.native-menu #menubar .mproj {
       b += n;
     }
   };
-  var CELLS = {
-    song: [
-      [
-        [0, 4],
-        [4, 2],
-        [6, 2],
-        [8, 8]
-      ],
-      [
-        [0, 3],
-        [3, 3],
-        [6, 2],
-        [8, 4],
-        [12, 4]
-      ],
-      [
-        [2, 2],
-        [4, 2],
-        [6, 2],
-        [8, 6],
-        [14, 2]
-      ],
-      [
-        [0, 6],
-        [6, 2],
-        [8, 2],
-        [10, 2],
-        [12, 4]
-      ]
-    ],
-    hard: [
-      [
-        [0, 2],
-        [2, 1],
-        [3, 1],
-        [4, 4],
-        [8, 2],
-        [10, 2],
-        [12, 4]
-      ],
-      [
-        [0, 1],
-        [1, 1],
-        [2, 2],
-        [6, 2],
-        [8, 4],
-        [12, 2],
-        [14, 2]
-      ],
-      [
-        [0, 4],
-        [6, 2],
-        [8, 2],
-        [10, 1],
-        [11, 1],
-        [12, 4]
-      ]
-    ],
-    trance: [
-      [
-        [0, 2],
-        [2, 2],
-        [4, 2],
-        [6, 2],
-        [8, 2],
-        [10, 2],
-        [12, 4]
-      ],
-      [
-        [0, 3],
-        [3, 3],
-        [6, 2],
-        [8, 3],
-        [11, 3],
-        [14, 2]
-      ]
-    ],
-    trap: [
-      [
-        [0, 3],
-        [3, 3],
-        [6, 2],
-        [8, 6],
-        [14, 2]
-      ],
-      [
-        [4, 2],
-        [6, 2],
-        [8, 4],
-        [12, 2],
-        [14, 2]
-      ]
-    ],
-    whine: [
-      [
-        [0, 6],
-        [6, 2],
-        [8, 8]
-      ],
-      [
-        [2, 2],
-        [4, 4],
-        [8, 4],
-        [12, 4]
-      ]
-    ],
-    sparse: [
-      [
-        [0, 12],
-        [12, 4]
-      ],
-      [
-        [0, 8],
-        [8, 8]
-      ]
-    ]
-  };
-  var CONTOURS2 = [
-    [0, 1, 2, 1, 0],
-    [2, 1, 0, -1, 0],
-    [0, 2, 1, 3, 2],
-    [0, -1, 1, 0, 2],
-    [4, 3, 2, 1, 0]
-  ];
   var inKey = (ctx2, n) => (SCALES[ctx2.scale] || SCALES.minor).includes(((n - ctx2.key) % 12 + 12) % 12);
   var GEN_V = /* @__PURE__ */ new Set(["A", "B", "C", "drop", "hook", "verse", "pre", "outro"]);
   var BASS_LO = { 808: 28 };
@@ -56957,73 +56897,389 @@ html.os-darwin.native-menu #menubar .mproj {
       }
     }
   }
+  var HOOKS = {
+    song: [
+      /* a leap up that falls back */
+      [
+        [0, 3, 0, "c"],
+        [3, 3, 3, "c"],
+        [6, 2, -1, "p"],
+        [8, 6, -1, "c"],
+        [16, 2, 0, "c"],
+        [18, 2, 1, "p"],
+        [20, 4, -1, "c"],
+        [26, 6, -2, "c"]
+      ],
+      /* an anticipation: the top note pushed ahead of the bar */
+      [
+        [2, 2, 0, "c"],
+        [4, 2, 1, "p"],
+        [6, 4, 1, "c"],
+        [12, 2, -2, "p"],
+        [14, 6, 3, "c"],
+        [24, 2, -1, "p"],
+        [26, 6, -1, "c"]
+      ],
+      /* a repeated note that breaks away */
+      [
+        [0, 2, 0, "c"],
+        [3, 2, 0, "c"],
+        [6, 2, 0, "c"],
+        [8, 4, 2, "c"],
+        [12, 2, -1, "p"],
+        [16, 6, -1, "c"],
+        [24, 8, -2, "c"]
+      ],
+      /* a call, then space */
+      [
+        [0, 2, 0, "c"],
+        [2, 2, 2, "p"],
+        [4, 4, 1, "c"],
+        [10, 2, -3, "p"],
+        [12, 4, 1, "c"],
+        [16, 12, 0, "c"]
+      ],
+      /* off the beat */
+      [
+        [0, 2, 0, "c"],
+        [3, 2, 2, "c"],
+        [6, 3, -1, "p"],
+        [10, 2, 3, "c"],
+        [12, 4, -2, "c"],
+        [19, 2, -1, "p"],
+        [22, 2, 1, "c"],
+        [26, 6, -2, "c"]
+      ],
+      /* a swoop: down, then a leap up to hold */
+      [
+        [0, 4, 0, "c"],
+        [4, 2, -1, "p"],
+        [6, 2, -1, "c"],
+        [8, 8, 4, "c"],
+        [18, 2, -1, "p"],
+        [20, 2, -1, "p"],
+        [22, 10, -1, "c"]
+      ],
+      /* a question that rises and stays open */
+      [
+        [4, 2, 0, "c"],
+        [6, 2, 1, "p"],
+        [8, 4, 1, "c"],
+        [14, 4, 2, "c"],
+        [20, 2, -1, "p"],
+        [22, 2, -1, "p"],
+        [24, 8, 3, "c"]
+      ],
+      /* two notes and a push */
+      [
+        [0, 6, 0, "c"],
+        [6, 2, -2, "c"],
+        [8, 6, 0, "c"],
+        [14, 2, 2, "c"],
+        [16, 4, 0, "c"],
+        [22, 2, -2, "p"],
+        [24, 8, -1, "c"]
+      ]
+    ],
+    /* riffs: busier, but each still answers itself */
+    hard: [
+      [
+        [0, 1, 0, "c"],
+        [2, 1, 0, "c"],
+        [3, 1, 2, "p"],
+        [4, 2, -2, "c"],
+        [8, 1, 0, "c"],
+        [10, 1, 3, "c"],
+        [12, 2, -1, "p"],
+        [14, 2, -2, "c"],
+        [16, 1, 0, "c"],
+        [18, 1, 0, "c"],
+        [19, 1, 2, "p"],
+        [20, 2, -2, "c"],
+        [24, 2, 4, "c"],
+        [26, 2, -1, "p"],
+        [28, 4, -1, "c"]
+      ],
+      [
+        [0, 3, 0, "c"],
+        [3, 3, 0, "c"],
+        [6, 2, 2, "c"],
+        [8, 2, -1, "p"],
+        [10, 2, -1, "c"],
+        [12, 4, 3, "c"],
+        [16, 3, 0, "c"],
+        [19, 3, 0, "c"],
+        [22, 2, -2, "c"],
+        [24, 8, -1, "c"]
+      ],
+      [
+        [0, 2, 0, "c"],
+        [3, 1, 0, "c"],
+        [6, 2, 3, "c"],
+        [10, 2, -1, "p"],
+        [12, 2, -2, "c"],
+        [14, 2, 1, "p"],
+        [16, 2, 0, "c"],
+        [19, 1, 0, "c"],
+        [22, 2, -2, "c"],
+        [24, 8, -1, "c"]
+      ],
+      [
+        [0, 2, 0, "c"],
+        [2, 2, 4, "c"],
+        [4, 2, -1, "p"],
+        [6, 2, -1, "c"],
+        [10, 2, 0, "c"],
+        [12, 4, -2, "c"],
+        [18, 2, 0, "c"],
+        [20, 2, 4, "c"],
+        [22, 2, -1, "p"],
+        [24, 8, -2, "c"]
+      ]
+    ],
+    trance: [
+      [
+        [0, 2, 0, "c"],
+        [2, 2, 2, "p"],
+        [4, 2, 1, "c"],
+        [6, 2, -3, "c"],
+        [8, 2, 0, "c"],
+        [10, 2, 2, "p"],
+        [12, 2, 1, "c"],
+        [14, 2, 1, "p"],
+        [16, 2, 0, "c"],
+        [18, 2, -1, "p"],
+        [20, 2, -1, "c"],
+        [22, 2, -2, "c"],
+        [24, 8, 1, "c"]
+      ],
+      [
+        [0, 3, 0, "c"],
+        [3, 3, 2, "c"],
+        [6, 2, -1, "p"],
+        [8, 3, 0, "c"],
+        [11, 3, 2, "c"],
+        [14, 2, -1, "p"],
+        [16, 3, 0, "c"],
+        [19, 3, 2, "c"],
+        [22, 2, 1, "c"],
+        [24, 8, -2, "c"]
+      ],
+      [
+        [0, 4, 0, "c"],
+        [4, 2, 4, "c"],
+        [6, 2, -1, "p"],
+        [8, 4, -1, "c"],
+        [12, 4, -2, "c"],
+        [16, 4, 0, "c"],
+        [20, 2, 4, "c"],
+        [22, 2, 1, "p"],
+        [24, 8, -1, "c"]
+      ]
+    ],
+    trap: [
+      [
+        [0, 2, 0, "c"],
+        [3, 2, 2, "c"],
+        [6, 4, -1, "c"],
+        [12, 2, 3, "c"],
+        [16, 6, -2, "c"],
+        [24, 2, 1, "p"],
+        [26, 6, -1, "c"]
+      ],
+      [
+        [0, 3, 0, "c"],
+        [3, 3, -1, "p"],
+        [6, 2, -1, "c"],
+        [10, 6, 3, "c"],
+        [19, 3, -1, "p"],
+        [22, 2, -1, "c"],
+        [24, 8, 2, "c"]
+      ],
+      [
+        [2, 2, 0, "c"],
+        [6, 2, 2, "c"],
+        [8, 6, -1, "c"],
+        [18, 2, 0, "c"],
+        [22, 2, 2, "c"],
+        [24, 8, 1, "c"]
+      ]
+    ],
+    sparse: [
+      [
+        [0, 8, 0, "c"],
+        [8, 4, 1, "p"],
+        [12, 4, -2, "c"],
+        [16, 16, -1, "c"]
+      ],
+      [
+        [2, 6, 0, "c"],
+        [8, 8, 3, "c"],
+        [20, 4, -1, "p"],
+        [24, 8, -1, "c"]
+      ],
+      [
+        [0, 12, 0, "c"],
+        [12, 4, 2, "c"],
+        [16, 8, -1, "p"],
+        [24, 8, -1, "c"]
+      ]
+    ]
+  };
+  HOOKS.whine = HOOKS.sparse;
+  var HOOK_FORMS = [
+    ["A", "a", "A", "z"],
+    ["A", "B", "A", "z"],
+    ["A", "a", "B", "z"],
+    ["A", "A", "B", "z"]
+  ];
   function melody(p, v, ctx2, center = 72) {
-    const { ch, r, nb, scale, key, recipe, motif } = ctx2;
-    const sc = SCALES[scale] || SCALES.minor, inScale = (n) => sc.includes(((n - key) % 12 + 12) % 12);
-    const cells = CELLS[recipe.lead] || CELLS.song;
-    const cellOf = (x) => motif.cells ? motif.cells[x] : cells[(x === "A" ? motif.a : x === "B" ? motif.b : motif.a + motif.b + 3) % cells.length], contour = (motif.shape || CONTOURS2[motif.c % CONTOURS2.length]).map(
-      (y) => ctx2.mood.dark >= 0.5 ? Math.round(y * 0.6) - 1 : y
-    ), form2 = motif.form || ["A", "A", "B", "A"];
-    let last3 = center;
-    const chordTone = (c, target) => {
-      let best = null;
-      for (const t of c.tones)
-        for (let o = -2; o <= 2; o++) {
-          const n = nearest((c.root + t) % 12, target) + o * 12;
-          if (best === null || Math.abs(n - target) < Math.abs(best - target)) best = n;
-        }
-      return best;
-    };
-    const stepTo = (from, dir) => {
-      let n = from + dir;
-      while (!inScale(n)) n += dir;
+    motifLine(p, v, ctx2, {
+      set: HOOKS[ctx2.recipe.lead] || HOOKS.song,
+      forms: HOOK_FORMS,
+      center,
+      salt: "hook:" + ctx2.recipe.lead
+    });
+  }
+  var PLUCK_HOOKS = {
+    bell: [
+      [
+        [0, 2, 0, "c"],
+        [3, 2, 2, "c"],
+        [6, 2, -1, "c"],
+        [16, 2, 0, "c"],
+        [19, 2, 2, "c"],
+        [22, 4, 1, "c"]
+      ],
+      [
+        [2, 2, 0, "c"],
+        [6, 2, 1, "c"],
+        [10, 2, -2, "c"],
+        [18, 2, 0, "c"],
+        [22, 2, 2, "c"],
+        [28, 4, -1, "c"]
+      ],
+      [
+        [0, 2, 0, "c"],
+        [6, 2, 3, "c"],
+        [8, 2, -1, "p"],
+        [10, 2, -1, "c"],
+        [16, 2, 0, "c"],
+        [22, 4, 3, "c"]
+      ],
+      [
+        [0, 3, 0, "c"],
+        [3, 3, -1, "c"],
+        [6, 2, -1, "c"],
+        [12, 2, 3, "c"],
+        [24, 4, -1, "c"]
+      ]
+    ],
+    lick: [
+      [
+        [0, 2, 0, "c"],
+        [3, 1, 1, "p"],
+        [4, 2, 1, "c"],
+        [10, 2, -2, "c"],
+        [16, 2, 0, "c"],
+        [19, 1, 1, "p"],
+        [20, 4, -1, "c"]
+      ],
+      [
+        [2, 2, 0, "c"],
+        [4, 2, 2, "c"],
+        [7, 1, -1, "p"],
+        [8, 4, -1, "c"],
+        [26, 2, 0, "c"],
+        [28, 4, -2, "c"]
+      ],
+      [
+        [0, 3, 0, "c"],
+        [6, 2, 3, "c"],
+        [8, 2, -1, "p"],
+        [12, 4, -2, "c"],
+        [22, 2, 1, "c"],
+        [24, 4, -1, "c"]
+      ]
+    ]
+  };
+  var PLUCK_FORMS = [
+    ["A", "a", "A", "a"],
+    ["A", "A", "A", "a"],
+    ["A", "a", "B", "a"]
+  ];
+  function motifLine(p, v, ctx2, o) {
+    const { ch, r, nb, scale, key, motif } = ctx2, center = o.center;
+    const sc = SCALES[scale] || SCALES.minor, inScale = (n) => sc.includes(((n - key) % 12 + 12) % 12), tr = mulberry(hashStr(o.salt) ^ motif.seed), set2 = o.set, one = (a) => a[Math.floor(tr() * a.length)];
+    const A = one(set2);
+    let B2 = one(set2);
+    if (B2 === A) B2 = set2[(set2.indexOf(A) + 1) % set2.length];
+    const form2 = one(o.forms);
+    const dark = ctx2.mood.dark >= 0.5;
+    const pcsOf = (c) => (dark && c.tones.length > 2 ? [0, c.tones[2]] : c.tones).map((t) => (c.root + t) % 12);
+    const snap = (c, n, dir, ahead) => {
+      const pcs = pcsOf(c);
+      for (let d = 0; d <= 12; d++)
+        for (const x of ahead ? [n + Math.sign(dir) * d] : dir >= 0 ? [n + d, n - d] : [n - d, n + d])
+          if (pcs.includes((x % 12 + 12) % 12)) return x;
       return n;
     };
-    const dark = ctx2.mood.dark >= 0.5;
-    const phrase = (bar2, cell, shape, cadence) => {
-      const notes = [];
-      for (const half of [0, 1]) {
-        const b = bar2 + half, c = ch[b % ch.length];
-        cell.forEach(([s, len], i) => {
-          const strong = s % 4 === 0;
-          const at2 = Math.round(i * (shape.length - 1) / Math.max(1, cell.length - 1)), target = center + (shape[at2] + (half ? motif.lift : 0)) * 2;
-          const tc = dark && c.tones.length > 2 ? { root: c.root, tones: [0, c.tones[2]] } : c;
-          let n = strong ? chordTone(tc, (target + last3) / 2) : stepTo(last3, target >= last3 ? 1 : -1);
-          if (Math.abs(n - last3) > 9) n = chordTone(c, last3);
-          if (!strong && len >= 3) {
-            const pc3 = (n % 12 + 12) % 12;
-            if (c.tones.some((t) => [1, 11].includes(((pc3 - c.root - t) % 12 + 12) % 12))) n = chordTone(c, n);
-          }
-          if (strong && n === last3 && i) {
-            const dir = target >= last3 ? 1 : -1;
-            n = chordTone(c, last3 + dir * 3);
-            if (n === last3) n = chordTone(c, last3 + dir * 5);
-          }
-          notes.push([b, s, len, n]);
-          last3 = n;
-        });
+    const stepBy = (n, k2) => {
+      let x = n;
+      for (let i = 0; i < Math.abs(k2); i++) {
+        x += Math.sign(k2);
+        while (!inScale(x)) x += Math.sign(k2);
       }
-      if (cadence) {
-        const lastN = notes[notes.length - 1], c = ch[lastN[0] % ch.length];
-        lastN[3] = chordTone({ root: c.root, tones: [0] }, lastN[3]);
-        lastN[2] = 16 - lastN[1];
-      }
-      return notes;
+      return x;
     };
-    const vel = (v === "break" ? 92 : v === "verse" ? 96 : 110) + Math.round(ctx2.mood.edge * 10);
+    let anchor = null;
+    const play2 = (bar2, m, kind) => {
+      const c0 = ch[bar2 % ch.length], pcs0 = pcsOf(c0);
+      const want = anchor ?? center;
+      let start = snap(c0, want, 0);
+      if (anchor == null) {
+        const third = (c0.root + (c0.tones[1] ?? 7)) % 12, fifth = (c0.root + (c0.tones[2] ?? 7)) % 12;
+        const tgt = dark ? fifth : tr() < 0.6 ? third : fifth;
+        start = nearest(tgt, center);
+        anchor = start;
+      } else if (!pcs0.includes((start % 12 + 12) % 12)) start = snap(c0, start, 0);
+      const notes = kind === "z" ? m.filter((x) => x[0] < 16) : m.slice();
+      let n = start, prev = null;
+      const out2 = [];
+      notes.forEach(([s, len, mv, k2], i) => {
+        let move = mv;
+        if (kind === "a" && i >= notes.length - 2 && move) move = -move;
+        let x = i ? stepBy(n, move) : start;
+        if (x > center + 8 || x < center - 8) x = stepBy(n, -move);
+        const b = bar2 + Math.floor(s / 16), c = ch[b % ch.length];
+        if (k2 === "c" || len >= 4) {
+          const y = snap(c, x, move);
+          x = y === prev && move ? snap(c, y + Math.sign(move), move, true) : y;
+        }
+        out2.push([b, s % 16, len, x]);
+        prev = x;
+        n = x;
+      });
+      if (kind === "z") {
+        const c = ch[(bar2 + 1) % ch.length];
+        out2.push([bar2 + 1, 0, 12, nearest(c.root, n)]);
+      }
+      return out2;
+    };
+    const vel = (o.vel || (v === "break" ? 92 : v === "verse" ? 96 : 110)) + Math.round(ctx2.mood.edge * 10);
     const all = [];
     for (let b = 0; b < nb; b += 8)
-      form2.forEach((x, i) => {
-        const shape = x !== "A" ? [...contour].reverse() : i && form2.slice(0, i).includes("A") && i < 3 ? contour.map((y) => y + 1) : contour;
-        all.push(...phrase(b + i * 2, cellOf(x), shape, i === 3));
-      });
-    for (const [b, s, len, n] of all) {
+      form2.forEach((x, i) => all.push(...play2(b + i * 2, x === "B" ? B2 : A, x === "B" ? "A" : x)));
+    for (const [b, s, len0, n0] of all) {
       if (b >= nb) continue;
+      const len = o.len ? Math.min(len0, o.len) : len0, n = o.top ? o.top(n0) : n0;
+      if (o.thin && b % 2) continue;
+      if (o.pluck && b === nb - 1 && s >= 12 && v === "drop") continue;
       if (v === "verse" && s % 8 === 6 && r() < 0.4) continue;
       if (v === "break") {
-        if (s % 4) continue;
-        p.add(b, s, Math.max(len, 4), n, hum3(r, vel));
-      } else p.add(b, s, len, n, hum3(r, vel, 5));
+        if (len < 4 && s % 8) continue;
+        p.add(b, s, Math.max(len, 6), n, hum3(r, vel));
+      } else p.add(b, s, len, n, hum3(r, s % 4 === 0 ? vel : vel - 8, 5));
     }
   }
   var PLUCK_WAY = {
@@ -57054,18 +57310,6 @@ html.os-darwin.native-menu #menubar .mproj {
       [0, 7],
       [3, 6, 12]
     ],
-    bell: [
-      [0, 3, 6],
-      [0, 6, 10, 12],
-      [2, 8, 11],
-      [0, 4, 7, 10]
-    ],
-    lick: [
-      [0, 3, 6],
-      [2, 6, 10],
-      [0, 7, 10],
-      [4, 7, 12]
-    ],
     echo: [
       [4, 7, 10],
       [12, 15],
@@ -57074,6 +57318,18 @@ html.os-darwin.native-menu #menubar .mproj {
     ]
   };
   function sparsePluck(p, v, ctx2, way) {
+    if (way === "bell" || way === "lick")
+      return motifLine(p, v === "break" ? "drop" : v, ctx2, {
+        set: PLUCK_HOOKS[way],
+        forms: PLUCK_FORMS,
+        center: way === "bell" ? 76 : 67,
+        salt: "pluck:" + way,
+        len: 2,
+        vel: 84,
+        top: arpTop,
+        thin: v === "intro" || v === "break",
+        pluck: true
+      });
     const { ch, nb, r } = ctx2, tr = mulberry(hashStr("pluck:" + way) ^ ctx2.motif.seed), one = (a) => a[Math.floor(tr() * a.length)], cells = [one(PLUCK_CELLS[way]), one(PLUCK_CELLS[way])], order = one([
       [2, 1, 0, 1],
       [0, 1, 2, 1],
@@ -57776,7 +58032,7 @@ html.os-darwin.native-menu #menubar .mproj {
       return;
     }
     if (role === "pluck") {
-      const op = pick3(tr, ["reverse", "octave", "gaps", "rate", "keep"]);
+      const arp3 = p.notes.length / nb >= 6, op = pick3(tr, arp3 ? ["reverse", "octave", "gaps", "rate", "keep"] : ["keep", "keep", "gaps", "keep", "keep"]);
       if (op === "rate" && p.notes.length && p.notes.every((n) => n.l <= 1)) {
         p.notes = p.notes.filter((n) => step(n) % 2 === 0);
         for (const n of p.notes) n.l = 2;
@@ -76224,7 +76480,7 @@ html.os-darwin.native-menu #menubar .mproj {
         },
         labPageOf: pageOf
       },
-      melody: { score: melodyScore, clashes: melodyClashes, isTriplet, isDotted },
+      melody: { score: melodyScore, clashes: melodyClashes, quality: melodyQuality, isTriplet, isDotted },
       seq: {
         clipPacked,
         encode: encodePattern,

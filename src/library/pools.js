@@ -10,7 +10,7 @@ import { addMelodicPack } from './melodic-pack.js';
 import { BB_GENRE, addBigBeatPack } from './bigbeat-pack.js';
 import { addFillPack } from './fill-pack.js';
 import { addLeadPack } from './lead-pack.js';
-import { melodyClashes, melodyFeelOk, melodyFitReset } from './melody-fit.js';
+import { melodyClashes, melodyFeelOk, melodyFitReset, melodyQuality } from './melody-fit.js';
 
 /* ---- wide pattern pools: every library pattern of the style's genre, sub-style and tempo ---- */
 const TONE_POOLS = ['bass', 'chords', 'pad', 'lead', 'pluck', 'acid'];
@@ -138,12 +138,13 @@ export function lvPool(st, pool) {
       !f.busy
   ).map(f => f.id);
   let ids = [...new Set([...hand, ...lib])].filter(id => facById(id));
-  /* leads and plucks: none that clash with their chords or run in triplets across a straight beat (they stay
-     in the library to pick by hand); if that would leave none, keep them all */
+  /* leads and plucks: none that clash with their chords, run in triplets across a straight beat or sound
+     generic (they stay in the library to pick by hand); if that would leave none, keep them all */
   if (pool === 'lead' || pool === 'pluck') {
     const ok = ids.filter(id => {
       const f = facById(id);
-      return !melodyClashes(f) && melodyFeelOk(f, st.id);
+      /* (and none that sound generic: melody-fit.js melodyQuality) */
+      return !melodyClashes(f) && melodyFeelOk(f, st.id) && melodyQuality(f, pool) >= 70;
     });
     if (ok.length) ids = ok;
   }

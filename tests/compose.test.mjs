@@ -390,3 +390,38 @@ test('Compose: a build has four shapes of its kick, perc, bass and riser, all on
   assert.deepEqual(r.long, []);
   assert.deepEqual(errors, []);
 });
+
+test('Compose: hooks and plucks are shaped lines, not scale runs or one rhythm looped', async () => {
+  const { page, errors } = await openApp();
+  const r = await page.evaluate(() => {
+    const { composer } = window.__app.compose,
+      q = window.__app.melody.quality,
+      out = { n: 0, weak: [], rhythm: 0, seq: 0 };
+    for (const st of window.__app.STYLES)
+      for (const seed of [3, 11, 29]) {
+        const c = composer(st, { seed, minutes: 4 }),
+          k = c.make('lead', 'hook');
+        if (!k) continue;
+        const p = c.patterns[k];
+        out.n++;
+        if (q(p, 'lead') < 70) out.weak.push(st.id + ' ' + seed + ' ' + q(p, 'lead'));
+        /* the same rhythm in 6 bars of 8 or more */
+        const rb = {};
+        for (let b = 0; b < p.bars; b++) {
+          const x = p.notes
+            .filter(n => Math.floor(n.s / 16) === b)
+            .map(n => n.s % 16)
+            .join();
+          rb[x] = (rb[x] || 0) + 1;
+        }
+        if (Math.max(...Object.values(rb)) >= p.bars * 0.75) out.rhythm++;
+        const pl = c.make('pluck', 'drop');
+        if (pl && q(c.patterns[pl], 'pluck') < 70) out.weak.push(st.id + ' ' + seed + ' pluck');
+      }
+    return out;
+  });
+  assert.ok(r.n > 100);
+  assert.ok(r.weak.length <= r.n * 0.03, 'weak lines: ' + r.weak.join(', '));
+  assert.ok(r.rhythm <= r.n * 0.03, 'hooks with one rhythm in nearly every bar: ' + r.rhythm);
+  assert.deepEqual(errors, []);
+});

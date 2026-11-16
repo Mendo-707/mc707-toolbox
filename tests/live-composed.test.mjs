@@ -465,3 +465,32 @@ test('A composed set you changed comes back after a restart, with its parts (and
   );
   assert.deepEqual([...first.errors, ...back.errors, ...fresh.errors], []);
 });
+
+test('Live library sets: no generic leads among the parts picked (they stay in the library to pick by hand)', async () => {
+  const { page, errors } = await openApp();
+  await page.click('#menubar .mtab[data-mode=live]');
+  await page.waitForTimeout(200);
+  const r = await page.evaluate(() => {
+    const a = window.__app,
+      LV = a.LV,
+      q = a.melody.quality,
+      out = { n: 0, weak: [] };
+    for (const style of ['liquid', 'deephouse', 'trap', 'electro', 'trance', 'boombap'])
+      for (const flavor of ['lively', 'mixed', 'classic'])
+        for (const seed of [1, 2, 3]) {
+          Object.assign(LV, { style, flavor, flavorPick: true, custom: false, seed });
+          a.liveBuild();
+          for (const sc of LV.scenes)
+            for (const c of Object.values(sc.cells)) {
+              const f = a.facById(c.id);
+              if (!f || f.pool !== 'lead') continue;
+              out.n++;
+              if (q(f, 'lead') < 70) out.weak.push(style + ' ' + c.id);
+            }
+        }
+    return out;
+  });
+  assert.ok(r.n > 20, 'leads picked: ' + r.n);
+  assert.deepEqual(r.weak, []);
+  assert.deepEqual(errors, []);
+});

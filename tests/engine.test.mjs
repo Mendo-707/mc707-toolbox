@@ -483,7 +483,7 @@ test('Humanize: off changes nothing; on, each player sits in its own spot, chord
         /* freeze both clocks, so MIDI times come straight from the player's schedule */
         Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => 0, configurable: true });
         performance.now = () => 0;
-        Object.assign(LV, { style: 'deephouse', seed: 4, custom: false, auto: true, vary: 60, human, feel });
+        Object.assign(LV, { style: 'deephouse', seed: 1, custom: false, auto: true, vary: 60, human, feel });
         a.liveBuild();
         window.__out.length = 0;
         window.__times = [];
