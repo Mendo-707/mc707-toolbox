@@ -12,7 +12,12 @@ import { newSound, paramOf } from './zc-tone.js';
 export const FW_REC = 0x660;
 /* Where each tone parameter sits in a record: [block key, offset, instances, stride, 'ID:offset+type ...'].
    Types: a = 16 ASCII characters, b = unsigned byte, c = signed byte, w = unsigned 16-bit, s = signed
-   16-bit (little-endian). Worked out against tones read back from an MC-707 over SysEx. */
+   16-bit (little-endian). Worked out against tones read back from an MC-707 over SysEx.
+   Five offsets corrected: the portamento curve is at 48 and the partial LFO phase lock at 49 (44 to 47
+   are Roland's reserved phrase fields, which some project tones use: 100 at 45 in factory projects),
+   and fine bend up, fine bend down and pitch drift are at 1436, 1437 and 1438 (1435 is unused). Checked
+   on an MC-707 at system 1.82: tones written with these offsets read back over SysEx with all 1151
+   values as written, and records from Roland's own files carry values only at these bytes. */
 const FW_MAP = [
   [
     'CMN',
@@ -22,7 +27,7 @@ const FW_MAP = [
     'NAME:0a CATEGORY:16b LEVEL:20b PAN:21c PRIORITY:24b PIT_CRS:25c PIT_FINE:26c OCTAVE:27c ' +
       'STRETCH:28b ANALOG_FEEL:29b MONO_POLY:30b LEGATO_SW:31b RETRIG_INTVL:32b PORTA_SW:33b ' +
       'PORTA_MODE:34b PORTA_TYPE:35b PORTA_START:37b PORTA_TIME:38w BEND_RANGE_UP:40b BEND_RANGE_DW:41b ' +
-      'BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:44b PTL_LFO_LOCK:45b'
+      'BEND_MODE:42b SOFT_LEVEL_SENS:43b PORTA_CRV:48b PTL_LFO_LOCK:49b'
   ],
   [
     'MFX',
@@ -122,8 +127,8 @@ const FW_MAP = [
     1432,
     1,
     0,
-    'UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:3b BEND_RANGE_FINE_DW:4b ' +
-      'RND_PIT_VAL:5b RND_PIT_NUM:7b CONDITION:8b'
+    'UNISON_SW:0b UNISON_SIZE:1b UNISON_DETN:2b BEND_RANGE_FINE_UP:4b BEND_RANGE_FINE_DW:5b ' +
+      'RND_PIT_VAL:6b RND_PIT_NUM:7b CONDITION:8b'
   ],
   [
     'SPMT',
