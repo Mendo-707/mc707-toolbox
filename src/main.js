@@ -186,7 +186,7 @@ import { browserOpen } from './zen/zc-browser.js';
 import { songSections } from './zen/zc-scenes.js';
 import { scanOnce, scanDiff, scanReset, sceneFinderOpen } from './zen/zc-scan.js';
 import { ZS, libraryJSON } from './zen/zc-sounds.js';
-import { FW_REC, fwFields, fwKitBytes, fwKits } from './zen/zc-factory.js';
+import { FW_REC, fwFields, fwKitBytes, fwKits, fwRecord, fwTone, fwTones } from './zen/zc-factory.js';
 import { newSound } from './zen/zc-tone.js';
 import { hooks } from './core/hooks.js';
 import { finishLibrary } from './library/pools.js';
@@ -312,7 +312,7 @@ PROJ.t = projTitle;
       ZS,
       libraryJSON,
       slotAddr,
-      fw: { FW_REC, fwFields, fwKits, fwKitBytes, newSound },
+      fw: { FW_REC, fwFields, fwKits, fwKitBytes, fwTone, fwTones, fwRecord, newSound },
       get ZE() {
         return ZE;
       },
