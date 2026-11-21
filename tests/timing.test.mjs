@@ -14,8 +14,10 @@ const RUN = `async (c) => {
   a.stopAll();
   Object.assign(LV, { human: c.hum, feel: c.feel || 'natural', style: c.style, seed: 3, custom: false, auto: true, chaos: 40, flavor: c.flavor, flavorPick: true });
   a.liveBuild();
-  const pn = performance.now.bind(performance);
-  performance.now = () => a.AU.ctx.currentTime * 1000;
+  /* both clocks stand still while the ticks run by hand, so a slow machine cannot shift the notes */
+  const pn = performance.now.bind(performance), ct = a.AU.ctx.currentTime;
+  Object.defineProperty(a.AU.ctx, 'currentTime', { get: () => ct, configurable: true });
+  performance.now = () => ct * 1000;
   window.__out.length = 0; window.__times = [];
   a.liveStart(0); a.TICKER.stop();
   LV.swing = c.swing;
@@ -24,6 +26,7 @@ const RUN = `async (c) => {
   const td = (a.TR.nextTime - t0) / (a.TR.tick - k0);
   const out = window.__out.map((m, i) => [m, window.__times[i], i]);
   performance.now = pn;
+  delete a.AU.ctx.currentTime;
   a.stopAll();
   const drum = new Set(a.S.tracks.filter(x => x.type === 'drum').map(x => x.ch - 1));
   const evs = out.filter(x => x[1] != null && x[0].length === 3 && (x[0][0] & 0xe0) === 0x80)
