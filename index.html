@@ -10529,7 +10529,7 @@ html.os-darwin.native-menu #menubar .mproj {
     forwardKeys(win);
     const save5 = () => {
       try {
-        if (!win.closed)
+        if (!win.closed && win.screenX > -1e4 && win.innerWidth > 100)
           keepPlace(o.id, {
             x: win.screenX,
             y: win.screenY,
@@ -10612,8 +10612,12 @@ html.os-darwin.native-menu #menubar .mproj {
     const old = OPEN.get(o.id);
     if (old && old.win && old.win.closed) old.close(true);
     else if (old) {
-      if (old.win) old.win.focus();
-      return old;
+      if (old.win && APP) {
+        APP.popWin(old.name, "show");
+        return old;
+      }
+      if (!old.win) return old;
+      old.close(true);
     }
     const h = { id: o.id, build: o.build, open: true };
     h.winBtns = () => {

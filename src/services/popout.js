@@ -98,7 +98,8 @@ function openWindow(o, h) {
   forwardKeys(win);
   const save = () => {
     try {
-      if (!win.closed)
+      /* (not while minimised: Windows then reports it at -32000, and it would reopen out of sight) */
+      if (!win.closed && win.screenX > -10000 && win.innerWidth > 100)
         keepPlace(o.id, {
           x: win.screenX,
           y: win.screenY,
@@ -191,8 +192,14 @@ export function popout(o) {
   /* a window closed a moment ago may not have been noticed yet */
   if (old && old.win && old.win.closed) old.close(true);
   else if (old) {
-    if (old.win) old.win.focus();
-    return old;
+    /* asked for again: bring it back even if it was minimised or is out of sight. The Windows app restores
+       it; a browser cannot, so the window is opened afresh (what it shows is drawn from the app) */
+    if (old.win && APP) {
+      APP.popWin(old.name, 'show');
+      return old;
+    }
+    if (!old.win) return old;
+    old.close(true);
   }
   const h = { id: o.id, build: o.build, open: true };
   /* a borderless window's own buttons (null anywhere else): stay on top, minimise, close */

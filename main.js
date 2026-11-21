@@ -122,6 +122,7 @@ function createWindow() {
       child.on('closed', () => tools.get(name) === child && tools.delete(name));
     }
     child.setMenu(null);
+    onScreen(child);
     child.webContents.on('will-navigate', (e) => e.preventDefault());
     child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   });
@@ -139,10 +140,36 @@ function createWindow() {
 
 // the tool windows by name (mc707-song-mixer…), for their own pin, minimise and close buttons
 const tools = new Map();
+/* a tool window remembered somewhere no screen shows now (a monitor unplugged, another computer): put it
+   in the middle of the screen the app is on, so it never opens out of sight */
+function onScreen(w) {
+  try {
+    const b = w.getBounds();
+    const seen = screen.getAllDisplays().some(d => {
+      const a = d.workArea;
+      const x = Math.max(0, Math.min(b.x + b.width, a.x + a.width) - Math.max(b.x, a.x)),
+        y = Math.max(0, Math.min(b.y + b.height, a.y + a.height) - Math.max(b.y, a.y));
+      /* enough of it, with its title bar, to grab */
+      return x >= 120 && y >= 60 && b.y >= a.y - 10 && b.y < a.y + a.height - 40;
+    });
+    if (seen) return;
+    const a = screen.getDisplayMatching(win ? win.getBounds() : b).workArea;
+    const width = Math.min(b.width, a.width),
+      height = Math.min(b.height, a.height);
+    w.setBounds({ x: Math.round(a.x + (a.width - width) / 2), y: Math.round(a.y + (a.height - height) / 2), width, height });
+  } catch (e) {}
+}
 ipcMain.handle('pop-win', (_e, name, act, on) => {
   const w = tools.get(name);
   if (!w || w.isDestroyed()) return false;
   if (act === 'min') w.minimize();
+  else if (act === 'show') {
+    /* clicking Mixer again: back from minimised or out of sight, and in front */
+    if (w.isMinimized()) w.restore();
+    onScreen(w);
+    w.show();
+    w.focus();
+  }
   else if (act === 'close') w.close();
   else if (act === 'top') w.setAlwaysOnTop(!!on, 'floating');
   return w.isAlwaysOnTop();
