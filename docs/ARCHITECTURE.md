@@ -168,7 +168,7 @@ access separately (`zc-sysex.js`), so the rest of the app never needs it.
 | Module | What it does | Owns |
 | --- | --- | --- |
 | `core/crc.js` | CRC-32 table, shared by the zip writers (MIDI export and audio recordings). |  |
-| `core/device.js` | Which device the app drives: the MC-707 (8 tracks), the MC-101 (4 tracks) or the MC-107 (an MC-101 modded to play 8 tracks: tracks 5-8 play but the MC-101's screen and pads never show them), the track colours, and helpers that say whether a track is in use. | DEV (the device) |
+| `core/device.js` | Which device the app drives: the MC-707 (8 tracks), the MC-101 (4 tracks) or the MC-107 (an MC-101 with the 8-track firmware mod, github.com/edco/mc-101-re: tracks 5-8 are a second bank on the same four SEL buttons and faders), the track colours, and helpers that say whether a track is in use. | DEV (the device) |
 | `core/dom.js` | Tiny DOM helpers used everywhere: $ and $$ (querySelector), el() to build elements, clamp, toast messages, and duration formatting. |  |
 | `core/hooks.js` | Calls that go UP the layers (see docs/ARCHITECTURE.md). |  |
 | `core/icons.js` | SVG icons for the Play and Stop buttons. |  |
