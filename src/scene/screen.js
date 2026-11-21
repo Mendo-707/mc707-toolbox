@@ -161,7 +161,9 @@ export function sceneRender() {
       el(
         'p',
         { class: 'scnNote' },
-        'Scenes are mapped on the MC-707 so far: on the MC-101, Scene Mode plays here but cannot write.'
+        DEV === '107'
+          ? 'Scenes are mapped on the MC-707 so far: on the MC-107, Scene Mode plays here but cannot write over USB. File › Save as MC-707 project (.mpj) puts the clips and scenes in a project file for it to load.'
+          : 'Scenes are mapped on the MC-707 so far: on the MC-101, Scene Mode plays here but cannot write.'
       )
     );
   if (!S.scn) {

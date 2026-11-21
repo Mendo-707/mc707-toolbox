@@ -9,7 +9,7 @@
 // Owns: ZX (the SysEx link: ports, queue, status).
 // Reads: MIDI, DEV.
 import { MIDI } from '../services/midi.js';
-import { DEV, devNum } from '../core/device.js';
+import { DEV, devHw, devNum } from '../core/device.js';
 
 /* ---- addresses: four 7-bit bytes on the wire, plain (linear) numbers in the code ---- */
 /** A packed address (as Roland writes it, 0x30000000) as a linear byte number. */
@@ -33,6 +33,19 @@ const TONE0 = lin(0x30000000),
 /** The device's own track index (0-7, or 0-3 on the MC-101) for app track t. The MC-101's four
    tracks are the app's tracks 1, 4, 5 and 7, so they are renumbered here. */
 export const devTrack = t => (DEV === '101' ? Math.max(0, devNum(t) - 1) : t);
+/* An MC-107 is an MC-101: its memory holds the sounds and settings of four tracks (68 tones, not the
+   MC-707's 136), and where tracks 5-8 keep theirs is not known. So nothing is read from or written to
+   where an MC-707 keeps them: those reads come back unanswered and those writes are dropped, rather than
+   landing somewhere else in the MC-101's memory. */
+function hiddenAddr(l) {
+  if (DEV !== '107') return false;
+  const slot = (base, step) => Math.floor((l - base) / step),
+    hid = i => i >= 4 * 17 && i < 8 * 17;
+  if (l >= TONE0 && hid(slot(TONE0, TONE_SLOT))) return true;
+  if (l >= KIT0 && hid(slot(KIT0, KIT_SLOT))) return true;
+  const tr = slot(TRK_SET, lin(0x200));
+  return l >= TRK_SET && tr >= 4 && tr < 8;
+}
 /**
  * Where a tone or drum kit lives: app track t (0-7), clip k (0-15), or k = 16 for the track's own sound
  * (used when the track's Sound Source is TRACK).
@@ -54,7 +67,7 @@ export function checksum(bytes) {
    the one the device answers to is learnt from its replies (ZX.model) and used from then on. */
 const MODELS = [0x5d, 0x5e];
 const known = () => (ZX.model && ZX.modelFor === DEV + ':' + (ZX.out && ZX.out.name) ? ZX.model : 0);
-export const modelId = () => known() || (DEV === '101' ? 0x5e : 0x5d);
+export const modelId = () => known() || (devHw() === '101' ? 0x5e : 0x5d);
 /** A DT1 (data set) message writing bytes at linear address l. */
 export function dt1(l, data, dev = 0x10) {
   const body = [...addrBytes(l), ...data.map(b => b & 0x7f)];
@@ -146,6 +159,7 @@ function rawSend(bytes) {
 const PACE = 6;
 /** Write bytes at a linear address (queued). */
 export function zxWrite(l, data) {
+  if (hiddenAddr(l)) return;
   ZX.q.delete(l);
   ZX.q.set(l, data);
   if (!ZX.timer) ZX.timer = setTimeout(pump, 0);
@@ -270,7 +284,7 @@ const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
  */
 export function zxRead(l, n, ms = 450, loose = false) {
   return serial(async () => {
-    if (!ZX.inp) return undefined;
+    if (!ZX.inp || hiddenAddr(l)) return undefined;
     for (let tries = 0; tries < 3; tries++) {
       /* the last try, while the model byte is still unknown, asks with the other model's byte */
       const guess = !known() && tries === 2 ? MODELS.find(m => m !== modelId()) : 0;

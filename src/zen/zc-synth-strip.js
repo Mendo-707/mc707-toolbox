@@ -6,7 +6,7 @@
 // Reads: SY, S, DEV.
 import { el, toast } from '../core/dom.js';
 import { S } from '../core/state.js';
-import { DEVS, DEV, TRACK_COLORS, devNum } from '../core/device.js';
+import { DEVS, DEV, TRACK_COLORS, devHidden, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { showMenu } from '../ui/menu.js';
 import { soundAdd, soundsLoad } from './zc-sounds.js';
@@ -213,7 +213,7 @@ export function strip(t, act) {
             if (SY.kbd !== 'own') (kbdSet(t), act.render());
           }
         },
-        SY.names[t] || 'No sound read'
+        SY.names[t] || (devHidden(t) ? 'Hidden on the MC' : 'No sound read')
       ),
       el(
         'div',

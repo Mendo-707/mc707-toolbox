@@ -5,7 +5,7 @@
 // Reads: S, UI, ED, TR, REC, CMNOW, SH.
 // Calls up the layers through hooks (core/hooks.js).
 import { $, $$, clamp, el, toast } from '../core/dom.js';
-import { TRACK_COLORS, devNm, devNum, devOn } from '../core/device.js';
+import { TRACK_COLORS, devHidden, devNm, devNum, devOn } from '../core/device.js';
 import { ED, S, UI, curClip, pushUndo, scheduleSave } from '../core/state.js';
 import { instFactory, metaOf } from '../library/index.js';
 import { loopLen, patOf, placeClip } from '../core/song-model.js';
@@ -261,7 +261,18 @@ function trackRow(t, i, W) {
     el(
       'div',
       { class: 'trow2' },
-      el('span', { class: 'ttype' }, t.type === 'drum' ? 'Drums' : 'Tone'),
+      devHidden(i)
+        ? el(
+            'span',
+            {
+              class: 'ttype hid',
+              title:
+                (t.type === 'drum' ? 'Drums' : 'Tone') +
+                '. The MC-107 plays this track but never shows it: its clips, sound and mix are changed here, in the app'
+            },
+            'App only'
+          )
+        : el('span', { class: 'ttype' }, t.type === 'drum' ? 'Drums' : 'Tone'),
       chSel,
       el('input', {
         type: 'range',

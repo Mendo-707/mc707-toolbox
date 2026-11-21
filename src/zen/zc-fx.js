@@ -12,7 +12,7 @@ import { S } from '../core/state.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR } from '../services/transport.js';
 import { WHOLE_SOUND, reselect, zeQuietly } from './zc-editor.js';
-import { DEV } from '../core/device.js';
+import { devHw } from '../core/device.js';
 import { MFX_PARAMS, MFX_RESET_MS, readSound, sendSound } from './zc-tone.js';
 import { lin, slotAddr, zxConnect, zxFlush, zxReadIn, zxWrite } from './zc-sysex.js';
 import { MFX_PRESETS, mfxPreset } from './zc-mfx-presets.js';
@@ -148,7 +148,8 @@ export async function trackFx(t, id) {
 }
 
 /* ---- the total effects ---- */
-const masterOk = () => DEV !== '101';
+/* (not on the MC-101, nor on an MC-107, which is one) */
+const masterOk = () => devHw() !== '101';
 /** The total effects now, read from the MC-707 (null when it does not answer). */
 export async function readMaster() {
   if (!masterOk() || !(await zxConnect())) return null;

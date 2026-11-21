@@ -9,7 +9,7 @@ import { PROJ, S, UI, pushUndo, replaceState, newState } from '../core/state.js'
 import { afterReplaceKeepUndo } from './controls.js';
 import { openWiz } from '../song/wizard-ui.js';
 import { setMode } from './mode.js';
-import { DEVS, DEV } from '../core/device.js';
+import { DEVS, DEV, devProj } from '../core/device.js';
 import { zenOpen } from '../zen/zc-editor.js';
 import { VERSION, openLink } from '../core/version.js';
 import { checkUpdate } from './update-check.js';
@@ -148,7 +148,7 @@ export function startOpen(last = true) {
           'Arrange in MC-707 scenes, then send them so the MC-707 plays the song by itself.',
           () => setMode('scene')
         ),
-        DEV === '707'
+        devProj()
           ? card(
               '▧',
               'Template builder',

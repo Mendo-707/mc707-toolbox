@@ -29,9 +29,13 @@ const SHORT = {
   pluck: 'Pluck',
   acid: 'Acid'
 };
+/** The MC-107 layout: the four parts you play and tweak on the MC-101's screen and pads on tracks 1-4
+    (a full kit, bass, chords and lead, as on an MC-101), the layers the app plays on hidden tracks 5-8. */
+export const MC107_ROLES = ['kit', 'bass', 'chords', 'lead', 'hats', 'perc', 'pad', 'pluck'];
 /** Ready-made splits, as roles for tracks 1-8. */
 const PRESETS = [
   ['Default: 3 drums + 5 tone', DEF_ROLES],
+  ['MC-107: kit, bass, chords, lead on the MC', MC107_ROLES],
   ['8 drums', ['kit', 'kit', 'hats', 'hats', 'perc', 'perc', 'kit', 'perc']],
   ['6 drums + 2 tone', ['kit', 'kit', 'hats', 'perc', 'perc', 'kit', 'bass', 'lead']],
   ['4 drums + 4 tone', ['kit', 'hats', 'perc', 'kit', 'bass', 'chords', 'lead', 'pluck']],
@@ -103,6 +107,59 @@ export async function applyRoles(roles) {
   liveRender();
   scheduleSave();
   return true;
+}
+
+/**
+ * Move the tracks around without changing what any of them holds: new track n is old track perm[n], with
+ * its role, name, mix, clips, clip changes, clip map and Scene Mode clips. Channels stay with the track
+ * number when they were the default (track n on channel n). One undo step.
+ */
+export function reorderTracks(perm) {
+  const inv = [];
+  perm.forEach((o, n) => (inv[o] = n));
+  stopAll();
+  pushUndo();
+  const old = S.tracks.map((x, t) => ({ tr: x, role: roleOf(t) })),
+    map = cmFix().slice();
+  S.tracks = perm.map((o, n) => {
+    const { tr, role } = old[o];
+    if (tr.ch === o + 1) tr.ch = n + 1;
+    if (role === DEF_ROLES[n]) delete tr.role;
+    else tr.role = role;
+    return tr;
+  });
+  S.clipMap = perm.map(o => map[o]);
+  S.clips.forEach(c => (c.t = inv[c.t]));
+  (S.clipMarks || []).forEach(m => (m.t = inv[m.t]));
+  if (S.scn) {
+    S.scn.clips = perm.map(o => S.scn.clips[o]);
+    S.scn.rows.forEach(r => (r.pick = perm.map(o => r.pick[o])));
+    /* what was written to the MC is kept per track:clip */
+    const mv = m =>
+      m &&
+      Object.fromEntries(
+        Object.entries(m).map(([k, v]) => {
+          const [t, c] = k.split(':');
+          return [inv[+t] + ':' + c, v];
+        })
+      );
+    if (S.scn.done) ['c', 'p'].forEach(w => S.scn.done[w] && (S.scn.done[w] = mv(S.scn.done[w])));
+  }
+  liveBuild();
+  renderAll();
+  liveRender();
+  scheduleSave();
+}
+/** The order that puts these roles on tracks 1-8, moving the tracks that already have them, or null. */
+export function orderFor(roles) {
+  const free = [0, 1, 2, 3, 4, 5, 6, 7],
+    perm = [];
+  for (const r of roles) {
+    const i = free.findIndex(t => roleOf(t) === r);
+    if (i < 0) return null;
+    perm.push(free.splice(i, 1)[0]);
+  }
+  return perm;
 }
 
 export function trackSetupOpen() {
@@ -212,7 +269,18 @@ function render(ov) {
         ...PRESETS.map(([lab, r]) =>
           el(
             'button',
-            { class: 'btn sm' + (r.every((x, t) => x === roles[t]) ? ' on' : ''), onclick: () => set(r.slice()) },
+            {
+              class: 'btn sm' + (r.every((x, t) => x === roles[t]) ? ' on' : ''),
+              /* a layout the tracks already have, in another order: the tracks move, clips and all */
+              onclick: () => {
+                const perm = orderFor(r);
+                if (perm && perm.some((o, n) => o !== n)) {
+                  reorderTracks(perm);
+                  toast('Tracks moved: each keeps its clips and settings');
+                  render(ov);
+                } else set(r.slice());
+              }
+            },
             lab
           )
         )

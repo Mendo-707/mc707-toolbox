@@ -8,7 +8,7 @@
 //
 // Reads: S, DEV, ZS, HOST.
 import { el, toast } from '../core/dom.js';
-import { DEV, DEVS } from '../core/device.js';
+import { DEV, DEVS, devProj } from '../core/device.js';
 import { LINKS, openLink } from '../core/version.js';
 import { saveFile } from '../song/export.js';
 import { askDlg } from './dialogs.js';
@@ -284,9 +284,15 @@ export async function templateBuilderOpen() {
         )
       : null;
     const dev =
-      DEV !== '707'
+      DEV === '101'
         ? el('p', { class: 'ptWarn' }, 'Project files are for the MC-707 (8 tracks). The MC-101 cannot load them.')
-        : null;
+        : DEV === '107'
+          ? el(
+              'p',
+              { class: 'ptWarn' },
+              'This makes an MC-707 project file (8 tracks), for your MC-107 to load. Tracks 5–8 get their sounds here: the MC-101’s screen never shows them.'
+            )
+          : null;
     /* the tracks */
     const rows = TB.tracks.flatMap((tr, t) => {
       const kind = kindOf(tr),
@@ -454,7 +460,7 @@ export async function templateBuilderOpen() {
           el('button', { type: 'button', class: 'btn', onclick: close }, 'Close'),
           el(
             'button',
-            { type: 'button', class: 'btn on', disabled: DEV !== '707' || !total, onclick: () => tbSave(close) },
+            { type: 'button', class: 'btn on', disabled: !devProj() || !total, onclick: () => tbSave(close) },
             'Save to the MC-707…'
           )
         )
@@ -496,7 +502,7 @@ async function tbSave(close) {
   } catch (e) {
     return void toast('Could not make the project: ' + ((e && e.message) || e));
   }
-  if (TB.useLayout && DEV === '707') {
+  if (TB.useLayout && devProj()) {
     const types = TB.tracks.map(kindOf);
     if (types.some((x, t) => S.tracks[t].type !== x) && !(await matchTypes(types))) return;
   }

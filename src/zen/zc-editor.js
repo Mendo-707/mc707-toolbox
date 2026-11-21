@@ -7,7 +7,7 @@
 import { $, el, toast } from '../core/dom.js';
 import { waveSource } from './zc-waves.js';
 import { S } from '../core/state.js';
-import { DEVS, DEV, devNum } from '../core/device.js';
+import { DEVS, DEV, devHidden, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR, stopAll } from '../services/transport.js';
@@ -276,6 +276,15 @@ function mfxType(type, vals) {
 /* ---- reading from the MC-707 ---- */
 /** Read the whole sound from the MC-707 (keeps what cannot be read). */
 export async function zeRead() {
+  /* an MC-107's tracks 5-8: where it keeps their sounds is unknown, so they are neither read nor sent */
+  if (devHidden(ZE.t)) {
+    ZE.busy = '';
+    ZE.srcNote =
+      'Track ' +
+      devNum(ZE.t) +
+      ' is hidden on the MC-107: the editor cannot read or send its sound over USB. Edit it here and save it, then put it in a project with the Template builder (MC-707 menu).';
+    return zeRender();
+  }
   if (!(await zxConnect())) return status();
   if (!ZX.inp) {
     toast('No MIDI input from the ' + DEVS[DEV].name + ': cannot read, but changes are still sent');
@@ -286,6 +295,8 @@ export async function zeRead() {
   ZE.busy = 'Reading…';
   status();
   const r = await readSound(ZE.snd, zeBase(), null, (d, n) => {
+    /* (a read for a sound no longer open says nothing) */
+    if (ZE.t !== t || ZE.k !== k) return;
     ZE.busy = 'Reading… ' + Math.round((d / n) * 100) + '%';
     status();
   });
@@ -314,6 +325,10 @@ async function readSource() {
 }
 /** Send the whole sound to the MC-707. */
 export async function zeSendAll() {
+  if (devHidden(ZE.t))
+    return toast(
+      'Track ' + devNum(ZE.t) + ' is hidden on the MC-107: its sound goes in through a project file (Template builder)'
+    );
   if (!(await zxConnect())) return status();
   const snd = ZE.snd,
     base = zeBase();

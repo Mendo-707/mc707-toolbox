@@ -143,6 +143,14 @@
   color: var(--mute);
   width: 38px;
 }
+/* MC-107: a track the MC plays but never shows */
+.ttype.hid {
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c);
+  white-space: normal;
+}
 .thead select {
   padding: 0 2px;
   font-size: 12px;

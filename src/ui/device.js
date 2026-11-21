@@ -2,7 +2,10 @@
 //
 // Reads: S, LV, DEV.
 import { $, toast } from '../core/dom.js';
-import { DEV, DEVS, assignDevice, modelOfName } from '../core/device.js';
+import { DEV, DEVS, assignDevice, devHw, modelOfName } from '../core/device.js';
+import { roleOf } from '../core/tracks.js';
+import { askDlg } from './dialogs.js';
+import { MC107_ROLES, orderFor, reorderTracks } from './track-setup.js';
 import { S, pushUndo, scheduleSave } from '../core/state.js';
 import { stopAll } from '../services/transport.js';
 import { renderAll } from './controls.js';
@@ -14,7 +17,7 @@ import { liveRender } from '../live/panels.js';
 export function applyDevice() {
   document.body.dataset.dev = DEV;
   const b = $('#menubar .mbrand');
-  if (b) b.textContent = DEV === '101' ? 'MC707 / 101 Toolbox · MC-101 mode' : 'MC707 / 101 Toolbox';
+  if (b) b.textContent = DEV === '707' ? 'MC707 / 101 Toolbox' : 'MC707 / 101 Toolbox · ' + DEVS[DEV].name + ' mode';
 }
 export function setDevice(d) {
   if (d === DEV) return;
@@ -40,8 +43,26 @@ export function setDevice(d) {
   toast(
     d === '101'
       ? 'MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits.'
-      : 'MC-707 mode: 8 tracks on channels 1–8.'
+      : d === '107'
+        ? 'MC-107 mode: 8 tracks on channels 1–8. Tracks 5–8 play, but the MC-101 never shows them: the app is where you see and change them.'
+        : 'MC-707 mode: 8 tracks on channels 1–8.'
   );
+  if (d === '107') offer107();
+}
+/* Switching to the MC-107: offer to move the tracks so the parts you play are on the four the MC shows.
+   Only when the tracks can simply be moved (each of those roles is on some track): nothing is lost. */
+async function offer107() {
+  const perm = orderFor(MC107_ROLES);
+  if (!perm || perm.every((o, n) => o === n)) return;
+  const ok = await askDlg({
+    title: 'Move the main parts to tracks 1–4?',
+    text: 'The MC-107 shows only tracks 1–4 on its screen and pads. The app can move the kit, bass, chords and lead there (the parts you play and tweak on the MC), and hats, percussion, pad and pluck to tracks 5–8, which the app plays and you change here. Each track keeps its clips, sound settings and mix. On the MC, set tracks 1–4 to Drum, Tone, Tone, Tone to match.',
+    ok: 'Move them',
+    cancel: 'Keep the order'
+  });
+  if (!ok) return;
+  reorderTracks(perm);
+  toast('Tracks 1–4: kit, bass, chords, lead. Tracks 5–8: hats, perc, pad, pluck.');
 }
 /**
  * The MIDI output is an MC-101 (or an MC-707) but the app is set to the other one: switch to match it,
@@ -50,7 +71,8 @@ export function setDevice(d) {
  */
 export function matchDevice(portName) {
   const m = modelOfName(portName);
-  if (!m || m === DEV) return;
+  /* (an MC-107 is an MC-101 on the cable: it stays an MC-107) */
+  if (!m || m === devHw()) return;
   setDevice(m);
   toast(
     'Found ' +

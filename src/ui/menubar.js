@@ -225,7 +225,12 @@ function initMenubar() {
           null,
           () => [
             { label: 'MC-707 (8 tracks)', checked: DEV === '707', action: () => setDevice('707') },
-            { label: 'MC-101 (4 tracks)', checked: DEV === '101', action: () => setDevice('101') }
+            { label: 'MC-101 (4 tracks)', checked: DEV === '101', action: () => setDevice('101') },
+            {
+              label: 'MC-107 (MC-101 modded to 8 tracks)',
+              checked: DEV === '107',
+              action: () => setDevice('107')
+            }
           ]
         ],
         ['Track setup…', () => trackSetupOpen()],

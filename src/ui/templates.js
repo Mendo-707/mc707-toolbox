@@ -6,7 +6,7 @@
 // Reads: S, DEV.
 import { el } from '../core/dom.js';
 import { S } from '../core/state.js';
-import { DEVS, DEV } from '../core/device.js';
+import { DEVS, DEV, devProj } from '../core/device.js';
 import { LINKS, openLink } from '../core/version.js';
 
 /** The templates: how many drum tracks (first), the file name. */
@@ -14,7 +14,7 @@ export const TEMPLATES = [8, 6, 4, 3, 2, 1, 0].map(d => [d, d + ' Drum ' + (8 - 
 
 /** The template for the app's Track setup now: {file, exact} (exact: its drum tracks come first, as the template's do), or null. */
 export function templateFor() {
-  if (DEV !== '707') return null;
+  if (!devProj()) return null;
   const types = DEVS[DEV].tracks.map(t => S.tracks[t].type),
     d = types.filter(x => x === 'drum').length,
     hit = TEMPLATES.find(x => x[0] === d);
@@ -27,32 +27,31 @@ export function templatesEmptyOpen() {
   document.getElementById('tplOv')?.remove();
   const close = () => ov.remove();
   const m = templateFor();
-  const which =
-    DEV !== '707'
+  const which = !devProj()
+    ? el(
+        'p',
+        { class: 'pmWarn' },
+        'These templates are for the MC-707 (8 tracks). Switch Settings › Device to MC-707 to use them.'
+      )
+    : !m.file
       ? el(
           'p',
-          { class: 'pmWarn' },
-          'These templates are for the MC-707 (8 tracks). Switch Settings › Device to MC-707 to use them.'
+          { class: 'hint' },
+          'Your Track setup has ' +
+            m.drums +
+            ' drum tracks: there is no template with exactly that. Load the nearest one and change the track types on the MC-707.'
         )
-      : !m.file
-        ? el(
-            'p',
-            { class: 'hint' },
-            'Your Track setup has ' +
-              m.drums +
-              ' drum tracks: there is no template with exactly that. Load the nearest one and change the track types on the MC-707.'
-          )
-        : el(
-            'p',
-            { class: 'tplPick' },
-            'For your Track setup (' + m.drums + ' drum, ' + (8 - m.drums) + ' tone): ',
-            el('b', {}, m.file.replace('.mpj', '')),
-            m.exact
-              ? '.'
-              : '. Its drum tracks are tracks 1-' +
-                  m.drums +
-                  '; yours are elsewhere, so change the track types on the MC-707 or in Track setup to match.'
-          );
+      : el(
+          'p',
+          { class: 'tplPick' },
+          'For your Track setup (' + m.drums + ' drum, ' + (8 - m.drums) + ' tone): ',
+          el('b', {}, m.file.replace('.mpj', '')),
+          m.exact
+            ? '.'
+            : '. Its drum tracks are tracks 1-' +
+                m.drums +
+                '; yours are elsewhere, so change the track types on the MC-707 or in Track setup to match.'
+        );
   const li = (...k) => el('li', {}, ...k);
   const ov = el(
     'div',

@@ -11,7 +11,7 @@
 // Reads: S, PROJ, DEV, HOST.
 import { el, toast } from '../core/dom.js';
 import { HOST, PROJ, S } from '../core/state.js';
-import { DEV, DEVS } from '../core/device.js';
+import { DEV, DEVS, devProj } from '../core/device.js';
 import { mpjBlank, mpjFill, mpjToneAt } from '../core/mpj-write.js';
 import { FW_REC, fwKitBytes, fwRecord } from '../zen/zc-factory.js';
 import { soundFrom } from '../zen/zc-tone.js';
@@ -24,7 +24,7 @@ import { songToRows } from './convert.js';
 
 /** The song as project contents: {name, bpm, clips, scenes, first, from, lost} or {error}. */
 export function mpjSong(name) {
-  if (DEV !== '707') return { error: 'MC-707 project files are for the MC-707 (8 tracks): switch Settings › Device' };
+  if (!devProj()) return { error: 'MC-707 project files are for the MC-707 (8 tracks): switch Settings › Device' };
   const own = !!(S.scn && S.scn.rows.length),
     made = own ? { rows: S.scn.rows, clips: S.scn.clips } : songToRows();
   if (!made.rows.length) return { error: 'The song has nothing to play yet' };
