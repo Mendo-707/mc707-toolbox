@@ -205,43 +205,58 @@ test('MC-101 mode hides the unused tracks', async () => {
   assert.deepEqual(errors, []);
 });
 
-test('MC-107 mode: 8 tracks on channels 1-8, an MC-101 on the cable, tracks 5-8 marked and kept off SysEx', async () => {
+test('MC-107 mode: 8 tracks on channels 1-8, an MC-101 on the cable, bank B written only once it answers', async () => {
   const { page, errors } = await openApp({ storage: { ...SAVED, 'mc-device': '107' } });
   const r = await page.evaluate(() => ({
     off: [...document.querySelectorAll('.trow')].map(t => t.classList.contains('devoff')),
-    app: [...document.querySelectorAll('.ttype')].map(t => t.classList.contains('hid')),
+    bankB: [...document.querySelectorAll('.ttype')].map(t => (t.classList.contains('hid') ? t.textContent : '')),
     ch: window.__app.S.tracks.map(t => t.ch),
     brand: document.querySelector('#menubar .mbrand').textContent
   }));
   assert.deepEqual(r.off, Array(8).fill(false), 'all eight tracks play');
-  assert.deepEqual(r.app, [false, false, false, false, true, true, true, true], 'tracks 5-8 say App only');
+  assert.deepEqual(r.bankB, ['', '', '', '', 'Bank B', 'Bank B', 'Bank B', 'Bank B']);
   assert.deepEqual(r.ch, [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.match(r.brand, /MC-107 mode/);
   /* an MC-101 port does not switch it to MC-101 mode */
   await page.evaluate(() => window.__app.hooks.matchDevice('MC-101'));
   assert.match(await page.textContent('#menubar .mbrand'), /MC-107 mode/);
-  /* the editor on track 2 talks to the MC-101 (model 0x5E) at the MC-707's addresses */
   const sysex = n => page.evaluate(n => window.__out.slice(n).filter(b => b[0] === 0xf0 && b[7] === 0x12), n);
+  const idle = () =>
+    page.waitForFunction(() => !/Reading/.test(document.querySelector('#zcStat').textContent), null, {
+      timeout: 30000
+    });
+  const settle = async () => {
+    let len = -1;
+    while (len !== (len = await page.evaluate(() => window.__out.length))) await page.waitForTimeout(400);
+  };
+  const sendAll = async () => {
+    await settle();
+    const n = await page.evaluate(() => window.__out.length);
+    await page.locator('.zcActs button', { hasText: 'Send all' }).click();
+    for (let i = 0; i < 20 && !(await sysex(n)).length; i++) await page.waitForTimeout(250);
+    return sysex(n);
+  };
+  /* track 2 (bank A) is sent as to an MC-101 (model 0x5E) */
   await page.evaluate(() => window.__app.zen.open(1, 0));
-  await page.waitForTimeout(300);
-  let n = await page.evaluate(() => window.__out.length);
-  await page.locator('.zcActs button', { hasText: 'Send all' }).click();
-  /* (the sends wait for the read the editor starts on opening: give them time on a busy machine) */
-  for (let i = 0; i < 40 && !(await sysex(n)).length; i++) await page.waitForTimeout(250);
-  const two = await sysex(n);
+  const two = await sendAll();
   assert.ok(two.length > 0 && two.every(b => b[6] === 0x5e), 'track 2 is sent, with the MC-101 model byte');
   await page.keyboard.press('Escape');
-  /* (let track 2's writes finish going out) */
-  let len = -1;
-  while (len !== (len = await page.evaluate(() => window.__out.length))) await page.waitForTimeout(400);
-  /* track 6 is hidden: nothing goes out, and the editor says why */
-  await page.evaluate(() => window.__app.zen.open(5, 0));
-  await page.waitForTimeout(300);
-  assert.match(await page.textContent('#zcOv'), /hidden on the MC-107/);
-  n = await page.evaluate(() => window.__out.length);
-  await page.locator('.zcActs button', { hasText: 'Send all' }).click();
-  await page.waitForTimeout(500);
-  assert.equal((await sysex(n)).length, 0, 'no SysEx for a hidden track');
+  /* track 6 (bank B) answers no read here, so nothing is written to it */
+  await page.evaluate(() => window.__app.zen.open(5, 1));
+  await idle();
+  assert.match(await page.textContent('#zcOv'), /bank B\) did not answer/);
+  assert.equal((await sendAll()).length, 0, 'no SysEx for a bank B track that has not answered');
+  await page.keyboard.press('Escape');
+  /* once its clip answers a read at the MC-707's address, it is written to */
+  await page.evaluate(() => {
+    const l = window.__app.zen.slotAddr('tone', 5, 1);
+    for (let i = 0; i < 32768; i++) window.__zcMem.set(l + i, 0);
+  });
+  await page.evaluate(() => window.__app.zen.open(5, 1));
+  await settle();
+  await page.locator('.zcActs button', { hasText: 'Read from' }).click();
+  await idle();
+  assert.ok((await sendAll()).length > 0, 'a bank B track that answered is written to');
   assert.deepEqual(errors, []);
 });
 

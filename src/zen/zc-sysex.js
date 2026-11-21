@@ -33,19 +33,28 @@ const TONE0 = lin(0x30000000),
 /** The device's own track index (0-7, or 0-3 on the MC-101) for app track t. The MC-101's four
    tracks are the app's tracks 1, 4, 5 and 7, so they are renumbered here. */
 export const devTrack = t => (DEV === '101' ? Math.max(0, devNum(t) - 1) : t);
-/* An MC-107 is an MC-101: its memory holds the sounds and settings of four tracks (68 tones, not the
-   MC-707's 136), and where tracks 5-8 keep theirs is not known. So nothing is read from or written to
-   where an MC-707 keeps them: those reads come back unanswered and those writes are dropped, rather than
+/* An MC-107 (an MC-101 with the 8-track mod) keeps tracks 5-8 in a second bank. The mod's project code is
+   the MC-707's, but where the MC-101 keeps those tracks' sounds and settings for SysEx has not been
+   checked. So for tracks 5-8 the editor reads first (a read changes nothing), and writes go out only to a
+   track that answered a read at the MC-707's address; until then they are dropped rather than risk
    landing somewhere else in the MC-101's memory. */
-function hiddenAddr(l) {
-  if (DEV !== '107') return false;
+function bankBTrack(l) {
+  if (DEV !== '107') return -1;
   const slot = (base, step) => Math.floor((l - base) / step),
-    hid = i => i >= 4 * 17 && i < 8 * 17;
-  if (l >= TONE0 && hid(slot(TONE0, TONE_SLOT))) return true;
-  if (l >= KIT0 && hid(slot(KIT0, KIT_SLOT))) return true;
+    inB = i => (i >= 4 * 17 && i < 8 * 17 ? Math.floor(i / 17) : -1);
+  if (l >= KIT0) {
+    const t = inB(slot(KIT0, KIT_SLOT));
+    if (t >= 0) return t;
+  }
+  if (l >= TONE0) {
+    const t = inB(slot(TONE0, TONE_SLOT));
+    if (t >= 0) return t;
+  }
   const tr = slot(TRK_SET, lin(0x200));
-  return l >= TRK_SET && tr >= 4 && tr < 8;
+  return l >= TRK_SET && tr >= 4 && tr < 8 ? tr : -1;
 }
+/** True when MC-107 track t (4-7) has answered a read, so the editor may write to it. */
+export const zxBankOk = t => ZX.bankOk.has(t);
 /**
  * Where a tone or drum kit lives: app track t (0-7), clip k (0-15), or k = 16 for the track's own sound
  * (used when the track's Sound Source is TRACK).
@@ -93,6 +102,7 @@ export const ZX = {
   log: [] /* the last messages, for the editor's details view */,
   model: 0 /* the model byte the device answered to (0 = not known yet) */,
   modelFor: '' /* the device setting and port it was learnt for */,
+  bankOk: new Set() /* MC-107 tracks 5-8 that answered a read at the MC-707's address */,
   onIdle: null /* called each time the write queue empties */,
   pace: 0 /* ms between queued writes when set (the clip notes write slower), else PACE */
 };
@@ -159,7 +169,8 @@ function rawSend(bytes) {
 const PACE = 6;
 /** Write bytes at a linear address (queued). */
 export function zxWrite(l, data) {
-  if (hiddenAddr(l)) return;
+  const b = bankBTrack(l);
+  if (b >= 0 && !ZX.bankOk.has(b)) return;
   ZX.q.delete(l);
   ZX.q.set(l, data);
   if (!ZX.timer) ZX.timer = setTimeout(pump, 0);
@@ -284,7 +295,7 @@ const serial = fn => (chain = chain.then(() => zxFlush()).then(fn, fn));
  */
 export function zxRead(l, n, ms = 450, loose = false) {
   return serial(async () => {
-    if (!ZX.inp || hiddenAddr(l)) return undefined;
+    if (!ZX.inp) return undefined;
     for (let tries = 0; tries < 3; tries++) {
       /* the last try, while the model byte is still unknown, asks with the other model's byte */
       const guess = !known() && tries === 2 ? MODELS.find(m => m !== modelId()) : 0;
@@ -294,7 +305,10 @@ export function zxRead(l, n, ms = 450, loose = false) {
       const r = await askRq(msg, l, n, ms, loose);
       if (!r.buf.length && !r.stray) continue;
       await pause(SETTLE);
-      return r.buf.length === n || (loose && r.buf.length) ? r.buf : null;
+      const ok = r.buf.length === n || (loose && r.buf.length);
+      /* an MC-107 track 5-8 that answers at the MC-707's address can be written to */
+      if (ok && bankBTrack(l) >= 0) ZX.bankOk.add(bankBTrack(l));
+      return ok ? r.buf : null;
     }
     return undefined;
   });

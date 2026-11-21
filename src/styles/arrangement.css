@@ -143,7 +143,7 @@
   color: var(--mute);
   width: 38px;
 }
-/* MC-107: a track the MC plays but never shows */
+/* MC-107: a track on bank B (tracks 5-8) */
 .ttype.hid {
   font-size: 9.5px;
   font-weight: 700;

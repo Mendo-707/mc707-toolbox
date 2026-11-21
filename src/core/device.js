@@ -1,6 +1,6 @@
-// Which device the app drives: the MC-707 (8 tracks), the MC-101 (4 tracks) or the MC-107 (an MC-101
-// modded to play 8 tracks: tracks 5-8 play but the MC-101's screen and pads never show them), the track
-// colours, and helpers that say whether a track is in use.
+// Which device the app drives: the MC-707 (8 tracks), the MC-101 (4 tracks) or the MC-107 (an MC-101 with
+// the 8-track firmware mod, github.com/edco/mc-101-re: tracks 5-8 are a second bank on the same four SEL
+// buttons and faders), the track colours, and helpers that say whether a track is in use.
 //
 // Owns: DEV (the device).
 // Reads: S.
@@ -8,7 +8,7 @@ import { S } from './state.js';
 
 export const TRACK_COLORS = ['#ff5f45', '#ffa629', '#ff6fa3', '#2fd3c0', '#4da3ff', '#a283ff', '#84d95b', '#e9d94a'];
 /* Device: MC-707 (8 tracks), MC-101 (4 tracks: Drums, Bass, Chords, Lead on channels 1-4) or MC-107 (an
-   MC-101 with 8 tracks on channels 1-8, as the MC-707). hw: the hardware on the USB cable (its port
+   MC-101 with 8 tracks on channels 1-8, as the MC-707; the mod keeps the MC-101's USB name). hw: the hardware on the USB cable (its port
    name, SysEx model and memory). */
 export const DEVS = {
   707: {
@@ -35,11 +35,11 @@ export let DEV = (() => {
 })();
 /** The hardware: '707' or '101' (an MC-107 is an MC-101). */
 export const devHw = () => DEVS[DEV].hw;
-/** True when the app makes 8-track MC-707 project files for this device (the MC-707, and the MC-107,
-   which loads them). */
+/** True when the app makes 8-track MC-707 project files for this device (the MC-707, and the MC-107:
+   the MC-101 reads MC-707 projects, and the mod keeps their tracks 5-8). */
 export const devProj = () => DEVS[DEV].tracks.length === 8;
-/** True for a track that plays but that the device never shows: tracks 5-8 on an MC-107. */
-export const devHidden = t => DEV === '107' && +t >= 4;
+/** True for a track on the MC-107's second bank (tracks 5-8: press the lit SEL button again to reach them). */
+export const devBankB = t => DEV === '107' && +t >= 4;
 /** Set the device: '707', '101' or '107'. Use setDevice() in ui/device.js, which also rebuilds the screens. */
 export function assignDevice(v) {
   DEV = v;

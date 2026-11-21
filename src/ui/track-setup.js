@@ -29,13 +29,13 @@ const SHORT = {
   pluck: 'Pluck',
   acid: 'Acid'
 };
-/** The MC-107 layout: the four parts you play and tweak on the MC-101's screen and pads on tracks 1-4
-    (a full kit, bass, chords and lead, as on an MC-101), the layers the app plays on hidden tracks 5-8. */
+/** The MC-107 layout: the four parts you play and tweak most on bank A, tracks 1-4 (a full kit, bass,
+    chords and lead, as on an MC-101), the layers on bank B, tracks 5-8. */
 export const MC107_ROLES = ['kit', 'bass', 'chords', 'lead', 'hats', 'perc', 'pad', 'pluck'];
 /** Ready-made splits, as roles for tracks 1-8. */
 const PRESETS = [
   ['Default: 3 drums + 5 tone', DEF_ROLES],
-  ['MC-107: kit, bass, chords, lead on the MC', MC107_ROLES],
+  ['MC-107: kit, bass, chords, lead on bank A', MC107_ROLES],
   ['8 drums', ['kit', 'kit', 'hats', 'hats', 'perc', 'perc', 'kit', 'perc']],
   ['6 drums + 2 tone', ['kit', 'kit', 'hats', 'perc', 'perc', 'kit', 'bass', 'lead']],
   ['4 drums + 4 tone', ['kit', 'hats', 'perc', 'kit', 'bass', 'chords', 'lead', 'pluck']],

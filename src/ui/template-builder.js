@@ -290,7 +290,7 @@ export async function templateBuilderOpen() {
           ? el(
               'p',
               { class: 'ptWarn' },
-              'This makes an MC-707 project file (8 tracks), for your MC-107 to load. Tracks 5–8 get their sounds here: the MC-101’s screen never shows them.'
+              'This makes an MC-707 project file (8 tracks) for your MC-107: the mod loads all 8 tracks of an MC-707 project, so tracks 5–8 (bank B) get their sounds and clips too.'
             )
           : null;
     /* the tracks */

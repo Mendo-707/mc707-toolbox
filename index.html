@@ -707,7 +707,7 @@ input[type='range'] {
   color: var(--mute);
   width: 38px;
 }
-/* MC-107: a track the MC plays but never shows */
+/* MC-107: a track on bank B (tracks 5-8) */
 .ttype.hid {
   font-size: 9.5px;
   font-weight: 700;
@@ -14988,7 +14988,7 @@ html.os-darwin.native-menu #menubar .mproj {
   })();
   var devHw = () => DEVS[DEV].hw;
   var devProj = () => DEVS[DEV].tracks.length === 8;
-  var devHidden = (t) => DEV === "107" && +t >= 4;
+  var devBankB = (t) => DEV === "107" && +t >= 4;
   function assignDevice(v) {
     DEV = v;
   }
@@ -27980,13 +27980,13 @@ html.os-darwin.native-menu #menubar .mproj {
       el(
         "div",
         { class: "trow2" },
-        devHidden(i) ? el(
+        devBankB(i) ? el(
           "span",
           {
             class: "ttype hid",
-            title: (t.type === "drum" ? "Drums" : "Tone") + ". The MC-107 plays this track but never shows it: its clips, sound and mix are changed here, in the app"
+            title: (t.type === "drum" ? "Drums" : "Tone") + ". On the MC-107 this is bank B: press the lit SEL button again to switch to tracks 5–8, then SEL " + (i - 3) + " for this one"
           },
-          "App only"
+          "Bank B"
         ) : el("span", { class: "ttype" }, t.type === "drum" ? "Drums" : "Tone"),
         chSel,
         el("input", {
@@ -31493,14 +31493,21 @@ html.os-darwin.native-menu #menubar .mproj {
   var KIT_SLOT = lin(196608);
   var TRK_SET = lin(268437504);
   var devTrack = (t) => DEV === "101" ? Math.max(0, devNum(t) - 1) : t;
-  function hiddenAddr(l) {
-    if (DEV !== "107") return false;
-    const slot2 = (base, step) => Math.floor((l - base) / step), hid = (i) => i >= 4 * 17 && i < 8 * 17;
-    if (l >= TONE0 && hid(slot2(TONE0, TONE_SLOT))) return true;
-    if (l >= KIT0 && hid(slot2(KIT0, KIT_SLOT))) return true;
+  function bankBTrack(l) {
+    if (DEV !== "107") return -1;
+    const slot2 = (base, step) => Math.floor((l - base) / step), inB = (i) => i >= 4 * 17 && i < 8 * 17 ? Math.floor(i / 17) : -1;
+    if (l >= KIT0) {
+      const t = inB(slot2(KIT0, KIT_SLOT));
+      if (t >= 0) return t;
+    }
+    if (l >= TONE0) {
+      const t = inB(slot2(TONE0, TONE_SLOT));
+      if (t >= 0) return t;
+    }
     const tr = slot2(TRK_SET, lin(512));
-    return l >= TRK_SET && tr >= 4 && tr < 8;
+    return l >= TRK_SET && tr >= 4 && tr < 8 ? tr : -1;
   }
+  var zxBankOk = (t) => ZX.bankOk.has(t);
   function slotAddr(kind, t, k2) {
     const i = devTrack(t) * 17 + k2;
     return kind === "kit" ? KIT0 + i * KIT_SLOT : TONE0 + i * TONE_SLOT;
@@ -31534,6 +31541,7 @@ html.os-darwin.native-menu #menubar .mproj {
     log: [],
     model: 0,
     modelFor: "",
+    bankOk: /* @__PURE__ */ new Set(),
     onIdle: null,
     pace: 0
     /* ms between queued writes when set (the clip notes write slower), else PACE */
@@ -31589,7 +31597,8 @@ html.os-darwin.native-menu #menubar .mproj {
   }
   var PACE = 6;
   function zxWrite(l, data) {
-    if (hiddenAddr(l)) return;
+    const b = bankBTrack(l);
+    if (b >= 0 && !ZX.bankOk.has(b)) return;
     ZX.q.delete(l);
     ZX.q.set(l, data);
     if (!ZX.timer) ZX.timer = setTimeout(pump, 0);
@@ -31673,7 +31682,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var serial = (fn) => chain = chain.then(() => zxFlush()).then(fn, fn);
   function zxRead(l, n, ms = 450, loose = false) {
     return serial(async () => {
-      if (!ZX.inp || hiddenAddr(l)) return void 0;
+      if (!ZX.inp) return void 0;
       for (let tries = 0; tries < 3; tries++) {
         const guess = !known() && tries === 2 ? MODELS.find((m) => m !== modelId()) : 0;
         if (tries === 2 && !guess) break;
@@ -31682,7 +31691,9 @@ html.os-darwin.native-menu #menubar .mproj {
         const r = await askRq(msg, l, n, ms, loose);
         if (!r.buf.length && !r.stray) continue;
         await pause(SETTLE);
-        return r.buf.length === n || loose && r.buf.length ? r.buf : null;
+        const ok = r.buf.length === n || loose && r.buf.length;
+        if (ok && bankBTrack(l) >= 0) ZX.bankOk.add(bankBTrack(l));
+        return ok ? r.buf : null;
       }
       return void 0;
     });
@@ -37145,7 +37156,7 @@ html.os-darwin.native-menu #menubar .mproj {
       const dev = DEV === "101" ? el("p", { class: "ptWarn" }, "Project files are for the MC-707 (8 tracks). The MC-101 cannot load them.") : DEV === "107" ? el(
         "p",
         { class: "ptWarn" },
-        "This makes an MC-707 project file (8 tracks), for your MC-107 to load. Tracks 5–8 get their sounds here: the MC-101’s screen never shows them."
+        "This makes an MC-707 project file (8 tracks) for your MC-107: the mod loads all 8 tracks of an MC-707 project, so tracks 5–8 (bank B) get their sounds and clips too."
       ) : null;
       const rows2 = TB.tracks.flatMap((tr, t) => {
         const kind = kindOf(tr), names = tr.names.slice(0, tr.n).filter(Boolean), row2 = el(
@@ -46865,7 +46876,7 @@ html.os-darwin.native-menu #menubar .mproj {
               if (SY.kbd !== "own") kbdSet(t), act.render();
             }
           },
-          SY.names[t] || (devHidden(t) ? "Hidden on the MC" : "No sound read")
+          SY.names[t] || "No sound read"
         ),
         el(
           "div",
@@ -47639,11 +47650,6 @@ html.os-darwin.native-menu #menubar .mproj {
     if (sending()) sendSound(ZE.snd, zeBase(), new Set(keys2)).then(() => $("#zcOv") && zeRender());
   }
   async function zeRead() {
-    if (devHidden(ZE.t)) {
-      ZE.busy = "";
-      ZE.srcNote = "Track " + devNum(ZE.t) + " is hidden on the MC-107: the editor cannot read or send its sound over USB. Edit it here and save it, then put it in a project with the Template builder (MC-707 menu).";
-      return zeRender();
-    }
     if (!await zxConnect()) return status2();
     if (!ZX.inp) {
       toast("No MIDI input from the " + DEVS[DEV].name + ": cannot read, but changes are still sent");
@@ -47659,7 +47665,7 @@ html.os-darwin.native-menu #menubar .mproj {
     });
     if (ZE.t !== t || ZE.k !== k2) return;
     ZE.busy = "";
-    ZE.srcNote = r.ok ? "Read " + r.ok + " of " + r.total + " values" + (r.bad ? " (" + r.bad + " could not be read; they show faded)" : "") : "The " + DEVS[DEV].name + " did not answer the read. Edits are still sent.";
+    ZE.srcNote = r.ok ? "Read " + r.ok + " of " + r.total + " values" + (r.bad ? " (" + r.bad + " could not be read; they show faded)" : "") : devBankB(t) ? "Track " + devNum(t) + " (bank B) did not answer at the MC-707’s address, so nothing is sent to it: give it its sound with the Template builder (MC-707 menu) instead." : "The " + DEVS[DEV].name + " did not answer the read. Edits are still sent.";
     remember();
     zeRender();
     if (r.ok) readSource();
@@ -47673,9 +47679,9 @@ html.os-darwin.native-menu #menubar .mproj {
     }
   }
   async function zeSendAll() {
-    if (devHidden(ZE.t))
+    if (devBankB(ZE.t) && !zxBankOk(ZE.t))
       return toast(
-        "Track " + devNum(ZE.t) + " is hidden on the MC-107: its sound goes in through a project file (Template builder)"
+        "Read track " + devNum(ZE.t) + " from the MC-107 first: the editor only sends to a bank B track once it has answered a read"
       );
     if (!await zxConnect()) return status2();
     const snd = ZE.snd, base = zeBase();
@@ -50557,7 +50563,7 @@ html.os-darwin.native-menu #menubar .mproj {
         el(
           "p",
           { class: "scnNote" },
-          DEV === "107" ? "Scenes are mapped on the MC-707 so far: on the MC-107, Scene Mode plays here but cannot write over USB. File › Save as MC-707 project (.mpj) puts the clips and scenes in a project file for it to load." : "Scenes are mapped on the MC-707 so far: on the MC-101, Scene Mode plays here but cannot write."
+          DEV === "107" ? "Scenes are mapped on the MC-707 so far: on the MC-107, Scene Mode plays here but cannot write over USB. File › Save as MC-707 project (.mpj) puts all 8 tracks’ clips and the scenes in a project file it loads." : "Scenes are mapped on the MC-707 so far: on the MC-101, Scene Mode plays here but cannot write."
         )
       );
     if (!S.scn) {
@@ -71222,7 +71228,7 @@ html.os-darwin.native-menu #menubar .mproj {
   var MC107_ROLES = ["kit", "bass", "chords", "lead", "hats", "perc", "pad", "pluck"];
   var PRESETS = [
     ["Default: 3 drums + 5 tone", DEF_ROLES],
-    ["MC-107: kit, bass, chords, lead on the MC", MC107_ROLES],
+    ["MC-107: kit, bass, chords, lead on bank A", MC107_ROLES],
     ["8 drums", ["kit", "kit", "hats", "hats", "perc", "perc", "kit", "perc"]],
     ["6 drums + 2 tone", ["kit", "kit", "hats", "perc", "perc", "kit", "bass", "lead"]],
     ["4 drums + 4 tone", ["kit", "hats", "perc", "kit", "bass", "chords", "lead", "pluck"]],
@@ -71476,7 +71482,7 @@ html.os-darwin.native-menu #menubar .mproj {
     renderAll();
     if (typeof liveRender === "function") liveRender();
     toast(
-      d === "101" ? "MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits." : d === "107" ? "MC-107 mode: 8 tracks on channels 1–8. Tracks 5–8 play, but the MC-101 never shows them: the app is where you see and change them." : "MC-707 mode: 8 tracks on channels 1–8."
+      d === "101" ? "MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits." : d === "107" ? "MC-107 mode: 8 tracks on channels 1–8. On the MC, set SYSTEM › MIDI › Track Ch5–8 to 5–8; tracks 5–8 are bank B (press the lit SEL button again)." : "MC-707 mode: 8 tracks on channels 1–8."
     );
     if (d === "107") offer107();
   }
@@ -71484,8 +71490,8 @@ html.os-darwin.native-menu #menubar .mproj {
     const perm = orderFor(MC107_ROLES);
     if (!perm || perm.every((o, n) => o === n)) return;
     const ok = await askDlg({
-      title: "Move the main parts to tracks 1–4?",
-      text: "The MC-107 shows only tracks 1–4 on its screen and pads. The app can move the kit, bass, chords and lead there (the parts you play and tweak on the MC), and hats, percussion, pad and pluck to tracks 5–8, which the app plays and you change here. Each track keeps its clips, sound settings and mix. On the MC, set tracks 1–4 to Drum, Tone, Tone, Tone to match.",
+      title: "Move the main parts to bank A?",
+      text: "The MC-107 opens a project on bank A (tracks 1–4); tracks 5–8 are bank B, a press of the lit SEL button away. The app can move the kit, bass, chords and lead to bank A, where you play and tweak them most, and hats, percussion, pad and pluck to bank B. Each track keeps its clips, sound settings and mix.",
       ok: "Move them",
       cancel: "Keep the order"
     });

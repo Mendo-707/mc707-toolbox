@@ -7,11 +7,11 @@
 import { $, el, toast } from '../core/dom.js';
 import { waveSource } from './zc-waves.js';
 import { S } from '../core/state.js';
-import { DEVS, DEV, devHidden, devNum } from '../core/device.js';
+import { DEVS, DEV, devBankB, devNum } from '../core/device.js';
 import { MIDI } from '../services/midi.js';
 import { PCLAST } from '../services/clip-switch.js';
 import { TR, stopAll } from '../services/transport.js';
-import { ZX, slotAddr, trackSetAddr, zxConnect, zxFlush, zxNote, zxRead } from './zc-sysex.js';
+import { ZX, slotAddr, trackSetAddr, zxBankOk, zxConnect, zxFlush, zxNote, zxRead } from './zc-sysex.js';
 import { MFX_PARAMS, newSound, pk, readSound, sendSound, setVal } from './zc-tone.js';
 import { clipMemory, rememberClip } from './zc-library.js';
 import { mfxDefaults } from './zc-mfx.js';
@@ -276,15 +276,6 @@ function mfxType(type, vals) {
 /* ---- reading from the MC-707 ---- */
 /** Read the whole sound from the MC-707 (keeps what cannot be read). */
 export async function zeRead() {
-  /* an MC-107's tracks 5-8: where it keeps their sounds is unknown, so they are neither read nor sent */
-  if (devHidden(ZE.t)) {
-    ZE.busy = '';
-    ZE.srcNote =
-      'Track ' +
-      devNum(ZE.t) +
-      ' is hidden on the MC-107: the editor cannot read or send its sound over USB. Edit it here and save it, then put it in a project with the Template builder (MC-707 menu).';
-    return zeRender();
-  }
   if (!(await zxConnect())) return status();
   if (!ZX.inp) {
     toast('No MIDI input from the ' + DEVS[DEV].name + ': cannot read, but changes are still sent');
@@ -309,7 +300,11 @@ export async function zeRead() {
       r.total +
       ' values' +
       (r.bad ? ' (' + r.bad + ' could not be read; they show faded)' : '')
-    : 'The ' + DEVS[DEV].name + ' did not answer the read. Edits are still sent.';
+    : devBankB(t)
+      ? 'Track ' +
+        devNum(t) +
+        ' (bank B) did not answer at the MC-707’s address, so nothing is sent to it: give it its sound with the Template builder (MC-707 menu) instead.'
+      : 'The ' + DEVS[DEV].name + ' did not answer the read. Edits are still sent.';
   remember();
   zeRender();
   if (r.ok) readSource();
@@ -325,9 +320,11 @@ async function readSource() {
 }
 /** Send the whole sound to the MC-707. */
 export async function zeSendAll() {
-  if (devHidden(ZE.t))
+  if (devBankB(ZE.t) && !zxBankOk(ZE.t))
     return toast(
-      'Track ' + devNum(ZE.t) + ' is hidden on the MC-107: its sound goes in through a project file (Template builder)'
+      'Read track ' +
+        devNum(ZE.t) +
+        ' from the MC-107 first: the editor only sends to a bank B track once it has answered a read'
     );
   if (!(await zxConnect())) return status();
   const snd = ZE.snd,

@@ -44,19 +44,20 @@ export function setDevice(d) {
     d === '101'
       ? 'MC-101 mode: Drums, Bass, Chords and Lead on channels 1–4. Drums play full kits.'
       : d === '107'
-        ? 'MC-107 mode: 8 tracks on channels 1–8. Tracks 5–8 play, but the MC-101 never shows them: the app is where you see and change them.'
+        ? 'MC-107 mode: 8 tracks on channels 1–8. On the MC, set SYSTEM › MIDI › Track Ch5–8 to 5–8; tracks 5–8 are bank B (press the lit SEL button again).'
         : 'MC-707 mode: 8 tracks on channels 1–8.'
   );
   if (d === '107') offer107();
 }
-/* Switching to the MC-107: offer to move the tracks so the parts you play are on the four the MC shows.
+/* Switching to the MC-107: offer to move the tracks so the parts you play most are on bank A, the four the
+   MC shows after a project loads.
    Only when the tracks can simply be moved (each of those roles is on some track): nothing is lost. */
 async function offer107() {
   const perm = orderFor(MC107_ROLES);
   if (!perm || perm.every((o, n) => o === n)) return;
   const ok = await askDlg({
-    title: 'Move the main parts to tracks 1–4?',
-    text: 'The MC-107 shows only tracks 1–4 on its screen and pads. The app can move the kit, bass, chords and lead there (the parts you play and tweak on the MC), and hats, percussion, pad and pluck to tracks 5–8, which the app plays and you change here. Each track keeps its clips, sound settings and mix. On the MC, set tracks 1–4 to Drum, Tone, Tone, Tone to match.',
+    title: 'Move the main parts to bank A?',
+    text: 'The MC-107 opens a project on bank A (tracks 1–4); tracks 5–8 are bank B, a press of the lit SEL button away. The app can move the kit, bass, chords and lead to bank A, where you play and tweak them most, and hats, percussion, pad and pluck to bank B. Each track keeps its clips, sound settings and mix.',
     ok: 'Move them',
     cancel: 'Keep the order'
   });
