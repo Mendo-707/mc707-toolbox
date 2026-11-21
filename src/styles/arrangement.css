@@ -210,11 +210,24 @@
 }
 .clip .lnk {
   position: absolute;
+  left: 6px;
   right: 11px;
   bottom: 2px;
   font-size: 10.5px;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--mute);
   pointer-events: none;
+}
+/* the name and the note stay readable over the clip's notes */
+.clip .cname,
+.clip .lnk {
+  text-shadow:
+    0 0 3px color-mix(in srgb, var(--panel) 90%, transparent),
+    0 0 1px var(--panel);
 }
 .ghost {
   position: absolute;

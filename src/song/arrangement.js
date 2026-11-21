@@ -384,25 +384,27 @@ function clipEl(c, col) {
   drawClipPreview(cv, c, p, w, h, col);
   drawClipOverlay(cv, c, w, h, col);
   const used = S.clips.filter(x => x.pat === c.pat).length;
+  /* the note under the name: in full on a wide clip, short on a narrow one, none on a short track (it
+     would sit on the name) */
+  const wide = w >= 110,
+    tag = [
+      c.mute ? 'muted' : '',
+      c.tr ? (c.tr > 0 ? '+' : '') + c.tr + (wide ? ' st' : '') : '',
+      c.vel ? c.vel + '%' : '',
+      used > 1 ? (wide ? 'linked ×' : '×') + used : ''
+    ]
+      .filter(Boolean)
+      .join(wide ? ' · ' : ' ');
   e.append(
     cv,
-    el('span', { class: 'cname' }, p.name),
-    ...(used > 1 || c.tr || c.vel || c.mute
-      ? [
-          el(
-            'span',
-            { class: 'lnk' },
-            [
-              c.mute ? 'muted' : '',
-              c.tr ? (c.tr > 0 ? '+' : '') + c.tr + ' st' : '',
-              c.vel ? c.vel + '%' : '',
-              used > 1 ? 'linked ×' + used : ''
-            ]
-              .filter(Boolean)
-              .join(' · ')
-          )
-        ]
-      : []),
+    /* a narrow clip names what it is ("Offbeat Open"), not the style it is from ("House Hats: …"); a clip
+       at the very start leaves room for the playhead's handle */
+    el(
+      'span',
+      { class: 'cname', style: c.start < 0.25 ? 'left:12px' : null },
+      w < 130 && p.name.includes(': ') ? p.name.slice(p.name.indexOf(': ') + 2) : p.name
+    ),
+    ...(tag && h >= 36 ? [el('span', { class: 'lnk' }, tag)] : []),
     el('i', { class: 'gripl' }),
     el('i', { class: 'grip' })
   );

@@ -1274,16 +1274,20 @@ body[data-mode='synth'] #synth {
   gap: 6px;
   align-items: center;
 }
-#synth .syBrowse {
+#synth .btn.syBrowse {
   flex: 1;
   background: var(--zc-acc);
   border-color: var(--zc-acc);
   color: #000;
   font-weight: 600;
 }
-#synth .syBrowse:hover {
+#synth .btn.syBrowse:hover {
   color: #000;
   box-shadow: 0 0 10px #39ff7a55;
+}
+/* a kit has no Browse: its Edit button takes the room, so every strip's row lines up */
+.syBtns.kit > .btn:first-child {
+  flex: 1;
 }
 .syPlay {
   width: 34px;

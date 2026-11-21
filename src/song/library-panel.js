@@ -353,17 +353,19 @@ export function renderLibrary() {
     const cv = el('canvas', { width: 128, height: 60 });
     drawThumb(cv, m, col);
     const uses = UI.libTab === 'proj' ? S.clips.filter(c => c.pat === m.id).length : 0;
+    /* the role on a line of its own, then length, key and tempo (no break inside an item: "174 bpm"
+       never splits over two lines) */
+    const role = m.role || (m.type === 'drum' ? 'Drums' : 'Tone');
     const meta = [
-      m.role || (m.type === 'drum' ? 'Drums' : 'Tone'),
-      m.bars + (m.bars === 1 ? ' bar' : ' bars'),
+      m.bars + (m.bars === 1 ? '\u00a0bar' : '\u00a0bars'),
       keyLabel(m),
       UI.libTab === 'fac'
         ? m.bpm
-          ? m.bpm + ' bpm'
+          ? m.bpm + '\u00a0bpm'
           : ''
         : UI.libTab === 'proj'
           ? uses
-            ? 'used ×' + uses
+            ? 'used\u00a0×' + uses
             : 'unused'
           : ''
     ]
@@ -494,7 +496,7 @@ export function renderLibrary() {
         }
       },
       cv,
-      el('div', { class: 't' }, el('b', {}, m.name), el('small', {}, meta), tags),
+      el('div', { class: 't' }, el('b', {}, m.name), el('small', {}, role, el('br'), meta), tags),
       acts
     );
     list.append(row);

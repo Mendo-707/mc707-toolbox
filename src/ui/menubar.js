@@ -300,7 +300,8 @@ function initMenubar() {
       ]
     ]
   ];
-  let openB = null;
+  let openB = null,
+    byMouse = false;
   const closeAll = () => {
     nav.querySelectorAll('.mdrop').forEach(d => (d.hidden = true));
     nav.querySelectorAll('.mb').forEach(b => {
@@ -404,6 +405,7 @@ function initMenubar() {
     b.addEventListener('click', ev => {
       ev.stopPropagation();
       closePops();
+      byMouse = ev.detail > 0;
       if (openB === b) closeAll();
       else show(b, d);
     });
@@ -465,7 +467,11 @@ function initMenubar() {
     true
   );
   addEventListener('keydown', e => {
-    if (e.key === 'Escape' && openB) closeAll();
+    if (e.key === 'Escape' && openB) {
+      /* a menu opened with the mouse leaves no focus ring behind on its name; from the keyboard it does */
+      if (byMouse && document.activeElement === openB) openB.blur();
+      closeAll();
+    }
   });
   addEventListener('blur', closeAll);
   /* on a Mac, the same menus go in the Mac's own menu bar (desktop.js) */

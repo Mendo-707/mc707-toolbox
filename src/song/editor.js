@@ -290,10 +290,12 @@ export function layoutEditor() {
   $('#edScroll').style.display = '';
   $('#edShape').hidden = true;
   const roll = ED.mode === 'roll';
-  const cw = roll ? ED.zoom : 26;
   const rows = edRows(p);
   const rh = p.type === 'drum' ? (roll ? 24 : 26) : roll ? 16 : 22;
   const N = p.bars * 16;
+  /* steps widen to fill the editor (a one-bar pattern no longer sits in the left third), up to 40 px */
+  const room = ($('#edScroll').clientWidth || 0) - LW - 14;
+  const cw = roll ? ED.zoom : Math.max(26, Math.min(40, Math.floor(room / N)));
   const idx = new Map(rows.map((r, i) => [r.id, i]));
   ED.geom = { rows, idx, cw, rh, N, W: N * cw, H: rows.length * rh };
   $('#edVelWrap').hidden = !roll;

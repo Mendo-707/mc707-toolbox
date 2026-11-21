@@ -224,7 +224,7 @@ export function strip(t, act) {
     ),
     el(
       'div',
-      { class: 'syBtns' },
+      { class: 'syBtns' + (S.tracks[t].type === 'drum' ? ' kit' : '') },
       /* tones only: a kit's drum sounds can't be changed over MIDI */
       S.tracks[t].type === 'drum'
         ? null

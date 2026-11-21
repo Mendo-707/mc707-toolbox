@@ -369,7 +369,9 @@
 }
 .wbox.mbox {
   width: min(860px, 100%);
-  height: min(720px, 100%);
+  /* as tall as its sliders, no gap above the footer */
+  height: auto;
+  max-height: 100%;
 }
 #mctlBody {
   padding: 16px;

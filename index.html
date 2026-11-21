@@ -774,11 +774,24 @@ input[type='range'] {
 }
 .clip .lnk {
   position: absolute;
+  left: 6px;
   right: 11px;
   bottom: 2px;
   font-size: 10.5px;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--mute);
   pointer-events: none;
+}
+/* the name and the note stay readable over the clip's notes */
+.clip .cname,
+.clip .lnk {
+  text-shadow:
+    0 0 3px color-mix(in srgb, var(--panel) 90%, transparent),
+    0 0 1px var(--panel);
 }
 .ghost {
   position: absolute;
@@ -1526,7 +1539,9 @@ input[type='range'] {
 }
 .wbox.mbox {
   width: min(860px, 100%);
-  height: min(720px, 100%);
+  /* as tall as its sliders, no gap above the footer */
+  height: auto;
+  max-height: 100%;
 }
 #mctlBody {
   padding: 16px;
@@ -3720,6 +3735,19 @@ body[data-mode='live'] #live {
 .lvCell:not(.st) {
   border-left-color: transparent;
   opacity: 0.8;
+}
+/* a part's name runs on over the following bars of the lane (they carry none) */
+.lvCell.lab {
+  overflow: visible;
+  z-index: 1;
+}
+.lvCell .lvLab {
+  display: block;
+  width: max-content;
+  max-width: var(--run);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 55%);
 }
 .lvCell.rest {
   background: transparent;
@@ -6979,16 +7007,20 @@ body[data-mode='synth'] #synth {
   gap: 6px;
   align-items: center;
 }
-#synth .syBrowse {
+#synth .btn.syBrowse {
   flex: 1;
   background: var(--zc-acc);
   border-color: var(--zc-acc);
   color: #000;
   font-weight: 600;
 }
-#synth .syBrowse:hover {
+#synth .btn.syBrowse:hover {
   color: #000;
   box-shadow: 0 0 10px #39ff7a55;
+}
+/* a kit has no Browse: its Edit button takes the room, so every strip's row lines up */
+.syBtns.kit > .btn:first-child {
+  flex: 1;
 }
 .syPlay {
   width: 34px;
@@ -10273,7 +10305,8 @@ html.os-darwin.native-menu #menubar .mproj {
           <input
             type="search"
             id="libQ"
-            placeholder="Search name, style, key, tempo, role"
+            placeholder="Search patterns…"
+            title="Search by name, style, key, tempo or role"
             aria-label="Search patterns"
           />
           <label class="prevrow"
@@ -25436,11 +25469,11 @@ html.os-darwin.native-menu #menubar .mproj {
       const cv = el("canvas", { width: 128, height: 60 });
       drawThumb(cv, m, col);
       const uses2 = UI.libTab === "proj" ? S.clips.filter((c) => c.pat === m.id).length : 0;
+      const role = m.role || (m.type === "drum" ? "Drums" : "Tone");
       const meta2 = [
-        m.role || (m.type === "drum" ? "Drums" : "Tone"),
-        m.bars + (m.bars === 1 ? " bar" : " bars"),
+        m.bars + (m.bars === 1 ? " bar" : " bars"),
         keyLabel(m),
-        UI.libTab === "fac" ? m.bpm ? m.bpm + " bpm" : "" : UI.libTab === "proj" ? uses2 ? "used ×" + uses2 : "unused" : ""
+        UI.libTab === "fac" ? m.bpm ? m.bpm + " bpm" : "" : UI.libTab === "proj" ? uses2 ? "used ×" + uses2 : "unused" : ""
       ].filter(Boolean).join(" · ");
       const styles = itemStyles(it);
       const tags = el(
@@ -25561,7 +25594,7 @@ html.os-darwin.native-menu #menubar .mproj {
           }
         },
         cv,
-        el("div", { class: "t" }, el("b", {}, m.name), el("small", {}, meta2), tags),
+        el("div", { class: "t" }, el("b", {}, m.name), el("small", {}, role, el("br"), meta2), tags),
         acts
       );
       list2.append(row2);
@@ -27292,10 +27325,11 @@ html.os-darwin.native-menu #menubar .mproj {
     $("#edScroll").style.display = "";
     $("#edShape").hidden = true;
     const roll2 = ED.mode === "roll";
-    const cw = roll2 ? ED.zoom : 26;
     const rows2 = edRows(p);
     const rh = p.type === "drum" ? roll2 ? 24 : 26 : roll2 ? 16 : 22;
     const N = p.bars * 16;
+    const room = ($("#edScroll").clientWidth || 0) - LW - 14;
+    const cw = roll2 ? ED.zoom : Math.max(26, Math.min(40, Math.floor(room / N)));
     const idx = new Map(rows2.map((r, i) => [r.id, i]));
     ED.geom = { rows: rows2, idx, cw, rh, N, W: N * cw, H: rows2.length * rh };
     $("#edVelWrap").hidden = !roll2;
@@ -28034,21 +28068,22 @@ html.os-darwin.native-menu #menubar .mproj {
     drawClipPreview(cv, c, p, w, h, col);
     drawClipOverlay(cv, c, w, h, col);
     const used = S.clips.filter((x) => x.pat === c.pat).length;
+    const wide = w >= 110, tag = [
+      c.mute ? "muted" : "",
+      c.tr ? (c.tr > 0 ? "+" : "") + c.tr + (wide ? " st" : "") : "",
+      c.vel ? c.vel + "%" : "",
+      used > 1 ? (wide ? "linked ×" : "×") + used : ""
+    ].filter(Boolean).join(wide ? " · " : " ");
     e.append(
       cv,
-      el("span", { class: "cname" }, p.name),
-      ...used > 1 || c.tr || c.vel || c.mute ? [
-        el(
-          "span",
-          { class: "lnk" },
-          [
-            c.mute ? "muted" : "",
-            c.tr ? (c.tr > 0 ? "+" : "") + c.tr + " st" : "",
-            c.vel ? c.vel + "%" : "",
-            used > 1 ? "linked ×" + used : ""
-          ].filter(Boolean).join(" · ")
-        )
-      ] : [],
+      /* a narrow clip names what it is ("Offbeat Open"), not the style it is from ("House Hats: …"); a clip
+         at the very start leaves room for the playhead's handle */
+      el(
+        "span",
+        { class: "cname", style: c.start < 0.25 ? "left:12px" : null },
+        w < 130 && p.name.includes(": ") ? p.name.slice(p.name.indexOf(": ") + 2) : p.name
+      ),
+      ...tag && h >= 36 ? [el("span", { class: "lnk" }, tag)] : [],
       el("i", { class: "gripl" }),
       el("i", { class: "grip" })
     );
@@ -44720,7 +44755,7 @@ html.os-darwin.native-menu #menubar .mproj {
       ),
       el(
         "div",
-        { class: "syBtns" },
+        { class: "syBtns" + (S.tracks[t].type === "drum" ? " kit" : "") },
         /* tones only: a kit's drum sounds can't be changed over MIDI */
         S.tracks[t].type === "drum" ? null : el(
           "button",
@@ -45045,10 +45080,12 @@ html.os-darwin.native-menu #menubar .mproj {
           "div",
           {
             class: "syLink" + (on3 ? " on" : ""),
-            title: on3 ? "Reading and writing sounds over SysEx" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
+            title: on3 ? "Reading and writing sounds over SysEx" : MIDI.out ? "MIDI is connected, but the " + dn() + " has not answered over SysEx yet: allow MIDI with SysEx, then Read sounds" : "Connect the " + dn() + " by USB and allow MIDI with SysEx"
           },
           el("i"),
-          on3 ? dn() + " connected" : dn() + " not connected"
+          /* (connected for notes but not answering SysEx: say so, rather than "not connected" beside the
+             menu bar's "connected") */
+          on3 ? dn() + " sounds linked" : MIDI.out ? "Sounds not read yet" : dn() + " not connected"
         )
       ),
       el(
@@ -66166,20 +66203,27 @@ html.os-darwin.native-menu #menubar .mproj {
         const resting = scell && scell.id === id && scell.play && !lvPlayOn(scell.play, bar2 % ssc.bars, ssc.bars) || hk && ti === trackOf(0) && !hk.on;
         const phase = bar2 % f.bars;
         const isFill = ti === trackOf(0) && pendFill.some((c) => c.tick <= tk2 && tk2 < c.tick + 32);
-        const label2 = isFill ? "Fill" : resting ? "" : hk && hk.chop && hk.on ? "⇄ " + (phase === 0 || id !== prevId ? f.name : "") : phase === 0 || id !== prevId ? f.name : "";
+        const named2 = id !== prevId || bar2 % 4 === 0;
+        const label2 = isFill ? "Fill" : resting ? "" : hk && hk.chop && hk.on ? "⇄ " + (named2 ? f.name : "") : named2 ? f.name : "";
         row2.append(
           el(
             "div",
             {
-              class: "lvCell" + (phase === 0 || id !== prevId ? " st" : "") + (isFill ? " fill" : "") + (resting ? " rest" : "") + (hopped ? " hop" : "") + (hk && hk.chop && hk.on ? " chop" : "") + (lvEmute(ti) ? " em" : ""),
-              style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px",
+              class: "lvCell" + (phase === 0 || id !== prevId ? " st" : "") + (isFill ? " fill" : "") + (resting ? " rest" : "") + (hopped ? " hop" : "") + (hk && hk.chop && hk.on ? " chop" : "") + (lvEmute(ti) ? " em" : "") + (label2 && !isFill ? " lab" : ""),
+              style: "left:" + k2 * bw2 + "px;width:" + (bw2 - 1) + "px;--run:" + (4 * bw2 - 12) + "px",
               title: f.name + (hk && hk.chop && hk.on ? " (the beat moves between kits in this bar)" : hopped ? " (the beat on this kit)" : resting ? hk && ti === trackOf(0) && !hk.on ? " (the beat is on another kit this bar)" : " (resting this bar)" : lvEmute(ti) ? " (held back by the energy level)" : "")
             },
-            label2
+            label2 && !isFill ? el("span", { class: "lvLab" }, label2) : label2
           )
         );
         prevId = id;
       }
+      const named = [...row2.children].filter((c) => c.textContent);
+      named.forEach((c, i) => {
+        const lab = c.querySelector(".lvLab"), next = named[i + 1];
+        if (lab && next)
+          lab.style.maxWidth = Math.max(0, parseFloat(next.style.left) - parseFloat(c.style.left) - 12) + "px";
+      });
       pendSw.forEach((c) => {
         if (c.ids[ti]) {
           const x = (c.tick / 32 - b0) * bw2;
@@ -74505,7 +74549,7 @@ html.os-darwin.native-menu #menubar .mproj {
         ]
       ]
     ];
-    let openB = null;
+    let openB = null, byMouse = false;
     const closeAll = () => {
       nav.querySelectorAll(".mdrop").forEach((d) => d.hidden = true);
       nav.querySelectorAll(".mb").forEach((b) => {
@@ -74609,6 +74653,7 @@ html.os-darwin.native-menu #menubar .mproj {
       b.addEventListener("click", (ev) => {
         ev.stopPropagation();
         closePops();
+        byMouse = ev.detail > 0;
         if (openB === b) closeAll();
         else show(b, d);
       });
@@ -74665,7 +74710,10 @@ html.os-darwin.native-menu #menubar .mproj {
       true
     );
     addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && openB) closeAll();
+      if (e.key === "Escape" && openB) {
+        if (byMouse && document.activeElement === openB) openB.blur();
+        closeAll();
+      }
     });
     addEventListener("blur", closeAll);
     macMenus(() => {

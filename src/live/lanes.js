@@ -189,13 +189,16 @@ export function liveRenderLanes(b0, force) {
         (hk && ti === trackOf(0) && !hk.on);
       const phase = bar % f.bars;
       const isFill = ti === trackOf(0) && pendFill.some(c => c.tick <= tk && tk < c.tick + 32);
+      /* the name once where a part starts and again every four bars (not on every bar of a one-bar loop);
+         it runs on over the bars after it, which carry no name */
+      const named = id !== prevId || bar % 4 === 0;
       const label = isFill
         ? 'Fill'
         : resting
           ? ''
           : hk && hk.chop && hk.on
-            ? '⇄ ' + (phase === 0 || id !== prevId ? f.name : '')
-            : phase === 0 || id !== prevId
+            ? '⇄ ' + (named ? f.name : '')
+            : named
               ? f.name
               : '';
       row.append(
@@ -209,8 +212,9 @@ export function liveRenderLanes(b0, force) {
               (resting ? ' rest' : '') +
               (hopped ? ' hop' : '') +
               (hk && hk.chop && hk.on ? ' chop' : '') +
-              (lvEmute(ti) ? ' em' : ''),
-            style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px',
+              (lvEmute(ti) ? ' em' : '') +
+              (label && !isFill ? ' lab' : ''),
+            style: 'left:' + k * bw + 'px;width:' + (bw - 1) + 'px;--run:' + (4 * bw - 12) + 'px',
             title:
               f.name +
               (hk && hk.chop && hk.on
@@ -225,11 +229,19 @@ export function liveRenderLanes(b0, force) {
                       ? ' (held back by the energy level)'
                       : '')
           },
-          label
+          label && !isFill ? el('span', { class: 'lvLab' }, label) : label
         )
       );
       prevId = id;
     }
+    /* a name runs on only as far as the next named cell */
+    const named = [...row.children].filter(c => c.textContent);
+    named.forEach((c, i) => {
+      const lab = c.querySelector('.lvLab'),
+        next = named[i + 1];
+      if (lab && next)
+        lab.style.maxWidth = Math.max(0, parseFloat(next.style.left) - parseFloat(c.style.left) - 12) + 'px';
+    });
     /* a swap waiting: a slim tag along the bottom of the lane from the point it happens (never over a part's
        name, even when it lands in the bar playing now) */
     pendSw.forEach(c => {

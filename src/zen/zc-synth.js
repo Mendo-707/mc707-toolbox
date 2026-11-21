@@ -359,10 +359,16 @@ export function synthRender() {
           class: 'syLink' + (on ? ' on' : ''),
           title: on
             ? 'Reading and writing sounds over SysEx'
-            : 'Connect the ' + dn() + ' by USB and allow MIDI with SysEx'
+            : MIDI.out
+              ? 'MIDI is connected, but the ' +
+                dn() +
+                ' has not answered over SysEx yet: allow MIDI with SysEx, then Read sounds'
+              : 'Connect the ' + dn() + ' by USB and allow MIDI with SysEx'
         },
         el('i'),
-        on ? dn() + ' connected' : dn() + ' not connected'
+        /* (connected for notes but not answering SysEx: say so, rather than "not connected" beside the
+           menu bar's "connected") */
+        on ? dn() + ' sounds linked' : MIDI.out ? 'Sounds not read yet' : dn() + ' not connected'
       )
     ),
     el(

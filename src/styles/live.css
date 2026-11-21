@@ -762,6 +762,19 @@ body[data-mode='live'] #live {
   border-left-color: transparent;
   opacity: 0.8;
 }
+/* a part's name runs on over the following bars of the lane (they carry none) */
+.lvCell.lab {
+  overflow: visible;
+  z-index: 1;
+}
+.lvCell .lvLab {
+  display: block;
+  width: max-content;
+  max-width: var(--run);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 55%);
+}
 .lvCell.rest {
   background: transparent;
   border: 1px dashed color-mix(in srgb, var(--c) 55%, transparent);
